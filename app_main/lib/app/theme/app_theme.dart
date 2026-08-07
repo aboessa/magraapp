@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
 abstract final class AppTheme {
+  /// Bundled brand typeface. Declared in pubspec.yaml under `fonts:` with
+  /// static weights 400/500/600/700 and licensed under the SIL OFL 1.1
+  /// (assets/fonts/OFL.txt).
+  ///
+  /// This replaces a runtime download of the same family via `google_fonts`.
+  /// The family is applied to the text theme only — deliberately not to
+  /// `ThemeData.fontFamily` — so that rendering matches the previous
+  /// `GoogleFonts.readexProTextTheme(...)` behaviour exactly.
+  ///
+  /// KNOWN GAP, unchanged by this refactor: many widgets construct a raw
+  /// `TextStyle(...)` with no family, so those fall back to the platform
+  /// default (Roboto) rather than Readex Pro. Making the brand font apply
+  /// app-wide is a typography task, not a font-bundling task, because it
+  /// changes the appearance of dozens of screens.
+  static const fontFamily = 'Readex Pro';
+
   static ThemeData get dark {
     final baseScheme =
         ColorScheme.fromSeed(
@@ -22,9 +37,13 @@ abstract final class AppTheme {
           surface: AppColors.midnight,
         );
 
-    final baseText = GoogleFonts.readexProTextTheme(
-      Typography.material2021(platform: TargetPlatform.android).white,
-    ).apply(bodyColor: AppColors.starlight, displayColor: AppColors.starlight);
+    final baseText = Typography.material2021(platform: TargetPlatform.android)
+        .white
+        .apply(
+          fontFamily: fontFamily,
+          bodyColor: AppColors.starlight,
+          displayColor: AppColors.starlight,
+        );
 
     return ThemeData(
       useMaterial3: true,

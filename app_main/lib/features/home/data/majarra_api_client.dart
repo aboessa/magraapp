@@ -14,10 +14,47 @@ class MajarraApiException implements Exception {
   String toString() => 'MajarraApiException: $message';
 }
 
+/// API base URLs.
+///
+/// ## A3 (staging/production separation) is BLOCKED — infrastructure, not code
+///
+/// [staging] and [production] currently hold the *same* URL. That is not an
+/// oversight left in place casually: there is no staging backend to point at.
+/// `dashboard/api/wrangler.jsonc` defines exactly one named environment,
+/// `production`, routed to `api.majarra.app`. The top-level Wrangler config is
+/// marked local-development-only and carries a warning that it must never point
+/// at production queues or buckets.
+///
+/// Inventing a plausible-looking staging hostname would be worse than leaving
+/// the duplication visible, because a build could then silently target a host
+/// that does not exist, or worse, resolve to production while claiming to be
+/// staging.
+///
+/// To unblock, infrastructure must first provide:
+///   1. A `staging` environment in `wrangler.jsonc` with its own route, D1
+///      database, KV namespace, R2 buckets and queues — sharing any of these
+///      with production would let test traffic mutate real family data.
+///   2. Separate `AUTH_TOKEN_SECRET` / `MEDIA_TOKEN_SECRET` / `ADMIN_API_KEY`
+///      values for that environment.
+///   3. The resulting hostname.
+///
+/// Once those exist, this class should become an explicit environment enum
+/// selected by `--dart-define`, with the override allowlisted to https (plus
+/// localhost for local development) rather than the current unrestricted
+/// [custom] value. See AUDIT_FLUTTER_APP.md §9 H10 and §7.4 B11.
+///
+/// Until then production behaviour is deliberately left exactly as it was.
 class ApiEnvironment {
+  /// Placeholder only — identical to [production] because no staging backend
+  /// exists yet. Do not treat a build using this as isolated from production.
   static const staging = 'https://api.majarra.app';
   static const production = 'https://api.majarra.app';
+
+  /// Superseded workers.dev hostname, kept for reference while the custom
+  /// override remains unrestricted. Not referenced by [baseUrl].
   static const legacy = 'https://majarra-api-prod.aboessa101.workers.dev';
+
+  /// Unrestricted build-time override. Needs an allowlist (see class docs).
   static const custom = String.fromEnvironment('API_BASE_URL', defaultValue: '');
   static String get baseUrl => custom.isNotEmpty ? custom : production;
 }
