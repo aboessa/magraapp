@@ -1,0 +1,35 @@
+# Normalise line endings so the same file does not churn between machines.
+* text=auto eol=lf
+
+# Windows-only scripts must keep CRLF.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Gradle wrapper.
+gradlew      text eol=lf
+gradlew.bat  text eol=crlf
+
+# Binary files: never touch, never diff as text.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.rar   binary
+*.zip   binary
+*.jks   binary
+*.keystore binary
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.mp3   binary
+*.mp4   binary
+*.wav   binary
+
+# Generated lockfiles: keep in the repo but do not show in diffs by default.
+pubspec.lock      -diff
+package-lock.json -diff

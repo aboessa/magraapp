@@ -1,0 +1,30 @@
+{
+  "name": "majarra-web",
+  "compatibility_date": "2025-06-01",
+  "observability": { "enabled": true },
+
+  // Worker للأصول الثابتة فقط، بلا main، فمخرجات Vite تُخدَم مباشرة.
+  // single-page-application تعيد index.html لأي مسار غير موجود، وهو ما يحتاجه
+  // react-router لمسارات مثل /admin و /plans دون أن تظهر 404.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+
+  // البيئات المسمّاة لا ترث الإعدادات من الأعلى، فتُصرّح صراحةً.
+  "env": {
+    "production": {
+      "name": "majarra-web-prod",
+      "observability": { "enabled": true },
+      "assets": {
+        "directory": "./dist",
+        "not_found_handling": "single-page-application"
+      },
+      // النطاق الجذر فقط. توجيه www إلى الجذر يُضبط بقاعدة Redirect Rule
+      // في لوحة Cloudflare حتى لا يظهر المحتوى نفسه على نطاقين.
+      "routes": [
+        { "pattern": "majarra.app", "custom_domain": true }
+      ]
+    }
+  }
+}

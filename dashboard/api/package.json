@@ -1,0 +1,33 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "node --experimental-strip-types --test test/*.test.mjs",
+    "typecheck": "wrangler deploy --dry-run --outdir .wrangler-dry-run --env=",
+    "types": "wrangler types",
+    "deploy:staging": "wrangler deploy --env staging",
+    "migrate:staging": "wrangler d1 migrations apply DB --remote --env staging",
+    "migrate:local": "wrangler d1 migrations apply majarra-db --local",
+    "migrate:remote": "wrangler d1 migrations apply majarra-db --remote --env production",
+    "migrate:triggers:local": "wrangler d1 execute majarra-db --local --file=scripts/child-profile-limit-triggers.sql",
+    "migrate:triggers:remote": "wrangler d1 execute majarra-db --remote --env production --file=scripts/child-profile-limit-triggers.sql",
+    "import:images:dry": "node scripts/import-images.mjs --dry-run",
+    "import:images:local": "node scripts/import-images.mjs",
+    "import:images:remote": "node scripts/import-images.mjs --remote"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "hono": "^4.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.118.0"
+  }
+}

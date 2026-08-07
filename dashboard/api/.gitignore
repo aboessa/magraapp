@@ -1,0 +1,27 @@
+# Cloudflare Worker API — local ignore rules.
+#
+# Defence in depth: the repository root .gitignore already covers these, but
+# this file keeps the protection in place if dashboard/api/ is ever extracted
+# into its own repository.
+
+# --- Secrets: never commit. Use `wrangler secret put` instead. ---
+.secrets.local.txt
+.secrets*
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*service-account*.json
+
+# --- Local probe / scratch files that can contain live tokens ---
+probe-*.json
+tail.log
+*.log
+.tmp/
+
+# --- Tooling ---
+node_modules/
+dist/
+.wrangler/
+.wrangler-dry-run/

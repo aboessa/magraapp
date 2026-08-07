@@ -1,0 +1,78 @@
+# ---------------------------------------------------------------------------
+# Repository-root ignore rules.
+#
+# Added during Phase 0 stabilisation. Before this file existed there was NO
+# .gitignore at the repository root and none in dashboard/api/, so
+# dashboard/api/.secrets.local.txt would have been committed by the first
+# `git add .`. See AUDIT_FLUTTER_APP.md.
+# ---------------------------------------------------------------------------
+
+# --- Secrets: never commit ---
+.secrets*
+*.secret
+*.secrets
+secrets.*
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+key.properties
+*service-account*.json
+*credentials*.json
+
+# --- Flutter / Dart ---
+app_main/build/
+app_main/.dart_tool/
+app_main/.flutter-plugins
+app_main/.flutter-plugins-dependencies
+app_main/android/local.properties
+app_main/android/.gradle/
+app_main/android/.kotlin/
+app_main/ios/Pods/
+app_main/.idea/
+
+# --- Node / Cloudflare Workers ---
+node_modules/
+dist/
+.wrangler/
+.wrangler-dry-run/
+*.log
+tail.log
+
+# --- Python ---
+__pycache__/
+*.pyc
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+
+# --- Local scratch / archives ---
+_archive/
+*.rar
+
+# ---------------------------------------------------------------------------
+# Raw image masters — EXCLUDED FROM VERSION CONTROL, DECISION PENDING
+#
+# `majarra_images/` is 568 MB of full-resolution PNG/JPEG masters (including
+# many obvious download duplicates named "... (1).png"). Committing it would
+# bake 568 MB into git history permanently and cannot be undone without a
+# history rewrite, so it is excluded from the baseline commit.
+#
+# The files are UNTOUCHED on disk. The app does not load them at runtime — it
+# ships compressed WebP from `app_main/assets/`. This directory is a pipeline
+# input (see tools/process_planet_icons.py).
+#
+# Pick one before relying on git for these:
+#   1. Git LFS      -> `git lfs track "majarra_images/**"` then remove this rule.
+#   2. Object storage (R2/S3) -> keep this rule; back the masters up there.
+#   3. Track anyway -> remove this rule, accepting a permanently large repo.
+# ---------------------------------------------------------------------------
+majarra_images/

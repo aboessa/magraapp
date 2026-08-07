@@ -1,0 +1,109 @@
+﻿{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "majarra-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "vars": {
+    "ENVIRONMENT": "development",
+    "API_VERSION": "v1",
+    "EMAIL_FROM": "accounts@majarra.app",
+    "EMAIL_VERIFICATION_URL": "https://majarra.app/verify"
+  },
+  "kv_namespaces": [
+    { "binding": "CACHE", "id": "local-cache-dev", "preview_id": "local-cache-preview" }
+  ],
+  // The top-level environment is for local development only and must never
+  // point at production queues or buckets.
+  "r2_buckets": [
+    { "binding": "MEDIA_BUCKET", "bucket_name": "majarra-media-dev" },
+    { "binding": "THUMBS_BUCKET", "bucket_name": "majarra-thumbs-dev" }
+  ],
+  "send_email": [{ "name": "EMAIL" }],
+  "durable_objects": {
+    "bindings": [
+      { "name": "FAMILY_STATE", "class_name": "FamilyState" },
+      { "name": "IDENTITY_STATE", "class_name": "IdentityState" },
+      { "name": "STORY_COLLAB", "class_name": "StoryCollab" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["FamilyState"] },
+    { "tag": "v2", "new_sqlite_classes": ["IdentityState"] },
+    { "tag": "v3", "new_sqlite_classes": ["StoryCollab"] }
+  ],
+  "triggers": { "crons": ["0 3 * * *"] },
+  "queues": {
+    "producers": [
+      { "queue": "family-events-dev", "binding": "FAMILY_EVENTS" }
+    ],
+    "consumers": [
+      {
+        "queue": "family-events-dev",
+        "max_batch_size": 100,
+        "max_batch_timeout": 5,
+        "max_retries": 5,
+        "dead_letter_queue": "family-events-dev-dlq"
+      },
+      { "queue": "family-events-dev-dlq", "max_batch_size": 10, "max_batch_timeout": 5 }
+    ]
+  },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "majarra-db", "database_id": "local-majarra-db", "migrations_dir": "migrations" }
+  ],
+  // Named environments do not inherit vars, KV, R2, D1, Durable Object or Queue
+  // bindings from the top level, so each environment declares them explicitly.
+  "env": {
+    "production": {
+      "name": "majarra-api-prod",
+      "routes": [{ "pattern": "api.majarra.app/*", "zone_name": "majarra.app" }],
+      "vars": {
+        "ENVIRONMENT": "production",
+        "API_VERSION": "v1",
+        "EMAIL_FROM": "accounts@majarra.app",
+        "EMAIL_VERIFICATION_URL": "https://majarra.app/verify"
+      },
+      "observability": { "enabled": true },
+      "send_email": [{ "name": "EMAIL" }],
+      "kv_namespaces": [
+        { "binding": "CACHE", "id": "2f1f0d02a577438ca22090be52288685" }
+      ],
+      "r2_buckets": [
+        { "binding": "MEDIA_BUCKET", "bucket_name": "majarra-media" },
+        { "binding": "THUMBS_BUCKET", "bucket_name": "majarra-thumbs" }
+      ],
+      "durable_objects": {
+        "bindings": [
+          { "name": "FAMILY_STATE", "class_name": "FamilyState" },
+          { "name": "IDENTITY_STATE", "class_name": "IdentityState" },
+          { "name": "STORY_COLLAB", "class_name": "StoryCollab" }
+        ]
+      },
+      "migrations": [
+        { "tag": "v1", "new_sqlite_classes": ["FamilyState"] },
+        { "tag": "v2", "new_sqlite_classes": ["IdentityState"] },
+        { "tag": "v3", "new_sqlite_classes": ["StoryCollab"] }
+      ],
+      "triggers": { "crons": ["0 3 * * *"] },
+      "queues": {
+        "producers": [
+          { "queue": "family-events", "binding": "FAMILY_EVENTS" }
+        ],
+        "consumers": [
+          {
+            "queue": "family-events",
+            "max_batch_size": 100,
+            "max_batch_timeout": 5,
+            "max_retries": 5,
+            "dead_letter_queue": "family-events-dlq"
+          },
+          { "queue": "family-events-dlq", "max_batch_size": 10, "max_batch_timeout": 5 }
+        ]
+      },
+      "d1_databases": [
+        { "binding": "DB", "database_name": "majarra-db", "database_id": "38febc7d-3712-444c-8b89-6c047cee32ee", "migrations_dir": "migrations" }
+      ]
+    }
+  }
+}
