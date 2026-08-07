@@ -237,7 +237,7 @@ class _ProfileDestination extends StatelessWidget {
                       // صورة كبيرة واضحة - هيكايا (ألوان غنية)
                       Opacity(
                         opacity: 0.72,
-                        child: Image.asset(bannerAsset, fit: BoxFit.cover, alignment: const Alignment(0, -0.2), errorBuilder: (_, __, ___) => Image.asset('assets/images/planets/planet-science.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                        child: Image.asset(bannerAsset, fit: BoxFit.cover, alignment: const Alignment(0, -0.2), errorBuilder: (_, __, ___) => Image.asset('assets/images/planets/planet-science.webp', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
                       ),
                       // Blur خفيف يحافظ على التفاصيل
                       ClipRect(child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14), child: Container(color: const Color(0xFF06091A).withValues(alpha: 0.32)))),

@@ -1,0 +1,23 @@
+# Template for android/key.properties  —  DO NOT COMMIT THE REAL FILE.
+#
+# Copy this file to `android/key.properties` and fill in real values.
+# `key.properties` is already listed in android/.gitignore.
+#
+# Generate the upload keystore first, storing it OUTSIDE the repository:
+#
+#   keytool -genkeypair -v \
+#     -keystore /secure/path/majarra-upload.jks \
+#     -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 \
+#     -alias majarra-upload
+#
+# Back the keystore and these passwords up somewhere durable. If the upload key
+# is lost you cannot publish another update to the same Google Play listing
+# without going through Play's key-reset process.
+#
+# storeFile accepts an absolute path, or a path relative to android/app/.
+# Prefer an absolute path outside the repository.
+
+storeFile=/secure/path/majarra-upload.jks
+storePassword=CHANGE_ME
+keyAlias=majarra-upload
+keyPassword=CHANGE_ME
