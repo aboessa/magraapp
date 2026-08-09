@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import type { Env } from '../lib/db'
 import { queryAll, queryFirst } from '../lib/db'
+import { callDurable, familyStub } from '../lib/doClient'
 import { auditActor, requireAdmin, requirePermission } from '../lib/adminAuth'
 import { actorId, auditStatement } from '../lib/auditLog'
 import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation'
@@ -268,6 +269,74 @@ route.get('/support/family/:id', async (c) => {
   await auditStatement(c.env.DB, actorId(c), 'view', 'support_family', id, {}).run()
 
   return c.json({ success: true, data: { family, children, devices, entitlements } })
+})
+
+/// `GET /admin/support/family/:id/devices` — the *live* device list.
+///
+/// ## Why this exists alongside the projection above
+///
+/// `account_devices` is a D1 projection fed by queue events. It is the right thing
+/// to list and filter across accounts, and it is the wrong thing to answer "is this
+/// parent's tablet still signed in right now", because a projection is by definition
+/// behind and a support conversation happens in the present. The audit recorded the
+/// consequence as a real gap: «لا إسقاط أجهزة حي من FamilyState».
+///
+/// `FamilyState` is the authority (`do/FamilyState.ts`), and its `GET /devices`
+/// handler requires no parent session — unlike `POST /devices/revoke`, which checks
+/// `activeSession` and therefore genuinely cannot be called by an operator. So the
+/// read is available today and the write is not, and this endpoint is exactly the
+/// half that is possible. Nothing here moves authority into D1.
+///
+/// `installation_id_hash` is dropped before the response. It is a device
+/// fingerprint, an operator never needs it to answer a question, and the narrow
+/// field set of the lookup above exists for the same reason.
+route.get('/support/family/:id/devices', async (c) => {
+  const id = c.req.param('id')
+  const family = await queryFirst<{ parent_id: string }>(c.env.DB, `
+    SELECT parent_id FROM family_projection WHERE parent_id = ?
+  `, [id])
+  if (!family) return c.json({ success: false, error: 'Family not found' }, 404)
+
+  const live = await callDurable<{
+    success: boolean
+    data?: Array<Record<string, unknown>>
+  }>(familyStub(c.env, id), '/devices', { method: 'GET' })
+
+  // A Durable Object outage must not be reported as "this family has no devices":
+  // an empty list and an unreachable authority are different answers, and only one
+  // of them means the parent can sign in.
+  if (!live.ok || !live.data?.success) {
+    return c.json({
+      success: false,
+      error: 'Family device state is unavailable right now',
+      data: { source: 'family_state', reachable: false },
+    }, 503)
+  }
+
+  const devices = (live.data.data ?? []).map((device) => ({
+    id: device.id,
+    display_name: device.display_name,
+    platform: device.platform,
+    status: device.status,
+    registered_at: device.registered_at,
+    last_seen_at: device.last_seen_at,
+  }))
+
+  await auditStatement(c.env.DB, actorId(c), 'view', 'support_family_devices', id, {
+    device_count: devices.length,
+  }).run()
+
+  return c.json({
+    success: true,
+    data: {
+      devices,
+      source: 'family_state',
+      // Stated in the payload so a screen cannot present a live read and a
+      // projection read as the same thing.
+      authority: 'FamilyState is the authority for device state; revoke is not an admin operation',
+      revoke_available: false,
+    },
+  })
 })
 
 // Rights

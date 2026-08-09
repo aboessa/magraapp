@@ -1606,6 +1606,30 @@ export interface WorkflowMyStage {
   blocks_publish: number
 }
 
+/**
+ * قراءة حيّة لأجهزة عائلة من FamilyState لا من إسقاط D1.
+ *
+ * الفرق ليس تجميليًا: الإسقاط يتغذّى من طابور فهو متأخّر بطبيعته، ومحادثة الدعم
+ * تجري في الحاضر. `revoke_available` تبقى false لأن `POST /devices/revoke` في
+ * الـDO يتحقّق من جلسة والٍ فعليًا، فلا مسار إداري له — والإعلان عن ذلك في
+ * الجسم يمنع الواجهة من تقديم قراءة حيّة وسحبًا كأنهما متاحان معًا.
+ */
+export interface SupportLiveDevice {
+  id: string
+  display_name: string | null
+  platform: string | null
+  status: string
+  registered_at: number | null
+  last_seen_at: number | null
+}
+
+export interface SupportLiveDevices {
+  devices: SupportLiveDevice[]
+  source: string
+  authority: string
+  revoke_available: boolean
+}
+
 /// فحص واحد. `message` جاهزة للعرض بالعربية من الخادم، وتحمل السبب لا الحكم فقط.
 export interface QualityCheck {
   check: string

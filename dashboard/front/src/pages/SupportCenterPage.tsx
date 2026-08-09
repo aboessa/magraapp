@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { EmptyState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
-import type { SupportFamilyEnvelope } from '../types/api'
+import type { SupportFamilyEnvelope, SupportLiveDevices } from '../types/api'
 
 /**
  * مركز الدعم: البحث عن عائلة لخدمة العملاء.
@@ -60,6 +60,13 @@ const copy = {
     actionsTitle: 'إجراءات الدعم',
     actionsHint: 'إعادة مزامنة الاستحقاق واستعادة الشراء وإعادة ضبط PIN وإنشاء التذاكر — كلها غير مُنفَّذة بعد في الخادم. أُزيلت الأزرار بدل إظهارها معطّلة أو مُوهِمة بالعمل.',
     searchError: 'تعذر البحث',
+    liveRead: 'قراءة حيّة من مصدر السلطة',
+    liveLoading: 'جارٍ القراءة الحيّة…',
+    liveSource: 'المصدر: FamilyState (حيّ)',
+    projectionSource: 'أدناه إسقاط D1، يتغذّى من طابور فهو متأخّر عن الحاضر بطبيعته.',
+    liveError: 'حالة أجهزة العائلة غير متاحة الآن (تعذّر الوصول لمصدر السلطة) — وهذا ليس «لا أجهزة».',
+    revokeUnavailable: 'سحب الجهاز ليس عملية إدارية: مسار السحب في FamilyState يتحقّق من جلسة والٍ، فلا يمكن للوحة تنفيذه.',
+    lastSeen: 'آخر ظهور',
   },
   en: {
     eyebrow: 'Customer support',
@@ -92,6 +99,13 @@ const copy = {
     actionsTitle: 'Support actions',
     actionsHint: 'Entitlement resync, purchase restore, PIN reset and ticket creation are not implemented on the server yet. The buttons were removed rather than shown disabled or pretending to work.',
     searchError: 'Search failed',
+    liveRead: 'Live read from the authority',
+    liveLoading: 'Reading live…',
+    liveSource: 'Source: FamilyState (live)',
+    projectionSource: 'Below is the D1 projection, fed by a queue and therefore behind the present by design.',
+    liveError: 'Family device state is unavailable right now (the authority was unreachable) — this is not “no devices”.',
+    revokeUnavailable: 'Revoking a device is not an admin operation: the FamilyState revoke path checks a parent session, so the dashboard cannot perform it.',
+    lastSeen: 'Last seen',
   },
 }
 
@@ -104,6 +118,11 @@ export function SupportCenterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [notFound, setNotFound] = useState(false)
+  // القراءة الحيّة حالة منفصلة: قد تفشل وحدها (503) بلا أن يُفقد باقي الملف،
+  // وفشلها يجب أن يُقرأ «تعذّر الوصول» لا «لا أجهزة».
+  const [live, setLive] = useState<SupportLiveDevices | null>(null)
+  const [liveLoading, setLiveLoading] = useState(false)
+  const [liveError, setLiveError] = useState('')
 
   const search = useCallback(async (event: FormEvent) => {
     event.preventDefault()
@@ -114,6 +133,8 @@ export function SupportCenterPage() {
     setError('')
     setNotFound(false)
     setFamily(null)
+    setLive(null)
+    setLiveError('')
     try {
       const response = await api.supportFamily(value)
       setFamily(response.data)
@@ -126,6 +147,24 @@ export function SupportCenterPage() {
       setLoading(false)
     }
   }, [query, text.required, text.searchError])
+
+  const loadLiveDevices = useCallback(async () => {
+    const id = family?.family?.parent_id
+    if (!id) return
+    setLiveLoading(true)
+    setLiveError('')
+    try {
+      const response = await api.supportFamilyDevices(id)
+      setLive(response.data)
+    } catch (caught) {
+      // مسح النتيجة القديمة عند الفشل: إبقاء قراءة سابقة معروضة بعد فشل نداء
+      // جديد يجعل العامل يقرأ حالة قديمة كأنها الحاضر.
+      setLive(null)
+      setLiveError(caught instanceof Error ? caught.message : text.liveError)
+    } finally {
+      setLiveLoading(false)
+    }
+  }, [family, text.liveError])
 
   const account = family?.family ?? null
 
@@ -229,7 +268,55 @@ export function SupportCenterPage() {
             </section>
 
             <section className="panel">
-              <div className="panel__header"><h3>{text.devicesTitle}</h3></div>
+              <div className="panel__header">
+                <h3>{text.devicesTitle}</h3>
+                {/* قراءة حيّة اختيارية: الإسقاط أدناه متأخّر بطبيعته لأنه يتغذّى من
+                    طابور، ومحادثة الدعم تجري في الحاضر. الزر يستدعي FamilyState
+                    مصدر السلطة، ويُعلَن مصدر كل جدول صراحةً فلا يُقرأ أحدهما
+                    كالآخر. */}
+                <button
+                  type="button"
+                  className="button button--ghost"
+                  disabled={liveLoading || !family}
+                  onClick={() => void loadLiveDevices()}
+                >
+                  {liveLoading ? text.liveLoading : text.liveRead}
+                </button>
+              </div>
+
+              {liveError && <p className="inline-alert inline-alert--error" role="alert">{liveError}</p>}
+
+              {live && (
+                <>
+                  <p className="readiness-note">{text.liveSource} · {live.authority}</p>
+                  <div className="table-scroll">
+                    <table className="data-table">
+                      <thead><tr><th>{text.device}</th><th>{text.platform}</th><th>{text.status}</th><th>{text.lastSeen}</th></tr></thead>
+                      <tbody>
+                        {live.devices.length ? live.devices.map((device) => (
+                          <tr key={device.id}>
+                            <td><span className="table-primary">{device.display_name || device.id}</span></td>
+                            <td>{device.platform ?? '—'}</td>
+                            <td>
+                              <span className={`account-status account-status--${device.status === 'active' ? 'active' : 'archived'}`}>
+                                {device.status}
+                              </span>
+                            </td>
+                            <td dir="ltr">
+                              {device.last_seen_at ? new Date(Number(device.last_seen_at)).toISOString().slice(0, 16).replace('T', ' ') : '—'}
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr><td colSpan={4}><span className="table-secondary">{text.noDevices}</span></td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="readiness-note">{text.revokeUnavailable}</p>
+                </>
+              )}
+
+              <p className="readiness-note">{text.projectionSource}</p>
               {(family?.devices ?? []).length ? (
                 <div className="table-scroll">
                   <table className="data-table">

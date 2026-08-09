@@ -9,8 +9,8 @@ read from the source on every run. The **Status** column comes from
 `docs/FEATURE_MATRIX_VERDICTS.json`, where each verdict records how it was
 verified; a route with no recorded verdict is `UNVERIFIED` rather than assumed.
 
-Registered admin routes: **57**. Server routes parsed: **249**.
-API client functions parsed: **173**.
+Registered admin routes: **57**. Server routes parsed: **250**.
+API client functions parsed: **174**.
 
 | Status | Routes |
 |---|---|
@@ -23,14 +23,14 @@ API client functions parsed: **173**.
 | Route | Page | Status | API calls | Server endpoints | Permissions | Audit | Tests |
 |---|---|---|---|---|---|---|---|
 | `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 11 |
-| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 39 |
+| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 40 |
 | `/taxonomy` | TaxonomyPage.tsx | COMPLETE | 8 | 8/8 | edit_metadata, create, archive | — | 2 |
 | `/planets` | PlanetsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/planets/:id` | PlanetDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
 | `/skills` | SkillsPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 3 |
 | `/objectives` | LearningObjectivesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive | — | 3 |
 | `/content-reviews` | ContentReviewsPage.tsx | PARTIAL | 4 | 4/4 | review | — | 1 |
-| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 39 |
+| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 40 |
 | `/series/:id` | SeriesDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 12 |
 | `/seasons/:id` | SeasonDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
@@ -40,8 +40,8 @@ API client functions parsed: **173**.
 | `/characters/:id` | CharacterDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 5 |
 | `/stories` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 22 |
 | `/stories/:id` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 22 |
-| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 28 |
-| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 26 |
+| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 29 |
+| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 27 |
 | `/games/:id` | GameDetailPage.tsx | COMPLETE | 4 | 4/4 | — | — | 21 |
 | `/games-ops` | GamesOpsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/games-audio-queue` | AudioProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
@@ -63,8 +63,8 @@ API client functions parsed: **173**.
 | `/quality` | QualityPage.tsx | PARTIAL | 2 | 2/2 | — | — | 1 |
 | `/mastery` | MasteryPage.tsx | PARTIAL | 3 | 3/3 | — | — | 8 |
 | `/app-experience` | AppExperiencePage.tsx | PARTIAL | 6 | 6/6 | edit_metadata, create | — | 0 |
-| `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 3 |
-| `/support-center` | SupportCenterPage.tsx | PARTIAL | 1 | 1/1 | — | ✅ | 1 |
+| `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 4 |
+| `/support-center` | SupportCenterPage.tsx | PARTIAL | 2 | 2/2 | — | ✅ | 2 |
 | `/workflows` | WorkflowPage.tsx | COMPLETE | 8 | 8/8 | assign_members, review | ✅ | 2 |
 | `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 7 |
 | `/remote-config` | RemoteConfigPage.tsx | PARTIAL | 3 | 3/3 | publish | — | 1 |
@@ -78,7 +78,7 @@ API client functions parsed: **173**.
 | `/school` | SchoolAccountsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/finance-advanced` | AdvancedFinancePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/ops-sla` | OpsSlaPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
-| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 39 |
+| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 40 |
 
 ## 2. Collection UX affordances (static evidence)
 
@@ -444,11 +444,11 @@ that it behaves; behavioural findings belong in the verdict file.
 
 ### `/support-center` — PARTIAL
 
-- Verified by: code read 2026-08-09
-- Evidence: Family lookup returns a deliberately narrow field set (no purchase or install hashes, no auth_epoch) and every lookup writes a 'view' audit row.
+- Verified by: code read 2026-08-09; api test supportFamilyDevices.test.mjs
+- Evidence: Family lookup returns a deliberately narrow field set (no purchase or install hashes, no auth_epoch) and every lookup writes a 'view' audit row. Added a live device read that calls FamilyState, the authority, rather than the D1 projection: it drops installation_id_hash, answers 503 when the Durable Object is unreachable rather than reporting an empty device list, declares its source and that revoke is not an admin operation, and is audited as its own entity type.
 - Gaps:
   - No tickets, categories, priority, SLA, assignment, timeline, notes or tags
-  - No operational actions (entitlement resync, restore purchase, device revoke, PIN reset)
+  - No operational actions: entitlement resync, restore purchase, PIN reset and account recovery have no server capability; device revoke is architecturally impossible for an operator because FamilyState's revoke path requires a parent session
 
 ### `/workflows` — COMPLETE
 
@@ -656,7 +656,7 @@ operator surface. Listed so the second case cannot hide.
 | series.ts | GET | `/api/v1/series/:id` | — | — |
 | siteMode.ts | GET | `/api/v1/site-mode` | — | — |
 
-Orphan count: **100** of 249.
+Orphan count: **100** of 250.
 
 ## 5. API client functions the matrix could not resolve to a server route
 

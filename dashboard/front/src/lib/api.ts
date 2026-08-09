@@ -398,6 +398,9 @@ export const api = {
   rollbackHomeBlock: (id: string) => request<ApiEnvelope<{ id: string }>>(`/admin/home-experience/${id}/rollback`, { method: 'POST' }),
   homeExperiencePreview: (filters: { track?: string; country?: string; platform?: string; plan?: string }) => request<ApiEnvelope<import('../types/api').HomePreviewEnvelope>>(`/admin/home-experience/preview${queryString(filters)}`),
   supportFamily: (id: string) => request<ApiEnvelope<import('../types/api').SupportFamilyEnvelope>>(`/admin/support/family/${encodeURIComponent(id)}`),
+  /// قراءة حيّة من FamilyState. منفصلة عن `supportFamily` لأنها نداء إلى مصدر
+  /// السلطة لا إلى الإسقاط، وقد يفشل وحده (503) بلا أن يُفقد باقي الملف.
+  supportFamilyDevices: (id: string) => request<ApiEnvelope<import('../types/api').SupportLiveDevices>>(`/admin/support/family/${encodeURIComponent(id)}/devices`),
   billingStats: () => request<ApiEnvelope<import('../types/api').BillingStats>>('/admin/billing/stats'),
   /// سجل الشراء الكامل من billing_audit. يحمل أعمدة أكثر من `recent_purchases`
   /// داخل /stats: يضيف purchase_token_hash و verified_at_ms.
