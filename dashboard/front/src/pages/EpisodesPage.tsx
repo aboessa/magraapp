@@ -5,6 +5,7 @@ import { api } from '../lib/api'
 import type { ContentStatus, EpisodePayload, EpisodeRecord, SeriesRecord } from '../types/api'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
+import { PublishReadinessDialog } from '../components/PublishReadinessDialog'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { EntityThumbnail } from '../components/EntityThumbnail'
 import { Pagination } from '../components/Pagination'
@@ -64,6 +65,7 @@ export function EpisodesPage() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [busyId, setBusyId] = useState('')
+  const [publishTarget, setPublishTarget] = useState<EpisodeRecord | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -125,10 +127,12 @@ export function EpisodesPage() {
   }
 
   async function publish(episode: EpisodeRecord) {
-    setBusyId(episode.id)
-    try { await api.publishEpisode(episode.id); await load() }
-    catch (caught) { setError(caught instanceof Error ? caught.message : text.statusError) }
-    finally { setBusyId('') }
+    // شاشة الجاهزية أولًا، لا نداء نشر مباشر.
+    //
+    // فحوص الحلقة هي الأكثر أثرًا في البوابة: حلقة بلا ملف فيديو أو بلا صورة
+    // مصغّرة أو تحت سلسلة غير منشورة ليست حلقة أقلّ جودة، بل بطاقة ميتة في
+    // مكتبة الطفل. الخادم يرفضها بـ409، وهذه الشاشة تُظهر ذلك قبل المحاولة.
+    setPublishTarget(episode)
   }
 
   async function archive(episode: EpisodeRecord) {
@@ -158,6 +162,18 @@ export function EpisodesPage() {
           <div className="form-actions"><button className="button button--ghost" type="button" onClick={() => setModalOpen(false)} disabled={saving}>{text.cancel}</button><button className="button button--primary" type="submit" disabled={saving}>{saving ? text.saving : text.save}</button></div>
         </form>
       </Modal>
+
+      {publishTarget && (
+        <PublishReadinessDialog
+          open
+          entityType="episode"
+          entityId={publishTarget.id}
+          entityTitle={publishTarget.title_ar}
+          onClose={() => setPublishTarget(null)}
+          onPublish={(id) => api.publishEpisode(id)}
+          onPublished={load}
+        />
+      )}
     </div>
   )
 }

@@ -40,11 +40,22 @@ export class ApiError extends Error {
    */
   details: string[]
 
-  constructor(message: string, status: number, details: string[] = []) {
+  /**
+   * جسم الرفض كما أرسله الخادم، حين يكون مركّبًا لا نصًّا.
+   *
+   * بوابة النشر ترفض بـ409 وتُعيد `data.blockers` — كل عائق بحالته ومالكه
+   * والإجراء المطلوب. تسطيحه إلى رسالة واحدة يعيد بالضبط المشكلة التي بُنيت
+   * البوابة لإنهائها: «تعذر النشر» بلا سبب قابل للتنفيذ. يبقى `null` لبقية
+   * المسارات فلا يتغيّر سلوك أي متصل قائم.
+   */
+  payload: unknown
+
+  constructor(message: string, status: number, details: string[] = [], payload: unknown = null) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.details = details
+    this.payload = payload
   }
 }
 
@@ -70,12 +81,12 @@ function authorizedHeaders(initial?: HeadersInit) {
 }
 
 async function responseError(response: Response) {
-  const payload = await response.clone().json().catch(() => null) as { error?: string; details?: unknown } | null
+  const payload = await response.clone().json().catch(() => null) as { error?: string; details?: unknown; data?: unknown } | null
   const fallbackMessage = document.documentElement.lang === 'en' ? 'Unable to complete the request' : 'تعذر إكمال الطلب'
   const details = Array.isArray(payload?.details)
     ? payload.details.filter((item): item is string => typeof item === 'string')
     : []
-  return new ApiError(payload?.error || fallbackMessage, response.status, details)
+  return new ApiError(payload?.error || fallbackMessage, response.status, details, payload?.data ?? null)
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -431,6 +442,9 @@ export const api = {
   // أُصلحت في الخادم: جدول خاطئ لنوع `story`، وفحص غلاف قيمته `true` دائمًا،
   // وأنواع تُعيد نجاحًا فارغًا، وحدّ صفحات مخترع لا وجود له في بوابات النشر.
   qualityReport: (type: import('../types/api').QualityEntityType, id: string) => request<ApiEnvelope<import('../types/api').QualityReport>>(`/admin/quality/${type}/${encodeURIComponent(id)}`),
+  /// جاهزية النشر الموحّدة. نفس المصدر الذي تستدعيه عملية النشر على الخادم،
+  /// فما تعرضه هذه الشاشة هو ما سيفرضه الخادم فعلًا لا تقديرًا مستقلًا.
+  publishReadiness: (type: import('../types/api').PublishableEntityType, id: string) => request<ApiEnvelope<import('../types/api').PublishGateResult>>(`/admin/publish-readiness/${type}/${encodeURIComponent(id)}`),
   backupExport: (type: import('../types/api').QualityEntityType, id: string) => request<ApiEnvelope<import('../types/api').BackupExport>>(`/admin/backup/${type}/${encodeURIComponent(id)}`),
 
   // أحداث العائلة الفاشلة. الجدول والمسارات أُضيفت مع المهاجرة 0021 لأن

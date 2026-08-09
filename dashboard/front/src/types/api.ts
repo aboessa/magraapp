@@ -1395,6 +1395,50 @@ export interface MasteryByObjectiveEnvelope extends ApiEnvelope<MasteryByObjecti
  */
 export type QualityEntityType = 'series' | 'story' | 'book' | 'game' | 'project'
 
+/**
+ * جاهزية النشر الموحّدة: `GET /admin/publish-readiness/:type/:id`.
+ *
+ * تشمل `episode` بخلاف `QualityEntityType` لأن بوابة النشر تفحص الحلقة فعليًا
+ * (فيديو، مصغّرة، صوت عربي، السلسلة الأمّ)، بينما فحوص الجودة القديمة لا تعرف
+ * الحلقات إطلاقًا. النوعان مفصولان عن قصد فلا يُدَّعى وجود فحص جودة للحلقة.
+ */
+export type PublishableEntityType = 'series' | 'episode' | 'story' | 'book' | 'game' | 'project'
+
+export type PublishGateStatus = 'pass' | 'blocked' | 'warn' | 'not_applicable'
+export type PublishGateSeverity = 'blocker' | 'warning' | 'none'
+export type PublishGateOwner =
+  | 'editor' | 'reviewer' | 'translator' | 'production'
+  | 'engineering' | 'rights' | 'legal' | 'publisher' | 'provider'
+
+export interface PublishGateFinding {
+  id: string
+  label_ar: string
+  status: PublishGateStatus
+  severity: PublishGateSeverity
+  detail: string
+  owner?: PublishGateOwner
+  required_action?: string
+  items?: string[]
+}
+
+export interface PublishGateResult {
+  entity_type: PublishableEntityType
+  entity_id: string
+  publishable: boolean
+  findings: PublishGateFinding[]
+  blockers: PublishGateFinding[]
+  warnings: PublishGateFinding[]
+}
+
+/// جسم رفض النشر بـ409. نفس شكل نتيجة الجاهزية منقوصًا من الفحوص الناجحة.
+export interface PublishRefusal {
+  entity_type: PublishableEntityType
+  entity_id: string
+  publishable: false
+  blockers: PublishGateFinding[]
+  warnings: PublishGateFinding[]
+}
+
 /// فحص واحد. `message` جاهزة للعرض بالعربية من الخادم، وتحمل السبب لا الحكم فقط.
 export interface QualityCheck {
   check: string

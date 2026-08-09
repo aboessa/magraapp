@@ -5,6 +5,7 @@ import { api } from '../lib/api'
 import type { AgeTrack, ContentStatus, Planet, SeriesPayload, SeriesRecord, VisualStyleRecord } from '../types/api'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
+import { PublishReadinessDialog } from '../components/PublishReadinessDialog'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { EntityThumbnail } from '../components/EntityThumbnail'
 import { Pagination } from '../components/Pagination'
@@ -91,6 +92,8 @@ export function SeriesPage() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [busyId, setBusyId] = useState('')
+  /// السلسلة التي طُلب نشرها. غير فارغة ⇒ شاشة الجاهزية مفتوحة لها.
+  const [publishTarget, setPublishTarget] = useState<SeriesRecord | null>(null)
 
   useEffect(() => setQuery(requestedQuery), [requestedQuery])
 
@@ -181,32 +184,13 @@ export function SeriesPage() {
   }
 
   async function publish(series: SeriesRecord) {
-    const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar
-
-    // فحص جودة تنبيهي لا حاجب: /admin/quality/series/:id موجود فعليًا ويحسب
-    // فحوصًا حقيقية (حلقات، كوكب، استايل بصري)، لكنه لم يكن مرتبطًا بعملية
-    // النشر إطلاقًا. لا نجعله بوابة تمنع النشر — ذلك قرار سياسة عمل لم
-    // يُعتمَد — بل نعرض نتيجته الحقيقية للمحرّر قبل تأكيد النشر، بدل تركه
-    // بلا أي إشارة حتى لو فشل كل فحص.
-    try {
-      const quality = await api.qualityReport('series', series.id)
-      if (!quality.data.allPassed) {
-        const failed = quality.data.checks.filter((item) => !item.passed).map((item) => `- ${item.message}`)
-        const confirmed = window.confirm(
-          `${text.qualityWarningTitle(title)}\n\n${text.qualityWarningIntro}\n\n${failed.join('\n')}\n\n${text.qualityWarningConfirm}`,
-        )
-        if (!confirmed) return
-      }
-    } catch {
-      // فشل الفحص نفسه (شبكة/خادم) لا يجوز أن يمنع النشر: العملية الأصلية لم
-      // تكن تتطلب هذا الفحص، وربطه الآن يجب ألا يضيف نقطة فشل جديدة.
-      setError(text.qualityCheckFailed)
-    }
-
-    setBusyId(series.id)
-    try { await api.publishSeries(series.id); await load() }
-    catch (caught) { setError(caught instanceof Error ? caught.message : text.statusError) }
-    finally { setBusyId('') }
+    // لا نشر مباشر من الجدول: تُفتح شاشة الجاهزية أولًا.
+    //
+    // النسخة السابقة كانت تستدعي فحص الجودة ثم `window.confirm` وتنشر بعد
+    // التأكيد — أي تنبيه في المتصفح لا بوابة. الفرض الآن على الخادم في
+    // `lib/publishGate.ts`، وهذه الشاشة تعرض نفس نتيجته قبل الضغط، فلا يبقى
+    // فرق بين ما يراه المحرّر وما سيحدث فعلًا.
+    setPublishTarget(series)
   }
 
   async function archive(series: SeriesRecord) {
@@ -248,6 +232,18 @@ export function SeriesPage() {
           <div className="form-actions"><button className="button button--ghost" type="button" onClick={() => setModalOpen(false)} disabled={saving}>{text.cancel}</button><button className="button button--primary" type="submit" disabled={saving}>{saving ? text.saving : editing ? text.save : text.createDraft}</button></div>
         </form>
       </Modal>
+
+      {publishTarget && (
+        <PublishReadinessDialog
+          open
+          entityType="series"
+          entityId={publishTarget.id}
+          entityTitle={locale === 'en' ? publishTarget.title_en || publishTarget.title_ar : publishTarget.title_ar}
+          onClose={() => setPublishTarget(null)}
+          onPublish={(id) => api.publishSeries(id)}
+          onPublished={load}
+        />
+      )}
     </div>
   )
 }

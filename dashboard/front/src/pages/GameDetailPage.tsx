@@ -437,7 +437,13 @@ export function GameDetailPage() {
           key: 'pack',
           label: text.tabs.pack,
           badge: pack?.levels?.length ?? enginePack?.levels?.length,
-          content: isTraceColor ? (
+          // أي محرّر حزمة يُعرض: محرّر trace_color المتخصّص أم المحرّر العام.
+          //
+          // الفصل بـengine_id لا بوجود حزمة مُحلَّلة: الحزمة قد تكون فارغة أو
+          // من إصدار سابق لا يُحلَّل، وصفّ اللعبة هو الجهة التي تعرف محرّكها.
+          // كان هذا الشرط يقرأ اسمًا غير معرَّف (`isTraceColor`) فكان بناء
+          // الواجهة كلها يفشل بـTS2304 — أي أن اللوحة لم تكن قابلة للبناء.
+          content: game.engine_id === 'trace_color' ? (
             <GamePackForm
               gameId={game.id}
               packId={pack?.pack_id ?? game.id}

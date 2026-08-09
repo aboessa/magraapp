@@ -3195,3 +3195,34 @@ body.modal-open {
   display: grid;
   gap: 12px;
 }
+
+
+/* --- بوابة جاهزية النشر -------------------------------------------------
+ *
+ * قائمة الفحوص تُقرأ عموديًا: كل عنصر عنوانه ثم سببه ثم قائمة المخالفين ثم
+ * الإجراء المطلوب. الحدّ الجانبي الملوّن هو ما يميّز العائق من التنبيه بلمحة،
+ * ولا يُعتمد عليه وحده: حالة كل عنصر مكتوبة نصًّا أيضًا (المسؤول والإجراء)
+ * فلا تعتمد القراءة على تمييز الألوان.
+ */
+.readiness-group { margin-block-end: 16px; }
+.readiness-group > h3 { margin: 0 0 8px; font-size: 0.95rem; }
+.readiness-group > summary { cursor: pointer; padding: 6px 0; color: var(--muted); font-size: 0.9rem; }
+.readiness-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.readiness-item {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-inline-start-width: 3px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.015);
+}
+.readiness-item--blocked { border-inline-start-color: #f05d77; }
+.readiness-item--warn { border-inline-start-color: #f0b429; }
+.readiness-item--pass { border-inline-start-color: rgba(70, 214, 148, 0.6); }
+.readiness-item--not_applicable { border-inline-start-color: var(--line); opacity: 0.75; }
+.readiness-item__head { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: baseline; }
+.readiness-item__label { font-weight: 600; }
+.readiness-item__owner { font-size: 0.8rem; color: var(--muted); }
+.readiness-item__detail { margin: 4px 0 0; font-size: 0.88rem; line-height: 1.55; }
+.readiness-item__items { margin: 6px 0 0; padding-inline-start: 18px; font-size: 0.83rem; color: var(--muted); }
+.readiness-item__action { margin: 6px 0 0; font-size: 0.83rem; color: var(--cyan); }
+.readiness-note { margin: 8px 0 0; font-size: 0.85rem; color: var(--muted); }
