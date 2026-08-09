@@ -9,9 +9,17 @@ import '../widgets/majarra_bottom_navigation.dart';
 import '../widgets/majarra_portal.dart';
 
 class AdaptiveHomeShell extends StatefulWidget {
-  const AdaptiveHomeShell({required this.catalog, super.key});
+  const AdaptiveHomeShell({
+    required this.catalog,
+    this.useV2Home = true,
+    super.key,
+  });
 
   final HomeCatalog catalog;
+
+  /// Selects the home surface. `/` renders the original feed; `/home-v2`
+  /// passes `true` so the new cinematic home stays reachable for comparison.
+  final bool useV2Home;
 
   @override
   State<AdaptiveHomeShell> createState() => _AdaptiveHomeShellState();
@@ -39,6 +47,9 @@ class _AdaptiveHomeShellState extends State<AdaptiveHomeShell> {
       catalog: widget.catalog,
       isTelevision: false,
       onOpenPlanet: _openPlanet,
+      useV2Home: widget.useV2Home,
+      onSelectDestination: _select,
+      onOpenPortal: _showPortal,
     );
 
     // This shell is, by construction, the non-television experience: HomePage

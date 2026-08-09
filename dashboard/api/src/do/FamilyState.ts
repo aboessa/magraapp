@@ -132,6 +132,11 @@ export class FamilyState {
         id TEXT PRIMARY KEY,
         child_id TEXT NOT NULL,
         episode_id TEXT,
+        /* Game attempts are filed here rather than in episode_id. Declared on the
+           table so a fresh object has the column outright; the ALTER below exists
+           only for objects created before it. */
+        game_id TEXT,
+        content_type TEXT,
         objective_id TEXT,
         score INTEGER,
         max_score INTEGER,
@@ -255,6 +260,19 @@ export class FamilyState {
       );
       CREATE INDEX IF NOT EXISTS idx_creations_child
         ON child_creations(child_id, deleted_at, created_at);
+
+      /* Object deletions still owed to the bucket.
+         A row can be removed in one transaction while the R2 object survives a
+         failed request, and a deleted row leaves nothing pointing at the object
+         to retry from. This table is that pointer: it is written in the same
+         transaction as the soft delete and drained afterwards, so "row gone,
+         blob remains" is a recoverable state rather than a permanent leak. */
+      CREATE TABLE IF NOT EXISTS creation_object_deletions (
+        storage_key TEXT PRIMARY KEY,
+        requested_at INTEGER NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT
+      );
     `);
 
     this.backfillGameAttempts();
@@ -339,6 +357,9 @@ export class FamilyState {
       'POST /creations': (r) => this.registerCreation(r),
       'GET /creations': () => this.listCreations(),
       'POST /creations/delete': (r) => this.deleteCreation(r),
+      'POST /creations/purge': (r) => this.purgeCreations(r),
+      'GET /creations/pending-deletions': () => this.pendingDeletions(),
+      'POST /creations/deletions-settled': (r) => this.settleDeletions(r),
     };
 
     const handler = routes[key];
@@ -925,11 +946,108 @@ export class FamilyState {
 
     // Soft delete first. Hard-deleting the row before the object is removed would
     // orphan the object in the bucket with nothing left pointing at it.
-    this.sql.exec(
-      `UPDATE child_creations SET deleted_at = ?, updated_at = ? WHERE id = ?`,
-      Date.now(), Date.now(), creationId,
-    );
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(
+        `UPDATE child_creations SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+        Date.now(), Date.now(), creationId,
+      );
+      this.sql.exec(
+        `INSERT OR IGNORE INTO creation_object_deletions (storage_key, requested_at) VALUES (?, ?)`,
+        row.storage_key, Date.now(),
+      );
+    });
     return json({ success: true, data: { id: creationId, storage_key: row.storage_key, deleted: true } });
+  }
+
+  /// Marks every creation for a child, or for the whole family, as deleted and
+  /// queues their objects for removal.
+  ///
+  /// Idempotent: calling it twice is harmless, because the rows are already
+  /// deleted and the deletion queue is keyed by storage key. The caller is
+  /// expected to follow up with a prefix sweep of the bucket, which is
+  /// authoritative and also removes objects this table never knew about.
+  private async purgeCreations(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const childId = typeof body.child_id === 'string' ? body.child_id : null;
+    if (!this.activeSession(sessionId)) {
+      return json({ success: false, error: 'Invalid purge request' }, 400);
+    }
+
+    const rows = childId === null
+      ? this.sql.exec<{ storage_key: string }>(`SELECT storage_key FROM child_creations`).toArray()
+      : this.sql.exec<{ storage_key: string }>(
+          `SELECT storage_key FROM child_creations WHERE child_id = ?`, childId,
+        ).toArray();
+
+    const now = Date.now();
+    this.state.storage.transactionSync(() => {
+      if (childId === null) {
+        this.sql.exec(`UPDATE child_creations SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL`, now, now);
+      } else {
+        this.sql.exec(
+          `UPDATE child_creations SET deleted_at = ?, updated_at = ? WHERE child_id = ? AND deleted_at IS NULL`,
+          now, now, childId,
+        );
+      }
+      for (const row of rows) {
+        this.sql.exec(
+          `INSERT OR IGNORE INTO creation_object_deletions (storage_key, requested_at) VALUES (?, ?)`,
+          row.storage_key, now,
+        );
+      }
+    });
+
+    return json({
+      success: true,
+      data: {
+        scope: childId === null ? 'family' : 'child',
+        child_id: childId,
+        storage_keys: rows.map((row) => row.storage_key),
+      },
+    });
+  }
+
+  /// Object deletions still owed, oldest first.
+  private pendingDeletions() {
+    const rows = this.sql.exec<{ storage_key: string; requested_at: number; attempts: number }>(`
+      SELECT storage_key, requested_at, attempts
+        FROM creation_object_deletions
+       ORDER BY requested_at
+       LIMIT 200
+    `).toArray();
+    return json({ success: true, data: { pending: rows } });
+  }
+
+  /// Clears keys whose objects are confirmed gone, and records a failure for the
+  /// rest so a permanently failing key is visible rather than silently retried
+  /// forever.
+  private async settleDeletions(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    if (!this.activeSession(sessionId)) {
+      return json({ success: false, error: 'Invalid settle request' }, 400);
+    }
+    const settled = Array.isArray(body.settled) ? body.settled.filter((k): k is string => typeof k === 'string') : [];
+    const failed = Array.isArray(body.failed) ? body.failed.filter((k): k is string => typeof k === 'string') : [];
+    const error = typeof body.error === 'string' ? body.error.slice(0, 200) : null;
+
+    this.state.storage.transactionSync(() => {
+      for (const key of settled) {
+        this.sql.exec(`DELETE FROM creation_object_deletions WHERE storage_key = ?`, key);
+        // Once the object is gone the row has nothing left to describe, so the
+        // soft delete becomes a hard one and the table stays bounded.
+        this.sql.exec(`DELETE FROM child_creations WHERE storage_key = ? AND deleted_at IS NOT NULL`, key);
+      }
+      for (const key of failed) {
+        this.sql.exec(
+          `UPDATE creation_object_deletions SET attempts = attempts + 1, last_error = ? WHERE storage_key = ?`,
+          error, key,
+        );
+      }
+    });
+
+    return json({ success: true, data: { settled: settled.length, failed: failed.length } });
   }
 
   private async updateFavorite(request: Request) {

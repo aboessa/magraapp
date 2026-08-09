@@ -346,6 +346,20 @@ class MajarraApiClient {
     return _postJson('/api/v1/family/progress', auth: true, body: payload);
   }
 
+  /// Stickers earned by one child.
+  ///
+  /// Backed by `GET /api/v1/family/rewards`. Rewards are kept forever, so there
+  /// is no paging and no expiry to account for.
+  Future<List<Map<String, Object?>>> fetchRewards({
+    required String childId,
+  }) async {
+    return _getList(
+      '/api/v1/family/rewards',
+      auth: true,
+      query: {'child_id': childId},
+    );
+  }
+
   // --- Billing ---
   //
   // Reads the effective plan from the same entitlement ledger the server uses to

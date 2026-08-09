@@ -97,6 +97,46 @@ familyRoute.get('/progress', async (c) => {
   });
 });
 
+// --- Rewards ---------------------------------------------------------------
+//
+// The stickers «مجموعتي» displays. Kept forever once earned, so there is no
+// paging and no expiry.
+
+familyRoute.get('/rewards', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const childId = c.req.query('child_id') ?? c.req.query('childId');
+  if (!childId) return c.json({ success: false, error: 'child_id is required' }, 400);
+
+  // Ownership is confirmed against the family's own children before anything is
+  // returned, so a guessed child id yields 404 rather than another child's row.
+  const owned = await state(c.env, auth.principal);
+  if (!owned.ok || !owned.data?.success || !owned.data.data) return forward(owned);
+  if (!owned.data.data.children.some((child) => child.id === childId)) {
+    return c.json({ success: false, error: 'Active child profile not found' }, 404);
+  }
+
+  const result = await callDurable<{ success: boolean; data?: { rewards?: Array<Record<string, unknown>> } }>(
+    familyStub(c.env, auth.principal.parentId), '/rewards', {},
+  );
+  if (result.status !== 200) return forward(result);
+  const rewards = result.data?.data?.rewards ?? [];
+  return c.json({
+    success: true,
+    data: rewards.filter((row) => String(row.child_id) === childId),
+  });
+});
+
+familyRoute.post('/rewards', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const value = await body(c);
+  if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400);
+  return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/rewards', {
+    body: { ...value, session_id: auth.principal.sessionId },
+  }));
+});
+
 familyRoute.post('/favorites', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
@@ -120,6 +160,26 @@ familyRoute.post('/devices/revoke', async (c) => {
   if (!value || typeof value.device_id !== 'string') return c.json({ success: false, error: 'device_id is required' }, 400);
   return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/devices/revoke', {
     body: { device_id: value.device_id, session_id: auth.principal.sessionId },
+  }));
+});
+
+familyRoute.post('/parent-pin', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const value = await body(c);
+  if (!value || typeof value.pin !== 'string') return c.json({ success: false, error: 'pin is required' }, 400);
+  return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/parent-pin', {
+    body: { pin: value.pin, session_id: auth.principal.sessionId },
+  }));
+});
+
+familyRoute.post('/parent-pin/verify', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const value = await body(c);
+  if (!value || typeof value.pin !== 'string') return c.json({ success: false, error: 'pin is required' }, 400);
+  return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/parent-pin/verify', {
+    body: { pin: value.pin, session_id: auth.principal.sessionId },
   }));
 });
 

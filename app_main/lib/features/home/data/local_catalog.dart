@@ -38,11 +38,11 @@ abstract final class LocalCatalog {
       imageAsset: 'assets/images/planets/planet-stories.webp',
     ),
     Planet(
-      id: 'ibdaa',
-      name: 'كوكب الإبداع',
-      description: 'ألوان وألحان وخيال بلا حدود',
+      id: 'alam',
+      name: 'عالمنا',
+      description: 'نستكشف بيئتنا ومدننا وطرقنا اليومية',
       colorHex: '#6A3DF2',
-      imageAsset: 'assets/images/planets/planet-creativity.webp',
+      imageAsset: 'assets/images/planets/planet-alamna.webp',
     ),
     Planet(
       id: 'maharat',
@@ -59,7 +59,7 @@ abstract final class LocalCatalog {
       imageAsset: 'assets/images/planets/planet-tarikh.webp',
     ),
     Planet(
-      id: 'iman',
+      id: 'islamic',
       name: 'كوكب الإيمان',
       description: 'آداب وقيم تضيء القلب',
       colorHex: '#2FBF8F',

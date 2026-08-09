@@ -247,13 +247,158 @@ creationsRoute.delete('/:id', async (c) => {
   }
 
   // The row is soft-deleted first, so a failure here leaves a recoverable state
-  // rather than a row pointing at a missing object.
+  // rather than a row pointing at a missing object. The DO has already queued the
+  // key, so a failure is retried by POST /creations/reconcile rather than lost.
   const storageKey = (result.data as { data?: { storage_key?: string } })?.data?.storage_key;
   if (bucket && storageKey && creationKeyBelongsTo(storageKey, auth.principal.parentId)) {
-    await bucket.delete(storageKey);
+    try {
+      await bucket.delete(storageKey);
+      await callDurable(familyStub(c.env, auth.principal.parentId), '/creations/deletions-settled', {
+        body: { session_id: auth.principal.sessionId, settled: [storageKey] },
+      });
+    } catch (error) {
+      await callDurable(familyStub(c.env, auth.principal.parentId), '/creations/deletions-settled', {
+        body: {
+          session_id: auth.principal.sessionId,
+          failed: [storageKey],
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+    }
   }
 
   return c.json({ success: true, data: { id: creationId, deleted: true } });
+});
+
+/// Deletes every object under `prefix`, paging through the listing.
+///
+/// The bucket listing is authoritative: it removes objects the metadata table
+/// never knew about, which is the only way to guarantee nothing survives a
+/// deleted account. Idempotent — a second call simply finds nothing.
+async function deleteByPrefix(bucket: R2Bucket, prefix: string): Promise<number> {
+  let deleted = 0;
+  let cursor: string | undefined;
+  do {
+    const listing = await bucket.list({ prefix, cursor, limit: 500 });
+    const keys = listing.objects.map((object) => object.key);
+    if (keys.length) {
+      await bucket.delete(keys);
+      deleted += keys.length;
+    }
+    cursor = listing.truncated ? listing.cursor : undefined;
+  } while (cursor);
+  return deleted;
+}
+
+/// `POST /api/v1/creations/purge` — remove a child's or a family's creations.
+///
+/// This is the path that makes deletion real. Cascading rows is not sufficient:
+/// an R2 object with no row pointing at it is still an image of a child sitting in
+/// storage, so the bucket is swept by prefix as well.
+///
+/// `{ "child_id": "..." }` scopes to one child; omitting it purges the whole
+/// family, which is what an account deletion needs.
+creationsRoute.post('/purge', async (c) => {
+  const auth = await authenticateParent(c.env, c.req.header('Authorization'));
+  if (!auth.ok) return unauthorized(auth.reason);
+
+  const bucket = creationsBucket(c.env);
+  const value = await c.req.json().catch(() => null) as Record<string, unknown> | null;
+  const childId = typeof value?.child_id === 'string' ? value.child_id.trim() : null;
+
+  if (childId !== null) {
+    if (!isSafeStorageId(childId)) {
+      return c.json({ success: false, error: 'A valid child_id is required' }, 400);
+    }
+    // A child that no longer exists must still be purgeable: deletion is the one
+    // operation that has to work *after* the profile is gone. Ownership is
+    // established by the key prefix, which is derived from the authenticated
+    // parent and cannot name another family.
+  }
+
+  const result = await callDurable(familyStub(c.env, auth.principal.parentId), '/creations/purge', {
+    body: { session_id: auth.principal.sessionId, child_id: childId },
+  });
+  if (result.status !== 200) {
+    return Response.json(result.data ?? { success: false, error: 'Could not purge creations' }, { status: result.status });
+  }
+
+  if (!bucket) {
+    // Rows are marked deleted and queued; without a bucket binding the objects
+    // cannot be touched, and saying so is better than reporting success.
+    return c.json({
+      success: true,
+      data: { rows_purged: true, objects_deleted: 0, storage_configured: false },
+    });
+  }
+
+  const prefix = childId === null
+    ? `family/${auth.principal.parentId}/`
+    : `family/${auth.principal.parentId}/child/${childId}/`;
+  const objectsDeleted = await deleteByPrefix(bucket, prefix);
+
+  // The sweep is authoritative, so everything queued under this prefix is now
+  // settled whether or not it was individually listed.
+  const keys = ((result.data as { data?: { storage_keys?: string[] } })?.data?.storage_keys ?? [])
+    .filter((key) => key.startsWith(prefix));
+  if (keys.length) {
+    await callDurable(familyStub(c.env, auth.principal.parentId), '/creations/deletions-settled', {
+      body: { session_id: auth.principal.sessionId, settled: keys },
+    });
+  }
+
+  return c.json({
+    success: true,
+    data: {
+      scope: childId === null ? 'family' : 'child',
+      objects_deleted: objectsDeleted,
+      storage_configured: true,
+    },
+  });
+});
+
+/// `POST /api/v1/creations/reconcile` — retry object deletions that failed.
+///
+/// A single delete can leave a row removed and its object present. This drains
+/// that queue, and is safe to call repeatedly: a key whose object is already gone
+/// settles on the first attempt.
+creationsRoute.post('/reconcile', async (c) => {
+  const auth = await authenticateParent(c.env, c.req.header('Authorization'));
+  if (!auth.ok) return unauthorized(auth.reason);
+
+  const bucket = creationsBucket(c.env);
+  if (!bucket) return c.json({ success: false, error: 'Creation storage is not configured' }, 503);
+
+  const pending = await callDurable(familyStub(c.env, auth.principal.parentId), '/creations/pending-deletions', {});
+  const rows = (pending.data as { data?: { pending?: Array<{ storage_key: string }> } })?.data?.pending ?? [];
+
+  const settled: string[] = [];
+  const failed: string[] = [];
+  let lastError: string | null = null;
+  for (const row of rows) {
+    // A key from another family cannot be acted on even if it somehow reached the
+    // queue.
+    if (!creationKeyBelongsTo(row.storage_key, auth.principal.parentId)) {
+      failed.push(row.storage_key);
+      lastError = 'key does not belong to this family';
+      continue;
+    }
+    try {
+      await bucket.delete(row.storage_key);
+      settled.push(row.storage_key);
+    } catch (error) {
+      failed.push(row.storage_key);
+      lastError = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  if (settled.length || failed.length) {
+    await callDurable(familyStub(c.env, auth.principal.parentId), '/creations/deletions-settled', {
+      body: { session_id: auth.principal.sessionId, settled, failed, error: lastError },
+    });
+  }
+
+  return c.json({ success: true, data: { settled: settled.length, failed: failed.length } });
 });
 
 export default creationsRoute;

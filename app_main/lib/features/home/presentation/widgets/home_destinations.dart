@@ -9,207 +9,61 @@ import '../../../../core/widgets/cinematic_background.dart';
 import '../../../search/presentation/search_page.dart';
 import '../../../shorts/presentation/shorts_page.dart';
 import '../../domain/content_models.dart';
-import 'content_cards.dart';
-import 'content_rail.dart';
+import '../v2/home_v2_page.dart';
 import 'home_feed.dart';
+
+/// Index of each destination, referenced by the v2 home chrome so it can switch
+/// tabs instead of pushing a route on top of the shell.
+abstract final class HomeDestinationIndex {
+  static const home = 0;
+  static const shorts = 1;
+  static const search = 2;
+  static const profile = 3;
+}
 
 List<Widget> buildHomeDestinations({
   required HomeCatalog catalog,
   required bool isTelevision,
   String? selectedPlanetId,
   ValueChanged<String>? onOpenPlanet,
+  bool useV2Home = true,
+  ValueChanged<int>? onSelectDestination,
+  VoidCallback? onOpenPortal,
 }) {
   final defaultPlanetId = catalog.planets.isEmpty ? null : selectedPlanetId ?? catalog.planets.first.id;
 
+  // The v1 feed is the default surface. The v2 cinematic home is kept reachable
+  // via `/home-v2` so the two can be compared side by side on a real device.
+  final Widget homeSurface = useV2Home
+      ? HomeV2Page(
+          catalog: catalog,
+          isTelevision: isTelevision,
+          onOpenSearch: () =>
+              onSelectDestination?.call(HomeDestinationIndex.search),
+          onOpenProfile: () =>
+              onSelectDestination?.call(HomeDestinationIndex.profile),
+          onOpenPortal: onOpenPortal,
+        )
+      : HomeFeed(catalog: catalog, isTelevision: isTelevision, onOpenPlanets: defaultPlanetId == null ? null : () => onOpenPlanet?.call(defaultPlanetId), onOpenPlanet: onOpenPlanet);
+
   return [
-    HomeFeed(catalog: catalog, isTelevision: isTelevision, onOpenPlanets: defaultPlanetId == null ? null : () => onOpenPlanet?.call(defaultPlanetId), onOpenPlanet: onOpenPlanet),
+    homeSurface,
     ShortsPage(catalog: catalog, isTelevision: isTelevision),
     SearchPage(catalog: catalog, isTelevision: isTelevision),
     _ProfileDestination(catalog: catalog, isTelevision: isTelevision),
   ];
 }
 
-/// The "مكتبتي" (My Library) destination.
-///
-/// RETAINED, CURRENTLY UNREFERENCED (analyzer: unused_element).
-///
-/// This is a complete, working screen — three tabs with empty states — that was
-/// never added to [buildHomeDestinations], so users cannot reach it. It is
-/// preserved intentionally: wiring it up is a Phase 1 decision, because its
-/// "continue watching" and "downloads" tabs need progress sync and the download
-/// feature respectively. See AUDIT_FLUTTER_APP.md §6.2 and §9 M4.
-class _LibraryDestination extends StatelessWidget {
-  const _LibraryDestination({required this.catalog, required this.isTelevision});
-  final HomeCatalog catalog;
-  final bool isTelevision;
-  @override
-  Widget build(BuildContext context) {
-    final padding = context.horizontalPagePadding;
-    final continueItems = catalog.series.take(3).toList();
-    final watchlistItems = catalog.series.where((s) => s.isFree).toList();
-    final downloadedItems = catalog.episodes.take(2).toList();
-    return CinematicBackground(
-      child: DefaultTabController(
-        length: 3,
-        child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            SliverAppBar(
-              pinned: true,
-              toolbarHeight: isTelevision ? 86 : 72,
-              backgroundColor: const Color(0xFF0B1026).withValues(alpha: 0.88),
-              titleSpacing: padding,
-              title: Text('مكتبتي', style: Theme.of(context).textTheme.headlineMedium),
-              bottom: TabBar(
-                labelColor: AppColors.starGold,
-                unselectedLabelColor: AppColors.mutedText,
-                indicatorColor: AppColors.starGold,
-                indicatorWeight: 2,
-                tabs: const [
-                  Tab(icon: Icon(Icons.play_circle_outline_rounded, size: 20), text: 'استكمال'),
-                  Tab(icon: Icon(Icons.bookmark_rounded, size: 20), text: 'المفضلة'),
-                  Tab(icon: Icon(Icons.download_rounded, size: 20), text: 'التنزيلات'),
-                ],
-              ),
-            ),
-          ],
-          body: TabBarView(
-            children: [
-              _LibraryTabContent(
-                emptyIcon: Icons.play_circle_outline_rounded,
-                emptyTitle: 'لا يوجد استكمال حالياً',
-                emptySubtitle: 'عندما تبدأ حلقة أو قصة أو لعبة ستظهر هنا مع شريط التقدم',
-                isTelevision: isTelevision,
-                padding: padding,
-                children: [
-                  if (continueItems.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 18),
-                      child: ContentRail<SeriesItem>(
-                        title: 'استمر من حيث توقفت',
-                        subtitle: 'فيديو • قصة • صوت • لعبة • رحلة',
-                        items: continueItems,
-                        height: isTelevision ? 354 : 282,
-                        horizontalPadding: padding,
-                        itemBuilder: (context, item, index) => Stack(
-                          children: [
-                            SeriesCard(item: item, isTelevision: isTelevision, onPressed: () => context.push('/series/${item.id}')),
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-                                child: LinearProgressIndicator(value: 0.68 - index * 0.15, backgroundColor: Colors.white.withValues(alpha: 0.12), valueColor: const AlwaysStoppedAnimation(AppColors.starGold), minHeight: 4),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(padding, 18, padding, 0),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: AppColors.indigoSurface.withValues(alpha: 0.42), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withValues(alpha: 0.06))),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.info_outline_rounded, color: AppColors.electricCyan, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text('سيظهر تقدّمك هنا بعد ربط مزامنة التقدّم', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.8), fontSize: 11))),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              _LibraryTabContent(
-                emptyIcon: Icons.bookmark_added_outlined,
-                emptyTitle: 'مكانك الآمن للرحلات المحفوظة',
-                emptySubtitle: 'أضف سلاسل للمفضلة من زر القلب في صفحة التفاصيل',
-                isTelevision: isTelevision,
-                padding: padding,
-                children: [
-                  if (watchlistItems.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 18),
-                      child: ContentRail<SeriesItem>(
-                        title: 'المفضلة',
-                        subtitle: 'متاح دون اتصال عند التنزيل',
-                        items: watchlistItems,
-                        height: isTelevision ? 354 : 282,
-                        horizontalPadding: padding,
-                        itemBuilder: (context, item, index) => SeriesCard(item: item, isTelevision: isTelevision, onPressed: () => context.push('/series/${item.id}')),
-                      ),
-                    ),
-                ],
-              ),
-              _LibraryTabContent(
-                emptyIcon: Icons.download_done_rounded,
-                emptyTitle: 'التنزيلات',
-                emptySubtitle: 'حمّل حلقات للمشاهدة دون اتصال.',
-                isTelevision: isTelevision,
-                padding: padding,
-                children: [
-                  if (downloadedItems.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 18),
-                      child: ContentRail<EpisodeItem>(
-                        title: 'محمّل',
-                        subtitle: 'متاح دون اتصال',
-                        items: downloadedItems,
-                        height: isTelevision ? 247 : 208,
-                        horizontalPadding: padding,
-                        itemBuilder: (context, item, index) => Stack(
-                          children: [
-                            EpisodeCard(item: item, isTelevision: isTelevision, onPressed: () {}),
-                            PositionedDirectional(
-                              top: 8,
-                              end: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                                decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(6)),
-                                child: const Text('تم التنزيل', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LibraryTabContent extends StatelessWidget {
-  const _LibraryTabContent({required this.emptyIcon, required this.emptyTitle, required this.emptySubtitle, required this.isTelevision, required this.padding, required this.children});
-  final IconData emptyIcon;
-  final String emptyTitle;
-  final String emptySubtitle;
-  final bool isTelevision;
-  final double padding;
-  final List<Widget> children;
-  @override
-  Widget build(BuildContext context) {
-    if (children.isEmpty) {
-      return ListView(
-        padding: EdgeInsetsDirectional.fromSTEB(padding, 32, padding, 0),
-        children: [
-          Icon(emptyIcon, color: AppColors.starGold, size: 36),
-          const SizedBox(height: 12),
-          Text(emptyTitle, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 6),
-          Text(emptySubtitle, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      );
-    }
-    return ListView(padding: EdgeInsets.only(bottom: isTelevision ? 32 : 24), children: children);
-  }
-}
+// The "مكتبتي" destination was removed rather than wired up.
+//
+// It was a complete but unreachable screen whose three tabs each depended on
+// data the app cannot produce: continue-watching drew progress from
+// `0.68 - index * 0.15`, and downloads badged every catalog episode as
+// "تم التنزيل" unconditionally. Its one honest tab, the watchlist, is now a
+// real feature at `/watchlist` backed by `WatchlistStore`.
+//
+// Reinstating a library tab is a Phase 1 decision that depends on progress
+// sync and the download feature actually existing.
 
 class _ProfileDestination extends StatelessWidget {
   const _ProfileDestination({required this.catalog, required this.isTelevision});
@@ -341,6 +195,15 @@ class _ProfileDestination extends StatelessWidget {
                       Expanded(child: _ProfileQuickCard(icon: Icons.grid_view_rounded, label: 'قائمتي', onTap: () => context.push('/watchlist'))),
                       const SizedBox(width: 10),
                       Expanded(child: _ProfileQuickCard(icon: Icons.download_rounded, label: 'التحميلات', onTap: () => context.push('/downloads'))),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      // The child's own space. Sits beside the family shelves
+                      // rather than inside them, because what a child made is not
+                      // catalogue content they saved.
+                      Expanded(child: _ProfileQuickCard(icon: Icons.brush_rounded, label: 'مجموعتي', onTap: () => context.push('/my-collection'))),
                     ],
                   ),
                     ],

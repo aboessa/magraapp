@@ -12,7 +12,13 @@ import 'shells/adaptive_home_shell.dart';
 import 'shells/tv_home_shell.dart';
 
 class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+  const HomePage({this.useV2Home = false, super.key});
+
+  /// Selects which home surface the shells render.
+  ///
+  /// `/` serves the original feed. `/home-v2` passes `true` so the new
+  /// cinematic home stays reachable for side-by-side comparison on a device.
+  final bool useV2Home;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -55,8 +61,8 @@ class HomePage extends ConsumerWidget {
       error: (_, __) =>
           _HomeErrorView(onRetry: () => ref.invalidate(homeCatalogProvider)),
       data: (value) => isTelevision
-          ? TvHomeShell(catalog: value)
-          : AdaptiveHomeShell(catalog: value),
+          ? TvHomeShell(catalog: value, useV2Home: useV2Home)
+          : AdaptiveHomeShell(catalog: value, useV2Home: useV2Home),
     );
   }
 }

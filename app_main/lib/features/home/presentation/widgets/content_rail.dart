@@ -15,6 +15,7 @@ class ContentRail<T> extends StatelessWidget {
     required this.horizontalPadding,
     this.subtitle,
     this.onSeeAll,
+    this.isTelevision = false,
     super.key,
   });
 
@@ -25,6 +26,10 @@ class ContentRail<T> extends StatelessWidget {
   final double height;
   final double horizontalPadding;
   final VoidCallback? onSeeAll;
+
+  /// Switches to clamping physics so a D-pad focus change does not fight the
+  /// iOS-style bounce, and keeps the whole rail in one traversal group.
+  final bool isTelevision;
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +130,11 @@ class ContentRail<T> extends StatelessWidget {
                 18,
               ),
               cacheExtent: 1000,
-              physics: const BouncingScrollPhysics(),
+              // Bounce fights D-pad focus scrolling on a remote, so TV uses
+              // clamping physics instead.
+              physics: isTelevision
+                  ? const ClampingScrollPhysics()
+                  : const BouncingScrollPhysics(),
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) =>

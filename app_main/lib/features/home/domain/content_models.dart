@@ -80,6 +80,8 @@ class EpisodeItem {
     required this.thumbnailAsset,
     required this.durationSeconds,
     this.thumbnailUrl,
+    this.videoUrl,
+    this.captionsUrl,
   });
 
   final String id;
@@ -89,7 +91,16 @@ class EpisodeItem {
   final String seriesTitle;
   final String thumbnailAsset;
   final String? thumbnailUrl;
+
+  /// HLS manifest or progressive MP4 delivered by the playback endpoint.
+  /// When null the player shows a poster-only state instead of failing.
+  final String? videoUrl;
+
+  /// Optional WebVTT track used by the captions toggle.
+  final String? captionsUrl;
   final int durationSeconds;
+
+  bool get isPlayable => (videoUrl ?? '').isNotEmpty;
 
   String get durationLabel {
     final minutes = durationSeconds ~/ 60;
@@ -113,6 +124,44 @@ class ExperienceItem {
   final String? planetId;
 }
 
+/// One page of a story, as stored in `story_pages` + `story_page_localizations`.
+///
+/// Both fields are nullable because the seeded content is incomplete: every row
+/// in `0013_qisas_pages.sql` has `image_asset_id = NULL`, and only a handful of
+/// pages have a localisation row. The reader must therefore render a page that
+/// has text but no art, or art but no text, without breaking.
+class StoryPage {
+  const StoryPage({
+    required this.id,
+    required this.pageNumber,
+    this.layout = 'full_bleed',
+    this.bodyText,
+    this.altText,
+    this.imageUrl,
+  });
+
+  final String id;
+  final int pageNumber;
+
+  /// `full_bleed` | `split` | `panels` | `text_focus`.
+  final String layout;
+
+  /// Page copy in the requested language. Null when no localisation row exists.
+  final String? bodyText;
+
+  /// Screen-reader description for the page artwork.
+  final String? altText;
+
+  /// Page artwork. Null until an asset is attached in the CMS.
+  final String? imageUrl;
+
+  bool get hasText => (bodyText ?? '').trim().isNotEmpty;
+  bool get hasImage => (imageUrl ?? '').trim().isNotEmpty;
+
+  /// A page with neither text nor art cannot be shown to a child.
+  bool get isRenderable => hasText || hasImage;
+}
+
 class BookItem {
   const BookItem({
     required this.id,
@@ -123,6 +172,9 @@ class BookItem {
     required this.ageMax,
     required this.posterAsset,
     this.coverUrl,
+    this.audioUrl,
+    this.durationSeconds,
+    this.pages = const [],
   });
 
   final String id;
@@ -133,6 +185,27 @@ class BookItem {
   final int ageMax;
   final String posterAsset;
   final String? coverUrl;
+
+  /// Narration track for audio stories. When null the audio player shows a
+  /// "not uploaded yet" state instead of faking progress.
+  final String? audioUrl;
+
+  /// Track length reported by the API. Null until the asset is processed; the
+  /// player then falls back to whatever the decoder reports.
+  final int? durationSeconds;
+
+  /// Story pages, in reading order. Empty until the pages endpoint is wired and
+  /// the CMS has published content; the reader shows an explicit empty state
+  /// rather than substituting a different story.
+  final List<StoryPage> pages;
+
+  bool get isPlayable => (audioUrl ?? '').isNotEmpty;
+
+  /// Pages that actually have something to show.
+  List<StoryPage> get readablePages =>
+      pages.where((page) => page.isRenderable).toList(growable: false);
+
+  bool get isReadable => readablePages.isNotEmpty;
 
   String get ageLabel => '$ageMin–$ageMax سنوات';
 }

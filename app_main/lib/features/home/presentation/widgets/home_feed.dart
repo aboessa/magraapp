@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/analytics/analytics.dart';
 import '../../../../core/layout/app_layout.dart';
 import '../../../../core/widgets/animated_brand_logo.dart';
 import '../../../../core/widgets/cinematic_background.dart';
@@ -29,6 +30,30 @@ class HomeFeed extends ConsumerWidget {
   final ValueChanged<String>? onOpenPlanet;
   final bool isReturning;
 
+  /// Blocks that pass their visibility rule, in contract order.
+  static List<HomeBlock> _visibleBlocks(
+    HomeFeedContract contract,
+    HomeCatalog catalog,
+  ) => contract.blocks
+      .where((block) => BlockRenderer.shouldShowBlock(block, catalog))
+      .toList();
+
+  /// First visible block that renders a focusable rail. The hero slider and the
+  /// welcome card are skipped so the remote lands on real content.
+  static HomeBlock? _firstFocusableBlock(
+    HomeFeedContract contract,
+    HomeCatalog catalog,
+  ) {
+    const skipped = {
+      BlockType.heroSlider,
+      BlockType.welcomeJourney,
+    };
+    for (final block in _visibleBlocks(contract, catalog)) {
+      if (!skipped.contains(block.type)) return block;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (catalog.series.isEmpty) {
@@ -37,6 +62,7 @@ class HomeFeed extends ConsumerWidget {
 
     final padding = context.horizontalPagePadding;
     final contract = isReturning ? HomeFeedContract.forReturning() : HomeFeedContract.forNewcomer();
+    final firstFocusable = _firstFocusableBlock(contract, catalog);
 
     return CinematicBackground(
       showTopGlow: true,
@@ -79,17 +105,19 @@ class HomeFeed extends ConsumerWidget {
             title: _HomeHeader(catalog: catalog, onOpenPlanets: onOpenPlanets),
           ),
 
-          // Dynamic Blocks rendering
-          for (final block in contract.blocks)
-            if (BlockRenderer.shouldShowBlock(block, catalog))
-              _BlockSliver(
-                block: block,
-                catalog: catalog,
-                isTelevision: isTelevision,
-                padding: padding,
-                onOpenPlanets: onOpenPlanets,
-                onOpenPlanet: onOpenPlanet,
-              ),
+          // Dynamic Blocks rendering. The first rail-bearing block owns the
+          // initial television focus, so it is flagged here rather than letting
+          // every rail claim autofocus.
+          for (final block in _visibleBlocks(contract, catalog))
+            _BlockSliver(
+              block: block,
+              catalog: catalog,
+              isTelevision: isTelevision,
+              padding: padding,
+              isFirstBlock: block == firstFocusable,
+              onOpenPlanets: onOpenPlanets,
+              onOpenPlanet: onOpenPlanet,
+            ),
 
           if (catalog.usesLocalFallback)
             SliverToBoxAdapter(
@@ -112,6 +140,7 @@ class _BlockSliver extends StatelessWidget {
     required this.catalog,
     required this.isTelevision,
     required this.padding,
+    this.isFirstBlock = false,
     this.onOpenPlanets,
     this.onOpenPlanet,
   });
@@ -120,6 +149,9 @@ class _BlockSliver extends StatelessWidget {
   final HomeCatalog catalog;
   final bool isTelevision;
   final double padding;
+
+  /// True for the first rail-bearing block, which owns the initial TV focus.
+  final bool isFirstBlock;
   final VoidCallback? onOpenPlanets;
   final ValueChanged<String>? onOpenPlanet;
 
@@ -132,7 +164,16 @@ class _BlockSliver extends StatelessWidget {
             spotlights: catalog.spotlights,
             series: catalog.series,
             isTelevision: isTelevision,
-            onOpenSeries: (item) => context.push('/series/${item.id}'),
+            onOpenSeries: (item) {
+              // H9: the analytics class existed with zero call sites. The
+              // spotlight id, not the series id, is logged because the event is
+              // about which curated slide converted.
+              final spotlight = catalog.spotlights
+                  .where((s) => s.seriesId == item.id)
+                  .firstOrNull;
+              if (spotlight != null) MajarraAnalytics.heroAction(spotlight.id);
+              context.push('/series/${item.id}');
+            },
           ),
         );
 
@@ -157,11 +198,14 @@ class _BlockSliver extends StatelessWidget {
               items: catalog.series.take(4).toList(),
               height: isTelevision ? 354 : 282,
               horizontalPadding: padding,
+              isTelevision: isTelevision,
               itemBuilder: (context, item, index) => Stack(
                 children: [
                   SeriesCard(
                     item: item,
                     isTelevision: isTelevision,
+                    // First card of the first rail is the remote's entry point.
+                    autofocus: isTelevision && isFirstBlock && index == 0,
                     onPressed: () => context.push('/series/${item.id}'),
                   ),
                   Positioned(
@@ -194,6 +238,7 @@ class _BlockSliver extends StatelessWidget {
               items: catalog.planets,
               height: isTelevision ? 226 : 190,
               horizontalPadding: padding,
+              isTelevision: isTelevision,
               onSeeAll: onOpenPlanets,
               itemBuilder: (context, item, index) => PlanetCard(
                 item: item,
@@ -222,6 +267,7 @@ class _BlockSliver extends StatelessWidget {
                 items: catalog.episodes,
                 height: isTelevision ? 247 : 208,
                 horizontalPadding: padding,
+              isTelevision: isTelevision,
                 itemBuilder: (context, item, index) => EpisodeCard(
                   item: item,
                   isTelevision: isTelevision,
@@ -242,10 +288,18 @@ class _BlockSliver extends StatelessWidget {
                 items: books.take(6).toList(),
                 height: isTelevision ? 354 : 282,
                 horizontalPadding: padding,
+              isTelevision: isTelevision,
                 itemBuilder: (context, item, index) => BookCard(
                   item: item,
                   isTelevision: isTelevision,
-                  onPressed: () => context.push('/reader/${item.id}'),
+                  // Audio stories open the narration player; other book types
+                  // open the reader. Sending both to `/reader` made an audio
+                  // story render as a silent page turner.
+                  onPressed: () => context.push(
+                    item.type == 'audio_story'
+                        ? '/audio?bookId=${item.id}'
+                        : '/reader/${item.id}',
+                  ),
                 ),
               ),
             ),
@@ -261,6 +315,7 @@ class _BlockSliver extends StatelessWidget {
                 items: catalog.experiences,
                 height: isTelevision ? 322 : 266,
                 horizontalPadding: padding,
+              isTelevision: isTelevision,
                 itemBuilder: (context, item, index) => ExperienceCard(
                   item: item,
                   isTelevision: isTelevision,
@@ -280,6 +335,7 @@ class _BlockSliver extends StatelessWidget {
               items: catalog.series,
               height: isTelevision ? 354 : 282,
               horizontalPadding: padding,
+              isTelevision: isTelevision,
               itemBuilder: (context, item, index) => SeriesCard(
                 item: item,
                 isTelevision: isTelevision,
@@ -322,6 +378,7 @@ class _BlockSliver extends StatelessWidget {
               items: catalog.experiences.take(4).toList(),
               height: isTelevision ? 260 : 220,
               horizontalPadding: padding,
+              isTelevision: isTelevision,
               itemBuilder: (context, item, index) => InkWell(
                 onTap: () => context.push('/audio?title=${Uri.encodeComponent(item.title)}&subtitle=${Uri.encodeComponent(item.subtitle)}'),
                 borderRadius: BorderRadius.circular(16),
@@ -351,6 +408,7 @@ class _BlockSliver extends StatelessWidget {
               items: freeItems,
               height: isTelevision ? 354 : 282,
               horizontalPadding: padding,
+              isTelevision: isTelevision,
               itemBuilder: (context, item, index) => Stack(
                 children: [
                   SeriesCard(item: item, isTelevision: isTelevision, onPressed: () => context.push('/series/${item.id}')),
@@ -380,6 +438,7 @@ class _BlockSliver extends StatelessWidget {
               items: newItems,
               height: isTelevision ? 354 : 282,
               horizontalPadding: padding,
+              isTelevision: isTelevision,
               itemBuilder: (context, item, index) => Stack(
                 children: [
                   SeriesCard(item: item, isTelevision: isTelevision, onPressed: () => context.push('/series/${item.id}')),
@@ -420,6 +479,7 @@ class _BlockSliver extends StatelessWidget {
               items: recItems,
               height: isTelevision ? 354 : 282,
               horizontalPadding: padding,
+              isTelevision: isTelevision,
               itemBuilder: (context, item, index) => SeriesCard(item: item, isTelevision: isTelevision, onPressed: () => context.push('/series/${item.id}')),
             ),
           ),
@@ -443,21 +503,10 @@ class _BlockSliver extends StatelessWidget {
     }
   }
 
-  /// RETAINED, CURRENTLY UNREFERENCED (analyzer: unused_element).
-  ///
-  /// Intended messaging for an episode whose video asset is not published yet.
-  /// Every seeded episode in the API is still `is_published = 0`, so this state
-  /// is real and will be needed; it is kept rather than deleted.
-  static void _unpublishedEpisode(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ستبدأ المشاهدة فور اعتماد الحلقة ونشر ملف الفيديو.')));
-  }
-
-  /// RETAINED, CURRENTLY UNREFERENCED (analyzer: unused_element).
-  ///
-  /// Generic "not built yet" messaging, kept for the same reason as above.
-  static void _comingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$feature قيد التجهيز للنسخة القادمة.')));
-  }
+  // `_unpublishedEpisode` and `_comingSoon` were removed: the player now owns
+  // that messaging itself. `PlaybackPage` shows an explicit state when an
+  // episode has no uploaded video, so a duplicate snackbar helper here had no
+  // remaining caller.
 }
 
 // --- Block-specific widgets ---
@@ -627,7 +676,13 @@ class _LearningJourneyCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text('الخطوة التالية: استمع للحرف', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.9), fontSize: 11)),
               const Spacer(),
-              TextButton(onPressed: () {}, child: const Text('تابع')),
+              // "تابع" had an empty callback. This whole card is a mock: the
+              // title, the 0.34 progress and the step copy are all hardcoded,
+              // and there is no learning-journey endpoint to resume from
+              // (`learning_objectives` has zero rows). Disabled until the
+              // journey is real, so the card cannot promise a resume that
+              // silently does nothing.
+              const TextButton(onPressed: null, child: Text('تابع')),
             ],
           ),
         ],

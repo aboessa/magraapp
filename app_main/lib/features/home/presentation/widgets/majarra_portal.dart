@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/analytics/analytics.dart';
 import '../../../../core/widgets/cinematic_image.dart';
 import '../../domain/content_models.dart';
 
@@ -325,6 +326,7 @@ class _PremiumPortalDialogState extends State<_PremiumPortalDialog>
         color: const Color(0xFFFF6FAE),
         isDiscover: true,
         onTap: () {
+          MajarraAnalytics.log('portal_mode_selected', params: {'mode': 'planets'});
           setState(() {
             _mode = _PortalMode.planets;
             _rotation = 0;
@@ -768,6 +770,9 @@ class _PremiumPortalDialogState extends State<_PremiumPortalDialog>
                   } else {
                     final planet = widget.catalog.planets[
                         _activeIndex % widget.catalog.planets.length];
+                    // Planet id is a fixed catalogue key, not user content, so
+                    // it carries no PII.
+                    MajarraAnalytics.planetSelected(planet.id);
                     if (widget.onOpenPlanet != null) {
                       Navigator.of(context).pop();
                       widget.onOpenPlanet!(planet.id);

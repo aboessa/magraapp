@@ -70,6 +70,10 @@ class PlanetDto {
     'tarikh': 'التاريخ',
     'alam': 'عالمنا',
     'islamic': 'الإيمان',
+    // Legacy aliases: older LocalCatalog used ibdaa/iman; keep them
+    // mapped so cached or offline data does not render as raw IDs.
+    'ibdaa': 'عالمنا',
+    'iman': 'الإيمان',
   };
 
   factory PlanetDto.fromJson(Map<String, Object?> json) {
@@ -165,11 +169,55 @@ class SeriesDto {
   }
 }
 
+/// One page of reader content from `GET /api/v1/books/:id/pages`.
+///
+/// Both `bodyText` and `imageUrl` are nullable by design: the API returns a page
+/// row even when its localisation or artwork is missing, so the reader can show
+/// an honest partial page instead of the caller inventing content.
+class StoryPageDto {
+  const StoryPageDto({
+    required this.id,
+    required this.pageNumber,
+    required this.layout,
+    this.bodyText,
+    this.altText,
+    this.imageUrl,
+  });
+
+  factory StoryPageDto.fromJson(Map<String, Object?> json) {
+    return StoryPageDto(
+      id: _text(json['id'], fallback: 'page'),
+      pageNumber: _integer(json['page_number'], fallback: 1),
+      layout: _text(json['layout'], fallback: 'full_bleed'),
+      bodyText: _nullableText(json['body_text']),
+      altText: _nullableText(json['alt_text']),
+      imageUrl: _nullableText(json['image_url']),
+    );
+  }
+
+  final String id;
+  final int pageNumber;
+  final String layout;
+  final String? bodyText;
+  final String? altText;
+  final String? imageUrl;
+
+  StoryPage toDomain() => StoryPage(
+    id: id,
+    pageNumber: pageNumber,
+    layout: layout,
+    bodyText: bodyText,
+    altText: altText,
+    imageUrl: imageUrl,
+  );
+}
+
 class BookDto {
-  const BookDto({required this.id, required this.title, required this.description, required this.type, required this.ageMin, required this.ageMax, this.coverUrl});
+  const BookDto({required this.id, required this.title, required this.description, required this.type, required this.ageMin, required this.ageMax, this.coverUrl, this.audioUrl, this.durationSeconds});
 
   factory BookDto.fromJson(Map<String, Object?> json) {
     final id = _text(json['id'], fallback: 'book');
+    final duration = _integer(json['duration_seconds']);
     return BookDto(
       id: id,
       title: _text(json['title_ar'], fallback: id),
@@ -178,6 +226,11 @@ class BookDto {
       ageMin: _integer(json['age_min'], fallback: 3).clamp(3, 12),
       ageMax: _integer(json['age_max'], fallback: 12).clamp(3, 12),
       coverUrl: _nullableText(json['cover_url']),
+      // Narration source. Accepts either naming the API may use depending on
+      // whether the track is packaged standalone or alongside the story pages.
+      audioUrl: _nullableText(json['audio_url']) ??
+          _nullableText(json['narration_url']),
+      durationSeconds: duration <= 0 ? null : duration,
     );
   }
 
@@ -188,9 +241,11 @@ class BookDto {
   final int ageMin;
   final int ageMax;
   final String? coverUrl;
+  final String? audioUrl;
+  final int? durationSeconds;
 
   BookItem toDomain({required BookItem fallback}) {
-    return BookItem(id: id, title: title, description: description.isEmpty ? fallback.description : description, type: type, coverUrl: coverUrl, ageMin: ageMin, ageMax: ageMax < ageMin ? ageMin : ageMax, posterAsset: fallback.posterAsset);
+    return BookItem(id: id, title: title, description: description.isEmpty ? fallback.description : description, type: type, coverUrl: coverUrl, ageMin: ageMin, ageMax: ageMax < ageMin ? ageMin : ageMax, posterAsset: fallback.posterAsset, audioUrl: audioUrl ?? fallback.audioUrl, durationSeconds: durationSeconds ?? fallback.durationSeconds);
   }
 }
 
@@ -203,6 +258,8 @@ class EpisodeDto {
     required this.seriesTitle,
     required this.durationSeconds,
     this.thumbnailUrl,
+    this.videoUrl,
+    this.captionsUrl,
   });
 
   factory EpisodeDto.fromJson(Map<String, Object?> json) {
@@ -215,6 +272,13 @@ class EpisodeDto {
       seriesTitle: _text(json['series_title'], fallback: 'مجرة'),
       durationSeconds: _integer(json['duration_seconds']),
       thumbnailUrl: _nullableText(json['thumbnail_url']),
+      // The playback endpoint may name the source either way depending on
+      // whether the asset is packaged as HLS or delivered as a single file.
+      videoUrl: _nullableText(json['hls_url']) ??
+          _nullableText(json['video_url']) ??
+          _nullableText(json['playback_url']),
+      captionsUrl: _nullableText(json['captions_url']) ??
+          _nullableText(json['subtitles_url']),
     );
   }
 
@@ -225,6 +289,8 @@ class EpisodeDto {
   final String seriesTitle;
   final int durationSeconds;
   final String? thumbnailUrl;
+  final String? videoUrl;
+  final String? captionsUrl;
 
   EpisodeItem toDomain({required EpisodeItem fallback}) {
     return EpisodeItem(
@@ -235,6 +301,8 @@ class EpisodeDto {
       seriesTitle: seriesTitle,
       thumbnailAsset: fallback.thumbnailAsset,
       thumbnailUrl: thumbnailUrl,
+      videoUrl: videoUrl ?? fallback.videoUrl,
+      captionsUrl: captionsUrl ?? fallback.captionsUrl,
       durationSeconds: durationSeconds <= 0
           ? fallback.durationSeconds
           : durationSeconds,

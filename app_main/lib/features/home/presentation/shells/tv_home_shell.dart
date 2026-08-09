@@ -8,9 +8,17 @@ import '../widgets/home_destinations.dart';
 import '../widgets/majarra_portal.dart';
 
 class TvHomeShell extends StatefulWidget {
-  const TvHomeShell({required this.catalog, super.key});
+  const TvHomeShell({
+    required this.catalog,
+    this.useV2Home = true,
+    super.key,
+  });
 
   final HomeCatalog catalog;
+
+  /// Selects the home surface. `/` renders the original feed; `/home-v2`
+  /// passes `true` so the new cinematic home stays reachable for comparison.
+  final bool useV2Home;
 
   @override
   State<TvHomeShell> createState() => _TvHomeShellState();
@@ -19,12 +27,28 @@ class TvHomeShell extends StatefulWidget {
 class _TvHomeShellState extends State<TvHomeShell> {
   int _selectedIndex = 0;
 
+  /// Destinations the user has actually opened. A plain [IndexedStack] builds
+  /// every child on the first frame, which meant all four screens — including
+  /// their rails and blurs — were laid out before the TV drew anything. Tracking
+  /// visits keeps state for opened tabs while deferring the rest.
+  final Set<int> _visited = {0};
+
+  void _select(int index) {
+    setState(() {
+      _selectedIndex = index;
+      _visited.add(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = buildHomeDestinations(
       catalog: widget.catalog,
       isTelevision: true,
       onOpenPlanet: (planetId) => context.push('/planets?planetId=$planetId'),
+      useV2Home: widget.useV2Home,
+      onSelectDestination: _select,
+      onOpenPortal: _showPortal,
     );
 
     return Scaffold(
@@ -49,9 +73,7 @@ class _TvHomeShellState extends State<TvHomeShell> {
                     minExtendedWidth: 226,
                     backgroundColor: Colors.transparent,
                     selectedIndex: _selectedIndex,
-                    onDestinationSelected: (index) {
-                      setState(() => _selectedIndex = index);
-                    },
+                    onDestinationSelected: _select,
                     leading: Padding(
                       padding: const EdgeInsets.only(bottom: 30),
                       child: Image.asset(
@@ -111,7 +133,16 @@ class _TvHomeShellState extends State<TvHomeShell> {
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(30),
-                    child: IndexedStack(index: _selectedIndex, children: pages),
+                    child: IndexedStack(
+                      index: _selectedIndex,
+                      children: [
+                        for (var i = 0; i < pages.length; i++)
+                          if (_visited.contains(i))
+                            pages[i]
+                          else
+                            const SizedBox.shrink(),
+                      ],
+                    ),
                   ),
                 ),
               ],

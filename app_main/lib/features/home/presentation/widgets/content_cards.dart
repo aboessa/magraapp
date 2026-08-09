@@ -7,12 +7,38 @@ import '../../../../core/widgets/cinematic_image.dart';
 import '../../../../core/widgets/focusable_scale.dart';
 import '../../domain/content_models.dart';
 
+/// Poster card width per layout class.
+///
+/// Previously every card branched on `isTelevision` only, so a 10" tablet was
+/// served the phone width. Sizing now follows [AppLayoutClass] so medium and
+/// expanded viewports get proportionally larger artwork.
+double _cardWidth(BuildContext context, {required bool isTelevision}) {
+  if (isTelevision) return 228;
+  return switch (context.layoutClass) {
+    AppLayoutClass.compact =>
+      MediaQuery.sizeOf(context).width < 410 ? 148 : 172,
+    AppLayoutClass.medium => 196,
+    AppLayoutClass.expanded => 214,
+  };
+}
+
+/// Landscape (16:9-ish) card width, used by episode and planet cards.
+double _wideCardWidth(BuildContext context, {required bool isTelevision}) {
+  if (isTelevision) return 360;
+  return switch (context.layoutClass) {
+    AppLayoutClass.compact => 264,
+    AppLayoutClass.medium => 300,
+    AppLayoutClass.expanded => 328,
+  };
+}
+
 class SeriesCard extends StatelessWidget {
   const SeriesCard({
     required this.item,
     required this.onPressed,
     required this.isTelevision,
     this.focusOrder,
+    this.autofocus = false,
     super.key,
   });
 
@@ -21,10 +47,13 @@ class SeriesCard extends StatelessWidget {
   final bool isTelevision;
   final FocusOrder? focusOrder;
 
+  /// Set on the first card of the first rail so a remote has a defined starting
+  /// point when the app opens on a television.
+  final bool autofocus;
+
   @override
   Widget build(BuildContext context) {
-    final compact = context.layoutClass == AppLayoutClass.compact;
-    final width = isTelevision ? 228.0 : (compact ? 148.0 : 172.0);
+    final width = _cardWidth(context, isTelevision: isTelevision);
     final height = width * 1.42;
 
     return SizedBox(
@@ -34,6 +63,7 @@ class SeriesCard extends StatelessWidget {
         onPressed: onPressed,
         semanticLabel: '${item.title}، ${item.ageLabel}',
         focusOrder: focusOrder,
+        autofocus: autofocus,
         child: Container(
           decoration: CinematicCardDecoration.premiumCard(borderRadius: 16),
           clipBehavior: Clip.antiAlias,
@@ -43,7 +73,8 @@ class SeriesCard extends StatelessWidget {
               CinematicImage(
                 networkUrl: item.coverUrl,
                 assetPath: item.posterAsset,
-                semanticLabel: 'ملصق ${item.title}',
+                semanticLabel: 'غلاف ${item.title}',
+                decodeWidth: width,
               ),
               // Cinematic scrim: dark gradient from middle to bottom
               const DecoratedBox(
@@ -138,15 +169,21 @@ class SeriesCard extends StatelessWidget {
 }
 
 class BookCard extends StatelessWidget {
-  const BookCard({required this.item, required this.onPressed, required this.isTelevision, super.key});
+  const BookCard({
+    required this.item,
+    required this.onPressed,
+    required this.isTelevision,
+    this.autofocus = false,
+    super.key,
+  });
   final BookItem item;
   final VoidCallback onPressed;
   final bool isTelevision;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
-    final compact = context.layoutClass == AppLayoutClass.compact;
-    final width = isTelevision ? 228.0 : (compact ? 148.0 : 172.0);
+    final width = _cardWidth(context, isTelevision: isTelevision);
     final height = width * 1.42;
     return SizedBox(
       width: width,
@@ -154,13 +191,14 @@ class BookCard extends StatelessWidget {
       child: FocusableScale(
         onPressed: onPressed,
         semanticLabel: item.title,
+        autofocus: autofocus,
         child: Container(
           decoration: CinematicCardDecoration.premiumCard(borderRadius: 16),
           clipBehavior: Clip.antiAlias,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CinematicImage(assetPath: item.posterAsset, semanticLabel: item.title),
+              CinematicImage(assetPath: item.posterAsset, semanticLabel: item.title, decodeWidth: width),
               const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Color(0x3306091A), Color(0xE606091A)], stops: [0, 0.32, 0.62]))),
               PositionedDirectional(top: 8, start: 8, child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: const Color(0xFF9D68FF).withValues(alpha: 0.88), borderRadius: BorderRadius.circular(6)), child: Text(item.type == 'comic' ? 'كوميكس' : item.type == 'audio_story' ? 'صوتي' : 'قصة', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)))),
               PositionedDirectional(start: 10, end: 10, bottom: 10, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white, fontSize: isTelevision ? 15 : 13.5, fontWeight: FontWeight.w700, shadows: [Shadow(color: Colors.black.withValues(alpha: 0.85), blurRadius: 8)])), const SizedBox(height: 2), Text(item.ageLabel, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.88), fontSize: 10.5))]))],
@@ -230,18 +268,20 @@ class EpisodeCard extends StatelessWidget {
     required this.item,
     required this.onPressed,
     required this.isTelevision,
+    this.autofocus = false,
     super.key,
   });
 
   final EpisodeItem item;
   final VoidCallback onPressed;
   final bool isTelevision;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
-    // 16:9 landscape cards - wider
-    final width = isTelevision ? 360.0 : 264.0;
-    final height = isTelevision ? 202.0 : 148.0;
+    // 16:9 landscape cards, scaled per layout class rather than TV-only.
+    final width = _wideCardWidth(context, isTelevision: isTelevision);
+    final height = width * 0.561;
 
     return SizedBox(
       width: width,
@@ -249,6 +289,7 @@ class EpisodeCard extends StatelessWidget {
       child: FocusableScale(
         onPressed: onPressed,
         semanticLabel: '${item.title}، ${item.durationLabel}',
+        autofocus: autofocus,
         child: Container(
           decoration: CinematicCardDecoration.premiumCard(borderRadius: 14),
           clipBehavior: Clip.antiAlias,
@@ -258,7 +299,8 @@ class EpisodeCard extends StatelessWidget {
               CinematicImage(
                 networkUrl: item.thumbnailUrl,
                 assetPath: item.thumbnailAsset,
-                semanticLabel: 'لقطة من ${item.title}',
+                semanticLabel: 'مشهد من ${item.title}',
+                decodeWidth: width,
               ),
               // Cinematic gradient
               const DecoratedBox(
@@ -352,18 +394,26 @@ class PlanetCard extends StatelessWidget {
     required this.item,
     required this.onPressed,
     required this.isTelevision,
+    this.autofocus = false,
     super.key,
   });
 
   final Planet item;
   final VoidCallback onPressed;
   final bool isTelevision;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
-    // Cinematic planet card
-    final width = isTelevision ? 340.0 : 248.0;
-    final height = isTelevision ? 196.0 : 152.0;
+    // Cinematic planet card, sized per layout class.
+    final width = isTelevision
+        ? 340.0
+        : switch (context.layoutClass) {
+            AppLayoutClass.compact => 248.0,
+            AppLayoutClass.medium => 282.0,
+            AppLayoutClass.expanded => 306.0,
+          };
+    final height = width * 0.613;
 
     return SizedBox(
       width: width,
@@ -371,6 +421,7 @@ class PlanetCard extends StatelessWidget {
       child: FocusableScale(
         onPressed: onPressed,
         semanticLabel: '${item.name}، ${item.description}',
+        autofocus: autofocus,
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
@@ -508,17 +559,25 @@ class ExperienceCard extends StatelessWidget {
     required this.item,
     required this.onPressed,
     required this.isTelevision,
+    this.autofocus = false,
     super.key,
   });
 
   final ExperienceItem item;
   final VoidCallback onPressed;
   final bool isTelevision;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
-    final width = isTelevision ? 218.0 : 162.0;
-    final height = isTelevision ? 268.0 : 210.0;
+    final width = isTelevision
+        ? 218.0
+        : switch (context.layoutClass) {
+            AppLayoutClass.compact => 162.0,
+            AppLayoutClass.medium => 184.0,
+            AppLayoutClass.expanded => 200.0,
+          };
+    final height = width * 1.296;
 
     return SizedBox(
       width: width,
@@ -526,6 +585,7 @@ class ExperienceCard extends StatelessWidget {
       child: FocusableScale(
         onPressed: onPressed,
         semanticLabel: '${item.title}، ${item.subtitle}',
+        autofocus: autofocus,
         child: Container(
           decoration: CinematicCardDecoration.premiumCard(borderRadius: 14),
           clipBehavior: Clip.antiAlias,
@@ -535,6 +595,7 @@ class ExperienceCard extends StatelessWidget {
               CinematicImage(
                 assetPath: item.imageAsset,
                 semanticLabel: item.title,
+                decodeWidth: width,
               ),
               const DecoratedBox(
                 decoration: BoxDecoration(
@@ -618,6 +679,7 @@ class CharacterCircleCard extends StatelessWidget {
     required this.onPressed,
     this.size = 82,
     this.isSelected = false,
+    this.autofocus = false,
     super.key,
   });
 
@@ -626,6 +688,7 @@ class CharacterCircleCard extends StatelessWidget {
   final VoidCallback onPressed;
   final double size;
   final bool isSelected;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -634,6 +697,7 @@ class CharacterCircleCard extends StatelessWidget {
       child: FocusableScale(
         onPressed: onPressed,
         semanticLabel: name,
+        autofocus: autofocus,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
