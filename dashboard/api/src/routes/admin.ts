@@ -21,6 +21,8 @@ import adminProductionRoute from './adminProduction.ts'
 import adminDevicesRoute from './adminDevices.ts'
 import adminCustomerRoute from './adminCustomer.ts'
 import adminWebsiteRoute from './adminWebsite.ts'
+import adminBlogRoute from './adminBlog.ts'
+import adminSeoRoute from './adminSeo.ts'
 import { summarizeGate } from '../lib/publishGate.ts'
 import { validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
@@ -111,6 +113,9 @@ adminRoute.route('/', adminCustomerRoute)
 // CMS الموقع العام: صفحات وأقسام ومراجعات وجدولة ونشر. تغييرات التسويق الروتينية
 // لا تحتاج نشر كود.
 adminRoute.route('/', adminWebsiteRoute)
+// المدونة وSEO. مركّبان بعد الموقع لأن كليهما يشترك معه في seo_meta والتحويلات.
+adminRoute.route('/', adminBlogRoute)
+adminRoute.route('/', adminSeoRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)
