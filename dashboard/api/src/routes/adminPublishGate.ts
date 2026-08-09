@@ -45,6 +45,8 @@ import {
   type RightsFact,
 } from '../lib/publishGate.ts';
 import { gameReadinessFor, loadGameRow } from './adminGames.ts';
+import { workflowFor } from './adminWorkflow.ts';
+import { workflowPublishBlockers } from '../lib/workflowEngine.ts';
 
 type AppEnv = { Bindings: Env };
 
@@ -130,6 +132,23 @@ async function loadLinkedAssets(
   `, [entityType, id]);
 }
 
+/// The workflow facts the gate needs, or null when no run governs this content.
+///
+/// Read through `routes/adminWorkflow.ts` rather than with its own query, so the
+/// gate and the workflow screen cannot disagree about which stages are approved —
+/// two queries against the same tables drift the moment one of them gains a
+/// condition.
+async function loadWorkflowFacts(env: Env, type: PublishableType, id: string) {
+  const workflow = await workflowFor(env.DB, type, id);
+  if (!workflow) return null;
+  const blockers = workflowPublishBlockers(workflow.stages, workflow.runStages);
+  return {
+    run_id: workflow.runId,
+    blockers,
+    total_blocking_stages: workflow.stages.filter((stage) => stage.blocks_publish).length,
+  };
+}
+
 /// Gathers every fact the gate needs, or null when the row does not exist.
 export async function gatherPublishGateFacts(
   env: Env,
@@ -165,6 +184,7 @@ export async function gatherPublishGateFacts(
       rights_supported: true,
       assets: await loadLinkedAssets(db, 'series', id),
       today: day,
+      workflow: await loadWorkflowFacts(env, 'series', id),
       planet_id: row.planet_id,
       source_type: row.source_type,
       religious_reviewer_id: row.religious_reviewer_id,
@@ -204,6 +224,7 @@ export async function gatherPublishGateFacts(
       rights_supported: true,
       assets: await loadLinkedAssets(db, 'episode', id),
       today: day,
+      workflow: await loadWorkflowFacts(env, 'episode', id),
       series_id: row.series_id,
       series_status: row.series_status,
       planet_id: row.planet_id,
@@ -266,6 +287,7 @@ export async function gatherPublishGateFacts(
       rights_supported: false,
       assets: await loadLinkedAssets(db, 'story', id),
       today: day,
+      workflow: await loadWorkflowFacts(env, 'story', id),
       story_type: row.type,
       default_language: row.default_language,
       declared_languages: stringArray(row.languages),
@@ -310,6 +332,7 @@ export async function gatherPublishGateFacts(
       rights_supported: true,
       assets: await loadLinkedAssets(db, 'book', id),
       today: day,
+      workflow: await loadWorkflowFacts(env, 'book', id),
       pages: row.pages,
       languages: row.languages,
       default_language: row.default_language,
@@ -339,6 +362,7 @@ export async function gatherPublishGateFacts(
       rights_supported: true,
       assets: await loadLinkedAssets(db, 'project', id),
       today: day,
+      workflow: await loadWorkflowFacts(env, 'project', id),
       materials: row.materials,
       steps: row.steps,
       supervision_level: row.supervision_level,
@@ -363,6 +387,7 @@ export async function gatherPublishGateFacts(
     rights_supported: true,
     assets: await loadLinkedAssets(db, 'game', id),
     today: day,
+    workflow: await loadWorkflowFacts(env, 'game', id),
     readiness,
   };
 }

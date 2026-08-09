@@ -56,6 +56,7 @@ import {
   text,
 } from './catalogueValidation.ts';
 import type { PublishReadiness } from './publishReadiness.ts';
+import type { WorkflowPublishBlocker } from './workflowEngine.ts';
 
 export const PUBLISHABLE_TYPES = ['series', 'episode', 'story', 'book', 'game', 'project'] as const;
 export type PublishableType = (typeof PUBLISHABLE_TYPES)[number];
@@ -155,6 +156,19 @@ interface CommonFacts {
   assets: LinkedAssetFact[];
   /// ISO date (YYYY-MM-DD). Injected so expiry rules are testable.
   today: string;
+  /// The governing workflow run, or null when the content has none.
+  ///
+  /// This is what stops a status string bypassing a required gate: every stage the
+  /// template marks `blocks_publish` must be approved or deliberately skipped.
+  /// `null` is reported as a warning rather than a blocker because most existing
+  /// catalogue rows predate the engine, and demanding a run would make the whole
+  /// published library unpublishable on the day it shipped — see
+  /// lib/workflowEngine.ts.
+  workflow?: {
+    run_id: string;
+    blockers: WorkflowPublishBlocker[];
+    total_blocking_stages: number;
+  } | null;
 }
 
 export interface SeriesFacts extends CommonFacts {
@@ -413,6 +427,37 @@ function religiousChecks(
 
 // --- Per-type evaluation ---------------------------------------------------
 
+/// The workflow gate.
+///
+/// This is the check that makes a status string insufficient. Before it, a row could
+/// be set to `ready` and published with no stage approved, because the status column
+/// and the workflow were unrelated data.
+///
+/// A missing run warns rather than blocks, and the distinction is deliberate: the
+/// engine shipped after most of the catalogue existed, so demanding a run for content
+/// created before it would mark the whole library unpublishable and the first
+/// workaround anyone found would be to bypass the gate.
+function workflowCheck(facts: CommonFacts): GateFinding[] {
+  if (facts.workflow === undefined) {
+    return [skip('workflow', 'سير العمل', 'لم تُقدَّم حالة سير العمل لهذا التقييم.')];
+  }
+  if (facts.workflow === null) {
+    return [warn('workflow', 'سير العمل',
+      'لا تشغيلة سير عمل تحكم هذا العنصر، فلا مراحل مراجعة مُلزَمة قبل النشر.',
+      'publisher',
+      'ابدأ تشغيلة من القالب المناسب (حلقة/قصة/محتوى إسلامي) ليُدار المحتوى بمراحل حقيقية.')];
+  }
+  const { blockers, total_blocking_stages: total } = facts.workflow;
+  if (!blockers.length) {
+    return [pass('workflow', 'سير العمل', `كل المراحل الحاجبة معتمدة (${total}).`)];
+  }
+  return [block('workflow', 'سير العمل',
+    `${blockers.length} من ${total} مرحلة حاجبة غير معتمدة.`,
+    'reviewer',
+    'أكمل قرارات المراحل الحاجبة في مركز سير العمل؛ لا يُنشر المحتوى بتغيير حالته فقط.',
+    blockers.map((blocker) => `${blocker.name_ar} (${blocker.status}): ${blocker.detail}`))];
+}
+
 function evaluateSeries(facts: SeriesFacts): GateFinding[] {
   const findings: GateFinding[] = [testFixtureCheck(facts), archivedCheck(facts)];
 
@@ -456,6 +501,7 @@ function evaluateSeries(facts: SeriesFacts): GateFinding[] {
     { role: 'qa', label: 'ضمان الجودة' },
   ]));
   findings.push(...rightsChecks(facts));
+  findings.push(...workflowCheck(facts));
   return findings;
 }
 
@@ -524,6 +570,7 @@ function evaluateEpisode(facts: EpisodeFacts): GateFinding[] {
     { role: 'qa', label: 'ضمان الجودة' },
   ]));
   findings.push(...rightsChecks(facts));
+  findings.push(...workflowCheck(facts));
   return findings;
 }
 
@@ -618,6 +665,7 @@ function evaluateStory(facts: StoryFacts): GateFinding[] {
 
   findings.push(...reviewChecks(facts, []));
   findings.push(...rightsChecks(facts));
+  findings.push(...workflowCheck(facts));
   return findings;
 }
 
@@ -654,6 +702,7 @@ function evaluateBook(facts: BookFacts): GateFinding[] {
     { role: 'qa', label: 'ضمان الجودة' },
   ]));
   findings.push(...rightsChecks(facts));
+  findings.push(...workflowCheck(facts));
   return findings;
 }
 
@@ -692,6 +741,7 @@ function evaluateProject(facts: ProjectFacts): GateFinding[] {
     { role: 'qa', label: 'ضمان الجودة' },
   ]));
   findings.push(...rightsChecks(facts));
+  findings.push(...workflowCheck(facts));
   return findings;
 }
 
@@ -734,7 +784,7 @@ function evaluateGame(facts: GameFacts): GateFinding[] {
       items: check.items,
     };
   });
-  return [testFixtureCheck(facts), archivedCheck(facts), ...mapped, ...rightsChecks(facts)];
+  return [testFixtureCheck(facts), archivedCheck(facts), ...mapped, ...rightsChecks(facts), ...workflowCheck(facts)];
 }
 
 // --- Entry point -----------------------------------------------------------

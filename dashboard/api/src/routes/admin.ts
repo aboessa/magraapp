@@ -15,6 +15,7 @@ import adminMasteryRoute from './adminMastery'
 import adminTtsRoute from './adminTts'
 import adminPublishGateRoute, { evaluateFor, gateRefusal } from './adminPublishGate.ts'
 import adminAvailabilityRoute from './adminAvailability.ts'
+import adminWorkflowRoute from './adminWorkflow.ts'
 import { summarizeGate } from '../lib/publishGate.ts'
 import { validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
@@ -83,6 +84,13 @@ adminRoute.route('/', adminTtsRoute)
 adminRoute.route('/', adminPublishGateRoute)
 // سياسة الإتاحة الجغرافية: قراءة السلسلة الكاملة (موروثة أم مُلغاة) وكتابتها.
 adminRoute.route('/', adminAvailabilityRoute)
+// محرك سير العمل: مراحل وتعيينات وقرارات وSLA.
+//
+// مركّب بعد adminTeams الذي يحمل `GET /workflows/runs` (القائمة) و
+// `POST /workflows/runs/:id/review` (سجل القرار القديم). لا تعارض: مسارات هذا
+// المحرك أخصّ (templates/overdue/my-stages و/stages/:key/decision)، وسجل
+// القرارات القديم يبقى عاملًا بلا كسر.
+adminRoute.route('/', adminWorkflowRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)
