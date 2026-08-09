@@ -1,0 +1,1 @@
+﻿SELECT cr.reviewer_role, count(*) AS n, group_concat(DISTINCT CASE WHEN s.planet_id IS NULL THEN cr.entity_type ELSE s.planet_id END) AS scope FROM content_reviews cr LEFT JOIN series s ON s.id=cr.entity_id WHERE cr.status='pending' GROUP BY cr.reviewer_role;

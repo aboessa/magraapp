@@ -1,0 +1,18 @@
+﻿SELECT 'published episode with no stream' AS chk, count(*) AS n FROM episodes e WHERE e.status='published' AND e.is_published=1 AND NOT EXISTS(SELECT 1 FROM asset_links al WHERE al.entity_type='episode' AND al.entity_id=e.id AND al.role IN ('stream','video'));
+SELECT 'published series with 0 published episodes' AS chk, count(*) AS n FROM series s WHERE s.status='published' AND NOT EXISTS(SELECT 1 FROM episodes e WHERE e.series_id=s.id AND e.status='published' AND e.is_published=1);
+SELECT 'published Majarra series missing poster' AS chk, count(*) AS n FROM series s WHERE s.status='published' AND s.content_class='production' AND NOT EXISTS(SELECT 1 FROM asset_links al WHERE al.entity_type='series' AND al.entity_id=s.id AND al.role IN ('poster','cover'));
+SELECT 'episode with no age track' AS chk, count(*) AS n FROM episodes e WHERE NOT EXISTS(SELECT 1 FROM episode_tracks t WHERE t.episode_id=e.id);
+SELECT 'episode with dangling objective' AS chk, count(*) AS n FROM episodes e WHERE e.learning_objective_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM learning_objectives o WHERE o.id=e.learning_objective_id);
+SELECT 'episode with dangling season' AS chk, count(*) AS n FROM episodes e WHERE e.season_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM seasons s WHERE s.id=e.season_id);
+SELECT 'series with no category' AS chk, count(*) AS n FROM series s WHERE NOT EXISTS(SELECT 1 FROM series_categories sc WHERE sc.series_id=s.id);
+SELECT 'series with no age track' AS chk, count(*) AS n FROM series s WHERE NOT EXISTS(SELECT 1 FROM series_tracks st WHERE st.series_id=s.id);
+SELECT 'duplicate artwork links' AS chk, count(*) AS n FROM (SELECT 1 FROM asset_links GROUP BY entity_type,entity_id,role HAVING count(*)>1);
+SELECT 'orphan episode asset_link' AS chk, count(*) AS n FROM asset_links al WHERE al.entity_type='episode' AND NOT EXISTS(SELECT 1 FROM episodes e WHERE e.id=al.entity_id);
+SELECT 'orphan series asset_link' AS chk, count(*) AS n FROM asset_links al WHERE al.entity_type='series' AND NOT EXISTS(SELECT 1 FROM series e WHERE e.id=al.entity_id);
+SELECT 'objective with no age track' AS chk, count(*) AS n FROM learning_objectives o WHERE NOT EXISTS(SELECT 1 FROM learning_objective_tracks t WHERE t.objective_id=o.id);
+SELECT 'duplicate episode_number in a series' AS chk, count(*) AS n FROM (SELECT 1 FROM episodes GROUP BY series_id,episode_number HAVING count(*)>1);
+SELECT 'episode age range outside its series' AS chk, count(*) AS n FROM episodes e JOIN series s ON s.id=e.series_id WHERE e.age_min < s.age_min OR e.age_max > s.age_max;
+SELECT 'public asset whose r2_key is not public/' AS chk, count(*) AS n FROM content_assets WHERE visibility='public' AND status='ready' AND r2_key NOT LIKE 'public/%';
+SELECT 'private asset whose r2_key is not private/' AS chk, count(*) AS n FROM content_assets WHERE visibility='private' AND status='ready' AND r2_key NOT LIKE 'private/%';
+SELECT 'video asset marked public' AS chk, count(*) AS n FROM content_assets WHERE kind='video' AND visibility='public';
+SELECT 'ready asset with no r2_key' AS chk, count(*) AS n FROM content_assets WHERE status='ready' AND (r2_key IS NULL OR bucket IS NULL);

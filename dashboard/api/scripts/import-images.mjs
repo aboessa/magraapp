@@ -19,6 +19,10 @@ const summaryOnly = args.has('--summary')
 const includeExtras = args.has('--include-extras')
 const skipUpload = args.has('--skip-upload')
 const skipDatabase = args.has('--skip-database')
+// Lets the asset import run when the migration chain cannot be applied. Useful because
+// 0012_qisas_slate.sql currently fails ("table books has no column named visual_style_id"),
+// which otherwise blocks every asset import.
+const skipMigrations = args.has('--skip-migrations')
 const resumeUpload = args.has('--resume-upload')
 const verifyR2 = args.has('--verify-r2')
 const concurrencyArg = process.argv.find((arg) => arg.startsWith('--concurrency='))
@@ -40,6 +44,11 @@ const PLANET_ID_BY_ASSET = {
   'planet-values-islamic': 'qiyam',
   'planet-stories': 'qisas',
   'planet-creativity': 'maharat',
+  // app_main/assets/images/planets ships 10 planet icons but only 6 were mapped here, which is
+  // why planets tarikh and alam ended up with no artwork at all and islamic had no icon.
+  'planet-tarikh': 'tarikh',
+  'planet-alamna': 'alam',
+  'planet-iman': 'islamic',
 }
 
 const PLANET_ICON_SOURCES = [
@@ -49,6 +58,9 @@ const PLANET_ICON_SOURCES = [
   ['assets/images/planets/planet-values-islamic.webp', 'planet-values-islamic.webp'],
   ['assets/images/planets/planet-stories.webp', 'planet-stories.webp'],
   ['assets/images/planets/planet-creativity.webp', 'planet-creativity.webp'],
+  ['assets/images/planets/planet-tarikh.webp', 'planet-tarikh.webp'],
+  ['assets/images/planets/planet-alamna.webp', 'planet-alamna.webp'],
+  ['assets/images/planets/planet-iman.webp', 'planet-iman.webp'],
 ].map(([expectedPath, filename]) => ({
   expectedPath,
   absolute: path.join(rootDir, 'app_main', 'assets', 'images', 'planets', filename),
@@ -187,8 +199,41 @@ function linkIdFor(link) {
   return `import-link-${createHash('sha1').update(identity).digest('hex').slice(0, 24)}`
 }
 
+// Keep this classification identical to inferVisibility() in
+// src/routes/adminAssets.ts. Catalogue artwork is public and served from the
+// CDN; only entitlement-controlled media (video, packs, downloads) stays
+// private behind a capability token. The R2 key prefix is derived from this
+// value, and src/lib/assetUrls.ts refuses to build a public URL when the prefix
+// and the visibility column disagree.
+const PUBLIC_ARTWORK_PATH_PATTERN =
+  /\/(landing|marketing|worlds|store|series|episodes|planets|characters|books|games|stories|projects|quizzes|flashcards|activities|audio|islamic|app)\//
+
 function inferVisibility(relativePath) {
-  return /\/(landing|marketing|worlds|store)\//.test(`/${normalize(relativePath).toLowerCase()}`) ? 'public' : 'private'
+  const normalized = `/${normalize(relativePath).toLowerCase()}`
+  if (/\/(downloads|packs|streams|video)\//.test(normalized)) return 'private'
+  return PUBLIC_ARTWORK_PATH_PATTERN.test(normalized) ? 'public' : 'private'
+}
+
+// Bucket architecture. Must stay identical to src/lib/assetBuckets.ts:
+//   THUMBS_BUCKET (majarra-thumbs) = public catalogue artwork, CDN origin.
+//   MEDIA_BUCKET  (majarra-media)  = private video/streams/downloads, never CDN.
+//
+// This script previously wrote every object to majarra-media regardless of
+// visibility, so public artwork landed in the private bucket. Pointing the CDN
+// at that bucket to compensate would have exposed all episode video.
+const PUBLIC_BUCKET_NAME = 'majarra-thumbs'
+const PRIVATE_BUCKET_NAME = 'majarra-media'
+const DEV_BUCKET_SUFFIX = '-dev'
+
+function bucketBindingFor(visibility) {
+  return visibility === 'public' ? 'thumbs' : 'media'
+}
+
+/// Wrangler addresses local buckets by their configured bucket_name, which is
+/// suffixed with -dev for the development environment.
+function bucketNameFor(visibility) {
+  const base = visibility === 'public' ? PUBLIC_BUCKET_NAME : PRIVATE_BUCKET_NAME
+  return isRemote ? base : `${base}${DEV_BUCKET_SUFFIX}`
 }
 
 function titleFromPath(relativePath) {
@@ -399,7 +444,7 @@ async function r2ObjectMatches(record, attempts = 1) {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     await fs.rm(destination, { force: true })
     try {
-      await run(['r2', 'object', 'get', `majarra-media/${record.r2Key}`, `--file=${destination}`, targetFlag], { quiet: true })
+      await run(['r2', 'object', 'get', `${bucketNameFor(record.visibility)}/${record.r2Key}`, `--file=${destination}`, targetFlag], { quiet: true })
       const data = await fs.readFile(destination)
       if (createHash('sha256').update(data).digest('hex') === record.checksum) return true
     } catch {
@@ -513,7 +558,7 @@ async function main() {
           reused += 1
         } else {
           await retry(() => run([
-            'r2', 'object', 'put', `majarra-media/${record.r2Key}`,
+            'r2', 'object', 'put', `${bucketNameFor(record.visibility)}/${record.r2Key}`,
             `--file=${record.actual.absolute}`,
             `--content-type=${record.mime}`,
             `--cache-control=${record.visibility === 'public' ? 'public,max-age=31536000,immutable' : 'private,no-store'}`,
@@ -547,7 +592,11 @@ async function main() {
   }
 
   if (!skipDatabase) {
-    await run(['d1', 'migrations', 'apply', 'majarra-db', targetFlag], { quiet: false })
+    if (skipMigrations) {
+      console.log('Skipping "d1 migrations apply" (--skip-migrations).')
+    } else {
+      await run(['d1', 'migrations', 'apply', 'majarra-db', targetFlag], { quiet: false })
+    }
     const statements = ['PRAGMA foreign_keys = ON;']
     for (const record of records) {
       const actual = record.actual
@@ -568,7 +617,7 @@ INSERT INTO content_assets (
   ${sql(record.id)}, ${sql(titleFromPath(record.expectedPath))}, 'image',
   ${actual ? "'generated'" : "'catalog'"}, ${actual ? "'ready'" : "'planned'"},
   ${sql(actual ? path.basename(actual.absolute) : path.basename(record.expectedPath))}, ${sql(record.expectedPath)},
-  ${sql(actual ? record.r2Key : null)}, ${actual ? "'media'" : 'NULL'}, ${sql(record.mime ?? MIME[path.extname(record.expectedPath).toLowerCase()] ?? 'image/webp')},
+  ${sql(actual ? record.r2Key : null)}, ${actual ? sql(bucketBindingFor(record.visibility)) : 'NULL'}, ${sql(record.mime ?? MIME[path.extname(record.expectedPath).toLowerCase()] ?? 'image/webp')},
   ${sql(record.size)}, ${sql(record.checksum)}, ${sql(record.visibility ?? inferVisibility(record.expectedPath))},
   ${sql(actual ? (record.dimensionMatch ? 'approved_size' : 'temporary_size_mismatch') : null)},
   ${sql(record.expectedWidth)}, ${sql(record.expectedHeight)}, ${sql(record.aspectRatio)}, ${sql(record.prompt)},
