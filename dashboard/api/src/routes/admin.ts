@@ -17,6 +17,7 @@ import adminPublishGateRoute, { evaluateFor, gateRefusal } from './adminPublishG
 import adminAvailabilityRoute from './adminAvailability.ts'
 import adminWorkflowRoute from './adminWorkflow.ts'
 import adminSupportRoute from './adminSupport.ts'
+import adminProductionRoute from './adminProduction.ts'
 import { summarizeGate } from '../lib/publishGate.ts'
 import { validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
@@ -95,6 +96,9 @@ adminRoute.route('/', adminWorkflowRoute)
 // مركز الدعم: التذاكر وخطها الزمني وSLA والوسوم والعروض المحفوظة. مركّب بعد
 // adminAppExperience الذي يحمل `/support/family/:id`، ومساراته لا تتقاطع معه.
 adminRoute.route('/', adminSupportRoute)
+// مركز الإنتاج: مصفوفة متطلبات لكل عنصر، مشتقّة من الأصول نفسها، وطبقة إسناد
+// بشرية مخزَّنة. مركّب بعد بوابة النشر لأنه يستدعي تقييمها لصفّ «النشر».
+adminRoute.route('/', adminProductionRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)
