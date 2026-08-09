@@ -54,6 +54,12 @@ __pycache__/
 Thumbs.db
 *.swp
 
+# --- Kiro operational reports ---
+# Operational task reporting, deliberately kept out of production commits.
+KIRO_LAST_REPORT.md
+KIRO_REPORT_HISTORY.md
+KIRO_IDE_LAST.md
+
 # --- Local scratch / archives ---
 _archive/
 *.rar
@@ -76,3 +82,43 @@ _archive/
 #   3. Track anyway -> remove this rule, accepting a permanently large repo.
 # ---------------------------------------------------------------------------
 majarra_images/
+
+
+# ---------------------------------------------------------------------------
+# Catalogue-audit artefacts (generated, not source).
+#
+# `scripts/_audit_*` are the reproducible generators and ARE tracked. What they
+# emit is not: the change set is large, regenerable, and specific to one run.
+# The D1 copy is a local safety net taken before the audit's write phase.
+# ---------------------------------------------------------------------------
+dashboard/api/_audit_apply.sql
+dashboard/api/_content.json
+dashboard/api/_MASTER_INVENTORY.txt
+dashboard/api/_d1_backup_before_audit/
+dashboard/api/_slate_load.sql
+dashboard/api/_manifests.json
+dashboard/api/_d1_backup_before_slate/
+dashboard/api/_completion_load.sql
+dashboard/api/_d1_backup_before_migrations/
+dashboard/api/_d1_backup_before_completion/
+
+# ---------------------------------------------------------------------------
+# Local media masters and safety copies — never committed.
+#
+# Measured on 2026-08-09: `videos/` is 1.29 GB of raw episode footage plus the
+# delivery zip, `assets/` is 32 MB of image/audio masters, `audio/` holds raw
+# narration takes. None of it is loaded at runtime — the app ships compressed
+# assets from `app_main/assets/` and the API serves from R2 — so committing it
+# would bake over a gigabyte into history for no runtime benefit, and that is
+# not reversible without a history rewrite.
+#
+# `_backups/` are point-in-time copies of the local D1 sqlite file taken before
+# destructive migrations. They are a local safety net, not source.
+#
+# The files stay untouched on disk. Same options as `majarra_images/` above:
+# Git LFS, object storage, or an explicit decision to accept the repo size.
+# ---------------------------------------------------------------------------
+videos/
+assets/
+audio/
+_backups/
