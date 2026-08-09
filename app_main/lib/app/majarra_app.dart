@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/env/app_environment.dart';
 import '../core/input/input_mode.dart';
 import '../l10n/app_localizations.dart';
 import 'router/app_router.dart';
@@ -53,9 +54,35 @@ class MajarraApp extends ConsumerWidget {
               maxScaleFactor: 1.3,
             ),
           ),
-          child: InputModeTracker(child: child ?? const SizedBox.shrink()),
+          child: InputModeTracker(
+            child: _EnvironmentBanner(
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
         );
       },
+    );
+  }
+}
+
+/// Corner ribbon marking non-production builds (STAGING / DEV).
+///
+/// Renders nothing in production, so it can never ship a banner to an end user.
+/// Uses [Directionality] from the surrounding app so it sits in the leading
+/// corner regardless of text direction.
+class _EnvironmentBanner extends StatelessWidget {
+  const _EnvironmentBanner({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!AppConfig.showEnvironmentBanner) return child;
+    return Banner(
+      message: AppConfig.environmentLabel,
+      location: BannerLocation.topStart,
+      color: AppConfig.isStaging ? const Color(0xFFB8860B) : const Color(0xFF8B0000),
+      child: child,
     );
   }
 }
