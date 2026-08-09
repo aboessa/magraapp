@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,7 +77,7 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
     // returning parent does not have to reach for the button.
     if (_canUseBiometric) {
       // A microtask so the first frame paints before the system dialog appears.
-      Future.microtask(_unlockWithBiometric);
+      unawaited(Future.microtask(_unlockWithBiometric));
     }
   }
 
