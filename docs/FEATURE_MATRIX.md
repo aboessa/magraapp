@@ -9,12 +9,12 @@ read from the source on every run. The **Status** column comes from
 `docs/FEATURE_MATRIX_VERDICTS.json`, where each verdict records how it was
 verified; a route with no recorded verdict is `UNVERIFIED` rather than assumed.
 
-Registered admin routes: **58**. Server routes parsed: **266**.
-API client functions parsed: **190**.
+Registered admin routes: **60**. Server routes parsed: **272**.
+API client functions parsed: **196**.
 
 | Status | Routes |
 |---|---|
-| COMPLETE | 32 |
+| COMPLETE | 34 |
 | PARTIAL | 18 |
 | MISSING | 8 |
 
@@ -23,14 +23,14 @@ API client functions parsed: **190**.
 | Route | Page | Status | API calls | Server endpoints | Permissions | Audit | Tests |
 |---|---|---|---|---|---|---|---|
 | `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 13 |
-| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 42 |
+| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 43 |
 | `/taxonomy` | TaxonomyPage.tsx | COMPLETE | 8 | 8/8 | edit_metadata, create, archive | — | 2 |
 | `/planets` | PlanetsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/planets/:id` | PlanetDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
 | `/skills` | SkillsPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 3 |
 | `/objectives` | LearningObjectivesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive | — | 3 |
 | `/content-reviews` | ContentReviewsPage.tsx | PARTIAL | 4 | 4/4 | review | — | 1 |
-| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 42 |
+| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 43 |
 | `/series/:id` | SeriesDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 12 |
 | `/seasons/:id` | SeasonDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
@@ -38,10 +38,10 @@ API client functions parsed: **190**.
 | `/episodes/:id` | EpisodeDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
 | `/characters` | CharactersPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 15 |
 | `/characters/:id` | CharacterDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 5 |
-| `/stories` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 23 |
-| `/stories/:id` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 23 |
-| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 30 |
-| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 28 |
+| `/stories` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 24 |
+| `/stories/:id` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 24 |
+| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 31 |
+| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 29 |
 | `/games/:id` | GameDetailPage.tsx | COMPLETE | 4 | 4/4 | — | — | 21 |
 | `/games-ops` | GamesOpsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/games-audio-queue` | AudioProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
@@ -50,11 +50,13 @@ API client functions parsed: **190**.
 | `/media/:id` | AssetDetailPage.tsx | COMPLETE | 2 | 2/2 | — | — | 23 |
 | `/visual-styles` | VisualStylesPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 0 |
 | `/parents` | ParentsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 0 |
+| `/customers` | CustomersPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
+| `/customers/:id` | CustomerDetailPage.tsx | COMPLETE | 4 | 4/4 | manage_permissions | ✅ | 0 |
 | `/children` | ChildrenPage.tsx | PARTIAL | 1 | 1/1 | — | — | 6 |
 | `/billing` | BillingPage.tsx | COMPLETE | 4 | 4/4 | — | — | 7 |
 | `/analytics` | AnalyticsPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
 | `/teams` | TeamsPage.tsx | COMPLETE | 3 | 3/3 | manage_team | — | 4 |
-| `/roles` | RolesPage.tsx | PARTIAL | 3 | 3/3 | manage_permissions | — | 9 |
+| `/roles` | RolesPage.tsx | PARTIAL | 3 | 3/3 | manage_permissions | — | 10 |
 | `/team-access` | TeamAccessPage.tsx | COMPLETE | 6 | 6/6 | — | — | 7 |
 | `/tasks` | MyTasksPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
 | `/production` | ProductionPage.tsx | COMPLETE | 4 | 4/4 | assign_members | ✅ | 0 |
@@ -64,7 +66,7 @@ API client functions parsed: **190**.
 | `/quality` | QualityPage.tsx | PARTIAL | 2 | 2/2 | — | — | 1 |
 | `/mastery` | MasteryPage.tsx | PARTIAL | 3 | 3/3 | — | — | 8 |
 | `/app-experience` | AppExperiencePage.tsx | PARTIAL | 6 | 6/6 | edit_metadata, create | — | 0 |
-| `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 4 |
+| `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 5 |
 | `/support-center` | SupportCenterPage.tsx | COMPLETE | 2 | 2/2 | — | ✅ | 2 |
 | `/workflows` | WorkflowPage.tsx | COMPLETE | 8 | 8/8 | assign_members, review | ✅ | 2 |
 | `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 7 |
@@ -79,7 +81,7 @@ API client functions parsed: **190**.
 | `/school` | SchoolAccountsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/finance-advanced` | AdvancedFinancePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/ops-sla` | OpsSlaPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
-| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 42 |
+| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 43 |
 
 ## 2. Collection UX affordances (static evidence)
 
@@ -116,6 +118,8 @@ that it behaves; behavioural findings belong in the verdict file.
 | `/media/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/visual-styles` | ✅ | — | — | — | — | ✅ | — | ✅ | ✅ |
 | `/parents` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
+| `/customers` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | — |
+| `/customers/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/children` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
 | `/billing` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
 | `/analytics` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
@@ -343,6 +347,23 @@ that it behaves; behavioural findings belong in the verdict file.
 - Gaps:
   - Not a Customer 360 workspace: no tabs for devices, downloads, payments, tickets, consents
   - No family detail route at all
+
+### `/customers` — COMPLETE
+
+- Verified by: code read 2026-08-09; api test adminDeviceOperations.test.mjs (17 tests)
+- Evidence: Family list from the D1 projection with child, device and open-ticket counts, search and plan/status filters, server-side paging. Counts come from the projection deliberately: a list calling the Durable Object per row would be 25 calls per page, and the live read belongs in the workspace where it is declared.
+- Gaps:
+  - No saved views or column manager yet
+  - Search matches the family id only; there is no e-mail index by design
+
+### `/customers/:id` — COMPLETE
+
+- Verified by: code read 2026-08-09; api test adminDeviceOperations.test.mjs asserts the data boundaries and the operator path
+- Evidence: Customer 360 workspace with eight tabs. The authority (FamilyState) answers present-tense questions - effective plan, entitlement ledger, devices, sessions, active leases, auth epoch, progress count - and D1 answers history; every section names its source. One failed section degrades alone rather than failing the page. Device revoke, download revoke and projection resync call the operator command path with a mandatory reason, a stated irreversible-effect warning and audit written before the command. No store credentials and no child viewing history are exposed; reading the family is audited as customer_360.
+- Gaps:
+  - Consents are rendered as raw records because FamilyState returns an untyped shape
+  - No refunds section: no refund data exists in any source
+  - Internal notes live on support tickets rather than on the family
 
 ### `/children` — PARTIAL
 
@@ -596,6 +617,7 @@ operator surface. Listed so the second case cannot hide.
 | adminCatalogue.ts | DELETE | `/api/v1/admin/stories/:id/purge` | delete_draft | — |
 | adminContent.ts | PUT | `/api/v1/admin/series/:id/categories` | edit_metadata | — |
 | adminContent.ts | PATCH | `/api/v1/admin/story-bubbles/:id` | edit_metadata | — |
+| adminDevices.ts | GET | `/api/v1/admin/families/:id/device-state` | — | ✅ |
 | adminFamilyProjection.ts | GET | `/api/v1/admin/children/:id` | — | — |
 | adminFamilyProjection.ts | POST | `/api/v1/admin/children` | — | — |
 | adminFamilyProjection.ts | PATCH | `/api/v1/admin/children/:id` | — | — |
@@ -681,7 +703,7 @@ operator surface. Listed so the second case cannot hide.
 | series.ts | GET | `/api/v1/series/:id` | — | — |
 | siteMode.ts | GET | `/api/v1/site-mode` | — | — |
 
-Orphan count: **112** of 266.
+Orphan count: **113** of 272.
 
 ## 5. API client functions the matrix could not resolve to a server route
 

@@ -13,6 +13,8 @@ import { BillingPage } from './pages/BillingPage'
 import { CampaignsPage } from './pages/CampaignsPage'
 import { CharactersPage } from './pages/CharactersPage'
 import { ChildrenPage } from './pages/ChildrenPage'
+import { CustomersPage } from './pages/CustomersPage'
+import { CustomerDetailPage } from './pages/CustomerDetailPage'
 import { ContentReviewsPage } from './pages/ContentReviewsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { DevicesAdminPage } from './pages/DevicesAdminPage'
@@ -142,6 +144,10 @@ export default function AdminRoutes() {
         <Route path="media/:id" element={<AssetDetailPage />} />
         <Route path="visual-styles" element={<VisualStylesPage />} />
         <Route path="parents" element={<ParentsPage />} />
+        {/* Customer 360: القائمة ثم مساحة العمل. منفصلة عن /parents لأن تلك قراءة
+            إسقاط الوالدين، وهذه سؤال «أي عائلة تحتاج تدخّلًا الآن». */}
+        <Route path="customers" element={<CustomersPage />} />
+        <Route path="customers/:id" element={<CustomerDetailPage />} />
         <Route path="children" element={<ChildrenPage />} />
         <Route path="billing" element={<BillingPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />

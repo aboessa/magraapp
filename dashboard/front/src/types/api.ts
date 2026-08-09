@@ -1784,6 +1784,73 @@ export interface ProductionQueueRow {
   content_status: string | null
 }
 
+// --- Customer 360 ------------------------------------------------------------
+
+/// قسم تعذّر تحميله. يُعرض بسببه لا كقسم فارغ: «تعذّر الوصول» و«لا بيانات»
+/// جوابان مختلفان، وأحدهما فقط يعني أن العائلة لا تستطيع الدخول.
+export interface UnavailableSection {
+  available: false
+  source: string
+  reason: string
+}
+
+export interface FamilyAuthorityState {
+  available?: true
+  source?: string
+  parent_id: string
+  status: string
+  base_plan: string
+  effective_plan: string
+  auth_epoch: number
+  entitlements: Array<{ plan: string; status: string; source: string; expires_at: number | null; updated_at: number }>
+  devices: Array<{
+    id: string; display_name: string | null; platform: string; status: string
+    registered_at: number; last_seen_at: number
+  }>
+  active_leases: number
+  active_sessions: number
+  child_count: number
+  active_child_count: number
+  progress_records: number
+}
+
+export interface CustomerListRow {
+  parent_id: string
+  plan: string
+  status: string
+  child_count: number
+  device_count: number
+  open_tickets: number
+}
+
+export interface Customer360 {
+  family: { parent_id: string; plan: string; status: string }
+  authority: FamilyAuthorityState | UnavailableSection
+  children: Array<{
+    child_id: string; nickname: string | null; age_track: string | null
+    status: string; last_event_at_ms: number
+  }>
+  devices_projection: Array<{
+    id: string; display_name: string | null; platform: string; status: string; last_seen_at: string
+  }>
+  billing: Array<{
+    product_id: string; plan: string; entitlement_status: string
+    expires_at_ms: number | null; created_at: string
+  }>
+  purchases: Array<{
+    product_id: string; purchase_state: string; purchased_at: string | null
+    expires_at: string | null; last_verified_at: string; created_at: string
+  }>
+  tickets: Array<{
+    id: string; reference: string; subject: string; category: string; priority: string
+    status: string; assignee_id: string | null; first_response_at: string | null
+    resolution_due_at: string | null; created_at: string
+  }>
+  audit: Array<{ action: string; entity_type: string; entity_id: string; actor_id: string; created_at: string }>
+  consents: unknown[] | UnavailableSection
+  progress_summary: { records: number } | { available: false; reason: string }
+}
+
 /// فحص واحد. `message` جاهزة للعرض بالعربية من الخادم، وتحمل السبب لا الحكم فقط.
 export interface QualityCheck {
   check: string

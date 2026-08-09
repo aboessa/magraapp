@@ -434,6 +434,21 @@ export const api = {
     payload: { assignee_id?: string | null; team_id?: string | null; due_at?: string | null; blocker?: string | null; note?: string | null },
   ) => request<ApiEnvelope<{ requirement: string }>>(`/admin/production/${type}/${encodeURIComponent(id)}/${requirement}`, { method: 'PUT', body: JSON.stringify(payload) }),
   productionQueue: () => request<PaginatedEnvelope<import('../types/api').ProductionQueueRow>>('/admin/production/my-queue'),
+
+  /// Customer 360 وعمليات الأجهزة الإدارية.
+  ///
+  /// عمليات الأجهزة تُنادي مسار المشغِّل في FamilyState لا مسار الوالد: السبب
+  /// إلزامي في الجسم لأن الخادم يرفض بلا سبب، والرفض يُعرض كما هو.
+  customers: (filters: { q?: string; plan?: string; status?: string; limit?: number; offset?: number } = {}) =>
+    request<PaginatedEnvelope<import('../types/api').CustomerListRow>>(`/admin/customers${queryString(filters)}`),
+  customer360: (id: string) => request<ApiEnvelope<import('../types/api').Customer360>>(`/admin/customers/${encodeURIComponent(id)}`),
+  familyDeviceState: (id: string) => request<ApiEnvelope<import('../types/api').FamilyAuthorityState>>(`/admin/families/${encodeURIComponent(id)}/device-state`),
+  revokeFamilyDevice: (familyId: string, deviceId: string, reason: string) =>
+    request<ApiEnvelope<{ revoked: boolean }>>(`/admin/families/${encodeURIComponent(familyId)}/devices/${encodeURIComponent(deviceId)}/revoke`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  revokeFamilyDownloads: (familyId: string, reason: string, deviceId?: string) =>
+    request<ApiEnvelope<{ leases_revoked: number }>>(`/admin/families/${encodeURIComponent(familyId)}/downloads/revoke`, { method: 'POST', body: JSON.stringify({ reason, device_id: deviceId ?? null }) }),
+  resyncFamily: (familyId: string, reason: string) =>
+    request<ApiEnvelope<{ plan: string; note: string }>>(`/admin/families/${encodeURIComponent(familyId)}/resync`, { method: 'POST', body: JSON.stringify({ reason }) }),
   billingStats: () => request<ApiEnvelope<import('../types/api').BillingStats>>('/admin/billing/stats'),
   /// سجل الشراء الكامل من billing_audit. يحمل أعمدة أكثر من `recent_purchases`
   /// داخل /stats: يضيف purchase_token_hash و verified_at_ms.

@@ -239,6 +239,22 @@
       "No calendar view and no bulk reassignment"
     ]
   },
+  "/customers": {
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-09; api test adminDeviceOperations.test.mjs (17 tests)",
+    "evidence": "Family list from the D1 projection with child, device and open-ticket counts, search and plan/status filters, server-side paging. Counts come from the projection deliberately: a list calling the Durable Object per row would be 25 calls per page, and the live read belongs in the workspace where it is declared.",
+    "gaps": ["No saved views or column manager yet", "Search matches the family id only; there is no e-mail index by design"]
+  },
+  "/customers/:id": {
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-09; api test adminDeviceOperations.test.mjs asserts the data boundaries and the operator path",
+    "evidence": "Customer 360 workspace with eight tabs. The authority (FamilyState) answers present-tense questions - effective plan, entitlement ledger, devices, sessions, active leases, auth epoch, progress count - and D1 answers history; every section names its source. One failed section degrades alone rather than failing the page. Device revoke, download revoke and projection resync call the operator command path with a mandatory reason, a stated irreversible-effect warning and audit written before the command. No store credentials and no child viewing history are exposed; reading the family is audited as customer_360.",
+    "gaps": [
+      "Consents are rendered as raw records because FamilyState returns an untyped shape",
+      "No refunds section: no refund data exists in any source",
+      "Internal notes live on support tickets rather than on the family"
+    ]
+  },
   "/tasks": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",
