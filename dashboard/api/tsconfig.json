@@ -1,0 +1,39 @@
+{
+  // Type checking for the Worker.
+  //
+  // ## Why this file exists
+  //
+  // `npm run typecheck` was `wrangler deploy --dry-run`, which *bundles* with esbuild.
+  // esbuild strips types without checking them and resolves unknown identifiers as
+  // globals, so a genuine mistake passes: a router mounted without its import bundled
+  // cleanly and would have failed only at runtime, on every admin request. That was
+  // found by accident while wiring the production routes, which means the previous
+  // "typecheck clean" claims were weaker than they read.
+  //
+  // The dry-run is still useful — it proves the bundle builds and the bindings resolve
+  // — so `npm run typecheck` now runs both, types first.
+  //
+  // ## Why `checkJs` is off and `strict` is on
+  //
+  // The source is TypeScript throughout; the `.mjs` test suite is deliberately plain
+  // JavaScript run by `node --test` and is not type checked, because typing the test
+  // fixtures would mean maintaining a second model of every route's shape.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    // The source imports siblings as './x.ts' because the test suite runs under
+    // `node --experimental-strip-types`, which requires the extension. tsc rejects that
+    // by default.
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["./worker-configuration.d.ts"]
+  },
+  "include": ["src/**/*.ts", "worker-configuration.d.ts"]
+}
