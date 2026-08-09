@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../core/layout/app_layout.dart';
 import '../../../core/widgets/cinematic_background.dart';
 import '../../../core/widgets/cinematic_image.dart';
 import '../../home/domain/content_models.dart';
+import '../../profile/data/watchlist_store.dart';
 
 /// فيديوهات قصيرة - Reels style vertical feed
 class ShortsPage extends StatefulWidget {
@@ -149,23 +152,15 @@ class _ReelCard extends StatelessWidget {
                   child: Icon(Icons.play_arrow_rounded, size: isTelevision ? 36 : 30, color: AppColors.deepSpace),
                 ),
               ),
-              // Side actions - like reels
+              // Side actions. Only the two that have a real backing are shown:
+              // Save writes through the per-child watchlist (/family/favorites),
+              // and Share opens the OS share sheet. Like and Comment were
+              // removed — there are no like/comment endpoints, and child
+              // comments need a separate moderation/safety decision.
               PositionedDirectional(
                 end: 12,
                 bottom: 90,
-                child: Column(
-                  children: [
-                    // Counts previously read '1.2k' and '86'. There are no
-                    // likes or comments endpoints, so no totals are shown.
-                    _ReelAction(icon: Icons.favorite_border_rounded, label: 'إعجاب'),
-                    const SizedBox(height: 14),
-                    _ReelAction(icon: Icons.chat_bubble_outline_rounded, label: 'تعليق'),
-                    const SizedBox(height: 14),
-                    _ReelAction(icon: Icons.share_rounded, label: 'مشاركة'),
-                    const SizedBox(height: 14),
-                    _ReelAction(icon: Icons.bookmark_border_rounded, label: 'حفظ'),
-                  ],
-                ),
+                child: _ReelActions(episode: episode),
               ),
               // Bottom info
               PositionedDirectional(
@@ -191,41 +186,91 @@ class _ReelCard extends StatelessWidget {
   }
 }
 
-/// One of the vertical side actions on a reel.
+/// The two real side actions on a reel: Save and Share.
 ///
-/// Renders permanently disabled, and takes no callback at all. None of these
-/// actions has a backend: there are no likes, comments or share endpoints, and
-/// favourites are per-child via `/family/favorites`, which this page has no
-/// child context for. Accepting an `onTap` that every call site left empty is
-/// what made these look tappable while swallowing the gesture.
-///
-/// When an endpoint lands, add the callback back — and wire it at the same time.
+/// Save toggles the reel's parent series in the watchlist, reusing the existing
+/// [watchlistProvider] which writes through to `/family/favorites` for the active
+/// child. Share opens the OS share sheet with descriptive text (no counters, no
+/// invented public link).
+class _ReelActions extends ConsumerWidget {
+  const _ReelActions({required this.episode});
+  final EpisodeItem episode;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final saved = ref.watch(watchlistProvider).contains(episode.seriesId);
+    return Column(
+      children: [
+        _ReelAction(
+          icon: saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+          label: saved ? 'محفوظ' : 'حفظ',
+          highlighted: saved,
+          onTap: () async {
+            await ref.read(watchlistProvider.notifier).toggle(episode.seriesId);
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(saved ? 'أُزيل من قائمتك' : 'أُضيف إلى قائمتك'),
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 14),
+        _ReelAction(
+          icon: Icons.share_rounded,
+          label: 'مشاركة',
+          onTap: () {
+            Share.share(
+              'شاهد "${episode.title}" من ${episode.seriesTitle} على تطبيق مجرة',
+              subject: episode.title,
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// One vertical side action on a reel — an enabled, tappable control.
 class _ReelAction extends StatelessWidget {
-  const _ReelAction({required this.icon, required this.label});
+  const _ReelAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.highlighted = false,
+  });
   final IconData icon;
   final String label;
+  final VoidCallback onTap;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
-    // `Semantics.enabled: false` is the part that matters for a screen reader;
-    // the reduced opacity is only the visual half of the same message.
-    final foreground = Colors.white.withValues(alpha: 0.38);
+    final foreground = highlighted ? AppColors.starGold : Colors.white;
 
     return Semantics(
       button: true,
-      enabled: false,
       label: label,
-      child: Column(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.14))),
-            child: Icon(icon, color: foreground, size: 20),
-          ),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: foreground, fontSize: 10, fontWeight: FontWeight.w600)),
-        ],
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+              ),
+              child: Icon(icon, color: foreground, size: 20),
+            ),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(color: foreground, fontSize: 10, fontWeight: FontWeight.w600)),
+          ],
+        ),
       ),
     );
   }
