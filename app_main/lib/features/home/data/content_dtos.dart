@@ -182,9 +182,11 @@ class StoryPageDto {
     this.bodyText,
     this.altText,
     this.imageUrl,
+    this.durationMs,
   });
 
   factory StoryPageDto.fromJson(Map<String, Object?> json) {
+    final duration = _integer(json['duration_ms']);
     return StoryPageDto(
       id: _text(json['id'], fallback: 'page'),
       pageNumber: _integer(json['page_number'], fallback: 1),
@@ -192,6 +194,7 @@ class StoryPageDto {
       bodyText: _nullableText(json['body_text']),
       altText: _nullableText(json['alt_text']),
       imageUrl: _nullableText(json['image_url']),
+      durationMs: duration <= 0 ? null : duration,
     );
   }
 
@@ -201,6 +204,7 @@ class StoryPageDto {
   final String? bodyText;
   final String? altText;
   final String? imageUrl;
+  final int? durationMs;
 
   StoryPage toDomain() => StoryPage(
     id: id,
@@ -209,6 +213,7 @@ class StoryPageDto {
     bodyText: bodyText,
     altText: altText,
     imageUrl: imageUrl,
+    durationMs: durationMs,
   );
 }
 

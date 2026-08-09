@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/env/app_environment.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../core/widgets/cinematic_image.dart';
+import '../../../child/application/child_provider.dart';
+import '../../../home/application/home_providers.dart';
 import '../../../home/domain/content_models.dart';
+import '../../application/reader_narration.dart';
 
 enum ReadingMode { readMyself, readToMe, readTogether, silent }
 
@@ -20,13 +26,14 @@ enum ReadingMode { readMyself, readToMe, readTogether, silent }
 /// lives in `story_pages` / `story_page_localizations` in D1, but there is no
 /// public endpoint serving it yet and the seeded rows carry no artwork, so most
 /// books legitimately reach the empty state today.
-class StoryReaderPage extends StatefulWidget {
+class StoryReaderPage extends ConsumerStatefulWidget {
   const StoryReaderPage({
     required this.title,
     this.subtitle,
     this.pages = const [],
     this.loading = false,
     this.isComic = false,
+    this.bookId,
     super.key,
   });
 
@@ -44,18 +51,31 @@ class StoryReaderPage extends StatefulWidget {
   /// artwork is composed to be read one page at a time.
   final bool isComic;
 
+  /// The book id, required for "اقرأ لي": narration is a private per-page asset
+  /// reached through a capability token. Null for the series reader, where the
+  /// narration modes stay unavailable.
+  final String? bookId;
+
   @override
-  State<StoryReaderPage> createState() => _StoryReaderPageState();
+  ConsumerState<StoryReaderPage> createState() => _StoryReaderPageState();
 }
 
-class _StoryReaderPageState extends State<StoryReaderPage> {
+class _StoryReaderPageState extends ConsumerState<StoryReaderPage> {
   final PageController _ctrl = PageController();
   int _page = 0;
   ReadingMode _mode = ReadingMode.readMyself;
   bool _showText = true;
   bool _modeChosen = false;
 
+  // --- Read-To-Me narration state ---
+  VideoPlayerController? _narration;
+  bool _narrationLoading = false;
+  String? _narrationUnavailable;
+  int _narrationToken = 0; // guards against races when pages change fast.
+
   List<StoryPage> get _pages => widget.pages;
+
+  bool get _canNarrate => (widget.bookId ?? '').isNotEmpty;
 
   @override
   void initState() {
@@ -68,8 +88,128 @@ class _StoryReaderPageState extends State<StoryReaderPage> {
 
   @override
   void dispose() {
+    _disposeNarration();
     _ctrl.dispose();
     super.dispose();
+  }
+
+  void _disposeNarration() {
+    _narration?.removeListener(_onNarrationTick);
+    _narration?.dispose();
+    _narration = null;
+  }
+
+  /// Loads and starts narration for the current page.
+  ///
+  /// Each call bumps [_narrationToken]; a slower in-flight request for a page the
+  /// child has already swiped past checks the token before touching state, so a
+  /// late response cannot start audio for the wrong page.
+  Future<void> _loadNarrationForCurrentPage() async {
+    if (!_canNarrate || _pages.isEmpty) return;
+    final childId = ref.read(childProvider).activeChildId;
+    final token = ++_narrationToken;
+
+    _disposeNarration();
+    setState(() {
+      _narrationLoading = true;
+      _narrationUnavailable = null;
+    });
+
+    if (childId == null || childId.isEmpty) {
+      if (mounted && token == _narrationToken) {
+        setState(() {
+          _narrationLoading = false;
+          _narrationUnavailable = 'اختر ملف طفل أولًا لتشغيل الصوت.';
+        });
+      }
+      return;
+    }
+
+    final source = await fetchPageNarration(
+      ref.read(majarraApiClientProvider),
+      bookId: widget.bookId!,
+      childId: childId,
+      pageId: _pages[_page].id,
+    );
+    if (!mounted || token != _narrationToken) return;
+
+    if (source is NarrationUnavailable) {
+      setState(() {
+        _narrationLoading = false;
+        _narrationUnavailable = source.reason;
+      });
+      return;
+    }
+
+    final playable = source as NarrationPlayable;
+    final uri = Uri.parse(ApiEnvironment.baseUrl).resolve(playable.streamUrl);
+    final controller = VideoPlayerController.networkUrl(
+      uri,
+      httpHeaders: {'Authorization': playable.authorization},
+    );
+    try {
+      await controller.initialize();
+      if (!mounted || token != _narrationToken) {
+        await controller.dispose();
+        return;
+      }
+      controller.addListener(_onNarrationTick);
+      setState(() {
+        _narration = controller;
+        _narrationLoading = false;
+      });
+      await controller.play();
+    } catch (_) {
+      await controller.dispose();
+      if (!mounted || token != _narrationToken) return;
+      setState(() {
+        _narrationLoading = false;
+        _narrationUnavailable = 'تعذّر تشغيل الصوت. حاول مرة أخرى.';
+      });
+    }
+  }
+
+  /// Advances to the next page when the current page's narration finishes, so a
+  /// child listening hands-free moves through the story on its own.
+  void _onNarrationTick() {
+    final value = _narration?.value;
+    if (value == null || !mounted) return;
+    final finished = value.duration > Duration.zero &&
+        value.position >= value.duration &&
+        !value.isPlaying;
+    if (finished && _page < _pages.length - 1) {
+      _ctrl.nextPage(
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  Future<void> _toggleNarration() async {
+    final c = _narration;
+    if (c == null) return;
+    if (c.value.isPlaying) {
+      await c.pause();
+    } else {
+      if (c.value.position >= c.value.duration) await c.seekTo(Duration.zero);
+      await c.play();
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _restartNarration() async {
+    final c = _narration;
+    if (c == null) return;
+    await c.seekTo(Duration.zero);
+    await c.play();
+    if (mounted) setState(() {});
+  }
+
+  void _onPageChanged(int index) {
+    setState(() => _page = index);
+    if (_mode == ReadingMode.readToMe) {
+      _loadNarrationForCurrentPage();
+    }
   }
 
   void _showModePicker() {
@@ -121,20 +261,28 @@ class _StoryReaderPageState extends State<StoryReaderPage> {
                 subtitle: 'صور فقط لتنمية الملاحظة',
                 onTap: () => _choose(sheetContext, ReadingMode.silent),
               ),
-              // "اقرأ لي" and "اقرأ معي" need per-page narration audio, which no
-              // story currently carries. Offering them would produce a silent
-              // player, so they are shown as unavailable rather than hidden —
-              // the modes are part of the product and will return.
-              const _ModeTile(
+              // "اقرأ لي": per-page narration through a capability token. Enabled
+              // whenever this is a book (has a bookId). If a given page has no
+              // recorded narration the runtime shows a truthful per-page notice
+              // rather than pretending — narration recordings are content that
+              // is still being produced.
+              _ModeTile(
                 icon: Icons.volume_up_rounded,
                 title: 'اقرأ لي',
-                subtitle: 'يحتاج تسجيل صوتي لكل صفحة — غير متاح بعد',
-                onTap: null,
+                subtitle: _canNarrate
+                    ? 'أستمع للسرد وتُقلب الصفحات تلقائيًا'
+                    : 'متاح لقصص الكتب فقط',
+                onTap: _canNarrate
+                    ? () => _choose(sheetContext, ReadingMode.readToMe)
+                    : null,
               ),
+              // "اقرأ معي" needs per-word timing to highlight text in sync with
+              // the narration. The content contract carries only page-level
+              // duration, not word timing, so this stays honestly unavailable.
               const _ModeTile(
                 icon: Icons.groups_rounded,
                 title: 'اقرأ معي',
-                subtitle: 'يحتاج تزامن الصوت مع الجملة — غير متاح بعد',
+                subtitle: 'يحتاج توقيت الكلمات مع الصوت — غير متاح بعد',
                 onTap: null,
               ),
             ],
@@ -151,6 +299,12 @@ class _StoryReaderPageState extends State<StoryReaderPage> {
       _modeChosen = true;
       _showText = mode != ReadingMode.silent;
     });
+    if (mode == ReadingMode.readToMe) {
+      _loadNarrationForCurrentPage();
+    } else {
+      _disposeNarration();
+      setState(() => _narrationUnavailable = null);
+    }
   }
 
   @override
@@ -216,7 +370,7 @@ class _StoryReaderPageState extends State<StoryReaderPage> {
                           )
                         : PageView.builder(
                             controller: _ctrl,
-                            onPageChanged: (i) => setState(() => _page = i),
+                            onPageChanged: _onPageChanged,
                             itemCount: _pages.length,
                             itemBuilder: (context, idx) => Padding(
                               padding: const EdgeInsets.symmetric(
@@ -232,6 +386,14 @@ class _StoryReaderPageState extends State<StoryReaderPage> {
                           ),
                   ),
                 ),
+                if (_mode == ReadingMode.readToMe)
+                  _NarrationBar(
+                    loading: _narrationLoading,
+                    unavailable: _narrationUnavailable,
+                    controller: _narration,
+                    onToggle: _toggleNarration,
+                    onRestart: _restartNarration,
+                  ),
                 _PagerControls(
                   page: _page,
                   total: _pages.length,
@@ -729,6 +891,115 @@ class _PagerControls extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// Read-To-Me transport for the current page.
+///
+/// Shows a spinner while a page's narration is being fetched, a truthful notice
+/// when the page has no recorded narration, or play/pause + restart controls
+/// when it does. The bar only appears in [ReadingMode.readToMe].
+class _NarrationBar extends StatelessWidget {
+  const _NarrationBar({
+    required this.loading,
+    required this.unavailable,
+    required this.controller,
+    required this.onToggle,
+    required this.onRestart,
+  });
+
+  final bool loading;
+  final String? unavailable;
+  final VideoPlayerController? controller;
+  final VoidCallback onToggle;
+  final VoidCallback onRestart;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget body;
+    if (loading) {
+      body = const Row(
+        children: [
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.starGold),
+          ),
+          SizedBox(width: 12),
+          Text('يُجهَّز الصوت…', style: TextStyle(color: Colors.white, fontSize: 12)),
+        ],
+      );
+    } else if (unavailable != null) {
+      body = Row(
+        children: [
+          const Icon(Icons.music_off_rounded, color: AppColors.mutedText, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              unavailable!,
+              style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.86), fontSize: 11.5),
+            ),
+          ),
+        ],
+      );
+    } else if (controller != null) {
+      body = ValueListenableBuilder<VideoPlayerValue>(
+        valueListenable: controller!,
+        builder: (context, value, _) {
+          final total = value.duration.inMilliseconds;
+          final progress = total <= 0
+              ? 0.0
+              : (value.position.inMilliseconds / total).clamp(0.0, 1.0).toDouble();
+          return Row(
+            children: [
+              Semantics(
+                button: true,
+                label: value.isPlaying ? 'إيقاف السرد' : 'تشغيل السرد',
+                child: IconButton(
+                  onPressed: onToggle,
+                  icon: Icon(
+                    value.isPlaying ? Icons.pause_circle_rounded : Icons.play_circle_rounded,
+                    color: AppColors.starGold,
+                    size: 34,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 4,
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    valueColor: const AlwaysStoppedAnimation(AppColors.starGold),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: onRestart,
+                tooltip: 'إعادة السرد',
+                icon: const Icon(Icons.replay_rounded, color: Colors.white, size: 20),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      body = const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
+      child: Container(
+        padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 4, 4),
+        decoration: BoxDecoration(
+          color: AppColors.indigoSurface.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.starGold.withValues(alpha: 0.18)),
+        ),
+        child: body,
+      ),
+    );
+  }
 }
 
 class _ModeTile extends StatelessWidget {

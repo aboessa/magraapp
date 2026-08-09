@@ -164,6 +164,7 @@ final List<RouteBase> _routes = <RouteBase>[
               pages: pages.valueOrNull ?? const [],
               loading: pages.isLoading,
               isComic: book.type == 'comic',
+              bookId: book.id,
             );
           }
 

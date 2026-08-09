@@ -138,6 +138,7 @@ class StoryPage {
     this.bodyText,
     this.altText,
     this.imageUrl,
+    this.durationMs,
   });
 
   final String id;
@@ -145,6 +146,12 @@ class StoryPage {
 
   /// `full_bleed` | `split` | `panels` | `text_focus`.
   final String layout;
+
+  /// Authored display/narration duration for this page in milliseconds, from
+  /// `story_pages.duration_ms`. This is page-level timing only — there is no
+  /// per-word timing in the content contract, so Read-Along cannot highlight
+  /// individual words honestly. Null when unauthored.
+  final int? durationMs;
 
   /// Page copy in the requested language. Null when no localisation row exists.
   final String? bodyText;
