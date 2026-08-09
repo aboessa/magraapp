@@ -401,6 +401,25 @@ export const api = {
   /// قراءة حيّة من FamilyState. منفصلة عن `supportFamily` لأنها نداء إلى مصدر
   /// السلطة لا إلى الإسقاط، وقد يفشل وحده (503) بلا أن يُفقد باقي الملف.
   supportFamilyDevices: (id: string) => request<ApiEnvelope<import('../types/api').SupportLiveDevices>>(`/admin/support/family/${encodeURIComponent(id)}/devices`),
+
+  /// تذاكر الدعم. الفلاتر تُرسل كسلسلة استعلام ليعمل الترقيم على المجموعة
+  /// المفلترة نفسها لا على مجموعة أوسع تُقصّ بعد الترقيم.
+  supportTickets: (filters: {
+    status?: string; priority?: string; category?: string; assignee_id?: string
+    family_id?: string; tag?: string; q?: string; live?: string; overdue?: string
+    limit?: number; offset?: number
+  } = {}) => request<PaginatedEnvelope<import('../types/api').SupportTicket>>(`/admin/support/tickets${queryString(filters)}`),
+  supportTicket: (id: string) => request<ApiEnvelope<import('../types/api').SupportTicketDetail>>(`/admin/support/tickets/${encodeURIComponent(id)}`),
+  createSupportTicket: (payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string; reference: string }>>('/admin/support/tickets', { method: 'POST', body: JSON.stringify(payload) }),
+  updateSupportTicket: (id: string, payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string }>>(`/admin/support/tickets/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  addSupportNote: (id: string, body: string) => request<ApiEnvelope<{ id: string }>>(`/admin/support/tickets/${encodeURIComponent(id)}/notes`, { method: 'POST', body: JSON.stringify({ body }) }),
+  recordSupportFirstResponse: (id: string, channel: string) => request<ApiEnvelope<{ first_response_at: string }>>(`/admin/support/tickets/${encodeURIComponent(id)}/first-response`, { method: 'POST', body: JSON.stringify({ channel }) }),
+  escalateSupportTicket: (id: string, reason: string) => request<ApiEnvelope<{ priority: string }>>(`/admin/support/tickets/${encodeURIComponent(id)}/escalate`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  recordSupportAction: (id: string, action: string, reason: string) => request<ApiEnvelope<{ action: string }>>(`/admin/support/tickets/${encodeURIComponent(id)}/actions`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
+  supportSla: () => request<ApiEnvelope<import('../types/api').SupportSlaOverview>>('/admin/support/sla'),
+  supportViews: () => request<ApiEnvelope<import('../types/api').SupportSavedView[]>>('/admin/support/views'),
+  createSupportView: (payload: { name: string; filters: Record<string, unknown>; is_shared?: boolean }) => request<ApiEnvelope<{ id: string }>>('/admin/support/views', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteSupportView: (id: string) => request<ApiEnvelope<{ id: string }>>(`/admin/support/views/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   billingStats: () => request<ApiEnvelope<import('../types/api').BillingStats>>('/admin/billing/stats'),
   /// سجل الشراء الكامل من billing_audit. يحمل أعمدة أكثر من `recent_purchases`
   /// داخل /stats: يضيف purchase_token_hash و verified_at_ms.

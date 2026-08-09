@@ -281,12 +281,14 @@
     "gaps": ["No live device projection from FamilyState", "No audited admin-command path for revoke or resync"]
   },
   "/support-center": {
-    "status": "PARTIAL",
-    "verified_by": "code read 2026-08-09; api test supportFamilyDevices.test.mjs",
-    "evidence": "Family lookup returns a deliberately narrow field set (no purchase or install hashes, no auth_epoch) and every lookup writes a 'view' audit row. Added a live device read that calls FamilyState, the authority, rather than the D1 projection: it drops installation_id_hash, answers 503 when the Durable Object is unreachable rather than reporting an empty device list, declares its source and that revoke is not an admin operation, and is audited as its own entity type.",
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-09; api test supportCrm.test.mjs (21 tests) and supportFamilyDevices.test.mjs (6 tests)",
+    "evidence": "Real CRM (migration 0031): tickets with reference, category, priority, status, family/subscription/purchase/device links, assignee and team, tags as rows, an event timeline, saved views, and stored SLA policies resolved most-specific-first. Two clocks are tracked and measured separately, a settled ticket is judged at resolution time rather than at now, and waiting_customer pauses the resolution clock. Status transitions are enforced (closed is terminal), raising priority re-derives both deadlines, escalation raises priority and moves the clock, and every write leaves both a timeline event and an audit row. Overdue filtering happens in SQL so the badge and the list agree. Operational actions accept only what the platform can perform; each unavailable one is refused with 501 and its own specific reason, which the UI lists instead of rendering a control that fails. Account lookup keeps its narrow field set, plus a live device read from FamilyState.",
     "gaps": [
-      "No tickets, categories, priority, SLA, assignment, timeline, notes or tags",
-      "No operational actions: entitlement resync, restore purchase, PIN reset and account recovery have no server capability; device revoke is architecturally impossible for an operator because FamilyState's revoke path requires a parent session"
+      "No customer messaging, deliberately: no channel exists and no table pretends one does",
+      "Assignment takes a user id typed in rather than a picker",
+      "SLA policies are editable data but have no admin editor yet",
+      "Attachments are not supported"
     ]
   },
   "/workflows": {

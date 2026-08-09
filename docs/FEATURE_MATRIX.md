@@ -9,28 +9,28 @@ read from the source on every run. The **Status** column comes from
 `docs/FEATURE_MATRIX_VERDICTS.json`, where each verdict records how it was
 verified; a route with no recorded verdict is `UNVERIFIED` rather than assumed.
 
-Registered admin routes: **57**. Server routes parsed: **250**.
-API client functions parsed: **174**.
+Registered admin routes: **57**. Server routes parsed: **262**.
+API client functions parsed: **186**.
 
 | Status | Routes |
 |---|---|
-| COMPLETE | 30 |
-| PARTIAL | 19 |
+| COMPLETE | 31 |
+| PARTIAL | 18 |
 | MISSING | 8 |
 
 ## 1. Route matrix
 
 | Route | Page | Status | API calls | Server endpoints | Permissions | Audit | Tests |
 |---|---|---|---|---|---|---|---|
-| `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 11 |
-| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 40 |
+| `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 12 |
+| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 41 |
 | `/taxonomy` | TaxonomyPage.tsx | COMPLETE | 8 | 8/8 | edit_metadata, create, archive | — | 2 |
 | `/planets` | PlanetsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/planets/:id` | PlanetDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
 | `/skills` | SkillsPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 3 |
 | `/objectives` | LearningObjectivesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive | — | 3 |
 | `/content-reviews` | ContentReviewsPage.tsx | PARTIAL | 4 | 4/4 | review | — | 1 |
-| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 40 |
+| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 41 |
 | `/series/:id` | SeriesDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 12 |
 | `/seasons/:id` | SeasonDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
@@ -51,10 +51,10 @@ API client functions parsed: **174**.
 | `/visual-styles` | VisualStylesPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 0 |
 | `/parents` | ParentsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 0 |
 | `/children` | ChildrenPage.tsx | PARTIAL | 1 | 1/1 | — | — | 6 |
-| `/billing` | BillingPage.tsx | COMPLETE | 4 | 4/4 | — | — | 5 |
+| `/billing` | BillingPage.tsx | COMPLETE | 4 | 4/4 | — | — | 6 |
 | `/analytics` | AnalyticsPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
 | `/teams` | TeamsPage.tsx | COMPLETE | 3 | 3/3 | manage_team | — | 4 |
-| `/roles` | RolesPage.tsx | PARTIAL | 3 | 3/3 | manage_permissions | — | 8 |
+| `/roles` | RolesPage.tsx | PARTIAL | 3 | 3/3 | manage_permissions | — | 9 |
 | `/team-access` | TeamAccessPage.tsx | COMPLETE | 6 | 6/6 | — | — | 7 |
 | `/tasks` | MyTasksPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
 | `/audit-logs` | AuditLogPage.tsx | COMPLETE | 1 | 1/1 | view_audit_log | — | 1 |
@@ -64,12 +64,12 @@ API client functions parsed: **174**.
 | `/mastery` | MasteryPage.tsx | PARTIAL | 3 | 3/3 | — | — | 8 |
 | `/app-experience` | AppExperiencePage.tsx | PARTIAL | 6 | 6/6 | edit_metadata, create | — | 0 |
 | `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 4 |
-| `/support-center` | SupportCenterPage.tsx | PARTIAL | 2 | 2/2 | — | ✅ | 2 |
+| `/support-center` | SupportCenterPage.tsx | COMPLETE | 2 | 2/2 | — | ✅ | 2 |
 | `/workflows` | WorkflowPage.tsx | COMPLETE | 8 | 8/8 | assign_members, review | ✅ | 2 |
 | `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 7 |
 | `/remote-config` | RemoteConfigPage.tsx | PARTIAL | 3 | 3/3 | publish | — | 1 |
 | `/packages` | PackagesPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
-| `/ops` | OpsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 5 |
+| `/ops` | OpsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 6 |
 | `/campaigns` | CampaignsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/revenue` | RevenuePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/translation` | TranslationCenterPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
@@ -78,7 +78,7 @@ API client functions parsed: **174**.
 | `/school` | SchoolAccountsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/finance-advanced` | AdvancedFinancePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/ops-sla` | OpsSlaPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
-| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 40 |
+| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 41 |
 
 ## 2. Collection UX affordances (static evidence)
 
@@ -129,7 +129,7 @@ that it behaves; behavioural findings belong in the verdict file.
 | `/mastery` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
 | `/app-experience` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
 | `/devices-admin` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/support-center` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
+| `/support-center` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
 | `/workflows` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
 | `/rights` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
 | `/remote-config` | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
@@ -442,13 +442,15 @@ that it behaves; behavioural findings belong in the verdict file.
   - No live device projection from FamilyState
   - No audited admin-command path for revoke or resync
 
-### `/support-center` — PARTIAL
+### `/support-center` — COMPLETE
 
-- Verified by: code read 2026-08-09; api test supportFamilyDevices.test.mjs
-- Evidence: Family lookup returns a deliberately narrow field set (no purchase or install hashes, no auth_epoch) and every lookup writes a 'view' audit row. Added a live device read that calls FamilyState, the authority, rather than the D1 projection: it drops installation_id_hash, answers 503 when the Durable Object is unreachable rather than reporting an empty device list, declares its source and that revoke is not an admin operation, and is audited as its own entity type.
+- Verified by: code read 2026-08-09; api test supportCrm.test.mjs (21 tests) and supportFamilyDevices.test.mjs (6 tests)
+- Evidence: Real CRM (migration 0031): tickets with reference, category, priority, status, family/subscription/purchase/device links, assignee and team, tags as rows, an event timeline, saved views, and stored SLA policies resolved most-specific-first. Two clocks are tracked and measured separately, a settled ticket is judged at resolution time rather than at now, and waiting_customer pauses the resolution clock. Status transitions are enforced (closed is terminal), raising priority re-derives both deadlines, escalation raises priority and moves the clock, and every write leaves both a timeline event and an audit row. Overdue filtering happens in SQL so the badge and the list agree. Operational actions accept only what the platform can perform; each unavailable one is refused with 501 and its own specific reason, which the UI lists instead of rendering a control that fails. Account lookup keeps its narrow field set, plus a live device read from FamilyState.
 - Gaps:
-  - No tickets, categories, priority, SLA, assignment, timeline, notes or tags
-  - No operational actions: entitlement resync, restore purchase, PIN reset and account recovery have no server capability; device revoke is architecturally impossible for an operator because FamilyState's revoke path requires a parent session
+  - No customer messaging, deliberately: no channel exists and no table pretends one does
+  - Assignment takes a user id typed in rather than a picker
+  - SLA policies are editable data but have no admin editor yet
+  - Attachments are not supported
 
 ### `/workflows` — COMPLETE
 
@@ -595,6 +597,18 @@ operator surface. Listed so the second case cannot hide.
 | adminPartnerships.ts | GET | `/api/v1/admin/partnerships/:id` | — | — |
 | adminPublishGate.ts | GET | `/publish-readiness/:type/:id` | — | — |
 | adminSiteMode.ts | POST | `/api/v1/admin/site-mode/reset` | publish | ✅ |
+| adminSupport.ts | GET | `/api/v1/admin/support/tickets` | — | — |
+| adminSupport.ts | POST | `/api/v1/admin/support/tickets` | assign_members | ✅ |
+| adminSupport.ts | GET | `/api/v1/admin/support/tickets/:id` | — | — |
+| adminSupport.ts | PATCH | `/api/v1/admin/support/tickets/:id` | assign_members | ✅ |
+| adminSupport.ts | POST | `/api/v1/admin/support/tickets/:id/notes` | assign_members | ✅ |
+| adminSupport.ts | POST | `/api/v1/admin/support/tickets/:id/first-response` | assign_members | ✅ |
+| adminSupport.ts | POST | `/api/v1/admin/support/tickets/:id/escalate` | assign_members | ✅ |
+| adminSupport.ts | POST | `/api/v1/admin/support/tickets/:id/actions` | manage_permissions | ✅ |
+| adminSupport.ts | GET | `/api/v1/admin/support/sla` | — | — |
+| adminSupport.ts | GET | `/api/v1/admin/support/views` | — | — |
+| adminSupport.ts | POST | `/api/v1/admin/support/views` | assign_members | — |
+| adminSupport.ts | DELETE | `/api/v1/admin/support/views/:id` | assign_members | — |
 | adminTeams.ts | GET | `/api/v1/admin/teams/:id` | — | — |
 | adminTeams.ts | POST | `/api/v1/admin/grants` | manage_permissions | — |
 | adminTeams.ts | DELETE | `/api/v1/admin/grants/:id` | manage_permissions | — |
@@ -656,7 +670,7 @@ operator surface. Listed so the second case cannot hide.
 | series.ts | GET | `/api/v1/series/:id` | — | — |
 | siteMode.ts | GET | `/api/v1/site-mode` | — | — |
 
-Orphan count: **100** of 250.
+Orphan count: **112** of 262.
 
 ## 5. API client functions the matrix could not resolve to a server route
 

@@ -3252,3 +3252,28 @@ body.modal-open {
   color: var(--muted);
 }
 .availability-state__message { margin: 6px 0 0; font-size: 0.88rem; line-height: 1.6; }
+
+
+/* --- طابور تذاكر الدعم ----------------------------------------------------
+ *
+ * `field--inline` لمربّعات الاختيار في شريط الفلاتر: العنوان بجانب المربّع لا
+ * فوقه، لأن الفلاتر تُقرأ صفًّا واحدًا.
+ *
+ * `readiness-pill` تعيد استخدام ألوان حالات الجاهزية داخل خلية جدول: الحالة
+ * مكتوبة نصًّا في كل الأحوال، واللون إضافة لا بديل عنه.
+ */
+.field--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.field--inline input[type='checkbox'] { width: 16px; height: 16px; }
+.readiness-pill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border-inline-start-width: 3px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}

@@ -1630,6 +1630,95 @@ export interface SupportLiveDevices {
   revoke_available: boolean
 }
 
+// --- تذاكر الدعم -------------------------------------------------------------
+
+export type TicketCategory =
+  | 'billing' | 'subscription' | 'playback' | 'downloads' | 'account'
+  | 'device' | 'child_profile' | 'content' | 'privacy' | 'bug' | 'other'
+export type TicketPriority = 'low' | 'normal' | 'high' | 'urgent'
+export type TicketStatus = 'open' | 'in_progress' | 'waiting_customer' | 'resolved' | 'closed'
+export type TicketAction =
+  | 'entitlement_resync' | 'subscription_resync' | 'restore_purchase'
+  | 'device_revoke' | 'pin_reset' | 'account_recovery' | 'manual_note'
+
+/// حالة SLA محسوبة على الخادم: ساعتان منفصلتان (أول ردّ، الحلّ) وسببها نصًّا.
+export interface TicketSlaState {
+  first_response_breached: boolean
+  resolution_breached: boolean
+  resolution_minutes_late: number
+  paused: boolean
+  reason: string
+}
+
+export interface SupportTicket {
+  id: string
+  reference: string
+  subject: string
+  body: string | null
+  category: TicketCategory
+  priority: TicketPriority
+  status: TicketStatus
+  family_id: string | null
+  subscription_ref: string | null
+  purchase_ref: string | null
+  device_id: string | null
+  assignee_id: string | null
+  assignee_name?: string | null
+  team_id: string | null
+  first_response_due_at: string | null
+  resolution_due_at: string | null
+  first_response_at: string | null
+  resolved_at: string | null
+  closed_at: string | null
+  escalated_at: string | null
+  escalation_reason: string | null
+  created_at: string
+  updated_at: string
+  tags: string[]
+  sla: TicketSlaState
+}
+
+export interface SupportTicketEvent {
+  id: string
+  kind: 'note' | 'status_change' | 'assignment' | 'priority_change' | 'escalation' | 'action' | 'link'
+  body: string | null
+  metadata_json: string
+  actor_id: string | null
+  actor_name: string | null
+  is_internal: number
+  created_at: string
+}
+
+export interface SupportTicketDetail {
+  ticket: SupportTicket
+  timeline: SupportTicketEvent[]
+  /// الإجراءات التي يمكن للمنصّة تنفيذها فعلًا اليوم.
+  supported_actions: TicketAction[]
+  /// وسببُ تعذّر كل إجراء غير متاح، نصًّا يقرأه المشغّل.
+  unavailable_actions: Record<string, string>
+}
+
+export interface SupportSlaOverview {
+  policies: Array<{
+    id: string
+    category: string
+    priority: TicketPriority
+    first_response_minutes: number
+    resolution_minutes: number
+    updated_at: string
+  }>
+  open_breaches: { first_response: number; resolution: number }
+}
+
+export interface SupportSavedView {
+  id: string
+  owner_id: string | null
+  name: string
+  filters_json: string
+  is_shared: number
+  created_at: string
+}
+
 /// فحص واحد. `message` جاهزة للعرض بالعربية من الخادم، وتحمل السبب لا الحكم فقط.
 export interface QualityCheck {
   check: string

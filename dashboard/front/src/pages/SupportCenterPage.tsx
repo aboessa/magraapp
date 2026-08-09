@@ -4,6 +4,7 @@ import { EmptyState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import type { SupportFamilyEnvelope, SupportLiveDevices } from '../types/api'
+import { SupportTickets } from '../components/SupportTickets'
 
 /**
  * مركز الدعم: البحث عن عائلة لخدمة العملاء.
@@ -58,7 +59,9 @@ const copy = {
     noDevices: 'لا أجهزة مسجَّلة',
     noEntitlements: 'لا سجل استحقاق',
     actionsTitle: 'إجراءات الدعم',
-    actionsHint: 'إعادة مزامنة الاستحقاق واستعادة الشراء وإعادة ضبط PIN وإنشاء التذاكر — كلها غير مُنفَّذة بعد في الخادم. أُزيلت الأزرار بدل إظهارها معطّلة أو مُوهِمة بالعمل.',
+    actionsHint: 'الإجراءات التشغيلية تُسجَّل داخل التذكرة حيث لها سياق وسبب وأثر مُدقَّق. غير المتاح منها (إعادة مزامنة الاستحقاق، استعادة الشراء، سحب الجهاز، إعادة ضبط PIN، استرداد الحساب) مسرود داخل التذكرة مع سبب تعذّر كل واحد، ولا يُعرض كزر يفشل.',
+    ticketsTab: 'التذاكر',
+    lookupTab: 'بحث الحساب',
     searchError: 'تعذر البحث',
     liveRead: 'قراءة حيّة من مصدر السلطة',
     liveLoading: 'جارٍ القراءة الحيّة…',
@@ -97,7 +100,9 @@ const copy = {
     noDevices: 'No registered devices',
     noEntitlements: 'No entitlement history',
     actionsTitle: 'Support actions',
-    actionsHint: 'Entitlement resync, purchase restore, PIN reset and ticket creation are not implemented on the server yet. The buttons were removed rather than shown disabled or pretending to work.',
+    actionsHint: 'Operational actions are recorded inside a ticket, where they have context, a reason and an audited trace. The unavailable ones (entitlement resync, restore purchase, device revoke, PIN reset, account recovery) are listed inside the ticket with the specific reason each is unavailable, rather than shown as a button that fails.',
+    ticketsTab: 'Tickets',
+    lookupTab: 'Account lookup',
     searchError: 'Search failed',
     liveRead: 'Live read from the authority',
     liveLoading: 'Reading live…',
@@ -118,6 +123,7 @@ export function SupportCenterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [notFound, setNotFound] = useState(false)
+  const [tab, setTab] = useState<'tickets' | 'lookup'>('tickets')
   // القراءة الحيّة حالة منفصلة: قد تفشل وحدها (503) بلا أن يُفقد باقي الملف،
   // وفشلها يجب أن يُقرأ «تعذّر الوصول» لا «لا أجهزة».
   const [live, setLive] = useState<SupportLiveDevices | null>(null)
@@ -178,6 +184,29 @@ export function SupportCenterPage() {
         </div>
       </section>
 
+      {/* تبويبان لا صفحتان: طابور التذاكر وبحث الحساب سؤالان في محادثة دعم واحدة
+          («ما المفتوح؟» ثم «ما حالة هذا الحساب؟»)، وفصلهما في مسارين يجعل
+          المشغّل يتنقّل بين شاشتين لكل تذكرة. */}
+      <div className="filters-row">
+        <button
+          type="button"
+          className={`button ${tab === 'tickets' ? 'button--primary' : 'button--ghost'}`}
+          onClick={() => setTab('tickets')}
+        >
+          {text.ticketsTab}
+        </button>
+        <button
+          type="button"
+          className={`button ${tab === 'lookup' ? 'button--primary' : 'button--ghost'}`}
+          onClick={() => setTab('lookup')}
+        >
+          {text.lookupTab}
+        </button>
+      </div>
+
+      {tab === 'tickets' && <SupportTickets />}
+
+      {tab === 'lookup' && (<>
       <form className="panel" onSubmit={search}>
         <div className="entity-form">
           <div className="filters-row">
@@ -366,13 +395,15 @@ export function SupportCenterPage() {
             )}
           </section>
 
-          {/* الإجراءات غير المُنفَّذة تُعلَن بدل أن تُوهِم بالعمل */}
+          {/* الإجراءات التشغيلية صارت داخل التذكرة: هناك سياق (حساب، جهاز، سبب)
+              وأثر (خط زمني وتدقيق). ما يبقى هنا هو الإعلان عن غير المتاح. */}
           <section className="panel panel--notice">
             <strong>{text.actionsTitle}</strong>
             <p>{text.actionsHint}</p>
           </section>
         </>
       ) : null}
+      </>)}
     </div>
   )
 }
