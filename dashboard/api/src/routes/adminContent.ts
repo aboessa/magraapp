@@ -1,6 +1,21 @@
 import { Hono } from 'hono'
 import type { Env } from '../lib/db'
 import { queryAll, queryFirst } from '../lib/db'
+import { isIslamicContent, validateIslamicFields } from '../lib/islamicContent'
+import { actorId, auditStatement } from '../lib/auditLog'
+import { requirePermission } from '../lib/adminAuth'
+import {
+  bookLanguagesError,
+  bookPublishError,
+  engineIdError,
+  gamePublishError,
+  isReleaseStatus,
+  parsePagination,
+  projectPublishError,
+  storyPublishError,
+  uniqueStringArray,
+} from '../lib/catalogueValidation'
+import { validatePackForGame } from '../lib/gamePackGate.ts'
 
 type AppEnv = { Bindings: Env }
 type Row = Record<string, unknown>
@@ -66,15 +81,21 @@ function parseJson(value: unknown, fallback: unknown) {
   try { return JSON.parse(value) } catch { return fallback }
 }
 
+/// هوية الفاعل من الجلسة المُصادَقة.
+///
+/// كانت تقرأ ترويسة `X-Admin-Actor` مباشرة، وهي ترويسة يكتبها المتصل بنفسه بلا
+/// أي تحقّق — فأي شخص كان يستطيع نسبة تعديلاته إلى غيره. الآن من `adminUser`
+/// الذي يضبطه `requireAdmin` من صف جلسة مُتحقَّق منه.
 function actor(c: any) {
-  return c.req.header('X-Admin-Actor') || 'admin'
+  return actorId(c)
 }
 
+/// يستخدم auditStatement المشترك، فيمرّ كل صف تدقيق عبر نفس التنقية.
+///
+/// كان هذا الملف يُدرج بـ`JSON.stringify` خامًا، فلا يُنقّى من الرموز ولا
+/// بيانات الأطفال — بخلاف باقي المسارات التي تستخدم auditStatement.
 function audit(db: D1Database, c: any, action: string, entityType: string, entityId: string, details: unknown) {
-  return db.prepare(`
-    INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, details)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).bind(crypto.randomUUID(), actor(c), action, entityType, entityId, JSON.stringify(details ?? {}))
+  return auditStatement(db, actor(c), action, entityType, entityId, details)
 }
 
 function isConstraintError(error: unknown) {
@@ -86,21 +107,29 @@ function isAgeRange(min: number | null, max: number | null): min is number {
   return min !== null && max !== null && min >= 3 && max <= 12 && max >= min
 }
 
-function isIslamicContent(planetId: string | null, sourceType: string | null): boolean {
-  return planetId === 'iman' || sourceType === 'quran' || sourceType === 'hadith' || sourceType === 'sira'
-}
-
-function validateIslamicFields(body: JsonObject, planetId: string | null): string | null {
-  const sourceType = typeof body.source_type === 'string' ? body.source_type : null
-  const isIslamic = isIslamicContent(planetId, sourceType)
-  if (!isIslamic) return null
-  if (!sourceType) return 'source_type مطلوب للمحتوى الإسلامي (quran/hadith/sira/adab)'
-  if (sourceType === 'quran' && (!body.verse_surah || !body.verse_ayah)) return 'verse_surah و verse_ayah مطلوبان للقرآن'
-  if (sourceType === 'hadith' && (!body.hadith_collection || !body.hadith_number)) return 'hadith_collection و hadith_number مطلوبان للحديث'
-  if (!body.religious_reviewer_id) return 'religious_reviewer_id مطلوب'
-  if (!body.religious_approved_at) return 'religious_approved_at مطلوب - لا يمكن النشر بدون موافقة شرعية'
-  if (body.visual_restrictions !== undefined && typeof body.visual_restrictions !== 'string') return 'visual_restrictions يجب أن تكون JSON'
-  return null
+/// The religious-review gate. This module used to carry its own copy that
+/// compared `planetId === 'iman'`, while the seeded planet ID is `islamic`, so
+/// every story, book, game and project on the real Islamic planet skipped the
+/// gate entirely. lib/islamicContent.ts holds the single unit-tested
+/// implementation; see test/islamicContent.test.mjs.
+///
+/// stories, books, games and projects carry no religious columns of their own -
+/// the approval is recorded on the parent series - so the gate is evaluated
+/// against that series row. Content with no series and no Islamic source type is
+/// unaffected.
+async function islamicReleaseError(db: D1Database, seriesId: string | null): Promise<string | null> {
+  if (!seriesId) return null
+  const series = await queryFirst<Row>(db, `
+    SELECT planet_id, source_type, verse_surah, verse_ayah, hadith_collection, hadith_number,
+      religious_reviewer_id, religious_approved_at
+    FROM series WHERE id = ?
+  `, [seriesId])
+  if (!series) return null
+  if (!isIslamicContent(series.planet_id == null ? null : String(series.planet_id), series.source_type == null ? null : String(series.source_type))) {
+    return null
+  }
+  const error = validateIslamicFields(series as JsonObject, String(series.planet_id ?? ''))
+  return error ? `${error} (على المسلسل الأصل)` : null
 }
 
 function validLanguage(value: string) {
@@ -137,7 +166,7 @@ route.get('/planets', async (c) => {
   return c.json({ success: true, data: rows.map(serializePlanet) })
 })
 
-route.post('/planets', async (c) => {
+route.post('/planets', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const nameAr = stringValue(value.name_ar)
@@ -161,7 +190,7 @@ route.post('/planets', async (c) => {
   return c.json({ success: true, data: { id } }, 201)
 })
 
-route.patch('/planets/:id', async (c) => {
+route.patch('/planets/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -196,7 +225,7 @@ route.patch('/planets/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/planets/:id', async (c) => {
+route.delete('/planets/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM planets WHERE id = ?', [id])) return c.json({ success: false, error: 'Planet not found' }, 404)
   await c.env.DB.batch([
@@ -218,7 +247,7 @@ route.get('/categories', async (c) => {
   return c.json({ success: true, data: rows.map(serializeCategory) })
 })
 
-route.post('/categories', async (c) => {
+route.post('/categories', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const nameAr = stringValue(value.name_ar)
@@ -242,7 +271,7 @@ route.post('/categories', async (c) => {
   return c.json({ success: true, data: { id, slug } }, 201)
 })
 
-route.patch('/categories/:id', async (c) => {
+route.patch('/categories/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -289,7 +318,7 @@ route.patch('/categories/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/categories/:id', async (c) => {
+route.delete('/categories/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM categories WHERE id = ?', [id])) return c.json({ success: false, error: 'Category not found' }, 404)
   await c.env.DB.batch([
@@ -299,7 +328,7 @@ route.delete('/categories/:id', async (c) => {
   return c.json({ success: true, data: { id, is_active: false } })
 })
 
-route.put('/series/:id/categories', async (c) => {
+route.put('/series/:id/categories', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value || !Array.isArray(value.category_ids)) return c.json({ success: false, error: 'category_ids must be an array' }, 400)
   const seriesId = c.req.param('id')
@@ -334,7 +363,7 @@ route.get('/visual-styles', async (c) => {
   return c.json({ success: true, data: rows.map(serializeStyle) })
 })
 
-route.post('/visual-styles', async (c) => {
+route.post('/visual-styles', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const nameAr = stringValue(value.name_ar)
@@ -363,7 +392,7 @@ route.post('/visual-styles', async (c) => {
   return c.json({ success: true, data: { id, slug } }, 201)
 })
 
-route.patch('/visual-styles/:id', async (c) => {
+route.patch('/visual-styles/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -414,7 +443,7 @@ route.patch('/visual-styles/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/visual-styles/:id', async (c) => {
+route.delete('/visual-styles/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM visual_styles WHERE id = ?', [id])) return c.json({ success: false, error: 'Visual style not found' }, 404)
   await c.env.DB.batch([
@@ -428,6 +457,9 @@ route.delete('/visual-styles/:id', async (c) => {
 route.get('/seasons', async (c) => {
   const seriesId = c.req.query('series_id')
   const clauses = seriesId ? 'WHERE se.series_id = ?' : ''
+  const params = seriesId ? [seriesId] : []
+  const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'))
+  const totalRow = await queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM seasons se ${clauses}`, params)
   const rows = await queryAll<Row>(c.env.DB, `
     SELECT se.*, s.title_ar AS series_title,
       (SELECT COUNT(*) FROM episodes e WHERE e.season_id = se.id AND e.status <> 'archived') AS episodes_count
@@ -435,11 +467,16 @@ route.get('/seasons', async (c) => {
     JOIN series s ON s.id = se.series_id
     ${clauses}
     ORDER BY s.sort_order, se.season_number
-  `, seriesId ? [seriesId] : [])
-  return c.json({ success: true, data: rows.map((row) => ({ ...row, learning_goals: parseJson(row.learning_goals, []) })) })
+    LIMIT ? OFFSET ?
+  `, [...params, limit, offset])
+  return c.json({
+    success: true,
+    data: rows.map((row) => ({ ...row, learning_goals: parseJson(row.learning_goals, []) })),
+    meta: { total: Number(totalRow?.total ?? 0), limit, offset },
+  })
 })
 
-route.post('/seasons', async (c) => {
+route.post('/seasons', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const seriesId = stringValue(value.series_id)
@@ -466,7 +503,7 @@ route.post('/seasons', async (c) => {
   return c.json({ success: true, data: { id } }, 201)
 })
 
-route.patch('/seasons/:id', async (c) => {
+route.patch('/seasons/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -523,9 +560,19 @@ route.patch('/seasons/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/seasons/:id', async (c) => {
+route.delete('/seasons/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM seasons WHERE id = ?', [id])) return c.json({ success: false, error: 'Season not found' }, 404)
+  // Archiving a season that published episodes or stories still sit in would
+  // hide the grouping the public catalogue orders them by.
+  const referenced = await queryFirst<{ episodes: number; stories: number }>(c.env.DB, `
+    SELECT
+      (SELECT COUNT(*) FROM episodes WHERE season_id = ? AND status = 'published') AS episodes,
+      (SELECT COUNT(*) FROM stories WHERE season_id = ? AND status = 'published') AS stories
+  `, [id, id])
+  if (Number(referenced?.episodes ?? 0) > 0 || Number(referenced?.stories ?? 0) > 0) {
+    return c.json({ success: false, error: `Season still holds ${referenced?.episodes} published episode(s) and ${referenced?.stories} published story/stories. Move or unpublish them first.` }, 409)
+  }
   await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE seasons SET status = 'archived' WHERE id = ?`).bind(id),
     audit(c.env.DB, c, 'archive', 'season', id, {}),
@@ -541,16 +588,24 @@ route.get('/characters', async (c) => {
   const params: unknown[] = []
   if (seriesId) { clauses.push('ch.series_id = ?'); params.push(seriesId) }
   if (!includeArchived) clauses.push(`ch.status <> 'archived'`)
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+  const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'))
+  const totalRow = await queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM characters ch ${where}`, params)
   const rows = await queryAll<Row>(c.env.DB, `
     SELECT ch.*, s.title_ar AS series_title
     FROM characters ch JOIN series s ON s.id = ch.series_id
-    ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''}
+    ${where}
     ORDER BY s.sort_order, ch.created_at
-  `, params)
-  return c.json({ success: true, data: rows.map((row) => ({ ...row, traits: parseJson(row.traits, []), reference_images: parseJson(row.reference_images, []), expressions: parseJson(row.expressions, {}), outfits: parseJson(row.outfits, []), languages: parseJson(row.languages, []) })) })
+    LIMIT ? OFFSET ?
+  `, [...params, limit, offset])
+  return c.json({
+    success: true,
+    data: rows.map((row) => ({ ...row, traits: parseJson(row.traits, []), reference_images: parseJson(row.reference_images, []), expressions: parseJson(row.expressions, {}), outfits: parseJson(row.outfits, []), languages: parseJson(row.languages, []) })),
+    meta: { total: Number(totalRow?.total ?? 0), limit, offset },
+  })
 })
 
-route.post('/characters', async (c) => {
+route.post('/characters', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const seriesId = stringValue(value.series_id)
@@ -570,7 +625,7 @@ route.post('/characters', async (c) => {
   return c.json({ success: true, data: { id } }, 201)
 })
 
-route.patch('/characters/:id', async (c) => {
+route.patch('/characters/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -632,9 +687,21 @@ route.patch('/characters/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/characters/:id', async (c) => {
+route.delete('/characters/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM characters WHERE id = ?', [id])) return c.json({ success: false, error: 'Character not found' }, 404)
+  // story_bubbles.character_id is ON DELETE SET NULL and speech bubbles in a
+  // published story would lose their speaker.
+  const bubbles = await queryFirst<{ total: number }>(c.env.DB, `
+    SELECT COUNT(*) AS total
+    FROM story_bubbles sb
+    JOIN story_pages sp ON sp.id = sb.page_id
+    JOIN stories st ON st.id = sp.story_id
+    WHERE sb.character_id = ? AND st.status = 'published'
+  `, [id])
+  if (Number(bubbles?.total ?? 0) > 0) {
+    return c.json({ success: false, error: `Character speaks in ${bubbles?.total} bubble(s) of published stories. Reassign them first.` }, 409)
+  }
   await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE characters SET status = 'archived' WHERE id = ?`).bind(id),
     audit(c.env.DB, c, 'archive', 'character', id, {}),
@@ -655,19 +722,12 @@ function optionalNullableString(value: unknown): string | null | undefined {
   return value === undefined ? null : nullableString(value)
 }
 
-function uniqueStringArray(value: unknown): string[] | null {
-  if (!Array.isArray(value)) return null
-  const parsed: string[] = []
-  for (const item of value) {
-    const id = stringValue(item)
-    if (!id || parsed.includes(id)) return null
-    parsed.push(id)
-  }
-  return parsed
-}
+/// uniqueStringArray now comes from lib/catalogueValidation.ts. This module
+/// carried a byte-identical private copy, so the rule had two homes and only
+/// one of them was unit tested.
 
 function serializeBook(row: Row) {
-  return { ...row, pages: parseJson(row.pages, []), is_free: Boolean(row.is_free) }
+  return { ...row, pages: parseJson(row.pages, []), languages: parseJson(row.languages, ['ar']), is_free: Boolean(row.is_free) }
 }
 
 function serializeGame(row: Row) {
@@ -703,7 +763,12 @@ async function objectiveIdsExist(db: D1Database, ids: string[]) {
 }
 
 async function gameReferenceError(db: D1Database, engineId: string, seriesId: string | null, episodeId: string | null, objectiveId: string | null) {
-  if (!await queryFirst(db, 'SELECT id FROM game_engines WHERE id = ?', [engineId])) return 'Game engine not found'
+  // engine_id is a FOREIGN KEY with ON DELETE RESTRICT; the pure check in
+  // lib/catalogueValidation.ts turns an unknown engine into a readable 400
+  // instead of a raw FOREIGN KEY failure.
+  const engines = await queryAll<{ id: string }>(db, 'SELECT id FROM game_engines')
+  const engineError = engineIdError(engineId, engines.map((engine) => engine.id))
+  if (engineError) return engineError
   if (seriesId && !await queryFirst(db, `SELECT id FROM series WHERE id = ? AND status <> 'archived'`, [seriesId])) return 'Series not found'
   if (episodeId) {
     const episode = await queryFirst<{ series_id: string }>(db, `SELECT series_id FROM episodes WHERE id = ? AND status <> 'archived'`, [episodeId])
@@ -736,15 +801,19 @@ route.get('/books', async (c) => {
     params.push(status)
   }
   if (!status) clauses.push(`b.status <> 'archived'`)
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+  const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'))
+  const totalRow = await queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM books b LEFT JOIN series s ON s.id = b.series_id ${where}`, params)
   const rows = await queryAll<Row>(c.env.DB, `
     SELECT b.*, s.title_ar AS series_title,
       (SELECT al.asset_id FROM asset_links al WHERE al.entity_type = 'book' AND al.entity_id = b.id AND al.role = 'cover' ORDER BY al.created_at DESC LIMIT 1) AS cover_asset_id
     FROM books b
     LEFT JOIN series s ON s.id = b.series_id
-    ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''}
+    ${where}
     ORDER BY b.updated_at DESC, b.created_at DESC
-  `, params)
-  return c.json({ success: true, data: rows.map(serializeBook) })
+    LIMIT ? OFFSET ?
+  `, [...params, limit, offset])
+  return c.json({ success: true, data: rows.map(serializeBook), meta: { total: Number(totalRow?.total ?? 0), limit, offset } })
 })
 
 route.get('/books/:id', async (c) => {
@@ -760,7 +829,7 @@ route.get('/books/:id', async (c) => {
   return c.json({ success: true, data: { ...serializeBook(book), assets } })
 })
 
-route.post('/books', async (c) => {
+route.post('/books', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const titleAr = stringValue(value.title_ar)
@@ -781,13 +850,32 @@ route.post('/books', async (c) => {
   if (seriesId && !await queryFirst(c.env.DB, `SELECT id FROM series WHERE id = ? AND status <> 'archived'`, [seriesId])) return c.json({ success: false, error: 'Series not found' }, 400)
   const isFree = value.is_free === undefined ? 0 : strictBoolInt(value.is_free)
   if (isFree === null) return c.json({ success: false, error: 'is_free must be a boolean' }, 400)
+  // visual_style_id, languages and default_language exist on the books table but
+  // had no HTTP surface, so a book's art style and language set could only be
+  // set with raw SQL. visual_style_id is an ON DELETE SET NULL foreign key;
+  // validating it here turns a bad id into a 400 instead of a FOREIGN KEY 500.
+  const visualStyleId = optionalNullableString(value.visual_style_id)
+  if (visualStyleId === undefined) return c.json({ success: false, error: 'Invalid visual_style_id' }, 400)
+  if (visualStyleId && !await queryFirst(c.env.DB, 'SELECT id FROM visual_styles WHERE id = ? AND is_active = 1', [visualStyleId])) {
+    return c.json({ success: false, error: 'Visual style not found' }, 400)
+  }
+  const bookLanguages = value.languages === undefined ? ['ar'] : uniqueStringArray(value.languages)
+  const bookDefaultLanguage = stringValue(value.default_language) ?? (bookLanguages?.[0] ?? 'ar')
+  const languageError = bookLanguagesError(bookLanguages, bookDefaultLanguage)
+  if (languageError) return c.json({ success: false, error: languageError }, 400)
+  if (isReleaseStatus(status)) {
+    const gate = bookPublishError(pages)
+    if (gate) return c.json({ success: false, error: gate }, 400)
+    const islamic = await islamicReleaseError(c.env.DB, seriesId)
+    if (islamic) return c.json({ success: false, error: islamic }, 400)
+  }
   const id = crypto.randomUUID()
   try {
     await c.env.DB.batch([
       c.env.DB.prepare(`
-        INSERT INTO books (id, series_id, title_ar, type, pages, age_min, age_max, reading_level, interaction_mode, supervision_level, safety_notes, is_free, status, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-      `).bind(id, seriesId, titleAr, type, pages, ageMin, ageMax, reading, interaction, supervision, safetyNotes, isFree, status),
+        INSERT INTO books (id, series_id, title_ar, type, pages, age_min, age_max, reading_level, interaction_mode, supervision_level, safety_notes, is_free, status, visual_style_id, languages, default_language, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `).bind(id, seriesId, titleAr, type, pages, ageMin, ageMax, reading, interaction, supervision, safetyNotes, isFree, status, visualStyleId, JSON.stringify(bookLanguages), bookDefaultLanguage),
       audit(c.env.DB, c, 'create', 'book', id, { title_ar: titleAr, type, status }),
     ])
   } catch (error) {
@@ -797,7 +885,7 @@ route.post('/books', async (c) => {
   return c.json({ success: true, data: { id, status } }, 201)
 })
 
-route.patch('/books/:id', async (c) => {
+route.patch('/books/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -845,7 +933,42 @@ route.patch('/books/:id', async (c) => {
     if (isFree === null) return c.json({ success: false, error: 'is_free must be a boolean' }, 400)
     add('is_free', isFree)
   }
+  if (value.visual_style_id !== undefined) {
+    const styleId = nullableString(value.visual_style_id)
+    if (styleId === undefined) return c.json({ success: false, error: 'Invalid visual_style_id' }, 400)
+    if (styleId && !await queryFirst(c.env.DB, 'SELECT id FROM visual_styles WHERE id = ? AND is_active = 1', [styleId])) {
+      return c.json({ success: false, error: 'Visual style not found' }, 400)
+    }
+    add('visual_style_id', styleId)
+  }
+  // languages and default_language have to stay consistent: dropping the
+  // default language out of the list would leave the reader with no text to
+  // fall back on, so both are resolved together against their final values.
+  // The rule itself is pure and unit tested (bookLanguagesError).
+  if (value.languages !== undefined || value.default_language !== undefined) {
+    const finalLanguages = value.languages === undefined
+      ? (parseJson(existing.languages, ['ar']) as string[])
+      : uniqueStringArray(value.languages)
+    const finalDefaultLanguage = value.default_language === undefined
+      ? String(existing.default_language ?? 'ar')
+      : stringValue(value.default_language)
+    const languageError = bookLanguagesError(finalLanguages, finalDefaultLanguage)
+    if (languageError) return c.json({ success: false, error: languageError }, 400)
+    if (value.languages !== undefined) add('languages', JSON.stringify(finalLanguages))
+    if (value.default_language !== undefined) add('default_language', finalDefaultLanguage)
+  }
   if (!sets.length) return c.json({ success: false, error: 'No supported fields supplied' }, 400)
+  const finalStatus = value.status === undefined ? String(existing.status) : stringValue(value.status)
+  if (isReleaseStatus(finalStatus)) {
+    const finalPages = value.pages === undefined ? existing.pages : value.pages
+    const gate = bookPublishError(finalPages)
+    if (gate) return c.json({ success: false, error: gate }, 400)
+    const finalSeriesId = value.series_id === undefined
+      ? (existing.series_id == null ? null : String(existing.series_id))
+      : nullableString(value.series_id) ?? null
+    const islamic = await islamicReleaseError(c.env.DB, finalSeriesId)
+    if (islamic) return c.json({ success: false, error: islamic }, 400)
+  }
   sets.push(`updated_at = datetime('now')`)
   try {
     await c.env.DB.batch([
@@ -859,9 +982,15 @@ route.patch('/books/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/books/:id', async (c) => {
+route.delete('/books/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM books WHERE id = ?', [id])) return c.json({ success: false, error: 'Book not found' }, 404)
+  // episodes.linked_book_id has no foreign key, so archiving a book a published
+  // episode still points at would leave that episode linking to hidden content.
+  const linked = await queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM episodes WHERE linked_book_id = ? AND status = 'published'`, [id])
+  if (Number(linked?.total ?? 0) > 0) {
+    return c.json({ success: false, error: `Book is linked from ${linked?.total} published episode(s). Unlink them first.` }, 409)
+  }
   await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE books SET status = 'archived', updated_at = datetime('now') WHERE id = ?`).bind(id),
     audit(c.env.DB, c, 'archive', 'book', id, {}),
@@ -881,6 +1010,14 @@ route.get('/games', async (c) => {
     params.push(status)
   }
   if (!status) clauses.push(`g.status <> 'archived'`)
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+  const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'))
+  const totalRow = await queryFirst<{ total: number }>(c.env.DB, `
+    SELECT COUNT(*) AS total FROM games g
+    JOIN game_engines ge ON ge.id = g.engine_id
+    LEFT JOIN series s ON s.id = g.series_id
+    ${where}
+  `, params)
   const rows = await queryAll<Row>(c.env.DB, `
     SELECT g.*, ge.name_ar AS engine_name, s.title_ar AS series_title,
       e.title_ar AS episode_title, lo.title_ar AS learning_objective_title,
@@ -890,10 +1027,11 @@ route.get('/games', async (c) => {
     LEFT JOIN series s ON s.id = g.series_id
     LEFT JOIN episodes e ON e.id = g.episode_id
     LEFT JOIN learning_objectives lo ON lo.id = g.learning_objective_id
-    ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''}
+    ${where}
     ORDER BY g.updated_at DESC, g.created_at DESC
-  `, params)
-  return c.json({ success: true, data: rows.map(serializeGame) })
+    LIMIT ? OFFSET ?
+  `, [...params, limit, offset])
+  return c.json({ success: true, data: rows.map(serializeGame), meta: { total: Number(totalRow?.total ?? 0), limit, offset } })
 })
 
 route.get('/games/:id', async (c) => {
@@ -913,7 +1051,7 @@ route.get('/games/:id', async (c) => {
   return c.json({ success: true, data: { ...serializeGame(game), assets } })
 })
 
-route.post('/games', async (c) => {
+route.post('/games', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const engineId = stringValue(value.engine_id)
@@ -945,6 +1083,25 @@ route.post('/games', async (c) => {
   }
   const isFree = value.is_free === undefined ? 0 : strictBoolInt(value.is_free)
   if (isFree === null) return c.json({ success: false, error: 'is_free must be a boolean' }, 400)
+  // Engine pack contract. Runs on every write, not only at publish: a level
+  // numbered 0 or a colouring stage claiming to grade the child is a defect at
+  // any status. Asset readiness and human review are only enforced for a
+  // release, which is what `forPublish` selects.
+  const packGate = await validatePackForGame(
+    c.env.DB,
+    { engine_id: engineId, age_min: ageMin as number, age_max: ageMax as number, supervision_level: supervision, safety_notes: safetyNotes },
+    contentPack,
+    isReleaseStatus(status),
+  )
+  if (packGate.errors.length) {
+    return c.json({ success: false, error: `content_pack is invalid for engine ${engineId}`, details: packGate.errors }, 400)
+  }
+  if (isReleaseStatus(status)) {
+    const gate = gamePublishError(contentPack)
+    if (gate) return c.json({ success: false, error: gate }, 400)
+    const islamic = await islamicReleaseError(c.env.DB, seriesId)
+    if (islamic) return c.json({ success: false, error: islamic }, 400)
+  }
   const id = crypto.randomUUID()
   try {
     await c.env.DB.batch([
@@ -961,7 +1118,7 @@ route.post('/games', async (c) => {
   return c.json({ success: true, data: { id, status } }, 201)
 })
 
-route.patch('/games/:id', async (c) => {
+route.patch('/games/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -1025,6 +1182,43 @@ route.patch('/games/:id', async (c) => {
     add('is_free', isFree)
   }
   if (!sets.length) return c.json({ success: false, error: 'No supported fields supplied' }, 400)
+  const finalStatus = value.status === undefined ? String(existing.status) : stringValue(value.status)
+
+  // Validate the pack that will actually be stored, merged from the patch and
+  // the existing row. Checking only `value.content_pack` would let a status
+  // change to `published` skip validation entirely whenever the pack itself was
+  // not part of the same request — which is the normal way a game is published.
+  const finalPackJson = value.content_pack === undefined
+    ? String(existing.content_pack ?? '{}')
+    : (jsonObject(value.content_pack) as string)
+  const finalSupervision = value.supervision_level === undefined
+    ? String(existing.supervision_level)
+    : stringValue(value.supervision_level) as string
+  const finalSafetyNotes = value.safety_notes === undefined
+    ? (existing.safety_notes == null ? null : String(existing.safety_notes))
+    : nullableString(value.safety_notes) ?? null
+  const packGate = await validatePackForGame(
+    c.env.DB,
+    {
+      engine_id: engineId,
+      age_min: ageMin as number,
+      age_max: ageMax as number,
+      supervision_level: finalSupervision,
+      safety_notes: finalSafetyNotes,
+    },
+    finalPackJson,
+    isReleaseStatus(finalStatus),
+  )
+  if (packGate.errors.length) {
+    return c.json({ success: false, error: `content_pack is invalid for engine ${engineId}`, details: packGate.errors }, 400)
+  }
+
+  if (isReleaseStatus(finalStatus)) {
+    const gate = gamePublishError(finalPackJson)
+    if (gate) return c.json({ success: false, error: gate }, 400)
+    const islamic = await islamicReleaseError(c.env.DB, seriesId)
+    if (islamic) return c.json({ success: false, error: islamic }, 400)
+  }
   sets.push(`updated_at = datetime('now')`)
   try {
     await c.env.DB.batch([
@@ -1038,9 +1232,15 @@ route.patch('/games/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/games/:id', async (c) => {
+route.delete('/games/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM games WHERE id = ?', [id])) return c.json({ success: false, error: 'Game not found' }, 404)
+  // episodes.linked_game_id carries no foreign key, so archiving a game a
+  // published episode links to would strand that episode's activity.
+  const linked = await queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM episodes WHERE linked_game_id = ? AND status = 'published'`, [id])
+  if (Number(linked?.total ?? 0) > 0) {
+    return c.json({ success: false, error: `Game is linked from ${linked?.total} published episode(s). Unlink them first.` }, 409)
+  }
   await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE games SET status = 'archived', updated_at = datetime('now') WHERE id = ?`).bind(id),
     audit(c.env.DB, c, 'archive', 'game', id, {}),
@@ -1060,25 +1260,50 @@ route.get('/projects', async (c) => {
     params.push(status)
   }
   if (!status) clauses.push(`p.status <> 'archived'`)
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+  const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'))
+  const totalRow = await queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM projects p ${where}`, params)
   const rows = await queryAll<Row>(c.env.DB, `
-    SELECT p.*,
+    SELECT p.*, s.title_ar AS series_title, e.title_ar AS episode_title,
       (SELECT al.asset_id FROM asset_links al WHERE al.entity_type = 'project' AND al.entity_id = p.id AND al.role = 'cover' ORDER BY al.created_at DESC LIMIT 1) AS cover_asset_id
     FROM projects p
-    ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''}
+    LEFT JOIN series s ON s.id = p.series_id
+    LEFT JOIN episodes e ON e.id = p.episode_id
+    ${where}
     ORDER BY p.updated_at DESC, p.created_at DESC
-  `, params)
-  return c.json({ success: true, data: rows.map(serializeProject) })
+    LIMIT ? OFFSET ?
+  `, [...params, limit, offset])
+  return c.json({ success: true, data: rows.map(serializeProject), meta: { total: Number(totalRow?.total ?? 0), limit, offset } })
 })
 
 route.get('/projects/:id', async (c) => {
   const id = c.req.param('id')
-  const project = await queryFirst<Row>(c.env.DB, 'SELECT * FROM projects WHERE id = ?', [id])
+  const project = await queryFirst<Row>(c.env.DB, `
+    SELECT p.*, s.title_ar AS series_title, e.title_ar AS episode_title
+    FROM projects p
+    LEFT JOIN series s ON s.id = p.series_id
+    LEFT JOIN episodes e ON e.id = p.episode_id
+    WHERE p.id = ?
+  `, [id])
   if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
   const assets = await linkedAssets(c.env.DB, 'project', id)
   return c.json({ success: true, data: { ...serializeProject(project), assets } })
 })
 
-route.post('/projects', async (c) => {
+/// series_id, episode_id and estimated_minutes were added by migration 0018.
+/// Both links are ON DELETE SET NULL foreign keys; validating them here turns a
+/// bad id into a 400 instead of a FOREIGN KEY failure.
+async function projectReferenceError(db: D1Database, seriesId: string | null, episodeId: string | null): Promise<string | null> {
+  if (seriesId && !await queryFirst(db, `SELECT id FROM series WHERE id = ? AND status <> 'archived'`, [seriesId])) return 'Series not found'
+  if (episodeId) {
+    const episode = await queryFirst<{ series_id: string }>(db, `SELECT series_id FROM episodes WHERE id = ? AND status <> 'archived'`, [episodeId])
+    if (!episode) return 'Episode not found'
+    if (seriesId && episode.series_id !== seriesId) return 'episode_id must belong to series_id'
+  }
+  return null
+}
+
+route.post('/projects', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const titleAr = stringValue(value.title_ar)
@@ -1100,14 +1325,30 @@ route.post('/projects', async (c) => {
   if (!await objectiveIdsExist(c.env.DB, objectiveIds)) return c.json({ success: false, error: 'One or more learning objectives were not found' }, 400)
   const isFree = value.is_free === undefined ? 0 : strictBoolInt(value.is_free)
   if (isFree === null) return c.json({ success: false, error: 'is_free must be a boolean' }, 400)
+  const seriesId = optionalNullableString(value.series_id)
+  const episodeId = optionalNullableString(value.episode_id)
+  if (seriesId === undefined || episodeId === undefined) return c.json({ success: false, error: 'Invalid series_id or episode_id' }, 400)
+  const referenceError = await projectReferenceError(c.env.DB, seriesId, episodeId)
+  if (referenceError) return c.json({ success: false, error: referenceError }, 400)
+  let estimatedMinutes: number | null = null
+  if (value.estimated_minutes !== undefined && value.estimated_minutes !== null && value.estimated_minutes !== '') {
+    estimatedMinutes = integer(value.estimated_minutes)
+    if (estimatedMinutes === null || estimatedMinutes < 1) return c.json({ success: false, error: 'estimated_minutes must be a positive integer or null' }, 400)
+  }
+  if (isReleaseStatus(status)) {
+    const gate = projectPublishError(materials, steps)
+    if (gate) return c.json({ success: false, error: gate }, 400)
+    const islamic = await islamicReleaseError(c.env.DB, seriesId)
+    if (islamic) return c.json({ success: false, error: islamic }, 400)
+  }
   const id = crypto.randomUUID()
   try {
     await c.env.DB.batch([
       c.env.DB.prepare(`
-        INSERT INTO projects (id, title_ar, description_ar, age_min, age_max, supervision_level, safety_notes, materials, steps, learning_objective_ids, cover_url, is_free, status, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-      `).bind(id, titleAr, description, ageMin, ageMax, supervision, safetyNotes, materials, steps, JSON.stringify(objectiveIds), coverUrl, isFree, status),
-      audit(c.env.DB, c, 'create', 'project', id, { title_ar: titleAr, status }),
+        INSERT INTO projects (id, title_ar, description_ar, age_min, age_max, supervision_level, safety_notes, materials, steps, learning_objective_ids, cover_url, is_free, status, series_id, episode_id, estimated_minutes, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `).bind(id, titleAr, description, ageMin, ageMax, supervision, safetyNotes, materials, steps, JSON.stringify(objectiveIds), coverUrl, isFree, status, seriesId, episodeId, estimatedMinutes),
+      audit(c.env.DB, c, 'create', 'project', id, { title_ar: titleAr, status, series_id: seriesId, episode_id: episodeId }),
     ])
   } catch (error) {
     if (isConstraintError(error)) return c.json({ success: false, error: 'Project values conflict with existing data' }, 409)
@@ -1116,7 +1357,7 @@ route.post('/projects', async (c) => {
   return c.json({ success: true, data: { id, status } }, 201)
 })
 
-route.patch('/projects/:id', async (c) => {
+route.patch('/projects/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -1169,7 +1410,39 @@ route.patch('/projects/:id', async (c) => {
     if (isFree === null) return c.json({ success: false, error: 'is_free must be a boolean' }, 400)
     add('is_free', isFree)
   }
+  // Migration 0018 links a project to the episode it accompanies.
+  const finalSeriesId = value.series_id === undefined
+    ? (existing.series_id == null ? null : String(existing.series_id))
+    : nullableString(value.series_id)
+  const finalEpisodeId = value.episode_id === undefined
+    ? (existing.episode_id == null ? null : String(existing.episode_id))
+    : nullableString(value.episode_id)
+  if (finalSeriesId === undefined || finalEpisodeId === undefined) return c.json({ success: false, error: 'Invalid series_id or episode_id' }, 400)
+  if (value.series_id !== undefined || value.episode_id !== undefined) {
+    const referenceError = await projectReferenceError(c.env.DB, finalSeriesId, finalEpisodeId)
+    if (referenceError) return c.json({ success: false, error: referenceError }, 400)
+    if (value.series_id !== undefined) add('series_id', finalSeriesId)
+    if (value.episode_id !== undefined) add('episode_id', finalEpisodeId)
+  }
+  if (value.estimated_minutes !== undefined) {
+    if (value.estimated_minutes === null || value.estimated_minutes === '') add('estimated_minutes', null)
+    else {
+      const minutes = integer(value.estimated_minutes)
+      if (minutes === null || minutes < 1) return c.json({ success: false, error: 'estimated_minutes must be a positive integer or null' }, 400)
+      add('estimated_minutes', minutes)
+    }
+  }
   if (!sets.length) return c.json({ success: false, error: 'No supported fields supplied' }, 400)
+  const finalStatus = value.status === undefined ? String(existing.status) : stringValue(value.status)
+  if (isReleaseStatus(finalStatus)) {
+    const gate = projectPublishError(
+      value.materials === undefined ? existing.materials : value.materials,
+      value.steps === undefined ? existing.steps : value.steps,
+    )
+    if (gate) return c.json({ success: false, error: gate }, 400)
+    const islamic = await islamicReleaseError(c.env.DB, finalSeriesId)
+    if (islamic) return c.json({ success: false, error: islamic }, 400)
+  }
   sets.push(`updated_at = datetime('now')`)
   try {
     await c.env.DB.batch([
@@ -1183,7 +1456,7 @@ route.patch('/projects/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/projects/:id', async (c) => {
+route.delete('/projects/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM projects WHERE id = ?', [id])) return c.json({ success: false, error: 'Project not found' }, 404)
   await c.env.DB.batch([
@@ -1206,6 +1479,9 @@ route.get('/stories', async (c) => {
   if (!status) clauses.push(`st.status <> 'archived'`)
   if (type) { if (!STORY_TYPES.includes(type)) return c.json({ success: false, error: 'Invalid story type' }, 400); clauses.push('st.type = ?'); params.push(type) }
   if (seriesId) { clauses.push('st.series_id = ?'); params.push(seriesId) }
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+  const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'))
+  const totalRow = await queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM stories st ${where}`, params)
   const rows = await queryAll<Row>(c.env.DB, `
     SELECT st.*, s.title_ar AS series_title, vs.name_ar AS visual_style_name,
       (SELECT COUNT(*) FROM story_pages sp WHERE sp.story_id = st.id) AS pages_count,
@@ -1213,10 +1489,11 @@ route.get('/stories', async (c) => {
     FROM stories st
     LEFT JOIN series s ON s.id = st.series_id
     LEFT JOIN visual_styles vs ON vs.id = st.visual_style_id
-    ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''}
+    ${where}
     ORDER BY st.sort_order, st.updated_at DESC
-  `, params)
-  return c.json({ success: true, data: rows.map(serializeStory) })
+    LIMIT ? OFFSET ?
+  `, [...params, limit, offset])
+  return c.json({ success: true, data: rows.map(serializeStory), meta: { total: Number(totalRow?.total ?? 0), limit, offset } })
 })
 
 route.get('/stories/:id', async (c) => {
@@ -1243,7 +1520,7 @@ route.get('/stories/:id', async (c) => {
   return c.json({ success: true, data: { ...serializeStory(story), pages: enriched, assets } })
 })
 
-route.post('/stories', async (c) => {
+route.post('/stories', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const titleAr = stringValue(value.title_ar)
@@ -1260,6 +1537,12 @@ route.post('/stories', async (c) => {
   if (!READING_LEVELS.includes(reading) || !INTERACTION_MODES.includes(interaction) || !SUPERVISION_LEVELS.includes(supervision) || !PRICE_TIERS.includes(tier)) return c.json({ success: false, error: 'Invalid experience metadata' }, 400)
   const languages = value.languages === undefined ? '["ar"]' : jsonArray(value.languages)
   if (!languages) return c.json({ success: false, error: 'languages must be an array' }, 400)
+  // A story is created before its pages exist, so it can never satisfy the
+  // release gate at creation time. Refuse rather than write an unpublishable
+  // 'published' row that the PATCH gate would then never re-check.
+  if (isReleaseStatus(status)) {
+    return c.json({ success: false, error: 'A new story has no pages yet. Create it as a draft, add pages with text, then change the status.' }, 400)
+  }
   const id = crypto.randomUUID()
   const slug = stringValue(value.slug) ?? slugify(titleAr, 'story')
   try {
@@ -1277,35 +1560,47 @@ route.post('/stories', async (c) => {
   return c.json({ success: true, data: { id, slug, status } }, 201)
 })
 
+/// Release gate for a story. The page-count and per-page text rules live in
+/// lib/catalogueValidation.ts (storyPublishError) so they are unit tested; the
+/// artwork rules stay here because they need the content_assets table.
 async function publicationReadiness(db: D1Database, storyId: string) {
-  const story = await queryFirst<{ type: string; default_language: string }>(db, 'SELECT type, default_language FROM stories WHERE id = ?', [storyId])
+  const story = await queryFirst<{ type: string; default_language: string; series_id: string | null }>(db, 'SELECT type, default_language, series_id FROM stories WHERE id = ?', [storyId])
   if (!story) return 'Story not found'
-  const result = await queryFirst<{ pages_count: number; missing_images: number; missing_text: number; missing_audio: number; unready_assets: number }>(db, `
-    SELECT
-      COUNT(*) AS pages_count,
-      SUM(CASE WHEN sp.image_asset_id IS NULL THEN 1 ELSE 0 END) AS missing_images,
-      SUM(CASE WHEN NOT EXISTS (
-        SELECT 1 FROM story_page_localizations spl
-        WHERE spl.page_id = sp.id AND spl.language = ? AND (length(trim(COALESCE(spl.body_text, ''))) > 0 OR spl.narration_asset_id IS NOT NULL)
-      ) THEN 1 ELSE 0 END) AS missing_text,
-      SUM(CASE WHEN ? = 'audio_story' AND NOT EXISTS (
-        SELECT 1 FROM story_page_localizations spl
-        WHERE spl.page_id = sp.id AND spl.language = ? AND spl.narration_asset_id IS NOT NULL
-      ) THEN 1 ELSE 0 END) AS missing_audio,
-      SUM(CASE WHEN sp.image_asset_id IS NOT NULL AND NOT EXISTS (
-        SELECT 1 FROM content_assets ca WHERE ca.id = sp.image_asset_id AND ca.status = 'ready'
-      ) THEN 1 ELSE 0 END) AS unready_assets
-    FROM story_pages sp WHERE sp.story_id = ?
-  `, [story.default_language, story.type, story.default_language, storyId])
-  if (!result || Number(result.pages_count) === 0) return 'Story must contain at least one page before publication'
-  if (Number(result.missing_images) > 0) return 'Every story page must have an image before publication'
-  if (Number(result.missing_text) > 0) return `Every page needs text or narration in ${story.default_language}`
-  if (Number(result.missing_audio) > 0) return `Audio stories require narration in ${story.default_language} on every page`
-  if (Number(result.unready_assets) > 0) return 'All referenced page images must be ready before publication'
-  return null
+
+  const pages = await queryAll<{ id: string; page_number: number; image_asset_id: string | null }>(db, 'SELECT id, page_number, image_asset_id FROM story_pages WHERE story_id = ? ORDER BY page_number', [storyId])
+  const localizations = pages.length
+    ? await queryAll<{ page_id: string; language: string; body_text: string | null; narration_asset_id: string | null }>(db, `
+        SELECT spl.page_id, spl.language, spl.body_text, spl.narration_asset_id
+        FROM story_page_localizations spl
+        WHERE spl.page_id IN (SELECT id FROM story_pages WHERE story_id = ?)
+      `, [storyId])
+    : []
+
+  const textError = storyPublishError(
+    pages.map((page) => ({
+      page_number: page.page_number,
+      image_asset_id: page.image_asset_id,
+      localizations: localizations.filter((item) => item.page_id === page.id),
+    })),
+    story.type,
+    story.default_language,
+  )
+  if (textError) return textError
+
+  const missingImage = pages.find((page) => !page.image_asset_id)
+  if (missingImage) return `Every story page must have an image before release (page ${missingImage.page_number} has none)`
+
+  const assetIds = pages.map((page) => String(page.image_asset_id))
+  const placeholders = assetIds.map(() => '?').join(',')
+  const readyRow = await queryFirst<{ total: number }>(db, `SELECT COUNT(*) AS total FROM content_assets WHERE id IN (${placeholders}) AND status = 'ready'`, assetIds)
+  if (Number(readyRow?.total ?? 0) !== new Set(assetIds).size) {
+    return 'All referenced page images must be ready before release'
+  }
+
+  return islamicReleaseError(db, story.series_id)
 }
 
-route.patch('/stories/:id', async (c) => {
+route.patch('/stories/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -1379,7 +1674,7 @@ route.patch('/stories/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/stories/:id', async (c) => {
+route.delete('/stories/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM stories WHERE id = ?', [id])) return c.json({ success: false, error: 'Story not found' }, 404)
   await c.env.DB.batch([
@@ -1389,7 +1684,7 @@ route.delete('/stories/:id', async (c) => {
   return c.json({ success: true, data: { id, status: 'archived' } })
 })
 
-route.post('/stories/:id/pages', async (c) => {
+route.post('/stories/:id/pages', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const storyId = c.req.param('id')
@@ -1414,7 +1709,7 @@ route.post('/stories/:id/pages', async (c) => {
   return c.json({ success: true, data: { id, story_id: storyId, page_number: pageNumber } }, 201)
 })
 
-route.patch('/story-pages/:id', async (c) => {
+route.patch('/story-pages/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -1470,7 +1765,7 @@ route.patch('/story-pages/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/story-pages/:id', async (c) => {
+route.delete('/story-pages/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM story_pages WHERE id = ?', [id])) return c.json({ success: false, error: 'Story page not found' }, 404)
   await c.env.DB.batch([
@@ -1480,7 +1775,7 @@ route.delete('/story-pages/:id', async (c) => {
   return c.json({ success: true, data: { id, deleted: true } })
 })
 
-route.put('/story-pages/:id/localizations/:language', async (c) => {
+route.put('/story-pages/:id/localizations/:language', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const pageId = c.req.param('id')
@@ -1505,7 +1800,7 @@ route.put('/story-pages/:id/localizations/:language', async (c) => {
   return c.json({ success: true, data: { page_id: pageId, language } })
 })
 
-route.post('/story-pages/:id/bubbles', async (c) => {
+route.post('/story-pages/:id/bubbles', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const pageId = c.req.param('id')
@@ -1531,7 +1826,7 @@ route.post('/story-pages/:id/bubbles', async (c) => {
   return c.json({ success: true, data: { id } }, 201)
 })
 
-route.patch('/story-bubbles/:id', async (c) => {
+route.patch('/story-bubbles/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -1571,7 +1866,7 @@ route.patch('/story-bubbles/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/story-bubbles/:id', async (c) => {
+route.delete('/story-bubbles/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM story_bubbles WHERE id = ?', [id])) return c.json({ success: false, error: 'Story bubble not found' }, 404)
   await c.env.DB.batch([
