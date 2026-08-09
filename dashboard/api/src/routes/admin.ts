@@ -18,6 +18,8 @@ import adminAvailabilityRoute from './adminAvailability.ts'
 import adminWorkflowRoute from './adminWorkflow.ts'
 import adminSupportRoute from './adminSupport.ts'
 import adminProductionRoute from './adminProduction.ts'
+import adminDevicesRoute from './adminDevices.ts'
+import adminCustomerRoute from './adminCustomer.ts'
 import { summarizeGate } from '../lib/publishGate.ts'
 import { validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
@@ -99,6 +101,12 @@ adminRoute.route('/', adminSupportRoute)
 // مركز الإنتاج: مصفوفة متطلبات لكل عنصر، مشتقّة من الأصول نفسها، وطبقة إسناد
 // بشرية مخزَّنة. مركّب بعد بوابة النشر لأنه يستدعي تقييمها لصفّ «النشر».
 adminRoute.route('/', adminProductionRoute)
+// عمليات الأجهزة الإدارية: المسار المشغِّل إلى سلطة FamilyState. مسارات هذا
+// المُوجِّه تحت /families/:id فلا تتقاطع مع /devices للقراءة من الإسقاط.
+adminRoute.route('/', adminDevicesRoute)
+// Customer 360: مساحة عمل العائلة. تُركِّب قراءة السلطة مع الإسقاطات وجداول
+// الإدارة، ولا تنقل سلطة العائلة إلى D1.
+adminRoute.route('/', adminCustomerRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)

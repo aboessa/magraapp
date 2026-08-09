@@ -386,6 +386,15 @@ export class FamilyState {
       'POST /creations/purge': (r) => this.purgeCreations(r),
       'GET /creations/pending-deletions': () => this.pendingDeletions(),
       'POST /creations/deletions-settled': (r) => this.settleDeletions(r),
+
+      // Operator commands. Prefixed `/admin` so the two authorisation stories are
+      // visible in the route table itself: everything above proves a parent session,
+      // everything here carries an operator id and a reason instead. Reached only from
+      // `routes/adminDevices.ts`, which enforces the permission and audits first.
+      'POST /admin/devices/revoke': (r) => this.adminRevokeDevice(r),
+      'POST /admin/downloads/revoke': (r) => this.adminRevokeDownloads(r),
+      'POST /admin/resync': (r) => this.adminResync(r),
+      'GET /admin/inspect': () => this.adminInspect(),
     };
 
     const handler = routes[key];
@@ -490,6 +499,233 @@ export class FamilyState {
     if (!this.env.FAMILY_EVENTS) return;
     const existing = await this.state.storage.getAlarm();
     if (existing === null) await this.state.storage.setAlarm(Date.now() + 1000);
+  }
+
+  // --- Operator commands ---------------------------------------------------
+  //
+  // ## Why these exist separately from the parent routes
+  //
+  // `revokeDevice` requires `activeSession(sessionId)`, and correctly so: a parent
+  // revoking a device must prove they are that parent. An operator has no parent
+  // session and must never be handed one, so the admin surface previously answered
+  // 501 and said the operation was architecturally impossible.
+  //
+  // It is not impossible; it is a *different* operation with a different
+  // authorisation story, and modelling it as the same one was the mistake. These
+  // handlers take an operator identity and a reason instead of a session, and they
+  // are reached only from `routes/adminDevices.ts`, which enforces the admin
+  // permission and writes the audit row before calling.
+  //
+  // Three properties make this safe rather than a back door:
+  //
+  //  1. **No session is minted.** Nothing here creates or resolves a parent session,
+  //     so an operator cannot act *as* the family — only on it.
+  //  2. **The reason travels with the effect.** `actor_id` and `reason` are required
+  //     and are written into the outbox event, so the projection and every downstream
+  //     consumer records that this was an operator action, not a parent's.
+  //  3. **Same state transitions as the parent path.** Revocation bumps `auth_epoch`
+  //     and ends leases exactly as the parent path does, so there is no second,
+  //     weaker notion of "revoked" in the system.
+
+  /// Operator identity and reason, required on every command below.
+  private operatorFrom(body: Record<string, unknown>): { actorId: string; reason: string } | null {
+    const actorId = typeof body.actor_id === 'string' ? body.actor_id.trim() : '';
+    const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+    if (!actorId || !reason) return null;
+    return { actorId, reason: reason.slice(0, 500) };
+  }
+
+  /// `POST /admin/devices/revoke` — operator revocation.
+  ///
+  /// Bumps `auth_epoch` like the parent path, which is what actually signs the device
+  /// out: without it the device keeps a valid session until expiry and the operator
+  /// would report a revocation that had not happened yet.
+  private async adminRevokeDevice(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const operator = this.operatorFrom(body);
+    if (!operator) return json({ success: false, error: 'actor_id and reason are required' }, 400);
+    const deviceId = typeof body.device_id === 'string' ? body.device_id : '';
+    if (!deviceId) return json({ success: false, error: 'device_id is required' }, 400);
+
+    const family = this.family();
+    if (!family) return json({ success: false, error: 'Family not found' }, 404);
+
+    const device = this.sql.exec<{ id: string; status: string }>(
+      'SELECT id, status FROM devices WHERE id = ?', deviceId,
+    ).toArray()[0];
+    if (!device) return json({ success: false, error: 'Device not found for this family' }, 404);
+    // Reported rather than treated as success: "already revoked" and "revoked by you
+    // just now" are different answers on a support call.
+    if (device.status !== 'active') {
+      return json({ success: true, data: { revoked: false, status: device.status, already: true } });
+    }
+
+    const now = Date.now();
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(`UPDATE devices SET status = 'revoked', revoked_at = ? WHERE id = ? AND status = 'active'`, now, deviceId);
+      this.sql.exec(`UPDATE auth_sessions SET status = 'revoked', revoked_at = ? WHERE device_id = ? AND status = 'active'`, now, deviceId);
+      this.sql.exec(`UPDATE family SET auth_epoch = auth_epoch + 1, updated_at = ? WHERE singleton = 1`, now);
+      this.sql.exec(`UPDATE playback_leases SET status = 'revoked', ended_at = ? WHERE device_id = ? AND status = 'active'`, now, deviceId);
+      this.addOutbox('device.revoked', {
+        deviceId,
+        // The projection and every downstream consumer can tell an operator action
+        // from a parent's, which a shared payload shape would have hidden.
+        by: 'operator',
+        operator_id: operator.actorId,
+        reason: operator.reason,
+      });
+    });
+    await this.scheduleOutbox();
+    return json({ success: true, data: { revoked: true, auth_epoch_bumped: true } });
+  }
+
+  /// `POST /admin/downloads/revoke` — ends offline access for one device.
+  ///
+  /// Distinct from revoking the device: a family that lost a tablet needs the device
+  /// gone, while a family that hit a download limit needs only the offline copies
+  /// invalidated and the device left signed in. Implemented as lease revocation
+  /// because leases are what authorise offline media in this architecture; there is no
+  /// separate downloads table, and inventing one would create a second truth.
+  private async adminRevokeDownloads(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const operator = this.operatorFrom(body);
+    if (!operator) return json({ success: false, error: 'actor_id and reason are required' }, 400);
+    const deviceId = typeof body.device_id === 'string' ? body.device_id : '';
+
+    const family = this.family();
+    if (!family) return json({ success: false, error: 'Family not found' }, 404);
+
+    const now = Date.now();
+    let affected = 0;
+    this.state.storage.transactionSync(() => {
+      const rows = deviceId
+        ? this.sql.exec<{ total: number }>(`SELECT COUNT(*) AS total FROM playback_leases WHERE device_id = ? AND status = 'active'`, deviceId).toArray()
+        : this.sql.exec<{ total: number }>(`SELECT COUNT(*) AS total FROM playback_leases WHERE status = 'active'`).toArray();
+      affected = Number(rows[0]?.total ?? 0);
+      if (deviceId) {
+        this.sql.exec(`UPDATE playback_leases SET status = 'revoked', ended_at = ? WHERE device_id = ? AND status = 'active'`, now, deviceId);
+      } else {
+        this.sql.exec(`UPDATE playback_leases SET status = 'revoked', ended_at = ? WHERE status = 'active'`, now);
+      }
+      this.addOutbox('downloads.revoked', {
+        deviceId: deviceId || null,
+        leases_revoked: affected,
+        by: 'operator',
+        operator_id: operator.actorId,
+        reason: operator.reason,
+      });
+    });
+    await this.scheduleOutbox();
+    return json({ success: true, data: { leases_revoked: affected } });
+  }
+
+  /// `POST /admin/resync` — re-emits the family's current state to the projection.
+  ///
+  /// The projection is queue-fed, so a dropped or dead-lettered event leaves D1 behind
+  /// the authority with no way back except waiting for the next change. This emits a
+  /// snapshot event rather than writing D1 directly, which keeps the authority the
+  /// authority: the same consumer applies it through the same path as every other
+  /// event, so a resync cannot produce a shape the normal flow could not.
+  private async adminResync(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const operator = this.operatorFrom(body);
+    if (!operator) return json({ success: false, error: 'actor_id and reason are required' }, 400);
+
+    const family = this.family();
+    if (!family) return json({ success: false, error: 'Family not found' }, 404);
+
+    const children = this.sql.exec<{ id: string; nickname: string; age_track: string; status: string }>(
+      'SELECT id, nickname, age_track, status FROM children ORDER BY created_at',
+    ).toArray();
+    const devices = this.sql.exec<{ id: string; platform: string; status: string; last_seen_at: number }>(
+      'SELECT id, platform, status, last_seen_at FROM devices ORDER BY last_seen_at DESC',
+    ).toArray();
+
+    this.state.storage.transactionSync(() => {
+      this.addOutbox('family.resynced', {
+        plan: this.currentPlan(),
+        status: family.status,
+        children: children.map((child) => ({ id: child.id, age_track: child.age_track, status: child.status })),
+        device_count: devices.length,
+        active_device_count: devices.filter((device) => device.status === 'active').length,
+        by: 'operator',
+        operator_id: operator.actorId,
+        reason: operator.reason,
+      });
+    });
+    await this.scheduleOutbox();
+    return json({
+      success: true,
+      data: {
+        plan: this.currentPlan(),
+        status: family.status,
+        child_count: children.length,
+        device_count: devices.length,
+        active_device_count: devices.filter((device) => device.status === 'active').length,
+      },
+    });
+  }
+
+  /// `GET /admin/inspect` — the operator's read of the authority.
+  ///
+  /// Deliberately narrower than `/state`: no nicknames, no progress rows, no favourites.
+  /// An operator answering "why can this family not watch anything" needs the plan, the
+  /// entitlement ledger, the device list and the lease count, and nothing about what a
+  /// specific child watched. `child_projection` already carries what little child data
+  /// the admin is allowed, and duplicating more of it here would widen the surface for
+  /// no operational gain.
+  private async adminInspect() {
+    const family = this.family();
+    if (!family) return json({ success: false, error: 'Family not found' }, 404);
+    const now = Date.now();
+
+    const entitlements = this.sql.exec<{
+      plan: string; status: string; source: string; expires_at: number | null; updated_at: number;
+    }>(`
+      SELECT plan, status, source, expires_at, updated_at FROM entitlements ORDER BY updated_at DESC
+    `).toArray();
+    const devices = this.sql.exec<{
+      id: string; display_name: string | null; platform: string; status: string;
+      registered_at: number; last_seen_at: number;
+    }>(`
+      SELECT id, display_name, platform, status, registered_at, last_seen_at
+        FROM devices ORDER BY last_seen_at DESC
+    `).toArray();
+    const leases = this.sql.exec<{ total: number }>(
+      `SELECT COUNT(*) AS total FROM playback_leases WHERE status = 'active' AND expires_at > ?`, now,
+    ).toArray()[0];
+    const sessions = this.sql.exec<{ total: number }>(
+      `SELECT COUNT(*) AS total FROM auth_sessions WHERE status = 'active' AND expires_at > ?`, now,
+    ).toArray()[0];
+    const children = this.sql.exec<{ total: number; active: number }>(`
+      SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active FROM children
+    `).toArray()[0];
+    // A count only. Customer 360 needs to know whether the family has used the product
+    // at all; it must not receive what any individual child watched, and returning rows
+    // here would put that in an operator's browser for no operational gain.
+    const progress = this.sql.exec<{ total: number }>(
+      'SELECT COUNT(*) AS total FROM content_progress',
+    ).toArray()[0];
+
+    return json({
+      success: true,
+      data: {
+        parent_id: family.parent_id,
+        status: family.status,
+        base_plan: family.base_plan,
+        effective_plan: this.currentPlan(now),
+        // Exposed because it is the number that explains "why did every device sign
+        // out": each revocation increments it and invalidates older sessions.
+        auth_epoch: family.auth_epoch,
+        entitlements,
+        devices,
+        active_leases: Number(leases?.total ?? 0),
+        active_sessions: Number(sessions?.total ?? 0),
+        child_count: Number(children?.total ?? 0),
+        active_child_count: Number(children?.active ?? 0),
+        progress_records: Number(progress?.total ?? 0),
+      },
+    });
   }
 
   private async initialize(request: Request) {
