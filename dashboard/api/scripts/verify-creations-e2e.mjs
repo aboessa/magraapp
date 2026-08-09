@@ -123,6 +123,37 @@ async function main() {
 
   const query = `child_id=${childId}&game_id=game-fixture-trace-circle&drawing_mode=coloring&width=1&height=1`;
 
+  // 0. Consent gate. Before any grant, an upload must be refused: storing a
+  //    picture a child drew is not covered by whatever telemetry consent a family
+  //    already has.
+  const beforeConsent = await call(`/api/v1/creations?${query}`, {
+    method: 'POST', token, raw: PNG_1X1, contentType: 'image/png',
+  });
+  check('an upload without consent is refused', beforeConsent.status === 403,
+    `status ${beforeConsent.status}`);
+  check('the refusal names the consent required',
+    beforeConsent.json?.consent_required?.consent_type === 'child_creations',
+    JSON.stringify(beforeConsent.json?.consent_required));
+
+  const consentBefore = await call(`/api/v1/family/consents?child_id=${childId}`, { token });
+  check('consent reads as not granted before it is given',
+    consentBefore.json?.data?.decisions?.child_creations?.granted === false,
+    JSON.stringify(consentBefore.json?.data?.decisions?.child_creations));
+
+  const granted = await call('/api/v1/family/consents', {
+    method: 'POST', token,
+    body: { consent_type: 'child_creations', version: '1', child_id: childId },
+  });
+  check('consent can be granted', granted.status === 200 && granted.json?.data?.granted === true,
+    `status ${granted.status}`);
+
+  const staleVersion = await call('/api/v1/family/consents', {
+    method: 'POST', token,
+    body: { consent_type: 'child_creations', version: '0', child_id: childId },
+  });
+  check('a stale consent version is refused', staleVersion.status === 400,
+    `status ${staleVersion.status}`);
+
   // 1. Upload.
   const uploaded = await call(`/api/v1/creations?${query}`, {
     method: 'POST', token, raw: PNG_1X1, contentType: 'image/png',
@@ -265,6 +296,24 @@ async function main() {
   const reconciled = await call('/api/v1/creations/reconcile', { method: 'POST', token });
   check('reconcile runs with nothing outstanding', reconciled.status === 200,
     JSON.stringify(reconciled.json?.data));
+
+  // 14. Revoking consent stops further uploads. This is the control the privacy
+  //     document promises, and it must actually close the door.
+  const revoked = await call('/api/v1/family/consents', {
+    method: 'POST', token,
+    body: { consent_type: 'child_creations', version: '1', child_id: childId, revoke: true },
+  });
+  check('consent can be revoked', revoked.status === 200 && revoked.json?.data?.granted === false,
+    `status ${revoked.status}`);
+
+  const afterRevoke = await call(`/api/v1/creations?${query}`, {
+    method: 'POST', token, raw: PNG_1X1, contentType: 'image/png',
+  });
+  check('an upload after revocation is refused', afterRevoke.status === 403,
+    `status ${afterRevoke.status}`);
+  check('the revocation is reported as the reason',
+    afterRevoke.json?.consent_required?.reason === 'revoked',
+    JSON.stringify(afterRevoke.json?.consent_required));
 
   console.log(`\n# ${failures === 0 ? 'all checks passed' : `${failures} check(s) failed`}`);
   process.exit(failures === 0 ? 0 : 1);

@@ -14,6 +14,7 @@ import { Hono } from 'hono';
 import type { Env } from '../lib/db';
 import { callDurable, familyStub } from '../lib/doClient';
 import { authenticateParent } from '../lib/parentAuth';
+import { evaluateConsent, type ConsentRow } from '../lib/consent.ts';
 import {
   creationClaimError,
   creationKeyBelongsTo,
@@ -81,6 +82,33 @@ creationsRoute.post('/', async (c) => {
   }
   if (!await assertChild(c.env, auth.principal.parentId, childId)) {
     return c.json({ success: false, error: 'Child not found for this account' }, 404);
+  }
+
+  // Consent gate. Storing an image a child drew is not covered by the telemetry
+  // consent a family may already have given, so it is asked separately and this
+  // route refuses until it is granted. Without this check the documented
+  // "absence of a row means no consent" was not enforced anywhere and a drawing
+  // could be stored without the parent ever being asked.
+  const consentResult = await callDurable<{ success: boolean; data?: { consents?: ConsentRow[] } }>(
+    familyStub(c.env, auth.principal.parentId), '/consents', {},
+  );
+  const consent = evaluateConsent(
+    consentResult.data?.data?.consents ?? [],
+    'child_creations',
+    childId,
+  );
+  if (!consent.granted) {
+    return c.json({
+      success: false,
+      error: 'Saving a child\'s drawing to family storage needs parental consent',
+      // Named so the client can present the exact grant it must ask for rather
+      // than a generic "permission denied".
+      consent_required: {
+        consent_type: 'child_creations',
+        version: consent.required_version,
+        reason: consent.reason,
+      },
+    }, 403);
   }
 
   const body = await c.req.arrayBuffer();

@@ -61,32 +61,47 @@ async function main() {
   // Registration deliberately does not hand back a session: the address must be
   // verified first. Dev returns the verification token in the response so this
   // flow can be exercised without a mailbox.
-  const email = `drawing-e2e-${Date.now()}@example.test`;
+  //
+  // `/api/v1/auth/*` allows 5 requests per 60s and this flow costs three, so a run
+  // straight after another script's run can exhaust it. Retried once after the
+  // window rather than failing, so the two scripts can run back to back.
   const password = 'Correct-Horse-9';
-  const installation = `e2e-${Date.now()}`;
-  const registered = await call('/api/v1/auth/register', {
-    method: 'POST',
-    body: { email, password, display_name: 'أسرة تحقّق', installation_id: installation, platform: 'android' },
-  });
-  const verificationToken = registered.json?.data?.development_verification_token;
-  if (!check('parent registered', registered.status === 201 && Boolean(verificationToken),
-    `status ${registered.status}`)) {
-    console.log(JSON.stringify(registered.json, null, 2));
-    process.exit(1);
+  let token = null;
+  for (let attempt = 0; attempt < 2 && !token; attempt++) {
+    const stamp = Date.now();
+    const email = `drawing-e2e-${stamp}@example.test`;
+    const installation = `e2e-${stamp}`;
+    const registered = await call('/api/v1/auth/register', {
+      method: 'POST',
+      body: { email, password, display_name: 'أسرة تحقّق', installation_id: installation, platform: 'android' },
+    });
+    const verificationToken = registered.json?.data?.development_verification_token;
+
+    if (verificationToken) {
+      await call('/api/v1/auth/verify-email', { method: 'POST', body: { token: verificationToken } });
+      const loggedIn = await call('/api/v1/auth/login', {
+        method: 'POST',
+        body: { email, password, installation_id: installation, platform: 'android', device_name: 'هاتف' },
+      });
+      token = loggedIn.json?.data?.access_token ?? null;
+      if (token) break;
+      if (loggedIn.status !== 429) {
+        check('parent holds an access token', false, `status ${loggedIn.status}`);
+        console.log(JSON.stringify(loggedIn.json, null, 2));
+        process.exit(1);
+      }
+    } else if (registered.status !== 429) {
+      check('parent registered', false, `status ${registered.status}`);
+      console.log(JSON.stringify(registered.json, null, 2));
+      process.exit(1);
+    }
+
+    if (attempt === 0) {
+      console.log('      auth rate limit reached; waiting 62s for the window to reset');
+      await new Promise((resolve) => setTimeout(resolve, 62_000));
+    }
   }
-
-  const verified = await call('/api/v1/auth/verify-email', {
-    method: 'POST', body: { token: verificationToken },
-  });
-  check('email verified', verified.status === 200, `status ${verified.status}`);
-
-  const loggedIn = await call('/api/v1/auth/login', {
-    method: 'POST',
-    body: { email, password, installation_id: installation, platform: 'android', device_name: 'هاتف' },
-  });
-  const token = loggedIn.json?.data?.access_token ?? loggedIn.json?.data?.accessToken;
-  if (!check('parent holds an access token', Boolean(token), `status ${loggedIn.status}`)) {
-    console.log(JSON.stringify(loggedIn.json, null, 2));
+  if (!check('parent registered, verified and holds an access token', Boolean(token))) {
     process.exit(1);
   }
 

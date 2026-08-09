@@ -2,6 +2,12 @@ import { Hono } from 'hono';
 import type { Env } from '../lib/db';
 import { callDurable, familyStub } from '../lib/doClient';
 import { authenticateParent, type ParentPrincipal } from '../lib/parentAuth';
+import {
+  CONSENT_TYPES,
+  evaluateConsent,
+  parseConsentWrite,
+  type ConsentRow,
+} from '../lib/consent.ts';
 
 type AppEnv = { Bindings: Env };
 type JsonBody = Record<string, unknown>;
@@ -118,6 +124,58 @@ familyRoute.get('/mastery', async (c) => {
     success: true,
     data: mastery.filter((row) => String(row.child_id) === childId),
   });
+});
+
+// --- Parental consent -------------------------------------------------------
+//
+// `parental_consents` existed in D1 from migration 0001 and had no HTTP surface at
+// all, so nothing could grant or read a consent and nothing could enforce one.
+
+familyRoute.get('/consents', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+
+  const result = await callDurable<{ success: boolean; data?: { consents?: ConsentRow[] } }>(
+    familyStub(c.env, auth.principal.parentId), '/consents', {},
+  );
+  if (result.status !== 200) return forward(result);
+  const rows = result.data?.data?.consents ?? [];
+
+  const childId = c.req.query('child_id') ?? null;
+  return c.json({
+    success: true,
+    data: {
+      rows,
+      // The decision per type, so a client does not reimplement the policy and
+      // then disagree with the server about what a parent allowed.
+      decisions: Object.fromEntries(
+        CONSENT_TYPES.map((type) => [type, evaluateConsent(rows, type, childId)]),
+      ),
+    },
+  });
+});
+
+familyRoute.post('/consents', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const value = await body(c);
+  if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400);
+
+  const parsed = parseConsentWrite(value);
+  if ('error' in parsed) return c.json({ success: false, error: parsed.error }, 400);
+  const { type, childId, version, revoke } = parsed.write;
+
+  // Child ownership is checked inside the object, which is the authority for which
+  // children exist, rather than here from a projection that can lag.
+  return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/consents', {
+    body: {
+      session_id: auth.principal.sessionId,
+      consent_type: type,
+      child_id: childId,
+      version,
+      revoke,
+    },
+  }));
 });
 
 // --- Rewards ---------------------------------------------------------------

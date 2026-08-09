@@ -10,14 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../child/application/child_provider.dart';
 import '../../../home/application/home_providers.dart';
+import '../../application/creation_cloud_service.dart';
 import '../../data/local_creation_store.dart';
 import 'my_collection_page.dart';
-
-/// One store for the whole app: it is stateless beyond `SharedPreferences`, and a
-/// second instance would not be wrong, merely wasteful.
-final localCreationStoreProvider = Provider<LocalCreationStore>((ref) {
-  return LocalCreationStore();
-});
 
 /// Stickers for the active child.
 ///
@@ -76,6 +71,73 @@ class MyCollectionRoute extends ConsumerWidget {
       childId: childId,
       creationStore: ref.watch(localCreationStoreProvider),
       loadStickers: () async => await ref.read(earnedStickersProvider.future),
+      onKeepInAlbum: (creation) => _keepInAlbum(context, ref, childId, creation),
+      onRemoveFromAlbum: (creation) async {
+        final removed = await ref
+            .read(creationCloudServiceProvider)
+            .deleteRemote(creation.uploadedCreationId!);
+        if (!removed) return 'لم نتمكّن من الإزالة. رسمتك ما زالت على الجهاز.';
+        await ref
+            .read(localCreationStoreProvider)
+            .markUploaded(childId, creation.id, '');
+        return null;
+      },
     );
+  }
+
+  /// Keeps a drawing in family storage, asking for consent first if needed.
+  ///
+  /// Consent is requested at the moment it is needed rather than at sign-up: a
+  /// parent asked to agree to image retention before any drawing exists has nothing
+  /// to decide about.
+  Future<String?> _keepInAlbum(
+    BuildContext context,
+    WidgetRef ref,
+    String childId,
+    LocalCreation creation,
+  ) async {
+    final service = ref.read(creationCloudServiceProvider);
+
+    if (!await service.hasConsent(childId)) {
+      if (!context.mounted) return 'تعذّر التحقّق من الموافقة.';
+      final agreed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('نحفظ رسومات طفلك؟'),
+          content: const Text(
+            'ستُحفظ الرسمة في مساحة خاصة بأسرتك فقط.\n\n'
+            '• لا تُنشر ولا تُشارك ولا يراها أحد خارج أسرتك.\n'
+            '• يمكنك حذفها أو سحب الموافقة في أي وقت.\n'
+            '• الرسمة تبقى على الجهاز سواء وافقت أو لا.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('لا، اتركها على الجهاز'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('أوافق'),
+            ),
+          ],
+        ),
+      );
+      if (agreed != true) return 'الرسمة باقية على هذا الجهاز فقط.';
+      if (!await service.grantConsent(childId)) {
+        return 'لم نتمكّن من تسجيل الموافقة. حاول لاحقًا.';
+      }
+    }
+
+    final result = await service.save(creation);
+    switch (result.outcome) {
+      case CloudSaveOutcome.saved:
+        return null;
+      case CloudSaveOutcome.consentRequired:
+        return 'تحتاج موافقة ولي الأمر أولًا.';
+      case CloudSaveOutcome.storageUnavailable:
+        return 'حفظ الأسرة غير مُهيَّأ بعد. رسمتك على الجهاز.';
+      case CloudSaveOutcome.failed:
+        return 'لم نتمكّن من الحفظ. رسمتك ما زالت على الجهاز.';
+    }
   }
 }

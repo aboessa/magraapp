@@ -273,6 +273,29 @@ export class FamilyState {
         attempts INTEGER NOT NULL DEFAULT 0,
         last_error TEXT
       );
+
+      /* Parental consent.
+         D1 has a parental_consents table from migration 0001, but its parent_id is
+         a foreign key to parents(id), and a parent account lives in the Durable
+         Objects and is never written to that D1 table - so the constraint can never
+         be satisfied and an insert there always fails with a 500. Consent is family
+         state, this object is the authority for the family, and storing it here
+         removes a cross-store key that cannot hold.
+         (No backticks in this comment: it sits inside a JS template literal.) */
+      CREATE TABLE IF NOT EXISTS consents (
+        id TEXT PRIMARY KEY,
+        consent_type TEXT NOT NULL,
+        /* NULL means the whole family, so a parent answering for the household
+           does not have to repeat it per profile. */
+        child_id TEXT,
+        version TEXT NOT NULL,
+        granted_at INTEGER NOT NULL,
+        /* Revoked rather than deleted: a withdrawal is itself a record, and
+           deleting the row would make "never asked" and "said no" the same. */
+        revoked_at INTEGER
+      );
+      CREATE INDEX IF NOT EXISTS idx_consents_type
+        ON consents(consent_type, child_id, revoked_at);
     `);
 
     this.backfillGameAttempts();
@@ -355,6 +378,8 @@ export class FamilyState {
       'POST /rewards': (r) => this.grantReward(r),
       'GET /rewards': () => this.listRewards(),
       'GET /mastery': () => this.listMastery(),
+      'GET /consents': () => this.listConsents(),
+      'POST /consents': (r) => this.writeConsent(r),
       'POST /creations': (r) => this.registerCreation(r),
       'GET /creations': () => this.listCreations(),
       'POST /creations/delete': (r) => this.deleteCreation(r),
@@ -864,6 +889,57 @@ export class FamilyState {
         FROM mastery ORDER BY last_attempt_at DESC
     `).toArray();
     return json({ success: true, data: { mastery: rows } });
+  }
+
+  // --- Parental consent ----------------------------------------------------
+
+  private listConsents() {
+    const rows = this.sql.exec<{
+      consent_type: string; child_id: string | null; version: string;
+      granted_at: number; revoked_at: number | null;
+    }>(`
+      SELECT consent_type, child_id, version, granted_at, revoked_at
+        FROM consents ORDER BY granted_at DESC
+    `).toArray();
+    return json({ success: true, data: { consents: rows } });
+  }
+
+  /// Grants or revokes one consent.
+  ///
+  /// The policy — which row counts, and whether a revocation wins — lives in
+  /// `lib/consent.ts` so it is testable without this object. This only stores.
+  private async writeConsent(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const consentType = typeof body.consent_type === 'string' ? body.consent_type : '';
+    const version = typeof body.version === 'string' ? body.version : '';
+    const childId = typeof body.child_id === 'string' && body.child_id ? body.child_id : null;
+    const revoke = body.revoke === true;
+
+    if (!this.activeSession(sessionId) || !consentType || !version) {
+      return json({ success: false, error: 'Invalid consent' }, 400);
+    }
+    if (childId !== null && !this.child(childId)) {
+      return json({ success: false, error: 'Active child profile not found' }, 404);
+    }
+
+    const now = Date.now();
+    if (revoke) {
+      this.sql.exec(`
+        UPDATE consents SET revoked_at = ?
+         WHERE consent_type = ? AND (child_id IS ? OR child_id = ?) AND revoked_at IS NULL
+      `, now, consentType, childId, childId);
+      return json({ success: true, data: { consent_type: consentType, child_id: childId, granted: false } });
+    }
+
+    this.sql.exec(`
+      INSERT INTO consents (id, consent_type, child_id, version, granted_at)
+      VALUES (?, ?, ?, ?, ?)
+    `, crypto.randomUUID(), consentType, childId, version, now);
+    return json({
+      success: true,
+      data: { consent_type: consentType, child_id: childId, version, granted: true },
+    });
   }
 
   private listRewards() {

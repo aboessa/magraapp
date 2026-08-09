@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -358,6 +359,92 @@ class MajarraApiClient {
       auth: true,
       query: {'child_id': childId},
     );
+  }
+
+  // --- Child creations ---
+  //
+  // Nothing here is called automatically. A drawing lives on the device, and these
+  // are only reached when a parent explicitly asks to keep one, after granting the
+  // `child_creations` consent.
+
+  /// Parental consents and the server's decision per type.
+  ///
+  /// The decision is taken from the server rather than recomputed here: two copies
+  /// of a consent policy would eventually disagree, and the client's copy is the one
+  /// that would be wrong.
+  Future<Map<String, dynamic>> fetchConsents({String? childId}) async {
+    return _getJson(
+      '/api/v1/family/consents',
+      auth: true,
+      query: {if (childId != null) 'child_id': childId},
+    );
+  }
+
+  Future<Map<String, dynamic>> setConsent({
+    required String consentType,
+    required String version,
+    String? childId,
+    bool revoke = false,
+  }) async {
+    return _postJson('/api/v1/family/consents', auth: true, body: {
+      'consent_type': consentType,
+      'version': version,
+      if (childId != null) 'child_id': childId,
+      'revoke': revoke,
+    });
+  }
+
+  /// Uploads one drawing to private family storage.
+  ///
+  /// The body is the raw PNG and the metadata travels as query parameters, matching
+  /// `POST /api/v1/creations`. A 403 carries `consent_required`, which the caller
+  /// surfaces as a request for consent rather than a failure.
+  Future<Map<String, dynamic>> uploadCreation({
+    required String childId,
+    required String gameId,
+    required String drawingMode,
+    required int width,
+    required int height,
+    required Uint8List bytes,
+    String mimeType = 'image/png',
+  }) async {
+    return _withAuthRetry(auth: true, doRequest: (headers) async {
+      final uri = _baseUri.replace(
+        path: '/api/v1/creations',
+        queryParameters: {
+          'child_id': childId,
+          'game_id': gameId,
+          'drawing_mode': drawingMode,
+          'width': '$width',
+          'height': '$height',
+        },
+      );
+      return _client
+          .post(uri, headers: {...headers, 'Content-Type': mimeType}, body: bytes)
+          .timeout(_timeout);
+    });
+  }
+
+  Future<List<Map<String, Object?>>> fetchCreations({required String childId}) async {
+    return _getList('/api/v1/creations', auth: true, query: {'child_id': childId});
+  }
+
+  Future<Map<String, dynamic>> deleteCreation({required String creationId}) async {
+    return _withAuthRetry(auth: true, doRequest: (headers) async {
+      final uri = _baseUri.replace(path: '/api/v1/creations/$creationId');
+      return _client.delete(uri, headers: headers).timeout(_timeout);
+    });
+  }
+
+  /// Removes every stored creation for one child, or for the whole family when
+  /// [childId] is null.
+  ///
+  /// Called from profile deletion and account deletion. Idempotent on the server, so
+  /// a retry after a dropped connection is safe.
+  Future<Map<String, dynamic>> purgeCreations({String? childId}) async {
+    return _postJson('/api/v1/creations/purge', auth: true, body: {
+      if (childId != null) 'child_id': childId,
+    });
   }
 
   // --- Billing ---

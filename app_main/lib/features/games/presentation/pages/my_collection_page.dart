@@ -48,6 +48,8 @@ class MyCollectionPage extends StatefulWidget {
     required this.childId,
     required this.creationStore,
     this.loadStickers,
+    this.onKeepInAlbum,
+    this.onRemoveFromAlbum,
     super.key,
   });
 
@@ -58,6 +60,17 @@ class MyCollectionPage extends StatefulWidget {
   /// legitimate state: the sticker shelf then shows its empty message rather than
   /// an error, because a missing shelf must not break the child's own space.
   final Future<List<EarnedSticker>> Function()? loadStickers;
+
+  /// Keeps one drawing in private family storage.
+  ///
+  /// Optional: when absent no cloud action is offered at all, which is the correct
+  /// state for a build with no storage configured. Returning a message means the
+  /// attempt did not succeed and the message explains why — most often that the
+  /// parent has not granted consent yet.
+  final Future<String?> Function(LocalCreation creation)? onKeepInAlbum;
+
+  /// Removes the stored copy, leaving the device copy.
+  final Future<String?> Function(LocalCreation creation)? onRemoveFromAlbum;
 
   @override
   State<MyCollectionPage> createState() => _MyCollectionPageState();
@@ -113,6 +126,9 @@ class _MyCollectionPageState extends State<MyCollectionPage> {
                   _DrawingsShelf(
                     creations: _creations,
                     onDelete: _deleteCreation,
+                    onKeepInAlbum: widget.onKeepInAlbum == null ? null : _keepInAlbum,
+                    onRemoveFromAlbum:
+                        widget.onRemoveFromAlbum == null ? null : _removeFromAlbum,
                   ),
                   _StickersShelf(stickers: _stickers),
                 ],
@@ -128,13 +144,45 @@ class _MyCollectionPageState extends State<MyCollectionPage> {
       _creations = _creations.where((entry) => entry.id != creation.id).toList(growable: false);
     });
   }
+
+  /// Keeps one drawing in family storage, then reloads so the badge reflects it.
+  ///
+  /// A returned message is shown as-is rather than translated into a generic
+  /// failure: the most common one is that consent has not been granted, and that is
+  /// something a parent can act on.
+  Future<void> _keepInAlbum(LocalCreation creation) async {
+    final message = await widget.onKeepInAlbum!(creation);
+    if (!mounted) return;
+    if (message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      return;
+    }
+    await _load();
+  }
+
+  Future<void> _removeFromAlbum(LocalCreation creation) async {
+    final message = await widget.onRemoveFromAlbum!(creation);
+    if (!mounted) return;
+    if (message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      return;
+    }
+    await _load();
+  }
 }
 
 class _DrawingsShelf extends StatelessWidget {
-  const _DrawingsShelf({required this.creations, required this.onDelete});
+  const _DrawingsShelf({
+    required this.creations,
+    required this.onDelete,
+    this.onKeepInAlbum,
+    this.onRemoveFromAlbum,
+  });
 
   final List<LocalCreation> creations;
   final ValueChanged<LocalCreation> onDelete;
+  final ValueChanged<LocalCreation>? onKeepInAlbum;
+  final ValueChanged<LocalCreation>? onRemoveFromAlbum;
 
   @override
   Widget build(BuildContext context) {
@@ -176,10 +224,28 @@ class _DrawingsShelf extends StatelessWidget {
                   ),
                 ),
                 if (creation.isUploaded)
-                  const Positioned(
+                  Positioned(
                     bottom: 4,
                     left: 4,
-                    child: Icon(Icons.cloud_done_outlined, size: 18),
+                    child: onRemoveFromAlbum == null
+                        ? const Icon(Icons.cloud_done_outlined, size: 18)
+                        : IconButton(
+                            icon: const Icon(Icons.cloud_done, size: 18),
+                            tooltip: 'أزِل من ألبوم العائلة',
+                            onPressed: () => onRemoveFromAlbum!(creation),
+                          ),
+                  )
+                else if (onKeepInAlbum != null)
+                  Positioned(
+                    bottom: 4,
+                    left: 4,
+                    child: IconButton(
+                      // Explicit, per drawing. Nothing is uploaded automatically and
+                      // the device copy is unaffected either way.
+                      icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+                      tooltip: 'احفظ في ألبوم العائلة',
+                      onPressed: () => onKeepInAlbum!(creation),
+                    ),
                   ),
               ],
             ),

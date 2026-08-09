@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations_ar.dart';
+import '../../../games/application/creation_cloud_service.dart';
+import '../../../home/application/home_providers.dart';
 
 class AccountDataPage extends StatelessWidget {
   const AccountDataPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
       body: CinematicBackground(
@@ -18,7 +24,7 @@ class AccountDataPage extends StatelessWidget {
               pinned: true,
               backgroundColor: const Color(0xFF0B1026).withValues(alpha: 0.88),
               leading: IconButton(icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white), onPressed: () => context.pop()),
-              title: const Text('بيانات الحساب', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+              title: Text(l10n.accountDataTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
               centerTitle: true,
             ),
             SliverToBoxAdapter(
@@ -53,23 +59,136 @@ class AccountDataPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     const Center(child: Text('—', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800))),
-                    Center(child: Text('لم تُربط بيانات الحساب بعد', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.72), fontSize: 12))),
+                    Center(child: Text(l10n.accountNotLinkedYet, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.72), fontSize: 12))),
                     const SizedBox(height: 24),
-                    _Field(label: 'الاسم', value: '—', icon: Icons.person_outline_rounded),
+                    _Field(label: l10n.nameLabel, value: '—', icon: Icons.person_outline_rounded),
                     const SizedBox(height: 12),
-                    _Field(label: 'البريد الإلكتروني', value: '—', icon: Icons.mail_outline_rounded),
+                    _Field(label: l10n.emailLabel, value: '—', icon: Icons.mail_outline_rounded),
                     const SizedBox(height: 12),
-                    _Field(label: 'رقم الهاتف', value: '+20 1———', icon: Icons.phone_outlined, trailing: TextButton(onPressed: () {}, child: const Text('إضافة'))),
+                    // "إضافة" / "تغيير" / "حفظ التغييرات" each had an empty
+                    // callback. There is no account-update endpoint: the API
+                    // exposes `GET /auth/me` only, with no PATCH and no
+                    // password-change route. Disabled buttons state that
+                    // honestly; empty callbacks implied the edits were saved.
+                    _Field(label: l10n.phoneLabel, value: '—', icon: Icons.phone_outlined, trailing: TextButton(onPressed: null, child: Text(l10n.addAction))),
                     const SizedBox(height: 12),
-                    _Field(label: 'كلمة المرور', value: '••••••••', icon: Icons.lock_outline_rounded, trailing: TextButton(onPressed: () {}, child: const Text('تغيير'))),
+                    _Field(label: l10n.passwordLabel, value: '••••••••', icon: Icons.lock_outline_rounded, trailing: TextButton(onPressed: null, child: Text(l10n.changeAction))),
                     const SizedBox(height: 20),
-                    SizedBox(height: 48, child: FilledButton(onPressed: () {}, style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.deepSpace), child: const Text('حفظ التغييرات'))),
+                    SizedBox(height: 48, child: FilledButton(onPressed: null, child: Text(l10n.accountEditUnavailable))),
+                    const SizedBox(height: 28),
+                    const _StoredDrawingsControl(),
                   ],
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The retention control for stored child drawings.
+///
+/// `docs/games/10-child-creations-storage.md` promises a parent can withdraw
+/// consent and have stored images removed. That promise had no surface: the purge
+/// endpoint existed and nothing called it, so the only way to exercise it was a
+/// hand-written HTTP request.
+///
+/// It is a family-wide purge, which is what an account-level data control should be.
+/// Per-drawing removal already lives in «مجموعتي».
+class _StoredDrawingsControl extends ConsumerStatefulWidget {
+  const _StoredDrawingsControl();
+
+  @override
+  ConsumerState<_StoredDrawingsControl> createState() => _StoredDrawingsControlState();
+}
+
+class _StoredDrawingsControlState extends ConsumerState<_StoredDrawingsControl> {
+  bool _busy = false;
+  String? _message;
+
+  Future<void> _purge() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('حذف رسومات الأطفال المحفوظة؟'),
+        content: const Text(
+          'سيُحذف كل ما حُفظ في مساحة أسرتك، وتُسحب الموافقة على الحفظ.\n\n'
+          'الرسومات الموجودة على هذا الجهاز لا تتأثّر.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('احذف')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+
+    final api = ref.read(majarraApiClientProvider);
+    try {
+      // Purge before revoking: if revocation succeeded and the purge then failed,
+      // images the parent has just refused would remain in storage.
+      final result = await api.purgeCreations();
+      final deleted = result['data'] is Map ? (result['data'] as Map)['objects_deleted'] : null;
+      await api.setConsent(
+        consentType: kCreationsConsentType,
+        version: kCreationsConsentVersion,
+        revoke: true,
+      );
+      if (!mounted) return;
+      setState(() => _message = 'تم الحذف. عناصر مُزالة: ${deleted ?? 0}.');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _message = 'لم نتمكّن من الحذف. حاول لاحقًا.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.indigoSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'رسومات الأطفال المحفوظة',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'ما يُحفظ يبقى خاصًّا بأسرتك: لا يُنشر ولا يُشارك ولا يظهر في أي فهرس.',
+            style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.80), fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 44,
+            child: OutlinedButton.icon(
+              onPressed: _busy ? null : _purge,
+              icon: const Icon(Icons.delete_sweep_outlined),
+              label: const Text('احذف كل الرسومات المحفوظة'),
+            ),
+          ),
+          if (_message != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _message!,
+              style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.85), fontSize: 12),
+            ),
+          ],
+        ],
       ),
     );
   }
