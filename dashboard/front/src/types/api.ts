@@ -1496,6 +1496,116 @@ export interface AvailabilityListRow extends AvailabilityPolicy {
   updated_at: string
 }
 
+// --- محرك سير العمل ---------------------------------------------------------
+
+export type WorkflowStageStatus =
+  | 'pending' | 'in_progress' | 'approved' | 'rejected' | 'changes_requested' | 'skipped'
+export type WorkflowDecision = 'approved' | 'rejected' | 'changes_requested' | 'skipped'
+
+export interface WorkflowStageDefinition {
+  stage_key: string
+  name_ar: string
+  sort_order: number
+  required_role: string | null
+  required_permission: string | null
+  sla_hours: number | null
+  escalate_after_hours: number | null
+  blocks_publish: boolean
+  depends_on: string[]
+  instructions_ar: string | null
+}
+
+export interface WorkflowTemplate {
+  id: string
+  name_ar: string
+  content_type: string
+  stages: WorkflowStageDefinition[]
+}
+
+export interface WorkflowRunStageState {
+  stage_key: string
+  status: WorkflowStageStatus
+  assignee_id: string | null
+  assignee_team_id: string | null
+  due_at: string | null
+  started_at: string | null
+  completed_at: string | null
+  decided_by: string | null
+  decision_comment: string | null
+  skip_reason: string | null
+}
+
+export interface WorkflowStageView extends WorkflowStageDefinition {
+  run_stage: WorkflowRunStageState | null
+  unmet_dependencies: string[]
+  /// محسوبة على الخادم بنفس دالة الفرض، فالزر المعطَّل يطابق ما سيرفضه الخادم.
+  can_decide: boolean
+  refusal_reason: string | null
+}
+
+export interface WorkflowHistoryEntry {
+  id: string
+  step: string
+  decision: string
+  comment: string | null
+  created_at: string
+  reviewer_id: string | null
+  reviewer_name: string | null
+}
+
+export interface WorkflowOverdueStage {
+  stage_key: string
+  name_ar: string | null
+  due_at: string
+  hours_late: number
+  escalated: boolean
+  assignee_id: string | null
+  assignee_team_id: string | null
+}
+
+export interface WorkflowRunDetail {
+  run: {
+    id: string
+    content_type: string
+    content_id: string
+    template_id: string | null
+    current_step: string
+    status: string
+    created_at: string
+    updated_at: string
+  }
+  stages: WorkflowStageView[]
+  actionable: string[]
+  overdue: WorkflowOverdueStage[]
+  implied_status: 'running' | 'approved' | 'rejected'
+  history: WorkflowHistoryEntry[]
+}
+
+export interface WorkflowOverdueRow {
+  run_id: string
+  content_type: string
+  content_id: string
+  stage_key: string
+  status: WorkflowStageStatus
+  due_at: string | null
+  name_ar: string | null
+  hours_late: number
+  escalated: boolean
+  assignee_id: string | null
+  assignee_team_id: string | null
+}
+
+export interface WorkflowMyStage {
+  run_id: string
+  content_type: string
+  content_id: string
+  stage_key: string
+  status: WorkflowStageStatus
+  due_at: string | null
+  name_ar: string | null
+  blocks_publish: number
+}
+
 /// فحص واحد. `message` جاهزة للعرض بالعربية من الخادم، وتحمل السبب لا الحكم فقط.
 export interface QualityCheck {
   check: string

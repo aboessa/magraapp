@@ -9,53 +9,53 @@ read from the source on every run. The **Status** column comes from
 `docs/FEATURE_MATRIX_VERDICTS.json`, where each verdict records how it was
 verified; a route with no recorded verdict is `UNVERIFIED` rather than assumed.
 
-Registered admin routes: **57**. Server routes parsed: **236**.
-API client functions parsed: **161**.
+Registered admin routes: **57**. Server routes parsed: **249**.
+API client functions parsed: **173**.
 
 | Status | Routes |
 |---|---|
-| COMPLETE | 29 |
-| PARTIAL | 20 |
+| COMPLETE | 30 |
+| PARTIAL | 19 |
 | MISSING | 8 |
 
 ## 1. Route matrix
 
 | Route | Page | Status | API calls | Server endpoints | Permissions | Audit | Tests |
 |---|---|---|---|---|---|---|---|
-| `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 8 |
-| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 36 |
+| `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 11 |
+| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 39 |
 | `/taxonomy` | TaxonomyPage.tsx | COMPLETE | 8 | 8/8 | edit_metadata, create, archive | — | 2 |
 | `/planets` | PlanetsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/planets/:id` | PlanetDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
 | `/skills` | SkillsPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 3 |
 | `/objectives` | LearningObjectivesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive | — | 3 |
 | `/content-reviews` | ContentReviewsPage.tsx | PARTIAL | 4 | 4/4 | review | — | 1 |
-| `/series` | SeriesPage.tsx | COMPLETE | 8 | 8/8 | edit_metadata, create, publish, archive | ✅ | 36 |
-| `/series/:id` | SeriesDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
-| `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 9 |
+| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 39 |
+| `/series/:id` | SeriesDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
+| `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 12 |
 | `/seasons/:id` | SeasonDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
-| `/episodes` | EpisodesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, publish, archive | ✅ | 9 |
+| `/episodes` | EpisodesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive, publish | ✅ | 12 |
 | `/episodes/:id` | EpisodeDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
-| `/characters` | CharactersPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 12 |
+| `/characters` | CharactersPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 15 |
 | `/characters/:id` | CharacterDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 5 |
-| `/stories` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 19 |
-| `/stories/:id` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 19 |
-| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 25 |
-| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 24 |
-| `/games/:id` | GameDetailPage.tsx | COMPLETE | 4 | 4/4 | — | — | 19 |
+| `/stories` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 22 |
+| `/stories/:id` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 22 |
+| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 28 |
+| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 26 |
+| `/games/:id` | GameDetailPage.tsx | COMPLETE | 4 | 4/4 | — | — | 21 |
 | `/games-ops` | GamesOpsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/games-audio-queue` | AudioProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/games-art-queue` | ArtProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
-| `/media` | MediaLibraryPage.tsx | COMPLETE | 6 | 6/6 | upload_images, create | — | 14 |
-| `/media/:id` | AssetDetailPage.tsx | COMPLETE | 2 | 2/2 | — | — | 20 |
+| `/media` | MediaLibraryPage.tsx | COMPLETE | 6 | 6/6 | upload_images, create | — | 16 |
+| `/media/:id` | AssetDetailPage.tsx | COMPLETE | 2 | 2/2 | — | — | 22 |
 | `/visual-styles` | VisualStylesPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 0 |
 | `/parents` | ParentsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 0 |
 | `/children` | ChildrenPage.tsx | PARTIAL | 1 | 1/1 | — | — | 6 |
 | `/billing` | BillingPage.tsx | COMPLETE | 4 | 4/4 | — | — | 5 |
 | `/analytics` | AnalyticsPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
-| `/teams` | TeamsPage.tsx | COMPLETE | 3 | 3/3 | manage_team | — | 3 |
-| `/roles` | RolesPage.tsx | PARTIAL | 3 | 3/3 | manage_permissions | — | 7 |
-| `/team-access` | TeamAccessPage.tsx | COMPLETE | 6 | 6/6 | — | — | 6 |
+| `/teams` | TeamsPage.tsx | COMPLETE | 3 | 3/3 | manage_team | — | 4 |
+| `/roles` | RolesPage.tsx | PARTIAL | 3 | 3/3 | manage_permissions | — | 8 |
+| `/team-access` | TeamAccessPage.tsx | COMPLETE | 6 | 6/6 | — | — | 7 |
 | `/tasks` | MyTasksPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
 | `/audit-logs` | AuditLogPage.tsx | COMPLETE | 1 | 1/1 | view_audit_log | — | 1 |
 | `/failed-events` | FailedEventsPage.tsx | COMPLETE | 3 | 3/3 | publish | — | 2 |
@@ -65,8 +65,8 @@ API client functions parsed: **161**.
 | `/app-experience` | AppExperiencePage.tsx | PARTIAL | 6 | 6/6 | edit_metadata, create | — | 0 |
 | `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 3 |
 | `/support-center` | SupportCenterPage.tsx | PARTIAL | 1 | 1/1 | — | ✅ | 1 |
-| `/workflows` | WorkflowPage.tsx | PARTIAL | 2 | 2/2 | approve | ✅ | 1 |
-| `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 4 |
+| `/workflows` | WorkflowPage.tsx | COMPLETE | 8 | 8/8 | assign_members, review | ✅ | 2 |
+| `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 7 |
 | `/remote-config` | RemoteConfigPage.tsx | PARTIAL | 3 | 3/3 | publish | — | 1 |
 | `/packages` | PackagesPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/ops` | OpsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 5 |
@@ -78,7 +78,7 @@ API client functions parsed: **161**.
 | `/school` | SchoolAccountsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/finance-advanced` | AdvancedFinancePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/ops-sla` | OpsSlaPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
-| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 36 |
+| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 39 |
 
 ## 2. Collection UX affordances (static evidence)
 
@@ -207,11 +207,11 @@ that it behaves; behavioural findings belong in the verdict file.
 
 ### `/series` — COMPLETE
 
-- Verified by: code read 2026-08-09; api test routeGuards.test.mjs
-- Evidence: CRUD plus publish authority separation: create/patch refuse status=published, publish is a separate operation behind the publish permission, archived refused with 409, publish audited with previous status.
+- Verified by: code read 2026-08-09; api test routeGuards.test.mjs and publishGate.test.mjs
+- Evidence: CRUD plus publish authority separation, and publication now passes a real readiness gate: the operation evaluates lib/publishGate.ts server-side, refuses with 409 and the full blocker list, audits the blocked attempt as publish_blocked, and records the accepted warnings with the publish. The UI opens the same readiness result before the button.
 - Gaps:
-  - Publish shows quality findings as a confirm dialog, not a blocking gate
   - No bulk actions
+  - No saved views or column manager
 
 ### `/series/:id` — COMPLETE
 
@@ -234,11 +234,11 @@ that it behaves; behavioural findings belong in the verdict file.
 
 ### `/episodes` — COMPLETE
 
-- Verified by: code read 2026-08-09; api test routeGuards.test.mjs
-- Evidence: CRUD plus the same publish authority separation as series, including is_published and first published_at preservation.
+- Verified by: code read 2026-08-09; api test routeGuards.test.mjs and publishGate.test.mjs
+- Evidence: CRUD plus the same publish authority separation, and the readiness gate now blocks an episode with no video file, no thumbnail, no Arabic voicing, an unpublished parent series, an expired licence or an unapproved blocking workflow stage - all reported at once with owner and required action.
 - Gaps:
-  - No episode quality check exists server-side, so publish has no readiness report
   - No bulk actions
+  - The legacy /admin/quality endpoint still has no episode checks; the publish gate covers episodes instead
 
 ### `/episodes/:id` — COMPLETE
 
@@ -450,21 +450,23 @@ that it behaves; behavioural findings belong in the verdict file.
   - No tickets, categories, priority, SLA, assignment, timeline, notes or tags
   - No operational actions (entitlement resync, restore purchase, device revoke, PIN reset)
 
-### `/workflows` — PARTIAL
+### `/workflows` — COMPLETE
 
-- Verified by: code read 2026-08-09; api test workflowReview.test.mjs
-- Evidence: Decisions are recorded against the server's current_step, the reviewer comes from the session, comments are length-capped, and no false transition to approved happens.
+- Verified by: code read 2026-08-09; api test workflowEngine.test.mjs (19 tests) and workflowReview.test.mjs
+- Evidence: Real engine: stages as rows with ordering, dependencies, required role and permission, SLA and escalation hours and a blocks_publish flag (migration 0030, three seeded templates). Runs hold per-stage state so parallel stages are expressible; decisions enforce the stage's own requirement plus creator/approver separation, write both the stage state and the shared history table, start the clock on newly unblocked stages, and are audited. Blocking stages are consumed by the publish gate, so a status string no longer bypasses a required review. UI shows stages with server-supplied refusal reasons, assignment, my-stages and overdue views.
 - Gaps:
-  - A decision log, not an engine: no stage ordering, assignment, due dates, dependencies, SLA or escalation
-  - A status string can still reach published without passing any gate
+  - Templates and stages are seeded by migration; there is no UI to author a new template
+  - Assignment takes a user id typed in rather than a picker
+  - Escalation is reported but sends no notification (no notification transport exists)
 
 ### `/rights` — PARTIAL
 
-- Verified by: code read 2026-08-09
-- Evidence: Create/list form matches the server fields exactly, with type/list/date validation and audit.
+- Verified by: code read 2026-08-09; api test availabilityPolicy.test.mjs (21 tests)
+- Evidence: The registry form is unchanged and real. Enforcement now exists separately: content_availability (0029) plus lib/availabilityPolicy.ts is consulted by the public series list and detail, episode list and detail, playback start, the app-facing game endpoint and the book detail, refusing with 451. Expired content_rights blocks publication through the publish gate.
 - Gaps:
-  - A registry only: no catalogue, search, playback or publish path consults it
-  - No territory policy model (worldwide / worldwide-except / selected-only / unavailable)
+  - This page still lists licences only; the availability policy is edited from the series and episode detail pages, not from here
+  - Search, recommendations and the home builder do not filter by availability yet
+  - Downloads have no availability check because there is no download endpoint
 
 ### `/remote-config` — PARTIAL
 
@@ -568,6 +570,10 @@ operator surface. Listed so the second case cannot hide.
 | adminAuth.ts | POST | `/api/v1/admin/auth/logout` | — | — |
 | adminAuth.ts | POST | `/api/v1/admin/auth/logout-all` | — | — |
 | adminAuth.ts | POST | `/api/v1/admin/auth/change-password` | — | — |
+| adminAvailability.ts | GET | `/api/v1/admin/availability/:type/:id` | — | — |
+| adminAvailability.ts | PUT | `/api/v1/admin/availability/:type/:id` | publish | ✅ |
+| adminAvailability.ts | DELETE | `/api/v1/admin/availability/:type/:id` | publish | ✅ |
+| adminAvailability.ts | GET | `/api/v1/admin/availability` | — | — |
 | adminBackup.ts | POST | `/api/v1/admin/restore` | publish | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/skills/:id` | — | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/content-reviews/:id` | — | — |
@@ -587,14 +593,17 @@ operator surface. Listed so the second case cannot hide.
 | adminGames.ts | PUT | `/api/v1/admin/games/:id/localizations/:language` | edit_text | ✅ |
 | adminGames.ts | GET | `/api/v1/admin/games/analytics` | — | — |
 | adminPartnerships.ts | GET | `/api/v1/admin/partnerships/:id` | — | — |
+| adminPublishGate.ts | GET | `/publish-readiness/:type/:id` | — | — |
 | adminSiteMode.ts | POST | `/api/v1/admin/site-mode/reset` | publish | ✅ |
 | adminTeams.ts | GET | `/api/v1/admin/teams/:id` | — | — |
 | adminTeams.ts | POST | `/api/v1/admin/grants` | manage_permissions | — |
 | adminTeams.ts | DELETE | `/api/v1/admin/grants/:id` | manage_permissions | — |
+| adminTeams.ts | POST | `/api/v1/admin/workflows/runs/:id/review` | approve | ✅ |
 | adminUsers.ts | GET | `/api/v1/adminadminUser` | — | ✅ |
 | adminUsers.ts | POST | `/api/v1/admin/users/:id/grants` | — | — |
 | adminUsers.ts | DELETE | `/api/v1/admin/users/:id/grants/:grantId` | — | — |
 | adminUsers.ts | GET | `/api/v1/admin/users/:id/sessions` | — | — |
+| adminWorkflow.ts | GET | `/api/v1/adminadminUser` | — | — |
 | auth.ts | POST | `/api/v1/auth/register` | — | — |
 | auth.ts | POST | `/api/v1/auth/resend-verification` | — | — |
 | auth.ts | POST | `/api/v1/auth/verify-email` | — | — |
@@ -647,7 +656,7 @@ operator surface. Listed so the second case cannot hide.
 | series.ts | GET | `/api/v1/series/:id` | — | — |
 | siteMode.ts | GET | `/api/v1/site-mode` | — | — |
 
-Orphan count: **93** of 236.
+Orphan count: **100** of 249.
 
 ## 5. API client functions the matrix could not resolve to a server route
 

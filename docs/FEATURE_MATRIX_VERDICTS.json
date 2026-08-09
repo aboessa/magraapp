@@ -71,9 +71,9 @@
   },
   "/series": {
     "status": "COMPLETE",
-    "verified_by": "code read 2026-08-09; api test routeGuards.test.mjs",
-    "evidence": "CRUD plus publish authority separation: create/patch refuse status=published, publish is a separate operation behind the publish permission, archived refused with 409, publish audited with previous status.",
-    "gaps": ["Publish shows quality findings as a confirm dialog, not a blocking gate", "No bulk actions"]
+    "verified_by": "code read 2026-08-09; api test routeGuards.test.mjs and publishGate.test.mjs",
+    "evidence": "CRUD plus publish authority separation, and publication now passes a real readiness gate: the operation evaluates lib/publishGate.ts server-side, refuses with 409 and the full blocker list, audits the blocked attempt as publish_blocked, and records the accepted warnings with the publish. The UI opens the same readiness result before the button.",
+    "gaps": ["No bulk actions", "No saved views or column manager"]
   },
   "/series/:id": {
     "status": "COMPLETE",
@@ -95,9 +95,9 @@
   },
   "/episodes": {
     "status": "COMPLETE",
-    "verified_by": "code read 2026-08-09; api test routeGuards.test.mjs",
-    "evidence": "CRUD plus the same publish authority separation as series, including is_published and first published_at preservation.",
-    "gaps": ["No episode quality check exists server-side, so publish has no readiness report", "No bulk actions"]
+    "verified_by": "code read 2026-08-09; api test routeGuards.test.mjs and publishGate.test.mjs",
+    "evidence": "CRUD plus the same publish authority separation, and the readiness gate now blocks an episode with no video file, no thumbnail, no Arabic voicing, an unpublished parent series, an expired licence or an unapproved blocking workflow stage - all reported at once with owner and required action.",
+    "gaps": ["No bulk actions", "The legacy /admin/quality endpoint still has no episode checks; the publish gate covers episodes instead"]
   },
   "/episodes/:id": {
     "status": "COMPLETE",
@@ -287,19 +287,24 @@
     "gaps": ["No tickets, categories, priority, SLA, assignment, timeline, notes or tags", "No operational actions (entitlement resync, restore purchase, device revoke, PIN reset)"]
   },
   "/workflows": {
-    "status": "PARTIAL",
-    "verified_by": "code read 2026-08-09; api test workflowReview.test.mjs",
-    "evidence": "Decisions are recorded against the server's current_step, the reviewer comes from the session, comments are length-capped, and no false transition to approved happens.",
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-09; api test workflowEngine.test.mjs (19 tests) and workflowReview.test.mjs",
+    "evidence": "Real engine: stages as rows with ordering, dependencies, required role and permission, SLA and escalation hours and a blocks_publish flag (migration 0030, three seeded templates). Runs hold per-stage state so parallel stages are expressible; decisions enforce the stage's own requirement plus creator/approver separation, write both the stage state and the shared history table, start the clock on newly unblocked stages, and are audited. Blocking stages are consumed by the publish gate, so a status string no longer bypasses a required review. UI shows stages with server-supplied refusal reasons, assignment, my-stages and overdue views.",
     "gaps": [
-      "A decision log, not an engine: no stage ordering, assignment, due dates, dependencies, SLA or escalation",
-      "A status string can still reach published without passing any gate"
+      "Templates and stages are seeded by migration; there is no UI to author a new template",
+      "Assignment takes a user id typed in rather than a picker",
+      "Escalation is reported but sends no notification (no notification transport exists)"
     ]
   },
   "/rights": {
     "status": "PARTIAL",
-    "verified_by": "code read 2026-08-09",
-    "evidence": "Create/list form matches the server fields exactly, with type/list/date validation and audit.",
-    "gaps": ["A registry only: no catalogue, search, playback or publish path consults it", "No territory policy model (worldwide / worldwide-except / selected-only / unavailable)"]
+    "verified_by": "code read 2026-08-09; api test availabilityPolicy.test.mjs (21 tests)",
+    "evidence": "The registry form is unchanged and real. Enforcement now exists separately: content_availability (0029) plus lib/availabilityPolicy.ts is consulted by the public series list and detail, episode list and detail, playback start, the app-facing game endpoint and the book detail, refusing with 451. Expired content_rights blocks publication through the publish gate.",
+    "gaps": [
+      "This page still lists licences only; the availability policy is edited from the series and episode detail pages, not from here",
+      "Search, recommendations and the home builder do not filter by availability yet",
+      "Downloads have no availability check because there is no download endpoint"
+    ]
   },
   "/remote-config": {
     "status": "PARTIAL",

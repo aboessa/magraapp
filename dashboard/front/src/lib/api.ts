@@ -375,6 +375,15 @@ export const api = {
   tasks: () => request<ApiEnvelope<import('../types/api').TaskRecord[]>>('/admin/tasks'),
   workflowRuns: () => request<ApiEnvelope<import('../types/api').WorkflowRunRecord[]>>('/admin/workflows/runs'),
   reviewWorkflowRun: (id: string, payload: { decision: string; comment?: string }) => request<ApiEnvelope<{ id: string }>>(`/admin/workflows/runs/${id}/review`, { method: 'POST', body: JSON.stringify(payload) }),
+
+  /// محرك سير العمل: قوالب ومراحل وتعيينات وقرارات وSLA.
+  workflowTemplates: () => request<ApiEnvelope<import('../types/api').WorkflowTemplate[]>>('/admin/workflows/templates'),
+  workflowRun: (id: string) => request<ApiEnvelope<import('../types/api').WorkflowRunDetail>>(`/admin/workflows/runs/${encodeURIComponent(id)}`),
+  startWorkflowRun: (payload: { content_type: string; content_id: string; template_id: string }) => request<ApiEnvelope<{ run_id: string }>>('/admin/workflows/runs', { method: 'POST', body: JSON.stringify(payload) }),
+  assignWorkflowStage: (runId: string, stageKey: string, payload: { assignee_id?: string | null; assignee_team_id?: string | null; due_at?: string | null }) => request<ApiEnvelope<{ run_id: string }>>(`/admin/workflows/runs/${encodeURIComponent(runId)}/stages/${encodeURIComponent(stageKey)}/assign`, { method: 'POST', body: JSON.stringify(payload) }),
+  decideWorkflowStage: (runId: string, stageKey: string, payload: { decision: import('../types/api').WorkflowDecision; comment?: string }) => request<ApiEnvelope<{ run_status: string }>>(`/admin/workflows/runs/${encodeURIComponent(runId)}/stages/${encodeURIComponent(stageKey)}/decision`, { method: 'POST', body: JSON.stringify(payload) }),
+  workflowOverdue: () => request<PaginatedEnvelope<import('../types/api').WorkflowOverdueRow>>('/admin/workflows/overdue'),
+  workflowMyStages: () => request<PaginatedEnvelope<import('../types/api').WorkflowMyStage>>('/admin/workflows/my-stages'),
   devices: () => request<ApiEnvelope<import('../types/api').AdminDeviceRecord[]>>('/admin/devices'),
   plans: () => request<ApiEnvelope<import('../types/api').PlansCatalogue>>('/admin/plans'),
   rights: () => request<ApiEnvelope<import('../types/api').RightsLicenseRecord[]>>('/admin/rights'),
