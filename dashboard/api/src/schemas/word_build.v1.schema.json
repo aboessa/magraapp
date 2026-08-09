@@ -1,0 +1,60 @@
+{
+  "$comment": "JSON Schema draft 2020-12. language_specific: تُؤلَّف لكل لغة ولا تُترجم.",
+  "title": "word_build level v1",
+  "type": "object",
+  "required": ["level", "language", "word", "word_audio", "word_image", "writing_direction", "slots", "letters", "show_word_text_button"],
+  "additionalProperties": false,
+  "properties": {
+    "level": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "language": { "type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$" },
+    "word": { "type": "string", "minLength": 2, "maxLength": 12 },
+    "word_audio": { "$ref": "#/$defs/assetId" },
+    "word_syllables_audio": { "$ref": "#/$defs/assetId" },
+    "word_image": { "$ref": "#/$defs/assetId" },
+    "writing_direction": { "type": "string", "enum": ["rtl", "ltr"] },
+    "slots": { "type": "integer", "minimum": 2, "maximum": 5 },
+    "letters": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/letter" }
+    },
+    "distractors": {
+      "$comment": "تُختار من حروف قريبة صوتيًا أو شكليًا، لا عشوائيًا.",
+      "type": "array",
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/letter" }
+    },
+    "show_word_text_button": {
+      "$comment": "إلزامي true — يجعل اللعبة قابلة للعب لمن لا يسمع.",
+      "type": "boolean",
+      "const": true
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "العربية تتطلب شكل الحرف داخل الكلمة.",
+      "if": { "properties": { "language": { "const": "ar" } }, "required": ["language"] },
+      "then": {
+        "properties": {
+          "writing_direction": { "const": "rtl" },
+          "letters": { "items": { "required": ["char", "form", "position", "audio"] } }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "assetId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{3,128}$" },
+    "letter": {
+      "type": "object",
+      "required": ["char", "audio"],
+      "additionalProperties": false,
+      "properties": {
+        "char": { "type": "string", "minLength": 1, "maxLength": 2 },
+        "form": { "type": "string", "enum": ["isolated", "initial", "medial", "final"] },
+        "position": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "audio": { "$ref": "#/$defs/assetId" }
+      }
+    }
+  }
+}

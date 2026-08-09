@@ -1,0 +1,75 @@
+{
+  "$comment": "JSON Schema draft 2020-12. يوسّع content-pack.base.schema.json",
+  "title": "match_pairs level v1",
+  "type": "object",
+  "required": ["level", "match_type", "prompt_key", "targets", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "level": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "match_type": {
+      "type": "string",
+      "enum": ["identical", "shadow", "relation", "sound_image", "part_whole"]
+    },
+    "prompt_key": { "$ref": "#/$defs/i18nKey" },
+    "targets": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/target" }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 6,
+      "items": { "$ref": "#/$defs/item" }
+    },
+    "distractors": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/distractor" }
+    },
+    "shuffle": { "type": "boolean", "default": true }
+  },
+  "$defs": {
+    "assetId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{3,128}$" },
+    "i18nKey": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$" },
+    "target": {
+      "type": "object",
+      "required": ["id", "image", "label_key", "audio"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^t[0-9]+$" },
+        "image": { "$ref": "#/$defs/assetId" },
+        "label_key": { "$ref": "#/$defs/i18nKey" },
+        "audio": { "$ref": "#/$defs/assetId" }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": ["id", "image", "target", "label_key", "audio"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^i[0-9]+$" },
+        "image": { "$ref": "#/$defs/assetId" },
+        "target": {
+          "$comment": "يجب أن يطابق id هدف موجود في نفس المستوى.",
+          "type": "string",
+          "pattern": "^t[0-9]+$"
+        },
+        "label_key": { "$ref": "#/$defs/i18nKey" },
+        "audio": { "$ref": "#/$defs/assetId" }
+      }
+    },
+    "distractor": {
+      "type": "object",
+      "required": ["id", "image", "label_key", "audio"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^d[0-9]+$" },
+        "image": { "$ref": "#/$defs/assetId" },
+        "label_key": { "$ref": "#/$defs/i18nKey" },
+        "audio": { "$ref": "#/$defs/assetId" }
+      }
+    }
+  }
+}

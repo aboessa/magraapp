@@ -1,0 +1,62 @@
+{
+  "$comment": "JSON Schema draft 2020-12. الشبكة لا تُعكس في RTL؛ الاتجاهات منطق لعبة.",
+  "title": "block_code level v1",
+  "type": "object",
+  "required": ["level", "grid", "allowed_blocks", "block_limit", "optimal_blocks", "step_delay_ms"],
+  "additionalProperties": false,
+  "properties": {
+    "level": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "grid": { "$ref": "#/$defs/grid" },
+    "allowed_blocks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["move", "turn_left", "turn_right", "repeat", "if_path", "collect", "function"]
+      }
+    },
+    "block_limit": { "type": "integer", "minimum": 3, "maximum": 24 },
+    "optimal_blocks": {
+      "$comment": "نجمة إضافية فقط؛ الحل الأطول لا يُعاقب.",
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 24
+    },
+    "step_delay_ms": {
+      "$comment": "التنفيذ خطوة بخطوة مرئي وقابل للإيقاف.",
+      "type": "integer",
+      "minimum": 200,
+      "maximum": 1200
+    },
+    "show_grid_coordinates": { "type": "boolean", "default": false },
+    "reference_solution": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-z_]+(:[0-9]+)?$" }
+    }
+  },
+  "$defs": {
+    "cell": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "type": "integer", "minimum": 0, "maximum": 7 }
+    },
+    "grid": {
+      "type": "object",
+      "required": ["w", "h", "start", "facing", "goal"],
+      "additionalProperties": false,
+      "properties": {
+        "w": { "type": "integer", "minimum": 3, "maximum": 8 },
+        "h": { "type": "integer", "minimum": 3, "maximum": 8 },
+        "walls": { "type": "array", "maxItems": 12, "items": { "$ref": "#/$defs/cell" } },
+        "start": { "$ref": "#/$defs/cell" },
+        "facing": { "type": "string", "enum": ["north", "east", "south", "west"] },
+        "goal": { "$ref": "#/$defs/cell" },
+        "collectibles": { "type": "array", "maxItems": 6, "items": { "$ref": "#/$defs/cell" } }
+      }
+    }
+  }
+}

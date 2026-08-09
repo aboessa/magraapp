@@ -25,6 +25,8 @@
 /// The split is expressed as `errors` (block the requested transition) and
 /// `warnings` (surface in the CMS, do not block a draft save).
 
+import { engineContract, REVIEW_OWNERS } from './engineContracts.ts';
+import { validateEngineRules } from './enginePackRules.ts';
 import { validateAgainstSchema, type Schema } from './jsonSchema.ts';
 
 export interface PackValidationContext {
@@ -37,6 +39,9 @@ export interface PackValidationContext {
   /// `games.translated_from` where present. Rule 10: a `language_specific` pack
   /// must not be a translation of another pack.
   translatedFrom?: string | null;
+  /// Whether the game row names a learning objective. Engines that write no
+  /// mastery must not have one.
+  hasLearningObjective?: boolean;
   /// Highest `pack_version` this deployment can run. Rule 7.
   supportedEngineVersion: number;
   /// `game_engines.mechanics.max_elements_on_screen`. Rule 4.
@@ -180,10 +185,42 @@ export function validateGamePack(
     errors.push(`progression.levels_to_finish (${toFinish}) exceeds the ${levels.length} level(s) in the pack`);
   }
 
-  // The engine is pointer-only. The contract declares supports_dpad false, and
-  // a pack claiming otherwise would be offered on TV and then be unplayable.
-  if (pack.supports_dpad === true) {
-    errors.push('trace_color requires a pointer; supports_dpad must be false');
+  // Whether the engine is playable without a pointer is the engine's own property,
+  // not the pack's opinion of itself. A pack claiming D-pad support for a pointer
+  // engine would be offered on television and then be unplayable; a pack denying it
+  // for a board engine would hide working content from every TV household.
+  const contract = engineContract(ctx.engineId);
+  if (contract && typeof pack.supports_dpad === 'boolean'
+    && pack.supports_dpad !== contract.supportsDpad) {
+    errors.push(
+      contract.supportsDpad
+        ? `${ctx.engineId} is playable with a D-pad; supports_dpad must be true`
+        : `${ctx.engineId} requires a pointer; supports_dpad must be false`,
+    );
+  }
+
+  // The language class is declared by the engine contract, where the engine fixes
+  // one. An editor may not reclassify a language-specific engine as translatable,
+  // which is what would permit machine translation of Arabic letter forms.
+  // `trace_color` fixes none, because shapes and letters differ; its letter levels
+  // are covered by the rule below instead.
+  if (contract?.languageClass && typeof pack.localization === 'string'
+    && pack.localization !== contract.languageClass) {
+    errors.push(
+      `${ctx.engineId} is "${contract.languageClass}"; content_pack.localization `
+      + `"${pack.localization}" contradicts the engine contract`,
+    );
+  }
+
+  // Engines the mastery document lists as entertainment-first must not carry a
+  // learning objective, because an objective is what a mastery row attaches to.
+  // This is how "لا تُكتب mastery" is enforced without the engine understating its
+  // score.
+  if (contract && !contract.writesMastery && ctx.hasLearningObjective === true) {
+    errors.push(
+      `${ctx.engineId} is entertainment-first and writes no mastery; `
+      + 'it must not have a learning objective',
+    );
   }
 
   // Rule 12 — supervised activities must say why.
@@ -197,7 +234,10 @@ export function validateGamePack(
 
   // Rule 10 — a language-specific pack is authored per language, never derived.
   const localization = typeof pack.localization === 'string' ? pack.localization : null;
-  const hasLetterLevel = levels.some((level) => level.mode === 'letter');
+  // `mode: "letter"` is a trace_color level shape. Other engines have their own
+  // level vocabularies, so this must not be inferred across engines.
+  const isTraceColor = ctx.engineId === 'trace_color';
+  const hasLetterLevel = isTraceColor && levels.some((level) => level.mode === 'letter');
   if (localization === 'language_specific' && ctx.translatedFrom) {
     errors.push('a language_specific pack must not be a translation (translated_from must be null)');
   }
@@ -385,6 +425,34 @@ export function validateGamePack(
       if (ctx.forPublish) errors.push(message); else warnings.push(message);
     }
   }
+
+  // The review each engine's contract makes mandatory. Engineering cannot satisfy
+  // any of these, which is exactly why they are checked rather than remembered:
+  // a science simulation, a historical timeline, an Arabic word pack and licensed
+  // music each need a named human to sign off before a child sees them.
+  const requiredReview = contract?.requiredReview;
+  if (requiredReview && !(isTraceColor && requiredReview === 'linguistic_review')) {
+    const record = isObject(review[requiredReview]) ? review[requiredReview] : null;
+    const status = typeof record?.status === 'string' ? record.status : 'pending';
+    if (status !== 'approved') {
+      const message =
+        `${ctx.engineId} packs need an approved ${requiredReview.replace('_', ' ')} `
+        + `by ${REVIEW_OWNERS[requiredReview] ?? 'a reviewer'} (status: ${status})`;
+      if (ctx.forPublish) errors.push(message); else warnings.push(message);
+    }
+  }
+
+  // Engine-specific semantics: the rules a JSON Schema cannot state, such as an
+  // answer that must equal the number of elements actually on screen, or a
+  // reference solution that must genuinely reach the goal.
+  const engineRules = validateEngineRules(ctx.engineId, pack, {
+    ageMin: ctx.ageMin,
+    ageMax: ctx.ageMax,
+    forPublish: ctx.forPublish,
+    hasLearningObjective: ctx.hasLearningObjective,
+  });
+  errors.push(...engineRules.errors);
+  warnings.push(...engineRules.warnings);
 
   return { errors, warnings };
 }

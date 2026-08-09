@@ -1,0 +1,20 @@
+{
+  "$comment": "Shared between app_main/lib/features/games/engine/timeline_map_engine.dart and dashboard/api/src/lib/mapRegions.ts. The client draws and hit-tests with these bounds; the server uses them to reject an event whose coordinates fall outside the map the child will see. Both sides are asserted against this file so they cannot drift. A bounding box is a viewport and nothing else: no borders are derived from it.",
+  "world": { "min_lat": -60, "max_lat": 80, "min_lon": -180, "max_lon": 180 },
+  "regions": {
+    "middle_east_north_africa": { "min_lat": 10, "max_lat": 42, "min_lon": -18, "max_lon": 63 },
+    "arab_world": { "min_lat": 10, "max_lat": 40, "min_lon": -18, "max_lon": 60 },
+    "world": { "min_lat": -60, "max_lat": 80, "min_lon": -180, "max_lon": 180 }
+  },
+  "known_places": [
+    { "name": "Baghdad", "lat": 33.31, "lon": 44.36, "inside": ["middle_east_north_africa", "arab_world", "world"] },
+    { "name": "Cairo", "lat": 30.04, "lon": 31.24, "inside": ["middle_east_north_africa", "arab_world", "world"] },
+    { "name": "Fez", "lat": 34.03, "lon": -5.0, "inside": ["middle_east_north_africa", "arab_world", "world"] },
+    { "name": "Samarkand", "lat": 39.65, "lon": 66.96, "inside": ["world"] }
+  ],
+  "distances_km": [
+    { "$comment": "Baghdad to Cairo, great-circle. Checked against the haversine both implementations use.", "from": [33.31, 44.36], "to": [30.04, 31.24], "expect_km": 1293, "tolerance_km": 15 },
+    { "$comment": "A point to itself must be zero, not a rounding artefact.", "from": [30.04, 31.24], "to": [30.04, 31.24], "expect_km": 0, "tolerance_km": 1 },
+    { "$comment": "Fez to Baghdad, spanning the whole MENA viewport.", "from": [34.03, -5.0], "to": [33.31, 44.36], "expect_km": 4548, "tolerance_km": 40 }
+  ]
+}

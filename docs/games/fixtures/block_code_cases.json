@@ -1,0 +1,114 @@
+{
+  "$comment": "Shared between the Dart engine (app_main/test/wave_two_engines_test.dart) and the server-side checker (dashboard/api/test/blockCodeSim.test.mjs). Two interpreters of block_code exist for good reason — one plays, one verifies that an authored reference_solution works — and this file is what stops them disagreeing. Coordinates are [x, y] with y increasing downwards, matching the schema.",
+  "cases": [
+    {
+      "name": "move advances one cell east",
+      "grid": {
+        "w": 4, "h": 2, "start": [0, 0], "facing": "east", "goal": [1, 0],
+        "walls": [], "collectibles": []
+      },
+      "program": ["move"],
+      "expect": { "x": 1, "y": 0, "facing": "east", "collected": 0, "collided": false, "reached_goal": true }
+    },
+    {
+      "name": "a wall stops Robo and is not a win",
+      "grid": {
+        "w": 4, "h": 2, "start": [0, 0], "facing": "east", "goal": [1, 0],
+        "walls": [[2, 0]], "collectibles": []
+      },
+      "program": ["move", "move"],
+      "expect": { "x": 1, "y": 0, "facing": "east", "collected": 0, "collided": true, "reached_goal": false }
+    },
+    {
+      "name": "walking off the edge is a collision, not a wrap",
+      "grid": {
+        "w": 2, "h": 2, "start": [1, 0], "facing": "east", "goal": [1, 1],
+        "walls": [], "collectibles": []
+      },
+      "program": ["move"],
+      "expect": { "x": 1, "y": 0, "facing": "east", "collected": 0, "collided": true, "reached_goal": false }
+    },
+    {
+      "name": "repeat:3 repeats the single following block",
+      "grid": {
+        "w": 5, "h": 2, "start": [0, 0], "facing": "east", "goal": [3, 0],
+        "walls": [], "collectibles": []
+      },
+      "program": ["repeat:3", "move"],
+      "expect": { "x": 3, "y": 0, "facing": "east", "collected": 0, "collided": false, "reached_goal": true }
+    },
+    {
+      "name": "a block after the repeated one runs once",
+      "grid": {
+        "w": 5, "h": 3, "start": [0, 0], "facing": "east", "goal": [2, 1],
+        "walls": [], "collectibles": []
+      },
+      "program": ["repeat:2", "move", "turn_right", "move"],
+      "expect": { "x": 2, "y": 1, "facing": "south", "collected": 0, "collided": false, "reached_goal": true }
+    },
+    {
+      "name": "turn_left cycles anticlockwise",
+      "grid": {
+        "w": 3, "h": 3, "start": [1, 1], "facing": "north", "goal": [0, 1],
+        "walls": [], "collectibles": []
+      },
+      "program": ["turn_left", "move"],
+      "expect": { "x": 0, "y": 1, "facing": "west", "collected": 0, "collided": false, "reached_goal": true }
+    },
+    {
+      "name": "if_path skips its guarded block when blocked and continues after",
+      "grid": {
+        "w": 3, "h": 3, "start": [0, 0], "facing": "east", "goal": [0, 1],
+        "walls": [[1, 0]], "collectibles": []
+      },
+      "program": ["if_path", "move", "turn_right", "move"],
+      "expect": { "x": 0, "y": 1, "facing": "south", "collected": 0, "collided": false, "reached_goal": true }
+    },
+    {
+      "name": "if_path runs its guarded block when the path is open",
+      "grid": {
+        "w": 3, "h": 2, "start": [0, 0], "facing": "east", "goal": [1, 0],
+        "walls": [], "collectibles": []
+      },
+      "program": ["if_path", "move"],
+      "expect": { "x": 1, "y": 0, "facing": "east", "collected": 0, "collided": false, "reached_goal": true }
+    },
+    {
+      "name": "collect needs Robo to be standing on the item",
+      "grid": {
+        "w": 4, "h": 2, "start": [0, 0], "facing": "east", "goal": [2, 0],
+        "walls": [], "collectibles": [[1, 0]]
+      },
+      "program": ["collect", "move", "move"],
+      "expect": { "x": 2, "y": 0, "facing": "east", "collected": 0, "collided": false, "reached_goal": false }
+    },
+    {
+      "name": "the goal is only reached with everything collected",
+      "grid": {
+        "w": 4, "h": 2, "start": [0, 0], "facing": "east", "goal": [2, 0],
+        "walls": [], "collectibles": [[1, 0]]
+      },
+      "program": ["move", "collect", "move"],
+      "expect": { "x": 2, "y": 0, "facing": "east", "collected": 1, "collided": false, "reached_goal": true }
+    },
+    {
+      "name": "the function strip runs where the function block sits",
+      "grid": {
+        "w": 5, "h": 2, "start": [0, 0], "facing": "east", "goal": [2, 0],
+        "walls": [], "collectibles": []
+      },
+      "program": ["function"],
+      "function": ["move", "move"],
+      "expect": { "x": 2, "y": 0, "facing": "east", "collected": 0, "collided": false, "reached_goal": true }
+    },
+    {
+      "name": "standing on the goal after a collision is still not a win",
+      "grid": {
+        "w": 3, "h": 2, "start": [0, 0], "facing": "east", "goal": [1, 0],
+        "walls": [[2, 0]], "collectibles": []
+      },
+      "program": ["move", "move"],
+      "expect": { "x": 1, "y": 0, "facing": "east", "collected": 0, "collided": true, "reached_goal": false }
+    }
+  ]
+}

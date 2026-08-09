@@ -1,0 +1,58 @@
+{
+  "$comment": "JSON Schema draft 2020-12",
+  "title": "sort_bins level v1",
+  "type": "object",
+  "required": ["level", "criterion_key", "criterion_type", "bins", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "level": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "criterion_key": { "$ref": "#/$defs/i18nKey" },
+    "criterion_type": {
+      "type": "string",
+      "enum": ["color", "shape", "size", "compound", "abstract"]
+    },
+    "bins": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/bin" }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 8,
+      "items": { "$ref": "#/$defs/item" }
+    },
+    "explain_on_correct": { "type": "boolean", "default": false },
+    "shuffle": { "type": "boolean", "default": true }
+  },
+  "$defs": {
+    "assetId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{3,128}$" },
+    "i18nKey": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$" },
+    "bin": {
+      "$comment": "السلة تُميَّز بصورة ونص وصوت، لا باللون وحده.",
+      "type": "object",
+      "required": ["id", "label_key", "image", "audio"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^b[0-9]+$" },
+        "label_key": { "$ref": "#/$defs/i18nKey" },
+        "image": { "$ref": "#/$defs/assetId" },
+        "audio": { "$ref": "#/$defs/assetId" }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": ["id", "image", "bin", "label_key", "audio"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^i[0-9]+$" },
+        "image": { "$ref": "#/$defs/assetId" },
+        "bin": { "type": "string", "pattern": "^b[0-9]+$" },
+        "label_key": { "$ref": "#/$defs/i18nKey" },
+        "audio": { "$ref": "#/$defs/assetId" },
+        "explain_audio": { "$ref": "#/$defs/assetId" }
+      }
+    }
+  }
+}

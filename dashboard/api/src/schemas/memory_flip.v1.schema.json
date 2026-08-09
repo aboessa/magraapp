@@ -1,0 +1,50 @@
+{
+  "$comment": "JSON Schema draft 2020-12. ترفيه أولًا: لا نقاط ولا مؤقت.",
+  "title": "memory_flip level v1",
+  "type": "object",
+  "required": ["level", "grid", "pair_type", "pairs", "flip_back_delay_ms"],
+  "additionalProperties": false,
+  "properties": {
+    "level": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "grid": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "type": "integer", "minimum": 2, "maximum": 4 }
+    },
+    "pair_type": { "type": "string", "enum": ["identical", "related"] },
+    "pairs": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 6,
+      "items": { "$ref": "#/$defs/pair" }
+    },
+    "flip_back_delay_ms": {
+      "$comment": "لا تقل عن 1400 في preschool.",
+      "type": "integer",
+      "minimum": 800,
+      "maximum": 2000
+    },
+    "reveal_help_after_misses": { "type": "integer", "minimum": 6, "maximum": 20 },
+    "celebrate_each_pair": { "type": "boolean", "default": true }
+  },
+  "$defs": {
+    "assetId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{3,128}$" },
+    "i18nKey": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$" },
+    "pair": {
+      "type": "object",
+      "required": ["a", "b", "sound_key"],
+      "additionalProperties": false,
+      "properties": {
+        "a": { "$ref": "#/$defs/assetId" },
+        "b": { "$ref": "#/$defs/assetId" },
+        "sound_key": { "$ref": "#/$defs/i18nKey" },
+        "audio": { "$ref": "#/$defs/assetId" },
+        "explain_audio": {
+          "$comment": "مطلوب للمستوى المترابط لشرح العلاقة.",
+          "$ref": "#/$defs/assetId"
+        }
+      }
+    }
+  }
+}

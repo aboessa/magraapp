@@ -18,17 +18,22 @@
 ///
 /// Supported: `type`, `const`, `enum`, `required`, `properties`,
 /// `additionalProperties`, `patternProperties`, `items`, `minItems`, `maxItems`,
-/// `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, `$ref` (local
-/// `#/$defs/...` only), `allOf`, `if`/`then`/`else`, `default` (annotation),
-/// plus the annotations `$schema`, `$id`, `$comment`, `title`, `description`.
+/// `uniqueItems`, `minProperties`, `maxProperties`, `minimum`, `maximum`,
+/// `exclusiveMinimum`, `exclusiveMaximum`, `minLength`, `maxLength`, `pattern`,
+/// `$ref` (local `#/$defs/...` only, with sibling keywords honoured), `allOf`,
+/// `oneOf`, `if`/`then`/`else`, `default` (annotation), plus the annotations
+/// `$schema`, `$id`, `$comment`, `title`, `description`.
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export type Schema = Record<string, unknown>;
 
 const SUPPORTED_KEYWORDS = new Set([
   'type', 'const', 'enum', 'required', 'properties', 'additionalProperties',
-  'patternProperties', 'items', 'minItems', 'maxItems', 'minimum', 'maximum',
-  'minLength', 'maxLength', 'pattern', '$ref', 'allOf', 'if', 'then', 'else',
+  'patternProperties', 'items', 'minItems', 'maxItems', 'uniqueItems',
+  'minProperties', 'maxProperties',
+  'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
+  'minLength', 'maxLength', 'pattern', '$ref', 'allOf', 'oneOf',
+  'if', 'then', 'else',
   // Annotations, no validation effect.
   '$schema', '$id', '$comment', 'title', 'description', 'default', '$defs',
 ]);
@@ -65,6 +70,9 @@ export function assertSupportedSchema(schema: Schema, path = '#'): void {
   }
   if (Array.isArray(schema.allOf)) {
     schema.allOf.forEach((entry, index) => walk(entry, `${path}/allOf/${index}`));
+  }
+  if (Array.isArray(schema.oneOf)) {
+    schema.oneOf.forEach((entry, index) => walk(entry, `${path}/oneOf/${index}`));
   }
 }
 
@@ -113,7 +121,25 @@ function matches(root: Schema, schema: Schema, value: unknown): boolean {
 
 function validateNode(root: Schema, schema: Schema, value: unknown, path: string): string[] {
   if (typeof schema.$ref === 'string') {
-    return validateNode(root, resolveRef(root, schema.$ref), value, path);
+    // Draft 2020-12 allows keywords beside `$ref`, and `timeline_map` uses
+    // `{ "type": ["object","null"], "$ref": "#/$defs/map" }` to say the property
+    // may be null *or* a map. Discarding the siblings — which is what a
+    // short-circuit does — would silently drop that constraint, so both are
+    // evaluated and the results combined.
+    const target = resolveRef(root, schema.$ref);
+    const siblings: Schema = {};
+    for (const [key, entry] of Object.entries(schema)) {
+      if (key !== '$ref') siblings[key] = entry;
+    }
+    const errors = validateNode(root, target, value, path);
+    if (Object.keys(siblings).some((key) => key !== '$comment')) {
+      errors.push(...validateNode(root, siblings, value, path));
+    }
+    // A nullable ref: the target rejects null while the sibling type allows it.
+    // When the sibling union accepts the value, the reference is not applicable.
+    const types = Array.isArray(siblings.type) ? siblings.type as string[] : [];
+    if (types.includes('null') && value === null) return [];
+    return errors;
   }
 
   const errors: string[] = [];
@@ -156,6 +182,12 @@ function validateNode(root: Schema, schema: Schema, value: unknown, path: string
     if (typeof schema.maximum === 'number' && value > schema.maximum) {
       errors.push(`${at}: above maximum ${schema.maximum}`);
     }
+    if (typeof schema.exclusiveMinimum === 'number' && value <= schema.exclusiveMinimum) {
+      errors.push(`${at}: must be greater than ${schema.exclusiveMinimum}`);
+    }
+    if (typeof schema.exclusiveMaximum === 'number' && value >= schema.exclusiveMaximum) {
+      errors.push(`${at}: must be less than ${schema.exclusiveMaximum}`);
+    }
   }
 
   if (Array.isArray(value)) {
@@ -164,6 +196,17 @@ function validateNode(root: Schema, schema: Schema, value: unknown, path: string
     }
     if (typeof schema.maxItems === 'number' && value.length > schema.maxItems) {
       errors.push(`${at}: allows at most ${schema.maxItems} item(s)`);
+    }
+    if (schema.uniqueItems === true) {
+      // Deep comparison rather than a Set of primitives: `allowed_blocks` is a
+      // list of strings today but the keyword is defined for any item type.
+      for (let i = 0; i < value.length; i++) {
+        for (let j = i + 1; j < value.length; j++) {
+          if (deepEqual(value[i], value[j])) {
+            errors.push(`${at}: items must be unique, ${JSON.stringify(value[i])} is repeated`);
+          }
+        }
+      }
     }
     if (schema.items && typeof schema.items === 'object') {
       value.forEach((entry, index) => {
@@ -174,6 +217,15 @@ function validateNode(root: Schema, schema: Schema, value: unknown, path: string
 
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
     const record = value as Record<string, unknown>;
+
+    if (typeof schema.minProperties === 'number'
+      && Object.keys(record).length < schema.minProperties) {
+      errors.push(`${at}: needs at least ${schema.minProperties} propert(ies)`);
+    }
+    if (typeof schema.maxProperties === 'number'
+      && Object.keys(record).length > schema.maxProperties) {
+      errors.push(`${at}: allows at most ${schema.maxProperties} propert(ies)`);
+    }
 
     for (const key of (schema.required ?? []) as string[]) {
       if (!(key in record)) errors.push(`${at}: missing required property "${key}"`);
@@ -208,6 +260,23 @@ function validateNode(root: Schema, schema: Schema, value: unknown, path: string
   if (Array.isArray(schema.allOf)) {
     for (const entry of schema.allOf as Schema[]) {
       errors.push(...validateNode(root, entry, value, path));
+    }
+  }
+
+  if (Array.isArray(schema.oneOf)) {
+    const branches = schema.oneOf as Schema[];
+    const failures = branches.map((entry) => validateNode(root, entry, value, path));
+    const passing = failures.filter((branch) => branch.length === 0).length;
+    if (passing === 0) {
+      // `count_quantity` items are a union of three shapes. Reporting "matches
+      // none" alone would leave an editor guessing, so the closest branch's own
+      // errors are surfaced — the one that got furthest is almost always the shape
+      // they meant.
+      const closest = failures.reduce((best, branch) => (branch.length < best.length ? branch : best));
+      errors.push(`${at}: does not match any allowed shape`);
+      errors.push(...closest);
+    } else if (passing > 1) {
+      errors.push(`${at}: ambiguous, matches ${passing} allowed shapes where exactly one is required`);
     }
   }
 

@@ -84,10 +84,32 @@ test('the canonical schema uses only keywords the evaluator implements', () => {
 });
 
 test('an unsupported keyword is rejected loudly rather than ignored', () => {
+  // `oneOf` used to be the example here. It is implemented now, because
+  // count_quantity's item union needs it, so the example moved to a keyword that
+  // genuinely is not implemented. The property under test is unchanged: silence
+  // about an unimplemented constraint is how a validator passes a pack it never
+  // checked.
   assert.throws(
-    () => assertSupportedSchema({ oneOf: [{ type: 'string' }] }),
-    /Unsupported JSON Schema keyword "oneOf"/,
+    () => assertSupportedSchema({ anyOf: [{ type: 'string' }] }),
+    /Unsupported JSON Schema keyword "anyOf"/,
   );
+  assert.throws(
+    () => assertSupportedSchema({ not: { type: 'string' } }),
+    /Unsupported JSON Schema keyword "not"/,
+  );
+  // And a nested one, so the walk is covered rather than just the top level.
+  assert.throws(
+    () => assertSupportedSchema({
+      type: 'object',
+      properties: { a: { dependentRequired: { x: ['y'] } } },
+    }),
+    /Unsupported JSON Schema keyword "dependentRequired"/,
+  );
+  // `oneOf` is now accepted, and inside a nested position too.
+  assert.doesNotThrow(() => assertSupportedSchema({
+    type: 'object',
+    properties: { a: { oneOf: [{ type: 'string' }, { type: 'integer' }] } },
+  }));
 });
 
 test('the worker schema and the documented schema are identical', () => {

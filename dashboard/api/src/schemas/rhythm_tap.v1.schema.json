@@ -1,0 +1,56 @@
+{
+  "$comment": "JSON Schema draft 2020-12. never_fail إلزامي true؛ المسار لا يُعكس في RTL.",
+  "title": "rhythm_tap level v1",
+  "type": "object",
+  "required": ["level", "track", "track_duration_ms", "bpm", "lanes", "hit_window_ms", "accuracy_to_pass", "notes", "visual_pulse", "never_fail"],
+  "additionalProperties": false,
+  "properties": {
+    "level": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "track": {
+      "$comment": "موسيقى مرخّصة بحقوق موثقة.",
+      "$ref": "#/$defs/assetId"
+    },
+    "track_duration_ms": { "type": "integer", "minimum": 10000, "maximum": 180000 },
+    "bpm": { "type": "integer", "minimum": 60, "maximum": 140 },
+    "lanes": { "type": "integer", "minimum": 1, "maximum": 3 },
+    "hit_window_ms": {
+      "$comment": "لا تقل عن 450 في preschool، و500 في الوضع الحركي المبسّط.",
+      "type": "integer",
+      "minimum": 250,
+      "maximum": 600
+    },
+    "accuracy_to_pass": { "type": "number", "minimum": 0.4, "maximum": 0.8 },
+    "notes": {
+      "type": "array",
+      "minItems": 4,
+      "items": { "$ref": "#/$defs/note" }
+    },
+    "visual_pulse": {
+      "$comment": "إلزامي true — بديل الصوت لمن لا يسمع.",
+      "type": "boolean",
+      "const": true
+    },
+    "haptic_pulse": { "type": "boolean", "default": true },
+    "never_fail": {
+      "$comment": "إلزامي true — الأنشودة تكمل دائمًا.",
+      "type": "boolean",
+      "const": true
+    }
+  },
+  "$defs": {
+    "assetId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{3,128}$" },
+    "note": {
+      "type": "object",
+      "required": ["time_ms", "lane"],
+      "additionalProperties": false,
+      "properties": {
+        "time_ms": {
+          "$comment": "متزامن مع المقطع بدقة ±20ms.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "lane": { "type": "integer", "minimum": 0, "maximum": 2 }
+      }
+    }
+  }
+}

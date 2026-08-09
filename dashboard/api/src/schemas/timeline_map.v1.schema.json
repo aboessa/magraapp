@@ -1,0 +1,92 @@
+{
+  "$comment": "JSON Schema draft 2020-12. التاريخ يُخزَّن ميلاديًا؛ الخريطة لا تُعكس في RTL.",
+  "title": "timeline_map level v1",
+  "type": "object",
+  "required": ["level", "mode", "events"],
+  "additionalProperties": false,
+  "properties": {
+    "level": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "mode": { "type": "string", "enum": ["timeline", "map", "both"] },
+    "timeline": { "$ref": "#/$defs/timeline" },
+    "map": { "type": ["object", "null"], "$ref": "#/$defs/map" },
+    "events": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/event" }
+    },
+    "show_reference_anchor": { "type": "boolean", "default": true }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "mode": { "enum": ["timeline", "both"] } }, "required": ["mode"] },
+      "then": { "required": ["timeline"] }
+    },
+    {
+      "if": { "properties": { "mode": { "enum": ["map", "both"] } }, "required": ["mode"] },
+      "then": { "required": ["map"] }
+    }
+  ],
+  "$defs": {
+    "assetId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{3,128}$" },
+    "i18nKey": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$" },
+    "timeline": {
+      "type": "object",
+      "required": ["from", "to", "unit", "display_calendar"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "integer" },
+        "to": { "type": "integer" },
+        "unit": {
+          "$comment": "التخزين ميلادي دائمًا.",
+          "type": "string",
+          "const": "gregorian_year"
+        },
+        "display_calendar": { "type": "string", "enum": ["auto", "gregorian", "hijri"] },
+        "anchors": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": ["year", "label_key"],
+            "additionalProperties": false,
+            "properties": {
+              "year": { "type": "integer" },
+              "label_key": { "$ref": "#/$defs/i18nKey" }
+            }
+          }
+        }
+      }
+    },
+    "map": {
+      "type": "object",
+      "required": ["region", "projection", "mirror_in_rtl"],
+      "additionalProperties": false,
+      "properties": {
+        "region": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "projection": { "type": "string", "enum": ["equirectangular"] },
+        "mirror_in_rtl": {
+          "$comment": "إلزامي false — الجغرافيا لا تُعكس أبدًا.",
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": ["id", "label_key", "image"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^e[0-9]+$" },
+        "label_key": { "$ref": "#/$defs/i18nKey" },
+        "image": { "$ref": "#/$defs/assetId" },
+        "year": { "type": "integer" },
+        "tolerance_years": { "type": "integer", "minimum": 10, "maximum": 200 },
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+        "tolerance_km": { "type": "integer", "minimum": 50, "maximum": 500 },
+        "explain_key": { "$ref": "#/$defs/i18nKey" }
+      }
+    }
+  }
+}
