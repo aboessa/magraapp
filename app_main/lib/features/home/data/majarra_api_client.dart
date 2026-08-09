@@ -333,6 +333,22 @@ class MajarraApiClient {
     );
   }
 
+  /// Skill mastery for one child.
+  ///
+  /// Backed by `GET /api/v1/family/mastery`, which returns one row per learning
+  /// objective the child has attempted, with a level and attempt counts. Used by
+  /// the parent dashboard's learning summary. The server verifies the child
+  /// belongs to the family and 404s otherwise.
+  Future<List<Map<String, Object?>>> fetchMastery({
+    required String childId,
+  }) async {
+    return _getList(
+      '/api/v1/family/mastery',
+      auth: true,
+      query: {'child_id': childId},
+    );
+  }
+
   // --- Child creations ---
   //
   // Nothing here is called automatically. A drawing lives on the device, and these

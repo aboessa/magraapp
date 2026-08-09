@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../child/application/child_provider.dart';
 import '../../../home/domain/content_models.dart';
+import '../../application/parent_reports.dart';
 
 /// Parent area.
 ///
@@ -69,28 +70,22 @@ class ParentDashboardPage extends ConsumerWidget {
             loading: filtered.isLoading,
           ),
           const SizedBox(height: 14),
-          const _PendingSection(
-            icon: Icons.timer_outlined,
-            title: 'وقت المشاهدة',
-            body:
-                'يحتاج وقت المشاهدة إلى مزامنة التقدّم من الخادم. لم تُربط بعد، '
-                'فلا نعرض أرقامًا تقديرية هنا.',
-          ),
-          const SizedBox(height: 14),
-          const _PendingSection(
-            icon: Icons.insights_outlined,
-            title: 'تقارير التقدّم',
-            body:
-                'سيظهر تقدّم كل طفل في كل سلسلة بعد ربط مزامنة التقدّم لكل '
-                'child_id.',
-          ),
+          if (child.activeChildId == null || !child.hasSelection)
+            const _PendingSection(
+              icon: Icons.insights_outlined,
+              title: 'التقارير',
+              body: 'اختر ملف طفل لعرض نشاطه وتقدّمه في التعلّم.',
+              pending: false,
+            )
+          else
+            _ActivityReports(childId: child.activeChildId!),
           const SizedBox(height: 14),
           const _PendingSection(
             icon: Icons.tune_rounded,
-            title: 'السماحات وحدود الوقت',
+            title: 'حدود الوقت والسماحات',
             body:
-                'التحكم في الكواكب المسموحة وحدود وقت الشاشة يُحفظ على مستوى '
-                'الأسرة في الخادم. الأزرار ستُفعّل عند إتاحة الحفظ.',
+                'حدود وقت الشاشة ونافذة النوم تُفرَض على مستوى الأسرة في الخادم '
+                'لتسري على كل الأجهزة. ستُفعَّل عند إتاحة الحفظ والفرض في الخادم.',
           ),
           const SizedBox(height: 18),
           Text(
@@ -186,8 +181,7 @@ class _ActiveProfileCard extends StatelessWidget {
             ),
           const SizedBox(height: 10),
           const Text(
-            'ملفات العائلة تُقرأ حاليًا من قائمة تجريبية على الجهاز، وليست من '
-            'الخادم.',
+            'الملفات تُقرأ من حساب الأسرة على الخادم، وتقاريرها معزولة لكل طفل.',
             style: TextStyle(
               color: ParentDashboardPage._inkFaint,
               fontSize: 10.5,
@@ -328,11 +322,17 @@ class _PendingSection extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.body,
+    this.pending = true,
   });
 
   final IconData icon;
   final String title;
   final String body;
+
+  /// When true, shows the amber "قيد الربط" chip. Set false for a neutral
+  /// informational card (e.g. "choose a profile") that is not blocked on a
+  /// backend capability.
+  final bool pending;
 
   @override
   Widget build(BuildContext context) {
@@ -353,24 +353,25 @@ class _PendingSection extends StatelessWidget {
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3D6),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text(
-                  'قيد الربط',
-                  style: TextStyle(
-                    color: Color(0xFF8A6300),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
+              if (pending)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3D6),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'قيد الربط',
+                    style: TextStyle(
+                      color: Color(0xFF8A6300),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -428,4 +429,252 @@ class _Card extends StatelessWidget {
         ),
         child: child,
       );
+}
+
+
+/// Real activity for the selected child, aggregated from the family endpoints
+/// (`/family/progress`, `/mastery`, `/rewards`). Every number here is derived
+/// from server rows; nothing is invented.
+class _ActivityReports extends ConsumerWidget {
+  const _ActivityReports({required this.childId});
+
+  final String childId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summary = ref.watch(childActivitySummaryProvider(childId));
+    final catalog = ref.watch(filteredCatalogProvider).valueOrNull;
+
+    return summary.when(
+      loading: () => const _Card(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      error: (_, __) => _Card(
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_off_rounded, color: ParentDashboardPage._inkSoft),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'تعذّر تحميل التقارير. تحقّق من الاتصال وحاول مجددًا.',
+                style: TextStyle(color: ParentDashboardPage._inkSoft, fontSize: 12),
+              ),
+            ),
+            TextButton(
+              onPressed: () => ref.invalidate(childActivitySummaryProvider(childId)),
+              child: const Text('إعادة'),
+            ),
+          ],
+        ),
+      ),
+      data: (data) {
+        if (data.isEmpty) {
+          return const _PendingSection(
+            icon: Icons.insights_outlined,
+            title: 'النشاط والتعلّم',
+            body:
+                'لم يبدأ هذا الملف أي مشاهدة أو نشاط بعد. ستظهر هنا ملخّصات '
+                'المشاهدة والتقدّم فور بدء الاستخدام.',
+            pending: false,
+          );
+        }
+        return Column(
+          children: [
+            _Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionHeader(Icons.insights_outlined, 'ملخّص النشاط'),
+                  const Divider(height: 18),
+                  Row(
+                    children: [
+                      _CountTile(label: 'قيد المتابعة', value: '${data.inProgress.length}'),
+                      const SizedBox(width: 10),
+                      _CountTile(label: 'أكملها', value: '${data.completed.length}'),
+                      const SizedBox(width: 10),
+                      _CountTile(label: 'أوسمة', value: '${data.rewardsCount}'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (data.recent.isNotEmpty)
+              _Card(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _sectionHeader(Icons.history_rounded, 'أحدث النشاط'),
+                    const Divider(height: 18),
+                    for (final entry in data.recent)
+                      _ProgressRow(
+                        title: resolveContentTitle(catalog, entry),
+                        entry: entry,
+                      ),
+                  ],
+                ),
+              ),
+            if (data.mastery.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _Card(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _sectionHeader(Icons.school_outlined, 'التعلّم والإتقان'),
+                    const Divider(height: 18),
+                    for (final m in data.mastery.take(8)) _MasteryRow(entry: m),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _sectionHeader(IconData icon, String title) => Row(
+        children: [
+          Icon(icon, color: ParentDashboardPage._brand, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              color: ParentDashboardPage._ink,
+            ),
+          ),
+        ],
+      );
+}
+
+class _ProgressRow extends StatelessWidget {
+  const _ProgressRow({required this.title, required this.entry});
+
+  final String title;
+  final ProgressEntry entry;
+
+  IconData get _icon => switch (entry.contentType) {
+        'episode' => Icons.play_circle_outline_rounded,
+        'book' => Icons.menu_book_outlined,
+        'game' => Icons.videogame_asset_outlined,
+        _ => Icons.play_circle_outline_rounded,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(_icon, size: 18, color: ParentDashboardPage._inkSoft),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12.5,
+                    color: ParentDashboardPage._ink,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: entry.fraction,
+                    minHeight: 4,
+                    backgroundColor: const Color(0xFFE7ECF6),
+                    valueColor: const AlwaysStoppedAnimation(ParentDashboardPage._brand),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            entry.completed ? 'اكتمل' : '${(entry.fraction * 100).round()}%',
+            style: const TextStyle(
+              color: ParentDashboardPage._inkSoft,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MasteryRow extends StatelessWidget {
+  const _MasteryRow({required this.entry});
+
+  final MasteryEntry entry;
+
+  String get _levelLabel => switch (entry.level) {
+        'mastered' => 'متقَن',
+        'practicing' => 'قيد التمرّن',
+        'introduced' => 'مُقدَّم',
+        _ => entry.level.isEmpty ? 'قيد التمرّن' : entry.level,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          const Icon(Icons.stars_rounded, size: 18, color: ParentDashboardPage._brand),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              entry.objectiveId,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 12.5,
+                color: ParentDashboardPage._ink,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAF0FF),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              _levelLabel,
+              style: const TextStyle(
+                color: ParentDashboardPage._brand,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          if (entry.attempts > 0) ...[
+            const SizedBox(width: 8),
+            Text(
+              '${(entry.accuracy * 100).round()}%',
+              style: const TextStyle(
+                color: ParentDashboardPage._inkSoft,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
