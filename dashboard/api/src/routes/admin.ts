@@ -20,6 +20,7 @@ import adminSupportRoute from './adminSupport.ts'
 import adminProductionRoute from './adminProduction.ts'
 import adminDevicesRoute from './adminDevices.ts'
 import adminCustomerRoute from './adminCustomer.ts'
+import adminWebsiteRoute from './adminWebsite.ts'
 import { summarizeGate } from '../lib/publishGate.ts'
 import { validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
@@ -107,6 +108,9 @@ adminRoute.route('/', adminDevicesRoute)
 // Customer 360: مساحة عمل العائلة. تُركِّب قراءة السلطة مع الإسقاطات وجداول
 // الإدارة، ولا تنقل سلطة العائلة إلى D1.
 adminRoute.route('/', adminCustomerRoute)
+// CMS الموقع العام: صفحات وأقسام ومراجعات وجدولة ونشر. تغييرات التسويق الروتينية
+// لا تحتاج نشر كود.
+adminRoute.route('/', adminWebsiteRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)
