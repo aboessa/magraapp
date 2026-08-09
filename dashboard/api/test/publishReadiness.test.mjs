@@ -143,6 +143,10 @@ test('Arabic blocks publication and the other languages only warn', () => {
 
 test('a language_specific pack does not warn about absent translations', () => {
   // It is authored per language as a separate game, so absence is correct.
+  //
+  // The `reviews` row is what makes this fixture genuinely publishable rather
+  // than merely well translated: a letter pack renders Arabic glyphs to a child,
+  // and that needs a documented font licence. See the font-licence tests below.
   const result = evaluatePublishReadiness(input({
     pack: {
       localization: 'language_specific',
@@ -153,6 +157,7 @@ test('a language_specific pack does not warn about absent translations', () => {
       },
       review: { linguistic_review: { status: 'approved' } },
     },
+    reviews: [{ role: 'rights', status: 'approved', reviewer: 'مورد الخطّ' }],
     localizations: [
       { language: 'ar', status: 'ready', hasTitle: true, hasInstructions: true, missingPromptKeys: [], isMachineTranslated: false },
     ],

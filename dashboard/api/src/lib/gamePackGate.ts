@@ -152,6 +152,34 @@ function referencedAssetIds(pack: Record<string, unknown>): string[] {
   return [...ids];
 }
 
+/// The limits an engine declares about itself, parsed from `game_engines.mechanics`.
+///
+/// Extracted so a batched caller — the production queues and the operations
+/// overview read every engine's mechanics in one query — derives the same numbers
+/// this gate does. Two copies of the parse would eventually disagree about the
+/// on-screen budget, and the disagreement would show up as a pack that publishes
+/// through one path and fails through another.
+export interface EngineLimits {
+  /// Falls back to 3, the conservative `trace_color` budget, when the column is
+  /// malformed. A too-small budget rejects a legal pack loudly; a too-large one
+  /// admits an illegal pack silently, and the loud failure is the safe one.
+  maxElements: number;
+  engineVersion: number;
+}
+
+export function parseEngineLimits(mechanics: string | null | undefined): EngineLimits {
+  let maxElements = 3;
+  let engineVersion = 1;
+  try {
+    const parsed = JSON.parse(mechanics ?? '{}') as Record<string, unknown>;
+    const declared = Number(parsed.max_elements_on_screen);
+    if (Number.isFinite(declared) && declared > 0) maxElements = declared;
+    const version = Number(parsed.engine_version);
+    if (Number.isFinite(version) && version > 0) engineVersion = version;
+  } catch { /* malformed mechanics; the conservative defaults stand. */ }
+  return { maxElements, engineVersion };
+}
+
 /// Validates a game's pack against its engine contract.
 ///
 /// `forPublish` must be true for any transition into a release status. When it
@@ -178,15 +206,7 @@ export async function validatePackForGame(
   const engine = await queryFirst<{ mechanics: string | null }>(
     db, 'SELECT mechanics FROM game_engines WHERE id = ?', [game.engine_id],
   );
-  let maxElements = 3;
-  let engineVersion = 1;
-  try {
-    const mechanics = JSON.parse(engine?.mechanics ?? '{}') as Record<string, unknown>;
-    const declared = Number(mechanics.max_elements_on_screen);
-    if (Number.isFinite(declared) && declared > 0) maxElements = declared;
-    const version = Number(mechanics.engine_version);
-    if (Number.isFinite(version) && version > 0) engineVersion = version;
-  } catch { /* mechanics is malformed; the conservative defaults stand. */ }
+  const { maxElements, engineVersion } = parseEngineLimits(engine?.mechanics);
 
   // Only look up the assets the pack actually names. An empty pack references
   // nothing and needs no query at all.
