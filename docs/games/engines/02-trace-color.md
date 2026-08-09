@@ -1,5 +1,21 @@
 # 02 — `trace_color` · تتبّع وتلوين
 
+> 🟢 **مُنفَّذ.** الكود في `app_main/lib/features/games/engine/`:
+> `trace_geometry.dart` (الرياضيات، Dart خالص وقابل للاختبار بلا واجهة)،
+> `trace_session.dart` (آلة الحالة وترتيب المسارات)،
+> `trace_color_engine.dart` (السطح واللمس والرسم)،
+> والعقد يُتحقَّق منه على الخادم في `dashboard/api/src/lib/gamePackValidation.ts`.
+>
+> **الأنماط أصبحت أوسع من الخمسة الأصلية.** بقي `line · curve · shape · number ·
+> letter` بمعناها، وأُضيف: `path` · `connect_dots` · `coloring` · `free_draw` ·
+> `copy_pattern` · `complete_drawing` · `draw_from_prompt`. ولكل مستوى حقل
+> `scoring` صريح في البيانات، ويرفض المُتحقِّق أي اقتران غير صادق — فالتلوين
+> والرسم الحرّ والرسم من وصف **لا تُقيَّم إطلاقًا**، لأن مجرة لا تملك أي تعرّف
+> على الصور ولن تدّعي ذلك.
+>
+> **المخطط الرسمي صار يصف الحزمة كاملة** لا مستوى واحدًا:
+> [`../schemas/trace_color.v1.schema.json`](../schemas/trace_color.v1.schema.json).
+
 ## الهوية
 
 | الحقل | القيمة |
