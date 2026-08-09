@@ -8,7 +8,7 @@
 | `sort_order` | 4 |
 | المجال | القيم والمواقف الأخلاقية العامة |
 
-**سلسلة واحدة · 6 حلقات · مسار `kids` (6–8)**
+**ثلاث سلاسل · 15 حلقة · المسارات الثلاثة `preschool` و`kids` و`junior`**
 
 > 🔴 **حدّ فاصل تحريري:** كوكب **قيم** مجال **عام إنساني**، ويختلف عن كوكب **الإيمان والآداب** (`islamic`) الذي له حوكمة شرعية وبوابة اعتماد. الخلط بينهما خطأ تحريري.
 >
@@ -18,10 +18,15 @@
 
 | المستند | الوصف |
 |---|---|
-| [دليل السلسلة](./series-bible-hekaya-wa-hikma.md) | `anthology` · دليل الأسلوب لا دليل شخصية |
-| [حزم الألعاب](./game-packs.md) | 6 حزم بمستوياتها |
+| [دليل حكاية وحكمة](./series-bible-hekaya-wa-hikma.md) | `anthology` · 6–8 · دليل الأسلوب لا دليل شخصية |
+| [دليل قيمي الصغيرة](./series-bible-qiyami-alsaghira.md) | `anthology` · 3–5 · النسخة ما قبل المدرسية |
+| [دليل مواقف وقرارات](./series-bible-mawaqif-wa-qararat.md) | `anthology` · 9–12 · 🔴 **معضلة لا موقف** |
+| [حزم الألعاب](./game-packs.md) | 6 حزم بمستوياتها *(حكاية وحكمة)* |
+| [مانيفست قيمي الصغيرة](./_manifest-qiyami-alsaghira.json) | 4 حلقات · 4 حزم · كتاب · مشروع |
+| [مانيفست مواقف وقرارات](./_manifest-mawaqif-wa-qararat.json) | 5 حلقات · 5 حزم · دفتر · مشروع |
 
-## السلسلة — حكاية وحكمة
+
+## السلسلة 1 — حكاية وحكمة
 
 `hekaya-wa-hikma` · `anthology` · 6–8 · `kids` · `motion_story` · `family` · 4:00
 
@@ -33,6 +38,51 @@
 | 4 | مسؤولية النبتة | المسؤولية | ❌ | `sim_lab` | [ep-04](./hekaya-wa-hikma/ep-04-plant-responsibility.md) |
 | 5 | كلمة طيبة | اللطف | ❌ | `match_pairs` | [ep-05](./hekaya-wa-hikma/ep-05-kind-word.md) |
 | 6 | أعتذر | الاعتذار الصادق | ❌ | `sequence_order` | [ep-06](./hekaya-wa-hikma/ep-06-i-apologize.md) |
+
+## السلسلة 2 — قيمي الصغيرة
+
+`qiyami-alsaghira` · `anthology` · 3–5 · `preschool` · `pre_reader` · `tap` · `motion_story` · `family` · 2:40
+
+| # | الحلقة | القيمة | الهدف | مجاني | المحرّك | السكربت |
+|---:|---|---|---|---|---|---|
+| 1 | أرجوحة واحدة | انتظار الدور | `val.share.take_turns` | ✅ | `sequence_order` | [ep-01](./qiyami-alsaghira/ep-01-one-swing.md) |
+| 2 | الماء على الورقة | الصدق | `val.truth.say_what_happened` | ❌ | `sequence_order` | [ep-02](./qiyami-alsaghira/ep-02-water-on-the-paper.md) |
+| 3 | الرفّ العالي | المساعدة **طلبًا وعرضًا** | `val.help.ask_and_offer` | ❌ | `sort_bins` | [ep-03](./qiyami-alsaghira/ep-03-the-high-shelf.md) |
+| 4 | البُرعُم | الرفق | `val.care.gentle_hands` | ❌ | `match_pairs` | [ep-04](./qiyami-alsaghira/ep-04-the-bud.md) |
+
+**ما يميّزها:** خيارَان لا ثلاثة · صمت **5 ثوان** لا 8 · إطار توقّف رمزه **يدان** لا علامة استفهام · و**جملة واحدة بصوت طفل حقيقي** في كل حلقة هي ما نريد أن يكرّره المشاهد.
+
+🔴 **بلا مشتّت «نصف صواب» في حزمها الأربع** — استثناء موثّق لعمر 3–5، مبرّره في [دليل السلسلة](./series-bible-qiyami-alsaghira.md).
+
+## السلسلة 3 — مواقف وقرارات
+
+`mawaqif-wa-qararat` · `anthology` · 9–12 · `junior` · `independent` · `limited_2d` · `family` · 6:00
+
+| # | الحلقة | القيمة | الهدف | مجاني | المحرّك | السكربت |
+|---:|---|---|---|---|---|---|
+| 1 | ستّة أجهزة | العدل | `val.fairness.equal_vs_fair` | ❌ | `sort_bins` | [ep-01](./mawaqif-wa-qararat/ep-01-six-devices.md) |
+| 2 | الرقم الذي كتبته | الاستقامة | `val.integrity.admit_mistake` | ❌ | `sequence_order` | [ep-02](./mawaqif-wa-qararat/ep-02-the-number-i-wrote.md) |
+| 3 | قبل أن أردّ | التعاطف | `val.empathy.perspective_take` | ❌ | `match_pairs` | [ep-03](./mawaqif-wa-qararat/ep-03-before-i-reply.md) |
+| 4 | يوم السبت | المسؤولية | `val.responsibility.keep_commitment` | ❌ | `sim_lab` | [ep-04](./mawaqif-wa-qararat/ep-04-saturday.md) |
+| 5 | صورة في المجموعة | الاحترام | `val.digital.respect_online` | ❌ | `sort_bins` | [ep-05](./mawaqif-wa-qararat/ep-05-a-picture-in-the-group.md) |
+
+**ما يميّزها:** 🔴 **معضلة لكلا طرفيها ثمن** لا موقف له خيار أفضل · مقطع **الكلفتين** تُسمّى فيه الأثمان صريحة ومتوازية · سؤالان في التوقّف: «ماذا تفعل أنت؟» **و«ما الذي تقبل أن تخسره؟»** · ومقطع **«ما بقي من الكلفة»** يبقى فيه الثمن مدفوعًا ولا يُعوَّض.
+
+🔴 **التركيب الذي تعطيه السلسلة:** «أقبل أن... ولا أقبل أن...» — أداة يوازن بها الطفل في معضلة لم نكتبها.
+
+> ⚠️ **تداخل مرفوع لقرار إنسان:** الحلقة 5 تغطّي أخلاق الرقمي، وكوكب `islamic` فيه سلسلة مخطّطة `identity-ethics-junior` تغطّيها أيضًا وهي موقوفة بانتظار المراجعة الشرعية. هذه السلسلة **أخلاق عامّة إنسانية بلا سند ديني**، والتداخل مُثبَت في [`open_questions`](./_manifest-mawaqif-wa-qararat.json).
+
+## التصعيد الحلزوني بين المسارات الثلاثة
+
+| قيمي الصغيرة (3–5) | حكاية وحكمة (6–8) | مواقف وقرارات (9–12) |
+|---|---|---|
+| `val.truth.say_what_happened` — يصف ما حدث | `val.apology.repair_four_steps` — أربع خطوات | `val.integrity.admit_mistake` — اعتراف بلا عذر وإصلاح بخطوات |
+| `val.share.take_turns` — ينتظر ويسمّي | `val.patience.wait_turn` — يحتمل ويعرف حدّ الصبر | `val.fairness.equal_vs_fair` — يميّز التساوي من العدل |
+| `val.help.ask_and_offer` — يطلب ويعرض | `val.kindness.initiate_words` — يبتدئ بلا مناسبة | `val.empathy.perspective_take` — يصوغ رأي من يخالفه |
+| `val.care.gentle_hands` — لمسة وسبب | `val.responsibility.build_system` — نظام متابعة | `val.responsibility.keep_commitment` — خطّة تُقفل بابه |
+
+🔴 **كل صفّ مقدّمة لما بعده لا تكرار له.** والصيغة نفسها تعود بطبقة أعمق: «الكوب وقع وحده» في الثالثة تصير «حدث خطأ في الجدول» في الثانية عشرة.
+
 
 ## البنية الثابتة — والعنصر المميّز
 
@@ -86,9 +136,15 @@
 | البند | الحالة |
 |---|---|
 | فهرس الكوكب | ✅ |
-| دليل السلسلة | ✅ |
-| سكربتات الـ6 حلقات | ✅ |
-| حزم الألعاب (6) | ✅ |
-| الحلقات المسجّلة في DB | ⚠️ 4 من 6 (`draft`) |
-| أصول الوسائط | ❌ 0 |
-| مراجعة تربوية | ❌ بوابة |
+| أدلّة السلاسل الثلاث | ✅ |
+| سكربتات حكاية وحكمة (6) | ✅ |
+| سكربتات قيمي الصغيرة (4) | ✅ `draft` |
+| سكربتات مواقف وقرارات (5) | ✅ `draft` |
+| حزم ألعاب حكاية وحكمة (6) | ✅ |
+| حزم قيمي الصغيرة (4) | ✅ في المانيفست |
+| حزم مواقف وقرارات (5) | ✅ في المانيفست |
+| كتاب + مشروع لكل سلسلة جديدة | ✅ في المانيفست |
+| الحلقات المسجّلة في DB | ⚠️ 4 من 15 (`draft`) — **9 حلقات جديدة غير مسجّلة** |
+| أصول الوسائط | ❌ 0 — **لا صورة ولا صوت ولا غلاف ولا مصغّرة لأي سلسلة** |
+| مراجعة تربوية | ❌ بوابة **للسلاسل الثلاث** |
+| 🔴 قرار التداخل مع `identity-ethics-junior` | ❌ **مرفوع لقرار إنسان** |

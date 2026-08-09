@@ -1,0 +1,136 @@
+{
+  "story": "act-s1",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-01-bird-home.md",
+  "out_dir": "assets/images/stories/act-s1",
+  "notes": [
+    "Prompts are English on purpose: image models parse visual description more accurately.",
+    "Every prompt must stay <= 500 characters (AutoFlow POST /api/jobs limit).",
+    "No humans appear in this story, so the catalog hijab / Arab-features clauses do not apply.",
+    "Hard content rules from the story file, enforced inline in every prompt: nest visible on every page, mother present from page 1, no full darkness, no visible teeth, bird never afraid, 2 characters only, 2-3 elements per page, no burnt-in text.",
+    "page-001 is generated FIRST and alone, then reused as a character reference for the other 10 assets so the bird stays consistent."
+  ],
+  "style_tail": " Soft preschool storybook art, rounded shapes, 3 elements max, calm warm light, deep navy sky with cyan and star-yellow accents, full-bleed to all four edges, no text, no logo, no frame, no border, no visible teeth, no fear.",
+  "reference_seed": "page-001",
+  "model_note": "imagen4 jobs are silently dropped by the queue on this account (confirmed by two live tests: job vanished, never reached processing/failed). nano_banana2 with quality:1K completed in ~50s and produced correct output (verified on page-001). All Flow assets below use nano_banana2.",
+  "assets": [
+    {
+      "id": "asset-act-s1-page-001",
+      "file": "page-001.png",
+      "order": 1,
+      "model": "nano_banana2",
+      "quality": "1K",
+      "aspectRatio": "landscape",
+      "export_size": "1920x1080 (16:9)",
+      "brightness": 1.0,
+      "scene": "A small round nest on a tree branch. Inside it a tiny light-gray baby bird with big friendly gentle eyes, and beside him his slightly larger mother bird. Bright warm daylight, soft green leaves."
+    },
+    {
+      "id": "asset-act-s1-page-002",
+      "file": "page-002.png",
+      "order": 2,
+      "model": "nano_banana2",
+      "quality": "1K",
+      "aspectRatio": "landscape",
+      "export_size": "1920x1080 (16:9)",
+      "brightness": 0.97,
+      "scene": "A tiny light-gray baby bird with big gentle eyes stands on the rim of his round nest on a branch, looking up at the open sky. His larger mother bird stays in the nest beside him. Warm daylight."
+    },
+    {
+      "id": "asset-act-s1-page-003",
+      "file": "page-003.png",
+      "order": 3,
+      "model": "nano_banana2",
+      "quality": "1K",
+      "aspectRatio": "landscape",
+      "export_size": "1920x1080 (16:9)",
+      "brightness": 0.94,
+      "scene": "A tiny light-gray baby bird with big gentle eyes flies calmly near a leafy tree, wings open and relaxed. His round nest stays visible, small in the background, with his mother bird in it. Warm daylight."
+    },
+    {
+      "id": "asset-act-s1-page-004",
+      "file": "page-004.png",
+      "order": 4,
+      "model": "nano_banana2",
+      "quality": "1K",
+      "aspectRatio": "landscape",
+      "export_size": "1920x1080 (16:9)",
+      "brightness": 0.9,
+      "scene": "A tiny light-gray baby bird with big gentle eyes glides calmly, tilting a little as a soft breeze moves a few leaves. Calm face, not startled. His round nest with his mother bird stays visible in the background."
+    },
+    {
+      "id": "asset-act-s1-page-005",
+      "file": "page-005.png",
+      "order": 5,
+      "model": "nano_banana2",
+      "quality": "1K",
+      "aspectRatio": "landscape",
+      "export_size": "1920x1080 (16:9)",
+      "brightness": 0.86,
+      "scene": "A tiny light-gray baby bird with big gentle eyes turns his head confidently toward his round nest on a branch, where his mother bird waits for him. Light turning to soft golden late afternoon."
+    },
+    {
+      "id": "asset-act-s1-page-006",
+      "file": "page-006.png",
+      "order": 6,
+      "model": "nano_banana2",
+      "quality": "1K",
+      "aspectRatio": "landscape",
+      "export_size": "1920x1080 (16:9)",
+      "brightness": 0.82,
+      "scene": "A tiny light-gray baby bird with big gentle eyes lands into his round nest on a branch while his larger mother bird opens one wing to welcome him. Soft golden evening light."
+    },
+    {
+      "id": "asset-act-s1-page-007",
+      "file": "page-007.png",
+      "order": 7,
+      "model": "nano_banana2",
+      "quality": "1K",
+      "aspectRatio": "landscape",
+      "export_size": "1920x1080 (16:9)",
+      "brightness": 0.76,
+      "scene": "A tiny light-gray baby bird with big gentle eyes sits close under his mother bird's wing inside their round nest on a branch. Calm blue evening, a soft glowing crescent moon visible, leaves still."
+    },
+    {
+      "id": "asset-act-s1-page-008",
+      "file": "page-008.png",
+      "order": 8,
+      "model": "nano_banana2",
+      "quality": "1K",
+      "aspectRatio": "landscape",
+      "export_size": "1920x1080 (16:9)",
+      "brightness": 0.7,
+      "scene": "A small round nest on a tree branch seen from a little further away, a tiny light-gray baby bird asleep beside his mother bird. Quiet blue night with a soft glowing moon. Never fully dark, always readable."
+    },
+    {
+      "id": "asset-act-s1-cover",
+      "file": "cover.png",
+      "order": 9,
+      "model": "nano_banana2",
+      "quality": "1K",
+      "aspectRatio": "square",
+      "export_size": "1200x1200 (1:1)",
+      "scene": "Square cover art: a small round nest on a tree branch holding a tiny light-gray baby bird with big gentle eyes and his larger mother bird, centered, gentle daylight sky behind, soft leaves framing."
+    },
+    {
+      "id": "asset-act-s1-hero",
+      "file": "hero.png",
+      "order": 10,
+      "model": "nano_banana2",
+      "quality": "1K",
+      "aspectRatio": "landscape",
+      "export_size": "1920x1080 (16:9)",
+      "scene": "Wide cinematic scene: a tiny light-gray baby bird with big gentle eyes flying calmly at left, his round nest with his mother bird on a branch behind him. Keep the right 40 percent calm, dim and uncluttered for an Arabic title. Warm evening sky."
+    },
+    {
+      "id": "asset-act-s1-thumb",
+      "file": "thumb.png",
+      "order": 11,
+      "model": "freepik",
+      "aspectRatio": "3:4",
+      "quality": "2K",
+      "export_size": "1200x1600 (3:4)",
+      "ratio_note": "Flow models expose landscape/portrait/square only, so a native 3:4 canvas requires freepik. The catalog frame rule forbids reaching a ratio by cropping or padding afterwards, so the model is switched instead of the ratio. Note this routes to a different Chrome extension (Genova Images), which must also be connected.",
+      "scene": "Vertical cover: a tall tree branch with a small round nest holding a tiny light-gray baby bird with big gentle eyes and his larger mother bird. Composition built vertically, clean calm upper quarter for an Arabic title. Soft evening sky, gentle moon."
+    }
+  ]
+}

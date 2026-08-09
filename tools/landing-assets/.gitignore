@@ -1,0 +1,5 @@
+# مخرجات أدوات التحقق: تُولَّد عند كل تشغيل ولا قيمة لتتبّعها
+_check/
+_responsive/
+prod-report.json
+prod-admin-report.json

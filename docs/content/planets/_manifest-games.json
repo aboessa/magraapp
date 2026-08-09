@@ -1,0 +1,1659 @@
+{
+  "manifest_version": 1,
+  "scope": "14 pre-existing game rows re-specified and remapped onto the 12 documented engines",
+  "implementation_status_note": "Every entry is design only. No engine, art, or voice asset exists.",
+  "games": [
+    {
+      "id": "game-preschool-picture-match",
+      "title_ar": "طابق الصورة",
+      "engine": "match_pairs",
+      "engine_justification": "عقد match_pairs يعلن المسار الأساسي preschool، ومدخلات drag/tap، وهدف لمس 72dp، وبلا مؤقت وبلا فشل (max_attempts = NULL) — وهي شروط لعبة 3–5. ونوع الربط identical معلن في العقد («صورة تفاحة ← صورة تفاحة») وهو ما تعلّمه الحلقة 1 حرفيًا. والمحرك translatable فتُترجم الحزمة بلا إعادة تأليف، وscore = الأزواج الصحيحة من أول محاولة وهو معيار الحلقة. لا توسيع فئة عمرية: المسار المطلوب هو مسار المحرك الأساسي نفسه.",
+      "planet_id": "abjad",
+      "series_slug": "luna-discovers-words",
+      "linked_episode_number": 1,
+      "age_min": 3,
+      "age_max": 5,
+      "track": "preschool",
+      "reading_level": "pre_reader",
+      "interaction_mode": "tap",
+      "supervision_level": "none",
+      "difficulty": "easy",
+      "objective_code": "lang.vocab.match_word_image",
+      "core_mechanic": "2–3 أهداف ثابتة في الأعلى و2–6 عناصر متحركة في الأسفل؛ يسحب الطفل العنصر إلى مثيله أو يلمس العنصر ثم الهدف، وكل لمسة تنطق اسم ما لُمس.",
+      "gameplay_loop": "intro ← تعليمة + زر إعادة دائم ← عرض الأهداف ونطقها عند اللمس ← اختيار عنصر ونطق اسمه ← سحبه أو لمس الهدف ← صحيح: يستقر مع تشجيع كل 2–3 نجاحات · غير صحيح: يعود في 200ms بعبارة محاولة بلا صوت سلبي ← إكمال المستوى بلحن 1.2s ← إكمال اللعبة وملصق واحد ← خروج متاح دائمًا يحفظ المستوى.",
+      "levels": [
+        { "level": 1, "goal": "مطابقة شيئين مختلفين تمامًا في اللون والشكل", "items": 2, "distractors": 0, "success_threshold": "الزوجان صحيحان" },
+        { "level": 2, "goal": "مطابقة ثلاثة أشياء مألوفة", "items": 3, "distractors": 0, "success_threshold": "الأزواج الثلاثة صحيحة" },
+        { "level": 3, "goal": "مطابقة ثلاثة مع مشتّت واحد واضح", "items": 4, "distractors": 1, "success_threshold": "الأزواج الثلاثة صحيحة والمشتّت غير مستخدم" }
+      ],
+      "difficulty_progression": "بُعد واحد في كل مستوى: عدد الأهداف أولًا (2 ← 3) ثم مشتّت واحد. لا يتغير نوع الربط ولا تُضاف تسميات جديدة، ولا مؤقت في أي مستوى.",
+      "instructions_ar": "هيا نلعب معًا! انظر إلى الصور في الأعلى. اسحب كل صورة إلى الصورة المثلها. المس الصورة لتسمع اسمها.",
+      "success_rule": "المستوى ينجح باستقرار كل عنصر في هدفه الصحيح، بلا شرط زمن وبلا حد محاولات. score = الأزواج الصحيحة من أول محاولة، max_score = عدد الأزواج، وattempts تُكتب مرة واحدة لكل مستوى بevent_id ثابت.",
+      "failure_rule": "لا فشل ولا وصف للطفل بالتقصير ولا عدّ أخطاء ظاهر. السلّم المركزي: 1 عودة لطيفة وعبارة محاولة · 2 توهج الهدف الصحيح نبضتين · 3 إخفاء المشتّتات · 4 نقل تلقائي مع شرح · 5+ اقتراح لعبة أسهل بلا وصف بالفشل. بعد التبسيط يُشجَّع النجاح كاملًا، ولا قفل محتوى ولا فقدان ملصق.",
+      "scoring": "score = الأزواج الصحيحة من أول محاولة · max_score = عدد الأزواج · لا نقاط ولا نسبة ولا زمن معروض للطفل.",
+      "rewards": "ملصق واحد هادئ عند إكمال اللعبة يُضاف إلى «مجموعتي» ولا يُفقد أبدًا. لا عملة ولا شراء ولا صناديق عشوائية ولا إعلانات ولا streaks ولا مقارنة.",
+      "educational_feedback": "نجاح: «أحسنت!» · «نعم، صحيح!» · «وجدتها!» بلا تكرار متتالٍ. محاولة: «جرّب مرة أخرى» · «انظر مرة أخرى» — بلا كلمة «خطأ». تلميح للقاعدة: «انظر إلى الشكل واللون معًا.» شرح: «هذه تفاحة، وهذه تفاحة. هما متماثلتان.»",
+      "accessibility": "هدف لمس 72dp · بديل السحب إلزامي (لمس ثم لمس) · وصف بديل مترجم لكل صورة وترتيب قراءة منطقي RTL/LTR · المشتّت لا يُميَّز باللون وحده · الصحيح/الخطأ برمز وحركة لا بلون · TextScaler 2.0× · لا وميض > 3Hz · احترام تقليل الحركة · لا مؤقت · D-pad على TV · تُلعَب بالصوت وحده وبلا صوت.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=highlight_target · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "انظر إلى الشكل واللون معًا.",
+          "توهج الهدف الصحيح نبضتين بلون #00D6F5",
+          "إخفاء المشتّتات وإبقاء الزوج الصحيح",
+          "نقل تلقائي مع شرح صوتي"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "match_pairs",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "match_type": "identical",
+            "prompt_key": "luna.ep1.match_picture_thing",
+            "targets": [
+              { "id": "t1", "image": "asset-apple", "label_key": "word.apple", "audio": "asset-vo-apple" },
+              { "id": "t2", "image": "asset-ball", "label_key": "word.ball", "audio": "asset-vo-ball" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-apple-pic", "target": "t1", "label_key": "word.apple", "audio": "asset-vo-apple" },
+              { "id": "i2", "image": "asset-ball-pic", "target": "t2", "label_key": "word.ball", "audio": "asset-vo-ball" }
+            ],
+            "distractors": [],
+            "shuffle": true
+          },
+          {
+            "level": 2,
+            "match_type": "identical",
+            "prompt_key": "luna.ep1.match_picture_thing",
+            "targets": [
+              { "id": "t1", "image": "asset-apple", "label_key": "word.apple", "audio": "asset-vo-apple" },
+              { "id": "t2", "image": "asset-cat", "label_key": "word.cat", "audio": "asset-vo-cat" },
+              { "id": "t3", "image": "asset-house", "label_key": "word.house", "audio": "asset-vo-house" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-apple-pic", "target": "t1", "label_key": "word.apple", "audio": "asset-vo-apple" },
+              { "id": "i2", "image": "asset-cat-pic", "target": "t2", "label_key": "word.cat", "audio": "asset-vo-cat" },
+              { "id": "i3", "image": "asset-house-pic", "target": "t3", "label_key": "word.house", "audio": "asset-vo-house" }
+            ],
+            "distractors": [],
+            "shuffle": true
+          },
+          {
+            "level": 3,
+            "match_type": "identical",
+            "prompt_key": "luna.ep1.match_picture_thing",
+            "targets": [
+              { "id": "t1", "image": "asset-ball", "label_key": "word.ball", "audio": "asset-vo-ball" },
+              { "id": "t2", "image": "asset-cat", "label_key": "word.cat", "audio": "asset-vo-cat" },
+              { "id": "t3", "image": "asset-house", "label_key": "word.house", "audio": "asset-vo-house" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-ball-pic", "target": "t1", "label_key": "word.ball", "audio": "asset-vo-ball" },
+              { "id": "i2", "image": "asset-cat-pic", "target": "t2", "label_key": "word.cat", "audio": "asset-vo-cat" },
+              { "id": "i3", "image": "asset-house-pic", "target": "t3", "label_key": "word.house", "audio": "asset-vo-house" }
+            ],
+            "distractors": [
+              { "id": "d1", "image": "asset-apple-pic", "label_key": "word.apple", "audio": "asset-vo-apple" }
+            ],
+            "shuffle": true
+          }
+        ],
+        "assets": {
+          "images": ["asset-apple", "asset-apple-pic", "asset-ball", "asset-ball-pic", "asset-cat", "asset-cat-pic", "asset-house", "asset-house-pic"],
+          "audio": ["asset-vo-apple", "asset-vo-ball", "asset-vo-cat", "asset-vo-house"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-gpm-intro",
+          "vo.instruction": "asset-vo-gpm-instruction",
+          "vo.instruction_repeat": "asset-vo-gpm-instruction-slow",
+          "vo.hint": "asset-vo-gpm-hint",
+          "vo.retry": "asset-vo-retry-preschool",
+          "vo.correct": "asset-vo-correct-preschool",
+          "vo.level_complete": "asset-vo-level-complete",
+          "vo.game_complete": "asset-vo-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/01-abjad/games/game-preschool-picture-match.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation"]
+    },
+    {
+      "id": "game-preschool-listen-find",
+      "title_ar": "استمع وابحث",
+      "engine": "match_pairs",
+      "engine_justification": "العقد يعلن sound_image نوع ربط مدعومًا صريحًا («كلمة منطوقة ‹قطة› ← صورة القطة») مع تعليمة جاهزة «استمع، ثم اسحب الصورة الصحيحة»، وهو انتقال الحلقة 2 من التمثيل البصري إلى الصوتي. المسار الأساسي preschool، بلا مؤقت وبلا فشل وبهدف لمس 72dp، فلا توسيع فئة. والعقد يشترط بديلًا بصريًا في المستوى الصوتي، وتنفّذه الحزمة ببطاقة صوت مرقّمة ومشكَّلة وزر إعادة نطق. لا محرك آخر يجمع «صوت ← صورة» في مسار البراعم: sort_bins يصنّف بخصيصة، وword_build مسار kids ولمن يعرف الحروف.",
+      "planet_id": "abjad",
+      "series_slug": "luna-discovers-words",
+      "linked_episode_number": 2,
+      "age_min": 3,
+      "age_max": 5,
+      "track": "preschool",
+      "reading_level": "pre_reader",
+      "interaction_mode": "tap",
+      "supervision_level": "none",
+      "difficulty": "easy",
+      "objective_code": "lang.vocab.match_word_image",
+      "core_mechanic": "بطاقتان إلى ثلاث «بطاقات صوت» في الأعلى، كل واحدة تنطق كلمة عند لمسها ولها رقم وشكل مميّز؛ وصور الأشياء في الأسفل تُسحب إلى بطاقة كلمتها أو تُلمس ثم تُلمس البطاقة.",
+      "gameplay_loop": "intro «نلعب بأذنينا» ← تعليمة + زر إعادة ← نطق كلمة البطاقة الأولى تلقائيًا ← الطفل يلمس البطاقة متى شاء بلا حد لإعادة السماع ← يسحب الصورة أو يلمس البطاقة ← صحيح: تستقر الصورة وتُعاد الكلمة مقترنة بها وتشجيع كل 2–3 نجاحات · غير صحيح: ارتداد لطيف وعبارة محاولة بلا صوت سلبي ← إكمال المستوى ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "كلمتان مختلفتان تمامًا في الصوت الأول", "items": 2, "distractors": 0, "success_threshold": "الزوجان صحيحان" },
+        { "level": 2, "goal": "ثلاث كلمات من الحلقة", "items": 3, "distractors": 0, "success_threshold": "الأزواج الثلاثة صحيحة" },
+        { "level": 3, "goal": "ثلاث كلمات + صورة مشتّتة واحدة", "items": 4, "distractors": 1, "success_threshold": "الأزواج الثلاثة صحيحة" }
+      ],
+      "difficulty_progression": "عدد الكلمات (2 ← 3) ثم مشتّت بصري واحد. الكلمات نفسها لا تصعب: تبقى أحادية أو ثنائية المقطع من الحلقة، لأن الصعوبة المقصودة تمييز سمعي لا طول كلمة. لا مؤقت.",
+      "instructions_ar": "هيا نلعب بأذنينا! المس البطاقة لتسمع الكلمة. ثم اسحب الصورة الصحيحة إليها. اسمع كما تحب، لا نستعجل.",
+      "success_rule": "المستوى ينجح باستقرار كل صورة على بطاقة كلمتها. score = الأزواج الصحيحة من أول محاولة، max_score = عدد الأزواج، وattempts مرة واحدة لكل مستوى بevent_id ثابت.",
+      "failure_rule": "لا فشل ولا قفل ولا عدّ أخطاء ظاهر: 1 ارتداد لطيف مع إعادة نطق الكلمة تلقائيًا · 2 توهج البطاقة الصحيحة نبضتين وتلميح بالصوت الأول · 3 إخفاء المشتّت · 4 نقل تلقائي مع شرح · 5+ اقتراح لعبة أسهل بلا أي وصف بالفشل.",
+      "scoring": "score = الأزواج الصحيحة من أول محاولة · max_score = عدد الأزواج · لا دقة ولا زمن معروض للطفل.",
+      "rewards": "ملصق واحد عند إكمال اللعبة لا يُفقد أبدًا. لا عملة ولا شراء ولا إعلانات ولا مقارنة.",
+      "educational_feedback": "نجاح: «نعم، صحيح!» · «وجدتها!» · «هكذا تمامًا!» بلا تكرار متتالٍ. محاولة: «هيا نجرب غيرها» · «انظر مرة أخرى» بلا كلمة «خطأ». تلميح: «استمع للصوت الأول: شـ… شَمس.» تثبيت بعد الصحيح: «شَمس. أحسنت.»",
+      "accessibility": "هدف لمس 72dp · بديل السحب إلزامي · بطاقات الصوت تُميَّز برقم وشكل لا بلون وحده ولها وصف بديل · زر «أعد الكلمة» ظاهر دائمًا وبلا حد · TextScaler 2.0× · احترام تقليل الحركة · لا وميض > 3Hz · D-pad على TV. قيد معلن: requires_audio = true، والبديل البصري (عرض الكلمة مكتوبة) ناقص لطفل ما قبل القراءة الذي لا يسمع، فتُعرَض «طابق الصورة» بديلًا مكافئًا في الكتالوج، والقيد غير محلول.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=highlight_target · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "استمع للصوت الأول: شـ… شَمس.",
+          "توهج بطاقة الصوت الصحيحة نبضتين",
+          "إخفاء المشتّت وإبقاء الزوج الصحيح",
+          "نقل تلقائي مع شرح: «هذه شَمس.»"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "match_pairs",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "match_type": "sound_image",
+            "prompt_key": "luna.ep2.listen_and_find",
+            "targets": [
+              { "id": "t1", "image": "asset-sound-card-1", "label_key": "word.sun", "audio": "asset-vo-word-sun" },
+              { "id": "t2", "image": "asset-sound-card-2", "label_key": "word.water", "audio": "asset-vo-word-water" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-sun", "target": "t1", "label_key": "word.sun", "audio": "asset-vo-word-sun" },
+              { "id": "i2", "image": "asset-water", "target": "t2", "label_key": "word.water", "audio": "asset-vo-word-water" }
+            ],
+            "distractors": [],
+            "shuffle": true
+          },
+          {
+            "level": 2,
+            "match_type": "sound_image",
+            "prompt_key": "luna.ep2.listen_and_find",
+            "targets": [
+              { "id": "t1", "image": "asset-sound-card-1", "label_key": "word.sun", "audio": "asset-vo-word-sun" },
+              { "id": "t2", "image": "asset-sound-card-2", "label_key": "word.flower", "audio": "asset-vo-word-flower" },
+              { "id": "t3", "image": "asset-sound-card-3", "label_key": "word.door", "audio": "asset-vo-word-door" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-sun", "target": "t1", "label_key": "word.sun", "audio": "asset-vo-word-sun" },
+              { "id": "i2", "image": "asset-flower", "target": "t2", "label_key": "word.flower", "audio": "asset-vo-word-flower" },
+              { "id": "i3", "image": "asset-door", "target": "t3", "label_key": "word.door", "audio": "asset-vo-word-door" }
+            ],
+            "distractors": [],
+            "shuffle": true
+          },
+          {
+            "level": 3,
+            "match_type": "sound_image",
+            "prompt_key": "luna.ep2.listen_and_find",
+            "targets": [
+              { "id": "t1", "image": "asset-sound-card-1", "label_key": "word.water", "audio": "asset-vo-word-water" },
+              { "id": "t2", "image": "asset-sound-card-2", "label_key": "word.flower", "audio": "asset-vo-word-flower" },
+              { "id": "t3", "image": "asset-sound-card-3", "label_key": "word.door", "audio": "asset-vo-word-door" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-water", "target": "t1", "label_key": "word.water", "audio": "asset-vo-word-water" },
+              { "id": "i2", "image": "asset-flower", "target": "t2", "label_key": "word.flower", "audio": "asset-vo-word-flower" },
+              { "id": "i3", "image": "asset-door", "target": "t3", "label_key": "word.door", "audio": "asset-vo-word-door" }
+            ],
+            "distractors": [
+              { "id": "d1", "image": "asset-sun", "label_key": "word.sun", "audio": "asset-vo-word-sun" }
+            ],
+            "shuffle": true
+          }
+        ],
+        "assets": {
+          "images": ["asset-sound-card-1", "asset-sound-card-2", "asset-sound-card-3", "asset-sun", "asset-water", "asset-flower", "asset-door"],
+          "audio": ["asset-vo-word-sun", "asset-vo-word-water", "asset-vo-word-flower", "asset-vo-word-door"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-glf-intro",
+          "vo.instruction": "asset-vo-glf-instruction",
+          "vo.instruction_repeat": "asset-vo-glf-instruction-slow",
+          "vo.hint": "asset-vo-glf-hint",
+          "vo.retry": "asset-vo-retry-preschool",
+          "vo.correct": "asset-vo-correct-preschool",
+          "vo.level_complete": "asset-vo-level-complete",
+          "vo.game_complete": "asset-vo-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/01-abjad/games/game-preschool-listen-find.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation"]
+    },
+    {
+      "id": "game-letter-tracing",
+      "title_ar": "تتبع الحروف",
+      "engine": "trace_color",
+      "engine_justification": "المحرك الوحيد من الاثني عشر الذي يقبل continuous_drag ويملك بيانات مسار (stroke_paths) بإحداثيات معيارية، وهو ما يحتاجه التتبّع حرفيًا. مساره المعلن preschool فقط وهو المطلوب (3–5)، فلا توسيع فئة. والعقد يفرض القواعد العربية الإلزامية: الجسم أولًا ثم النقاط عبر order، والنقطة تُرسم لمسًا (type=dot)، وletter_form من isolated/initial/medial/final، والاتجاه من بيانات الحرف، والحرف يُنطق بصوته لا باسمه للبراعم. والتلوين بلا شرط نجاح، وscore = المسارات المكتملة والتلوين لا يُحسب. وsupports_dpad=false فتُخفى اللعبة على TV صراحة. المحرك القديم engine-match كان خطأً بيانيًا صريحًا: لعبة تتبّع أُسندت إلى محرك مطابقة.",
+      "planet_id": "abjad",
+      "series_slug": "luna-discovers-words",
+      "linked_episode_number": 4,
+      "age_min": 3,
+      "age_max": 5,
+      "track": "preschool",
+      "reading_level": "pre_reader",
+      "interaction_mode": "tap",
+      "supervision_level": "none",
+      "difficulty": "easy",
+      "objective_code": "lang.letters.trace_form",
+      "core_mechanic": "حرف واحد بمسار منقّط ونقطة بداية متوهجة؛ يتبع الطفل المسار بإصبعه فيرتسم الخط، والنقاط الإعجامية تُرسم بلمسة بعد إكمال الجسم، ثم تُفتح مرحلة تلوين حرة بلا شرط نجاح وبزر «تم» في أي وقت.",
+      "gameplay_loop": "intro «هيا نرسم معًا» ← تعليمة تنطق صوت الحرف لا اسمه + زر إعادة ← توهج نقطة البداية ← تتبّع؛ عند الخروج عن المسار يتوقف الخط عند آخر نقطة صحيحة وتتوهج التالية بلا إعادة من البداية ← إكمال الجسم ثم لمس موضع النقطة ← اكتمال الحرف ← تلوين حرّ بلمسة واحدة و5 ألوان ← إكمال اللعبة وملصق وحفظ الرسمة.",
+      "levels": [
+        { "level": 1, "goal": "حرف ا — خط رأسي واحد مستقيم", "items": 1, "distractors": 0, "success_threshold": "تغطية ≥ 80% وانحراف ≤ 24dp" },
+        { "level": 2, "goal": "حرف ل — خط ثم منحنى في نهايته", "items": 1, "distractors": 0, "success_threshold": "تغطية ≥ 80% وانحراف ≤ 24dp" },
+        { "level": 3, "goal": "حرف ب — جسم منحنٍ + نقطة تحت الجسم", "items": 2, "distractors": 0, "success_threshold": "الجسم مكتمل قبل النقطة، وتغطية ≥ 80%" },
+        { "level": 4, "goal": "حرف ن — جسم مقوّس + نقطة فوق الجسم", "items": 2, "distractors": 0, "success_threshold": "الجسم مكتمل قبل النقطة، وتغطية ≥ 80%" }
+      ],
+      "difficulty_progression": "خط مستقيم ← خط بمنحنى ← جسم + نقطة تحت ← جسم + نقطة فوق. لا يزيد عدد المسارات، ولا يضيق هامش الانحراف، ولا يُطلب الاتصال بين الحروف (الأشكال المنفردة فقط، والاتصال حزمة لاحقة). «العناصر» في هذا المحرك = المسارات، والحد 3 مسارات، والمشتّتات = صفر لأن مفهوم المشتّت غير موجود في التتبّع.",
+      "instructions_ar": "هيا نرسم معًا! هذا حرف الباء، وصوته: بَ. ضع إصبعك على النقطة المتوهّجة، واتبع الطريق. ثم المس مكان النقطة. بعد ذلك لوّن كما تحب.",
+      "success_rule": "مرحلة التتبّع تنجح بتغطية ≥ coverage_required (0.8) مع انحراف ≤ tolerance_dp (24dp). ومرحلة التلوين بلا أي شرط نجاح. score = المسارات المكتملة، max_score = عدد المسارات، والتلوين لا يُحسب.",
+      "failure_rule": "لا فشل ولا إعادة من الصفر ولا عدّ محاولات في أي حالة: 1 توهج النقطة التالية · 2 سهم اتجاه متحرك · 3 توسيع هامش الانحراف تلقائيًا إلى 36dp · 4 حركة إرشادية كاملة ثم إعادة المحاولة. لا يُقال «خطأ» ولا يُعرَض الانحراف ولا يُقفل الطفل خارج أي مستوى.",
+      "scoring": "score = المسارات المكتملة · max_score = عدد المسارات · التلوين لا يُحسب · لا نقاط ولا مؤقت ولا دقة معروضة.",
+      "rewards": "ملصق واحد عند إكمال اللعبة + حفظ الرسمة الملوّنة في «مجموعتي»، ولا تُفقد المكافأة أبدًا. لا عملة ولا شراء ولا إعلانات.",
+      "educational_feedback": "إكمال مسار: «أحسنت!» أثناء التوقف: «ابدأ من النقطة المتوهّجة.» قبل النقطة: «الآن المس مكان النقطة.» بعد الحرف: «هذا حرف الباء، وصوته بَ. نقطته تحت.» والمستوى 4: «نقطته فوق.» التلوين: «الآن لوّن كما تحب» بلا أي تعليق على النتيجة.",
+      "accessibility": "وضع حركي مبسّط إلزامي (هامش 40dp وتغطية 60%) · بديل السحب المستمر إلزامي بلمس النقاط بالتتابع · التلوين بلمسة واحدة بلا دقة حركية · لا يعمل بالـD-pad ⇒ supports_dpad=false واللعبة تُخفى من كتالوج TV صراحة · عرض المسار 40dp وتباين ≥ 3:1 · لا وميض > 3Hz · لا مؤقت · وصف بديل لكل حرف ومنطقة تلوين · احترام تقليل الحركة · الحزمة language_specific: يُرفض نشرها مترجمة آليًا (translated_from = NULL) وترتيب الرسم يحتاج مراجعة لغوية معتمدة.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=direction_arrow · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "ابدأ من النقطة المتوهجة.",
+          "سهم اتجاه متحرك على المسار",
+          "توسيع هامش الانحراف تلقائيًا إلى 36dp",
+          "حركة إرشادية كاملة ثم إعادة المحاولة"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "trace_color",
+        "progression": { "levels_to_finish": 4, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "mode": "letter",
+            "language": "ar",
+            "glyph": "ا",
+            "letter_form": "isolated",
+            "writing_direction": "rtl",
+            "stroke_paths": [
+              { "id": "s1", "order": 1, "points": [[0.5, 0.22], [0.5, 0.74]], "direction": "forward", "type": "stroke" }
+            ],
+            "tolerance_dp": 24,
+            "coverage_required": 0.8,
+            "guide_audio": "asset-vo-sound-alif",
+            "coloring": { "enabled": true, "regions": ["r1"], "palette": ["#FFD34D", "#00D6F5", "#FF6FAE", "#6A3DF2", "#FF9F1C"] }
+          },
+          {
+            "level": 2,
+            "mode": "letter",
+            "language": "ar",
+            "glyph": "ل",
+            "letter_form": "isolated",
+            "writing_direction": "rtl",
+            "stroke_paths": [
+              { "id": "s1", "order": 1, "points": [[0.55, 0.2], [0.55, 0.62], [0.4, 0.75], [0.3, 0.68]], "direction": "forward", "type": "stroke" }
+            ],
+            "tolerance_dp": 24,
+            "coverage_required": 0.8,
+            "guide_audio": "asset-vo-sound-lam",
+            "coloring": { "enabled": true, "regions": ["r1"], "palette": ["#FFD34D", "#00D6F5", "#FF6FAE", "#6A3DF2", "#FF9F1C"] }
+          },
+          {
+            "level": 3,
+            "mode": "letter",
+            "language": "ar",
+            "glyph": "ب",
+            "letter_form": "isolated",
+            "writing_direction": "rtl",
+            "stroke_paths": [
+              { "id": "s1", "order": 1, "points": [[0.8, 0.45], [0.55, 0.62], [0.3, 0.45]], "direction": "forward", "type": "stroke" },
+              { "id": "s2", "order": 2, "points": [[0.55, 0.78]], "type": "dot" }
+            ],
+            "tolerance_dp": 24,
+            "coverage_required": 0.8,
+            "guide_audio": "asset-vo-sound-baa",
+            "coloring": { "enabled": true, "regions": ["r1"], "palette": ["#FFD34D", "#00D6F5", "#FF6FAE", "#6A3DF2", "#FF9F1C"] }
+          },
+          {
+            "level": 4,
+            "mode": "letter",
+            "language": "ar",
+            "glyph": "ن",
+            "letter_form": "isolated",
+            "writing_direction": "rtl",
+            "stroke_paths": [
+              { "id": "s1", "order": 1, "points": [[0.68, 0.42], [0.62, 0.62], [0.5, 0.7], [0.38, 0.62], [0.32, 0.42]], "direction": "forward", "type": "stroke" },
+              { "id": "s2", "order": 2, "points": [[0.5, 0.28]], "type": "dot" }
+            ],
+            "tolerance_dp": 24,
+            "coverage_required": 0.8,
+            "guide_audio": "asset-vo-sound-noon",
+            "coloring": { "enabled": true, "regions": ["r1"], "palette": ["#FFD34D", "#00D6F5", "#FF6FAE", "#6A3DF2", "#FF9F1C"] }
+          }
+        ],
+        "assets": {
+          "images": ["asset-glyph-alif", "asset-glyph-lam", "asset-glyph-baa", "asset-glyph-noon"],
+          "audio": ["asset-vo-sound-alif", "asset-vo-sound-lam", "asset-vo-sound-baa", "asset-vo-sound-noon"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-glt-intro",
+          "vo.instruction": "asset-vo-glt-instruction",
+          "vo.instruction_repeat": "asset-vo-glt-instruction-slow",
+          "vo.hint": "asset-vo-glt-hint",
+          "vo.stroke_complete": "asset-vo-stroke-complete",
+          "vo.coloring_intro": "asset-vo-coloring-intro",
+          "vo.level_complete": "asset-vo-level-complete",
+          "vo.game_complete": "asset-vo-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/01-abjad/games/game-letter-tracing.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation", "arabic_letter_stroke_review", "arabic_font_license"]
+    },
+    {
+      "id": "game-preschool-count-place",
+      "title_ar": "عد وضع",
+      "engine": "count_quantity",
+      "engine_justification": "العقد ينصّ حرفيًا: «المسار الأساسي kids (يمتد إلى preschool للمدى 1–5)» — والحزمة تلتزم المدى المسموح فلا مستوى فيها يتجاوز 5، أي داخل التوسيع المعلن لا خارجه. والنمط drag_amount المعلن («اسحب العدد المطلوب من العناصر إلى الصندوق») ترجمة حرفية لعنوان اللعبة. وهذا المحرك بنصّ عقده «الأهم في تطبيق قاعدة الخطأ فرصة تعليم»: عند أول محاولة غير موفقة يُبرز كل عنصر بالتتابع مع نطق رقمه بدل رفض الجواب. ويوفّر numeral_system=auto فيُعرض ٣ أو 3 مع تخزين القيمة العددية وحدها، وزر «أعد العدّ» ظاهر دائمًا، و20 مقطعًا صوتيًا منفصلًا. match_pairs لا يعدّ وsort_bins يصنّف بخصيصة.",
+      "planet_id": "arqam",
+      "series_slug": "count-with-me",
+      "linked_episode_number": 3,
+      "age_min": 3,
+      "age_max": 5,
+      "track": "preschool",
+      "reading_level": "pre_reader",
+      "interaction_mode": "tap",
+      "supervision_level": "none",
+      "difficulty": "easy",
+      "objective_code": "math.count.to_five",
+      "core_mechanic": "كومة عناصر متطابقة وصندوق واحد؛ تُطلب كمية منطوقة فيسحب الطفل النجوم واحدة واحدة أو يلمس النجمة ثم الصندوق، والعدّاد ينطق «واحد… اثنان… ثلاثة» مع كل إضافة، وزر «أعد العدّ» يُفرغ الصندوق بلا عقاب.",
+      "gameplay_loop": "intro ← تعليمة «اسحب ثلاث نجوم إلى الصندوق» + زر إعادة ← لمس نجمة فتتوهج ← نطق العدد التراكمي مع كل نجمة ← صمت 4 ثوان قبل أي مساعدة ← عند بلوغ العدد يُعرَض شكل الرقم مع الكمية ويُنطق ← زائد أو ناقص: «هيا نعدّ معًا» وإبراز كل نجمة بالتتابع بلا رفض ← تثبيت البند والانتقال إلى التالي ← إكمال المستوى ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "وضع 1–3 · العناصر مرتّبة في صفّ", "items": 3, "distractors": 0, "success_threshold": "البنود الثلاثة صحيحة" },
+        { "level": 2, "goal": "وضع 2–4 · العناصر مرتّبة في صفّ", "items": 3, "distractors": 0, "success_threshold": "البنود الثلاثة صحيحة" },
+        { "level": 3, "goal": "وضع 3–5 · العناصر مبعثرة لا مرتّبة", "items": 3, "distractors": 0, "success_threshold": "البنود الثلاثة صحيحة" }
+      ],
+      "difficulty_progression": "المدى يتوسّع 3 ← 4 ← 5، ثم يتغيّر ترتيب العرض من صفّ منظّم إلى تبعثّر في المستوى 3 — وهو الانتقال الحقيقي: العدّ في صفّ يعتمد على النظر، والعدّ في تبعثّر يحتاج تتبّع ما عُدّ. لا يزيد عدد البنود، ولا مؤقت (بند إلزامي لكل محرك preschool). لا مشتّتات في هذا المحرك.",
+      "instructions_ar": "هيا نعدّ معًا! انظر إلى النجوم. اسحب ثلاث نجوم إلى الصندوق. عُدّ معي وأنت تضعها: واحد… اثنان… ثلاثة. وإن أردت أن نبدأ من جديد، المس ‹أعد العدّ›.",
+      "success_rule": "البند ينجح عندما يساوي عدد ما في الصندوق العدد المطلوب، والمستوى ينجح بإتمام بنوده الثلاثة. score = البنود الصحيحة من أول محاولة، max_score = 3. «أعد العدّ» لا يُعدّ مساعدة؛ التلميح أو التبسيط أو الحل هو ما يضع help_used = 1.",
+      "failure_rule": "الخطأ حدث تعليمي لا رفض: 1 «هيا نعدّ معًا» مع إبراز كل عنصر بالتتابع ونطق رقمه · 2 إبقاء الأرقام الصحيحة فقط · 3 تقليل العناصر بمقدار واحد · 4 إظهار الجواب مع عدّ صوتي كامل وشرح · 5+ اقتراح أسهل بلا أي وصف بالفشل. لا كلمة «خطأ» ولا عدّ أخطاء ظاهر ولا قفل.",
+      "scoring": "score = البنود الصحيحة من أول محاولة · max_score = 3 · لا نقاط ولا زمن ولا نسب للطفل.",
+      "rewards": "ملصق هادئ واحد عند إكمال اللعبة يُضاف إلى «مجموعتي» ولا يُفقد. لا عملة ولا شراء ولا صناديق عشوائية ولا إعلانات ولا مكافأة يومية تعاقب الغياب.",
+      "educational_feedback": "نجاح: «أحسنت!» · «هكذا تمامًا!» كل 2–3 نجاحات. زائد/ناقص: «هيا نعدّ مرة أخرى» ثم العدّ التتابعي المسموع. تثبيت الرمز بعد الكمية لا قبلها: «ثلاثة. هذا شكل الرقم ثلاثة.» تلميح: «ابدأ العدّ من اليمين، وعُدّ واحدة واحدة.»",
+      "accessibility": "هدف اللمس 56dp في العقد يُرفع إلى 64dp لأن الحزمة preschool · زر «أعد العدّ» ظاهر دائمًا كبند إمكانية وصول · العناصر لا تتحرك أثناء العدّ · الرقم يُعرَض رقمًا ونصًا عند التكبير وnumeral_system=auto يقبل ٣ و3 · بديل السحب إلزامي · وصف بديل لكل عنصر وللصندوق · لا مؤقت · لا وميض > 3Hz · TextScaler 2.0× · احترام تقليل الحركة · D-pad على TV · تُلعَب بلا صوت لأن الكمية داخل الصندوق ظاهرة دائمًا.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=highlight_target · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "ابدأ العدّ من اليمين، وعُدّ واحدة واحدة.",
+          "إبراز كل عنصر بالتتابع مع نطق رقمه",
+          "تقليل عدد العناصر بمقدار واحد",
+          "إظهار الجواب مع عدّ صوتي كامل"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "count_quantity",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "mode": "drag_amount",
+            "range": [1, 3],
+            "numeral_system": "auto",
+            "items": [
+              { "id": "q1", "items": [{ "image": "asset-star-flat", "count": 3 }], "question_key": "cwm.place_amount", "options": [1, 2, 3], "answer": 2 },
+              { "id": "q2", "items": [{ "image": "asset-star-flat", "count": 3 }], "question_key": "cwm.place_amount", "options": [1, 2, 3], "answer": 3 },
+              { "id": "q3", "items": [{ "image": "asset-star-flat", "count": 3 }], "question_key": "cwm.place_amount", "options": [1, 2, 3], "answer": 1 }
+            ],
+            "count_aloud_on_error": true,
+            "allow_recount_button": true
+          },
+          {
+            "level": 2,
+            "mode": "drag_amount",
+            "range": [1, 4],
+            "numeral_system": "auto",
+            "items": [
+              { "id": "q1", "items": [{ "image": "asset-star-flat", "count": 4 }], "question_key": "cwm.place_amount", "options": [2, 3, 4], "answer": 3 },
+              { "id": "q2", "items": [{ "image": "asset-star-flat", "count": 4 }], "question_key": "cwm.place_amount", "options": [2, 3, 4], "answer": 4 },
+              { "id": "q3", "items": [{ "image": "asset-star-flat", "count": 4 }], "question_key": "cwm.place_amount", "options": [1, 2, 3], "answer": 2 }
+            ],
+            "count_aloud_on_error": true,
+            "allow_recount_button": true
+          },
+          {
+            "level": 3,
+            "mode": "drag_amount",
+            "range": [1, 5],
+            "numeral_system": "auto",
+            "items": [
+              { "id": "q1", "items": [{ "image": "asset-star-scattered", "count": 5 }], "question_key": "cwm.place_amount", "options": [3, 4, 5], "answer": 5 },
+              { "id": "q2", "items": [{ "image": "asset-star-scattered", "count": 5 }], "question_key": "cwm.place_amount", "options": [3, 4, 5], "answer": 4 },
+              { "id": "q3", "items": [{ "image": "asset-star-scattered", "count": 5 }], "question_key": "cwm.place_amount", "options": [2, 3, 4], "answer": 3 }
+            ],
+            "count_aloud_on_error": true,
+            "allow_recount_button": true
+          }
+        ],
+        "assets": {
+          "images": ["asset-star-flat", "asset-star-scattered", "asset-box-open"],
+          "audio": ["asset-vo-count-1", "asset-vo-count-2", "asset-vo-count-3", "asset-vo-count-4", "asset-vo-count-5"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-gcp-intro",
+          "vo.instruction": "asset-vo-gcp-instruction",
+          "vo.instruction_repeat": "asset-vo-gcp-instruction-slow",
+          "vo.hint": "asset-vo-gcp-hint",
+          "vo.recount": "asset-vo-recount",
+          "vo.correct": "asset-vo-correct-preschool",
+          "vo.explain_answer": "asset-vo-gcp-explain",
+          "vo.level_complete": "asset-vo-level-complete",
+          "vo.game_complete": "asset-vo-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/02-arqam/games/game-preschool-count-place.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation"]
+    },
+    {
+      "id": "game-preschool-color-sort",
+      "title_ar": "صنف الألوان",
+      "engine": "sort_bins",
+      "engine_justification": "مسار المحرك الأساسي preschool وهو المطلوب هنا فلا توسيع فئة. والعقد يعلن criterion_type بقيمة color ويجعل مستواه الأول «لون واحد مقابل آخر» بسلتين وأربعة عناصر، وهو تطابق حرفي مع حلقة «صنّف لونين». والأهم أن العقد يفرض بندًا لا يمكن تجاهله: السلة تُميَّز بصورة ونصّ وصوت لا باللون وحده، وهو ما يجعل اللعبة صالحة لطفل عمى الألوان. ويوفّر explain_on_correct («التفاحة حمراء، فتذهب هنا») وهو التثبيت اللفظي الذي تطلبه الحلقة، وscore = العناصر الصحيحة من أول محاولة وهو معيار الحلقة. match_pairs يطابق مثيلًا بمثيل ولا يبني فكرة المجموعة.",
+      "planet_id": "alam",
+      "series_slug": "colors-around-us",
+      "linked_episode_number": 2,
+      "age_min": 3,
+      "age_max": 5,
+      "track": "preschool",
+      "reading_level": "pre_reader",
+      "interaction_mode": "tap",
+      "supervision_level": "none",
+      "difficulty": "easy",
+      "objective_code": "world.color.sort_two",
+      "core_mechanic": "سلتان إلى ثلاث، كل سلة بصورة ونصّ وصوت وشكل مقترن (أصفر=دائرة · أحمر=مثلّث · أزرق=مربّع)، و4–8 عناصر تُسحب إلى سلتها أو تُلمس ثم تُلمس السلة، والعنصر الصحيح يستقر مع شرح صوتي قصير.",
+      "gameplay_loop": "intro ← تعليمة «ضع كل شيء أحمر في السلة الحمراء» + زر إعادة ← لمس السلة ينطق اسمها ولمس العنصر ينطق اسمه ← سحب أو لمس ← صحيح: يستقر داخل السلة مع «التفاحة حمراء، فتذهب هنا» · غير صحيح: ارتداد لطيف وعبارة محاولة بلا صوت سلبي ← إكمال المستوى ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "لونان متقابلان: أصفر/دائرة مقابل أحمر/مثلّث", "items": 4, "distractors": 0, "success_threshold": "العناصر الأربعة في سلاتها" },
+        { "level": 2, "goal": "اللونان نفسهما بعناصر أكثر تنوعًا", "items": 6, "distractors": 0, "success_threshold": "العناصر الستة في سلاتها" },
+        { "level": 3, "goal": "ثلاثة ألوان: + أزرق/مربّع", "items": 6, "distractors": 0, "success_threshold": "العناصر الستة في سلاتها" }
+      ],
+      "difficulty_progression": "لونان ← لونان بعناصر أكثر ← ثلاثة ألوان. المستوى 3 الأصعب لأن ثلاث سلات تحتاج مقارنتين لا واحدة. لا يُخلط معيار ثانٍ (شكل أو حجم) في أي مستوى؛ الخصيصتان معًا حزمة لاحقة. لا مشتّتات ولا مؤقت.",
+      "instructions_ar": "هيا نرتّب معًا! هذه سلة الأصفر، وهذه سلة الأحمر. المس السلة لتسمع اسمها. ثم ضع كل شيء مع سلة لونه. لا نستعجل.",
+      "success_rule": "المستوى ينجح باستقرار كل عنصر في سلته الصحيحة، بلا مؤقت وبلا حد محاولات. score = العناصر الصحيحة من أول محاولة، max_score = عدد العناصر.",
+      "failure_rule": "1 ارتداد لطيف وعبارة محاولة من بنك preschool · 2 توهج السلة الصحيحة وتلميح «انظر إلى اللون مرة أخرى» · 3 إخفاء سلة خاطئة · 4 نقل تلقائي مع شرح · 5+ اقتراح لعبة أسهل بلا أي وصف بالفشل. لا كلمة «خطأ» ولا عدّ أخطاء ظاهر ولا قفل محتوى، وبعد التبسيط يُشجَّع النجاح كاملًا.",
+      "scoring": "score = العناصر الصحيحة من أول محاولة · max_score = عدد العناصر · لا نقاط ولا زمن للطفل.",
+      "rewards": "ملصق واحد عند إكمال اللعبة لا يُفقد أبدًا. لا عملة ولا شراء ولا إعلانات ولا مقارنة بأطفال آخرين.",
+      "educational_feedback": "نجاح: «نعم، صحيح!» · «جميل جدًا!» كل 2–3 نجاحات. محاولة: «لا بأس، حاول» · «انظر مرة أخرى» بلا كلمة «خطأ». شرح عند الصحيح: «التفاحة حمراء، فتذهب مع الأحمر.» تلميح: «انظر إلى لون السلة، وإلى شكلها أيضًا.»",
+      "accessibility": "هدف لمس 64dp · السلة بصورة ونصّ وصوت وشكل مقترن لا باللون وحده (شرط قبول الحزمة) · العناصر داخل كل لون متنوعة الشكل والسلة تحمل شكلها المقترن فيبقى دليل غير لوني · بديل السحب إلزامي · وصف بديل لكل عنصر وسلة · ترتيب قراءة منطقي RTL/LTR · لا مؤقت · لا وميض > 3Hz · TextScaler 2.0× · احترام تقليل الحركة · D-pad · لا بطاقة شمس في أي مستوى · لا أشياء صغيرة تُبلَع في أي نشاط مرتبط.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=highlight_target · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "انظر إلى اللون مرة أخرى.",
+          "توهج السلة الصحيحة",
+          "إخفاء سلة خاطئة لتقليل الاختيار",
+          "نقل تلقائي مع شرح: «التفاحة حمراء، فتذهب هنا.»"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "sort_bins",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "criterion_key": "sort.by_color",
+            "criterion_type": "color",
+            "bins": [
+              { "id": "b1", "label_key": "color.yellow", "image": "asset-bin-yellow-circle", "audio": "asset-vo-color-yellow" },
+              { "id": "b2", "label_key": "color.red", "image": "asset-bin-red-triangle", "audio": "asset-vo-color-red" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-banana", "bin": "b1", "label_key": "object.banana", "audio": "asset-vo-banana", "explain_audio": "asset-vo-explain-banana" },
+              { "id": "i2", "image": "asset-lemon", "bin": "b1", "label_key": "object.lemon", "audio": "asset-vo-lemon", "explain_audio": "asset-vo-explain-lemon" },
+              { "id": "i3", "image": "asset-apple-red", "bin": "b2", "label_key": "object.apple", "audio": "asset-vo-apple", "explain_audio": "asset-vo-explain-apple" },
+              { "id": "i4", "image": "asset-tomato", "bin": "b2", "label_key": "object.tomato", "audio": "asset-vo-tomato", "explain_audio": "asset-vo-explain-tomato" }
+            ],
+            "explain_on_correct": true,
+            "shuffle": true
+          },
+          {
+            "level": 2,
+            "criterion_key": "sort.by_color",
+            "criterion_type": "color",
+            "bins": [
+              { "id": "b1", "label_key": "color.yellow", "image": "asset-bin-yellow-circle", "audio": "asset-vo-color-yellow" },
+              { "id": "b2", "label_key": "color.red", "image": "asset-bin-red-triangle", "audio": "asset-vo-color-red" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-banana", "bin": "b1", "label_key": "object.banana", "audio": "asset-vo-banana", "explain_audio": "asset-vo-explain-banana" },
+              { "id": "i2", "image": "asset-lemon", "bin": "b1", "label_key": "object.lemon", "audio": "asset-vo-lemon", "explain_audio": "asset-vo-explain-lemon" },
+              { "id": "i3", "image": "asset-duckling", "bin": "b1", "label_key": "object.duckling", "audio": "asset-vo-duckling", "explain_audio": "asset-vo-explain-duckling" },
+              { "id": "i4", "image": "asset-apple-red", "bin": "b2", "label_key": "object.apple", "audio": "asset-vo-apple", "explain_audio": "asset-vo-explain-apple" },
+              { "id": "i5", "image": "asset-tomato", "bin": "b2", "label_key": "object.tomato", "audio": "asset-vo-tomato", "explain_audio": "asset-vo-explain-tomato" },
+              { "id": "i6", "image": "asset-ladybird", "bin": "b2", "label_key": "object.ladybird", "audio": "asset-vo-ladybird", "explain_audio": "asset-vo-explain-ladybird" }
+            ],
+            "explain_on_correct": true,
+            "shuffle": true
+          },
+          {
+            "level": 3,
+            "criterion_key": "sort.by_color",
+            "criterion_type": "color",
+            "bins": [
+              { "id": "b1", "label_key": "color.yellow", "image": "asset-bin-yellow-circle", "audio": "asset-vo-color-yellow" },
+              { "id": "b2", "label_key": "color.red", "image": "asset-bin-red-triangle", "audio": "asset-vo-color-red" },
+              { "id": "b3", "label_key": "color.blue", "image": "asset-bin-blue-square", "audio": "asset-vo-color-blue" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-banana", "bin": "b1", "label_key": "object.banana", "audio": "asset-vo-banana", "explain_audio": "asset-vo-explain-banana" },
+              { "id": "i2", "image": "asset-lemon", "bin": "b1", "label_key": "object.lemon", "audio": "asset-vo-lemon", "explain_audio": "asset-vo-explain-lemon" },
+              { "id": "i3", "image": "asset-apple-red", "bin": "b2", "label_key": "object.apple", "audio": "asset-vo-apple", "explain_audio": "asset-vo-explain-apple" },
+              { "id": "i4", "image": "asset-ladybird", "bin": "b2", "label_key": "object.ladybird", "audio": "asset-vo-ladybird", "explain_audio": "asset-vo-explain-ladybird" },
+              { "id": "i5", "image": "asset-blue-ball", "bin": "b3", "label_key": "object.ball", "audio": "asset-vo-ball", "explain_audio": "asset-vo-explain-ball" },
+              { "id": "i6", "image": "asset-blue-cup", "bin": "b3", "label_key": "object.cup", "audio": "asset-vo-cup", "explain_audio": "asset-vo-explain-cup" }
+            ],
+            "explain_on_correct": true,
+            "shuffle": true
+          }
+        ],
+        "assets": {
+          "images": ["asset-bin-yellow-circle", "asset-bin-red-triangle", "asset-bin-blue-square", "asset-banana", "asset-lemon", "asset-duckling", "asset-apple-red", "asset-tomato", "asset-ladybird", "asset-blue-ball", "asset-blue-cup"],
+          "audio": ["asset-vo-color-yellow", "asset-vo-color-red", "asset-vo-color-blue", "asset-vo-banana", "asset-vo-lemon", "asset-vo-duckling", "asset-vo-apple", "asset-vo-tomato", "asset-vo-ladybird", "asset-vo-ball", "asset-vo-cup", "asset-vo-explain-banana", "asset-vo-explain-lemon", "asset-vo-explain-duckling", "asset-vo-explain-apple", "asset-vo-explain-tomato", "asset-vo-explain-ladybird", "asset-vo-explain-ball", "asset-vo-explain-cup"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-gcs-intro",
+          "vo.instruction": "asset-vo-gcs-instruction",
+          "vo.instruction_repeat": "asset-vo-gcs-instruction-slow",
+          "vo.hint": "asset-vo-gcs-hint",
+          "vo.retry": "asset-vo-retry-preschool",
+          "vo.correct": "asset-vo-correct-preschool",
+          "vo.level_complete": "asset-vo-level-complete",
+          "vo.game_complete": "asset-vo-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/08-alam/games/game-preschool-color-sort.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation"]
+    },
+    {
+      "id": "game-number-maze",
+      "title_ar": "متاهة الأرقام",
+      "engine": "count_quantity",
+      "engine_justification": "لا يوجد في الاثني عشر محركًا محرك متاهة، فالسؤال هو أي محرك يقيس ما تعلّمه الحلقة. مسار count_quantity الأساسي kids وهو مسار اللعبة، ونمطه pattern_fill معلن في العقد بمثال حرفي «2، 4، 6، ؟» مع rule_key، وهو ما تعلّمه الحلقة 6 (العدّ بالوثب). ومخطط المحرك يخزّن الأنماط قيمًا عددية لا صورًا فيقبل numeral_system=auto ويعرض ٨ أو 8 بلا نصّ داخل صورة. وسلّم الخطأ تعليمي («هيا نعدّ معًا» مع إبراز ونطق) لا رافض، وscore = البنود الصحيحة من أول محاولة وهو معيار الحلقة. logic_pattern مرفوض لأن خياراته assetId أي صور لا أعداد، ومستوياته العليا تفرض تعليلًا لا يقيسه هدف الحلقة في هذا العمر؛ وsequence_order يرتّب لوحات ويكتب score=1 فقط فلا يصلح لخمسة بنود عددية.",
+      "planet_id": "arqam",
+      "series_slug": "adventures-of-numbers",
+      "linked_episode_number": 6,
+      "age_min": 6,
+      "age_max": 8,
+      "track": "kids",
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "medium",
+      "objective_code": "math.pattern.complete",
+      "core_mechanic": "مسار من بوابات على درج؛ كل بوابة تعرض متتالية عددية فيها موضع ناقص واحد وثلاثة خيارات عددية، ولمس الرقم الصحيح يفتح البوابة ويتقدّم الطفل خطوة. زر «أعد العدّ» يعيد نطق المتتالية من أولها.",
+      "gameplay_loop": "intro وعرض المسار كاملًا مرة ← تعليمة «ما الرقم الناقص؟» + زر إعادة ← نطق المتتالية بالتتابع مع إبراز كل رقم ← لمس أحد الخيارات ← صحيح: يستقر الرقم وتُفتح البوابة ويُنطق اسم القاعدة · غير صحيح: ارتداد وعبارة محاولة ثم إبراز المتتالية ونطق الفروق ← تكرار على بنود المستوى الثلاثة ← إكمال المستوى ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "نمط تصاعدي بمقدار 1 · المدى 1–10", "items": 3, "distractors": 2, "success_threshold": "البنود الثلاثة صحيحة" },
+        { "level": 2, "goal": "نمط تصاعدي بمقدار 2 · المدى 1–20", "items": 3, "distractors": 2, "success_threshold": "البنود الثلاثة صحيحة" },
+        { "level": 3, "goal": "مقادير مختلفة + نمط تنازلي · المدى 1–20", "items": 3, "distractors": 2, "success_threshold": "البنود الثلاثة صحيحة" }
+      ],
+      "difficulty_progression": "مقدار الوثب أولًا (1 ← 2) ثم تنويع المقدار واتجاهه (4، 5، ثم تنازلي بمقدار 2). المستوى 3 الأصعب لأن الطفل لا يعرف المقدار مسبقًا: عليه أن يستنتجه من الفروق ويلاحظ أن النمط قد ينقص لا يزيد. المشتّتان قريبان عدديًا (±1 أو ±2) لا عشوائيان وإلا صار الجواب بالاستبعاد. لا مؤقت ولا زيادة في عدد البنود.",
+      "instructions_ar": "هذا درج الأرقام، وفي كل درجة رقم. درجة واحدة ناقصة. استمع للأرقام، واكتشف كم نزيد كل مرة، ثم اختر الرقم الناقص. إن أردت أن نعدّ من جديد، المس ‹أعد العدّ›.",
+      "success_rule": "البند ينجح باختيار العدد الصحيح والمستوى بإتمام بنوده الثلاثة. score = البنود الصحيحة من أول محاولة، max_score = 3. «أعد العدّ» لا يُحسب مساعدة؛ التلميح أو التضييق أو الحل هو ما يضع help_used = 1.",
+      "failure_rule": "الخطأ فرصة تعليم لا رفض: 1 عبارة محاولة مع نطق الفروق «من اثنين إلى أربعة: زدنا اثنين» · 2 إبقاء الخيارات الصحيحة فقط · 3 تقصير المتتالية بموضع واحد · 4 إظهار الجواب مع عدّ صوتي كامل وشرح القاعدة · 5+ اقتراح أسهل بلا وصف بالفشل. لا كلمة «خطأ» ولا عدّ أخطاء ظاهر، والبوابة تُفتح دائمًا في النهاية.",
+      "scoring": "score = البنود الصحيحة من أول محاولة · max_score = 3 · لا نقاط ولا زمن ولا نسبة دقة معروضة.",
+      "rewards": "ملصق هادئ عند إكمال اللعبة لا يُفقد أبدًا. لا عملة ولا شراء ولا صناديق عشوائية ولا إعلانات ولا streaks ولا لوحة ترتيب.",
+      "educational_feedback": "نجاح: «تفكير ممتاز!» · «صحيح تمامًا!» كل 2–3 نجاحات. محاولة: «اقتربت! انظر للفرق بين الرقمين الأولين.» تلميح للقاعدة: «كم نزيد في كل خطوة؟ عُدّ الفرق.» شرح: «نزيد اثنين كل مرة: اثنان، أربعة، ستة، ثمانية.» والمستوى 3: «هذا نمط تنازلي: ننقص اثنين كل مرة.»",
+      "accessibility": "هدف لمس 56dp · زر «أعد العدّ» ظاهر دائمًا · لا مؤقت · الأرقام تُعرَض رقمًا ونصًا عند التكبير وnumeral_system=auto يقبل ٨ و8 · العناصر لا تتحرك أثناء نطق المتتالية · الصحيح/الخاطئ برمز وحركة وصوت لا بلون · وصف بديل لكل بوابة وموضع («الموضع الرابع، ناقص») · TextScaler 2.0× · لا وميض > 3Hz · احترام تقليل الحركة · D-pad · تُلعَب بلا صوت · المتتالية لا تُعكس في RTL كترتيب كمّي واتجاه التزايد يُنطق صريحًا.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=narrow_options · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "كم نزيد في كل خطوة؟ عُدّ الفرق.",
+          "إبقاء الخيارات الصحيحة فقط",
+          "تقصير المتتالية بموضع واحد",
+          "إظهار الجواب مع عدّ صوتي كامل وشرح القاعدة"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "count_quantity",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "mode": "pattern_fill",
+            "range": [1, 10],
+            "numeral_system": "auto",
+            "items": [
+              { "id": "p1", "sequence": [1, 2, 3, null], "options": [4, 5, 6], "answer": 4, "rule_key": "pattern.add_1" },
+              { "id": "p2", "sequence": [2, 3, 4, null], "options": [5, 6, 7], "answer": 5, "rule_key": "pattern.add_1" },
+              { "id": "p3", "sequence": [5, 6, 7, null], "options": [8, 9, 10], "answer": 8, "rule_key": "pattern.add_1" }
+            ],
+            "count_aloud_on_error": true,
+            "allow_recount_button": true
+          },
+          {
+            "level": 2,
+            "mode": "pattern_fill",
+            "range": [1, 20],
+            "numeral_system": "auto",
+            "items": [
+              { "id": "p1", "sequence": [2, 4, 6, null], "options": [7, 8, 9], "answer": 8, "rule_key": "pattern.add_2" },
+              { "id": "p2", "sequence": [3, 5, 7, null], "options": [8, 9, 10], "answer": 9, "rule_key": "pattern.add_2" },
+              { "id": "p3", "sequence": [10, 12, 14, null], "options": [15, 16, 17], "answer": 16, "rule_key": "pattern.add_2" }
+            ],
+            "count_aloud_on_error": true,
+            "allow_recount_button": true
+          },
+          {
+            "level": 3,
+            "mode": "pattern_fill",
+            "range": [1, 20],
+            "numeral_system": "auto",
+            "items": [
+              { "id": "p1", "sequence": [4, 8, 12, null], "options": [14, 15, 16], "answer": 16, "rule_key": "pattern.add_4" },
+              { "id": "p2", "sequence": [5, 10, 15, null], "options": [18, 19, 20], "answer": 20, "rule_key": "pattern.add_5" },
+              { "id": "p3", "sequence": [20, 18, 16, null], "options": [12, 13, 14], "answer": 14, "rule_key": "pattern.subtract_2" }
+            ],
+            "count_aloud_on_error": true,
+            "allow_recount_button": true
+          }
+        ],
+        "assets": {
+          "images": ["asset-maze-gate", "asset-maze-step", "asset-maze-path"],
+          "audio": ["asset-vo-count-1", "asset-vo-count-2", "asset-vo-count-3", "asset-vo-count-4", "asset-vo-count-5", "asset-vo-count-6", "asset-vo-count-7", "asset-vo-count-8", "asset-vo-count-9", "asset-vo-count-10", "asset-vo-count-12", "asset-vo-count-14", "asset-vo-count-15", "asset-vo-count-16", "asset-vo-count-18", "asset-vo-count-20"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-gnm-intro",
+          "vo.instruction": "asset-vo-gnm-instruction",
+          "vo.instruction_repeat": "asset-vo-gnm-instruction-slow",
+          "vo.hint": "asset-vo-gnm-hint",
+          "vo.recount": "asset-vo-recount",
+          "vo.correct": "asset-vo-correct-kids",
+          "vo.explain_answer": "asset-vo-gnm-explain-rule",
+          "vo.level_complete": "asset-vo-level-complete-kids",
+          "vo.game_complete": "asset-vo-game-complete-kids",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/02-arqam/games/game-number-maze.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation"]
+    },
+    {
+      "id": "game-shape-matching",
+      "title_ar": "مطابقة الأشكال",
+      "engine": "match_pairs",
+      "engine_justification": "عقد المحرك ينصّ على أن مساره الأساسي preschool «ويمتد إلى kids»، واللعبة في 6–8 أي داخل الامتداد المعلن فلا حاجة إلى توقيع توسيع فئة. ونوع الربط relation معلن في العقد («العنصر ← ما يرتبط به») وهو المطلوب: كل بلاطة تُربَط بالصفّ الذي تكمل نمطه لا بمثيلها. والعقد يسمح بـ3 أهداف و6 عناصر و3 مشتّتات وهو ما يكفي لثلاثة أنماط ومشتّتين. اخترناه لا logic_pattern لسببين: logic_pattern يفرض التعليل في مستوييه 4 و5 وهو ما تقيسه حزمة lp-aon-ep3 القائمة لهذه الحلقة، ونبرته الصوتية مصمَّمة لبنك junior المحترم غير الطفولي وهي غير مناسبة لطفل السادسة.",
+      "planet_id": "arqam",
+      "series_slug": "adventures-of-numbers",
+      "linked_episode_number": 3,
+      "age_min": 6,
+      "age_max": 8,
+      "track": "kids",
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "none",
+      "difficulty": "easy",
+      "objective_code": "math.pattern.complete",
+      "core_mechanic": "صفوف جسر (2–3) كل صفّ يعرض نمطًا متكرّرًا وفي آخره فراغ واضح، وبلاطات أشكال هندسية في الأسفل تُسحب إلى الفراغ الذي تكمله أو تُلمس ثم يُلمس الصفّ؛ البلاطة الصحيحة تثبت والخطأ لا يثبت.",
+      "gameplay_loop": "intro «هيا نكمل الجسر» ← تعليمة + زر إعادة ← لمس صفّ ينطق نمطه بالتتابع ولمس بلاطة ينطق شكلها ← سحب أو لمس ← صحيح: تثبت البلاطة ويُنطق سبب صحّتها «القاعدة: مثلّث ثم مربّع، فالناقص مثلّث» · غير صحيح: ارتداد لطيف وعبارة محاولة بلا صوت سلبي ولا يُهدَم ما ثبت ← إكمال المستوى ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "نمط بوحدة من شكلين: مثلّث مربّع مثلّث مربّع ؟", "items": 2, "distractors": 0, "success_threshold": "الصفّان مكتملان" },
+        { "level": 2, "goal": "ثلاثة أنماط بوحدة من شكلين", "items": 3, "distractors": 0, "success_threshold": "الصفوف الثلاثة مكتملة" },
+        { "level": 3, "goal": "ثلاثة أنماط + بلاطتان مشتّتتان", "items": 5, "distractors": 2, "success_threshold": "الصفوف الثلاثة مكتملة والمشتّتان غير مستخدمين" }
+      ],
+      "difficulty_progression": "عدد الأنماط أولًا (2 ← 3) ثم إضافة مشتّتين. وحدة النمط تبقى من شكلين في كل المستويات لأن الوحدة الثلاثية تغيّر مستوى التجريد وتحتاج تعليلًا تقيسه حزمة logic_pattern. الأشكال كلها بنفس اللون في كل المستويات وإلا صار التمييز بالشكل تمييزًا باللون. لا مؤقت.",
+      "instructions_ar": "الجسر ناقص بلاطات. انظر إلى نمط كل صفّ: ما الذي يتكرر؟ ثم اسحب البلاطة التي تكمله. البلاطة الخطأ لن تثبت، ولا بأس — جرّب غيرها.",
+      "success_rule": "المستوى ينجح عندما يكتمل كل صفّ ببلاطته الصحيحة، بلا مؤقت وبلا حد محاولات. score = الأنماط المكتملة من أول محاولة، max_score = عدد الأنماط.",
+      "failure_rule": "1 البلاطة ترتدّ بلطف وعبارة محاولة من بنك kids وما ثبت يبقى ثابتًا · 2 توهج الصفّ المقصود ونطق نمطه من أوله · 3 إخفاء البلاطات المشتّتة · 4 وضع البلاطة تلقائيًا مع شرح القاعدة كاملة · 5+ اقتراح أسهل بلا وصف بالفشل. «البلاطة الخطأ لا تثبت» تعليم لا عقاب: لا يُهدَم الجسر ولا تُعاد المحاولة من الصفر ولا يُعدّ الخطأ ظاهرًا.",
+      "scoring": "score = الأنماط المكتملة من أول محاولة · max_score = عدد الأنماط · لا نقاط ولا زمن ولا نسب للطفل. التعليل لا يُقاس في هذه اللعبة وتقيسه حزمة logic_pattern القائمة.",
+      "rewards": "ملصق واحد عند إكمال اللعبة لا يُفقد أبدًا. لا عملة ولا شراء ولا إعلانات ولا مقارنة.",
+      "educational_feedback": "نجاح: «أحسنت، رتّبتها صح!» · «لاحظت الفرق، جيد جدًا!» كل 2–3 نجاحات. محاولة: «ليست هذه، جرّب مرة أخرى» · «اقتربت! انظر للخطوة الأولى». تلميح للقاعدة: «ما الذي يتكرر في هذا الصفّ؟ عُدّ من أوله.» شرح: «القاعدة: مثلّث ثم مربّع. آخر بلاطة مربّع، فالناقص مثلّث.»",
+      "accessibility": "هدف لمس 72dp · بديل السحب إلزامي · الأشكال تُميَّز بالشكل وكلها بنفس اللون ولا يُدلّ على الصحيح/الخطأ بالأحمر/الأخضر وحدهما · حواف الأشكال ناعمة لا حادّة واقعية · وصف بديل لكل بلاطة وصفّ («الصفّ الأول: مثلّث، مربّع، مثلّث، مربّع، فراغ») · ترتيب النمط يُعرَض باتجاه القراءة والقاعدة تُنطق صريحة · لا مؤقت · لا وميض > 3Hz · TextScaler 2.0× · احترام تقليل الحركة · D-pad · تُلعَب بلا صوت.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=highlight_target · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "ما الذي يتكرر في هذا الصفّ؟ عُدّ من أوله.",
+          "توهج الصفّ المقصود ونطق نمطه من أوله",
+          "إخفاء البلاطات المشتّتة",
+          "وضع البلاطة تلقائيًا مع شرح القاعدة"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "match_pairs",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "match_type": "relation",
+            "prompt_key": "aon.ep3.complete_bridge",
+            "targets": [
+              { "id": "t1", "image": "asset-bridge-row-tri-sq", "label_key": "pattern.row_triangle_square", "audio": "asset-vo-row-tri-sq" },
+              { "id": "t2", "image": "asset-bridge-row-cir-sq", "label_key": "pattern.row_circle_square", "audio": "asset-vo-row-cir-sq" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-tile-triangle", "target": "t1", "label_key": "shape.triangle", "audio": "asset-vo-triangle" },
+              { "id": "i2", "image": "asset-tile-circle", "target": "t2", "label_key": "shape.circle", "audio": "asset-vo-circle" }
+            ],
+            "distractors": [],
+            "shuffle": true
+          },
+          {
+            "level": 2,
+            "match_type": "relation",
+            "prompt_key": "aon.ep3.complete_bridge",
+            "targets": [
+              { "id": "t1", "image": "asset-bridge-row-tri-sq", "label_key": "pattern.row_triangle_square", "audio": "asset-vo-row-tri-sq" },
+              { "id": "t2", "image": "asset-bridge-row-cir-sq", "label_key": "pattern.row_circle_square", "audio": "asset-vo-row-cir-sq" },
+              { "id": "t3", "image": "asset-bridge-row-sq-cir", "label_key": "pattern.row_square_circle", "audio": "asset-vo-row-sq-cir" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-tile-triangle", "target": "t1", "label_key": "shape.triangle", "audio": "asset-vo-triangle" },
+              { "id": "i2", "image": "asset-tile-circle", "target": "t2", "label_key": "shape.circle", "audio": "asset-vo-circle" },
+              { "id": "i3", "image": "asset-tile-square", "target": "t3", "label_key": "shape.square", "audio": "asset-vo-square" }
+            ],
+            "distractors": [],
+            "shuffle": true
+          },
+          {
+            "level": 3,
+            "match_type": "relation",
+            "prompt_key": "aon.ep3.complete_bridge",
+            "targets": [
+              { "id": "t1", "image": "asset-bridge-row-tri-cir", "label_key": "pattern.row_triangle_circle", "audio": "asset-vo-row-tri-cir" },
+              { "id": "t2", "image": "asset-bridge-row-sq-tri", "label_key": "pattern.row_square_triangle", "audio": "asset-vo-row-sq-tri" },
+              { "id": "t3", "image": "asset-bridge-row-cir-sq", "label_key": "pattern.row_circle_square", "audio": "asset-vo-row-cir-sq" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-tile-triangle", "target": "t1", "label_key": "shape.triangle", "audio": "asset-vo-triangle" },
+              { "id": "i2", "image": "asset-tile-square", "target": "t2", "label_key": "shape.square", "audio": "asset-vo-square" },
+              { "id": "i3", "image": "asset-tile-circle", "target": "t3", "label_key": "shape.circle", "audio": "asset-vo-circle" }
+            ],
+            "distractors": [
+              { "id": "d1", "image": "asset-tile-rhombus", "label_key": "shape.rhombus", "audio": "asset-vo-rhombus" },
+              { "id": "d2", "image": "asset-tile-hexagon", "label_key": "shape.hexagon", "audio": "asset-vo-hexagon" }
+            ],
+            "shuffle": true
+          }
+        ],
+        "assets": {
+          "images": ["asset-bridge-row-tri-sq", "asset-bridge-row-cir-sq", "asset-bridge-row-sq-cir", "asset-bridge-row-tri-cir", "asset-bridge-row-sq-tri", "asset-tile-triangle", "asset-tile-circle", "asset-tile-square", "asset-tile-rhombus", "asset-tile-hexagon"],
+          "audio": ["asset-vo-row-tri-sq", "asset-vo-row-cir-sq", "asset-vo-row-sq-cir", "asset-vo-row-tri-cir", "asset-vo-row-sq-tri", "asset-vo-triangle", "asset-vo-circle", "asset-vo-square", "asset-vo-rhombus", "asset-vo-hexagon"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-gsm-intro",
+          "vo.instruction": "asset-vo-gsm-instruction",
+          "vo.instruction_repeat": "asset-vo-gsm-instruction-slow",
+          "vo.hint": "asset-vo-gsm-hint",
+          "vo.retry": "asset-vo-retry-kids",
+          "vo.correct": "asset-vo-correct-kids",
+          "vo.explain_rule": "asset-vo-gsm-explain-rule",
+          "vo.level_complete": "asset-vo-level-complete-kids",
+          "vo.game_complete": "asset-vo-game-complete-kids",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/02-arqam/games/game-shape-matching.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation"]
+    },
+    {
+      "id": "game-butterfly-sequence",
+      "title_ar": "دورة الفراشة",
+      "engine": "sequence_order",
+      "engine_justification": "العقد يعلن أن مسار المحرك الأساسي kids وهو مسار اللعبة، وأن أحد أنواعه process بمثال حرفي «خطوات نمو النبات» أي عملية بيولوجية متدرّجة وهو نوع دورة الفراشة نفسه. والمخطط يقبل 3–6 لوحات ويربط كل لوحة بposition مع accepted_orders. وسلوك الخطأ يجعله صالحًا لهذا العمر: اللوحة الخاطئة تهتز وتعود والصحيحة تثبت بلا إعادة من الصفر. وnarrate_on_complete يسرد الدورة كاملة وهو التثبيت التعليمي المطلوب، وscore=1 وmax_score=1 فالقياس نظيف. logic_pattern مرفوض لأنه يقيس قاعدة مجرّدة بلا زمن، وmatch_pairs لا يعبّر عن ترتيب إطلاقًا.",
+      "planet_id": "oloom",
+      "series_slug": "discover-your-body",
+      "linked_episode_number": 5,
+      "age_min": 6,
+      "age_max": 8,
+      "track": "kids",
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "medium",
+      "objective_code": "sci.observe.living_thing",
+      "core_mechanic": "لوحات مبعثرة (3–5) تُرتَّب على شريط يتبع اتجاه القراءة؛ يسحب الطفل اللوحة إلى خانتها أو يلمس اللوحة ثم الخانة، واللوحة الصحيحة تثبت وتبقى، وبعد إكمال الترتيب يُسرَد التسلسل صوتيًا.",
+      "gameplay_loop": "intro «هيا نرتّب المراحل» ← تعليمة + زر إعادة ← لمس لوحة ينطق وصفها ← وضعها في خانة ← صحيح: تثبت والخانة التالية تصبح المتوقّعة · غير صحيح: تهتز وتعود وما ثبت يبقى ثابتًا مع عبارة محاولة بلا صوت سلبي ← اكتمال الترتيب: سرد الدورة كاملة ثم إكمال المستوى ← المستوى 3 يضيف اللوحة التي تُغلق الدورة ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "ثلاث مراحل بفارق مرئي واضح: بيضة · يسروع · فراشة", "items": 3, "distractors": 0, "success_threshold": "الترتيب مطابق لaccepted_orders" },
+        { "level": 2, "goal": "أربع مراحل — تُضاف الخادرة بين اليسروع والفراشة", "items": 4, "distractors": 0, "success_threshold": "الترتيب مطابق" },
+        { "level": 3, "goal": "خمس لوحات — يُضاف بيض جديد فتُغلق الدورة", "items": 5, "distractors": 0, "success_threshold": "الترتيب مطابق" }
+      ],
+      "difficulty_progression": "ثلاث مراحل متباعدة بصريًا ← إضافة المرحلة الأقرب التباسًا (الخادرة، لأنها ساكنة وتشبه ورقة ملتوية) ← إغلاق الدورة بلوحة خامسة تعلّم أن الدورة ليست خطًا ينتهي. لا مشتّتات (كل لوحة جزء من التسلسل) ولا مؤقت، ولا تُذكر مدد زمنية بالأيام لأنها تختلف بين الأنواع.",
+      "instructions_ar": "كل كائن حي يمرّ بمراحل. انظر إلى اللوحات، ورتّبها من البداية إلى النهاية. المس اللوحة لتسمع وصفها. اللوحة التي تثبت في مكانها الصحيح تبقى، فلا تقلق.",
+      "success_rule": "المستوى ينجح عندما يطابق الترتيب أحد accepted_orders. score = 1 عند الترتيب الصحيح، max_score = 1، وattempts مرة واحدة لكل مستوى بevent_id ثابت.",
+      "failure_rule": "1 اللوحة الخاطئة تهتز وتعود والصحيحة تثبت مع عبارة محاولة من بنك kids · 2 توهج الخانة الصحيحة للوحة المحمولة وتلميح «ما الذي يحدث أولًا؟» · 3 تثبيت أول لوحة صحيحة تلقائيًا · 4 ترتيب كامل مع سرد صوتي · 5+ اقتراح أسهل بلا وصف بالفشل. لا إعادة من الصفر إطلاقًا ولا عدّ أخطاء ظاهر ولا قفل محتوى.",
+      "scoring": "score = 1 عند الترتيب الصحيح · max_score = 1 · لا نقاط ولا زمن ولا نسب للطفل.",
+      "rewards": "ملصق واحد عند إكمال اللعبة لا يُفقد. لا عملة ولا شراء ولا إعلانات ولا مقارنة.",
+      "educational_feedback": "نجاح: «أحسنت، رتّبتها صح!» · «تفكير ممتاز!» كل 2–3 نجاحات. محاولة: «اقتربت! انظر للخطوة الأولى» · «حاول مرة أخرى، أنت تفهمها». تلميح: «ما الذي يحدث أولًا؟ أصغر مرحلة تبدأ.» سرد الإكمال: «البيضة تصير يسروعًا، ثم خادرة ساكنة، ثم فراشة تطير.» والمستوى 3: «والفراشة تضع بيضًا جديدًا، فتبدأ الدورة من جديد.»",
+      "accessibility": "هدف لمس 64dp · بديل السحب إلزامي · الاتجاه يتبع اللغة تلقائيًا ويُختبر في ar وen إلزاميًا · كل لوحة لها نصّ مرئي ووصف بديل فاللعبة تُلعَب بلا صوت · المراحل تختلف شكلًا وحجمًا والخانة الصحيحة تُبرَز بإطار ورمز لا بلون · لا مؤقت · لا وميض > 3Hz · TextScaler 2.0× · احترام تقليل الحركة · D-pad · حدود التصوير: رسم رمزي مبسّط لا واقعي عياني بلا ملمس لزج ولا تقريب مقزّز.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=highlight_target · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "ما الذي يحدث أولًا؟ أصغر مرحلة تبدأ.",
+          "توهج الخانة الصحيحة للوحة المحمولة",
+          "تثبيت أول لوحة صحيحة تلقائيًا",
+          "ترتيب كامل مع سرد صوتي للدورة"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "sequence_order",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "sequence_type": "process",
+            "prompt_key": "seq.butterfly_stages",
+            "direction": "reading_order",
+            "panels": [
+              { "id": "p1", "image": "asset-bf-egg", "position": 1, "caption_key": "seq.bf.egg", "audio": "asset-vo-bf-egg" },
+              { "id": "p2", "image": "asset-bf-caterpillar", "position": 2, "caption_key": "seq.bf.caterpillar", "audio": "asset-vo-bf-caterpillar" },
+              { "id": "p3", "image": "asset-bf-butterfly", "position": 3, "caption_key": "seq.bf.butterfly", "audio": "asset-vo-bf-butterfly" }
+            ],
+            "accepted_orders": [["p1", "p2", "p3"]],
+            "narrate_on_complete": true
+          },
+          {
+            "level": 2,
+            "sequence_type": "process",
+            "prompt_key": "seq.butterfly_stages",
+            "direction": "reading_order",
+            "panels": [
+              { "id": "p1", "image": "asset-bf-egg", "position": 1, "caption_key": "seq.bf.egg", "audio": "asset-vo-bf-egg" },
+              { "id": "p2", "image": "asset-bf-caterpillar", "position": 2, "caption_key": "seq.bf.caterpillar", "audio": "asset-vo-bf-caterpillar" },
+              { "id": "p3", "image": "asset-bf-chrysalis", "position": 3, "caption_key": "seq.bf.chrysalis", "audio": "asset-vo-bf-chrysalis" },
+              { "id": "p4", "image": "asset-bf-butterfly", "position": 4, "caption_key": "seq.bf.butterfly", "audio": "asset-vo-bf-butterfly" }
+            ],
+            "accepted_orders": [["p1", "p2", "p3", "p4"]],
+            "narrate_on_complete": true
+          },
+          {
+            "level": 3,
+            "sequence_type": "process",
+            "prompt_key": "seq.butterfly_cycle_closes",
+            "direction": "reading_order",
+            "panels": [
+              { "id": "p1", "image": "asset-bf-egg", "position": 1, "caption_key": "seq.bf.egg", "audio": "asset-vo-bf-egg" },
+              { "id": "p2", "image": "asset-bf-caterpillar", "position": 2, "caption_key": "seq.bf.caterpillar", "audio": "asset-vo-bf-caterpillar" },
+              { "id": "p3", "image": "asset-bf-chrysalis", "position": 3, "caption_key": "seq.bf.chrysalis", "audio": "asset-vo-bf-chrysalis" },
+              { "id": "p4", "image": "asset-bf-butterfly", "position": 4, "caption_key": "seq.bf.butterfly", "audio": "asset-vo-bf-butterfly" },
+              { "id": "p5", "image": "asset-bf-new-eggs", "position": 5, "caption_key": "seq.bf.new_eggs", "audio": "asset-vo-bf-new-eggs" }
+            ],
+            "accepted_orders": [["p1", "p2", "p3", "p4", "p5"]],
+            "narrate_on_complete": true
+          }
+        ],
+        "assets": {
+          "images": ["asset-bf-egg", "asset-bf-caterpillar", "asset-bf-chrysalis", "asset-bf-butterfly", "asset-bf-new-eggs"],
+          "audio": ["asset-vo-bf-egg", "asset-vo-bf-caterpillar", "asset-vo-bf-chrysalis", "asset-vo-bf-butterfly", "asset-vo-bf-new-eggs"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-gbs-intro",
+          "vo.instruction": "asset-vo-gbs-instruction",
+          "vo.instruction_repeat": "asset-vo-gbs-instruction-slow",
+          "vo.hint": "asset-vo-gbs-hint",
+          "vo.retry": "asset-vo-retry-kids",
+          "vo.correct": "asset-vo-correct-kids",
+          "vo.narrate_complete": "asset-vo-gbs-narrate",
+          "vo.level_complete": "asset-vo-level-complete-kids",
+          "vo.game_complete": "asset-vo-game-complete-kids",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/03-oloom/games/game-butterfly-sequence.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation", "series_assignment_decision", "scientific_review"]
+    },
+    {
+      "id": "game-animal-memory",
+      "title_ar": "ذاكرة الحيوانات",
+      "engine": "memory_flip",
+      "engine_justification": "عقد المحرك يعلن مساره صراحة «المسار: preschool + kids» فعمر 6–8 داخل المسار المعلن بلا أي توسيع فئة. ومدخله tap وحده وهو ما تحتاجه لعبة قلب بطاقات بلا سحب ولا دقة حركية. وشبكته تصل إلى 12 بطاقة فيستوعب ستة أزواج بلا خرق الحد. والأهم أن العقد يعرّف نوع الزوج related («مترابط لا متماثل») ويوفّر explain_audio لشرح العلاقة، وهو ما يحوّل شبكة ذاكرة إلى تمرين على الدليل. وسياسة الفشل صمت مقصود بلا vo.retry إطلاقًا. ولا يجوز تحويل هذه اللعبة إلى مقياس صارم: المحركان الترفيهيان موجودان تحديدًا حتى لا تصير المنصة مدرسة.",
+      "planet_id": "alam",
+      "series_slug": "explorers-adventures",
+      "linked_episode_number": 1,
+      "age_min": 6,
+      "age_max": 8,
+      "track": "kids",
+      "reading_level": "emerging",
+      "interaction_mode": "tap",
+      "supervision_level": "none",
+      "difficulty": "easy",
+      "objective_code": "world.reason.combine_clues",
+      "objective_note": "ترفيه أولًا: لا mastery للمستويين 1 و2 بحكم 05-mastery. والمستوى 3 (المترابط) هو الوحيد القابل للربط بهدف، وعقد المحرك يذكر هدف مفردات؛ فربطه بهدف استنتاجي يحتاج توقيعًا تحريريًا مسجَّلًا في open_questions. حتى صدوره: تُكتب attempts وحدها للمستويات الثلاثة.",
+      "core_mechanic": "شبكة بطاقات مقلوبة بظهر موحّد؛ يلمس الطفل بطاقتين، فإن تطابقتا أو تناسبتا في المستوى 3 بقيتا مكشوفتين مع توهج ناعم ونطق الاسم، وإلا عادتا للقلب بعد مهلة بلا أي صوت أو عبارة.",
+      "gameplay_loop": "intro «هيا نبحث عن الأزواج» ← تعليمة (متماثل أو مترابط) + زر إعادة ← عرض الشبكة مقلوبة بلا مؤقت ولا عدّ محاولات ← لمس بطاقة ونطق اسمها ← لمس بطاقة ثانية ← تطابق: تبقى مكشوفة مع «وجدتها!» وتوهج ناعم وشرح العلاقة في المستوى 3 · لا تطابق: عودة بعد المهلة بصمت كامل ← كشف كل الأزواج ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "ذاكرة عاملة على 4 أزواج متماثلة من حيوانات الحيّ (شبكة 2×4)", "items": 4, "distractors": 0, "success_threshold": "كشف الأزواج الأربعة" },
+        { "level": 2, "goal": "6 أزواج متماثلة — سعة أكبر بنفس القاعدة (شبكة 3×4)", "items": 6, "distractors": 0, "success_threshold": "كشف الأزواج الستة" },
+        { "level": 3, "goal": "6 أزواج مترابطة: الحيوان ← الدليل الذي يتركه (شبكة 3×4)", "items": 6, "distractors": 0, "success_threshold": "كشف الأزواج الستة وسماع شرح كل علاقة" }
+      ],
+      "difficulty_progression": "بُعد واحد في كل مستوى: السعة أولًا (4 ← 6 أزواج) ثم نوع الربط (متماثل ← مترابط) بنفس السعة. المستوى 3 لا يزيد البطاقات لأن الحمل الجديد معرفي لا ذاكري، وflip_back_delay_ms يعود إلى 1200ms بعد 1000ms في المستوى 2 — زيادة المهلة مع زيادة الحمل لا العكس. لا مشتّتات: المحرك لا يعرّف مشتّتات وبطاقة بلا زوج تجعل اللعبة غير قابلة للإكمال. لا مؤقت.",
+      "instructions_ar": "هيا نبحث عن الأزواج! البطاقات كلها مقلوبة. المس بطاقة، ثم المس بطاقة أخرى. إن كانتا متشابهتين بقيتا مكشوفتين. وفي المرحلة الأخيرة ابحث عن البطاقتين اللتين تناسبان بعضهما: الحيوان والدليل الذي يتركه. خُذ وقتك، فلا وقت محدد هنا.",
+      "success_rule": "المستوى ينجح بكشف كل الأزواج بلا شرط زمن ولا حد محاولات ولا نسبة دقة. score = max_score عند الإكمال، max_score = عدد الأزواج (4 ثم 6 ثم 6). attempts مرة واحدة لكل مستوى بevent_id ثابت، ولا mastery للمستويين 1 و2.",
+      "failure_rule": "لا يوجد «خطأ» في هذه اللعبة إطلاقًا: البطاقتان تعودان وهذا كل ما يحدث، بلا عبارة ولا عدّ أخطاء — استثناء منصوص في 04 («memory_flip: لا vo.retry إطلاقًا — صمت مقصود»). بعد 6 محاولات غير موفقة: إبقاء بطاقة مكشوفة لثانية إضافية. بعد 10: كشف زوج واحد تلقائيًا بهدوء بلا أي تعليق، ثم يتكرر كل 10 بلا تصاعد. الكشف المساعد لا يُعرض كإخفاق، ولأن اللعبة ترفيهية لا تُقترح لعبة أسهل ولا تُعرض رسالة «نلعب شيئًا آخر؟».",
+      "scoring": "score = max_score عند الإكمال · max_score = عدد الأزواج · لا نقاط ولا مؤقت ولا عدد محاولات معروض (بند صريح في معايير قبول المحرك).",
+      "rewards": "ملصق واحد هادئ عند إكمال اللعبة يُضاف إلى «مجموعتي» ولا يُفقد أبدًا. لا عملة ولا شراء ولا صناديق عشوائية ولا إعلانات ولا streaks ولا لوحة ترتيب.",
+      "educational_feedback": "كشف زوج: «وجدتها!» مع توهج ناعم لا وميض. عدم التطابق: صمت كامل. شرح العلاقة في المستوى 3: «الريشة دليل على الحمامة.» · «أثر الأقدام دليل على القطة.» · «العُشّ دليل على العصفور.» إكمال اللعبة: «وجدت كل الأزواج! لعب جميل.»",
+      "accessibility": "هدف لمس 64dp ومدخل tap وحده فلا حاجة إلى بديل سحب · وصف بديل مترجم لكل بطاقة يُقرأ عند الكشف ولكل خلية وصف موضعها · حركة القلب تُختصر عند تقليل الحركة · لا وميض عند المطابقة وتوهج ناعم فقط · التطابق برمز وصوت لا بلون · لا مؤقت · TextScaler 2.0× · العناصر لا تُثبَّت في جهة واحدة · D-pad على TV · تُلعَب بلا صوت بالكامل · صور الدلائل غير مخيفة: بلا عظام ولا حيوان مصاب ولا دم.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=6 · hint_type=highlight_target · repeat_instructions_button=true · simplify_after_failed_attempts=10 · solution_after_failed_attempts=10 · counts_as_help_used=false — العتبات من جدول سلوك الخطأ في عقد المحرك لا من الافتراضي، لأن المحاولة غير الموفقة في لعبة ذاكرة حدث طبيعي في اللعب",
+        "hints": [
+          "إبقاء بطاقة واحدة مكشوفة لثانية إضافية بعد 6 محاولات",
+          "كشف زوج واحد تلقائيًا بهدوء بعد 10 محاولات بلا أي تعليق"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "memory_flip",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "grid": [2, 4],
+            "pair_type": "identical",
+            "pairs": [
+              { "a": "asset-am-cat", "b": "asset-am-cat-2", "sound_key": "animal.cat", "audio": "asset-vo-am-cat" },
+              { "a": "asset-am-sparrow", "b": "asset-am-sparrow-2", "sound_key": "animal.sparrow", "audio": "asset-vo-am-sparrow" },
+              { "a": "asset-am-turtle", "b": "asset-am-turtle-2", "sound_key": "animal.turtle", "audio": "asset-vo-am-turtle" },
+              { "a": "asset-am-bee", "b": "asset-am-bee-2", "sound_key": "animal.bee", "audio": "asset-vo-am-bee" }
+            ],
+            "flip_back_delay_ms": 1200,
+            "reveal_help_after_misses": 10,
+            "celebrate_each_pair": true
+          },
+          {
+            "level": 2,
+            "grid": [3, 4],
+            "pair_type": "identical",
+            "pairs": [
+              { "a": "asset-am-cat", "b": "asset-am-cat-2", "sound_key": "animal.cat", "audio": "asset-vo-am-cat" },
+              { "a": "asset-am-sparrow", "b": "asset-am-sparrow-2", "sound_key": "animal.sparrow", "audio": "asset-vo-am-sparrow" },
+              { "a": "asset-am-turtle", "b": "asset-am-turtle-2", "sound_key": "animal.turtle", "audio": "asset-vo-am-turtle" },
+              { "a": "asset-am-bee", "b": "asset-am-bee-2", "sound_key": "animal.bee", "audio": "asset-vo-am-bee" },
+              { "a": "asset-am-dove", "b": "asset-am-dove-2", "sound_key": "animal.dove", "audio": "asset-vo-am-dove" },
+              { "a": "asset-am-squirrel", "b": "asset-am-squirrel-2", "sound_key": "animal.squirrel", "audio": "asset-vo-am-squirrel" }
+            ],
+            "flip_back_delay_ms": 1000,
+            "reveal_help_after_misses": 10,
+            "celebrate_each_pair": true
+          },
+          {
+            "level": 3,
+            "grid": [3, 4],
+            "pair_type": "related",
+            "pairs": [
+              { "a": "asset-am-cat", "b": "asset-am-paw-tracks", "sound_key": "clue.cat_tracks", "audio": "asset-vo-am-cat-tracks", "explain_audio": "asset-vo-am-explain-cat" },
+              { "a": "asset-am-dove", "b": "asset-am-feather", "sound_key": "clue.dove_feather", "audio": "asset-vo-am-dove-feather", "explain_audio": "asset-vo-am-explain-dove" },
+              { "a": "asset-am-sparrow", "b": "asset-am-nest", "sound_key": "clue.sparrow_nest", "audio": "asset-vo-am-sparrow-nest", "explain_audio": "asset-vo-am-explain-sparrow" },
+              { "a": "asset-am-bee", "b": "asset-am-honeycomb", "sound_key": "clue.bee_honeycomb", "audio": "asset-vo-am-bee-honeycomb", "explain_audio": "asset-vo-am-explain-bee" },
+              { "a": "asset-am-squirrel", "b": "asset-am-cracked-nut", "sound_key": "clue.squirrel_nut", "audio": "asset-vo-am-squirrel-nut", "explain_audio": "asset-vo-am-explain-squirrel" },
+              { "a": "asset-am-turtle", "b": "asset-am-sand-trail", "sound_key": "clue.turtle_trail", "audio": "asset-vo-am-turtle-trail", "explain_audio": "asset-vo-am-explain-turtle" }
+            ],
+            "flip_back_delay_ms": 1200,
+            "reveal_help_after_misses": 10,
+            "celebrate_each_pair": true
+          }
+        ],
+        "assets": {
+          "images": ["asset-am-card-back", "asset-am-cat", "asset-am-cat-2", "asset-am-sparrow", "asset-am-sparrow-2", "asset-am-turtle", "asset-am-turtle-2", "asset-am-bee", "asset-am-bee-2", "asset-am-dove", "asset-am-dove-2", "asset-am-squirrel", "asset-am-squirrel-2", "asset-am-paw-tracks", "asset-am-feather", "asset-am-nest", "asset-am-honeycomb", "asset-am-cracked-nut", "asset-am-sand-trail"],
+          "audio": ["asset-vo-am-cat", "asset-vo-am-sparrow", "asset-vo-am-turtle", "asset-vo-am-bee", "asset-vo-am-dove", "asset-vo-am-squirrel", "asset-vo-am-cat-tracks", "asset-vo-am-dove-feather", "asset-vo-am-sparrow-nest", "asset-vo-am-bee-honeycomb", "asset-vo-am-squirrel-nut", "asset-vo-am-turtle-trail", "asset-vo-am-explain-cat", "asset-vo-am-explain-dove", "asset-vo-am-explain-sparrow", "asset-vo-am-explain-bee", "asset-vo-am-explain-squirrel", "asset-vo-am-explain-turtle"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-gam-intro",
+          "vo.instruction": "asset-vo-gam-instruction",
+          "vo.instruction_repeat": "asset-vo-gam-instruction-slow",
+          "vo.pair_found": "asset-vo-pair-found",
+          "vo.pair_explain": "asset-vo-gam-pair-explain",
+          "vo.level_complete": "asset-vo-level-complete-kids",
+          "vo.game_complete": "asset-vo-gam-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/08-alam/games/game-animal-memory.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation", "editorial_signoff_level3_objective"]
+    },
+    {
+      "id": "game-kids-explorers-clue-trail",
+      "title_ar": "مسار الدلائل",
+      "engine": "logic_pattern",
+      "engine_justification": "لا يوجد محرك متاهة بين الاثني عشر، فالسؤال أي محرك يقيس ما تعلّمه الحلقة. وعقد logic_pattern يعلن «المسار الأساسي junior (يمتد إلى kids بأنماط خطية)» — والامتداد معلن في العقد نفسه فلا يحتاج توقيع فريق محرك كما احتاجته lp-color-preschool. وله سابقة قائمة في الكوكب: حزمة lp-shapes-linear تعمل على kids 6–8 بنمط linear_alt. والتزامًا بحرفية الامتداد تقتصر الحزمة على linear وlinear_alt بلا matrix ولا rule_infer وبلا تعليل (والعقد لا يفرض التعليل إلا في matrix_3x3 وrule_infer). والمحرك language_neutral بمدخل tap وحده، وسلّم مساعدته يوجّه إلى القاعدة لا إلى الجواب وهو منهج الحلقة. sequence_order مرفوض لأنه يرتّب لوحات قصة ويكتب score=1 ولا يقيس استنتاج قاعدة.",
+      "planet_id": "alam",
+      "series_slug": "explorers-adventures",
+      "linked_episode_number": 1,
+      "age_min": 6,
+      "age_max": 8,
+      "track": "kids",
+      "reading_level": "emerging",
+      "interaction_mode": "tap",
+      "supervision_level": "none",
+      "difficulty": "medium",
+      "objective_code": "world.reason.combine_clues",
+      "core_mechanic": "مسار من ثلاث محطات؛ في كل محطة صفّ من بطاقات الدليل (آثار بأشكال ونقوش مختلفة) فيه موضع فارغ واحد، وتحته 3–4 بطاقات خيار، ويلمس الطفل البطاقة التي تُكمل المسار.",
+      "gameplay_loop": "intro «مسار الدلائل. لنبدأ.» وعرض المسار مرة ← تعليمة «ما الدليل الذي يكمل المسار؟» + زر إعادة ← قراءة الصف كوصف بديل عند التنقل ← لمس خيار فيتوهج قبل التأكيد ← صحيح: يستقر الدليل ويُنطق اسم القاعدة وتنفتح المحطة التالية · غير صحيح: عودة الخيار وعبارة محاولة من بنك kids ثم إبراز البُعد المتغير لا الجواب ← إكمال المستوى ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "ملاحظة تغيّر واحد متدرّج: النقش يزداد كثافة (نمط linear)", "items": 4, "distractors": 2, "success_threshold": "الجواب صحيح" },
+        { "level": 2, "goal": "ملاحظة تبادل شكلين بالتناوب (نمط linear_alt)", "items": 6, "distractors": 3, "success_threshold": "الجواب صحيح" },
+        { "level": 3, "goal": "الجمع بين بُعدين: الشكل يتبادل والعدد يزداد (نمط linear)", "items": 6, "distractors": 3, "success_threshold": "الجواب صحيح" }
+      ],
+      "difficulty_progression": "قاعدة متدرّجة ببُعد واحد (النقش) ← قاعدة تبادلية بطول صف أكبر وخيار إضافي ← قاعدتان في نمط واحد. لا يزيد عدد المحطات (3 لكل مستوى) ولا يُضاف تعليل ولا مؤقت. المشتّتات نصف صحيحة بالتصميم: في المستوى 3 خيار يطابق الشكل ويخالف العدد وآخر يطابق العدد ويخالف الشكل، فمن نظر إلى بُعد واحد يجد خيارًا يريحه — وهو فخّ الحلقة نفسه.",
+      "instructions_ar": "هذا مسار دلائل. في كل محطة صفّ من الآثار، وموضع واحد فارغ. انظر إلى الصفّ: ما الذي يتغيّر من أثر إلى أثر؟ ثم اختر الأثر الذي يكمل المسار. وفي المحطة الأخيرة انتبه — قد يتغيّر شيئان معًا، فدليل واحد لا يكفي.",
+      "success_rule": "المحطة تنجح باختيار الدليل الصحيح والمستوى بإتمام محطاته. score = 1 للإجابة الصحيحة، max_score = 1 لأن التعليل غير مستخدم في هذه الحزمة. attempts مرة واحدة لكل مستوى بevent_id ثابت، وmastery على world.reason.combine_clues؛ وشرط independent المرتبط بالتعليل لا ينطبق فتُتبع القاعدة العامة: دقة ≥ 80% في 3 محاولات متتالية بلا مساعدة.",
+      "failure_rule": "1 عبارة محاولة من بنك kids «اقتربت! انظر إلى الأثر الأول والثاني» بلا كلمة «خطأ» · 2 إبراز البُعد المتغير بإطار متحرك على البطاقتين الأوليين · 3 استبعاد خيارين خاطئين · 4 شرح القاعدة كاملة صوتيًا ثم عرض الجواب ومتابعة عادية · 5+ اقتراح لعبة أسهل بلا أي وصف بالفشل. لا عدّ أخطاء معروض ولا قفل لأي محطة: المحطة تُفتح دائمًا في النهاية.",
+      "scoring": "score = 1 للإجابة · max_score = 1 · لا نقاط ولا زمن ولا نسبة دقة معروضة للطفل.",
+      "rewards": "ملصق هادئ واحد عند إكمال اللعبة لا يُفقد أبدًا. لا عملة ولا شراء ولا صناديق عشوائية ولا إعلانات ولا streaks ولا لوحة ترتيب.",
+      "educational_feedback": "نجاح: «تفكير ممتاز!» · «لاحظت الفرق، جيد جدًا!» كل 2–3 نجاحات. محاولة: «اقتربت! انظر للخطوة الأولى» · «فكّر في النقش مرة أخرى». تلميح 1: «راجع ما يتغيّر من أثر إلى أثر.» تلميح 2: «انظر إلى الشكل والعدد معًا.» شرح: «الشكل يتبادل: مثلث ثم دائرة. والعدد يزداد واحدًا في كل خطوة.» والمستوى 3: «هنا تغيّر شيئان معًا. دليل واحد لا يكفي.»",
+      "accessibility": "الأشكال تُميَّز بالشكل والنقش لا باللون وحده (بند إلزامي لعمى الألوان)، وتدرّج النقش هندسي مرئي لا لوني · هدف لمس 64dp بدل 56dp لأن الفئة kids · وصف بديل نصي لكل خلية («الموضع الرابع، فارغ») · مدخل tap وحده فلا حاجة إلى بديل سحب · الصحيح/الخطأ برمز وحركة وصوت لا بلون · لا مؤقت · TextScaler 2.0× · لا وميض > 3Hz · احترام تقليل الحركة (إبراز البُعد له بديل ثابت) · لا نصّ داخل أي صورة · الصفّ لا يُعكس في RTL كعلاقة منطقية واتجاه القاعدة يُنطق صريحًا · D-pad مع توهج قبل التأكيد · تُلعَب بلا صوت · الآثار غير مخيفة.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=show_dimension · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "راجع ما يتغيّر من أثر إلى أثر.",
+          "انظر إلى الشكل والعدد معًا.",
+          "استبعاد خيارين خاطئين",
+          "شرح القاعدة كاملة ثم عرض الجواب"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "logic_pattern",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "mode": "linear",
+            "sequence": ["asset-ct-tri-h1", "asset-ct-tri-h2", "asset-ct-tri-h3", null],
+            "options": ["asset-ct-tri-h4", "asset-ct-tri-h1", "asset-ct-circ-h4"],
+            "answer": "asset-ct-tri-h4",
+            "rule_key": "rule.hatch_density_increases",
+            "changing_dimensions": ["pattern"]
+          },
+          {
+            "level": 2,
+            "mode": "linear_alt",
+            "sequence": ["asset-ct-tri-h2", "asset-ct-circ-h2", "asset-ct-tri-h2", "asset-ct-circ-h2", "asset-ct-tri-h2", null],
+            "options": ["asset-ct-circ-h2", "asset-ct-tri-h2", "asset-ct-square-h2", "asset-ct-circ-h4"],
+            "answer": "asset-ct-circ-h2",
+            "rule_key": "rule.alternate_two_shapes",
+            "changing_dimensions": ["shape"]
+          },
+          {
+            "level": 3,
+            "mode": "linear",
+            "sequence": ["asset-ct-tri-n1", "asset-ct-circ-n2", "asset-ct-tri-n3", "asset-ct-circ-n4", "asset-ct-tri-n5", null],
+            "options": ["asset-ct-circ-n6", "asset-ct-tri-n6", "asset-ct-circ-n5", "asset-ct-square-n6"],
+            "answer": "asset-ct-circ-n6",
+            "rule_key": "rule.shape_alternates_count_grows",
+            "changing_dimensions": ["shape", "count"]
+          }
+        ],
+        "assets": {
+          "images": ["asset-ct-trail-ground", "asset-ct-station-marker", "asset-ct-tri-h1", "asset-ct-tri-h2", "asset-ct-tri-h3", "asset-ct-tri-h4", "asset-ct-circ-h2", "asset-ct-circ-h4", "asset-ct-square-h2", "asset-ct-tri-n1", "asset-ct-tri-n3", "asset-ct-tri-n5", "asset-ct-tri-n6", "asset-ct-circ-n2", "asset-ct-circ-n4", "asset-ct-circ-n5", "asset-ct-circ-n6", "asset-ct-square-n6"],
+          "audio": ["asset-vo-ct-rule-hatch", "asset-vo-ct-rule-alternate", "asset-vo-ct-rule-two-dims"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-ct-intro",
+          "vo.instruction": "asset-vo-ct-instruction",
+          "vo.instruction_repeat": "asset-vo-ct-instruction-slow",
+          "vo.hint.1": "asset-vo-ct-hint-1",
+          "vo.hint.2": "asset-vo-ct-hint-2",
+          "vo.retry": "asset-vo-retry-kids",
+          "vo.correct": "asset-vo-correct-kids",
+          "vo.explain_rule": "asset-vo-ct-explain-rule",
+          "vo.level_complete": "asset-vo-level-complete-kids",
+          "vo.game_complete": "asset-vo-ct-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/08-alam/games/game-kids-explorers-clue-trail.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation", "colorblind_pattern_contrast_review"]
+    },
+    {
+      "id": "game-junior-code-sequence",
+      "title_ar": "تسلسل الأوامر",
+      "engine": "block_code",
+      "engine_justification": "المحرك القديم engine-maze لا يقابل أي عقد، ومفارقة التسمية أن block_code هو محرك الشبكة والمسار في هذه المنصة: عقده ينصّ على «شبكة، وروبو بموضع واتجاه، وهدف، وعوائق»، فما كان يُسمّى متاهة ليس محركًا مفقودًا بل حالة استخدام لهذا المحرك. ومساره المعلن junior وهو مسار اللعبة حرفيًا بلا توسيع فئة. والشخصية المعلنة في العقد هي روبو من سلسلة «روبو يبرمج» أي أن المحرك مؤلَّف أصلًا لهذه السلسلة. وbلوك move معلن من المستوى 1 وturn من 2 وcollect من 3، فالمستويات الثلاثة تُغطّي التسلسل الخالص قبل دخول repeat. وscore = 1 عند الوصول و+1 عند optimal_blocks مع نصّ صريح أن الحل الأطول لا يُعاقب. sequence_order مرفوض لأنه يرتّب لوحات تمثيل لتسلسل ولا يُنفّذه ولا يُظهر أثر الترتيب على النتيجة: في block_code يرى الطفل برنامجه يفشل خطوة بخطوة ويعرف أي أمر أوقفه.",
+      "planet_id": "maharat",
+      "series_slug": "robo-codes",
+      "linked_episode_number": 1,
+      "age_min": 9,
+      "age_max": 12,
+      "track": "junior",
+      "reading_level": "independent",
+      "interaction_mode": "independent",
+      "supervision_level": "none",
+      "difficulty": "medium",
+      "objective_code": "skill.ct.sequence",
+      "core_mechanic": "شبكة وروبو بموضع واتجاه وهدف وعوائق؛ يسحب الطفل البلوكات إلى منطقة البرنامج أو يلمس البلوك ثم موضع الإدراج ثم يضغط «شغّل»، والتنفيذ خطوة بخطوة مرئي والبلوك المنفَّذ مُبرَز والتنفيذ قابل للإيقاف. اصطلاح الإحداثيات [x,y] وx شرقًا وy شمالًا، والشبكة لا تُعكس في RTL.",
+      "gameplay_loop": "intro «روبو يحتاج مساعدتك» ← تعليمة «رتّب الأوامر ثم اضغط شغّل» + زر إعادة ← عرض الشبكة والهدف والعوائق ← بناء البرنامج بلوكًا بلوكًا مع نطق اسم كل بلوك ← شغّل: تنفيذ خطوة بخطوة مع إبراز البلوك الحالي وزر إيقاف ← اصطدام: توقف واهتزاز وإبراز البلوك المسبِّب · نهاية البرنامج قبل الهدف: «وصلت إلى هنا. ما البلوك الناقص؟» والبرنامج يبقى للتعديل ← وصول: احتفال ونجمة إضافية إن كان العدد ≤ optimal_blocks ← «رجوع خطوة» و«ابدأ من جديد» متاحان دائمًا بلا فقدان تقدم ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "تسلسل خطي بأمر واحد متكرر على شبكة 4×4 (move فقط · حد 6 · الأمثل 3)", "items": 6, "distractors": 0, "success_threshold": "الوصول إلى الهدف" },
+        { "level": 2, "goal": "تسلسل بانعطاف واحد على 5×5 — الترتيب يغيّر النتيجة (move/turn · حد 10 · الأمثل 6)", "items": 10, "distractors": 1, "success_threshold": "الوصول إلى الهدف" },
+        { "level": 3, "goal": "تسلسل بانعطاف وجمع عنصرين قبل الهدف على 6×6 (+collect · حد 16 · الأمثل 11)", "items": 16, "distractors": 2, "success_threshold": "الوصول وجمع كل العناصر" }
+      ],
+      "difficulty_progression": "أمر واحد على مسار مستقيم ← الانعطاف (أول موضع يصبح فيه الترتيب حاسمًا: move قبل turn ليست كturn قبل move) ← هدف مركّب بجمع عنصرين على شبكة أوسع. نوع بلوك واحد إضافي في كل خطوة، ولا مؤقت، ولا حد لعدد التشغيلات. لا repeat ولا if_path ولا function في أي مستوى لأن التكرار هدف الحلقة 3 والشرط هدف الحلقة 4، وإدخالهما يخلط هدفين في قياس واحد. وoptimal_blocks في المستوى 3 = 11 لا 8 كجدول العقد لأن جدول العقد يفترض توفّر repeat، وblock_limit = 16 يترك هامشًا للحلول الأطول بلا عقوبة. «العناصر» هنا = سعة البرنامج (block_limit) و«المشتّتات» = العوائق.",
+      "instructions_ar": "روبو يحتاج مساعدتك للوصول. رتّب الأوامر في القائمة، ثم اضغط شغّل. سيتحرك روبو أمرًا بأمر، فستعرف بالضبط أين توقّف ولماذا. يمكنك حذف آخر أمر بزر رجوع خطوة، أو البدء من جديد في أي وقت. وإن وصل روبو بعدد أوامر أقل، تحصل على نجمة إضافية — والحل الأطول صحيح أيضًا.",
+      "success_rule": "المستوى ينجح بوصول روبو إلى الهدف وجمع كل collectibles، بلا مؤقت وبلا حد محاولات وبلا حد لعدد مرات التشغيل. score = 1 عند الوصول و+1 عند عدد بلوكات ≤ optimal_blocks، max_score = 2. تشغيل الحل النموذجي يضع help_used = 1 ولا يمنع التقدم.",
+      "failure_rule": "اصطدام: توقف واهتزاز لطيف وإبراز البلوك المسبِّب مع «توقف روبو هنا. ما الخطأ في هذا الأمر؟» · نهاية البرنامج قبل الهدف: «وصلت إلى هنا. ما البلوك الناقص؟» · 2 محاولتان: إبراز أول خطوة خاطئة لا الجواب · 3: تصغير الشبكة أو إزالة عائق · 4: تشغيل الحل النموذجي خطوة بخطوة مع شرح · 5+: اقتراح تحدٍّ أسهل بلا أي وصف بالفشل. العبارة تسأل عن الأمر لا عن الطفل، ولا عدّ أخطاء معروض، ولا قفل، والحل الأطول لا يُعاقب أبدًا وغياب النجمة لا يُعلَّق عليه صوتيًا.",
+      "scoring": "score = 1 للوصول + 1 لoptimal_blocks · max_score = 2 · لا عدد أخطاء ولا زمن ولا نسبة معروضة.",
+      "rewards": "النجمة الإضافية على الحل الفعّال هي المكافأة الوحيدة داخل المستوى، وملصق هادئ عند إكمال اللعبة لا يُفقد أبدًا. لا عملة ولا شراء ولا صناديق عشوائية ولا إعلانات ولا streaks ولا لوحة ترتيب.",
+      "educational_feedback": "نجاح بنبرة junior: «استنتاج صحيح.» · «حل فعّال، أحسنت.» حل فعّال: «حل فعّال بعدد أوامر قليل.» اصطدام: «توقف روبو هنا. ما الخطأ في هذا الأمر؟» نقص أمر: «وصلت إلى هنا. ما البلوك الناقص؟» تلميح: «راجع أول أمر بعد الانعطاف.» شرح المستوى 2: «الانعطاف قبل التقدّم يغيّر الطريق كله: نفس الأوامر بترتيب مختلف تعطي نتيجة مختلفة.» لا نبرة طفولية مع الروّاد.",
+      "accessibility": "الشبكة لا تُعكس في RTL (الاتجاهات منطق لعبة) والاختبار في ar وen إلزامي · هدف لمس 48dp · بديل السحب إلزامي (لمس البلوك ثم موضع الإدراج) · أيقونة كل بلوك تدلّ على وظيفته بلا نص مطبوع والاسم من الترجمة ويُنطق عند اللمس · التنفيذ خطوة بخطوة قابل للإيقاف ومهلة الخطوة قابلة للتمديد · وصف بديل لكل خلية ولحالة روبو (موضعه واتجاهه) · الاصطدام باهتزاز وإبراز وصوت غير سلبي لا بلون · لا مؤقت · TextScaler 2.0× · لا وميض > 3Hz · احترام تقليل الحركة · D-pad · تُلعَب بلا صوت بالكامل.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=highlight_target (إبراز أول بلوك خاطئ في البرنامج) · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "راجع أول أمر بعد الانعطاف.",
+          "إبراز أول خطوة خاطئة في البرنامج",
+          "تصغير الشبكة أو إزالة عائق",
+          "تشغيل الحل النموذجي خطوة بخطوة مع شرح"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "block_code",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "grid": { "w": 4, "h": 4, "walls": [], "start": [0, 0], "facing": "east", "goal": [3, 0], "collectibles": [] },
+            "allowed_blocks": ["move"],
+            "block_limit": 6,
+            "optimal_blocks": 3,
+            "step_delay_ms": 500,
+            "show_grid_coordinates": false,
+            "reference_solution": ["move", "move", "move"]
+          },
+          {
+            "level": 2,
+            "grid": { "w": 5, "h": 5, "walls": [[0, 1]], "start": [0, 0], "facing": "east", "goal": [2, 3], "collectibles": [] },
+            "allowed_blocks": ["move", "turn_left", "turn_right"],
+            "block_limit": 10,
+            "optimal_blocks": 6,
+            "step_delay_ms": 500,
+            "show_grid_coordinates": false,
+            "reference_solution": ["move", "move", "turn_left", "move", "move", "move"]
+          },
+          {
+            "level": 3,
+            "grid": { "w": 6, "h": 6, "walls": [[1, 1], [4, 2]], "start": [0, 0], "facing": "east", "goal": [5, 3], "collectibles": [[3, 0], [5, 1]] },
+            "allowed_blocks": ["move", "turn_left", "turn_right", "collect"],
+            "block_limit": 16,
+            "optimal_blocks": 11,
+            "step_delay_ms": 500,
+            "show_grid_coordinates": false,
+            "reference_solution": ["move", "move", "move", "collect", "move", "move", "turn_left", "move", "collect", "move", "move"]
+          }
+        ],
+        "assets": {
+          "images": ["asset-robo-north", "asset-robo-east", "asset-robo-south", "asset-robo-west", "asset-robo-walk", "asset-robo-stop", "asset-bc-tile", "asset-bc-wall", "asset-bc-goal", "asset-bc-star", "asset-bc-icon-move", "asset-bc-icon-turn-left", "asset-bc-icon-turn-right", "asset-bc-icon-collect"],
+          "audio": ["asset-sfx-robo-move", "asset-sfx-robo-stop", "asset-sfx-robo-collect"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-jcs-intro",
+          "vo.instruction": "asset-vo-jcs-instruction",
+          "vo.instruction_repeat": "asset-vo-jcs-instruction-repeat",
+          "vo.block.move": "asset-vo-block-move",
+          "vo.block.turn_left": "asset-vo-block-turn-left",
+          "vo.block.turn_right": "asset-vo-block-turn-right",
+          "vo.block.collect": "asset-vo-block-collect",
+          "vo.collision": "asset-vo-jcs-collision",
+          "vo.hint": "asset-vo-jcs-hint",
+          "vo.star_optimal": "asset-vo-star-optimal",
+          "vo.correct": "asset-vo-correct-junior",
+          "vo.level_complete": "asset-vo-level-complete-junior",
+          "vo.game_complete": "asset-vo-jcs-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/06-maharat/games/game-junior-code-sequence.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation"]
+    },
+    {
+      "id": "game-junior-circuit-builder",
+      "title_ar": "ابن الدائرة",
+      "engine": "sim_lab",
+      "engine_justification": "المحرك القديم engine-builder لا يقابل أي عقد، والاسم مضلِّل: ما تعلّمه الحلقة ليس تجميع دائرة بل استنتاج علاقة بين متغيّراتها. وعقد sim_lab يعلن مساره junior وهو مسار اللعبة، ويعلن ضمن محاكاته المدعومة عند الإطلاق circuit بمتغيّري «عدد البطاريات، عدد المصابيح» وعلاقة «طردية / عكسية» — أي أن هذه المحاكاة موجودة نصًّا في العقد ولا تحتاج توسيعًا. ومراحله الثلاث الإلزامية (توقّع ← جرّب ← فسّر) هي بنية الحلقة نفسها. وقراره التربوي حاسم: التوقع الخاطئ ليس فشلًا ولا يُخصم وscore من التفسير وحده. ويفرض results_table نصيًا وmin_trials_before_explain فيمنع التفسير قبل جمع بيانات. block_code يبرمج ولا يقيس علاقة فيزيائية، وlogic_pattern يستنتج من أشكال لا من قياسات، وsort_bins يصنّف ولا يجرّب.",
+      "planet_id": "oloom",
+      "series_slug": "future-lab",
+      "linked_episode_number": 3,
+      "age_min": 9,
+      "age_max": 12,
+      "track": "junior",
+      "reading_level": "independent",
+      "interaction_mode": "independent",
+      "supervision_level": "recommended",
+      "difficulty": "hard",
+      "objective_code": "sci.energy.series_circuit",
+      "core_mechanic": "لوحة محاكاة مخطّطية لبطاريات ومصابيح على التوالي؛ لكل متغيّر منزلق مع أزرار +/−، ويمرّ الطفل في ثلاث مراحل إلزامية: يختار فرضية، ثم يجرّب قيمًا وتُسجَّل النتائج في جدول نصّي، ثم يختار التفسير.",
+      "gameplay_loop": "رسالة سلامة «هذه محاكاة. لا تجرّب بكهرباء حقيقية» ورمز سلامة دائم ← intro وتعليمة المراحل الثلاث ← توقّع: اختيار فرضية ثم «سجّلنا توقعك» بلا أي حكم ← جرّب: تحريك المنزلق ونطق القيمة وإضافة النتيجة إلى الجدول ← منع لطيف إن حاول التفسير قبل min_trials_before_explain ← فسّر: اختيار التفسير المرتبط بالبيانات ← صحيح: شرح يربط بالجدول · غير صحيح: إشارة إلى البيانات لا إلى الطفل ← إكمال المستوى ← إكمال اللعبة وملصق، والخروج يحفظ الجدول.",
+      "levels": [
+        { "level": 1, "goal": "متغيّر واحد: عدد المصابيح على التوالي — علاقة عكسية", "items": 1, "distractors": 2, "success_threshold": "تفسير صحيح واحد بعد 3 محاولات تجريب على الأقل" },
+        { "level": 2, "goal": "متغيّر واحد: عدد البطاريات — علاقة طردية مع قراءة الجدول", "items": 1, "distractors": 2, "success_threshold": "تفسير صحيح واحد بعد 3 محاولات تجريب" },
+        { "level": 3, "goal": "المتغيّران معًا: تثبيت أحدهما وتغيير الآخر", "items": 2, "distractors": 3, "success_threshold": "تفسير صحيح يذكر الاتجاهين بعد 4 محاولات تجريب" }
+      ],
+      "difficulty_progression": "العلاقة العكسية وحدها (وهي المفارقة التي تفتح الحلقة) ← العلاقة الطردية مع تدريب صريح على قراءة الجدول ← ضبط المتغيّرات: تثبيت واحد وتغيير الآخر وتفسير الاتجاهين. عدد المحاولات المطلوبة يرتفع من 3 إلى 4 لأن متغيّرين يحتاجان بيانات أكثر. لا مؤقت ولا حد أقصى للتجارب. «العناصر» = المتغيّرات و«المشتّتات» = تفسيرات خاطئة معقولة لا سخيفة.",
+      "instructions_ar": "هذه محاكاة على الشاشة. لا تجرّب بكهرباء حقيقية أبدًا. أمامك دائرة على التوالي: بطاريات ومصابيح. اتبع ثلاث مراحل. أولًا: توقّع ماذا يحدث للسطوع — وتوقعك مسجَّل ولا يُحسب عليك خطأً. ثانيًا: غيّر القيمة بالمنزلق أو بزرّي زائد وناقص، وراقب الجدول يمتلئ. ثالثًا: اختر التفسير الذي تدلّ عليه أرقامك أنت. وإن كان توقعك مختلفًا عن النتيجة، فهذا اكتشاف لا خطأ.",
+      "success_rule": "المستوى ينجح بإكمال المراحل الثلاث مع تفسير صحيح، ولا يُقبل التفسير قبل min_trials_before_explain. score = 1 للتفسير فقط، max_score = 1، والتوقع الخاطئ لا يُخصم. mastery على sci.energy.series_circuit، وindependent يتطلب تفسيرًا صحيحًا بلا مساعدة في 3 محاولات. وanswers تُسجّل التوقع والتفسير بندين منفصلين بلا أي بيانات شخصية.",
+      "failure_rule": "توقّع خاطئ: «لنرَ ما سيحدث فعلًا» بلا أي سلبية وبلا خصم ولا يُحتسب محاولة فاشلة · تفسير خاطئ 1: «قارن نتيجتك عند مصباح واحد وعند ثلاثة» · 2: إبراز جدول النتائج والعمود الحاسم · 3: استبعاد خيار · 4: شرح كامل مربوط بأرقام الطفل نفسه ثم متابعة عادية · 5+: اقتراح تجربة أبسط بلا أي وصف بالفشل. لا رسالة تُوحي بأن الفرضية الخاطئة عيب، ولا عدّ أخطاء، ولا قفل.",
+      "scoring": "score = 1 للتفسير فقط · max_score = 1 · التوقع لا يُحسب · لا نقاط ولا زمن ولا نسبة معروضة.",
+      "rewards": "ملصق هادئ واحد عند إكمال اللعبة لا يُفقد أبدًا. لا عملة ولا شراء ولا صناديق عشوائية ولا إعلانات ولا streaks ولا لوحة ترتيب.",
+      "educational_feedback": "تسجيل التوقع: «سجّلنا توقعك. لنرَ النتيجة.» تسجيل محاولة: «أضفنا النتيجة إلى الجدول.» محاولات غير كافية: «جرّب قيمة أخرى قبل التفسير.» نجاح: «تحليل دقيق.» · «صحيح — لاحظت القاعدة.» تفسير غير صحيح: «ليس هذا التفسير. راجع الجدول.» شرح المستوى 1: «المصابيح على التوالي تتقاسم الجهد نفسه، فيخبو ضوء كل مصباح.» المستوى 2: «زيادة البطاريات ترفع الجهد الكلي، فيزداد السطوع.» المستوى 3: «البطاريات ترفع السطوع، والمصابيح تخفضه. وحين تغيّر واحدًا فقط ترى أثره وحده.»",
+      "accessibility": "جدول النتائج نصّي لا رسمًا بيانيًا فقط ومتاح لقارئ الشاشة صفًّا صفًّا · أزرار +/− بديلة للمنزلق إلزامية · كل قيمة تُنطق عند التغيير ولكل صف وصف نصي · السطوع بقيمة رقمية ووصف وحجم توهج ونقش لا بلون · الرسوم تُختصر عند تقليل الحركة مع بقاء النتيجة النصية · لا مؤقت · TextScaler 2.0× · لا وميض > 3Hz والسطوع توهج ثابت لا نبض · D-pad · تُلعَب بلا صوت بالكامل · رمز السلامة له وصف بديل نصي ولا يُعتمد على لونه البرتقالي وحده.",
+      "safety": "رسالة عند بدء كل مستوى «هذه محاكاة. لا تجرّب بكهرباء حقيقية» بصيغة موجِّهة لا مخيفة · رمز السلامة #FF9F1C ظاهر طول اللعب · كل الأصول مخطّطية بلا مقبس ولا سلك واقعي ولا شرارة ولا دخان · لا بطارية قُرص في أي أصل لا شكلها ولا اسمها · لا نشاط منزلي مقترن ولا زر «جرّبها في البيت» · supervision_level=recommended مع safety_note_key غير فارغ في كل مستوى · لا تُنشر بلا توقيع مراجع سلامة وتوقيع مراجع علمي.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=narrow_options · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true — والعتبات تُحتسب على التفسير وحده، والتوقع الخاطئ لا يزيد العدّاد إطلاقًا",
+        "hints": [
+          "قارن نتيجتك عند مصباح واحد وعند ثلاثة.",
+          "إبراز جدول النتائج المسجّلة والعمود الحاسم",
+          "استبعاد خيار تفسير واحد",
+          "شرح كامل مربوط بأرقام الطفل نفسه"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "sim_lab",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "sim": "circuit",
+            "variables": [
+              { "id": "lamps_count", "label_key": "var.lamps_count", "min": 1, "max": 4, "step": 1, "unit_key": "unit.lamp" }
+            ],
+            "measured": { "id": "lamp_brightness", "label_key": "var.lamp_brightness", "unit_key": "unit.brightness_level" },
+            "hypothesis_options": ["hyp.more_lamps_brighter", "hyp.more_lamps_dimmer", "hyp.more_lamps_no_change"],
+            "expected_relationships": { "lamps_count": "negative" },
+            "explanation_options": ["exp.series_shares_voltage", "exp.lamps_drain_battery_fast", "exp.lamps_independent"],
+            "explanation_answer": "exp.series_shares_voltage",
+            "results_table": true,
+            "min_trials_before_explain": 3,
+            "supervision_level": "recommended",
+            "safety_note_key": "sci.safety.simulation_only_no_real_electricity"
+          },
+          {
+            "level": 2,
+            "sim": "circuit",
+            "variables": [
+              { "id": "batteries_count", "label_key": "var.batteries_count", "min": 1, "max": 4, "step": 1, "unit_key": "unit.battery" }
+            ],
+            "measured": { "id": "lamp_brightness", "label_key": "var.lamp_brightness", "unit_key": "unit.brightness_level" },
+            "hypothesis_options": ["hyp.more_batteries_brighter", "hyp.more_batteries_dimmer", "hyp.more_batteries_no_change"],
+            "expected_relationships": { "batteries_count": "positive" },
+            "explanation_options": ["exp.more_voltage_more_brightness", "exp.battery_count_irrelevant", "exp.brightness_depends_on_lamp_only"],
+            "explanation_answer": "exp.more_voltage_more_brightness",
+            "results_table": true,
+            "min_trials_before_explain": 3,
+            "supervision_level": "recommended",
+            "safety_note_key": "sci.safety.simulation_only_no_real_electricity"
+          },
+          {
+            "level": 3,
+            "sim": "circuit",
+            "variables": [
+              { "id": "batteries_count", "label_key": "var.batteries_count", "min": 1, "max": 4, "step": 1, "unit_key": "unit.battery" },
+              { "id": "lamps_count", "label_key": "var.lamps_count", "min": 1, "max": 4, "step": 1, "unit_key": "unit.lamp" }
+            ],
+            "measured": { "id": "lamp_brightness", "label_key": "var.lamp_brightness", "unit_key": "unit.brightness_level" },
+            "hypothesis_options": ["hyp.batteries_up_lamps_down", "hyp.both_increase_brightness", "hyp.only_lamps_matter", "hyp.only_batteries_matter"],
+            "expected_relationships": { "batteries_count": "positive", "lamps_count": "negative" },
+            "explanation_options": ["exp.batteries_raise_lamps_share", "exp.both_raise_brightness", "exp.lamps_only_matter", "exp.nothing_matters"],
+            "explanation_answer": "exp.batteries_raise_lamps_share",
+            "results_table": true,
+            "min_trials_before_explain": 4,
+            "supervision_level": "recommended",
+            "safety_note_key": "sci.safety.simulation_only_no_real_electricity"
+          }
+        ],
+        "assets": {
+          "images": ["asset-cb-schematic-battery", "asset-cb-schematic-lamp-on", "asset-cb-schematic-lamp-dim", "asset-cb-schematic-wire", "asset-cb-results-table", "asset-cb-safety-badge"],
+          "audio": ["asset-vo-cb-value-1", "asset-vo-cb-value-2", "asset-vo-cb-value-3", "asset-vo-cb-value-4"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-cb-intro",
+          "vo.instruction": "asset-vo-cb-instruction",
+          "vo.instruction_repeat": "asset-vo-cb-instruction-slow",
+          "vo.safety_notice": "asset-vo-cb-safety-notice",
+          "vo.stage_predict": "asset-vo-stage-predict",
+          "vo.stage_experiment": "asset-vo-stage-experiment",
+          "vo.stage_explain": "asset-vo-stage-explain",
+          "vo.prediction_recorded": "asset-vo-prediction-recorded",
+          "vo.trial_recorded": "asset-vo-trial-recorded",
+          "vo.need_more_trials": "asset-vo-need-more-trials",
+          "vo.hint": "asset-vo-cb-hint",
+          "vo.retry_explain": "asset-vo-retry-explain",
+          "vo.correct": "asset-vo-correct-junior",
+          "vo.explain_final": "asset-vo-cb-explain-final",
+          "vo.level_complete": "asset-vo-level-complete-junior",
+          "vo.game_complete": "asset-vo-cb-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/03-oloom/games/game-junior-circuit-builder.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation", "safety_reviewer_signoff", "scientific_review"]
+    },
+    {
+      "id": "game-junior-science-evidence",
+      "title_ar": "دليل علمي",
+      "engine": "sort_bins",
+      "engine_justification": "البديل المتوقّع match_pairs غير قانوني هنا: عقده يعلن «المسار الأساسي preschool (يمتد إلى kids)» ولا يعلن junior إطلاقًا، فإسناد لعبة 9–12 إليه خرق لحدود المحرك. أما sort_bins فيعلن نصًّا «المسار الأساسي preschool (يمتد إلى kids وjunior)» فامتداد junior معلن في العقد ولا يحتاج توقيعًا. ومستواه الخامس معرَّف بقاعدة مجرّدة (criterion_type=abstract) وهو ما تحتاجه دعوى علمية: العنصر يُصنَّف بالمبدأ الذي يفسّره لا بلونه ولا بشكله. ويوفّر explain_on_correct مع explain_audio لكل عنصر فيصير كل تصنيف صحيح جملة تفسير مسموعة. logic_pattern مرفوض لأنه language_neutral بأشكال بلا تسميات ولا شرح لغوي، وsim_lab يقيس تفسير تجربة يجريها الطفل لا إسناد مشاهدات جاهزة، وsequence_order يرتّب زمنيًا ولا يصنّف.",
+      "planet_id": "oloom",
+      "series_slug": "science-in-a-minute",
+      "linked_episode_number": 1,
+      "age_min": 9,
+      "age_max": 12,
+      "track": "junior",
+      "reading_level": "independent",
+      "interaction_mode": "independent",
+      "supervision_level": "none",
+      "difficulty": "medium",
+      "objective_code": "sci.method.evidence_claim",
+      "objective_note": "رمز قائم في كوكب علوم (جرّب في البيت · الحلقة 6) وليس في سلسلة «علوم في دقيقة» نفسها؛ وإعادة استخدامه هو ما يفرضه عقد التأليف لأن الهدف هو هو: ربط الدليل بالدعوى. تسجيله على السلسلة في جدول الأهداف مسألة إدارية في open_questions. ومادة اللعبة من الحلقات 1 و2 و5.",
+      "core_mechanic": "ثلاث سلات كل واحدة دعوى علمية مميّزة بصورة مخطّطية ونصّ وصوت، و4–8 بطاقات مشاهدة بلا نصّ؛ يسحب الطفل كل مشاهدة إلى الدعوى التي تفسّرها أو يلمس المشاهدة ثم السلة، والعنصر الصحيح يستقر ويُنطق تفسيره.",
+      "gameplay_loop": "intro «ثلاث دعاوى، ومشاهدات مبعثرة» ← تعليمة «أي مبدأ يفسّر كل مشاهدة؟» + زر إعادة ← لمس سلة ينطق دعواها ولمس مشاهدة ينطق وصفها ← إسناد المشاهدة ← صحيح: تستقر ويُنطق المبدأ · غير صحيح: ارتداد لطيف وعبارة محاولة من بنك junior بلا كلمة «خطأ» وبلا صوت سلبي ← إسناد كل المشاهدات ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "التمييز بين مبدأين متباعدين: الضوء ينكسر / الهواء يدفع (سلتان)", "items": 4, "distractors": 0, "success_threshold": "4 من 4 صحيحة" },
+        { "level": 2, "goal": "مبدأان أقرب: الهواء يدفع / الماء يتحوّل (سلتان)", "items": 6, "distractors": 0, "success_threshold": "5 من 6 صحيحة من أول محاولة" },
+        { "level": 3, "goal": "ثلاثة مبادئ معًا وفيها مشاهدة تبدو تابعة لدعوى وهي تابعة لأخرى", "items": 8, "distractors": 1, "success_threshold": "7 من 8 صحيحة من أول محاولة" }
+      ],
+      "difficulty_progression": "مبدأان متباعدان بلا التباس ← مبدأان متجاوران (الهواء والماء يظهران في ظواهر متشابهة المشهد) بعدد عناصر أكبر ← ثلاثة مبادئ مع حالة ملتبسة واحدة. عدد السلات يزيد مرة واحدة فقط، والمعيار abstract في المستويات الثلاثة، ولا مؤقت. الحالة الملتبسة (كأس مقلوب مغطّى بورقة والماء لا يسقط) تبدو مشاهدة عن الماء وهي دليل على دفع الهواء: من صنّفها في سلة الماء صنّف بالموضوع لا بالمبدأ، وهو ما تقيسه اللعبة.",
+      "instructions_ar": "أمامك دعاوى علمية في السلات، ومشاهدات مبعثرة في الأسفل. مهمتك أن تُسند كل مشاهدة إلى الدعوى التي تفسّرها — لا إلى الدعوى التي تشبهها في الموضوع. المس أي سلة لتسمع دعواها، والمس أي مشاهدة لتسمع وصفها. وانتبه في المرحلة الأخيرة: مشاهدة واحدة فيها ماء لكن الذي يفسّرها هواء.",
+      "success_rule": "شرط الإكمال هو إسناد كل المشاهدات إسنادًا صحيحًا (شرط الفوز في العقد «كل العناصر مصنّفة صحيحًا»)؛ والعتبات 5 من 6 و7 من 8 هي عتبات الإتقان المقاسة على score لا شرط إكمال، فالطفل يواصل حتى تُسند كل بطاقة. score = العناصر الصحيحة من أول محاولة، max_score = عدد العناصر، وmastery على sci.method.evidence_claim.",
+      "failure_rule": "1 ارتداد لطيف مع «ليست صحيحة. راجع ما يفعله الهواء وما يفعله الماء» بلا كلمة «خطأ» · 2 توهج السلة الصحيحة مع نطق دعواها كاملة · 3 إخفاء سلة خاطئة · 4 نقل تلقائي مع شرح يربط المشاهدة بالمبدأ ثم متابعة عادية · 5+ اقتراح تحدٍّ أبسط بلا أي وصف بالفشل. الحالة الملتبسة لا يُعلَّق عليها بلغة تقصير: «هذه مشاهدة يظهر فيها الماء، لكن الذي يمسكه هو الهواء.» لا عدّ أخطاء ولا قفل ولا فقدان ملصق.",
+      "scoring": "score = العناصر الصحيحة من أول محاولة · max_score = عدد العناصر · لا نقاط ولا زمن ولا نسبة دقة معروضة.",
+      "rewards": "ملصق هادئ واحد عند إكمال اللعبة لا يُفقد أبدًا. لا عملة ولا شراء ولا صناديق عشوائية ولا إعلانات ولا streaks ولا لوحة ترتيب.",
+      "educational_feedback": "نجاح: «تحليل دقيق.» · «صحيح — لاحظت القاعدة.» كل 2–3 نجاحات. محاولة: «ليست صحيحة. راجع العلاقة بين المشاهدة والمبدأ.» تلميح: «اسأل: ما الذي تحرّك في هذه المشاهدة؟» شرح الضوء: «الضوء يسير في الماء بسرعة مختلفة، فيبدو القلم مكسورًا عند سطح الماء.» الهواء: «الهواء حولنا يدفع في كل اتجاه، وهذا الدفع يرفع الماء في المصّاصة.» الماء: «الماء يتحوّل بين بخار وسائل، فيتكاثف على السطح البارد.» الحالة الملتبسة: «الماء لم يسقط لأن الورقة قوية، بل لأن الهواء يدفع الورقة من الأسفل.» كل شرح جملة مبدأ واحدة بلا محاضرة ولا نبرة طفولية.",
+      "accessibility": "السلة مميّزة بصورة ونص وصوت لا باللون وحده (بند إلزامي) · بديل السحب إلزامي · هدف لمس 56dp · وصف بديل مترجم لكل مشاهدة كافٍ للعب بلا صوت · الصحيح/الخطأ برمز وحركة وصوت لا بالأحمر/الأخضر · لا مؤقت · TextScaler 2.0× · لا وميض > 3Hz · احترام تقليل الحركة · D-pad · صور المشاهدات آمنة: لا لهب ولا كهرباء ولا زجاج مكسور ولا سائل مجهول، والكأس المقلوب يُرسم على حوض لا على طاولة حتى لا يقرأه الطفل كتجربة يعيدها بلا إشراف · العناصر لا تُثبَّت في جهة واحدة.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=show_dimension (إبراز المبدأ المتغيّر بين السلات لا السلة الصحيحة) · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "اسأل: ما الذي تحرّك في هذه المشاهدة؟",
+          "توهج السلة الصحيحة مع نطق دعواها كاملة",
+          "إخفاء سلة خاطئة لتقليل الاختيار",
+          "نقل تلقائي مع شرح يربط المشاهدة بالمبدأ"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "sort_bins",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "criterion_key": "sort.by_scientific_principle",
+            "criterion_type": "abstract",
+            "bins": [
+              { "id": "b1", "label_key": "claim.light_bends", "image": "asset-se-bin-light", "audio": "asset-vo-se-bin-light" },
+              { "id": "b2", "label_key": "claim.air_pushes", "image": "asset-se-bin-air", "audio": "asset-vo-se-bin-air" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-se-straw-bent", "bin": "b1", "label_key": "obs.straw_bent", "audio": "asset-vo-se-straw-bent", "explain_audio": "asset-vo-se-explain-straw-bent" },
+              { "id": "i2", "image": "asset-se-rainbow", "bin": "b1", "label_key": "obs.rainbow", "audio": "asset-vo-se-rainbow", "explain_audio": "asset-vo-se-explain-rainbow" },
+              { "id": "i3", "image": "asset-se-straw-suction", "bin": "b2", "label_key": "obs.straw_suction", "audio": "asset-vo-se-straw-suction", "explain_audio": "asset-vo-se-explain-straw-suction" },
+              { "id": "i4", "image": "asset-se-balloon-release", "bin": "b2", "label_key": "obs.balloon_release", "audio": "asset-vo-se-balloon-release", "explain_audio": "asset-vo-se-explain-balloon" }
+            ],
+            "explain_on_correct": true,
+            "shuffle": true
+          },
+          {
+            "level": 2,
+            "criterion_key": "sort.by_scientific_principle",
+            "criterion_type": "abstract",
+            "bins": [
+              { "id": "b1", "label_key": "claim.air_pushes", "image": "asset-se-bin-air", "audio": "asset-vo-se-bin-air" },
+              { "id": "b2", "label_key": "claim.water_changes_state", "image": "asset-se-bin-water", "audio": "asset-vo-se-bin-water" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-se-sail-boat", "bin": "b1", "label_key": "obs.sail_boat", "audio": "asset-vo-se-sail-boat", "explain_audio": "asset-vo-se-explain-sail" },
+              { "id": "i2", "image": "asset-se-straw-suction", "bin": "b1", "label_key": "obs.straw_suction", "audio": "asset-vo-se-straw-suction", "explain_audio": "asset-vo-se-explain-straw-suction" },
+              { "id": "i3", "image": "asset-se-balloon-release", "bin": "b1", "label_key": "obs.balloon_release", "audio": "asset-vo-se-balloon-release", "explain_audio": "asset-vo-se-explain-balloon" },
+              { "id": "i4", "image": "asset-se-steam-cup", "bin": "b2", "label_key": "obs.steam_cup", "audio": "asset-vo-se-steam-cup", "explain_audio": "asset-vo-se-explain-steam" },
+              { "id": "i5", "image": "asset-se-condensation", "bin": "b2", "label_key": "obs.condensation", "audio": "asset-vo-se-condensation", "explain_audio": "asset-vo-se-explain-condensation" },
+              { "id": "i6", "image": "asset-se-puddle-drying", "bin": "b2", "label_key": "obs.puddle_drying", "audio": "asset-vo-se-puddle-drying", "explain_audio": "asset-vo-se-explain-puddle" }
+            ],
+            "explain_on_correct": true,
+            "shuffle": true
+          },
+          {
+            "level": 3,
+            "criterion_key": "sort.by_scientific_principle",
+            "criterion_type": "abstract",
+            "bins": [
+              { "id": "b1", "label_key": "claim.light_bends", "image": "asset-se-bin-light", "audio": "asset-vo-se-bin-light" },
+              { "id": "b2", "label_key": "claim.air_pushes", "image": "asset-se-bin-air", "audio": "asset-vo-se-bin-air" },
+              { "id": "b3", "label_key": "claim.water_changes_state", "image": "asset-se-bin-water", "audio": "asset-vo-se-bin-water" }
+            ],
+            "items": [
+              { "id": "i1", "image": "asset-se-straw-bent", "bin": "b1", "label_key": "obs.straw_bent", "audio": "asset-vo-se-straw-bent", "explain_audio": "asset-vo-se-explain-straw-bent" },
+              { "id": "i2", "image": "asset-se-prism", "bin": "b1", "label_key": "obs.prism_colors", "audio": "asset-vo-se-prism", "explain_audio": "asset-vo-se-explain-prism" },
+              { "id": "i3", "image": "asset-se-lens-leaf", "bin": "b1", "label_key": "obs.lens_leaf", "audio": "asset-vo-se-lens-leaf", "explain_audio": "asset-vo-se-explain-lens" },
+              { "id": "i4", "image": "asset-se-sail-boat", "bin": "b2", "label_key": "obs.sail_boat", "audio": "asset-vo-se-sail-boat", "explain_audio": "asset-vo-se-explain-sail" },
+              { "id": "i5", "image": "asset-se-inverted-glass", "bin": "b2", "label_key": "obs.inverted_glass", "audio": "asset-vo-se-inverted-glass", "explain_audio": "asset-vo-se-explain-inverted-glass" },
+              { "id": "i6", "image": "asset-se-cloud-rain", "bin": "b3", "label_key": "obs.cloud_rain", "audio": "asset-vo-se-cloud-rain", "explain_audio": "asset-vo-se-explain-cloud" },
+              { "id": "i7", "image": "asset-se-condensation", "bin": "b3", "label_key": "obs.condensation", "audio": "asset-vo-se-condensation", "explain_audio": "asset-vo-se-explain-condensation" },
+              { "id": "i8", "image": "asset-se-steam-cup", "bin": "b3", "label_key": "obs.steam_cup", "audio": "asset-vo-se-steam-cup", "explain_audio": "asset-vo-se-explain-steam" }
+            ],
+            "explain_on_correct": true,
+            "shuffle": true
+          }
+        ],
+        "assets": {
+          "images": ["asset-se-bin-light", "asset-se-bin-air", "asset-se-bin-water", "asset-se-straw-bent", "asset-se-rainbow", "asset-se-prism", "asset-se-lens-leaf", "asset-se-straw-suction", "asset-se-balloon-release", "asset-se-sail-boat", "asset-se-inverted-glass", "asset-se-steam-cup", "asset-se-condensation", "asset-se-puddle-drying", "asset-se-cloud-rain"],
+          "audio": ["asset-vo-se-bin-light", "asset-vo-se-bin-air", "asset-vo-se-bin-water", "asset-vo-se-straw-bent", "asset-vo-se-rainbow", "asset-vo-se-prism", "asset-vo-se-lens-leaf", "asset-vo-se-straw-suction", "asset-vo-se-balloon-release", "asset-vo-se-sail-boat", "asset-vo-se-inverted-glass", "asset-vo-se-steam-cup", "asset-vo-se-condensation", "asset-vo-se-puddle-drying", "asset-vo-se-cloud-rain", "asset-vo-se-explain-straw-bent", "asset-vo-se-explain-rainbow", "asset-vo-se-explain-prism", "asset-vo-se-explain-lens", "asset-vo-se-explain-straw-suction", "asset-vo-se-explain-balloon", "asset-vo-se-explain-sail", "asset-vo-se-explain-inverted-glass", "asset-vo-se-explain-steam", "asset-vo-se-explain-condensation", "asset-vo-se-explain-puddle", "asset-vo-se-explain-cloud"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-gse-intro",
+          "vo.instruction": "asset-vo-gse-instruction",
+          "vo.instruction_repeat": "asset-vo-gse-instruction-slow",
+          "vo.hint": "asset-vo-gse-hint",
+          "vo.explain_correct": "asset-vo-gse-explain-correct",
+          "vo.retry": "asset-vo-retry-junior",
+          "vo.correct": "asset-vo-correct-junior",
+          "vo.level_complete": "asset-vo-level-complete-junior",
+          "vo.game_complete": "asset-vo-gse-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/03-oloom/games/game-junior-science-evidence.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation", "scientific_review", "objective_registration"]
+    },
+    {
+      "id": "game-junior-civilizations-timeline",
+      "title_ar": "خط الحضارات",
+      "engine": "timeline_map",
+      "engine_justification": "البديل الظاهري sequence_order يفقد نصف الهدف: يرتّب لوحات ترتيبًا نسبيًا ويكتب score=1 للمستوى كله ولا يعرف سنةً ولا موقعًا ولا هامش تقريب. أما timeline_map فمساره المعلن junior وهو مسار اللعبة حرفيًا، وهدفه المعلن «تسلسل تاريخي · موقع جغرافي · ربط الزمان بالمكان» أي هدف الحلقة 4 نصًّا. ويعلن أنماطه timeline وmap وboth ويوفّر tolerance_years وtolerance_km فيجعل الهامش جزءًا من العقد لا تسهيلًا — وهو بند تربوي حاسم لأن طلب سنة بعينها يعلّم دقّة زائفة. ويفرض التخزين ميلاديًا مع عرض هجري أو ميلادي، وmirror_in_rtl=false للخريطة مقابل عكس خط الزمن في RTL. وscore = العناصر الصحيحة من أول محاولة. ولا توسيع فئة عمرية هنا بخلاف حزمة tm-neighborhood التي تطلب kids وتحتاج توقيعًا.",
+      "planet_id": "tarikh",
+      "series_slug": "journey-of-civilizations",
+      "linked_episode_number": 4,
+      "age_min": 9,
+      "age_max": 12,
+      "track": "junior",
+      "reading_level": "independent",
+      "interaction_mode": "independent",
+      "supervision_level": "none",
+      "difficulty": "hard",
+      "objective_code": "hist.civ.trade_geography",
+      "core_mechanic": "المستويان 1 و2: خط زمن أفقي بمرساة مرجعية وبطاقات أحداث تُسحب إلى موضعها أو تُلمس ثم يُلمس الموضع مع أزرار تحريك دقيق، وتستقر البطاقة داخل tolerance_years. المستوى 3: خريطة إقليمية بلا حدود سياسية وبطاقات مدن تستقر داخل tolerance_km. خط الزمن يُعكس في RTL والخريطة لا تُعكس أبدًا.",
+      "gameplay_loop": "intro «رحلة في الزمان والمكان» ← تعليمة النمط + زر إعادة ← عرض المرساة المرجعية كنقطة قياس ← لمس بطاقة ينطق اسم الحدث ولكل موضع وصف نصي («القرن الثامن الميلادي») ← سحب أو لمس ثم ضبط بأزرار التحريك الدقيق ← داخل الهامش: تستقر البطاقة ويُنطق الشرح التاريخي موجزًا · خارج الهامش: توجيه اتجاهي «أقدم من ذلك» · «إلى الشرق أكثر» ← وضع كل العناصر ← إكمال اللعبة وملصق.",
+      "levels": [
+        { "level": 1, "goal": "ترتيب زمني بفوارق قرون واسعة (نمط timeline)", "items": 3, "distractors": 0, "success_threshold": "كل حدث داخل ±100 سنة" },
+        { "level": 2, "goal": "ترتيب زمني أدقّ على مدى 900 سنة (نمط timeline)", "items": 4, "distractors": 0, "success_threshold": "كل حدث داخل ±75 سنة" },
+        { "level": 3, "goal": "موقع جغرافي لمدن على طريق تجاري (نمط map)", "items": 4, "distractors": 0, "success_threshold": "كل مدينة داخل ±300 كم" }
+      ],
+      "difficulty_progression": "الترتيب الزمني بهامش واسع (±100) ← حدث رابع وهامش أضيق (±75) على المدى نفسه ← تغيير البُعد كله من الزمن إلى المكان. لا يزيد عدد العناصر عن 4 ولا مؤقت ولا حد محاولات. والهامش لا يضيق إلى أقل من ±75 سنة لأن ثلاثة من التواريخ تقديرية بطبيعتها، وطلب دقة أعلى من دقة المصدر خطأ منهجي لا تحدٍّ. لا مشتّتات: لا بطاقات زائدة ولا خيارات خاطئة، والصعوبة من ضيق الهامش وتقارب الأحداث. ولا سنوات في المستوى 3 لأن نمط map يطلب الموقع وحده والمخطط لا يوجب year.",
+      "instructions_ar": "رحلة في الزمان والمكان. أمامك خط زمن، وعليه علامة مرجعية تعرفها. خُذ كل بطاقة وضعها في زمنها التقريبي — والتقريب هنا ليس خطأً، فكثير من التواريخ تقديري. إن ابتعدت سأقول لك: أقدم من ذلك، أو أحدث من ذلك. وفي المرحلة الأخيرة تتغيّر المهمة: ستضع مدنًا على خريطة طريق تجاري، وسأدلّك بالاتجاه: إلى الشرق أكثر، أو إلى الجنوب.",
+      "success_rule": "المستوى ينجح بوضع كل العناصر داخل هامشها، بلا مؤقت وبلا حد محاولات. score = العناصر الصحيحة من أول محاولة، max_score = عدد العناصر (3 ثم 4 ثم 4)، وmastery على hist.civ.trade_geography. والقيم تُخزَّن ميلاديًا دائمًا والعرض بحسب اللغة والمنطقة، والقيمة المعروضة لا تُخزَّن أبدًا.",
+      "failure_rule": "1 سهم واتجاه: «أقدم من ذلك» · «أحدث من ذلك» · «إلى الشرق أكثر» بلا كلمة «خطأ» · 2 تضييق المدى المعروض حول الجواب · 3 إظهار حدث مرجعي معروف كمرساة إضافية · 4 وضع العنصر تلقائيًا مع شرح تاريخي ثم متابعة عادية · 5+ اقتراح تحدٍّ أبسط بلا أي وصف بالفشل. التقريب الصحيح يُمدَح لا الإصابة الحرفية، ولا عدّ أخطاء معروض ولا قفل ولا فقدان ملصق.",
+      "scoring": "score = العناصر الصحيحة من أول محاولة · max_score = عدد العناصر · لا نقاط ولا زمن ولا نسبة دقة معروضة.",
+      "rewards": "ملصق هادئ واحد عند إكمال اللعبة لا يُفقد أبدًا. لا عملة ولا شراء ولا صناديق عشوائية ولا إعلانات ولا streaks ولا لوحة ترتيب.",
+      "educational_feedback": "نجاح: «استنتاج صحيح.» · «تحليل دقيق.» كل 2–3 نجاحات. خارج الهامش زمنيًا: «أقدم من ذلك» · «أحدث من ذلك». مكانيًا: «إلى الشرق أكثر» · «إلى الجنوب أكثر». تلميح: «ابدأ من العلامة المرجعية وعُدّ القرون منها» · «ابحث عن النهر أولًا». شرح حدث: «بُنيت بغداد سنة 762 ميلادية.» شرح مكاني: «دمشق على طريق يربط الساحل بالداخل.» قاعدة عامة: «التقريب في التاريخ ليس خطأً.» ولا معارك ولا حكّام في أي عنصر أو شرح.",
+      "accessibility": "خط الزمن يُعكس في RTL والخريطة لا تُعكس أبدًا والاختبار في ar وen إلزامي · بديل السحب إلزامي مع أزرار تحريك دقيق · كل موضع له وصف نصي («القرن الثامن الميلادي»، «شمال شرق الخريطة قرب النهر») ولا يُعتمد على الموضع البصري وحده · هدف لمس 56dp · خارج الهامش يُدلّ عليه بسهم ورمز وصوت لا بلون · لا مؤقت · TextScaler 2.0× · لا وميض > 3Hz · احترام تقليل الحركة · D-pad بخطوة تحريك ثابتة · الخريطة محيّدة سياسيًا بلا حدود ولا أعلام ولا أسماء دول · تُلعَب بلا صوت بالكامل.",
+      "max_attempts": null,
+      "help_system": {
+        "model": "hint_after_failed_attempts=2 · hint_type=direction_arrow · repeat_instructions_button=true · simplify_after_failed_attempts=3 · solution_after_failed_attempts=4 · counts_as_help_used=true",
+        "hints": [
+          "أقدم من ذلك · أحدث من ذلك · إلى الشرق أكثر",
+          "تضييق المدى المعروض حول الجواب",
+          "إظهار حدث مرجعي معروف كمرساة",
+          "وضع العنصر تلقائيًا مع شرح تاريخي"
+        ]
+      },
+      "content_pack": {
+        "pack_version": 1,
+        "engine_id": "timeline_map",
+        "progression": { "levels_to_finish": 3, "advance_on": "level_complete" },
+        "levels": [
+          {
+            "level": 1,
+            "mode": "timeline",
+            "timeline": {
+              "from": 600,
+              "to": 1500,
+              "unit": "gregorian_year",
+              "display_calendar": "auto",
+              "anchors": [{ "year": 622, "label_key": "hist.anchor.hijri_epoch" }]
+            },
+            "events": [
+              { "id": "e1", "label_key": "hist.event.baghdad_founded", "image": "asset-tc-baghdad", "year": 762, "tolerance_years": 100, "explain_key": "hist.explain.baghdad" },
+              { "id": "e2", "label_key": "hist.event.idrisi_map", "image": "asset-tc-idrisi-map", "year": 1154, "tolerance_years": 100, "explain_key": "hist.explain.idrisi_map" },
+              { "id": "e3", "label_key": "hist.event.movable_type_europe", "image": "asset-tc-printing", "year": 1450, "tolerance_years": 100, "explain_key": "hist.explain.movable_type" }
+            ],
+            "show_reference_anchor": true
+          },
+          {
+            "level": 2,
+            "mode": "timeline",
+            "timeline": {
+              "from": 600,
+              "to": 1500,
+              "unit": "gregorian_year",
+              "display_calendar": "auto",
+              "anchors": [{ "year": 622, "label_key": "hist.anchor.hijri_epoch" }]
+            },
+            "events": [
+              { "id": "e1", "label_key": "hist.event.baghdad_founded", "image": "asset-tc-baghdad", "year": 762, "tolerance_years": 75, "explain_key": "hist.explain.baghdad" },
+              { "id": "e2", "label_key": "hist.event.idrisi_map", "image": "asset-tc-idrisi-map", "year": 1154, "tolerance_years": 75, "explain_key": "hist.explain.idrisi_map" },
+              { "id": "e3", "label_key": "hist.event.maragheh_observatory", "image": "asset-tc-observatory", "year": 1259, "tolerance_years": 75, "explain_key": "hist.explain.maragheh" },
+              { "id": "e4", "label_key": "hist.event.movable_type_europe", "image": "asset-tc-printing", "year": 1450, "tolerance_years": 75, "explain_key": "hist.explain.movable_type" }
+            ],
+            "show_reference_anchor": true
+          },
+          {
+            "level": 3,
+            "mode": "map",
+            "map": { "region": "middle_east_north_africa", "projection": "equirectangular", "mirror_in_rtl": false },
+            "events": [
+              { "id": "e1", "label_key": "hist.place.baghdad", "image": "asset-tc-city-baghdad", "lat": 33.31, "lon": 44.36, "tolerance_km": 300, "explain_key": "hist.explain.place_baghdad" },
+              { "id": "e2", "label_key": "hist.place.damascus", "image": "asset-tc-city-damascus", "lat": 33.51, "lon": 36.29, "tolerance_km": 300, "explain_key": "hist.explain.place_damascus" },
+              { "id": "e3", "label_key": "hist.place.cairo", "image": "asset-tc-city-cairo", "lat": 30.04, "lon": 31.24, "tolerance_km": 300, "explain_key": "hist.explain.place_cairo" },
+              { "id": "e4", "label_key": "hist.place.sanaa", "image": "asset-tc-city-sanaa", "lat": 15.35, "lon": 44.21, "tolerance_km": 300, "explain_key": "hist.explain.place_sanaa" }
+            ],
+            "show_reference_anchor": true
+          }
+        ],
+        "assets": {
+          "images": ["asset-tc-timeline-base", "asset-tc-map-base", "asset-tc-baghdad", "asset-tc-idrisi-map", "asset-tc-observatory", "asset-tc-printing", "asset-tc-city-baghdad", "asset-tc-city-damascus", "asset-tc-city-cairo", "asset-tc-city-sanaa"],
+          "audio": ["asset-vo-tc-baghdad", "asset-vo-tc-idrisi", "asset-vo-tc-observatory", "asset-vo-tc-printing", "asset-vo-tc-place-baghdad", "asset-vo-tc-place-damascus", "asset-vo-tc-place-cairo", "asset-vo-tc-place-sanaa", "asset-vo-tc-explain-baghdad", "asset-vo-tc-explain-idrisi", "asset-vo-tc-explain-maragheh", "asset-vo-tc-explain-printing"]
+        },
+        "voice_manifest": {
+          "vo.intro": "asset-vo-gct-intro",
+          "vo.instruction": "asset-vo-gct-instruction",
+          "vo.instruction_repeat": "asset-vo-gct-instruction-slow",
+          "vo.hint_older": "asset-vo-hint-older",
+          "vo.hint_newer": "asset-vo-hint-newer",
+          "vo.hint_direction": "asset-vo-hint-direction",
+          "vo.retry": "asset-vo-retry-junior",
+          "vo.correct": "asset-vo-correct-junior",
+          "vo.explain_event": "asset-vo-gct-explain-event",
+          "vo.level_complete": "asset-vo-level-complete-junior",
+          "vo.game_complete": "asset-vo-gct-game-complete",
+          "vo.exit_confirm": "asset-vo-exit-confirm"
+        }
+      },
+      "implementation_status": "design only",
+      "source_file": "docs/content/planets/07-tarikh/games/game-junior-civilizations-timeline.md",
+      "production_required": ["game_art", "voice_prompts", "engine_implementation", "historical_review", "rtl_timeline_map_test"]
+    }
+  ],
+  "engine_remap": [
+    { "game_id": "game-preschool-picture-match", "from": "engine-match", "to": "match_pairs" },
+    { "game_id": "game-preschool-listen-find", "from": "engine-match", "to": "match_pairs" },
+    { "game_id": "game-letter-tracing", "from": "engine-match", "to": "trace_color" },
+    { "game_id": "game-preschool-count-place", "from": "engine-match", "to": "count_quantity" },
+    { "game_id": "game-preschool-color-sort", "from": "engine-match", "to": "sort_bins" },
+    { "game_id": "game-number-maze", "from": "engine-maze", "to": "count_quantity" },
+    { "game_id": "game-shape-matching", "from": "engine-match", "to": "match_pairs" },
+    { "game_id": "game-butterfly-sequence", "from": "engine-sequence", "to": "sequence_order" },
+    { "game_id": "game-animal-memory", "from": "engine-memory", "to": "memory_flip" },
+    { "game_id": "game-kids-explorers-clue-trail", "from": "engine-maze", "to": "logic_pattern" },
+    { "game_id": "game-junior-code-sequence", "from": "engine-maze", "to": "block_code" },
+    { "game_id": "game-junior-circuit-builder", "from": "engine-builder", "to": "sim_lab" },
+    { "game_id": "game-junior-science-evidence", "from": "engine-match", "to": "sort_bins" },
+    { "game_id": "game-junior-civilizations-timeline", "from": "engine-sequence", "to": "timeline_map" }
+  ],
+  "engine_track_legality": [
+    { "engine": "match_pairs", "declared": "المسار الأساسي preschool (يمتد إلى kids)", "used_for_tracks": ["preschool", "kids"], "expansion_relied_on": "امتداد kids معلن في العقد — لا توقيع مطلوب" },
+    { "engine": "trace_color", "declared": "المسار الأساسي preschool", "used_for_tracks": ["preschool"], "expansion_relied_on": "لا شيء" },
+    { "engine": "sort_bins", "declared": "المسار الأساسي preschool (يمتد إلى kids وjunior)", "used_for_tracks": ["preschool", "junior"], "expansion_relied_on": "امتداد junior معلن في العقد — لا توقيع مطلوب" },
+    { "engine": "memory_flip", "declared": "المسار: preschool + kids", "used_for_tracks": ["kids"], "expansion_relied_on": "لا شيء — kids معلن أصلًا" },
+    { "engine": "count_quantity", "declared": "المسار الأساسي kids (يمتد إلى preschool للمدى 1–5)", "used_for_tracks": ["preschool", "kids"], "expansion_relied_on": "امتداد preschool معلن بشرط المدى 1–5، وحزمة عد وضع لا تتجاوز 5 في أي مستوى" },
+    { "engine": "sequence_order", "declared": "المسار الأساسي kids (يمتد إلى junior)", "used_for_tracks": ["kids"], "expansion_relied_on": "لا شيء" },
+    { "engine": "logic_pattern", "declared": "المسار الأساسي junior (يمتد إلى kids بأنماط خطية)", "used_for_tracks": ["kids"], "expansion_relied_on": "امتداد kids معلن في العقد بشرط الأنماط الخطية، والحزمة تقتصر على linear وlinear_alt بلا تعليل" },
+    { "engine": "block_code", "declared": "المسار الأساسي junior", "used_for_tracks": ["junior"], "expansion_relied_on": "لا شيء" },
+    { "engine": "sim_lab", "declared": "المسار الأساسي junior", "used_for_tracks": ["junior"], "expansion_relied_on": "لا شيء" },
+    { "engine": "timeline_map", "declared": "المسار الأساسي junior", "used_for_tracks": ["junior"], "expansion_relied_on": "لا شيء" }
+  ],
+  "engines_not_used": ["word_build", "rhythm_tap"],
+  "open_questions": [
+    "game-butterfly-sequence مُسندة في قاعدة البيانات إلى سلسلة discover-your-body وهي سلسلة knowledge عن جسم الإنسان لا تعلّم أي دورة حياة. القرار المطلوب: إعادة إسناد اللعبة إلى سلسلة تعلّم دورات الحياة، أو إضافة حلقة دورة حياة إلى سلسلة علوم. المواصفة صحيحة بنيويًا مع أي من الخيارين.",
+    "game-animal-memory المستوى 3 (أزواج مترابطة) مربوط بهدف استنتاجي world.reason.combine_clues، وعقد memory_flip يذكر ربط هذا المستوى بهدف مفردات. يحتاج توقيعًا تحريريًا؛ والافتراضي حتى صدوره أن تُكتب attempts وحدها بلا mastery للمستويات الثلاثة.",
+    "game-junior-science-evidence يستعير sci.method.evidence_claim من سلسلة try-it-at-home (الحلقة 6) في الكوكب نفسه لأن سلسلة science-in-a-minute لا تنشر هدفًا لربط الدليل بالدعوى. القرار الإداري: تسجيل الرمز على السلسلة في جدول الأهداف، أو نقل اللعبة إلى try-it-at-home.",
+    "تواريخ game-junior-civilizations-timeline تحتاج مراجعة تاريخية معتمدة قبل النشر: خريطة الإدريسي 1154م، ومرصد مراغة 1259م، والطباعة بالحروف المعدنية المتحركة نحو 1450م. وسنة بناء بغداد 762م مأخوذة حرفيًا من مثال عقد المحرك وتُراجَع مع الباقي. FACT CHECK REQUIRED.",
+    "مرساة hist.anchor.hijri_epoch (622م) مستخدمة كنقطة قياس تقويمية كما في مثال عقد timeline_map؛ يُراجَع تحريريًا أنها تُقدَّم كأساس التقويم الهجري لا كمحتوى ديني، لأن كوكب islamic خارج نطاق هذا العمل.",
+    "تعارض مخطط: عقد logic_pattern يكتب مفتاحي التلميح vo.hint_1 وvo.hint_2، وهما لا يجتازان نمط مفاتيح voice_manifest في content-pack.base.schema.json (^vo\\.[a-z_]+(\\.[A-Za-z0-9_-]+)?$ يمنع الرقم في المقطع الأول). الحزمة تستخدم vo.hint.1 وvo.hint.2؛ يُحسم التعارض في العقد أو في المخطط.",
+    "تعارض قيم قائم في سكربتات موجودة لا في هذه الحزم: حلقات future-lab وscience-in-a-minute تستخدم reading_level=fluent وinteraction_mode=interactive وsupervision_level=optional وهي قيم غير قانونية بحسب القسم 2 من عقد التأليف. حزم الألعاب هنا تستخدم القيم القانونية (independent · independent · none/recommended)، والحلقات تحتاج تصحيحًا منفصلًا.",
+    "block_code مؤجَّل إلى الموجة 3 بحسب بوابات النشر في كوكب مهارات، فحزمة game-junior-code-sequence لا يمكن تشغيلها قبل ذلك حتى لو اكتمل الفنّ والصوت.",
+    "لم تُستخدم في هذه المجموعة محركات word_build وrhythm_tap: لا يوجد بين الألعاب الأربعة عشر لعبة بناء كلمة ولا لعبة إيقاع. هذه ملاحظة تغطية لا نقص في المواصفة.",
+    "كل الألعاب الأربعة عشر design only. تشغيل أي منها يتطلب تنفيذ المحرك أولًا، ثم إنتاج الفنّ والصوت، ثم ترحيل engine_id في قاعدة البيانات بحسب جدول engine_remap."
+  ]
+}

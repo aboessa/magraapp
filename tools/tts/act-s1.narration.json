@@ -1,0 +1,83 @@
+{
+  "story": "act-s1",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-01-bird-home.md",
+  "language": "ar",
+  "out_dir": "assets/audio/stories/act-s1/ar",
+  "model": "gemini-3.1-flash-tts-preview",
+  "voice": "Kore",
+  "voice_alternatives": ["Aoede", "Leda", "Vindemiatrix", "Achernar"],
+  "notes": [
+    "Arabic text is copied verbatim from the story file. Do not re-word it here; the story file is the source of truth.",
+    "Style directions are transcribed from the story file's pronunciation table (### ملاحظات النطق).",
+    "Narrator target is ~90 words/min, page 8 ~75 words/min, and loudness must stay constant across all 8 files with no escalation on page 4.",
+    "The API returns 24 kHz 16-bit mono PCM. This runner writes .wav masters. Delivery format in the story file is .m4a, which needs a separate ffmpeg pass (ffmpeg is not installed on this machine).",
+    "durationMs values in the story file are planning estimates. Measure them from these files and write the measured values back."
+  ],
+  "global_style": "You are narrating a bedtime picture book for a 3 to 5 year old Arabic-speaking child. Read in Modern Standard Arabic with a calm, warm, low voice, as if sitting beside the child in a dimly lit room. Keep loudness constant and identical across every line. Never sound tense, worried, excited or surprised. No gasps, no exclamations, no dramatic build-up.",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-act-s1-vo-ar-001",
+      "file": "page-001-ar.wav",
+      "text": "هذا زُغب. بيته عشّ صغير.",
+      "style": "Steady and welcoming. Pronounce the name زُغب clearly with a short u vowel on the first letter; this is the first time the child hears it.",
+      "planned_duration_ms": 5200
+    },
+    {
+      "page": 2,
+      "id": "asset-act-s1-vo-ar-002",
+      "file": "page-002-ar.wav",
+      "text": "اليوم يريد أن يطير قليلًا.",
+      "style": "Gentle and matter-of-fact. No anticipation, no excitement.",
+      "planned_duration_ms": 5000
+    },
+    {
+      "page": 3,
+      "id": "asset-act-s1-vo-ar-003",
+      "file": "page-003-ar.wav",
+      "text": "طار إلى الشجرة. ثم أبعد قليلًا.",
+      "style": "Even pace with a small natural pause between the two sentences. Do not let the pitch rise on أبعد.",
+      "planned_duration_ms": 5600
+    },
+    {
+      "page": 4,
+      "id": "asset-act-s1-vo-ar-004",
+      "file": "page-004-ar.wav",
+      "text": "هبّت ريح خفيفة. فتحرّكت الأوراق.",
+      "style": "This is the story's peak and it must stay completely calm. Give خفيفة its shadda clearly but with zero tension. Absolutely no volume increase, no urgency, no drama.",
+      "planned_duration_ms": 5800
+    },
+    {
+      "page": 5,
+      "id": "asset-act-s1-vo-ar-005",
+      "file": "page-005-ar.wav",
+      "text": "نظر زُغب إلى بيته. وعرف طريقه.",
+      "style": "Quiet confidence on وعرف طريقه. He is sure, not relieved and not searching.",
+      "planned_duration_ms": 5400
+    },
+    {
+      "page": 6,
+      "id": "asset-act-s1-vo-ar-006",
+      "file": "page-006-ar.wav",
+      "text": "فطار إلى العشّ. وأمّه تنتظره.",
+      "style": "Warmth on تنتظره, soft and affectionate, still at the same loudness.",
+      "planned_duration_ms": 5500
+    },
+    {
+      "page": 7,
+      "id": "asset-act-s1-vo-ar-007",
+      "file": "page-007-ar.wav",
+      "text": "جلس قريبًا منها. والريح هدأت.",
+      "style": "Slow down on والريح هدأت and let it settle. Softer, sleepier, but not quieter in level.",
+      "planned_duration_ms": 5300
+    },
+    {
+      "page": 8,
+      "id": "asset-act-s1-vo-ar-008",
+      "file": "page-008-ar.wav",
+      "text": "والآن ينام زُغب في بيته.",
+      "style": "Slowest line of the story, about 75 words per minute. Begin after a short silent beat. Read it as a closing statement of stillness, not a goodbye and not a question.",
+      "planned_duration_ms": 4800
+    }
+  ]
+}

@@ -1,0 +1,677 @@
+{
+  "planet_id": "tarikh",
+  "category_id": "category-history",
+  "series": {
+    "slug": "ashyaa-laha-hikaya",
+    "title_ar": "أشياء لها حكاية",
+    "title_en": "Things With a Story",
+    "type": "knowledge",
+    "age_min": 6,
+    "age_max": 8,
+    "track": "kids",
+    "reading_level": "emerging",
+    "interaction_mode": "guided",
+    "supervision_level": "recommended",
+    "difficulty": "medium",
+    "production_level": "limited_2d",
+    "price_tier": "family",
+    "is_free": 0,
+    "description_ar": "خمس حلقات، وفي كل حلقة شيء واحد عادي أقدم من كل من يعرفه الطفل: جرّة ماء، ومصباح زيت، وقلم قصب، وقطعة قماش، وحجر رحى. ننظر إلى الشيء، ونسأل: ماذا يخبرنا؟ وماذا لا يخبرنا؟ بلا تاريخ واحد، وبلا اسم حضارة، وبلا خريطة.",
+    "learning_goals": [
+      "يعرف أن شيئًا عاديًا يمكن أن يكون أقدم من كل إنسان يعرفه، ويعبّر عن ذلك بسُلَّم الأجداد لا بعدد سنوات",
+      "يحدّد علامتين تدلّان على أن شيئًا شكّلته يد إنسان لا آلة",
+      "يستنتج أمرًا واحدًا عن حياة الناس من أداة واحدة، ويسند استنتاجه إلى ما يراه فيها",
+      "يشرح أن المهارة تُنقَل من إنسان إلى إنسان، وأن الشيء وحده لا يعلّم كيف صُنع",
+      "يقارن كيف كانت حاجة واحدة تُلبّى قبل أن يُولَد جدّه وكيف تُلبّى اليوم، ويسمّي فرقًا وشيئًا لم يتغيّر"
+    ],
+    "languages": ["ar"],
+    "purpose": "فهرس كوكب تاريخ ينصّ على أن غياب مسار kids فجوة حقيقية تحتاج «سلسلة من خمس حلقات لعمر 6–8 تعتمد الأشياء لا التواريخ». وهذه هي. والقيد الحاكم فيها أنها بلا تاريخ واحد: طفل السابعة لا يمثّل «قبل ألف سنة»، فيسمعها صوتًا لا مسافة، ويخرج بخلط لا بمعرفة. وبديلنا سُلَّم الأجداد: أنا، وأبي، وجدّي، وجدّ جدّي — بلا رقم واحد. والسلسلة knowledge بلا شخصية متكرّرة لأن الشيء هو الموضوع. وهي رُتبة تحت رحلة الحضارات: الطفل الذي تعلّم أن يسأل «وماذا لا يخبرنا الشيء؟» يدخل مقطع «كيف نعرف؟» في 9–12 ومعه المهارة. وأثر عملي مهمّ: السلسلة بلا خريطة وبلا خط زمن، فهي غير محجوبة على محرّك timeline_map ولا على خريطة الأساس المحيّدة، بخلاف رحلة الحضارات. ولا تُصنَع سلسلة preschool لهذا الكوكب: غياب 3–5 قرار موثَّق لا نقص.",
+    "safety_notes": "الأشياء الخمسة تُرى في صور ولا تُلمَس: لا جرّة فخّار ولا مصباح فخّار في يد الطفل — الفخّار ثقيل ويُكسَر وشقافه حادّة. لا نار ولا شعلة ولا عود ثقاب ولا ولّاعة ولا زيت ولا فتيل في أي نشاط، والمصباح غير مُضاء في كل لقطة. لا سكّين ولا شفرة ولا مقصّ ولا إبرة ولا دبّوس، ولا يُرى قطع القصب. الخيوط لا يزيد طولها عن 30 سم، ولا تُلَفّ حول عنق ولا يد ولا إصبع ولا أي شيء، ولا بكرة كاملة في متناول الطفل. لا حجر يُرفَع ولا يُحمَل ولا يُحَكّ حجر بحجر، ولا مطرقة ولا هاون حجري ولا مطحنة ولا آلة كهربائية. لا شيء يوضع في الفم ولا يُقرَّب من العين. بالغ حاضر في كل نشاط."
+  },
+  "season": {
+    "season_number": 1,
+    "title_ar": "الموسم الأول",
+    "watch_order": "sequential"
+  },
+  "objectives": [
+    {
+      "code": "hist.object.older_than_me",
+      "title_ar": "يعرف أن شيئًا يمكن أن يكون أقدم من كل إنسان يعرفه",
+      "criteria_ar": "يرتّب أربع درجات من سُلَّم الأجداد، ويصنّف 5 أشياء من 6 إلى «كان قبل أن يُولَد جدّي» أو «صُنع في زماني»، في 3 محاولات من 4. ولا يُطلَب منه عدد سنوات ولا قرن، ولا يُقبَل جواب برقم.",
+      "skill": "observation",
+      "age_min": 6,
+      "age_max": 8
+    },
+    {
+      "code": "hist.object.made_by_hand",
+      "title_ar": "يحدّد علامتين على أن شيئًا شكّلته يد لا آلة",
+      "criteria_ar": "يميّز الشيء المصنوع باليد من الشيء المصنوع بالآلة في 5 حالات من 6، ويسمّي علامة واحدة على الأقلّ، ويرفض استدلالًا عن صاحب اليد — في 3 محاولات من 4.",
+      "skill": "observation",
+      "age_min": 6,
+      "age_max": 8
+    },
+    {
+      "code": "hist.evidence.object_tells",
+      "title_ar": "يستنتج أمرًا واحدًا عن حياة الناس من أداة واحدة، مسنَدًا",
+      "criteria_ar": "يذكر استنتاجًا واحدًا مسنَدًا إلى ما يُرى في الأداة، ويرفض استنتاجين لا تسندهما الأداة، في 3 محاولات من 4. ولا يُقبَل «لأنه قديم» إسنادًا.",
+      "skill": "observation",
+      "age_min": 6,
+      "age_max": 8
+    },
+    {
+      "code": "hist.craft.skill_passed_on",
+      "title_ar": "يشرح أن المهارة تُنقَل من إنسان إلى إنسان",
+      "criteria_ar": "يجرّب النسج بنفسه، ثم يذكر أنه احتاج إنسانًا يريه لا الشيء وحده، ويرتّب خطوات النسج الثلاث — في 3 محاولات من 4. ولا يُقاس جمال النسج ولا إتمام القطعة.",
+      "skill": null,
+      "age_min": 6,
+      "age_max": 8
+    },
+    {
+      "code": "hist.change.then_and_now",
+      "title_ar": "يقارن كيف لُبّيت حاجة واحدة قديمًا والآن",
+      "criteria_ar": "يطابق 4 أزواج من «قديمًا ↔ الآن»، ويسمّي فرقًا واحدًا وشيئًا واحدًا لم يتغيّر — في 3 محاولات من 4. ولا يُقبَل جواب «حياتنا أفضل»، ولا يُطلَب عدد سنوات.",
+      "skill": "observation",
+      "age_min": 6,
+      "age_max": 8
+    }
+  ],
+  "episodes": [
+    {
+      "episode_number": 1,
+      "slug": "ep-01-clay-water-jar",
+      "title_ar": "جرّة الماء",
+      "title_en": "The Water Jar",
+      "description_ar": "جرّة من فخّار كانت في بيوت قبل أن يُولَد جدّك، وما زالت تُبرّد الماء بلا كهرباء",
+      "duration_seconds": 280,
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "easy",
+      "is_free": 1,
+      "objective_code": "hist.object.older_than_me",
+      "new_words": ["فخّار"],
+      "prerequisites": [],
+      "skills": ["observation"],
+      "mastery_criteria": "يرتّب أربع درجات من سُلَّم الأجداد، ويصنّف 5 أشياء من 6 إلى «كان قبل أن يُولَد جدّي» أو «صُنع في زماني»، ويميّز ما لا يخبرنا به الشيء — في 3 محاولات من 4. ولا يُقبَل جواب برقم.",
+      "parent_guide_ar": "يتعلّم طفلك أن شيئًا عاديًا في البيت يمكن أن يكون أقدم من كل إنسان يعرفه، وأن الشيء نفسه يخبرنا أشياء ويسكت عن أخرى. ولا تواريخ في هذه السلسلة كلها: لن تسمعوا «قبل ألف سنة» ولا اسم حضارة ولا اسم شخص، لأن طفل السابعة لا يمثّل «ألف سنة» فيسمعها صوتًا لا مسافة. وبديلنا سُلَّم الأجداد: أنت وأبوك وجدّك وجدّ جدّك، بلا رقم واحد — فلا تحوّلوه إلى سنوات، فـ«يعني قبل مئتي سنة» تُلغي فائدته كلها. وأهمّ مقطع في الحلقة «وماذا لا يخبرنا؟»: لا نعرف من صنعها، ولا كم عمرها، ولا من شرب منها، ثم «نرى الشيء، ولا نرى صاحبه». بند سلامة: لا تعطوا طفلكم جرّة فخّار يحملها أو يملؤها — الفخّار ثقيل ويُكسَر وشقافه حادّة كالزجاج، والجرّة في الحلقة صورة لا أداة نشاط. والنشاط بكوب بلاستيك وقماش مبلّل وماء بارد، بلا ماء ساخن وبلا كوب زجاج وبلا شرب منه.",
+      "family_activity_ar": "الكوب المبلّل — 12 دقيقة بإشراف بالغ. المواد: كوبان بلاستيك متينان، قطعة قماش قطن نظيفة، ماء بارد، منشفة، صحن. 1) البالغ يملأ الكوبين بماء بارد بنفس المقدار. 2) لُفّوا القماش حول كوب واحد وبلّلوها بماء بارد. 3) ضعوا الكوبين على صحن على طاولة بعيدة عن أي مقبس كهربائي. 4) اتركوهما نصف ساعة. 5) المسوا الكوبين من الخارج بظهر اليد: أيّهما أبرد؟ 6) اسألوا: «القماش مبلّل، فإلى أين ذهب ماؤه؟». 7) اربطوا: وجه الجرّة الخارجي يفعل هذا بنفسه لأن الفخّار خشن. 8) لا تشربوا من الكوبين، ويُفرَغان في الحوض. الخطوتان 5 و6 هما النشاط، واللمس بظهر اليد يكفي. تنويع لطفل الثامنة: كوب ثالث بقماش مبلّل في مكان فيه هواء، ومقارنة الثلاثة.",
+      "safety_notes": "لا يحمل الطفل جرّة فخّار ولا يملؤها ولا يرفعها — الفخّار ثقيل ويُكسَر وشقافه حادّة. والنشاط بكوب بلاستيك وقطعة قماش مبلّلة وماء بارد على طاولة. لا ماء ساخن، ولا كوب زجاج، ولا شرب من كوبَي النشاط، ولا شيء يوضع في الفم، وبعيدًا عن أي مقبس كهربائي. بالغ يتولّى الماء ويمسح أي قطرة فورًا.",
+      "questions": [
+        {
+          "id": "q1",
+          "type": "sort_bins",
+          "prompt_key": "ah.ep1.q1",
+          "prompt_text": "أيّ الأشياء كان قبل أن يُولَد جدّك؟",
+          "items": ["asset-item-ah-clay-jar", "asset-item-ah-grinding-stone", "asset-item-ah-hand-loom", "asset-item-ah-plastic-bottle", "asset-item-ah-fridge", "asset-item-ah-led-lamp"],
+          "correct": [["asset-item-ah-clay-jar", "asset-item-ah-grinding-stone", "asset-item-ah-hand-loom"], ["asset-item-ah-plastic-bottle", "asset-item-ah-fridge", "asset-item-ah-led-lamp"]]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "ah.ep1.q2",
+          "prompt_text": "ما الذي لا تخبرنا به الجرّة؟",
+          "items": ["asset-choice-ah1-who-made-it", "asset-choice-ah1-it-is-clay", "asset-choice-ah1-it-cools-water"],
+          "correct": ["asset-choice-ah1-who-made-it"]
+        }
+      ],
+      "script_file": "ep-01-clay-water-jar.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "art_neutral_surface_no_label_no_number",
+        "art_hands_neutral_no_face",
+        "art_vocab_frame",
+        "art_predict_frame_no_timer",
+        "art_tells_frame",
+        "art_not_tells_frame",
+        "art_challenge_frame",
+        "art_grandparent_ladder_no_numbers",
+        "art_jar_still_no_label",
+        "art_jar_surface_close",
+        "animation_jar_wall_section_seep_and_evaporate",
+        "art_bottle_and_jar_side_by_side",
+        "art_series_item_cards_old_and_new",
+        "question_art_who_made_it_is_clay_cools_water",
+        "sfx_clay_tap",
+        "music_bed_minus24db_no_regional_instrument"
+      ],
+      "production_notes": "بلا أي سنة ولا قرن ولا اسم حضارة ولا اسم شخص — قيد السلسلة الحاكم. وبلا خريطة وبلا خط زمن، وأثر ذلك أن السلسلة غير محجوبة على timeline_map ولا على خريطة الأساس المحيّدة. الجرّة تُرى ساكنة وبلا لافتة ولا رقم جرد، فهي تمثّل نوعًا لا قطعة بعينها. وقفة 3 ثوان في الثانية 42 واللقطة ساكنة، وهي مقصودة ولا تُقصَّر في المونتاج. سُلَّم الأجداد يُعرَض بلا رقم، و«وكان طفلًا مثلك» جملة إلزامية. مقطع «وماذا لا يخبرنا؟» إلزامي وفيه ثلاث جمل «لا نعرف» بنفس الإيقاع. «نرى الشيء، ولا نرى صاحبه» تُعاد في الحلقات الخمس بنفس اللفظ. لا جرّة فخّار في أي نشاط. ويلزم فحص عدم تعارض مع حلقة دورة الماء في كوكب علوم."
+    },
+    {
+      "episode_number": 2,
+      "slug": "ep-02-oil-lamp",
+      "title_ar": "مصباح الزيت",
+      "title_en": "The Oil Lamp",
+      "description_ar": "مصباح صغير من فخّار، وفيه أثر إبهام من صنعه — فنعرف أنه ليس من آلة",
+      "duration_seconds": 280,
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "easy",
+      "is_free": 0,
+      "objective_code": "hist.object.made_by_hand",
+      "new_words": ["فتيل"],
+      "prerequisites": [],
+      "skills": ["observation"],
+      "mastery_criteria": "يميّز الشيء المصنوع باليد من الشيء المصنوع بالآلة في 5 حالات من 6، ويسمّي علامة واحدة على الأقلّ، ويرفض استدلالًا عن صاحب اليد — في 3 محاولات من 4. ولا يُقبَل جواب «لأنه قديم».",
+      "parent_guide_ar": "يتعلّم طفلك أن يعرف بعلامة أن شيئًا شكّلته يد إنسان لا آلة: أثر الإصبع، واختلاف قطعتين متشابهتين. والعلامة الواحدة لا تكفي: أثر الإصبع وحده قد يكون في قالب نُسِخ منه مرّات، واختلاف القطعتين وحده قد يكون من آلة قديمة غير دقيقة، والعلامتان معًا هما ما يخبرنا أن يدًا شكّلت كل قطعة وحدها — وهذا نفس ما يتعلّمه في كوكب العالم حولنا: دليل واحد لا يميّز. وأهمّ حدّ في الحلقة أن أثر الإبهام لا يخبرنا شيئًا عن صاحبه: لا حجم يده ولا أيّها كانت ولا عمره، والأثر يسند دعوى واحدة أن يدًا شكّلته. وسيريد طفلكم أن يستنتج أكثر، والسؤال الذي يوقفه بلطف: «وما الذي يخبرك بهذا؟». بند سلامة: المصباح مُطفَأ في كل لقطة ولا نار في الحلقة كلها، ولا تجرّبوا إشعال أي مصباح ولا فتيل ولا زيت، ولا عود ثقاب ولا ولّاعة في متناوله، ولا تعطوه مصباح فخّار يحمله.",
+      "family_activity_ar": "إبهامان لا يتشابهان — 12 دقيقة بإشراف بالغ وبلا نار. المواد: كوب طحين، ماء، صحنان، منشفة — ولا زيت ولا فتيل ولا نار. 1) البالغ يعجن الطحين بالماء حتى تصير عجينة متماسكة. 2) يأخذ طفلك قطعة بحجم كفّه وأنتم قطعة مثلها. 3) يشكّل كل واحد وعاءً صغيرًا بالضغط بالإبهام في وسط القطعة. 4) ضعوا الوعاءين جنبًا إلى جنب. 5) اسألوا: «هل هما متطابقان تمامًا؟» ثم اصمتوا. 6) ابحثوا معًا عن أثر الإبهام في كل واحد، وعن فرق واحد بينهما. 7) اسألوا: «وماذا لا يخبرنا الوعاء عن صاحبه؟». 8) لا تُؤكَل العجينة ولا تُقرَّب من الفم، وتُرمى بعد النشاط وتُغسَل الأيدي. الخطوتان 5 و6 هما النشاط، والعلامتان معًا لا واحدة. تنويع لطفل الثامنة: أربعة أوعية يرتّبها من الأقرب إلى الأبعد عن التطابق.",
+      "safety_notes": "المصباح في الحلقة غير مُضاء في كل لقطة. ولا نار ولا عود ثقاب ولا ولّاعة ولا زيت ولا فتيل في أي نشاط — مطلقًا. والنشاط بعجينة طحين وماء تُصنَع بيد بالغ، ولا تُؤكَل ولا تُقرَّب من الفم، وبلا ملح كثير، وبلا فرن ولا تجفيف بحرارة. لا مصباح فخّار في يد الطفل: الفخّار يُكسَر وشقافه حادّة. بالغ حاضر، وتُغسَل الأيدي بعد النشاط.",
+      "questions": [
+        {
+          "id": "q1",
+          "type": "logic_pattern",
+          "prompt_key": "ah.ep2.q1",
+          "prompt_text": "أيّ صفّ فيه قطع شكّلتها يد؟",
+          "items": ["asset-row-ah2-handmade-varied", "asset-row-ah2-machine-identical", "asset-row-ah2-machine-identical-b"],
+          "correct": ["asset-row-ah2-handmade-varied"]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "ah.ep2.q2",
+          "prompt_text": "ماذا يخبرنا أثر الإبهام؟",
+          "items": ["asset-choice-ah2-a-hand-shaped-it", "asset-choice-ah2-who-owned-it", "asset-choice-ah2-which-hand"],
+          "correct": ["asset-choice-ah2-a-hand-shaped-it"]
+        }
+      ],
+      "script_file": "ep-02-oil-lamp.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "art_neutral_surface_no_label_no_number",
+        "art_vocab_frame",
+        "art_predict_frame_no_timer",
+        "art_tells_frame",
+        "art_not_tells_frame",
+        "art_challenge_frame",
+        "art_grandparent_ladder_no_numbers",
+        "art_oil_lamp_unlit_still",
+        "art_thumb_print_close",
+        "animation_thumb_overlay_matches_hollow",
+        "art_wick_still_no_flame",
+        "art_two_lamps_similar_not_identical_both_unlit",
+        "art_two_factory_cups_identical",
+        "art_modern_lamp_row_identical",
+        "question_art_rows_handmade_and_machine",
+        "question_art_hand_shaped_who_owned_which_hand",
+        "sfx_clay_tap",
+        "music_bed_minus24db_no_regional_instrument"
+      ],
+      "production_notes": "المصباح غير مُضاء في كل لقطة ولا نار في الحلقة كلها، وهذا شرط قبول مطلق: موضوع الحلقة الإضاءة بلا شعلة، وأي نسخة مُضاءة من أصل المصباح تُرفض ولو كانت أجمل. إطار الفتيل صورة خيط وحدها بلا نار ولا دخان. الإبهام المرسوم يُوضَع فوق الانخفاض فيطابقه، فالدليل يُرى ولا يُشرَح. علامتان لا واحدة، و«العلامة الواحدة لا تكفي» جملة إلزامية. لا استدلال عن صاحب اليد: لا حجمها ولا أيّها ولا عمره، وهذا مسجَّل في جدول فحص الحقائق. الفرق بين صفوف الحزمة شكلي لا لوني. وحدّ القياس مسجَّل: الحزمة تقيس ملاحظة الاختلاف، وأثر الإبهام يُقاس بالنشاط."
+    },
+    {
+      "episode_number": 3,
+      "slug": "ep-03-reed-pen",
+      "title_ar": "قلم القصب",
+      "title_en": "The Reed Pen",
+      "description_ar": "عود قصب مقطوع من طرفه، يخبرنا أن أحدًا تعلّم أن يكتب — ولا يخبرنا ماذا كتب",
+      "duration_seconds": 280,
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "medium",
+      "is_free": 0,
+      "objective_code": "hist.evidence.object_tells",
+      "new_words": ["قصب"],
+      "prerequisites": ["ep-01-clay-water-jar"],
+      "skills": ["observation"],
+      "mastery_criteria": "يذكر استنتاجًا واحدًا مسنَدًا إلى ما يُرى في الأداة، ويرفض استنتاجين لا تسندهما الأداة — في 3 محاولات من 4. ولا يُقبَل «لأنه قديم» إسنادًا، ولا يُطلَب تاريخ ولا لغة ولا مكان.",
+      "parent_guide_ar": "يتعلّم طفلك أن يستنتج شيئًا واحدًا عن حياة الناس من أداة واحدة، وأن يسند استنتاجه إلى ما يراه فيها. والاستدلال في الحلقة بسيط ومتين: «الأداة لا تُصنَع إلا لمن يستعملها» — فوجود قلم يخبرنا أن أحدًا كان يكتب، وطفلكم يمشي في هذا الاستدلال بنفسه ولا يُعطى نتيجته. و«لأنه قديم» ليست إسنادًا، وهي أشيع جواب في هذا العمر: الإسناد المطلوب أن يشير إلى شيء في الأداة — الفراغ الداخلي أو الطرف المائل. والسؤال الذي يعلّمه ذلك: «وما الذي في القلم يخبرك بهذا؟». وفي آخر الحلقة تظهر ورقة فارغة بجانب القلم ولا يُكتَب عليها حرف، وهي تُري طفلكم حدّ الدليل بلا كلام: عندنا الأداة وليس عندنا ما كُتِب. بند سلامة: قلم القصب يُصنَع بقطع طرفه بأداة حادّة، ولا مكان لهذا في نشاط طفل — لا تقطعوا قصبًا أمامه ولا تعطوه سكّينًا ولا شفرة ولا مقصًّا، ولا تُرى أداة قطع في الحلقة كلها.",
+      "family_activity_ar": "زاوية واحدة، وخطّان — 12 دقيقة بإشراف بالغ وبلا قطع. المواد: عود خشبي عريض الطرف (عود تحريك مشروب) أو عود قطن، طلاء مائي أو ماء ملوّن بلون طعام، ورق سميك، صحن صغير، منشفة — ولا سكّين ولا مقصّ ولا شفرة. 1) البالغ يجهّز الطلاء والعود. 2) يغمس طفلك الطرف قليلًا ويمسح الزائد على حرف الصحن. 3) يرسم خطًّا والطرف العريض مسطّح على الورق: خطّ عريض. 4) يرسم خطًّا آخر والطرف على حرفه: خطّ أرقّ. 5) اسألوا: «ما الذي تغيّر؟ الطلاء أم اليد؟». 6) يجرّب زوايا ثالثة ورابعة ويرى سلسلة خطوط. 7) اسألوا: «وماذا لا تخبرنا هذه الورقة عن غد؟». 8) لا يُقرَّب العود من الوجه ولا العين، ويُغسَل كل شيء. الخطوة 5 هي النشاط، واكتشاف أن اليد هي التي تغيّر الخطّ هو الدرس. تنويع لطفل الثامنة: يكتب حرفًا كبيرًا بزاويتين مختلفتين ويقارن.",
+      "safety_notes": "لا يقطع الطفل قصبًا ولا شيئًا آخر. ولا سكّين ولا شفرة ولا مقصّ في النشاط، ولا يُرى القطع في الحلقة. والنشاط بعود خشبي عريض الطرف وطلاء مائي على ورق. لا حبر دائم، ولا عود مدبّب، ولا قصب حقيقي في يد الطفل (حروفه قد تكون حادّة)، ولا شيء يوضع في الفم، ولا يُقرَّب شيء من الوجه أو العين. بالغ يجهّز الطلاء، وتُغسَل الأيدي بعد النشاط.",
+      "questions": [
+        {
+          "id": "q1",
+          "type": "match_pairs",
+          "prompt_key": "ah.ep3.q1",
+          "prompt_text": "صِلْ ما في القلم بما يخبرنا به",
+          "items": ["asset-part-ah3-hollow", "asset-part-ah3-angled-tip", "asset-tells-ah3-holds-ink", "asset-tells-ah3-line-changes"],
+          "correct": [["asset-part-ah3-hollow", "asset-tells-ah3-holds-ink"], ["asset-part-ah3-angled-tip", "asset-tells-ah3-line-changes"]]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "ah.ep3.q2",
+          "prompt_text": "ما الذي يخبرنا به القلم؟",
+          "items": ["asset-choice-ah3-someone-wrote", "asset-choice-ah3-what-was-written", "asset-choice-ah3-who-wrote"],
+          "correct": ["asset-choice-ah3-someone-wrote"]
+        }
+      ],
+      "script_file": "ep-03-reed-pen.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "art_neutral_surface_no_label_no_number",
+        "art_vocab_frame",
+        "art_predict_frame_no_timer",
+        "art_tells_frame",
+        "art_not_tells_frame",
+        "art_challenge_frame",
+        "art_grandparent_ladder_no_numbers",
+        "art_reed_still_no_cutting_tool_in_frame",
+        "art_angled_tip_close",
+        "art_reed_cross_section_hollow",
+        "animation_ink_enters_hollow",
+        "animation_two_strokes_by_angle",
+        "art_blank_page_no_single_letter",
+        "art_modern_pen_uniform_line",
+        "question_art_parts_and_what_they_support",
+        "question_art_someone_wrote_what_who",
+        "sfx_reed_scrape",
+        "music_bed_minus24db_no_regional_instrument"
+      ],
+      "production_notes": "لا أداة قطع في أي لقطة ولا يُرى قطع الطرف: يُرى مقطوعًا ولا يُرى يُقطَع. وجملة النهي عن القطع آخر ما يسمعه الطفل، وهي في النصّ لا في التحذيرات وحدها. الورقة الفارغة أصل إلزامي ويُرفَض إن كُتِب عليه حرف واحد — الفراغ هو المعنى. الاستنتاجان مسنَدان إلى ما يُرى، ولا يُقال «كان ماهرًا». موضع «لا نعرف» في الحزمة إلزامي، وبه تُقاس البطاقتان الزائدتان. لا اسم لغة ولا خطّ ولا شعب، وهذا مسجَّل في جدول فحص الحقائق: المترجم قد يضيف اسم خطّ لأنه يبدو معلومة نافعة، وهو يُدخِل اسم شعب. ويلزم فحص عدم تداخل مع كوكب أبجد: هذه الحلقة عن الأداة، وتعليم الحروف مكانه هناك."
+    },
+    {
+      "episode_number": 4,
+      "slug": "ep-04-woven-cloth",
+      "title_ar": "قطعة القماش",
+      "title_en": "The Woven Cloth",
+      "description_ar": "خيط يمرّ فوق خيط وتحت خيط، ومنسج خشبي — والقماش لا يعلّمك كيف تنسجه",
+      "duration_seconds": 280,
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "medium",
+      "is_free": 0,
+      "objective_code": "hist.craft.skill_passed_on",
+      "new_words": ["نسج"],
+      "prerequisites": ["ep-03-reed-pen"],
+      "skills": ["observation"],
+      "mastery_criteria": "يجرّب النسج بنفسه، ثم يذكر أنه احتاج إنسانًا يريه لا الشيء وحده، ويرتّب خطوات النسج الثلاث — في 3 محاولات من 4. ولا يُطلَب منه إتمام قطعة قماش، ولا يُقاس جمال النسج.",
+      "parent_guide_ar": "يتعلّم طفلك أن المهارة تُنقَل من إنسان إلى إنسان، وأن الشيء وحده لا يعلّم كيف صُنع. والحلقة لا تُكمِل شرح النسج عن قصد: تعرض خطوتين ثم تتوقّف وتقول «الخطوة الثالثة تحتاج من يريك، لا من يخبرك». وهذا أجرأ ما في السلسلة، وسببه أن الهدف نفسه هو ذلك: لو شرحت الحلقة النسج كاملًا لتعلّم طفلكم أن الشاشة تكفي، وهو نقيض ما تقوله. فالحلقة تحتاجكم ولا تُفهَم كاملة بلا يد حاضرة، وأنتم الخطوة الثالثة — ولا تحتاجون أن تعرفوا النسج، أروه الخطوة الأولى فقط وسيكمل ويخطئ ويعيد. وفي الحلقة جملة عن الذي نسج القطعة: «ولا نعرف كم مرّة أخطأ قبل أن يتعلّم» — وهي تجعل الصانع إنسانًا يتعلّم لا يدًا ماهرة بلا تاريخ. بند سلامة وهو الأهمّ في السلسلة: الخيط أخطر ما في هذه الحلقة — لا يزيد طول أي خيط عن 30 سم وتقصّونها أنتم مسبقًا، ولا يُلَفّ خيط حول عنق ولا يد ولا إصبع ولا كرسي ولا أي شيء ولا لعبًا، ولا بكرة خيط كاملة في متناوله، ولا مقصّ ولا إبرة ولا دبّوس في يده، ولا منسج حقيقي فيه أجزاء متحرّكة، وبالغ حاضر طول النشاط والخيوط تُجمَع وتُعَدّ بعده وتُرفَع بعيدًا.",
+      "family_activity_ar": "بطاقة ونسجة — 15 دقيقة بإشراف بالغ حاضر وبخيوط قصيرة. المواد: بطاقة كرتون سميك بحجم الكفّ أو أكبر، و6 خيوط طول كل واحد ≤ 30 سم يقصّها بالغ مسبقًا، وقلم. 1) البالغ يجهّز البطاقة بشقوق قصيرة متساوية على حرفين متقابلين، والطفل لا يقصّ شيئًا. 2) يمدّ البالغ ثلاثة خيوط بين الشقوق مشدودة قليلًا، وهذه «الخيوط التي لا تتحرّك». 3) أروه الخطوة الأولى بيدكم: خيط يمرّ فوق الأول. 4) اصمتوا ودعوه يكمل: تحت الثاني ثم فوق الثالث. 5) سيخطئ في التبادل مرّة أو مرّتين، ولا تصحّحوا بأيديكم — أعيدوا الخطوة الأولى فقط. 6) بعد أن يكمل صفًّا اسألوه: «هل كنتَ تستطيع هذا بالنظر إلى قميصك وحده؟». 7) اسألوه: «ومن علّمك الآن؟». 8) اجمعوا الخيوط كلها وعُدّوها وارفعوها بعيدًا، ولا تتركوا خيطًا واحدًا. الخطوتان 6 و7 هما النشاط، ولا يهمّ جمال النسج ولا إتمامه. تنويع لطفل الثامنة: يعلّم هو أخًا أصغر الخطوة الأولى — وأن يعلّم أحدًا هو الدرس بعينه.",
+      "safety_notes": "خيوط قصيرة فقط، لا يزيد طول الخيط عن 30 سم، ولا يُلَفّ حول عنق ولا يد ولا إصبع ولا أيّ شيء. ولا خيط طويل ولا بكرة كاملة في متناول الطفل. لا مقصّ (البالغ يقصّ الخيوط مسبقًا)، ولا إبرة، ولا دبّوس، ولا منسج حقيقي فيه أجزاء متحرّكة أو أوتاد بارزة. بالغ حاضر طول النشاط، والخيوط تُجمَع وتُعَدّ بعده وتُرفَع بعيدًا.",
+      "questions": [
+        {
+          "id": "q1",
+          "type": "sequence_order",
+          "prompt_key": "ah.ep4.q1",
+          "prompt_text": "رتّب خطوات النسج",
+          "items": ["asset-card-ah4-stretch", "asset-card-ah4-over", "asset-card-ah4-under"],
+          "correct": ["asset-card-ah4-stretch", "asset-card-ah4-over", "asset-card-ah4-under"]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "ah.ep4.q2",
+          "prompt_text": "كيف تتعلّم أن تنسج؟",
+          "items": ["asset-choice-ah4-someone-shows-me", "asset-choice-ah4-look-at-cloth", "asset-choice-ah4-cloth-tells-me"],
+          "correct": ["asset-choice-ah4-someone-shows-me"]
+        }
+      ],
+      "script_file": "ep-04-woven-cloth.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "art_neutral_surface_no_label_no_number",
+        "art_hands_neutral_no_face",
+        "art_vocab_frame",
+        "art_predict_frame_no_timer",
+        "art_tells_frame",
+        "art_not_tells_frame",
+        "art_challenge_frame",
+        "art_grandparent_ladder_no_numbers",
+        "animation_shirt_weave_zoom",
+        "art_cloth_and_loom_still_no_label",
+        "art_uneven_crossings_close",
+        "animation_weave_over_under_very_slow",
+        "animation_weave_stops_at_third_step",
+        "art_machine_even_crossings",
+        "art_card_loom_short_threads_only",
+        "question_art_weave_step_cards",
+        "question_art_someone_shows_look_cloth_tells",
+        "sfx_cloth_pull",
+        "music_bed_minus24db_no_regional_instrument"
+      ],
+      "production_notes": "الحركة تتوقّف عند الخطوة الثالثة ولا تُكمَل، وهذا شرط قبول وأهمّ قرار في السلسلة. والحلقة لا تُفهَم كاملة بلا إنسان حاضر، وinteraction_mode هنا guided بحقّ لا بالاسم. لا يُقال «اسأل أمك» ولا «شاهد فيديو»: يُقال «من يريك»، والتفصيل في دليل ولي الأمر. سؤال التوقّع له جوابان صحيحان، والمشهد التالي يقول ذلك صريحًا. الخيط أخطر عنصر في السلسلة: كل خيط ≤ 30 سم، ولا لفّ حول شيء، ولا بكرة، والخيوط تُعَدّ بعد النشاط، ويُرفَض أي أصل فيه خيط أطول أو ملفوف. الحزمة تُقرّ بحدّها برسالة صريحة وهي الحزمة الوحيدة في الكوكب التي تفعل ذلك. والسؤال الثاني لا يُطرَح قبل النشاط، فالجواب من التجربة لا من الحفظ. وأي ترجمة تُكمِل الخطوة الثالثة تُرفض كاملة."
+    },
+    {
+      "episode_number": 5,
+      "slug": "ep-05-grinding-stone",
+      "title_ar": "حجر الرحى",
+      "title_en": "The Grinding Stone",
+      "description_ar": "حجر وسطه أملس منخفض، وكيس طحين في مطبخك — حاجة واحدة، وطريقتان",
+      "duration_seconds": 280,
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "medium",
+      "is_free": 0,
+      "objective_code": "hist.change.then_and_now",
+      "new_words": ["طحين"],
+      "prerequisites": ["ep-01-clay-water-jar"],
+      "skills": ["observation"],
+      "mastery_criteria": "يطابق 4 أزواج من «قديمًا ↔ الآن»، ويسمّي فرقًا واحدًا وشيئًا واحدًا لم يتغيّر — في 3 محاولات من 4. ولا يُقبَل جواب «حياتنا أفضل»، ولا يُطلَب عدد سنوات، ولا يُقبَل عدد في وصف «حُكَّ كثيرًا».",
+      "parent_guide_ar": "يتعلّم طفلك أن يقارن كيف كانت حاجة واحدة تُلبّى قبل أن يُولَد جدّه وكيف تُلبّى اليوم، وأن يسمّي فرقًا واحدًا وشيئًا واحدًا لم يتغيّر. والحلقة تصف ولا تحكم: لن تسمعوا «حياتنا اليوم أفضل» ولا «كانوا يتعبون»، وستسمعون «الطريقة تغيّرت، والحاجة هي هي: خبز» — والحكم يعلّم الطفل أن ينظر إلى من قبله من فوق، والوصف يعلّمه أن ينظر إلى العمل. وأجمل دليل في السلسلة في هذه الحلقة: وسط الحجر أملس ومنخفض وحرفه خشن، وطفلكم يرى الاثنين في حجر واحد فيعرف بنفسه أن شيئًا حدث في الوسط. ولاحظوا جملتين متتاليتين: «لا نعرف كم سنة حُكّ» ثم «لكنّه حُكَّ كثيرًا. هذا نراه» — وهما أدقّ ما في السلسلة: نرفض العدد ونثبت الكثرة، لأن الكثرة مرئية في الحجر والعدد ليس كذلك. بند سلامة: لا حجر في النشاط مطلقًا — لا يُرفَع ولا يُحمَل ولا يُحَكّ حجر بحجر، فالحجارة ثقيلة تسحق الأصابع وحكّها يُطاير شظايا حادّة في العين، ولا مطرقة ولا هاون حجري ولا مطحنة ولا آلة كهربائية. وهذه آخر حلقة، وطفلكم الآن يعرف أن يسأل عن أيّ شيء قديم سؤالين: ماذا يخبرني؟ وماذا لا يخبرني؟",
+      "family_activity_ar": "من الخشن إلى الناعم — 12 دقيقة بإشراف بالغ وبلا حجر. المواد: وعاء بلاستيك متين واسع، ملعقة خشب، قطعة خبز جافّة أو بسكويت جاف، قليل من الطحين في صحن للمقارنة — ولا حجر ولا مطرقة ولا هاون. 1) ضعوا قطعة الخبز الجافّة في الوعاء. 2) يسحقها طفلك بظهر ملعقة الخشب بحركة دائرية بطيئة على قاع الوعاء. 3) يعدّ بصوته: كم دقيقة حتى تصير ناعمة؟ والوعاء على الطاولة لا في يده. 4) يقارن ما صنعه بالطحين في الصحن: أيّهما أنعم؟ 5) اسألوا: «وكم يحتاج كيس كامل؟» ودعوه يقدّر بلا رقم دقيق. 6) اسألوا: «ما الذي تغيّر بين حجر جدّ جدّك وكيسك؟». 7) اسألوا: «وما الذي لم يتغيّر؟» — والجواب: الحاجة. 8) لا يُقرَّب شيء من العين ولا الفم، ويُنظَّف كل شيء بعد النشاط. الخطوتان 6 و7 هما النشاط، والسحق تمهيد يجعل «الوقت والذراعين» محسوسًا. تنويع لطفل الثامنة: يرسم جدولًا بعمودين قديمًا والآن، ويضع فيه ثلاثة أشياء من بيته، ثم عمودًا ثالثًا: الحاجة.",
+      "safety_notes": "لا حجر في النشاط مطلقًا: لا يُرفَع ولا يُحمَل ولا يُحَكّ حجر بحجر. الحجارة ثقيلة تسحق الأصابع، وحكّها يُطاير شظايا في العين. والنشاط بوعاء بلاستيك وظهر ملعقة خشب وقطعة خبز جافّة أو بسكويت. لا مطرقة ولا هاون حجري ولا آلة كهربائية ولا مطحنة. الوعاء على الطاولة لا في اليد، ووعاء بلاستيك لا زجاج. بالغ حاضر، ولا يُقرَّب شيء من العين أو الفم.",
+      "questions": [
+        {
+          "id": "q1",
+          "type": "match_pairs",
+          "prompt_key": "ah.ep5.q1",
+          "prompt_text": "صِلْ ما كان قديمًا بما يقابله الآن",
+          "items": ["asset-then-ah5-grinding-stone", "asset-then-ah5-clay-jar", "asset-then-ah5-oil-lamp", "asset-then-ah5-hand-loom", "asset-now-ah5-flour-bag", "asset-now-ah5-fridge", "asset-now-ah5-electric-lamp", "asset-now-ah5-factory-shirt"],
+          "correct": [["asset-then-ah5-grinding-stone", "asset-now-ah5-flour-bag"], ["asset-then-ah5-clay-jar", "asset-now-ah5-fridge"], ["asset-then-ah5-oil-lamp", "asset-now-ah5-electric-lamp"], ["asset-then-ah5-hand-loom", "asset-now-ah5-factory-shirt"]]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "ah.ep5.q2",
+          "prompt_text": "ما الذي لم يتغيّر؟",
+          "items": ["asset-choice-ah5-the-need", "asset-choice-ah5-the-tool", "asset-choice-ah5-the-time"],
+          "correct": ["asset-choice-ah5-the-need"]
+        }
+      ],
+      "script_file": "ep-05-grinding-stone.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "art_neutral_surface_no_label_no_number",
+        "art_vocab_frame",
+        "art_predict_frame_no_timer",
+        "art_tells_frame",
+        "art_not_tells_frame",
+        "art_challenge_frame",
+        "art_grandparent_ladder_no_numbers",
+        "art_flour_bag_no_brand",
+        "art_grinding_stone_still_untouched_no_label",
+        "art_worn_centre_close",
+        "art_rough_edge_vs_smooth_centre",
+        "art_grain_and_flour",
+        "animation_stone_on_stone_no_child_hand_no_lifting",
+        "art_then_cards_four_series_objects",
+        "art_now_cards_four_modern_counterparts",
+        "question_art_need_tool_time",
+        "sfx_stone_scrape",
+        "music_bed_minus24db_no_regional_instrument"
+      ],
+      "production_notes": "لا حجر في يد طفل في أي لقطة ولا في أي نشاط: الحجر ثقيل يسحق، وحكّه يُطاير شظايا. و«وهو ثقيل» ثاني جملة في الحلقة، وبند السلامة في النصّ قبل التحذيرات. لقطة الوسط الأملس أصل إلزامي وهي الدليل الذي يستدلّ به الطفل، وبلا لقطتها لا يوجد استدلال. «لا نعرف كم سنة حُكّ» ثم «لكنّه حُكَّ كثيرًا» أدقّ موضع في السلسلة: نرفض العدد ونثبت الكثرة، وأي ترجمة تضع رقمًا تُرفض. لا حكم تفضيلي بين قديم وحديث في نصّ ولا صورة ولا حزمة. «وكل شيء جديد وقف على قديم» في هذه الحلقة وحدها وهي خاتمة السلسلة، ونظيرها «كل ابتكار جديد يقف على سابق» في مسار 9–12. وحزمة memory_flip مبرَّرة: أزواجها مقترنة بالمعنى لا متماثلة الصور، وهذا يخرجها من القاعدة 4 في ملف الأهداف لا يستثنيها منها. والسؤال الأول يراجع أشياء السلسلة الأربعة السابقة، وهو مقصود في الحلقة الأخيرة."
+    }
+  ],
+  "characters": [],
+  "games": [
+    {
+      "pack_id": "ah-old-or-new",
+      "title_ar": "قبل جدّي، أو في زماني",
+      "engine": "sort_bins",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "hist.object.older_than_me",
+      "linked_episode": 1,
+      "core_mechanic": "ستّة أشياء تُفرَز في سلّتين: «كان قبل أن يُولَد جدّي» و«صُنع في زماني».",
+      "gameplay_loop": "يُنطَق اسم السلّتين · تظهر ستّة أشياء بيت · الطفل يسحب كل شيء إلى سلّة · يُعرَض سُلَّم الأجداد في النهاية بلا أرقام.",
+      "levels": [
+        { "level": 1, "goal": "فرز 6 أشياء في سلّتين بلا أي رقم سنة", "items": 6, "distractors": 0 }
+      ],
+      "difficulty_progression": "مستوى واحد. ولا عنصر ملتبس في هذا المستوى: عناصر السلّة الأولى أشياء بيت واضحة، وعناصر الثانية أشياء يعرفها الطفل اليوم.",
+      "instructions_ar": "أيّ الأشياء كان قبل أن يُولَد جدّك؟",
+      "success_rule": "5 أشياء من 6 في السلّة الصحيحة.",
+      "failure_rule": "الشيء في السلّة الخطأ يرجع إلى موضعه بلا رسالة خطأ وبلا صوت سلبي.",
+      "scoring": "بلا مؤقّت وبلا نقاط.",
+      "educational_feedback": "أسماء السلّتين بلا أي رقم سنة، وهذا قيد الحزمة كما هو قيد الحلقة. والحزمة لا تستعمل محرّك timeline_map، فالسلسلة بلا خط زمن وبلا خريطة وهي غير محجوبة على الموجة 3.",
+      "content_pack": {
+        "bins": 2,
+        "bin_labels_ar": ["كان قبل أن يُولَد جدّي", "صُنع في زماني"],
+        "items_before": ["asset-item-ah-clay-jar", "asset-item-ah-grinding-stone", "asset-item-ah-hand-loom"],
+        "items_now": ["asset-item-ah-plastic-bottle", "asset-item-ah-fridge", "asset-item-ah-led-lamp"],
+        "year_numbers_forbidden": true,
+        "timer": false
+      }
+    },
+    {
+      "pack_id": "ah-hand-or-machine",
+      "title_ar": "يد أو آلة",
+      "engine": "logic_pattern",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "hist.object.made_by_hand",
+      "linked_episode": 2,
+      "core_mechanic": "ثلاثة صفوف من أربع قطع، والمطلوب تحديد الصفّ الذي لا تتطابق قطعه.",
+      "gameplay_loop": "تظهر ثلاثة صفوف · الطفل يلمس الصفّ الذي فيه اختلاف · يُعرَض تكبير على موضع الاختلاف.",
+      "levels": [
+        { "level": 1, "goal": "تحديد الصفّ غير المتطابق من ثلاثة", "items": 3, "distractors": 2 }
+      ],
+      "difficulty_progression": "مستوى واحد. الفرق بسيط ومرئي بالشكل أو الحجم، ولا يضيق أكثر من ذلك.",
+      "instructions_ar": "أيّ صفّ فيه قطع شكّلتها يد؟",
+      "success_rule": "تحديد الصفّ غير المتطابق.",
+      "failure_rule": "الاختيار الخاطئ يُظهِر تكبيرًا على الصفّ المختار ليرى أنه متطابق، بلا رسالة خطأ.",
+      "scoring": "بلا مؤقّت وبلا نقاط.",
+      "educational_feedback": "الفرق شكلي لا لوني، لعمى الألوان ولأن العلامة نفسها شكلية. والحزمة تقيس ملاحظة الاختلاف فقط: أثر الإبهام — وهو العلامة الثانية — لا تقيسه شاشة، ويُقاس بالنشاط وبملاحظة ولي الأمر.",
+      "content_pack": {
+        "rows": 3,
+        "items_per_row": 4,
+        "correct_row": "asset-row-ah2-handmade-varied",
+        "distractor_rows": ["asset-row-ah2-machine-identical", "asset-row-ah2-machine-identical-b"],
+        "difference_must_be_shape_not_colour": true,
+        "timer": false
+      }
+    },
+    {
+      "pack_id": "ah-what-it-tells",
+      "title_ar": "ماذا يخبرنا؟",
+      "engine": "match_pairs",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "hist.evidence.object_tells",
+      "linked_episode": 3,
+      "core_mechanic": "ثلاثة أزواج: جزء من الأداة ↔ ما يسنده. وبطاقتان زائدتان لا يسندهما شيء توضعان في موضع اسمه «لا نعرف».",
+      "gameplay_loop": "تظهر أجزاء الأداة وبطاقات ما تسنده · الطفل يصل الأزواج · البطاقتان الزائدتان توضعان في موضع «لا نعرف».",
+      "levels": [
+        { "level": 1, "goal": "وصل 3 أزواج ووضع بطاقتين في موضع «لا نعرف»", "items": 3, "distractors": 2 }
+      ],
+      "difficulty_progression": "مستوى واحد. البطاقتان الزائدتان ثابتتان: «ماذا كُتِب به» و«من كتب».",
+      "instructions_ar": "صِلْ ما في القلم بما يخبرنا به. وما لا يخبرنا به، ضعه في «لا نعرف».",
+      "success_rule": "الأزواج الثلاثة صحيحة، والبطاقتان الزائدتان في موضع «لا نعرف».",
+      "failure_rule": "وصل بطاقة زائدة بجزء من الأداة يفصلها بلطف بلا صوت سلبي، ويظهر تلميح بعد 25 ثانية بلا خصم.",
+      "scoring": "بلا مؤقّت وبلا نقاط.",
+      "educational_feedback": "البطاقتان الزائدتان هما القياس: من يحاول وصلهما بجزء من الأداة لم يفهم حدّ الدليل. وموضع «لا نعرف» إلزامي في كل لغة.",
+      "content_pack": {
+        "pairs": [
+          ["asset-part-ah3-hollow", "asset-tells-ah3-holds-ink"],
+          ["asset-part-ah3-angled-tip", "asset-tells-ah3-line-changes"],
+          ["asset-part-ah3-use-marks", "asset-tells-ah3-someone-used-it"]
+        ],
+        "unsupported_cards": ["asset-choice-ah3-what-was-written", "asset-choice-ah3-who-wrote"],
+        "dont_know_slot_ar": "لا نعرف",
+        "dont_know_slot_required": true,
+        "hint_after_seconds": 25,
+        "timer": false
+      }
+    },
+    {
+      "pack_id": "ah-thread-steps",
+      "title_ar": "خطوات النسج",
+      "engine": "sequence_order",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "hist.craft.skill_passed_on",
+      "linked_episode": 4,
+      "core_mechanic": "ثلاث بطاقات ترتَّب: شدّ الخيوط، ثم فوق، ثم تحت.",
+      "gameplay_loop": "تظهر ثلاث بطاقات مختلطة · الطفل يرتّبها · تُعرَض حركة بطيئة للخطوتين الأولى والثانية · ثم رسالة صريحة عن حدّ الحزمة.",
+      "levels": [
+        { "level": 1, "goal": "ترتيب ثلاث بطاقات نسج", "items": 3, "distractors": 0 }
+      ],
+      "difficulty_progression": "مستوى واحد. ولا مستوى ثانٍ في هذه الحزمة: الفعل لا يُتعلَّم من شاشة.",
+      "instructions_ar": "رتّب خطوات النسج.",
+      "success_rule": "البطاقات الثلاث بالترتيب الصحيح.",
+      "failure_rule": "الترتيب الخاطئ يعيد البطاقات بلا رسالة خطأ وبلا صوت سلبي.",
+      "scoring": "بلا مؤقّت وبلا نقاط.",
+      "educational_feedback": "الحزمة تعرض رسالة صريحة في نهايتها: «رتّبتَ الخطوات. والنسج يحتاج من يريك.» وهي الحزمة الوحيدة في الكوكب التي تُقرّ بحدّها، وذلك موافق لهدف الحلقة لا مخالف له.",
+      "content_pack": {
+        "cards": ["asset-card-ah4-stretch", "asset-card-ah4-over", "asset-card-ah4-under"],
+        "closing_message_ar": "رتّبتَ الخطوات. والنسج يحتاج من يريك.",
+        "closing_message_required": true,
+        "reading_direction_ar": "rtl",
+        "timer": false
+      }
+    },
+    {
+      "pack_id": "ah-then-and-now",
+      "title_ar": "قديمًا والآن",
+      "engine": "memory_flip",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "hist.change.then_and_now",
+      "linked_episode": 5,
+      "core_mechanic": "ثمانية بطاقات وأربعة أزواج، وكل زوج شيء قديم مع ما يقابله اليوم — والأزواج مقترنة بالمعنى لا متماثلة الصور.",
+      "gameplay_loop": "البطاقات مقلوبة · الطفل يقلب اثنتين · إن اقترنتا بالمعنى تبقيان مكشوفتين ويُنطَق الزوج · حتى تكتمل الأربعة.",
+      "levels": [
+        { "level": 1, "goal": "مطابقة 4 أزواج قديمًا/الآن", "items": 8, "distractors": 0 }
+      ],
+      "difficulty_progression": "مستوى واحد. والأزواج من أشياء السلسلة الخمسة لا من أشياء جديدة.",
+      "instructions_ar": "اقلب بطاقتين. وصِلْ ما كان قديمًا بما يقابله الآن.",
+      "success_rule": "الأزواج الأربعة مكتملة.",
+      "failure_rule": "البطاقتان غير المقترنتين تُقلَبان مرّة أخرى بلا صوت سلبي وبلا خصم، ولا حدّ لعدد المحاولات.",
+      "scoring": "بلا مؤقّت وبلا نقاط وبلا أي رسالة تفضيل بين القديم والحديث.",
+      "educational_feedback": "حزمة memory_flip بلا هدف مرفوضة بالقاعدة 4 في ملف الأهداف، وهذه ليست كذلك: أزواجها مقترنة بالمعنى لا متماثلة الصور — حجر رحى مع كيس طحين، وجرّة مع ثلّاجة — فالمطابقة نفسها هي القياس. ولو كانت البطاقات متماثلة لصارت ترفيهًا لا قياسًا.",
+      "content_pack": {
+        "pairs": [
+          ["asset-then-ah5-grinding-stone", "asset-now-ah5-flour-bag"],
+          ["asset-then-ah5-clay-jar", "asset-now-ah5-fridge"],
+          ["asset-then-ah5-oil-lamp", "asset-now-ah5-electric-lamp"],
+          ["asset-then-ah5-hand-loom", "asset-now-ah5-factory-shirt"]
+        ],
+        "pairs_are_semantic_not_identical": true,
+        "preference_message_forbidden": true,
+        "timer": false
+      }
+    }
+  ],
+  "books": [
+    {
+      "slug": "ashyaa-book-what-the-thing-says",
+      "title_ar": "ماذا يخبرنا الشيء؟",
+      "type": "picture_book",
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "description_ar": "كتاب صور بلا شخصيات: في كل صفحتين شيء واحد من أشياء السلسلة، وصفحة تقول ما يخبرنا به، وصفحة تقول ما لا يخبرنا به. وفيه سُلَّم الأجداد مرّة واحدة، وبلا رقم واحد في الكتاب كلّه.",
+      "objective_code": "hist.evidence.object_tells",
+      "pages": [
+        { "page": 1, "role": "غلاف", "text_ar": "أشياء لها حكاية.", "illustration_brief": "خمسة أشياء على سطح محايد: جرّة، ومصباح مُطفَأ، وعود قصب، وقطعة قماش، وحجر. بلا لافتة ولا رقم ولا خريطة." },
+        { "page": 2, "role": "سُلَّم الأجداد", "text_ar": "أنا، وأبي، وجدّي، وجدّ جدّي.", "illustration_brief": "أربع درجات صاعدة، وفي كل درجة شخص مبسّط بلا ملامح فردية. بلا أي رقم." },
+        { "page": 3, "role": "الجرّة", "text_ar": "جرّة كانت قبل أن يُولَد جدّك.", "illustration_brief": "الجرّة ساكنة على سطح محايد، وسطحها خشن مرئي. لا لافتة متحف." },
+        { "page": 4, "role": "يخبرنا", "text_ar": "تخبرنا أن أحدًا احتاج ماءً باردًا.", "illustration_brief": "مقطع مبسّط لجدار الجرّة: نقاط ماء تخرج، وبخار خفيف." },
+        { "page": 5, "role": "لا يخبرنا", "text_ar": "ولا تخبرنا من شرب منها.", "illustration_brief": "الجرّة وحدها، وثلاث علامات استفهام بلا أجوبة. لا وجه." },
+        { "page": 6, "role": "المصباح", "text_ar": "مصباح مُطفَأ، وفيه أثر إبهام.", "illustration_brief": "مصباح زيت غير مُضاء، ولقطة مكبّرة على انخفاض الإبهام. بلا نار ولا شعلة ولا دخان." },
+        { "page": 7, "role": "علامتان", "text_ar": "أثر إبهام، واختلاف. والواحدة لا تكفي.", "illustration_brief": "مصباحان متشابهان غير متطابقين وكلاهما مُطفَأ، وبجانبهما كوبان من مصنع متطابقان." },
+        { "page": 8, "role": "القلم", "text_ar": "عود قصب، طرفه مقطوع مائلًا.", "illustration_brief": "عود قصب ساكن، ومقطع عرضي يُظهِر أنه مجوّف. بلا أي أداة قطع في الصفحة." },
+        { "page": 9, "role": "لا يخبرنا", "text_ar": "وهذه الورقة فارغة.", "illustration_brief": "العود بجانب ورقة فارغة تمامًا. لا حرف واحد على الورقة." },
+        { "page": 10, "role": "القماش", "text_ar": "خيط فوق خيط، وتحت خيط.", "illustration_brief": "لقطة قريبة على تقاطعات غير متساوية، ومنسج خشبي بجانبها. لا خيط طويل ولا ملفوف." },
+        { "page": 11, "role": "من علّمه", "text_ar": "لكنّ أحدًا علّمه. هذا نعرفه.", "illustration_brief": "يدان مبسّطتان: يد تريد وأخرى تنظر. بلا وجوه." },
+        { "page": 12, "role": "الحجر", "text_ar": "وسطه أملس. والحكّ الكثير فعل هذا.", "illustration_brief": "حجر مسطّح، وسطه أملس منخفض وحرفه خشن. الحجر على السطح ولا يمسّه أحد." },
+        { "page": 13, "role": "قديمًا والآن", "text_ar": "الطريقة تغيّرت. والحاجة هي هي.", "illustration_brief": "الحجر وكيس طحين بلا علامة تجارية، بحجم متساوٍ وبلا أي علامة تفضيل بينهما." },
+        { "page": 14, "role": "خاتمة", "text_ar": "نرى الشيء، ولا نرى صاحبه.", "illustration_brief": "الأشياء الخمسة على سطح محايد، وبجانبها موضع فارغ. بلا نصّ مطبوع داخل الرسم." }
+      ],
+      "activities": [
+        "بعد الصفحة 2: يسمّي الطفل جدّه بالاسم، ويسأل من كان جدّ جدّه",
+        "بعد الصفحة 5: يذكر شيئًا واحدًا لا تخبرنا به الجرّة",
+        "بعد الصفحة 9: ينظر إلى قلمه ويسأل ما الذي يخبرنا به",
+        "بعد الصفحة 13: يبحث في بيته عن شيء تغيّرت طريقته وحاجته هي هي"
+      ],
+      "illustration_requirements": "بلا شخصيات ولا وجوه بملامح فردية — الكتاب knowledge كالسلسلة. بلا أي رقم سنة أو قرن في الكتاب كلّه. بلا خريطة وبلا خط زمن. بلا لافتة متحف ولا بطاقة قطعة ولا رقم جرد. بلا اسم مكان ولا شعب. بلا نار ولا شعلة ولا دخان، والمصباح غير مُضاء. بلا سكّين ولا شفرة ولا مقصّ. بلا خيط أطول من قصر مرئي ولا ملفوف حول شيء. بلا حجر يُرفَع أو في يد. بلا فلتر أصفر «قديم» مبالَغ. بلا مقارنة تفضيلية بين قديم وحديث. لا يوجد أي رسم منتَج — كلها مطلوبة."
+    }
+  ],
+  "projects": [
+    {
+      "slug": "ashyaa-project-oldest-thing-in-our-home",
+      "title_ar": "أقدم شيء في بيتنا",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "hist.object.older_than_me",
+      "supervision_level": "recommended",
+      "description_ar": "بحث حقيقي في البيت عن شيء أقدم من والد الطفل، وسؤال إنسان عنه لا تخمينه. ثم بطاقة يكتبها الطفل بعمودين: ماذا يخبرنا الشيء، وماذا لا يخبرنا.",
+      "materials": [
+        "بطاقة ورق سميك بحجم الكفّ أو أكبر",
+        "قلم",
+        "شيء واحد من البيت، يختاره الطفل ويحمله بالغ إن كان ثقيلًا أو قابلًا للكسر",
+        "ظرف لحفظ البطاقات"
+      ],
+      "preparation": "قرّروا مع طفلكم من في العائلة يمكن أن يُسأل: أب أو أم أو جدّ أو جدّة أو قريب. واتّفقوا على أن جواب «لا نعرف» جواب صحيح ومقبول. وأبعدوا عن متناوله أي شيء ثقيل أو زجاجي أو حادّ.",
+      "steps": [
+        "1. يبحث طفلك في البيت عن شيء يظنّ أنه أقدم من أبيه.",
+        "2. لا يحمل شيئًا ثقيلًا ولا فخّارًا ولا زجاجًا — تحملونه أنتم إن لزم، أو ينظر إليه في موضعه.",
+        "3. ينظر إلى الشيء دقيقة كاملة بلا كلام، ويبحث عن أثر يد أو أثر استعمال.",
+        "4. يكتب في العمود الأول: ماذا يخبرنا الشيء؟ — وكل جملة يجب أن يشير إلى شيء يراه فيه.",
+        "5. يكتب في العمود الثاني: وماذا لا يخبرنا؟",
+        "6. يسأل إنسانًا في العائلة: من أين جاء هذا الشيء؟ ولا يخمّن.",
+        "7. يكتب الجواب — وإن كان «لا نعرف»، يكتبها كما هي.",
+        "8. يضع البطاقة في الظرف، ويكرّر الأمر بشيء آخر بعد أسبوع."
+      ],
+      "safety_notes": "لا يحمل الطفل شيئًا ثقيلًا ولا فخّارًا ولا زجاجًا ولا حجرًا — البالغ يحمله أو ينظر إليه في موضعه. لا يفتح صناديق مغلقة ولا أدراجًا عالية ولا يصعد على كرسي. لا شيء حادّ ولا صدئ ولا مكسور. لا شيء يوضع في الفم. لا يدخل مخزنًا ولا سطحًا ولا مكانًا مغلقًا وحده. بالغ في المكان.",
+      "expected_result": "بطاقة بعمودين لشيء حقيقي من البيت، وفيها جواب إنسان عن مصدره — أو «لا نعرف» مكتوبة صريحة.",
+      "explanation_ar": "هذا هو العمل التاريخي بعمر 6–8: أن تنظر إلى شيء، وتفصل ما يسنده عمّا لا يسنده، وتسأل إنسانًا لا تخمّن. ولا يحتاج الطفل تاريخًا ولا اسم حضارة ليفعل ذلك. و«لا نعرف» مكتوبة في البطاقة أنفع من جواب مخترع، وهي نفس ما تعلّمه الحلقات الخمس.",
+      "parent_involvement": "احملوا عنه كل ما هو ثقيل أو قابل للكسر. ولا تصحّحوا عموده الأول: إن كتب شيئًا لا يسنده الشيء، اسألوا «وما الذي في الشيء يخبرك بهذا؟» ولا تقولوا إنه خطأ. ولا تحوّلوا أي جواب إلى عدد سنوات.",
+      "related_episode": 1
+    },
+    {
+      "slug": "ashyaa-project-teach-one-step",
+      "title_ar": "علّمني خطوة واحدة",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "hist.craft.skill_passed_on",
+      "supervision_level": "recommended",
+      "description_ar": "نشاط في دورين: يتعلّم الطفل خطوة يدوية واحدة من إنسان، ثم يعلّمها إنسانًا آخر. وهو أقصر طريق ليفهم أن المهارة تُنقَل ولا تُقرَأ.",
+      "materials": [
+        "بطاقة كرتون سميك بشقوق يجهّزها بالغ",
+        "6 خيوط، طول كل واحد ≤ 30 سم، يقصّها بالغ مسبقًا",
+        "بطاقة ورق وقلم لتسجيل من علّم من"
+      ],
+      "preparation": "يقصّ البالغ الخيوط ويجهّز البطاقة ويمدّ ثلاثة خيوط مشدودة قليلًا بين الشقوق. الطفل لا يقصّ شيئًا ولا يمسك مقصًّا. اعزلوا المكان عن أي بكرة خيط أو خيط طويل.",
+      "steps": [
+        "1. يريه بالغ الخطوة الأولى بيده: خيط يمرّ فوق الخيط الأول. مرّة واحدة فقط.",
+        "2. يجرّب الطفل ويكمل بنفسه: تحت الثاني، ثم فوق الثالث.",
+        "3. يخطئ في التبادل، ولا يُصحَّح بيد أحد — تُعاد له الخطوة الأولى فقط.",
+        "4. بعد أن يكمل صفًّا، يُسأل: هل كان يستطيع هذا بالنظر إلى قميصه وحده؟",
+        "5. ثم الدور الثاني: يعلّم هو إنسانًا آخر — أخًا أصغر أو والدًا أو صديقًا.",
+        "6. يريه الخطوة الأولى بيده، ثم يصمت.",
+        "7. يكتب على البطاقة: من علّمني، ومن علّمتُه.",
+        "8. تُجمَع الخيوط كلها وتُعَدّ وتُرفَع بعيدًا، ولا يُترَك خيط واحد."
+      ],
+      "safety_notes": "كل خيط ≤ 30 سم، ولا يُلَفّ حول عنق ولا يد ولا إصبع ولا كرسي ولا أي شيء، ولا لعبًا. لا بكرة خيط كاملة في متناول الطفل. لا مقصّ ولا إبرة ولا دبّوس في يده — البالغ يقصّ مسبقًا. لا منسج حقيقي فيه أجزاء متحرّكة أو أوتاد بارزة. بالغ حاضر طول النشاط. وتُجمَع الخيوط وتُعَدّ بعد النشاط وتُرفَع بعيدًا، ولا يُترَك خيط واحد على الأرض.",
+      "expected_result": "صفّ منسوج غير متساوٍ التقاطعات، وبطاقة مكتوب عليها من علّم من.",
+      "explanation_ar": "الشيء لا يعلّم كيف صُنع. والطفل يكتشف ذلك بيده: ينظر إلى قماش، ثم لا يستطيع أن ينسج مثله بالنظر وحده، ثم يريه أحد خطوة واحدة فيكمل. والدور الثاني — أن يعلّم هو — هو الذي يثبّت المعنى: المهارة انتقلت مرّتين في نشاط واحد، ومرّ بها هو في الاتجاهين.",
+      "parent_involvement": "أروه خطوة واحدة فقط، ثم اصمتوا. ولا تصحّحوا بأيديكم. ولا تحتاجون أن تعرفوا النسج. واحرصوا على بند الخيط: كل خيط قصير، ولا لفّ حول شيء، وتُعَدّ الخيوط بعد النشاط.",
+      "related_episode": 4
+    }
+  ],
+  "open_questions": [
+    "فهرس كوكب تاريخ يصف سلسلة kids بأنها «مقترحة لا مقرّرة». حُدِّث الفهرس ليصفها مقرّرة ومكتوبة، والقرار التحريري نفسه يحتاج توقيع صاحب الكوكب. وغياب preschool بقي كما هو: قرار موثَّق لا نقص، ولم نصنع سلسلة له.",
+    "بوابة الاعتماد في هذا الكوكب «مراجع تاريخي معتمد — مانع مطلق». وهذه السلسلة بلا تواريخ وبلا أسماء حضارات وبلا نسبة قطع، فأكثر دعاواها وصف مادّة لا دعوى تاريخية. والمراجعة التي تحتاجها أقرب إلى مراجع ثقافة مادّية منها إلى مراجع تاريخ سياسي. هل تُقبَل مراجعة ثقافة مادّية بديلًا عن البوابة المطلقة لهذه السلسلة وحدها؟ قرار يحتاج صاحب الكوكب، ولم نفترض جوابًا.",
+    "أهداف hist.object.* وhist.evidence.* وhist.craft.* وhist.change.* جديدة، وملف الأهداف 90-learning-objectives.md يصف قسم تاريخ بأنه «7 أهداف · 5 حلقات · junior». يحتاج تحديثًا يشمل الخمسة الجديدة والسلسلة الجديدة.",
+    "قيمة skill في الأهداف: observation في أربعة، وnull في hist.craft.skill_passed_on — ولا قيمة في القائمة المسموحة تدلّ على نقل مهارة أو تعلّم من إنسان. يحتاج قرارًا في المخطط.",
+    "السلسلة بلا خريطة وبلا خط زمن، فهي غير محجوبة على محرّك timeline_map ولا على أصل asset-jc-basemap-neutral المانع. وهذا يجعلها أول محتوى قابل للنشر في هذا الكوكب قبل الموجة 3 — إن سقطت بوابة المراجعة. يحتاج تأكيدًا من مالك خطّة النشر.",
+    "الحلقة 4 حلقة لا تُكمِل شرحها عن قصد، وتتوقّف عند الخطوة الثالثة. وهذا قرار تحريري قد يُقرأ كنقص إنتاجي، وقد يُطلَب «إصلاحه» في المونتاج أو في الترجمة. مسجَّل في معايير القبول وفي عقد التوطين، ويحتاج توقيعًا صريحًا من مراجع تحريري ليُحفَظ.",
+    "أشياء السلسلة الخمسة اختيرت لأنها أشياء بيت ومألوفة في أسواق النشر الأولى. واستبدال أيّ منها في سوق آخر يحتاج قرار مراجعة سوق، والشرط أن يكون البديل شيء بيت لا شيء نادر ولا شيء له دلالة دينية أو سياسية.",
+    "لا يوجد مراجع سلامة أطفال متعاقد عليه، وبند طول الخيط (≤ 30 سم) في الحلقة 4 اختيار تحريري متحفّظ يحتاج مطابقة مع معيار سلامة معتمد."
+  ],
+  "fact_checks_required": [
+    "أوصاف المادّة في الحلقات الخمس: أن الفخّار غير المطليّ ينفذ منه الماء قليلًا إلى سطحه الخارجي وأن تبخّره يبرّد ما داخله؛ وأن مصابيح الزيت تعمل بزيت وفتيل يحمل الزيت إلى أعلى؛ وأن ساق القصب مجوّفة وأن الطرف المقطوع مائلًا يُنتج خطوطًا مختلفة السماكة؛ وأن النسج إمرار خيط فوق وتحت خيوط مشدودة وأن المنسج إطار يشدّها؛ وأن سحق الحبّ بين حجرين يُنتج طحينًا. كلها أوصاف مادّية غير خلافية، وكلها موقوفة على توقيع مراجع ثقافة مادّية.",
+    "آثار الاستعمال والصناعة اليدوية: أن الفخّار المشكَّل باليد يحمل أثر الأصابع والضغط؛ وأن قطعتين مشكَّلتين باليد لا تتطابقان تمامًا؛ وأن القماش المنسوج باليد غير متساوي التقاطعات؛ وأن الحكّ الكثير يجعل موضعه من الحجر أملس ومنخفضًا. هذه هي الدعاوى التي يُبنى عليها الاستدلال في السلسلة، وتحتاج توقيعًا أدقّ من غيرها.",
+    "أن جرار الفخّار ومصابيح الزيت وأقلام القصب والمناسج اليدوية وأحجار الرحى كانت أشياء بيت شائعة، وأن بعضها ما زال يُستعمَل اليوم. مكتوبة كلها بصيغة «أشياء مثلها كانت في بيوت كثيرة» بلا مكان ولا زمن ولا نسبة، وتحتاج تأكيدًا أن الصيغة كافية بلا تحديد.",
+    "لا يوجد في السلسلة أي دعوى بتاريخ، ولا نسبة قطعة إلى مكان أو شعب أو شخص، ولا دعوى أوّلية. وكل ما لا نملك سنده مكتوب بصيغة «لا نعرف» صريحة، وهي مسجّلة في جدول فحص الحقائق في كل حلقة. والمطلوب من المراجع أن يتحقّق من الغياب أيضًا لا من الحاضر فقط: أن لا سنة ولا قرن ولا اسم حضارة تسرّب إلى نصّ أو صورة أو ترجمة."
+  ]
+}

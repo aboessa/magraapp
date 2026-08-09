@@ -41,10 +41,21 @@ if (adminChunk) {
   )
 }
 
-// صفحة الهبوط لا تنادي الـAPI، فلا يجب أن تحمل عميل الـAPI
+// صار للهبوط نداء واحد: نموذج الشراكات. فيحتاج قاعدة الـAPI،
+// لكن يجب ألا يسحب عميل اللوحة (lib/api.ts) ومعه ترويسات الإدارة،
+// وعلامة ذلك هي مفتاح جلسة المسؤول.
 if (landingEntry) {
   const landingSource = readFileSync(landingEntry, 'utf8')
-  check('حزمة الهبوط لا تحمل عميل الـAPI', !landingSource.includes('api.majarra.app'))
+  check(
+    'حزمة الهبوط تحمل قاعدة الـAPI لنموذج الشراكات',
+    landingSource.includes('api.majarra.app/api/v1'),
+    'من .env.production',
+  )
+  check(
+    'حزمة الهبوط لا تسحب عميل اللوحة',
+    !landingSource.includes('majarra-admin-token'),
+  )
+  check('حزمة الهبوط تحمل مسار الشراكات', landingSource.includes('/partnerships'))
 }
 
 // كل صورة يشير إليها السورس موجودة في المخرجات

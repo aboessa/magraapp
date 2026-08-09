@@ -1,0 +1,837 @@
+{
+  "planet_id": "abjad",
+  "category_id": "category-language",
+  "series": {
+    "slug": "abni-kalima",
+    "title_ar": "ابني كلمة",
+    "title_en": "Build a Word",
+    "type": "continuous",
+    "age_min": 6,
+    "age_max": 8,
+    "track": "kids",
+    "reading_level": "emerging",
+    "interaction_mode": "guided",
+    "supervision_level": "recommended",
+    "difficulty": "medium",
+    "production_level": "limited_2d",
+    "price_tier": "family",
+    "is_free": 0,
+    "description_ar": "رَيّان يعمل في ورشة الكلمات، ويبني في كل حلقة درجة واحدة على السلّم بين معرفة أصوات الحروف وقراءة ثلاث جمل بفهم وسلاسة.",
+    "learning_goals": [
+      "يصل مقطعين منطوقين في كلمة واحدة صحيحة",
+      "يبني كلمة مكتوبة من حروف يعرفها بشكل الحرف الصحيح في موضعه",
+      "يجمع الكلمات في عائلة واحدة بالمعنى المشترك ثم بالحروف الثلاثة المشتركة",
+      "يقرأ جملة قصيرة ويجيب عن سؤال عن معناها",
+      "يقرأ بنبرة تناسب النقطة وعلامة الاستفهام",
+      "يقرأ مقطعًا من ثلاث جمل بلا تهجئة حرف بحرف"
+    ],
+    "languages": ["ar"],
+    "purpose": "كوكب أبجد يخدم اليوم مسار 3–5 بسلسلة لونا (أصوات الحروف والوعي الصوتي) ومسار 9–12 بقواعد الإملاء، ولا يخدم مسار 6–8 بشيء. هذا يترك فراغًا حقيقيًا: الطفل الذي أنهى لونا يعرف الأصوات، والطفل الذي يدخل مسار 9–12 مفترض أنه يقرأ جملًا كاملة، ولا جسر بينهما. هذه السلسلة هي الجسر بست درجات متعاقبة: وصل المقاطع، بناء الكلمة المكتوبة، عائلة الكلمات، قراءة الجملة بفهم، الترقيم كنبرة، ثم الطلاقة على مقطع من ثلاث جمل. وهي `continuous` لأن كل حلقة تستخدم مخرج ما قبلها حرفيًا، ولأن ضعف الشخصية (التسرّع والخجل من إعادة القراءة) يحتاج قوسًا من ست حلقات ليتحول إلى روتين تحقّق يتبنّاه الطفل.",
+    "safety_notes": null
+  },
+  "season": {
+    "season_number": 1,
+    "title_ar": "الموسم الأول",
+    "watch_order": "sequential"
+  },
+  "objectives": [
+    {
+      "code": "lang.syllable.blend",
+      "title_ar": "وصل مقطعين في كلمة",
+      "criteria_ar": "يصل مقطعين في كلمة صحيحة في 4 من 5 كلمات بلا مساعدة، ويشير إلى الشيء الذي تعنيه الكلمة في 4 من 5.",
+      "skill": "reading",
+      "age_min": 6,
+      "age_max": 8
+    },
+    {
+      "code": "lang.word.build",
+      "title_ar": "بناء كلمة مكتوبة من حروف معروفة",
+      "criteria_ar": "يبني 4 من 5 كلمات ثلاثية بترتيب صحيح وبشكل الحرف الصحيح في موضعه، بلا مساعدة.",
+      "skill": "writing",
+      "age_min": 6,
+      "age_max": 8
+    },
+    {
+      "code": "lang.vocab.word_family",
+      "title_ar": "تمييز عائلة الكلمات",
+      "criteria_ar": "يصنّف 5 من 6 كلمات في عائلتين صحيحتين، ويستبعد الشبيه الكاذب، ويقول سببًا صحيحًا واحدًا للاستبعاد.",
+      "skill": "reading",
+      "age_min": 6,
+      "age_max": 8
+    },
+    {
+      "code": "lang.sentence.read",
+      "title_ar": "قراءة جملة بفهم معناها",
+      "criteria_ar": "يقرأ 4 من 5 جمل قراءة صحيحة، ويجيب عن سؤال معنى واحد لكل جملة إجابة صحيحة، بلا مساعدة.",
+      "skill": "reading",
+      "age_min": 6,
+      "age_max": 8
+    },
+    {
+      "code": "lang.reading.punctuation",
+      "title_ar": "قراءة النقطة وعلامة الاستفهام بنبرتهما",
+      "criteria_ar": "يحدّد نوع الجملة (خبر أم سؤال) في 5 من 5، ويقرأ 4 من 5 جمل بالنبرة الصحيحة: نزول وتوقّف عند النقطة، وارتفاع في نهاية السؤال.",
+      "skill": "reading",
+      "age_min": 7,
+      "age_max": 8
+    },
+    {
+      "code": "lang.reading.fluency",
+      "title_ar": "قراءة مقطع من ثلاث جمل بسلاسة",
+      "criteria_ar": "يقرأ مقطعًا من ثلاث جمل بلا تهجئة أي كلمة حرفًا حرفًا، مع وقفة مسموعة عند النقاط الثلاث، وبتصحيح ذاتي واحد كحدّ أقصى. لا يُقاس الزمن.",
+      "skill": "reading",
+      "age_min": 7,
+      "age_max": 8
+    }
+  ],
+  "episodes": [
+    {
+      "episode_number": 1,
+      "slug": "ep-01-two-syllables",
+      "title_ar": "مَقطعان وكلمة",
+      "title_en": "Two Syllables, One Word",
+      "description_ar": "يسمع الطفل مقطعين منفصلين ويصلهما ليصنع كلمة واحدة مفهومة.",
+      "duration_seconds": 270,
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "easy",
+      "is_free": 1,
+      "objective_code": "lang.syllable.blend",
+      "new_words": ["مَقطع", "نَصِل", "شريط الكلمة"],
+      "prerequisites": [],
+      "skills": ["reading", "memory"],
+      "mastery_criteria": "يصل مقطعين في كلمة صحيحة في 4 من 5 كلمات بلا مساعدة، ويشير إلى الشيء الذي تعنيه الكلمة في 4 من 5. الوصل الصحيح بلا معنى لا يُحتسب إتقانًا.",
+      "parent_guide_ar": "طفلك يتعلّم وصل المقاطع: يسمع «قَ… لَم» فيقول «قَلَم». معرفة أصوات الحروف لا تُنتج قراءة وحدها، والوصل هو الجسر. الخط الأحمر: لا تُظهر له الكلمة مكتوبة قبل أن ينطقها، فالمكتوب أولًا يجعله يحفظ الشكل ويستغني عن الوصل. ساعده بقول كلمات على مقطعين في أي وقت مع التصفيق، وابدأ باسمه. إن سمع المقطعين ولم يصلهما بعد تدريب متكرر في السابعة فاستشر مختص نطق وسمع؛ التطبيق لا يشخّص.",
+      "family_activity_ar": "مشي المقاطع — 7 دقائق: قفا في أول الممر، وقل كلمة على مقطعين، ويخطو طفلك خطوة لكل مقطع ثم يقول الكلمة كاملة عند الوقوف. بدّلا الأدوار وأخطئ عمدًا مرة ليصحّح لك. بلا فائز وبلا وقت. تنويع للأكبر: كلمات من ثلاثة مقاطع.",
+      "safety_notes": null,
+      "questions": [
+        {
+          "id": "q1",
+          "type": "match_pairs",
+          "prompt_key": "abk.ep1.q1",
+          "prompt_text": "استمع للمقطعين، ثم اختر الشيء الذي تعنيه الكلمة.",
+          "items": ["syl.qa_lam", "syl.ma_tar", "syl.a_sal", "syl.wa_raq"],
+          "correct": [
+            ["syl.qa_lam", "asset-obj-pen"],
+            ["syl.ma_tar", "asset-obj-rain"],
+            ["syl.a_sal", "asset-obj-honey"],
+            ["syl.wa_raq", "asset-obj-paper"]
+          ]
+        },
+        {
+          "id": "q2",
+          "type": "count_quantity",
+          "prompt_key": "abk.ep1.q2",
+          "prompt_text": "كم مقطعًا في هذه الكلمة؟ صفّق ثم اختر.",
+          "items": ["syl.ja_mal"],
+          "correct": [2]
+        }
+      ],
+      "script_file": "ep-01-two-syllables.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "character_design_rayyan",
+        "background_abjad_workshop",
+        "word_strip_and_blocks_art",
+        "object_art_pen_rain_honey_paper_camel",
+        "syllable_audio_stems_separate",
+        "music_bed_workshop",
+        "sfx_block_slide",
+        "sfx_rain_soft",
+        "arabic_language_review",
+        "pedagogy_review"
+      ],
+      "production_notes": "الكلمة المكتوبة ممنوعة في كل إطار قبل 4:10 — شرط قبول لا تفضيل. كل مقطع يُسجَّل منفصلًا؛ تقطيع تسجيل كامل يُنتج مقاطع غير طبيعية. المطر خفيف بلا رعد ولا برق. توهج المكعب نبضة واحدة 500ms ولا وميض > 3Hz. الحلقة مجانية فتُفهم بالصوت وحده وبالبصر وحده."
+    },
+    {
+      "episode_number": 2,
+      "slug": "ep-02-build-a-word",
+      "title_ar": "أبني كلمة بحروفي",
+      "title_en": "I Build a Word",
+      "description_ar": "يبني الطفل كلمة مكتوبة من حروف يعرفها، بشكل الحرف الصحيح في موضعه.",
+      "duration_seconds": 270,
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "easy",
+      "is_free": 0,
+      "objective_code": "lang.word.build",
+      "new_words": ["موضع الحرف", "يتصل", "ينفصل"],
+      "prerequisites": ["abk-ep-01"],
+      "skills": ["writing", "reading"],
+      "mastery_criteria": "يبني 4 من 5 كلمات ثلاثية بترتيب صحيح وبشكل الحرف الصحيح في موضعه، بلا مساعدة. الترتيب الصحيح بشكل حرف خاطئ يُحتسب محاولة لا إتقانًا.",
+      "parent_guide_ar": "طفلك يحوّل الأصوات إلى حروف مرتّبة، ويختار شكل الحرف المناسب لموضعه — وهذه أول مرة يتعامل مع أشكال الحرف العربي بوعي. الخط الأحمر: لا تعلّمه اسم الحرف بدلًا من صوته أثناء البناء؛ «قاف + لام + ميم» لا تُنتج «قلم» في ذهنه. اكتبا كلمات قصيرة معًا وأشِر إلى موضع كل حرف، وصحّح بإعادة البناء لا بالمسح. عكس الترتيب مرة أو مرتين طبيعي؛ العكس الدائم بعد تدريب طويل يستحق استشارة مختص تعلّم. التطبيق لا يشخّص.",
+      "family_activity_ar": "صندوق الحروف — 10 دقائق: اكتبا حروفًا على أوراق صغيرة، كل حرف بأشكاله الثلاثة (أول، وسط، آخر). يسحب طفلك ثلاث ورقات ويبني كلمة، ويسأل نفسه عند كل حرف: في أي موضع هو؟ بدّلا الأدوار وضع شكلًا خاطئًا عمدًا ليصحّح ويشرح. تنويع للأكبر: أضيفا حروف الفراغ الصحيح (ا د ذ ر ز و).",
+      "safety_notes": null,
+      "questions": [
+        {
+          "id": "q1",
+          "type": "sequence_order",
+          "prompt_key": "abk.ep2.q1",
+          "prompt_text": "رتّب الحروف لتبني كلمة «قلم».",
+          "items": ["glyph.lam_medial", "glyph.qaf_initial", "glyph.mim_final"],
+          "correct": ["glyph.qaf_initial", "glyph.lam_medial", "glyph.mim_final"]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "abk.ep2.q2",
+          "prompt_text": "أي شكل للحرف يصلح في أول الكلمة؟",
+          "items": ["glyph.jim_isolated", "glyph.jim_initial", "glyph.jim_final"],
+          "correct": ["glyph.jim_initial"]
+        }
+      ],
+      "script_file": "ep-02-build-a-word.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "glyph_set_positional_forms",
+        "licensed_arabic_font_redistribution_rights",
+        "letter_box_and_strip_art",
+        "sfx_block_slide",
+        "sfx_strip_connect",
+        "arabic_language_review",
+        "pedagogy_review"
+      ],
+      "production_notes": "كل أصل حرف هو شكل في موضع محدد؛ عرض شكل منفرد داخل كلمة موصولة خطأ تعليمي يرفض القبول. الفراغ بعد «و» يُرسم فراغًا طبيعيًا لا علامة خطأ. الحرف يُنطق بصوته في كل موضع إلا ذكر اسم «قاف» مرة واحدة في 4:12. خطأ رَيّان مرة واحدة ويصلحه هو. الخط العربي يجب أن يكون مرخّصًا لإعادة التوزيع وأن تتوفر فيه أشكال الحرف الأربعة."
+    },
+    {
+      "episode_number": 3,
+      "slug": "ep-03-word-family",
+      "title_ar": "عائلة الكلمات",
+      "title_en": "The Word Family",
+      "description_ar": "يجمع الطفل كلمات تتشارك المعنى وثلاثة حروف في ترتيب واحد، ويستبعد الشبيه الكاذب.",
+      "duration_seconds": 270,
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "medium",
+      "is_free": 0,
+      "objective_code": "lang.vocab.word_family",
+      "new_words": ["عائلة الكلمات", "قريب المعنى", "شبيه لا قريب"],
+      "prerequisites": ["abk-ep-01", "abk-ep-02"],
+      "skills": ["reading", "observation"],
+      "mastery_criteria": "يصنّف 5 من 6 كلمات في عائلتين صحيحتين، ويستبعد الشبيه الكاذب، ويقول سببًا واحدًا صحيحًا للاستبعاد (المعنى أو ترتيب الحروف). التصنيف الصحيح بلا تعليل يُحتسب محاولة لا إتقانًا.",
+      "parent_guide_ar": "طفلك يتعلّم أن العربية تبني عشرات الكلمات من ثلاثة حروف واحدة، فمن يعرف «كِتاب» ويفهم العائلة يقرأ «مَكتَبة» و«كاتِب» أسرع. الخط الأحمر: لا تسمح بالتصنيف بالشكل؛ كلمتان تتشاركان حرفين ليستا عائلة، والمعيار هو المعنى القريب مع الحروف الثلاثة بالترتيب نفسه. عند أي كلمة جديدة اسأله: هل تعرف كلمة من عائلتها؟ فهم العائلة ينمو حتى العاشرة، ولا تشرح كلمة «جذر» ولا قواعد الصرف الآن.",
+      "family_activity_ar": "شجرة العائلة اللغوية — 10 دقائق: اكتب ثلاثة حروف في وسط ورقة (د ر س)، وتنافسا في كتابة كل كلمة من عائلتها، ويقول طفلك معنى كل كلمة قبل كتابتها. اقترح كلمة شبيهة لا قريبة مثل «دَرَج» ودعه يكتشفها. بلا فائز وبلا وقت. تنويع للأكبر: قارنا حجم عائلتين مختلفتين.",
+      "safety_notes": null,
+      "questions": [
+        {
+          "id": "q1",
+          "type": "sort_bins",
+          "prompt_key": "abk.ep3.q1",
+          "prompt_text": "ضع كل كلمة في عائلتها، وما لا ينتمي في صندوق «لا ينتمي».",
+          "items": ["word.kitab", "word.malab", "word.maktaba", "word.luba", "word.laban"],
+          "correct": [
+            ["word.kitab", "bin.family_ktb"],
+            ["word.maktaba", "bin.family_ktb"],
+            ["word.malab", "bin.family_lab"],
+            ["word.luba", "bin.family_lab"],
+            ["word.laban", "bin.not_family"]
+          ]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "abk.ep3.q2",
+          "prompt_text": "لماذا لا تنتمي كلمة «كَبير» إلى عائلة الكتابة؟",
+          "items": ["reason.meaning_far", "reason.short_word", "reason.no_alif"],
+          "correct": ["reason.meaning_far"]
+        }
+      ],
+      "script_file": "ep-03-word-family.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "family_box_art",
+        "word_card_art_eight_words",
+        "object_art_book_writer_library_playground_player_toy_desk_milk",
+        "root_glow_overlays",
+        "sfx_card_flip",
+        "sfx_card_out_neutral",
+        "arabic_language_review",
+        "pedagogy_review"
+      ],
+      "production_notes": "الصور تسبق الكلمات المكتوبة في مشهدَي التصنيف — ترتيب إلزامي. توهّج الحروف الثلاثة بالتتابع لا معًا بإيقاع 500ms. بطاقتا «كَبير» و«لَبَن» لا توسمان بلون خطأ ولا بمؤثر سالب. ممنوع ذكر «جذر» أو «وزن» أو أي مصطلح صرفي في هذا العمر."
+    },
+    {
+      "episode_number": 4,
+      "slug": "ep-04-read-a-sentence",
+      "title_ar": "جملة أفهمها",
+      "title_en": "A Sentence I Understand",
+      "description_ar": "يقرأ الطفل جملة قصيرة ويُظهر أنه فهم معناها، لا أنه نطق كلماتها فقط.",
+      "duration_seconds": 270,
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "medium",
+      "is_free": 0,
+      "objective_code": "lang.sentence.read",
+      "new_words": ["جملة", "مَن؟ ماذا؟ أين؟", "أعيد القراءة"],
+      "prerequisites": ["abk-ep-02", "abk-ep-03"],
+      "skills": ["reading", "observation"],
+      "mastery_criteria": "يقرأ 4 من 5 جمل قراءة صحيحة، ويجيب عن سؤال معنى واحد لكل جملة إجابة صحيحة، بلا مساعدة. القراءة الصحيحة مع إجابة معنى خاطئة لا تُحتسب إتقانًا.",
+      "parent_guide_ar": "طفلك يتعلّم أن ينطق الكلمات ويعرف ماذا حدث. كثير من الأطفال ينطقون الجملة كاملة ولا يستطيعون قول مَن فعل ماذا، وهذه قراءة ناقصة. الخط الأحمر: لا تسمح له بالإجابة من الصورة؛ غطِّ الصورة ودعه يقرأ ثم اكشفها ليتحقق، فالتخمين من الصورة ينجح سنتين ثم ينهار عند أول كتاب بلا صور. بعد كل جملة اسأل سؤالًا واحدًا فقط. إن نطق بطلاقة ولم يجب عن «مَن فعل؟» بعد إعادتين متكررًا فتحدّث مع معلّمه؛ التطبيق لا يشخّص.",
+      "family_activity_ar": "الجملة المغطاة — 8 دقائق: اكتب جملة قصيرة على ورقة والصورة على أخرى، وغطِّ الصورة. يقرأ طفلك الجملة مرة واحدة ويجيب عن سؤال واحد (مَن؟ ماذا؟ أين؟) ثم تُكشف الصورة ليتحقق بنفسه. بدّلا الأدوار وأخطئ في الفاعل عمدًا. تنويع للأكبر: جملتان متشابهتان بفاعل مختلف، وما الفرق؟",
+      "safety_notes": null,
+      "questions": [
+        {
+          "id": "q1",
+          "type": "match_pairs",
+          "prompt_key": "abk.ep4.q1",
+          "prompt_text": "اقرأ الجملة أولًا، ثم اختر الصورة التي تناسبها.",
+          "items": ["sent.pen_on_table", "sent.camel_drinks", "sent.paper_under_rain"],
+          "correct": [
+            ["sent.pen_on_table", "asset-scene-pen-table"],
+            ["sent.camel_drinks", "asset-scene-camel-water"],
+            ["sent.paper_under_rain", "asset-scene-paper-rain"]
+          ]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "abk.ep4.q2",
+          "prompt_text": "«أَخَذَ رَيّان الكِتاب.» ماذا أَخَذَ رَيّان؟",
+          "items": ["word.kitab", "word.qalam", "word.asal"],
+          "correct": ["word.kitab"]
+        }
+      ],
+      "script_file": "ep-04-read-a-sentence.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "sentence_strip_art",
+        "question_cards_who_what_where",
+        "scene_art_four_similar_scenes",
+        "sentence_text_assets_per_language",
+        "sfx_strip_slide",
+        "sfx_reveal",
+        "arabic_language_review",
+        "pedagogy_review"
+      ],
+      "production_notes": "قاعدة إنتاجية حاكمة: بعد هذه الحلقة لا تظهر أي صورة قبل جملتها في أي حلقة من السلسلة. الصورتان المتشابهتان (ورق تحت مطر / مطر على ورق) مقصودتان ويجب أن تكونا متشابهتين فعلًا وإلا سقط قياس الفهم. الجمل تُعرض بالحركات كاملة. سؤال واحد بعد كل جملة ووقفة 4 ثوان على الأقل."
+    },
+    {
+      "episode_number": 5,
+      "slug": "ep-05-dot-or-question",
+      "title_ar": "نقطة أم سؤال؟",
+      "title_en": "Full Stop or Question Mark?",
+      "description_ar": "يستخدم الطفل النقطة وعلامة الاستفهام ليقرأ الجملة بالنبرة الصحيحة ويعرف نوعها.",
+      "duration_seconds": 270,
+      "age_min": 7,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "medium",
+      "is_free": 0,
+      "objective_code": "lang.reading.punctuation",
+      "new_words": ["النقطة", "علامة الاستفهام", "نبرة", "أداة السؤال"],
+      "prerequisites": ["abk-ep-04"],
+      "skills": ["reading"],
+      "mastery_criteria": "يحدّد نوع الجملة (خبر أم سؤال) في 5 من 5، ويقرأ 4 من 5 جمل بالنبرة الصحيحة: نزول وتوقّف عند النقطة، وارتفاع في نهاية السؤال. تحديد النوع صحيحًا بنبرة موحّدة في كل الجمل لا يبلغ الإتقان.",
+      "parent_guide_ar": "طفلك يتعلّم أن علامات الترقيم تُقرأ لا تُرى فقط: النقطة توقُّف ونَفَس، وعلامة الاستفهام ارتفاع في الصوت. الخط الأحمر: لا تقبل نبرة واحدة ثابتة لكل الجمل، ولا تعلّمه أن أي جملة تصير سؤالًا بإضافة «؟» فقط، فللسؤال في الفصحى المكتوبة أداة (هل، ما، أين، مَن). اقرأ أنت أولًا ثم يقرأ بعدك، فالنبرة تُنقل بالتقليد لا بالشرح، وذكّره بحيلة رَيّان: انظر إلى آخر السطر قبل أن تبدأ. إن كان يتهجّى بعد فالنبرة ليست معركة اليوم.",
+      "family_activity_ar": "بطاقتا العلامة — 8 دقائق: اصنعا بطاقة نقطة وبطاقة علامة استفهام، واكتب جملة بلا علامة في آخرها. يختار طفلك بطاقة ويضعها في الآخر ثم يقرأ بالنبرة المناسبة، ويشرح إن لم تصلح كسؤال لأنها ناقصة أداة سؤال. بدّلا الأدوار واقرأ بنبرة خاطئة عمدًا. تنويع للأكبر: أضيفا علامة التعجّب وناقشا الفرق.",
+      "safety_notes": null,
+      "questions": [
+        {
+          "id": "q1",
+          "type": "sort_bins",
+          "prompt_key": "abk.ep5.q1",
+          "prompt_text": "ضع كل جملة في صندوقها: خبر أم سؤال؟",
+          "items": ["sent.honey_in_jar", "sent.what_in_jar", "sent.who_took_pen", "sent.rayyan_took_pen"],
+          "correct": [
+            ["sent.honey_in_jar", "bin.statement"],
+            ["sent.rayyan_took_pen", "bin.statement"],
+            ["sent.what_in_jar", "bin.question"],
+            ["sent.who_took_pen", "bin.question"]
+          ]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "abk.ep5.q2",
+          "prompt_text": "«أين الكِتاب؟» كيف نقرأ آخر هذه الجملة؟",
+          "items": ["tone.rising", "tone.falling", "tone.flat"],
+          "correct": ["tone.rising"]
+        }
+      ],
+      "script_file": "ep-05-dot-or-question.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar_statements_falling_tone",
+        "voiceover_ar_questions_rising_tone",
+        "voiceover_ar_wrong_flat_tone_take",
+        "captions_ar",
+        "mark_blocks_dot_and_question",
+        "tone_arrow_art",
+        "sort_bins_art_statement_question",
+        "sfx_breath",
+        "arabic_language_review",
+        "audio_listening_review",
+        "pedagogy_review"
+      ],
+      "production_notes": "كل سؤال في الحلقة بأداة استفهام صريحة؛ لا جملة خبرية تُحوَّل بسؤال بمجرد «؟». أسهم النبرة تظهر بعد القراءة لا قبلها. الفرق بين النسخة النازلة الخاطئة والصاعدة الصحيحة يجب أن يكون مسموعًا بوضوح لطفل، ويُراجَع سماعيًا قبل الاعتماد. نَفَس النقطة يُسجَّل فعلًا ولا يُصنَّع بصمت مُدرَج.",
+      "age_note": "age_min = 7 لا 6: التحكّم في النبرة يحتاج قراءة بلا تهجئة، وهي غالبًا غير مستقرة في السادسة."
+    },
+    {
+      "episode_number": 6,
+      "slug": "ep-06-read-smoothly",
+      "title_ar": "أقرأ بلا توقّف",
+      "title_en": "I Read Without Stopping",
+      "description_ar": "يقرأ الطفل مقطعًا من ثلاث جمل بسلاسة، بلا تهجئة حرف بحرف، مع وقفة عند كل نقطة.",
+      "duration_seconds": 270,
+      "age_min": 7,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "interaction_mode": "guided",
+      "supervision_level": "recommended",
+      "difficulty": "hard",
+      "is_free": 0,
+      "objective_code": "lang.reading.fluency",
+      "new_words": ["مقطع القراءة", "بسلاسة", "القراءة الثانية"],
+      "prerequisites": ["abk-ep-04", "abk-ep-05"],
+      "skills": ["reading", "memory"],
+      "mastery_criteria": "يقرأ المقطع الثلاثي كاملًا بلا تهجئة أي كلمة حرفًا حرفًا، مع وقفة مسموعة عند النقاط الثلاث، وبتصحيح ذاتي واحد كحدّ أقصى وبلا مساعدة. لا يُقاس زمن القراءة ولا يُعرض للطفل.",
+      "parent_guide_ar": "طفلك يتعلّم الطلاقة: أن يقرأ الكلمة المعروفة دفعة واحدة فيتحرّر انتباهه للمعنى. من يتهجّى كل كلمة يصل آخر الجملة ولا يذكر أولها، وهذا امتلاء في الذاكرة لا نقص في الذكاء. الخط الأحمر: لا تقس سرعته بساعة ولا تقاطعه أثناء القراءة؛ إن أخطأ كلمة انتظر حتى ينهي الجملة، فكثير من الأطفال يصحّحون أنفسهم من المعنى. السر هو القراءة الثانية: الأولى للفهم والثانية للسلاسة. التفاوت بين الأطفال هنا كبير وطبيعي، لكن طفل الثامنة الذي يتهجّى كل كلمة حتى المتكرّرة يستحق تقييمًا مع معلّمه أو مختص تعلّم. التطبيق لا يشخّص.",
+      "family_activity_ar": "قراءتان لكل مقطع — 10 دقائق يوميًا: اختارا مقطعًا من ثلاث جمل من كتاب يعرفه. القراءة الأولى للفهم وبعدها سؤال واحد: ماذا حدث؟ والقراءة الثانية للسلاسة، اسمع ولا تقاطع. عند كل نقطة يأخذ نَفَسًا. بدّلا الأدوار وتهجَّ كلمة عمدًا ليقول لك: اقرأها دفعة واحدة. بلا ساعة وبلا عدّ؛ المقياس أن تكون الثانية أسلس من الأولى. تنويع للأكبر: أربع جمل فيها سؤال واحد.",
+      "safety_notes": null,
+      "questions": [
+        {
+          "id": "q1",
+          "type": "sequence_order",
+          "prompt_key": "abk.ep6.q1",
+          "prompt_text": "رتّب الجمل الثلاث لتصنع مقطعًا مفهومًا.",
+          "items": ["sent.read_full_word", "sent.took_pen", "sent.wrote_word"],
+          "correct": ["sent.took_pen", "sent.wrote_word", "sent.read_full_word"]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "abk.ep6.q2",
+          "prompt_text": "قرأتَ المقطع ولم تفهمه. ماذا تفعل؟",
+          "items": ["strategy.read_again", "strategy.skip_it", "strategy.spell_letters"],
+          "correct": ["strategy.read_again"]
+        }
+      ],
+      "script_file": "ep-06-read-smoothly.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar_spelled_take",
+        "voiceover_ar_read_first_pass",
+        "voiceover_ar_read_second_pass_smoother",
+        "captions_ar",
+        "passage_board_art",
+        "word_frame_art",
+        "wall_of_tools_art",
+        "sentence_text_assets_per_language",
+        "sfx_breath",
+        "arabic_language_review",
+        "audio_listening_review",
+        "pedagogy_review"
+      ],
+      "production_notes": "صمت مشهد «دورك» (22 ثانية موزّعة) بلا موسيقى ولا مؤثرات ولا حركة كاميرا، ويُرفض أي ملء له. إطار الكلمة الكاملة يظهر في هذه الحلقة فقط؛ إدخاله في الحلقات 1–3 يعطّل بناء الكلمة. لا مؤقت ولا عدّ كلمات ولا عرض زمن في الحلقة ولا في اللعبة. لا صورة توضيحية للمقطع إطلاقًا. الفرق بين القراءة الأولى والثانية هو درس الحلقة، ويُراجَع سماعيًا.",
+      "age_note": "age_min = 7: قراءة ثلاث جمل متصلة بلا تهجئة تحتاج استقرارًا في بناء الكلمة لا يتوفر عادة في السادسة."
+    }
+  ],
+  "characters": [
+    {
+      "name_ar": "رَيّان",
+      "role": "hero",
+      "age": 7,
+      "description_ar": "طفل عربي في السابعة، شعر أسود قصير مموّج وحاجبان معبّران، يلبس قميصًا مرجانيًا ومِريلة ورشة صغيرة. يعمل في ورشة الكلمات على كوكب أبجد ويبني الكلمات بيديه. حيوي وكريم ويحب أن يُنجز بسرعة، ولا يعرف كل شيء ولا يتصرف كمعلّم.",
+      "traits": ["حيوي", "كريم", "يبني بيديه", "أذنه ممتازة", "لا يستسلم", "متسرّع", "يخجل من إعادة القراءة"],
+      "speech_style": "جمل قصيرة سريعة لا تتجاوز عشر كلمات، يفكّر بصوت مسموع، يبدأ كثيرًا بـ«انظر»، ويذكر عدد ما بناه. لا يستخدم أي مصطلح لغوي (جذر، وزن، فاعل).",
+      "behavioural_rules": [
+        "لا يعطي الطفل الجواب قبل انتهاء الصمت المقرّر",
+        "لا يصف نفسه ولا الطفل بالضعيف أو البطيء",
+        "لا يسخر من خطأ، ولا من خطأ نفسه",
+        "يقول روتين التحقّق بصوت مسموع في كل حلقة",
+        "يصمت ويستمع في مشهد «دورك» ولا يعلّق أثناء صمت الطفل",
+        "يشكر الطفل حين يصحّح له",
+        "يخطئ مرة واحدة في الحلقة على الأكثر، وخطؤه منطقي يفعله أطفال حقيقيون"
+      ],
+      "relationships": "يخاطب الراوي كصوت يعرفه ويثق به بلا خوف، ويخاطب الطفل المشاهد مباشرة بـ«دورك» و«قل معي». لا شخصية ثالثة في السلسلة، والراوي صوت لا شخصية ولا يظهر بصريًا.",
+      "educational_role": "يجسّد الخطأ الشائع عند القارئ الناشئ (التخمين من أول مقطع أو أول حرف أو من الصورة) ثم روتين إصلاحه. الطفل يتعلّم منه إجراءً لا معلومة، ويرى أن التحقّق عادة يمكن تعلّمها وأن إعادة القراءة خطوة في الخطة لا اعتراف بالفشل. ضعفه يتحسّن ولا يزول خلال الموسم.",
+      "visual_brief": "شخصية limited_2d بخطوط نظيفة سميكة متوسطة بلا زوايا حادة، ملامح مبسّطة تكفي لأربع حالات: عادي، مستمع، لحظة إدراك التسرّع (حاجبان مرفوعان وفم صغير)، ومبتهج بما بنى. أربعة أوضاع شفافة PNG على الأقل. الألوان من هوية مجرة فقط: قميص #FF6B6B وبنطال #1B236B. يشغل ثلث الكادر وفي مستوى نظر الطفل، ويجب أن يعمل التصميم بجانب شريط الكلمة بلا تنافس بصري معه.",
+      "artwork_status": "none — production required"
+    }
+  ],
+  "games": [
+    {
+      "pack_id": "rt-abk-ep1",
+      "title_ar": "إيقاع المقاطع",
+      "engine": "rhythm_tap",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "lang.syllable.blend",
+      "linked_episode": 1,
+      "core_mechanic": "يسمع الطفل كلمة على مقطعين، فينقر نقرة واحدة لكل مقطع، ثم يختار صورة الشيء الذي تعنيه الكلمة.",
+      "gameplay_loop": "تُنطق الكلمة على مقطعين متباعدين ← ينقر الطفل عدد المقاطع ← ينزلق المكعبان حتى يتلامسا وتُنطق الكلمة موصولة ← يختار الصورة الصحيحة من صور معروضة ← تأكيد وتقدّم للكلمة التالية.",
+      "levels": [
+        { "level": 1, "goal": "نقر مقطعين لكلمة معروفة من الحلقة", "items": 4, "distractors": 1 },
+        { "level": 2, "goal": "نقر المقاطع ثم اختيار الصورة", "items": 5, "distractors": 2 },
+        { "level": 3, "goal": "كلمات من ثلاثة مقاطع بين كلمات من مقطعين", "items": 6, "distractors": 2 }
+      ],
+      "difficulty_progression": "من كلمتين ظهرتا في الحلقة، إلى كلمات لم تظهر بنفس البنية، إلى خلط كلمات مقطعين مع ثلاثة مقاطع دون إعلان العدد مسبقًا.",
+      "instructions_ar": "استمع للكلمة، وانقر نقرة لكل مقطع، ثم اختر الصورة التي تعنيها.",
+      "success_rule": "عدد النقرات يساوي عدد المقاطع، والصورة المختارة تطابق الكلمة.",
+      "failure_rule": "بلا خسارة وبلا مؤقت. تُعاد الكلمة بمقاطع أبطأ وفراغ أوضح، ثم يُتاح تلميح بصري على المكعبات بعد محاولتين.",
+      "scoring": "نجمة لكل كلمة صحيحة بلا تلميح، ونصف نجمة مع تلميح. لا خصم ولا مقارنة بأطفال آخرين.",
+      "educational_feedback": "عند خطأ في عدد النقرات: «استمع مرة أخرى، وصفّق مع كل مقطع.» وعند خطأ في الصورة: «وصلتَ المقاطع صحيحًا. الآن: ما معنى الكلمة؟»",
+      "content_pack": {
+        "language_specific": true,
+        "words": [
+          { "id": "syl.qa_lam", "syllables": ["قَ", "لَم"], "image": "asset-obj-pen" },
+          { "id": "syl.ma_tar", "syllables": ["مَ", "طَر"], "image": "asset-obj-rain" },
+          { "id": "syl.a_sal", "syllables": ["عَ", "سَل"], "image": "asset-obj-honey" },
+          { "id": "syl.wa_raq", "syllables": ["وَ", "رَق"], "image": "asset-obj-paper" },
+          { "id": "syl.ja_mal", "syllables": ["جَ", "مَل"], "image": "asset-obj-camel" }
+        ],
+        "no_timer": true
+      }
+    },
+    {
+      "pack_id": "wb-abk-ep2",
+      "title_ar": "ابنِ الكلمة",
+      "engine": "word_build",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "lang.word.build",
+      "linked_episode": 2,
+      "core_mechanic": "يسحب الطفل مكعبات حروف إلى مواضع الشريط الثلاثة، وعليه اختيار شكل الحرف المناسب للموضع.",
+      "gameplay_loop": "تُنطق الكلمة ويظهر شريط بمواضع فارغة ← تُعرض مكعبات فيها أشكال صحيحة وأشكال في مواضع خاطئة ← يسحب الطفل ← إن صحّ الشكل والموضع اتصلت الحروف بصريًا ← تُنطق الكلمة كاملة ← كلمة تالية.",
+      "levels": [
+        { "level": 1, "goal": "بناء كلمة ثلاثية وأشكال الحروف معروضة صحيحة فقط", "items": 3, "distractors": 1 },
+        { "level": 2, "goal": "بناء كلمة ثلاثية مع أشكال منفردة كمشوّشات", "items": 4, "distractors": 3 },
+        { "level": 3, "goal": "كلمات فيها حرف لا يتصل بما بعده (و، ر)", "items": 4, "distractors": 3 }
+      ],
+      "difficulty_progression": "من مواضع ظاهرة وأشكال صحيحة فقط، إلى إدخال الشكل المنفرد كمشوّش، إلى كلمات بها فراغ صحيح يجب ألا يُقرأ خطأً.",
+      "instructions_ar": "استمع للكلمة، وضع كل حرف في موضعه بالشكل المناسب.",
+      "success_rule": "الحروف الثلاثة في ترتيبها الصحيح، وكل حرف بشكل موضعه، فتتصل الكلمة بصريًا.",
+      "failure_rule": "بلا خسارة وبلا مؤقت. الشكل الخاطئ لا يثبت في الموضع ويعود بحركة هادئة، ويظهر تلميح: «انظر إلى الفراغ بعد حرفك.»",
+      "scoring": "نجمة لكل كلمة مبنية بلا تلميح. لا خصم على المحاولات.",
+      "educational_feedback": "«هذا الشكل يقف وحده، وحرفك في أول الكلمة» ثم يُعرض الشكلان جنبًا إلى جنب للمقارنة.",
+      "content_pack": {
+        "language_specific": true,
+        "words": [
+          { "id": "word.qalam", "slots": ["glyph.qaf_initial", "glyph.lam_medial", "glyph.mim_final"] },
+          { "id": "word.jamal", "slots": ["glyph.jim_initial", "glyph.mim_medial", "glyph.lam_final"] },
+          { "id": "word.asal", "slots": ["glyph.ain_initial", "glyph.sin_medial", "glyph.lam_final"] },
+          { "id": "word.waraq", "slots": ["glyph.waw_isolated", "glyph.ra_medial", "glyph.qaf_final"] }
+        ],
+        "distractor_glyphs": ["glyph.jim_isolated", "glyph.qaf_isolated", "glyph.mim_isolated"],
+        "no_timer": true
+      }
+    },
+    {
+      "pack_id": "sb-abk-ep3",
+      "title_ar": "صناديق العائلة",
+      "engine": "sort_bins",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "lang.vocab.word_family",
+      "linked_episode": 3,
+      "core_mechanic": "يوزّع الطفل بطاقات كلمات على صندوقَي عائلة وصندوق ثالث اسمه «لا ينتمي».",
+      "gameplay_loop": "تُعرض صورة الكلمة ثم الكلمة مكتوبة ← يسحبها الطفل إلى صندوق ← عند الصواب تتوهج الحروف الثلاثة المشتركة بالتتابع ← عند وضع كلمة في «لا ينتمي» يُسأل عن السبب ← بطاقة تالية.",
+      "levels": [
+        { "level": 1, "goal": "توزيع أربع كلمات على عائلتين، بلا مشوّشات", "items": 4, "distractors": 0 },
+        { "level": 2, "goal": "إضافة كلمة شبيهة لا قريبة يجب استبعادها", "items": 5, "distractors": 1 },
+        { "level": 3, "goal": "عائلة ثالثة جديدة (د ر س) مع مشوّشين", "items": 6, "distractors": 2 }
+      ],
+      "difficulty_progression": "من عائلتين واضحتين، إلى إدخال شبيه كاذب واحد، إلى عائلة لم تظهر في الحلقة لقياس نقل القاعدة لا حفظها.",
+      "instructions_ar": "ضع كل كلمة في عائلتها. وإن لم تكن من أي عائلة، ضعها في صندوق «لا ينتمي».",
+      "success_rule": "كل بطاقة في صندوقها الصحيح، مع اختيار سبب صحيح لكل كلمة مستبعدة.",
+      "failure_rule": "بلا خسارة وبلا مؤقت. البطاقة الخاطئة تخرج بحركة هادئة بلا لون خطأ، ويُطرح سؤال: «ما معنى هذه الكلمة؟»",
+      "scoring": "نجمة لكل توزيع صحيح، ونجمة إضافية عند تعليل استبعاد صحيح.",
+      "educational_feedback": "«الحروف تشبه، والمعنى بعيد. العائلة معنى أولًا، ثم ثلاثة حروف بالترتيب نفسه.»",
+      "content_pack": {
+        "language_specific": true,
+        "bins": ["bin.family_ktb", "bin.family_lab", "bin.not_family"],
+        "cards": [
+          { "id": "word.kitab", "bin": "bin.family_ktb" },
+          { "id": "word.maktaba", "bin": "bin.family_ktb" },
+          { "id": "word.katib", "bin": "bin.family_ktb" },
+          { "id": "word.malab", "bin": "bin.family_lab" },
+          { "id": "word.luba", "bin": "bin.family_lab" },
+          { "id": "word.laib", "bin": "bin.family_lab" },
+          { "id": "word.kabir", "bin": "bin.not_family" },
+          { "id": "word.laban", "bin": "bin.not_family" }
+        ],
+        "reasons": ["reason.meaning_far", "reason.letters_order_differs"],
+        "no_timer": true
+      }
+    },
+    {
+      "pack_id": "mp-abk-ep4",
+      "title_ar": "الجملة وصورتها",
+      "engine": "match_pairs",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "lang.sentence.read",
+      "linked_episode": 4,
+      "core_mechanic": "يقرأ الطفل جملة معروضة وحدها، ثم تظهر الصور فيختار الصورة التي تطابقها.",
+      "gameplay_loop": "تظهر الجملة وحدها بلا صور ← وقفة قراءة بلا مؤقت ← يضغط الطفل «قرأت» ← تظهر ثلاث صور متشابهة ← يختار ← سؤال معنى واحد (مَن؟ ماذا؟ أين؟) ← جملة تالية.",
+      "levels": [
+        { "level": 1, "goal": "جملة من ثلاث كلمات وصور مختلفة بوضوح", "items": 4, "distractors": 2 },
+        { "level": 2, "goal": "صور متشابهة يختلف فيها الفاعل فقط", "items": 5, "distractors": 2 },
+        { "level": 3, "goal": "جملة من خمس كلمات وسؤال معنى إلزامي", "items": 5, "distractors": 3 }
+      ],
+      "difficulty_progression": "من صور متمايزة يمكن حسمها بكلمة واحدة، إلى صور تتطلب قراءة الفاعل والمكان معًا، إلى جمل أطول بسؤال معنى إلزامي.",
+      "instructions_ar": "اقرأ الجملة أولًا. الصور تظهر بعد أن تقرأ.",
+      "success_rule": "الصورة الصحيحة مع إجابة صحيحة عن سؤال المعنى.",
+      "failure_rule": "بلا خسارة وبلا مؤقت. عند الخطأ تُخفى الصور وتُعاد الجملة مع سؤال موجّه: «مَن في الجملة؟»",
+      "scoring": "نجمة للصورة الصحيحة، ونجمة لسؤال المعنى. الصورة الصحيحة بمعنى خاطئ لا تكمل المستوى.",
+      "educational_feedback": "«الصورة تساعد، ولا تقرأ عنك. عد إلى الجملة واسأل: مَن؟ ماذا؟ أين؟»",
+      "content_pack": {
+        "language_specific": true,
+        "reveal_order": "sentence_before_images",
+        "pairs": [
+          { "sentence": "sent.pen_on_table", "image": "asset-scene-pen-table" },
+          { "sentence": "sent.camel_drinks", "image": "asset-scene-camel-water" },
+          { "sentence": "sent.paper_under_rain", "image": "asset-scene-paper-rain" },
+          { "sentence": "sent.rain_on_paper", "image": "asset-scene-rain-paper" }
+        ],
+        "no_timer": true
+      }
+    },
+    {
+      "pack_id": "sb-abk-ep5",
+      "title_ar": "خبر أم سؤال؟",
+      "engine": "sort_bins",
+      "age_min": 7,
+      "age_max": 8,
+      "objective_code": "lang.reading.punctuation",
+      "linked_episode": 5,
+      "core_mechanic": "يوزّع الطفل الجمل على صندوقَي «خبر» و«سؤال»، ثم يسمع نسختين منطوقتين ويختار النبرة الصحيحة.",
+      "gameplay_loop": "تظهر جملة بعلامتها ← يسحبها الطفل إلى صندوق ← تُعرض نسختان صوتيتان للجملة، نازلة وصاعدة ← يختار النبرة المناسبة ← يظهر سهم النبرة بعد الاختيار ← جملة تالية.",
+      "levels": [
+        { "level": 1, "goal": "تصنيف أربع جمل بعلامات واضحة", "items": 4, "distractors": 0 },
+        { "level": 2, "goal": "اختيار النبرة المسموعة الصحيحة لكل جملة", "items": 5, "distractors": 1 },
+        { "level": 3, "goal": "جمل بنفس الكلمات وعلامات مختلفة", "items": 6, "distractors": 2 }
+      ],
+      "difficulty_progression": "من التصنيف بالعلامة، إلى ربط العلامة بالنبرة المسموعة، إلى جمل متطابقة الكلمات لا يفرقها إلا العلامة وأداة السؤال.",
+      "instructions_ar": "ضع الجملة في صندوقها، ثم اختر كيف نقرأ آخرها.",
+      "success_rule": "الصندوق الصحيح مع اختيار النبرة الصحيحة.",
+      "failure_rule": "بلا خسارة وبلا مؤقت. عند الخطأ تُبرز نهاية الجملة وحدها ويُطرح سؤال: «ما آخر علامة في السطر؟»",
+      "scoring": "نجمة للتصنيف ونجمة للنبرة. لا خصم.",
+      "educational_feedback": "«السؤال يبدأ بأداة ويرتفع صوته في آخره. الخبر ينزل ويتوقّف.»",
+      "content_pack": {
+        "language_specific": true,
+        "bins": ["bin.statement", "bin.question"],
+        "sentences": [
+          { "id": "sent.honey_in_jar", "bin": "bin.statement", "tone": "tone.falling" },
+          { "id": "sent.rayyan_took_pen", "bin": "bin.statement", "tone": "tone.falling" },
+          { "id": "sent.what_in_jar", "bin": "bin.question", "tone": "tone.rising" },
+          { "id": "sent.who_took_pen", "bin": "bin.question", "tone": "tone.rising" },
+          { "id": "sent.where_is_book", "bin": "bin.question", "tone": "tone.rising" },
+          { "id": "sent.camel_drinks_water", "bin": "bin.statement", "tone": "tone.falling" }
+        ],
+        "rule": "كل سؤال بأداة استفهام صريحة: هل · ما · أين · مَن",
+        "no_timer": true
+      }
+    },
+    {
+      "pack_id": "so-abk-ep6",
+      "title_ar": "رتّب المقطع",
+      "engine": "sequence_order",
+      "age_min": 7,
+      "age_max": 8,
+      "objective_code": "lang.reading.fluency",
+      "linked_episode": 6,
+      "core_mechanic": "يرتّب الطفل ثلاث جمل مبعثرة ليصنع مقطعًا مفهومًا، ثم يقرؤه قراءتين: للفهم ثم للسلاسة.",
+      "gameplay_loop": "تُعرض ثلاث جمل بترتيب مبعثر ← يرتّبها الطفل ← عند الترتيب الصحيح يظهر المقطع كاملًا على لوح ← يقرأ القراءة الأولى ثم يجيب عن سؤال معنى ← ثم القراءة الثانية بإطارات الكلمات ظاهرة ← مقطع تالٍ.",
+      "levels": [
+        { "level": 1, "goal": "ترتيب ثلاث جمل بمفردات الحلقات 1–5", "items": 3, "distractors": 0 },
+        { "level": 2, "goal": "ترتيب ثلاث جمل مع جملة زائدة لا تنتمي للمقطع", "items": 4, "distractors": 1 },
+        { "level": 3, "goal": "مقطع من أربع جمل فيه سؤال واحد بنبرته", "items": 4, "distractors": 1 }
+      ],
+      "difficulty_progression": "من ثلاث جمل متتابعة المعنى، إلى إدخال جملة دخيلة تُكتشف بالمعنى، إلى مقطع أطول يجمع الترتيب والنبرة.",
+      "instructions_ar": "رتّب الجمل لتصنع مقطعًا مفهومًا، ثم اقرأه مرتين: مرة لتفهم، ومرة لتسلس.",
+      "success_rule": "الترتيب صحيح، وإجابة سؤال المعنى صحيحة، وتمّت القراءتان.",
+      "failure_rule": "بلا خسارة وبلا مؤقت وبلا قياس زمن. عند ترتيب خاطئ يُطرح سؤال: «ما أول شيء حدث؟» ولا يُعطى الجواب.",
+      "scoring": "نجمة للترتيب ونجمة لسؤال المعنى. **لا نجوم على السرعة ولا عرض لأي زمن.**",
+      "educational_feedback": "«القراءة الثانية أسلس دائمًا. إن لم تفهم، أعد القراءة — الإعادة خطوة في الخطة.»",
+      "content_pack": {
+        "language_specific": true,
+        "passages": [
+          {
+            "id": "passage.pen_write_read",
+            "ordered": ["sent.took_pen", "sent.wrote_word", "sent.read_full_word"],
+            "meaning_question": "ماذا حدث أولًا؟"
+          }
+        ],
+        "vocabulary_rule": "لا كلمة جديدة: كل مفردات المقطع ظهرت في الحلقات 1–5",
+        "no_timer": true,
+        "no_wpm_measurement": true
+      }
+    }
+  ],
+  "books": [
+    {
+      "slug": "warshat-al-kalimat",
+      "title_ar": "ورشة الكلمات",
+      "title_en": "The Word Workshop",
+      "type": "interactive",
+      "age_min": 6,
+      "age_max": 8,
+      "reading_level": "emerging",
+      "description_ar": "كتاب تفاعلي قصير يعيد بناء درجات السلسلة الست على الورق: من مقطعين إلى مقطع من ثلاث جمل. كل صفحة تطلب من الطفل فعلًا واحدًا لا قراءة صامتة.",
+      "objective_code": "lang.reading.fluency",
+      "pages": [
+        {
+          "page": 1,
+          "role": "افتتاح",
+          "text_ar": "هذه ورشة رَيّان. فيها شريط وصناديق ومكعبات.",
+          "illustration_brief": "الورشة كاملة من زاوية واسعة، ورَيّان يفتح الباب. الشريط فارغ على الحائط. ≤ 4 عناصر بارزة."
+        },
+        {
+          "page": 2,
+          "role": "مقطعان",
+          "text_ar": "قَ… لَم. صفّق مرتين، ثم قل الكلمة.",
+          "illustration_brief": "مكعبان متباعدان على الشريط، وقلم حقيقي بجانبهما. لا كلمة مكتوبة كاملة."
+        },
+        {
+          "page": 3,
+          "role": "بناء",
+          "text_ar": "ضع كل حرف في موضعه. أول، ووسط، وآخر.",
+          "illustration_brief": "شريط بثلاثة مواضع فارغة، وثلاثة مكعبات حروف بأشكالها الموضعية بجانبه."
+        },
+        {
+          "page": 4,
+          "role": "عائلة",
+          "text_ar": "كِتاب. كاتِب. مَكتَبة. كلها عن الكتابة.",
+          "illustration_brief": "ثلاث صور صغيرة متجاورة: كتاب، شخص يكتب، مكتبة. الكلمات مكتوبة تحت الصور لا فوقها."
+        },
+        {
+          "page": 5,
+          "role": "الشبيه الكاذب",
+          "text_ar": "وكَبير؟ حروفها تشبه، ومعناها بعيد.",
+          "illustration_brief": "بطاقة «كَبير» خارج الصندوق بحركة هادئة، بلا أي لون تحذيري."
+        },
+        {
+          "page": 6,
+          "role": "جملة",
+          "text_ar": "اقرأ أولًا: العَسَل في البُرطُمان. ثم اكشف الصورة.",
+          "illustration_brief": "صفحة بلسان قابل للرفع: الجملة ظاهرة، والصورة تحته مخفية. الصورة لا تُرى قبل رفع اللسان."
+        },
+        {
+          "page": 7,
+          "role": "علامتان",
+          "text_ar": "أين الكِتاب؟ ارفع صوتك. الكِتاب هنا. انزل وتوقّف.",
+          "illustration_brief": "جملتان متقابلتان، وسهم صاعد بجانب الأولى ونازل بجانب الثانية، بلونين من هوية مجرة."
+        },
+        {
+          "page": 8,
+          "role": "المقطع والخاتمة",
+          "text_ar": "أَخَذَ رَيّان القَلَم. كَتَبَ كلمة على الوَرَق. قَرَأَ الكلمة كاملة.",
+          "illustration_brief": "لوح المقطع بثلاثة أسطر، ورَيّان يقرأ واقفًا، وحائط الأدوات كاملًا في الخلف. بلا مؤقت وبلا أي إشارة إلى سرعة."
+        }
+      ],
+      "activities": [
+        "صفّق مقاطع اسمك واسم من تحب",
+        "ابنِ كلمة قلم بمكعبات ورقية",
+        "اكتب ثلاث كلمات من عائلة واحدة",
+        "غطِّ صورة واقرأ جملتها أولًا",
+        "اقرأ المقطع الأخير مرتين: مرة لتفهم ومرة لتسلس"
+      ],
+      "illustration_requirements": "أسلوب limited_2d نفسه وبنفس لوحة الألوان. لا نص واجهة داخل أي رسمة؛ نصوص الصفحات من ملفات الترجمة، وبيانات المكعبات والبطاقات تُحزَّم لكل لغة. لا صورة تسبق جملتها في صفحتها. لا أي أصل رسومي موجود اليوم — كل ما فوق موجز إنتاج."
+    }
+  ],
+  "projects": [
+    {
+      "slug": "sharit-al-kalima-warqi",
+      "title_ar": "شريط الكلمة الورقي",
+      "age_min": 6,
+      "age_max": 8,
+      "objective_code": "lang.word.build",
+      "supervision_level": "required",
+      "description_ar": "يصنع الطفل مع ولي أمره شريط كلمة من ورق مقوّى وبطاقات حروف بأشكالها الموضعية، ويستخدمه لبناء كلمات السلسلة الأربع ثم كلمات من عنده.",
+      "materials": [
+        "ورق مقوّى: قطعة طويلة للشريط وقطع صغيرة للبطاقات",
+        "أقلام تلوين أو أقلام لبّاد",
+        "مسطرة",
+        "شريط لاصق ورقي"
+      ],
+      "preparation": "**القص كله يقوم به ولي الأمر قبل الجلسة.** تُقص القطعة الطويلة وتُقسم إلى ثلاثة مواضع بخطوط، وتُقص البطاقات الصغيرة. يجلس الطفل ليكتب ويلوّن ويركّب فقط.",
+      "steps": [
+        "1. ارسما ثلاثة مواضع متساوية على الشريط الطويل: أول، ووسط، وآخر.",
+        "2. يكتب طفلك على البطاقات أشكال الحروف: قـ، لـ، م، جـ، مـ، ل، عـ، سـ، و، ر، ق.",
+        "3. لكل حرف ثلاث بطاقات: شكله في الأول، وفي الوسط، وفي الآخر.",
+        "4. يبني الكلمات الأربع: قلم، جمل، عسل، ورق.",
+        "5. عند كل حرف يسأل نفسه بصوت مسموع: في أي موضع هو؟",
+        "6. بدّلا الأدوار: ابنِ أنت كلمة وضع شكلًا خاطئًا عمدًا، ودعه يصحّح ويشرح السبب.",
+        "7. علّقا الشريط في مكان يراه، وأضيفا كلمة جديدة كل يوم."
+      ],
+      "safety_notes": "**القص لولي الأمر وحده.** لا يستخدم الطفل مقصًا ولا سكينًا ولا مشرطًا في هذا النشاط. الأقلام واللاصق فقط للطفل. لا يوضع اللاصق ولا الورق في الفم، ولا تُستخدم أدوات حادة لتقسيم الشريط. يُنجَز النشاط على طاولة وبجلوس، وبلا صعود على كرسي لتعليق الشريط — التعليق لولي الأمر.",
+      "expected_result": "شريط ورقي قابل لإعادة الاستخدام، وبطاقات حروف بأشكال موضعية، وأربع كلمات مبنية صحيحة الشكل والموضع.",
+      "explanation_ar": "الكتابة بيد الطفل تثبّت أن للحرف أكثر من شكل، وأن الشكل يتبع الموضع لا المزاج. صناعة البطاقات نفسها تدريب: من يكتب «جـ» و«ج» على بطاقتين مختلفتين لن يخلط بينهما بسهولة بعد ذلك.",
+      "parent_involvement": "ولي الأمر يقص ويحضّر ويعلّق، ثم يشارك كلاعب لا كمصحّح: يبني كلمة ويخطئ عمدًا مرة واحدة ليتيح للطفل دور المصحّح. لا يمسح خطأ الطفل، بل يطلب إعادة البناء.",
+      "related_episode": 2
+    },
+    {
+      "slug": "daftar-al-maqta",
+      "title_ar": "دفتر المقطع",
+      "age_min": 7,
+      "age_max": 8,
+      "objective_code": "lang.reading.fluency",
+      "supervision_level": "recommended",
+      "description_ar": "دفتر بسيط يكتب فيه الطفل مقطعًا من ثلاث جمل كل أسبوع من مفردات يعرفها، ويقرؤه قراءتين: للفهم ثم للسلاسة، بلا أي قياس زمن.",
+      "materials": [
+        "دفتر صغير مسطّر",
+        "قلم",
+        "قلم تحديد فاتح لتعليم النقاط"
+      ],
+      "preparation": "يخصّص ولي الأمر صفحة لكل أسبوع، ويكتب في أعلاها: «القراءة الأولى للفهم. القراءة الثانية للسلاسة.» لا مكان في الصفحة لأي خانة زمن.",
+      "steps": [
+        "1. يختار طفلك ثلاث كلمات يعرفها جيدًا.",
+        "2. يكتب ثلاث جمل قصيرة تحكي شيئًا واحدًا متصلًا.",
+        "3. يضع نقطة في آخر كل جملة، ويلوّنها بقلم التحديد.",
+        "4. القراءة الأولى: بصوت مسموع للفهم. بعدها سؤال واحد فقط: ماذا حدث؟",
+        "5. القراءة الثانية: للسلاسة، مع نَفَس عند كل نقطة. اسمع ولا تقاطع.",
+        "6. في الأسبوع التالي يقرأ مقطع الأسبوع الماضي أولًا، فسيجده أسلس.",
+        "7. لا ساعة، ولا عدّ كلمات، ولا مقارنة بأحد."
+      ],
+      "safety_notes": "نشاط ورقي على طاولة، بلا أدوات حادة وبلا مواد. الخطر الوحيد هنا نفسي لا جسدي: **لا يُقاس زمن القراءة ولا تُقارن نتيجة الطفل بغيره**، فذلك يولّد قلق قراءة يستمر سنوات.",
+      "expected_result": "دفتر يجمع مقاطع الطفل بخطه، ويُظهر له بنفسه أن المقطع القديم صار أسهل — وهذا أوضح دليل تقدّم يمكن أن يراه.",
+      "explanation_ar": "الطلاقة تُبنى بإعادة قراءة نص معروف لا بقراءة نص جديد كل مرة. المقطع الذي يكتبه الطفل بنفسه بمفرداته يجعل الإعادة ممتعة، ويحوّل «أعيد القراءة» من اعتراف بالفشل إلى خطوة معتادة.",
+      "parent_involvement": "ولي الأمر يستمع ولا يقاطع، وينتظر آخر الجملة قبل أي تعليق، ويقرأ هو جملة أولًا ليقلّده الطفل في الإيقاع. ويمتنع تمامًا عن استخدام ساعة.",
+      "related_episode": 6
+    }
+  ],
+  "open_questions": [
+    "اختيار مؤدّي صوت رَيّان: طفل حقيقي في 7–9 أم مؤدّية بنبرة طفل؟ القرار يؤثر على جدولة التسجيل وعلى إعادة التسجيل عند تغيّر صوت الطفل بين المواسم.",
+    "هل يُذكر اسم الحرف مرة واحدة في الحلقة 2 كما هو مكتوب هنا، أم يُؤجَّل بالكامل إلى مسار 9–12؟ القرار تربوي ويحتاج اعتماد المراجع التربوي.",
+    "الحلقة 5 تعلّم السؤال بأداة استفهام صريحة فقط، ولا تعلّم تحويل الجملة الخبرية إلى سؤال بـ«؟» وحدها. يلزم تثبيت هذا القرار مع المراجع اللغوي حتى لا يُنقض في التسجيل.",
+    "هل تُقبل الحركات الكاملة على كل الجمل في الحلقات 4–6، أم تُخفَّف تدريجيًا لتقريب الطفل من النص غير المشكول؟ لم يُحسم لغياب سياسة تشكيل موحّدة في المنصة.",
+    "الترتيب مع مسار 9–12 في كوكب أبجد: يلزم تأكيد أن مخرج هذه السلسلة (طلاقة على مقطع ثلاثي) هو بالضبط مدخل سلسلة الإملاء، وأن لا فجوة ولا تكرار بينهما.",
+    "الخط العربي: يلزم اختيار خط مرخّص لإعادة التوزيع تتوفر فيه أشكال الحرف الأربعة بجودة كافية لعرض المكعبات."
+  ],
+  "fact_checks_required": [
+    "تقطيع المقاطع لكل كلمة: قَ/لَم · مَ/طَر · جَ/مَل · عَ/سَل · وَ/رَق — يلزم اعتماد مدقق لغوي عربي معتمد.",
+    "أشكال الحروف في مواضعها لكل كلمة مبنية في الحلقة 2 واللعبة wb-abk-ep2.",
+    "انتماء كل كلمة لعائلتها في الحلقة 3: كِتاب · كاتِب · مَكتَبة · مَكتَب لعائلة واحدة، ولاعِب · مَلعَب · لُعبة لعائلة أخرى، واستبعاد كَبير ولَبَن.",
+    "الحركات والإعراب في الجمل المعروضة في الحلقات 4 و5 و6، وفي المقطع الثلاثي كاملًا.",
+    "صياغة أسئلة الحلقة 5 بأدوات استفهام صحيحة في الفصحى المكتوبة."
+  ]
+}

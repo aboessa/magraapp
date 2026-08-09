@@ -98,9 +98,13 @@ const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: t
 
 await send('Page.enable', {}, sessionId)
 await send('Runtime.enable', {}, sessionId)
+const VP_WIDTH = Number(process.env.MJ_WIDTH ?? 1360)
+const VP_MOBILE = VP_WIDTH <= 860
 await send('Emulation.setDeviceMetricsOverride', {
-  width: 1360, height: 1000, deviceScaleFactor: 1, mobile: false,
+  width: VP_WIDTH, height: 1000, deviceScaleFactor: 1, mobile: VP_MOBILE,
+  screenWidth: VP_WIDTH, screenHeight: 1000,
 }, sessionId)
+console.log(`منفذ العرض: ${VP_WIDTH}px`)
 
 async function goto(url) {
   await send('Page.navigate', { url }, sessionId)
@@ -118,7 +122,7 @@ async function shoot(name, options = {}) {
   const result = await send('Page.captureScreenshot', {
     format: 'png', captureBeyondViewport: Boolean(options.fullPage), ...options.clip ? { clip: options.clip } : {},
   }, sessionId)
-  const file = path.join(OUT, `${name}.png`)
+  const file = path.join(OUT, `${VP_WIDTH}-${name}.png`)
   writeFileSync(file, Buffer.from(result.data, 'base64'))
   console.log(`  ✓ ${name}.png`)
 }
@@ -184,7 +188,7 @@ for (const name of sectionShots) {
     const el = document.querySelector('[data-section="${name}"]');
     if (!el) return null;
     const r = el.getBoundingClientRect();
-    return { x: 0, y: Math.round(r.top + window.scrollY), width: 1360, height: Math.min(Math.round(r.height), 2400) };
+    return { x: 0, y: Math.round(r.top + window.scrollY), width: window.innerWidth, height: Math.min(Math.round(r.height), 4000) };
   })()`)
   if (!box) { console.log(`  - ${name}: غير موجود`); continue }
   await shoot(`sec-${name}`, { clip: { ...box, scale: 1 }, fullPage: true })

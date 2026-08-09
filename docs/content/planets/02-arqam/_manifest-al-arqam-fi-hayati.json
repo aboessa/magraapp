@@ -1,0 +1,830 @@
+{
+  "planet_id": "arqam",
+  "category_id": "category-numbers",
+  "series": {
+    "slug": "al-arqam-fi-hayati",
+    "title_ar": "الأرقام في حياتي",
+    "title_en": "Numbers in My Life",
+    "type": "knowledge",
+    "age_min": 9,
+    "age_max": 12,
+    "track": "junior",
+    "reading_level": "independent",
+    "interaction_mode": "independent",
+    "supervision_level": "none",
+    "difficulty": "medium",
+    "production_level": "limited_2d",
+    "price_tier": "family",
+    "is_free": 0,
+    "description_ar": "سلسلة معرفية تجيب في كل حلقة عن سؤال واحد يواجهه الطفل حين يستخدم الأرقام خارج ورقة التمارين: جزء من ماذا؟ بأي وحدة؟ هل الجواب معقول؟ ما يقوله الرسم؟ فرق أم نسبة؟ وكيف أوزّع مقدارًا محدودًا؟",
+    "learning_goals": [
+      "يقرأ الكسر كجزء من كلٍّ مُسمّى، ويتحقق من تساوي الأجزاء",
+      "يختار وحدة قياس مناسبة ويعلّل اختياره، ولا يقبل رقمًا بلا وحدة",
+      "يحكم على معقولية الجواب بالتقدير قبل الحساب الدقيق",
+      "يقرأ قيمة من رسم بالأعمدة بعد فحص المقياس وبداية المحور",
+      "يقارن كميتين بالنسبة لا بالفرق وحده",
+      "يوزّع مقدارًا ثابتًا على خيارات متزاحمة ويشرح مفاضلته"
+    ],
+    "languages": ["ar"],
+    "purpose": "كوكب أرقام يخدم اليوم مسار 3–5 بسلسلة عدّ معي (العدّ حتى 5 والمقارنة والأنماط) ومسار 6–8 بمغامرات الأرقام (الجمع والطرح البصريان والعدّ بالوثب في مدى 1–20)، ولا يخدم مسار 9–12 بشيء. طفل التاسعة تجاوز هذا المدى كله ولا يجد على الكوكب محتوى يخصّه. والفراغ ليس في حساب أصعب، بل في الحسّ العددي التطبيقي: أن يفهم ما تعنيه الأرقام التي يراها في حياته وأن يحكم عليها. هذه السلسلة تغلق الفراغ بست أدوات حكم: تسمية الكل في الكسر، اختيار الوحدة، التقدير قبل الحساب، قراءة الرسم من مقياسه، المقارنة بالنسبة، وتوزيع مقدار محدود بمفاضلة معلَنة. وهي `knowledge` بلا شخصية لأن البطل في كل حلقة هو الشيء المعروض الذي يفحصه الطفل بنفسه، ولأن الحكم على الأرقام مهارة يمارسها الطفل لا يشاهد شخصًا يمارسها.",
+    "safety_notes": "حلقتان فقط تطلبان نشاطًا ماديًا: الحلقة 2 (قياس بشريط قياس ومسطرة وكوب معايرة داخل البيت، بلا أدوات حادة وبلا ماء ساخن وبلا صعود على كرسي) والحلقة 5 (خلط بماء بارد ومادة معدّة للشرب فقط). تفاصيل المنع بالاسم في `safety_notes` لكل حلقة ولكل مشروع."
+  },
+  "season": {
+    "season_number": 1,
+    "title_ar": "الموسم الأول",
+    "watch_order": "sequential"
+  },
+  "objectives": [
+    {
+      "code": "math.fraction.part_whole",
+      "title_ar": "قراءة الكسر كجزء من كلٍّ مُسمّى",
+      "criteria_ar": "يسمّي الكل ويحدّد عدد الأجزاء المتساوية في 5 من 6 كسور معروضة، ويرفض تسمية «ربع» لجزء من أجزاء غير متساوية، ويتعرّف على كسرين مختلفي الشكل متساويي القيمة مرة واحدة على الأقل.",
+      "skill": "counting",
+      "age_min": 9,
+      "age_max": 12
+    },
+    {
+      "code": "math.measure.unit_choice",
+      "title_ar": "اختيار وحدة قياس مناسبة",
+      "criteria_ar": "يختار الوحدة المناسبة في 5 من 6 مواقف، ويعلّل اختياره في 3 على الأقل بأن الرقم الناتج أسهل في القول والاستخدام، ويرفض أي جواب رقمي بلا وحدة.",
+      "skill": "observation",
+      "age_min": 9,
+      "age_max": 12
+    },
+    {
+      "code": "math.estimate.reasonable",
+      "title_ar": "الحكم على معقولية الجواب قبل الحساب",
+      "criteria_ar": "يحدّد مدى معقولًا صحيحًا في 4 من 5 مسائل قبل الحساب، ويرفض جوابًا مستحيلًا ويقول سبب الرفض في 3 على الأقل، ويذكر اتجاه التقريب مرة واحدة على الأقل.",
+      "skill": "addition",
+      "age_min": 9,
+      "age_max": 12
+    },
+    {
+      "code": "math.data.read_chart",
+      "title_ar": "قراءة قيمة من رسم بالأعمدة",
+      "criteria_ar": "يفحص المقياس قبل القراءة، ويقرأ 5 من 6 قيم صحيحة من رسمين مختلفَي المقياس، ويجيب عن سؤالين يحتاجان قيمتين معًا، ويقرّر أن رسمين بمحورين مختلفين يحملان القيم نفسها.",
+      "skill": "observation",
+      "age_min": 9,
+      "age_max": 12
+    },
+    {
+      "code": "math.ratio.compare",
+      "title_ar": "مقارنة كميتين بالنسبة لا بالفرق",
+      "criteria_ar": "يحكم على تكافؤ نسبتين في 4 من 5 حالات باستخدام «لكل واحد» أو بالضرب في عدد، ويحدّد في 3 حالات على الأقل هل السؤال يطلب فرقًا أم نسبة، ويرفض حفظ النسبة بالجمع على الطرفين.",
+      "skill": "counting",
+      "age_min": 10,
+      "age_max": 12
+    },
+    {
+      "code": "math.money.budget",
+      "title_ar": "توزيع مقدار ثابت مع شرح المفاضلة",
+      "criteria_ar": "يُنتج توزيعًا مجموعه لا يتجاوز المقدار في 4 من 5 محاولات، ويسمّي في كل مرة خيارًا واحدًا تنازل عنه وسببًا للتنازل، ويعلن أولويته قبل الحساب مرة واحدة على الأقل.",
+      "skill": "addition",
+      "age_min": 10,
+      "age_max": 12
+    }
+  ],
+  "episodes": [
+    {
+      "episode_number": 1,
+      "slug": "ep-01-part-of-what",
+      "title_ar": "جزء من ماذا؟",
+      "title_en": "A Part of What?",
+      "description_ar": "الكسر لا معنى له وحده؛ لا بد من تسمية الكل الذي هو جزء منه.",
+      "duration_seconds": 390,
+      "age_min": 9,
+      "age_max": 12,
+      "reading_level": "independent",
+      "interaction_mode": "independent",
+      "supervision_level": "none",
+      "difficulty": "medium",
+      "is_free": 0,
+      "objective_code": "math.fraction.part_whole",
+      "new_words": ["الكل", "أجزاء متساوية", "المقام", "البسط"],
+      "prerequisites": [],
+      "skills": ["counting", "observation"],
+      "mastery_criteria": "يسمّي الكل ويحدّد عدد الأجزاء المتساوية في 5 من 6 كسور معروضة، ويرفض تسمية «ربع» لجزء من أجزاء غير متساوية، ويتعرّف على كسرين مختلفي الشكل متساويي القيمة مرة واحدة على الأقل. قراءة الكسر صحيحًا بلا تسمية الكل لا تُحتسب إتقانًا.",
+      "parent_guide_ar": "طفلك يتعلّم أن الكسر نسبة لا كمية: «نصف» لا يعني مقدارًا معلومًا حتى نعرف نصف ماذا. أكثر أخطاء الكسور لاحقًا ترجع إلى هذا. الخط الأحمر: لا تقبل «واحد من أربعة» كتعريف للربع بلا شرط التساوي، وانتبه لرسوم تسمّي أجزاء غير متساوية أرباعًا. ساعده في المطبخ: «هذا نصف الكوب وهذا نصف القدر، أيهما أكثر ماءً؟» إن أجاب «متساويان» فالمفهوم لم يستقر، وأعِد مشهد الكوب والقارورة وحده.",
+      "family_activity_ar": "نصف ماذا؟ — 15 دقيقة: اجمعا ثلاثة أوعية بلاستيكية مختلفة الحجم، واملأ كل واحد إلى نصفه بماء بارد. يرتّبها طفلك من الأقل ماءً إلى الأكثر وكلها أنصاف، ثم يشرح لماذا تختلف. اطويا شريط ورق إلى أنصاف ثم أرباع ثم أثمان وقارنا حجم القطعة. تنويع للأكبر: أثبتا أن ٢/٦ و٤/١٢ متساويان بالورق لا بالحساب.",
+      "safety_notes": null,
+      "questions": [
+        {
+          "id": "q1",
+          "type": "match_pairs",
+          "prompt_key": "afh.ep1.q1",
+          "prompt_text": "طابق كل صورة بالكسر الملوّن فيها، وسمِّ الكل.",
+          "items": ["fig.bar_2_of_6", "fig.circles_4_of_12", "fig.loaf_3_of_4"],
+          "correct": [
+            ["fig.bar_2_of_6", "frac.one_third"],
+            ["fig.circles_4_of_12", "frac.one_third"],
+            ["fig.loaf_3_of_4", "frac.three_quarters"]
+          ]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "afh.ep1.q2",
+          "prompt_text": "دائرة مقسومة إلى أربعة أجزاء غير متساوية، وجزء واحد ملوّن. هل الملوّن ربع؟",
+          "items": ["ans.no_parts_unequal", "ans.yes_four_parts", "ans.depends_on_color"],
+          "correct": ["ans.no_parts_unequal"]
+        }
+      ],
+      "script_file": "ep-01-part-of-what.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "bar_split_art_2_4_6_8",
+        "loaf_quarters_two_sizes",
+        "grid_24_circles_and_3x8_regroup",
+        "circle_unequal_vs_equal_quarters",
+        "cup_and_bottle_half_art",
+        "fraction_notation_numeral_system_aware",
+        "music_bed_calm",
+        "sfx_split",
+        "math_pedagogy_review"
+      ],
+      "production_notes": "الأجزاء المتساوية تُرسم متساوية فعلًا بالقياس لا بالتقريب البصري، وأي انحراف يفسد درس الأجزاء غير المتساوية. فرق حجم الرغيفين ظاهر فورًا بنسبة 1:2 على الأقل. الصف والمدرسة متخيَّلان بالكامل وممنوع إدخال أي إحصاء واقعي. لا يُعطى جواب السؤال الأخير في الحلقة؛ يُستكمل في اللعبة. الأرقام تتبع numeral_system auto."
+    },
+    {
+      "episode_number": 2,
+      "slug": "ep-02-which-unit",
+      "title_ar": "أيّ وحدة أختار؟",
+      "title_en": "Which Unit Do I Choose?",
+      "description_ar": "لكل شيء وحدة تناسب حجمه؛ الوحدة الخاطئة تُنتج رقمًا صحيحًا لا يفيد أحدًا.",
+      "duration_seconds": 390,
+      "age_min": 9,
+      "age_max": 12,
+      "reading_level": "independent",
+      "interaction_mode": "independent",
+      "supervision_level": "recommended",
+      "difficulty": "easy",
+      "is_free": 0,
+      "objective_code": "math.measure.unit_choice",
+      "new_words": ["وحدة القياس", "الوحدة المناسبة", "التحويل", "مقدار وحده لا يكفي"],
+      "prerequisites": ["afh-ep-01"],
+      "skills": ["observation"],
+      "mastery_criteria": "يختار الوحدة المناسبة في 5 من 6 مواقف، ويعلّل اختياره في 3 على الأقل بأن الرقم الناتج أسهل في القول والاستخدام، ويرفض أي جواب رقمي بلا وحدة.",
+      "parent_guide_ar": "طفلك يتعلّم اختيار الوحدة، وأن الرقم بلا وحدة ليس جوابًا — وهذا خطأ يخسر به التلاميذ درجات على شيء يعرفونه. الخط الأحمر: القياس في هذا النشاط بشريط قياس مرن ومسطرة وكوب معايرة فقط؛ لا أدوات حادة ولا ماء ساخن ولا صعود على كرسي أو طاولة ولا قياس خارج البيت، والارتفاعات يقيسها ولي الأمر. اجعل القياس عادة يومية واطلب الوحدة مع كل رقم. إن اختار وحدة صحيحة بلا تعليل فالمعرفة شكلية، وأعِد مشهد «الرقم المريح».",
+      "family_activity_ar": "مفكرة القياس — 20 دقيقة: اصنعا جدولًا من ثلاثة أعمدة (الشيء، الوحدة المختارة، المقدار) واختارا خمسة أشياء داخل البيت في متناول اليد. يختار طفلك الوحدة قبل القياس ويكتب سببًا، ثم يقيس. إن لم يكن الرقم مريحًا فجرّب وحدة أخرى بالتحويل لا بإعادة القياس. كل رقم مكتوب بوحدته، ورقم بلا وحدة يُشطب. لا مقص ولا سكين ولا شيء ساخن ولا صعود على كرسي.",
+      "safety_notes": "القياس بشريط قياس مرن ومسطرة وأكواب معايرة فقط. ممنوع استخدام أي أداة حادة، أو ميزان مطبخ كهربائي بلا وجود راشد، أو ماء ساخن، أو الصعود على كرسي أو طاولة لقياس ارتفاع. لا يُقاس شيء في الشارع ولا خارج البيت، ولا في الحمّام. الأشياء المرتفعة يقيسها ولي الأمر.",
+      "questions": [
+        {
+          "id": "q1",
+          "type": "sort_bins",
+          "prompt_key": "afh.ep2.q1",
+          "prompt_text": "ضع كل شيء في صندوق الوحدة المناسبة لقياسه.",
+          "items": ["item.door_height", "item.seed_length", "item.tank_water", "item.cup_water", "item.activity_duration", "item.race_duration"],
+          "correct": [
+            ["item.door_height", "bin.meter"],
+            ["item.seed_length", "bin.millimeter"],
+            ["item.tank_water", "bin.liter"],
+            ["item.cup_water", "bin.milliliter"],
+            ["item.activity_duration", "bin.hour"],
+            ["item.race_duration", "bin.minute"]
+          ]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "afh.ep2.q2",
+          "prompt_text": "تلميذ كتب: «الجواب = ٢٥». ما المشكلة في جوابه؟",
+          "items": ["ans.missing_unit", "ans.number_too_small", "ans.needs_fraction"],
+          "correct": ["ans.missing_unit"]
+        }
+      ],
+      "script_file": "ep-02-which-unit.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "unit_column_art_four_units",
+        "balance_visual_small_big_comfortable",
+        "room_and_pencil_measurement_art",
+        "answer_without_unit_art",
+        "unit_bins_art_six",
+        "sfx_tick",
+        "math_pedagogy_review"
+      ],
+      "production_notes": "كل التحويلات بالعشرات فقط (١٠ · ١٠٠ · ١٠٠٠) ليتحقق منها الطفل. الملعب والغرفة والقلم أمثلة مؤلَّفة ولا تُنسب إلى مكان حقيقي ولا مقاس رسمي. ممنوع ذكر أي سعر أو عملة في هذه الحلقة. قاعدة «الرقم المريح» تُقدَّم كعادة عملية لا كقانون، مع ذكر حالة المهندس صراحةً. safety_notes إلزامية لأن النشاط يطلب قياسًا فعليًا."
+    },
+    {
+      "episode_number": 3,
+      "slug": "ep-03-is-it-reasonable",
+      "title_ar": "هل الجواب معقول؟",
+      "title_en": "Is the Answer Reasonable?",
+      "description_ar": "التقدير قبل الحساب يكشف الأجوبة المستحيلة قبل أن تُكتب.",
+      "duration_seconds": 390,
+      "age_min": 9,
+      "age_max": 12,
+      "reading_level": "independent",
+      "interaction_mode": "independent",
+      "supervision_level": "none",
+      "difficulty": "medium",
+      "is_free": 0,
+      "objective_code": "math.estimate.reasonable",
+      "new_words": ["التقدير", "التقريب", "المدى المعقول", "جواب مستحيل"],
+      "prerequisites": ["afh-ep-02"],
+      "skills": ["addition", "observation"],
+      "mastery_criteria": "يحدّد مدى معقولًا صحيحًا في 4 من 5 مسائل قبل الحساب، ويرفض جوابًا مستحيلًا ويقول سبب الرفض في 3 على الأقل، ويذكر اتجاه التقريب مرة واحدة على الأقل. إعطاء رقم دقيق بدلًا من مدى لا يُحتسب تقديرًا.",
+      "parent_guide_ar": "طفلك يتعلّم أن يحكم على جوابه قبل أن يثق به. التقدير حاجز أمان: من يقدّر أولًا لا يكتب جوابًا أكبر عشر مرات من الصحيح بلا أن يلاحظ. الخط الأحمر: لا تقبل «خمّنت» كتعليل؛ التقدير له سبب معلوم (قرّبتُ إلى كذا فصار كذا) والتخمين بلا سبب ليس مهارة. اسأله قبل أي حساب: تقريبًا كم؟ ولا تصحّح تقديره إن كان قريبًا. إن أعطى رقمًا دقيقًا كلما طُلب تقدير فهو لم يفهم الفرق، فأعِد مشهد «منطقة لا رقم».",
+      "family_activity_ar": "قدّر ثم تحقّق — 15 دقيقة: اختارا ثلاثة أشياء يمكن عدّها فعلًا (بلاطات ممر، كتب في رفّ، ملاعق في درج). قبل العدّ يكتب طفلك تقديرًا مع سببه، ثم تعدّان فعلًا وتحسبان الفرق؛ والفرق الصغير نجاح للتقدير لا فشل. اللعبة المضادة: اكتب أنت جوابًا مستحيلًا لمسألة ويكشفه هو ويشرح لماذا. بلا مؤقت. تنويع للأكبر: حدّدا حدّين، أقل رقم ممكن وأكبره، وتأكّدا أن الدقيق بينهما.",
+      "safety_notes": null,
+      "questions": [
+        {
+          "id": "q1",
+          "type": "count_quantity",
+          "prompt_key": "afh.ep3.q1",
+          "prompt_text": "قدّر: ١٨ صفًا × ٢٢ كرسيًا. أي مدى يقع فيه الجواب؟",
+          "items": ["range.300_350", "range.350_450", "range.900_1000"],
+          "correct": ["range.350_450"]
+        },
+        {
+          "id": "q2",
+          "type": "sort_bins",
+          "prompt_key": "afh.ep3.q2",
+          "prompt_text": "صنّف كل جملة: معقولة أم مستحيلة؟",
+          "items": ["stmt.pupil_140cm", "stmt.bag_40kg", "stmt.cup_2liters", "stmt.apple_240g"],
+          "correct": [
+            ["stmt.pupil_140cm", "bin.reasonable"],
+            ["stmt.apple_240g", "bin.reasonable"],
+            ["stmt.bag_40kg", "bin.impossible"],
+            ["stmt.cup_2liters", "bin.impossible"]
+          ]
+        }
+      ],
+      "script_file": "ep-03-is-it-reasonable.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "notebook_wrong_answer_art",
+        "rounding_arrows_art",
+        "numberline_with_shaded_range",
+        "hall_plan_18x22_countable",
+        "calculator_and_apples_art",
+        "reasonable_impossible_cards",
+        "sfx_tick",
+        "math_pedagogy_review"
+      ],
+      "production_notes": "كل حسبة قابلة للتحقق بالورقة: ٢٠×٢٠=٤٠٠ · ١٨×٢٠=٣٦٠ · ١٨×٢=٣٦ · ٣٦٠+٣٦=٣٩٦ · ٥٠×١١=٥٥٠. اتجاه التقريب يُذكر صراحةً؛ حذفه يعلّم تقديرًا أعمى. التمييز بين التقدير والتخمين يبقى حرفيًا في التسجيل. ممنوع أي سعر أو عملة، ومشهد التفاح عن الوزن لا الثمن. القاعة والكيس أمثلة مؤلَّفة. لا مؤقت في الحلقة ولا في اللعبة لأن التقدير المتسرّع نقيض المطلوب."
+    },
+    {
+      "episode_number": 4,
+      "slug": "ep-04-read-the-chart",
+      "title_ar": "أقرأ العمود",
+      "title_en": "Reading the Bar",
+      "description_ar": "يقرأ الطفل قيمة من رسم بالأعمدة بعد أن يفحص المقياس، ويجيب بها عن سؤال.",
+      "duration_seconds": 390,
+      "age_min": 9,
+      "age_max": 12,
+      "reading_level": "independent",
+      "interaction_mode": "independent",
+      "supervision_level": "none",
+      "difficulty": "medium",
+      "is_free": 0,
+      "objective_code": "math.data.read_chart",
+      "new_words": ["المحور", "المقياس", "العنوان", "بداية المحور"],
+      "prerequisites": ["afh-ep-02"],
+      "skills": ["observation", "counting"],
+      "mastery_criteria": "يفحص المقياس قبل القراءة، ويقرأ 5 من 6 قيم صحيحة من رسمين مختلفَي المقياس، ويجيب عن سؤالين يحتاجان قيمتين معًا (فرق ومجموع)، ويقرّر أن رسمين بمحورين مختلفين يحملان القيم نفسها. قراءة القيم صحيحًا بمقياس واحد فقط لا تُحتسب إتقانًا.",
+      "parent_guide_ar": "طفلك يتعلّم قراءة الرسم من مقياسه لا من شكله، وأن الرسم قد يعطي إحساسًا مختلفًا عن أرقامه حين لا يبدأ محوره من الصفر. الخط الأحمر: لا تقبل جوابًا مأخوذًا من طول العمود بالنظر؛ اسأل أولًا «كم يمثّل كل خط؟». عند أي رسم يراه اسأل ثلاثة أسئلة: ما العنوان؟ ما المحاور؟ من أين يبدأ المحور الرأسي؟ وملاحظة مهمة: كل أرقام الحلقة مؤلَّفة لمثال تعليمي وليست إحصاءً حقيقيًا، وإن سألك طفلك عن ذلك فالجواب الصريح درس جيد في ذاته.",
+      "family_activity_ar": "رسمان لبيانات واحدة — 20 دقيقة: عُدّا شيئًا حقيقيًا لخمسة أيام (أكواب ماء أو صفحات قراءة). ارسما رسمًا بالأعمدة على ورق مربّعات بمحور يبدأ من الصفر، ثم الرسم نفسه بمحور يبدأ من رقم أعلى. اسأل: أي رسم يجعل الفرق يبدو أكبر؟ وهل تغيّرت الأرقام؟ اكتبا عنوانًا ووحدة محور لكل رسم، ورسم بلا عنوان يُشطب. تنويع للأكبر: نفس البيانات بمقياسين مختلفين، وأي مقياس أوضح ولماذا.",
+      "safety_notes": null,
+      "questions": [
+        {
+          "id": "q1",
+          "type": "match_pairs",
+          "prompt_key": "afh.ep4.q1",
+          "prompt_text": "طابق كل سؤال بجوابه من الرسم (كل خط يمثّل كتابين).",
+          "items": ["ask.tuesday_value", "ask.wednesday_value", "ask.tue_minus_wed", "ask.five_days_total"],
+          "correct": [
+            ["ask.tuesday_value", "val.14"],
+            ["ask.wednesday_value", "val.6"],
+            ["ask.tue_minus_wed", "val.8"],
+            ["ask.five_days_total", "val.50"]
+          ]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "afh.ep4.q2",
+          "prompt_text": "رسمان بالأرقام نفسها، وأحدهما محوره يبدأ من ١٠. ما الصحيح؟",
+          "items": ["ans.values_same_look_different", "ans.second_chart_bigger_values", "ans.first_chart_wrong"],
+          "correct": ["ans.values_same_look_different"]
+        }
+      ],
+      "script_file": "ep-04-read-the-chart.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "bar_chart_step2_from_zero",
+        "bar_chart_same_data_truncated_axis",
+        "bar_chart_second_step5",
+        "three_looks_arrows_art",
+        "difference_bracket_and_sum_steps",
+        "chart_titles_as_localized_content_data",
+        "sfx_tick",
+        "math_pedagogy_review"
+      ],
+      "production_notes": "البيانات مؤلَّفة بالكامل ويجب أن يُعلن ذلك على الشاشة في عنوان كل رسم بعبارة «بيانات مؤلَّفة لصفٍّ مُتخيَّل»؛ رسم بلا هذه العبارة يُرفض في القبول. المقياس في الرسم الأول ٢ وفي الثاني ٥ والتغيير مقصود لقياس الإجراء لا الحفظ. النسخة المقطوعة المحور تُعرض بجوار النسخة الكاملة في نفس الكادر وإلا سقط الدرس، ولا تُوصف بأنها خداع من أحد بل خاصية تحتاج انتباهًا. كل قيمة = عدد الخطوط × المقياس، وخطوات الجمع الخمس معروضة كاملة."
+    },
+    {
+      "episode_number": 5,
+      "slug": "ep-05-ratio-not-difference",
+      "title_ar": "فرق أم نسبة؟",
+      "title_en": "Difference or Ratio?",
+      "description_ar": "مقارنة كميتين بالطرح تعطي جوابًا مختلفًا عن مقارنتهما بالنسبة، والسؤال يحدّد أيّهما نستخدم.",
+      "duration_seconds": 390,
+      "age_min": 10,
+      "age_max": 12,
+      "reading_level": "independent",
+      "interaction_mode": "independent",
+      "supervision_level": "none",
+      "difficulty": "hard",
+      "is_free": 0,
+      "objective_code": "math.ratio.compare",
+      "new_words": ["الفرق", "النسبة", "نسبتان متكافئتان", "لكل واحد"],
+      "prerequisites": ["afh-ep-01", "afh-ep-03"],
+      "skills": ["counting", "observation"],
+      "mastery_criteria": "يحكم على تكافؤ نسبتين في 4 من 5 حالات باستخدام «لكل واحد» أو بالضرب في عدد، ويحدّد في 3 حالات على الأقل هل السؤال يطلب فرقًا أم نسبة، ويرفض حفظ النسبة بالجمع على الطرفين. الحكم الصحيح بلا تعليل بالنسبة لا يُحتسب إتقانًا.",
+      "parent_guide_ar": "طفلك يتعلّم المقارنة بالنسبة لا بالطرح وحده، وهي مقدمة الكسور المتكافئة والمقياس والسرعة والنسبة المئوية. الخط الأحمر: لا تقبل «أزيد واحدًا على كل طرف فتبقى النسبة»؛ هذا التفكير الجمعي أشهر خطأ في الموضوع ويُصحّح بمثال محسوس لا بقاعدة. المطبخ خير مكان: «الوصفة كوب أرز لكوبين ماء، فلو استخدمنا ثلاثة أكواب أرز فكم ماء؟». إن قال إن خليط ٤ و١٠ مثل خليط ٣ و٩ لأن الفرق واحد، فأعِد مشهد الإبريق الثالث — فهذا الخطأ هو سبب وجود الحلقة.",
+      "family_activity_ar": "خليطان بنفس الطعم — 15 دقيقة: بماء بارد وملعقة عصير مركّز أو مسحوق شرب مخصّص للأطفال. الخليط الأول ملعقة لكل ثلاثة أكواب، والثاني ملعقتان لكل ستة أكواب؛ ذوّقا فالطعم واحد والكمية ضعف. ثم خليط ثالث ملعقتان لكل أربعة أكواب فهو أقوى لأن الماء أقل لكل ملعقة. يكتب طفلك النسب الثلاث بصيغة «لكل واحد». ماء بارد فقط، لا ماء ساخن ولا غليان ولا مواد غير معدّة للشرب. تنويع للأكبر: اصنعا خليطًا يكافئ نسبة ٢ إلى ٥ بأعداد أكبر وأثبتا التكافؤ بالضرب.",
+      "safety_notes": "نشاط الذوق بماء بارد من الصنبور فقط، وبمادة معدّة للشرب فقط. ممنوع الماء الساخن، والغليان، وأي مادة غير غذائية، وخلط أي شيء غير معدّ للشرب. الأدوات: ملعقة وكوب فقط، بلا أدوات حادة وبلا استخدام موقد.",
+      "questions": [
+        {
+          "id": "q1",
+          "type": "logic_pattern",
+          "prompt_key": "afh.ep5.q1",
+          "prompt_text": "أي خليط تكافئ نسبته النسبة «مكعبان لكل ستة أكواب»؟",
+          "items": ["mix.3_and_9", "mix.4_and_10", "mix.2_and_4", "mix.5_and_15"],
+          "correct": ["mix.3_and_9", "mix.5_and_15"]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "afh.ep5.q2",
+          "prompt_text": "خليطان لهما الفرق نفسه. هل نسبتهما بالضرورة واحدة؟",
+          "items": ["ans.no_ratio_can_differ", "ans.yes_same_difference", "ans.only_if_even"],
+          "correct": ["ans.no_ratio_can_differ"]
+        }
+      ],
+      "script_file": "ep-05-ratio-not-difference.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "three_jugs_art_countable_cubes_and_cups",
+        "per_one_grouping_animation_art",
+        "ratio_add_error_visual",
+        "ratio_multiply_visual",
+        "which_tool_cards_subtract_divide",
+        "sfx_tick",
+        "math_pedagogy_review"
+      ],
+      "production_notes": "الأكواب والمكعبات تُرسم معدودة ظاهرة في كل إبريق فيعدّها الطفل. الإبريقان الثاني والثالث لهما الفرق نفسه (٦) عن قصد وهو محور المشهد الرابع، ولا يجوز تغيير الأرقام. كل حسبة قابلة للتحقق: ٦÷٢=٣ · ٩÷٣=٣ · ٤×٣=١٢ · ١٠÷٤=٢٫٥ · ٨÷٢=٤ · ١٢÷٣=٤. مسحوق العصير مادة مؤلَّفة بلا علامة تجارية، وممنوع ذكر سعر أو عملة.",
+      "age_note": "age_min = 10: المقارنة النسبية تحتاج استقرارًا في مفهوم الكسر وفي الضرب والقسمة، ولا تستقر عادة في التاسعة."
+    },
+    {
+      "episode_number": 6,
+      "slug": "ep-06-small-budget",
+      "title_ar": "ميزانية صغيرة",
+      "title_en": "A Small Budget",
+      "description_ar": "يوزّع الطفل مقدارًا محدودًا على خيارات متزاحمة، ويشرح ما تنازل عنه ولماذا.",
+      "duration_seconds": 390,
+      "age_min": 10,
+      "age_max": 12,
+      "reading_level": "independent",
+      "interaction_mode": "independent",
+      "supervision_level": "none",
+      "difficulty": "hard",
+      "is_free": 0,
+      "objective_code": "math.money.budget",
+      "new_words": ["الميزانية", "المفاضلة", "الأولوية", "الباقي"],
+      "prerequisites": ["afh-ep-03", "afh-ep-05"],
+      "skills": ["addition", "observation"],
+      "mastery_criteria": "يُنتج توزيعًا مجموعه لا يتجاوز المقدار في 4 من 5 محاولات، ويسمّي في كل مرة خيارًا واحدًا تنازل عنه وسببًا واحدًا للتنازل، ويعلن أولويته قبل الحساب مرة واحدة على الأقل. توزيع صحيح حسابيًا بلا شرح للمفاضلة لا يُحتسب إتقانًا.",
+      "parent_guide_ar": "طفلك يتعلّم أن الحساب يخدم قرارًا: كل «نعم» تعني «لا» لشيء آخر، وأن يشرح ما تركه. الخط الأحمر: لا تحكم على اختياره بأنه سيئ إن التزم بالميزانية؛ الحلقة لا تفضّل الكتاب على اللعبة بل تطلب أن يعلن أولويته ويتبعها، وتحويل النشاط إلى درس أخلاقي في الترشيد يخسر الرياضيات والدرس معًا. ولماذا «وحدة» لا عملة؟ لأن الأسعار تتغيّر وتختلف بين البلدان والمقصود مهارة التوزيع؛ اذكر أنت عملتكم في نشاط البيت إن أردت. أعطه مقدارًا صغيرًا حقيقيًا وقرارًا يخصّه، واطلب شيئًا واحدًا: أن يقول قبل الشراء ما سيتركه ولماذا.",
+      "family_activity_ar": "بازار الوحدات — 20 دقيقة: اصنعا عشرين قصاصة ورق كل واحدة «وحدة»، واكتبا خمس بطاقات لأشياء من البيت بتكاليف مجموعها أكبر من عشرين. قبل أي اختيار يجمع طفلك التكاليف ويكتب كم ينقصه، ثم يكتب أولويته في سطر، ثم يختار سلته، ثم يشرح ماذا ترك ولماذا — وهذا هو المطلوب لا السلة. بدّلا الأدوار: اختر أنت سلة تتجاوز الميزانية بوحدة ودعه يكشفها. أي توزيع مجموعه ٢٠ أو أقل مقبول، ولا سلة صحيحة وحيدة. تنويع للأكبر: أضيفا شرط «لا بد أن يبقى لديك ثلاث وحدات».",
+      "safety_notes": null,
+      "questions": [
+        {
+          "id": "q1",
+          "type": "sort_bins",
+          "prompt_key": "afh.ep6.q1",
+          "prompt_text": "ميزانيتك ١٥ وحدة. صنّف كل سلة: مقبولة أم تتجاوز الميزانية؟",
+          "items": ["basket.9_6", "basket.9_4", "basket.9_6_4", "basket.6_4"],
+          "correct": [
+            ["basket.9_6", "bin.within_budget"],
+            ["basket.9_4", "bin.within_budget"],
+            ["basket.6_4", "bin.within_budget"],
+            ["basket.9_6_4", "bin.over_budget"]
+          ]
+        },
+        {
+          "id": "q2",
+          "type": "choice",
+          "prompt_key": "afh.ep6.q2",
+          "prompt_text": "اخترت سلة بـ١٣ وحدة من ميزانية ١٥. ما الصحيح عن الوحدتين الباقيتين؟",
+          "items": ["ans.remainder_is_a_choice", "ans.remainder_is_a_mistake", "ans.must_spend_all"],
+          "correct": ["ans.remainder_is_a_choice"]
+        }
+      ],
+      "script_file": "ep-06-small-budget.md",
+      "production_required": [
+        "video_master",
+        "thumbnail_16x9",
+        "voiceover_ar",
+        "captions_ar",
+        "bazaar_table_background",
+        "budget_card_and_four_option_cards_in_units",
+        "three_baskets_comparison_art",
+        "priority_sheet_art",
+        "budget_bar_three_segments",
+        "four_steps_art",
+        "sfx_tick",
+        "math_pedagogy_review"
+      ],
+      "production_notes": "لا عملة ولا رمز عملة ولا سعر واقعي ولا اسم منتج تجاري في أي إطار؛ الوحدة الحسابية «وحدة» فقط. الأرقام صغيرة وقابلة للجمع ذهنيًا: ٨ · ٣ · ١٢ · ٧ بمجموع ٣٠ وميزانية ٢٠، ثم ٩ · ٦ · ٤ بميزانية ١٥. خطوات الجمع تُعرض كاملة. لا سلة صحيحة واحدة، ويُرفض أي تصميم يوسم سلة ملتزمة بالميزانية كخيار خاطئ. الأولوية فرض في المثال لا حكم على الطفل، وممنوع أي نبرة وعظية عن الترشيد. الحلقة تستدعي الكسر والتقدير صراحةً لأنها تُغلق السلسلة.",
+      "age_note": "age_min = 10: الحلقة تطلب تقديرًا ومقارنة نسبية معًا وتبني على الحلقتين 3 و5."
+    }
+  ],
+  "characters": [],
+  "games": [
+    {
+      "pack_id": "mp-afh-ep1",
+      "title_ar": "الكسر وكلّه",
+      "engine": "match_pairs",
+      "age_min": 9,
+      "age_max": 12,
+      "objective_code": "math.fraction.part_whole",
+      "linked_episode": 1,
+      "core_mechanic": "يطابق الطفل شكلًا مقسومًا بالكسر الذي يمثّله، ثم يختار اسم الكل من قائمة قبل أن يُقبل الجواب.",
+      "gameplay_loop": "يظهر شكل مقسوم (شريط أو دائرة أو مجموعة) ← يطابقه الطفل بكسر ← يُسأل: ما الكل؟ ← يختار اسم الكل ← يُسأل: هل الأجزاء متساوية؟ ← تأكيد وشكل تالٍ.",
+      "levels": [
+        { "level": 1, "goal": "مطابقة أشكال مقسومة بكسورها وتسمية الكل", "items": 6, "distractors": 2 },
+        { "level": 2, "goal": "شكلان مختلفان بالكسر نفسه (٢/٦ و٤/١٢)", "items": 6, "distractors": 3 },
+        { "level": 3, "goal": "إدخال أشكال بأجزاء غير متساوية يجب رفضها", "items": 8, "distractors": 4 }
+      ],
+      "difficulty_progression": "من كسور مألوفة على شكل واحد، إلى كسور متكافئة على أشكال مختلفة، إلى أشكال غير صالحة يجب رفضها لعدم تساوي الأجزاء.",
+      "instructions_ar": "طابق الشكل بكسره، ثم قل: جزء من ماذا؟",
+      "success_rule": "الكسر صحيح، والكل مُسمّى صحيحًا، والحكم على تساوي الأجزاء صحيح.",
+      "failure_rule": "بلا خسارة وبلا مؤقت. عند الخطأ يظهر الشكل مع شريط قياس يقارن الأجزاء، ويُعاد السؤال بلا إعطاء الجواب.",
+      "scoring": "نجمة للمطابقة، ونجمة لتسمية الكل. المطابقة بلا تسمية الكل لا تُكمل المستوى.",
+      "educational_feedback": "«عددت الأجزاء، لكن هل هي متساوية؟» و«كسر بلا كلٍّ مُسمّى ليس معلومة.»",
+      "content_pack": {
+        "figures": [
+          { "id": "fig.bar_2_of_6", "fraction": "frac.one_third", "whole": "whole.paper_strip", "equal_parts": true },
+          { "id": "fig.circles_4_of_12", "fraction": "frac.one_third", "whole": "whole.group_of_circles", "equal_parts": true },
+          { "id": "fig.loaf_3_of_4", "fraction": "frac.three_quarters", "whole": "whole.one_loaf", "equal_parts": true },
+          { "id": "fig.circle_1_of_4_unequal", "fraction": "frac.invalid", "whole": "whole.one_circle", "equal_parts": false }
+        ],
+        "no_timer": true,
+        "data_note": "كل الأمثلة مؤلَّفة تعليميًا"
+      }
+    },
+    {
+      "pack_id": "sb-afh-ep2",
+      "title_ar": "صناديق الوحدات",
+      "engine": "sort_bins",
+      "age_min": 9,
+      "age_max": 12,
+      "objective_code": "math.measure.unit_choice",
+      "linked_episode": 2,
+      "core_mechanic": "يوزّع الطفل أشياء على صناديق وحدات، وفي كل مجال صندوقان: وحدة كبيرة وأخرى صغيرة.",
+      "gameplay_loop": "تظهر صورة شيء ← يسحبه الطفل إلى صندوق وحدة ← يُعرض الرقم الناتج بالوحدتين المتاحتين ← يختار الأريح ← تُعرض جملة بلا وحدة ويُطلب إكمالها ← شيء تالٍ.",
+      "levels": [
+        { "level": 1, "goal": "توزيع ستة أشياء على صناديق الطول والسعة والزمن", "items": 6, "distractors": 0 },
+        { "level": 2, "goal": "اختيار الوحدة الأريح بين وحدتين من نفس المجال", "items": 6, "distractors": 2 },
+        { "level": 3, "goal": "إكمال جواب ناقص الوحدة، ورفض الجواب بلا وحدة", "items": 8, "distractors": 3 }
+      ],
+      "difficulty_progression": "من تمييز المجال (طول أم سعة أم زمن)، إلى اختيار حجم الوحدة داخل المجال، إلى كشف جواب بلا وحدة ورفضه.",
+      "instructions_ar": "ضع كل شيء في صندوق وحدته، واختر الوحدة التي تعطيك رقمًا مريحًا.",
+      "success_rule": "الصندوق صحيح، والوحدة المختارة تعطي رقمًا بين واحد ومئة تقريبًا، وكل جواب مكتوب بوحدته.",
+      "failure_rule": "بلا خسارة وبلا مؤقت. عند اختيار وحدة غير مناسبة يُعرض الرقم الناتج كاملًا ويُسأل: أتستطيع قوله بسهولة؟",
+      "scoring": "نجمة للصندوق ونجمة للتعليل. لا خصم.",
+      "educational_feedback": "«الرقم صحيح لكنه غير مريح. جرّب وحدة أكبر.» و«رقم بلا وحدة ليس جوابًا.»",
+      "content_pack": {
+        "bins": ["bin.millimeter", "bin.meter", "bin.milliliter", "bin.liter", "bin.minute", "bin.hour"],
+        "items": [
+          { "id": "item.door_height", "bin": "bin.meter" },
+          { "id": "item.seed_length", "bin": "bin.millimeter" },
+          { "id": "item.tank_water", "bin": "bin.liter" },
+          { "id": "item.cup_water", "bin": "bin.milliliter" },
+          { "id": "item.activity_duration", "bin": "bin.hour" },
+          { "id": "item.race_duration", "bin": "bin.minute" }
+        ],
+        "metric_only": true,
+        "no_timer": true
+      }
+    },
+    {
+      "pack_id": "cq-afh-ep3",
+      "title_ar": "قدّر ثم تحقّق",
+      "engine": "count_quantity",
+      "age_min": 9,
+      "age_max": 12,
+      "objective_code": "math.estimate.reasonable",
+      "linked_episode": 3,
+      "core_mechanic": "يختار الطفل مدى يقع فيه الجواب قبل أن يُتاح له الحساب، ثم يحسب ويقارن.",
+      "gameplay_loop": "تُعرض مسألة ← يختار الطفل مدى من ثلاثة مديات ← يُطلب سبب التقريب ← يُفتح الحساب الدقيق ← يقارن الدقيق بالمدى ← مسألة تالية.",
+      "levels": [
+        { "level": 1, "goal": "اختيار المدى الصحيح لضرب عددين قريبين من العشرات", "items": 5, "distractors": 2 },
+        { "level": 2, "goal": "ذكر اتجاه التقريب: هل الجواب أقل أم أكثر من التقدير؟", "items": 5, "distractors": 2 },
+        { "level": 3, "goal": "تصنيف جمل «معقول / مستحيل» في الطول والوزن والسعة", "items": 8, "distractors": 3 }
+      ],
+      "difficulty_progression": "من اختيار مدى، إلى تحديد اتجاه التقريب، إلى الحكم على معقولية مقادير في مجالات مختلفة بلا حساب أصلًا.",
+      "instructions_ar": "قبل أن تحسب: بين أي رقمين يقع الجواب؟ ولماذا؟",
+      "success_rule": "المدى صحيح، وسبب التقريب صحيح، والحكم على المعقولية صحيح.",
+      "failure_rule": "بلا خسارة وبلا مؤقت. **لا يُفتح الحساب الدقيق قبل اختيار مدى** — هذا شرط تصميمي لا عقوبة.",
+      "scoring": "نجمة للمدى ونجمة للسبب. اختيار رقم دقيق بدلًا من مدى لا يُقبل ولا يُحتسب.",
+      "educational_feedback": "«قرّبت الاثنين إلى أعلى، فالجواب الحقيقي أقل قليلًا.» و«التقدير له سبب، والتخمين بلا سبب.»",
+      "content_pack": {
+        "problems": [
+          { "id": "prob.19x21", "range": "range.350_450", "check": "٢٠ × ٢٠ = ٤٠٠ والدقيق ٣٩٩" },
+          { "id": "prob.18x22", "range": "range.350_450", "check": "١٨ × ٢٠ = ٣٦٠ ثم + ٣٦ = ٣٩٦" },
+          { "id": "prob.49x11", "range": "range.500_600", "check": "٥٠ × ١١ = ٥٥٠ والدقيق ٥٣٩" }
+        ],
+        "judgement_statements": ["stmt.pupil_140cm", "stmt.bag_40kg", "stmt.cup_2liters", "stmt.apple_240g"],
+        "no_timer": true,
+        "no_currency": true
+      }
+    },
+    {
+      "pack_id": "mp-afh-ep4",
+      "title_ar": "اقرأ الرسم",
+      "engine": "match_pairs",
+      "age_min": 9,
+      "age_max": 12,
+      "objective_code": "math.data.read_chart",
+      "linked_episode": 4,
+      "core_mechanic": "يطابق الطفل أسئلة عن رسم بالأعمدة بقيمها، بعد أن يجيب عن سؤال المقياس أولًا.",
+      "gameplay_loop": "يظهر رسم بعنوانه ← سؤال إجباري: كم يمثّل كل خط؟ ← تُفتح بطاقات الأسئلة ← يطابقها الطفل بالقيم ← سؤال يحتاج قيمتين (فرق أو مجموع) ← رسم تالٍ بمقياس مختلف.",
+      "levels": [
+        { "level": 1, "goal": "قراءة قيم من رسم بمقياس خطوة ٢ ومحور من الصفر", "items": 5, "distractors": 2 },
+        { "level": 2, "goal": "أسئلة تحتاج قيمتين: فرق ومجموع", "items": 4, "distractors": 2 },
+        { "level": 3, "goal": "مقارنة رسمين بنفس البيانات، أحدهما محوره لا يبدأ من الصفر", "items": 4, "distractors": 2 }
+      ],
+      "difficulty_progression": "من قراءة قيمة واحدة، إلى دمج قيمتين، إلى الحكم على أن شكلين مختلفين يحملان القيم نفسها.",
+      "instructions_ar": "ابدأ بالمقياس: كم يمثّل كل خط؟ ثم اقرأ القيم.",
+      "success_rule": "سؤال المقياس صحيح، والقيم المطابقة صحيحة، وسؤال القيمتين صحيح.",
+      "failure_rule": "بلا خسارة وبلا مؤقت. **لا تُفتح بطاقات الأسئلة قبل الإجابة عن سؤال المقياس.** عند خطأ في قيمة تُبرز الخطوط ليعدّها الطفل.",
+      "scoring": "نجمة للمقياس، ونجمة لكل مطابقة، ونجمتان لسؤال القيمتين.",
+      "educational_feedback": "«قرأت طول العمود لا قيمته. اضرب عدد الخطوط في المقياس.» و«الأرقام لم تتغيّر، الشكل فقط تغيّر.»",
+      "content_pack": {
+        "charts": [
+          {
+            "id": "chart.books_step2",
+            "title_ar": "كتب مُستعارة — بيانات مؤلَّفة لصفٍّ مُتخيَّل",
+            "scale": 2,
+            "axis_starts_at": 0,
+            "values": { "day1": 12, "day2": 8, "day3": 14, "day4": 6, "day5": 10 }
+          },
+          {
+            "id": "chart.books_truncated",
+            "title_ar": "الكتب نفسها — المحور يبدأ من ١٠ — بيانات مؤلَّفة",
+            "scale": 2,
+            "axis_starts_at": 10,
+            "values": { "day1": 12, "day2": 8, "day3": 14, "day4": 6, "day5": 10 }
+          },
+          {
+            "id": "chart.second_step5",
+            "title_ar": "رسم ثانٍ — بيانات مؤلَّفة",
+            "scale": 5,
+            "axis_starts_at": 0,
+            "values": { "a": 15, "b": 25, "c": 40 }
+          }
+        ],
+        "requires_title_and_axis_unit": true,
+        "no_timer": true
+      }
+    },
+    {
+      "pack_id": "lp-afh-ep5",
+      "title_ar": "نسب متكافئة",
+      "engine": "logic_pattern",
+      "age_min": 10,
+      "age_max": 12,
+      "objective_code": "math.ratio.compare",
+      "linked_episode": 5,
+      "core_mechanic": "يكتشف الطفل قاعدة النسبة (الضرب في عدد) ويختار كل الخلائط المكافئة، مع مشوّشات لها الفرق نفسه.",
+      "gameplay_loop": "تُعرض نسبة مرجعية بمكعبات وأكواب معدودة ← تُعرض أربعة خلائط ← يختار الطفل كل المكافئ ← يُطلب تعليل: «كم لكل واحد؟» ← يُعرض التجميع بصريًا للتأكيد ← نسبة تالية.",
+      "levels": [
+        { "level": 1, "goal": "اختيار خليط واحد مكافئ بالضرب في ٢ أو ٣", "items": 4, "distractors": 2 },
+        { "level": 2, "goal": "اختيار خليطين مكافئين معًا، مع مشوّش له الفرق نفسه", "items": 5, "distractors": 3 },
+        { "level": 3, "goal": "كشف خطأ الجمع على الطرفين، وتحديد أي سؤال يطلب فرقًا وأيّه يطلب نسبة", "items": 6, "distractors": 3 }
+      ],
+      "difficulty_progression": "من مضاعف واحد واضح، إلى عائلة نسب مع مشوّش يشترك في الفرق، إلى التمييز بين سؤال الفرق وسؤال النسبة.",
+      "instructions_ar": "اسأل: كم كوبًا لكل مكعب؟ ثم اختر كل الخلائط المكافئة.",
+      "success_rule": "كل الخلائط المكافئة مختارة ولا خليط زائد، مع تعليل صحيح بصيغة «لكل واحد».",
+      "failure_rule": "بلا خسارة وبلا مؤقت. عند اختيار مشوّش الفرق يُعرض التجميع «لكل واحد» للخليطين جنبًا إلى جنب.",
+      "scoring": "نجمة لكل خليط صحيح، ونجمة للتعليل. اختيار ناقص لا يُكمل المستوى لأن النسبة عائلة لا حالة.",
+      "educational_feedback": "«الفرق نفسه لا يعني النسبة نفسها.» و«النسبة تُحفظ بالضرب لا بالجمع.»",
+      "content_pack": {
+        "reference_ratio": { "cubes": 2, "cups": 6, "per_one": 3 },
+        "mixes": [
+          { "id": "mix.3_and_9", "cubes": 3, "cups": 9, "per_one": 3, "equivalent": true },
+          { "id": "mix.5_and_15", "cubes": 5, "cups": 15, "per_one": 3, "equivalent": true },
+          { "id": "mix.4_and_10", "cubes": 4, "cups": 10, "per_one": 2.5, "equivalent": false, "note": "فرقه يساوي فرق mix.3_and_9 — مشوّش مقصود" },
+          { "id": "mix.2_and_4", "cubes": 2, "cups": 4, "per_one": 2, "equivalent": false, "note": "ناتج الجمع على الطرفين" }
+        ],
+        "no_timer": true,
+        "no_currency": true
+      }
+    },
+    {
+      "pack_id": "sl-afh-ep6",
+      "title_ar": "موزّع الميزانية",
+      "engine": "sim_lab",
+      "age_min": 10,
+      "age_max": 12,
+      "objective_code": "math.money.budget",
+      "linked_episode": 6,
+      "core_mechanic": "محاكاة توزيع: يسحب الطفل بطاقات خيارات إلى سلة، والمجموع يُحدَّث أمامه، ولا يُقبل إتمام الجولة قبل أن يكتب ما تركه وسببه.",
+      "gameplay_loop": "تُعرض ميزانية بالوحدات وخيارات مجموعها أكبر منها ← سؤال إجباري: كم مجموع كل الخيارات؟ وكم ينقصك؟ ← يكتب الطفل أولويته ← يبني سلته والمجموع يُحدَّث ← يختار ما تركه ويعلّل ← تُعرض ميزانيته كشريط بأقسامها والباقي ← جولة تالية بميزانية مختلفة.",
+      "levels": [
+        { "level": 1, "goal": "ميزانية ٢٠ وحدة وأربعة خيارات مجموعها ٣٠", "items": 4, "distractors": 0 },
+        { "level": 2, "goal": "ميزانية ١٥ وحدة وثلاثة خيارات مجموعها ١٩", "items": 3, "distractors": 0 },
+        { "level": 3, "goal": "ميزانية ٢٠ وحدة بشرط إضافي: يجب أن يبقى ٣ وحدات", "items": 5, "distractors": 1 }
+      ],
+      "difficulty_progression": "من التزام بحدٍّ واحد، إلى ميزانية أضيق بخيارات أقل، إلى قيد إضافي على الباقي يغيّر القرار كله.",
+      "instructions_ar": "اجمع كل التكاليف أولًا، ثم أعلن أولويتك، ثم وزّع. واشرح ما تركت.",
+      "success_rule": "مجموع السلة لا يتجاوز الميزانية، وسؤال المجموع الكلي صحيح، وقد سُمّي المتروك مع سببه.",
+      "failure_rule": "بلا خسارة وبلا مؤقت. عند تجاوز الميزانية يُبرز مقدار التجاوز ويُتاح إرجاع بطاقة. **لا سلة ملتزمة تُوسم كخيار خاطئ.**",
+      "scoring": "نجمة للالتزام بالميزانية، ونجمة لتسمية المتروك وسببه. **لا نجوم على إنفاق كل المقدار**، فالباقي اختيار مقبول.",
+      "educational_feedback": "«تجاوزت بوحدتين. أي بطاقة تُرجعها، ولماذا هي الأقل أولوية عندك؟» و«الباقي قرار لا خطأ.»",
+      "content_pack": {
+        "currency": "وحدة — عملة مؤلَّفة، ممنوع أي عملة أو رمز عملة حقيقي",
+        "rounds": [
+          {
+            "budget": 20,
+            "options": [
+              { "id": "opt.notebook", "cost": 8 },
+              { "id": "opt.pen", "cost": 3 },
+              { "id": "opt.small_toy", "cost": 12 },
+              { "id": "opt.used_book", "cost": 7 }
+            ],
+            "total": 30,
+            "accepted_baskets_note": "أي مجموع ≤ ٢٠ مقبول؛ لا سلة صحيحة وحيدة"
+          },
+          {
+            "budget": 15,
+            "options": [
+              { "id": "opt.a", "cost": 9 },
+              { "id": "opt.b", "cost": 6 },
+              { "id": "opt.c", "cost": 4 }
+            ],
+            "total": 19,
+            "accepted_baskets_note": "٩+٦=١٥ · ٩+٤=١٣ · ٦+٤=١٠ — ثلاثة حلول مقبولة"
+          }
+        ],
+        "requires_tradeoff_explanation": true,
+        "no_timer": true
+      }
+    }
+  ],
+  "books": [
+    {
+      "slug": "daftar-al-tahaqquq",
+      "title_ar": "دفتر التحقّق",
+      "title_en": "The Checking Notebook",
+      "type": "interactive",
+      "age_min": 9,
+      "age_max": 12,
+      "reading_level": "independent",
+      "description_ar": "كتاب تفاعلي قصير يجمع أدوات السلسلة الست في ست صفحات عمل، كل صفحة تطرح سؤالًا وتترك مساحة للطفل ليحسب ويعلّل. كل الأمثلة مؤلَّفة تعليميًا وقابلة للتحقق بالورقة.",
+      "objective_code": "math.estimate.reasonable",
+      "pages": [
+        {
+          "page": 1,
+          "role": "افتتاح — الأدوات الست",
+          "text_ar": "ست أسئلة تحمي حسابك: جزء من ماذا؟ أي وحدة؟ هل معقول؟ ما المقياس؟ كم لكل واحد؟ وماذا أترك؟",
+          "illustration_brief": "ست بطاقات تخطيطية مرتّبة، كل واحدة برمز بسيط وبلون من هوية مجرة. بلا شخصيات."
+        },
+        {
+          "page": 2,
+          "role": "الكسر والكل",
+          "text_ar": "شريطان مختلفا الطول، وكل واحد مقسوم إلى أربعة. لوّن ثلاثة أرباع كل واحد. أيّهما أكبر مقدارًا؟",
+          "illustration_brief": "شريطان بنسبة طول 1:2، وكل واحد مقسوم إلى أربعة أجزاء متساوية بالقياس، ومساحة تلوين فارغة."
+        },
+        {
+          "page": 3,
+          "role": "الوحدة",
+          "text_ar": "أمام كل شيء اكتب وحدته المناسبة. وأي جواب بلا وحدة اشطبه.",
+          "illustration_brief": "جدول من عمودين وستة أسطر: صورة شيء صغيرة في اليمين ومساحة كتابة في اليسار."
+        },
+        {
+          "page": 4,
+          "role": "التقدير",
+          "text_ar": "قبل أن تحسب: بين أي رقمين يقع الجواب؟ اكتب سبب تقريبك.",
+          "illustration_brief": "ثلاث مسائل ضرب بأعداد قريبة من العشرات، وتحت كل واحدة خط أعداد فارغ ليظلّل الطفل المدى."
+        },
+        {
+          "page": 5,
+          "role": "الرسم",
+          "text_ar": "رسمان بالأرقام نفسها. أحدهما محوره يبدأ من الصفر. أي فرق تراه؟ وهل تغيّرت الأرقام؟",
+          "illustration_brief": "رسمان بالأعمدة جنبًا إلى جنب، لكل واحد عنوان يحمل عبارة «بيانات مؤلَّفة» ووحدة على المحور."
+        },
+        {
+          "page": 6,
+          "role": "النسبة والميزانية",
+          "text_ar": "خليطان: مكعبان لستة أكواب، وثلاثة لتسعة. كم لكل واحد؟ ثم: وزّع عشرين وحدة واكتب ما تركت.",
+          "illustration_brief": "أعلى الصفحة إبريقان بمكعبات وأكواب معدودة. أسفلها أربع بطاقات بتكاليف بالوحدات وسلة فارغة وسطر «تركتُ… لأنّ…». بلا أي رمز عملة."
+        }
+      ],
+      "activities": [
+        "لوّن ثلاثة أرباع شريطين مختلفي الطول وقارن المقدار",
+        "اكتب وحدة مناسبة لستة أشياء واشطب أي جواب بلا وحدة",
+        "ظلّل المدى المعقول لثلاث مسائل قبل حلّها",
+        "ارسم بياناتك الخاصة بمحور من الصفر ومحور لا يبدأ من الصفر",
+        "اكتب نسبة خليط بصيغة «لكل واحد»",
+        "وزّع عشرين وحدة واكتب ما تركته وسببه"
+      ],
+      "illustration_requirements": "أسلوب تخطيطي نظيف بنفس لوحة ألوان السلسلة. **لا شخصيات ولا تميمة في أي صفحة.** كل رسم بأعمدة له عنوان ووحدة محور وعبارة «بيانات مؤلَّفة». الأجزاء المتساوية متساوية بالقياس. لا رمز عملة في أي صفحة. النصوص من ملفات الترجمة، وأرقام الصفحات والمحاور بيانات محتوى تُحزَّم لكل لغة. لا يوجد أي أصل رسومي اليوم — كل ما فوق موجز إنتاج."
+    }
+  ],
+  "projects": [
+    {
+      "slug": "mufakkirat-al-qiyas",
+      "title_ar": "مفكرة القياس",
+      "age_min": 9,
+      "age_max": 12,
+      "objective_code": "math.measure.unit_choice",
+      "supervision_level": "recommended",
+      "description_ar": "يبني الطفل مفكرة قياس لخمسة أشياء في البيت، ويختار وحدة كل قياس قبل أن يقيس، ويعلّل اختياره، ويحوّل إلى وحدة أخرى بدل إعادة القياس.",
+      "materials": [
+        "شريط قياس مرن",
+        "مسطرة",
+        "كوب معايرة",
+        "دفتر وقلم"
+      ],
+      "preparation": "يجهّز ولي الأمر جدولًا من ثلاثة أعمدة: الشيء · الوحدة المختارة وسببها · المقدار. ويختار مسبقًا خمسة أشياء **في متناول يد الطفل وعلى الأرض أو الطاولة**، فلا يحتاج الطفل إلى الوصول لشيء مرتفع.",
+      "steps": [
+        "1. اكتبا أسماء الأشياء الخمسة في الجدول قبل أي قياس.",
+        "2. **قبل القياس**، يكتب طفلك الوحدة التي يتوقعها وسببًا في كلمتين.",
+        "3. يقيس بالأداة المناسبة: الشريط أو المسطرة للأطوال، وكوب المعايرة للسعة.",
+        "4. يكتب المقدار **مع وحدته**. أي رقم بلا وحدة يُشطب ويُعاد.",
+        "5. يحوّل قياسًا واحدًا إلى وحدة أخرى **بالحساب لا بإعادة القياس**، ويقارن أي رقم أريح.",
+        "6. في النهاية يختار قياسًا واحدًا كان اختياره للوحدة فيه خاطئًا، ويشرح ما تعلّمه."
+      ],
+      "safety_notes": "**الأدوات المسموحة: شريط قياس مرن، مسطرة، كوب معايرة، قلم فقط.** ممنوع أي أداة حادة (مقص، سكين، مشرط)، وممنوع الماء الساخن، وممنوع استخدام موقد أو أجهزة كهربائية. **ممنوع الصعود على كرسي أو طاولة أو سلّم**؛ أي شيء مرتفع يقيسه ولي الأمر. لا يُقاس شيء في الشارع ولا خارج البيت، ولا في الحمّام، ولا قرب مقابس كهربائية. لا يُوضع شريط القياس حول الرقبة ولا حول أي جزء من الجسم.",
+      "expected_result": "جدول من خمسة أسطر، كل سطر بوحدة مختارة ومعلّلة ومقدار مكتوب بوحدته، وتحويل واحد محسوب، وسطر تعلّم في النهاية.",
+      "explanation_ar": "اختيار الوحدة **قبل** القياس يجبر الطفل على تقدير حجم الشيء ذهنيًا، وهو ربط مباشر بين الحلقتين 2 و3. والتحويل بالحساب لا بإعادة القياس يُظهر أن المقدار واحد وأن الوحدة تمثيل له لا حقيقته.",
+      "parent_involvement": "ولي الأمر يجهّز الجدول ويختار الأشياء الآمنة ويقيس المرتفعات بنفسه. ويشارك بسؤال واحد فقط عند كل سطر: «لماذا هذه الوحدة؟» ولا يصحّح الاختيار إن كان معلَّلًا ومعقولًا.",
+      "related_episode": 2
+    },
+    {
+      "slug": "bazaar-al-wahadat",
+      "title_ar": "بازار الوحدات",
+      "age_min": 10,
+      "age_max": 12,
+      "objective_code": "math.money.budget",
+      "supervision_level": "recommended",
+      "description_ar": "لعبة ميزانية ورقية بوحدات مؤلَّفة: يوزّع الطفل عشرين وحدة على خمس بطاقات مجموعها أكبر من ميزانيته، ويشرح ما تركه وسببه. لا نقود حقيقية ولا عملة في أي خطوة.",
+      "materials": [
+        "عشرون قصاصة ورق صغيرة متساوية (وحدات اللعبة)",
+        "خمس بطاقات ورقية",
+        "قلم",
+        "ورقة لكتابة الأولوية والتعليل"
+      ],
+      "preparation": "يقص ولي الأمر القصاصات والبطاقات **قبل الجلسة**. ويكتبان معًا على كل بطاقة اسم شيء من البيت وتكلفته بالوحدات، بحيث يكون **مجموع التكاليف أكبر من عشرين** بخمس وحدات على الأقل.",
+      "steps": [
+        "1. ضعا الوحدات العشرين أمام الطفل، والبطاقات الخمس مكشوفة.",
+        "2. **قبل أي اختيار:** يجمع طفلك تكاليف البطاقات كلها ويكتب: كم ينقصه؟",
+        "3. يقدّر: هل تكفي الميزانية لثلاث بطاقات أم لاثنتين فقط؟",
+        "4. يكتب أولويته في سطر واحد **قبل** أن يختار.",
+        "5. يبني سلته بدفع الوحدات فعلًا، ويعدّ الباقي.",
+        "6. يكتب سطرًا واحدًا: «تركتُ… لأنّ…» — وهذا هو المطلوب الحقيقي لا السلة.",
+        "7. **بدّلا الأدوار:** ابنِ أنت سلة تتجاوز الميزانية بوحدة واحدة، ودعه يكشف التجاوز ويحسبه.",
+        "8. جولة ثانية بميزانية مختلفة، وبشرط: يجب أن يبقى لديه ثلاث وحدات."
+      ],
+      "safety_notes": "نشاط ورقي على طاولة. **القص كله لولي الأمر**؛ لا يستخدم الطفل مقصًا. لا تُستخدم نقود حقيقية ولا بطاقات بنكية ولا أي تطبيق دفع في هذا النشاط إطلاقًا — الوحدات ورقية مؤلَّفة. ولا تُوضع القصاصات الصغيرة في متناول طفل أصغر من ثلاث سنوات لخطر البلع.",
+      "expected_result": "سلة مجموعها لا يتجاوز عشرين وحدة، وسطر أولوية مكتوب قبل الاختيار، وسطر تعليل يسمّي المتروك وسببه، وباقٍ معدود.",
+      "explanation_ar": "الميزانية تجعل الجمع أداة قرار لا تمرينًا. والإصرار على كتابة الأولوية **قبل** الاختيار يمنع أشهر خطأ: أخذ الأغلى أولًا ثم محاولة إتمام المجموع. والتعليل هو ما يُقاس، لأن أي سلة ملتزمة بالحد صحيحة.",
+      "parent_involvement": "ولي الأمر يقص ويجهّز، ثم يلعب كخصم لا كحكم: يبني سلة متجاوزة عمدًا مرة واحدة. ويمتنع عن الحكم على اختيار الطفل إن التزم بالميزانية، وعن أي تعليق وعظي عن الإنفاق أو الترشيد.",
+      "related_episode": 6
+    }
+  ],
+  "open_questions": [
+    "الحلقة 4 تقدّم الرسم بمحور لا يبدأ من الصفر لعمر يبدأ من 9. يلزم قرار المراجع التربوي: هل يبقى في الحلقة 4، أم يُنقل إلى حلقة لاحقة أو إلى الفئة 11–12 فقط؟ القرار يؤثر على `age_min` للحلقة.",
+    "الحلقة 5 تُنتج كسرًا عشريًا (١٠ ÷ ٤ = ٢٫٥) في مثال الإبريق الثالث. البديل استخدام أعداد تعطي ناتجًا صحيحًا، لكن ذلك يفقد المثال ميزته الأساسية (تساوي الفرق مع الإبريق الثاني). يلزم اعتماد المراجع الرياضي لأحد الخيارين.",
+    "لم تُحسم سياسة الوحدات لغير المنطقة المترية. الموسم متري بالكامل، وأي نسخة بوحدات إمبراطورية هي **إعادة تأليف للأمثلة لا ترجمة**، لأن قاعدة «الرقم المريح» تتغيّر بتغيّر نظام الوحدات.",
+    "لا حلقة مجانية في هذا الموسم (`is_free = 0` للحلقات الست). يلزم قرار تجاري: هل تبقى السلسلة كلها مدفوعة، أم تُفتح حلقة واحدة كبوابة؟ التوصية التحريرية هي الحلقة 3 لأنها الأكثر استقلالًا عن غيرها.",
+    "الترتيب مع مسار 6–8 في نفس الكوكب: يلزم تأكيد أن مخرج مغامرات الأرقام (العدّ بالوثب في مدى 1–20) يكفي كمدخل لهذه السلسلة، وأن الضرب والقسمة البسيطة مفترضان من المدرسة لا من المنصة.",
+    "لم تُحدَّد سياسة تشكيل النصوص المعروضة على الشاشة في مسار `junior`؛ السكربتات تفترض نصًا غير مشكول عدا الحالات الملتبسة."
+  ],
+  "fact_checks_required": [
+    "لا توجد في هذه السلسلة أي واقعة تاريخية أو علمية أو إحصائية تحتاج تحققًا خارجيًا: كل السياقات مؤلَّفة ومُعلن أنها مؤلَّفة، ولا عملة ولا سعر ولا بيانات واقعية. المطلوب مراجعة حسابية لا مراجعة وقائع.",
+    "التحقق الحسابي من كل قيمة معروضة: ٨+٨+٨=٢٤ · ٢/٦=١/٣ · ٤/١٢=١/٣ · ٢٠×٢٠=٤٠٠ · ١٩×٢١=٣٩٩ · ١٨×٢٠=٣٦٠ · ١٨×٢=٣٦ · ١٨×٢٢=٣٩٦ · ٥٠×١١=٥٥٠ · ٤٩×١١=٥٣٩.",
+    "التحقق من قيم الرسم ومجموعها: ١٢+٨+١٤+٦+١٠=٥٠ والفرق ١٤−٦=٨، وأن كل قيمة = عدد الخطوط × المقياس.",
+    "التحقق من النسب: ٦÷٢=٣ · ٩÷٣=٣ · ١٥÷٥=٣ · ١٠÷٤=٢٫٥ · ٨÷٢=٤ · ١٢÷٣=٤، وأن فرق (٩ و٣) يساوي فرق (١٠ و٤).",
+    "التحقق من الميزانية: ٨+٣+١٢+٧=٣٠ · ٨+٣+٧=١٨ · ٢٠−١٨=٢ · ١٢+٨=٢٠ · ١٢+٣+٧=٢٢ · ٩+٦+٤=١٩.",
+    "مراجعة لغوية للأعداد المركّبة وإعرابها في التعليق الصوتي: «اثنا عشر» ترفع بالألف، و«ثلاث وعشرون»، و«خمس عشرة»."
+  ]
+}
