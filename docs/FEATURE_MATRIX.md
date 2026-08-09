@@ -9,7 +9,7 @@ read from the source on every run. The **Status** column comes from
 `docs/FEATURE_MATRIX_VERDICTS.json`, where each verdict records how it was
 verified; a route with no recorded verdict is `UNVERIFIED` rather than assumed.
 
-Registered admin routes: **60**. Server routes parsed: **272**.
+Registered admin routes: **60**. Server routes parsed: **301**.
 API client functions parsed: **196**.
 
 | Status | Routes |
@@ -609,6 +609,16 @@ operator surface. Listed so the second case cannot hide.
 | adminAvailability.ts | DELETE | `/api/v1/admin/availability/:type/:id` | publish | ✅ |
 | adminAvailability.ts | GET | `/api/v1/admin/availability` | — | — |
 | adminBackup.ts | POST | `/api/v1/admin/restore` | publish | — |
+| adminBlog.ts | GET | `/api/v1/admin/blog/taxonomy` | — | — |
+| adminBlog.ts | POST | `/api/v1/admin/blog/authors` | create | ✅ |
+| adminBlog.ts | POST | `/api/v1/admin/blog/categories` | create | ✅ |
+| adminBlog.ts | POST | `/api/v1/admin/blog/tags` | create | — |
+| adminBlog.ts | GET | `/api/v1/admin/blog/posts` | — | — |
+| adminBlog.ts | GET | `/api/v1/admin/blog/posts/:id` | — | — |
+| adminBlog.ts | POST | `/api/v1/admin/blog/posts` | create | ✅ |
+| adminBlog.ts | PATCH | `/api/v1/admin/blog/posts/:id` | edit_text | ✅ |
+| adminBlog.ts | POST | `/api/v1/admin/blog/posts/:id/publish` | publish | ✅ |
+| adminBlog.ts | POST | `/api/v1/admin/blog/posts/:id/rollback` | edit_text | ✅ |
 | adminCatalogue.ts | GET | `/api/v1/admin/skills/:id` | — | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/content-reviews/:id` | — | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/stories/:id/pages` | — | — |
@@ -629,6 +639,13 @@ operator surface. Listed so the second case cannot hide.
 | adminGames.ts | GET | `/api/v1/admin/games/analytics` | — | — |
 | adminPartnerships.ts | GET | `/api/v1/admin/partnerships/:id` | — | — |
 | adminPublishGate.ts | GET | `/publish-readiness/:type/:id` | — | — |
+| adminSeo.ts | GET | `/api/v1/admin/seo/:type/:id` | — | — |
+| adminSeo.ts | PUT | `/api/v1/admin/seo/:type/:id` | edit_metadata | ✅ |
+| adminSeo.ts | GET | `/api/v1/admin/seo/redirects` | — | — |
+| adminSeo.ts | POST | `/api/v1/admin/seo/redirects` | publish | ✅ |
+| adminSeo.ts | DELETE | `/api/v1/admin/seo/redirects/:id` | publish | ✅ |
+| adminSeo.ts | GET | `/api/v1/admin/seo/audit` | — | — |
+| adminSeo.ts | GET | `/api/v1/admin/seo/slug-check` | — | — |
 | adminSiteMode.ts | POST | `/api/v1/admin/site-mode/reset` | publish | ✅ |
 | adminSupport.ts | GET | `/api/v1/admin/support/tickets` | — | — |
 | adminSupport.ts | POST | `/api/v1/admin/support/tickets` | assign_members | ✅ |
@@ -650,6 +667,13 @@ operator surface. Listed so the second case cannot hide.
 | adminUsers.ts | POST | `/api/v1/admin/users/:id/grants` | — | — |
 | adminUsers.ts | DELETE | `/api/v1/admin/users/:id/grants/:grantId` | — | — |
 | adminUsers.ts | GET | `/api/v1/admin/users/:id/sessions` | — | — |
+| adminWebsite.ts | GET | `/api/v1/admin/website/pages` | — | — |
+| adminWebsite.ts | GET | `/api/v1/admin/website/pages/:id` | — | — |
+| adminWebsite.ts | POST | `/api/v1/admin/website/pages` | create | ✅ |
+| adminWebsite.ts | PATCH | `/api/v1/admin/website/pages/:id` | edit_metadata | ✅ |
+| adminWebsite.ts | PUT | `/api/v1/admin/website/pages/:id/sections` | edit_text | ✅ |
+| adminWebsite.ts | POST | `/api/v1/admin/website/pages/:id/publish` | publish | ✅ |
+| adminWebsite.ts | POST | `/api/v1/admin/website/pages/:id/rollback` | publish | ✅ |
 | adminWorkflow.ts | GET | `/api/v1/adminadminUser` | — | — |
 | auth.ts | POST | `/api/v1/auth/register` | — | — |
 | auth.ts | POST | `/api/v1/auth/resend-verification` | — | — |
@@ -699,11 +723,16 @@ operator surface. Listed so the second case cannot hide.
 | partnerships.ts | POST | `/api/v1/partnerships` | — | — |
 | partnerships.ts | GET | `/api/v1/partnerships/status` | — | — |
 | planets.ts | GET | `/api/v1/planets/:id` | — | — |
+| publicSite.ts | GET | `/resolve` | — | — |
+| publicSite.ts | GET | `/page` | — | — |
+| publicSite.ts | GET | `/blog` | — | — |
+| publicSite.ts | GET | `/blog/post` | — | — |
+| publicSite.ts | GET | `/sitemap.xml` | — | — |
 | series.ts | GET | `/api/v1/series` | — | — |
 | series.ts | GET | `/api/v1/series/:id` | — | — |
 | siteMode.ts | GET | `/api/v1/site-mode` | — | — |
 
-Orphan count: **113** of 272.
+Orphan count: **142** of 301.
 
 ## 5. API client functions the matrix could not resolve to a server route
 
