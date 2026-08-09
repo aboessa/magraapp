@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/auth_guard.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/failures/app_failure.dart';
 import '../../../../core/widgets/cinematic_background.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations_ar.dart';
 import '../../../home/application/home_providers.dart';
 import '../../../home/data/majarra_api_client.dart';
 
@@ -29,6 +33,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     try {
       final api = ref.read(majarraApiClientProvider);
       final storage = ref.read(authStorageProvider);
+      final guard = ref.read(authGuardProvider);
       final res = await api.login(email: _email.text.trim(), password: _pass.text, installationId: 'flutter-${_email.text.hashCode}', platform: 'android', deviceName: 'Flutter');
       final data = res['data'] as Map<String, dynamic>?;
       final access = data?['access_token'] as String?;
@@ -37,6 +42,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final parentId = parent?['id']?.toString();
       if (access != null && refresh != null && parentId != null) {
         await storage.save(accessToken: access, refreshToken: refresh, parentId: parentId);
+        guard.setAuthenticated(true);
         if (!mounted) return;
         context.go('/children');
       } else {
@@ -44,10 +50,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
     } on MajarraApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
-    } catch (_) {
+      final failure = AppFailure.fromException(e);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure.message)));
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر الاتصال - تأكد من الشبكة')));
+      final failure = AppFailure.fromException(e);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure.message)));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -55,6 +63,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Falls back to the Arabic table when no Localizations ancestor exists, so
+    // this page can still be pumped in a bare widget test.
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
       body: CinematicBackground(
@@ -70,16 +81,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     const SizedBox(height: 12),
                     Center(child: Image.asset('assets/brand/majarra-logo.png', width: 90, height: 90, errorBuilder: (_, __, ___) => const Icon(Icons.auto_awesome_rounded, color: AppColors.starGold, size: 48))),
                     const SizedBox(height: 16),
-                    const Text('أهلاً بك في مجرة', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+                    Text(l10n.loginTitle, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 6),
-                    Text('مساحة آمنة للخيال ومجرة كاملة للتعلم', textAlign: TextAlign.center, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.72), fontSize: 12)),
+                    Text(l10n.loginSubtitle, textAlign: TextAlign.center, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.72), fontSize: 12)),
                     const SizedBox(height: 28),
                     TextField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        labelText: 'البريد الإلكتروني',
+                        labelText: l10n.emailLabel,
                         labelStyle: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.7)),
                         prefixIcon: const Icon(Icons.mail_outline_rounded, color: AppColors.mutedText),
                         filled: true,
@@ -94,7 +105,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       obscureText: _obscure,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        labelText: 'كلمة المرور',
+                        labelText: l10n.passwordLabel,
                         labelStyle: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.7)),
                         prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.mutedText),
                         suffixIcon: IconButton(icon: Icon(_obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: AppColors.mutedText), onPressed: () => setState(() => _obscure = !_obscure)),
@@ -105,7 +116,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(onPressed: () {}, child: Text('نسيت كلمة المرور؟', style: TextStyle(color: AppColors.electricCyan.withValues(alpha: 0.9), fontSize: 12)))),
+                    // Disabled, not silently inert. There is no self-service
+                    // password reset: the only reset route in the API is
+                    // `POST /admin/users/:id/reset-password`, which is guarded
+                    // by `canManage` and is for dashboard staff, not parents.
+                    // A live-looking link that swallows the tap strands anyone
+                    // who has actually forgotten their password.
+                    Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(onPressed: null, child: Text(l10n.forgotPassword, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.5), fontSize: 12)))),
                     const SizedBox(height: 8),
                     SizedBox(
                       height: 50,

@@ -7,6 +7,25 @@ import '../../../core/widgets/cinematic_background.dart';
 import '../../home/domain/content_models.dart';
 import '../../home/presentation/widgets/content_cards.dart';
 
+/// Poster grid that derives its column count from available width instead of a
+/// fixed count. A fixed `crossAxisCount: 2` gave a 10" tablet the same two
+/// columns as a phone; extent-based sizing fills the viewport on every device.
+SliverGridDelegate _posterGrid(BuildContext context, bool isTelevision) {
+  final maxExtent = isTelevision
+      ? 260.0
+      : switch (context.layoutClass) {
+          AppLayoutClass.compact => 180.0,
+          AppLayoutClass.medium => 200.0,
+          AppLayoutClass.expanded => 220.0,
+        };
+  return SliverGridDelegateWithMaxCrossAxisExtent(
+    maxCrossAxisExtent: maxExtent,
+    mainAxisSpacing: 12,
+    crossAxisSpacing: 12,
+    childAspectRatio: 0.72,
+  );
+}
+
 class SearchPage extends StatefulWidget {
   const SearchPage({required this.catalog, required this.isTelevision, super.key});
   final HomeCatalog catalog;
@@ -111,7 +130,7 @@ class _SearchPageState extends State<SearchPage> {
             SliverPadding(
               padding: EdgeInsetsDirectional.fromSTEB(padding, 14, padding, 0),
               sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: widget.isTelevision ? 4 : 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.72),
+                gridDelegate: _posterGrid(context, widget.isTelevision),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final item = widget.catalog.series[index % widget.catalog.series.length];
                   return SeriesCard(item: item, isTelevision: widget.isTelevision, onPressed: () => context.push('/series/${item.id}'));
@@ -138,7 +157,7 @@ class _SearchPageState extends State<SearchPage> {
             SliverPadding(
               padding: EdgeInsetsDirectional.fromSTEB(padding, 18, padding, 0),
               sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: widget.isTelevision ? 4 : 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.72),
+                gridDelegate: _posterGrid(context, widget.isTelevision),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final item = filtered[index];
                   return SeriesCard(item: item, isTelevision: widget.isTelevision, onPressed: () => context.push('/series/${item.id}'));

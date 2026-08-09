@@ -114,8 +114,15 @@ android {
 
     defaultConfig {
         applicationId = "com.majarra.majarra"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Pinned rather than inherited from `flutter.*`. A Flutter SDK upgrade
+        // silently moving minSdk changes which devices can install the app, and
+        // targetSdk changes runtime behaviour and Play submission requirements.
+        // Both must be a deliberate, reviewed decision.
+        //
+        // minSdk 24 (Android 7.0): required by flutter_secure_storage, which the
+        // parent PIN and auth tokens depend on.
+        minSdk = 24
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -145,6 +152,16 @@ android {
             } else {
                 null
             }
+
+            // R8 shrinking. Enabled together: `isMinifyEnabled` without
+            // `isShrinkResources` leaves every drawable and string in the APK,
+            // and resource shrinking requires code shrinking to run first.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 

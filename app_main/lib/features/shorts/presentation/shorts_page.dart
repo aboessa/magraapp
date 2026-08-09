@@ -51,8 +51,10 @@ class _ShortsPageState extends State<ShortsPage> {
                   const Icon(Icons.play_circle_rounded, color: AppColors.starGold, size: 22),
                   const SizedBox(width: 8),
                   Text('فيديوهات قصيرة', style: Theme.of(context).textTheme.titleLarge),
-                  const Spacer(),
-                  IconButton(onPressed: () {}, icon: const Icon(Icons.search_rounded, color: Colors.white)),
+                  // A search icon used to sit here with an empty callback. It is
+                  // removed rather than wired: there is no `/search` route to
+                  // push, and search is already a bottom-navigation destination,
+                  // so this was a duplicate affordance that did nothing.
                 ],
               ),
             ),
@@ -155,13 +157,13 @@ class _ReelCard extends StatelessWidget {
                   children: [
                     // Counts previously read '1.2k' and '86'. There are no
                     // likes or comments endpoints, so no totals are shown.
-                    _ReelAction(icon: Icons.favorite_border_rounded, label: 'إعجاب', onTap: () {}),
+                    _ReelAction(icon: Icons.favorite_border_rounded, label: 'إعجاب'),
                     const SizedBox(height: 14),
-                    _ReelAction(icon: Icons.chat_bubble_outline_rounded, label: 'تعليق', onTap: () {}),
+                    _ReelAction(icon: Icons.chat_bubble_outline_rounded, label: 'تعليق'),
                     const SizedBox(height: 14),
-                    _ReelAction(icon: Icons.share_rounded, label: 'مشاركة', onTap: () {}),
+                    _ReelAction(icon: Icons.share_rounded, label: 'مشاركة'),
                     const SizedBox(height: 14),
-                    _ReelAction(icon: Icons.bookmark_border_rounded, label: 'حفظ', onTap: () {}),
+                    _ReelAction(icon: Icons.bookmark_border_rounded, label: 'حفظ'),
                   ],
                 ),
               ),
@@ -189,27 +191,40 @@ class _ReelCard extends StatelessWidget {
   }
 }
 
+/// One of the vertical side actions on a reel.
+///
+/// Renders permanently disabled, and takes no callback at all. None of these
+/// actions has a backend: there are no likes, comments or share endpoints, and
+/// favourites are per-child via `/family/favorites`, which this page has no
+/// child context for. Accepting an `onTap` that every call site left empty is
+/// what made these look tappable while swallowing the gesture.
+///
+/// When an endpoint lands, add the callback back — and wire it at the same time.
 class _ReelAction extends StatelessWidget {
-  const _ReelAction({required this.icon, required this.label, required this.onTap});
+  const _ReelAction({required this.icon, required this.label});
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+    // `Semantics.enabled: false` is the part that matters for a screen reader;
+    // the reduced opacity is only the visual half of the same message.
+    final foreground = Colors.white.withValues(alpha: 0.38);
+
+    return Semantics(
+      button: true,
+      enabled: false,
+      label: label,
       child: Column(
         children: [
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.14))),
-            child: Icon(icon, color: Colors.white, size: 20),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.14))),
+            child: Icon(icon, color: foreground, size: 20),
           ),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+          Text(label, style: TextStyle(color: foreground, fontSize: 10, fontWeight: FontWeight.w600)),
         ],
       ),
     );

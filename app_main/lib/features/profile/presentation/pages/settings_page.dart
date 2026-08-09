@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations_ar.dart';
+import '../../../auth/application/auth_controller.dart';
+import '../../data/settings_store.dart';
 
-class SettingsPage extends StatefulWidget {
+/// App settings.
+///
+/// Previously every toggle lived in plain widget state, so a preference was lost
+/// as soon as the page was popped and nothing else in the app could read it.
+/// Values now go through [settingsProvider], which persists them on the device.
+class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final controller = ref.read(settingsProvider.notifier);
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
 
-class _SettingsPageState extends State<SettingsPage> {
-  bool _autoplay = false;
-  bool _downloadWifiOnly = true;
-  bool _notifications = true;
-  String _quality = 'تلقائي';
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
       body: CinematicBackground(
@@ -27,8 +31,21 @@ class _SettingsPageState extends State<SettingsPage> {
             SliverAppBar(
               pinned: true,
               backgroundColor: const Color(0xFF0B1026).withValues(alpha: 0.88),
-              leading: IconButton(icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white), onPressed: () => context.pop()),
-              title: const Text('الإعدادات', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+              leading: IconButton(
+                icon: const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                ),
+                tooltip: l10n.back,
+                onPressed: () => context.pop(),
+              ),
+              title: Text(
+                l10n.settings,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               centerTitle: true,
             ),
             SliverToBoxAdapter(
@@ -37,25 +54,66 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _SectionHeader(title: 'التشغيل'),
-                    _TileSwitch(title: 'تشغيل تلقائي للحلقة التالية', subtitle: 'يعمل فقط على Wi-Fi ووفق إعداد ولي الأمر', value: _autoplay, onChanged: (v) => setState(() => _autoplay = v)),
+                    _SectionHeader(title: l10n.settingsSectionPlayback),
+                    _TileSwitch(
+                      title: l10n.autoplayNextTitle,
+                      subtitle: l10n.autoplayNextSubtitle,
+                      value: settings.autoplayNext,
+                      onChanged: controller.setAutoplay,
+                    ),
                     const SizedBox(height: 8),
-                    _TileNav(title: 'جودة الفيديو', trailing: _quality, onTap: () => _pickQuality()),
+                    _TileNav(
+                      title: l10n.videoQualityTitle,
+                      trailing: settings.quality.label,
+                      onTap: () => _pickQuality(context, ref, settings),
+                    ),
                     const SizedBox(height: 18),
-                    _SectionHeader(title: 'التنزيل'),
-                    _TileSwitch(title: 'التحميل عبر Wi-Fi فقط', subtitle: 'توفير البيانات', value: _downloadWifiOnly, onChanged: (v) => setState(() => _downloadWifiOnly = v)),
+                    _SectionHeader(title: l10n.settingsSectionDownload),
+                    _TileSwitch(
+                      title: l10n.wifiOnlyTitle,
+                      subtitle: l10n.wifiOnlySubtitle,
+                      value: settings.downloadOverWifiOnly,
+                      onChanged: controller.setDownloadOverWifiOnly,
+                    ),
                     const SizedBox(height: 18),
-                    _SectionHeader(title: 'الإشعارات'),
-                    _TileSwitch(title: 'إشعارات المحتوى الجديد', subtitle: 'حلقات وأعمال جديدة', value: _notifications, onChanged: (v) => setState(() => _notifications = v)),
+                    _SectionHeader(title: l10n.settingsSectionNotifications),
+                    _TileSwitch(
+                      title: l10n.contentNotificationsTitle,
+                      subtitle: l10n.contentNotificationsSubtitle,
+                      value: settings.contentNotifications,
+                      onChanged: controller.setContentNotifications,
+                    ),
                     const SizedBox(height: 18),
-                    _SectionHeader(title: 'عام'),
-                    _TileNav(title: 'اللغة', trailing: 'العربية', onTap: () {}),
+                    _SectionHeader(title: l10n.settingsSectionGeneral),
+                    // Language and appearance are single-option today: the app
+                    // ships Arabic only and one cinematic dark theme. They are
+                    // shown as read-only rows rather than as taps that do
+                    // nothing when pressed.
+                    _TileInfo(title: l10n.languageLabel, value: l10n.languageValueArabic),
                     const SizedBox(height: 8),
-                    _TileNav(title: 'المظهر', trailing: 'داكن سينمائي', onTap: () {}),
-                    const SizedBox(height: 8),
-                    _TileNav(title: 'مسح التخزين المؤقت', trailing: '—', onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لا يوجد تخزين مؤقت لإدارته بعد')))),
+                    _TileInfo(title: l10n.appearanceLabel, value: l10n.appearanceValueDark),
                     const SizedBox(height: 24),
-                    TextButton(onPressed: () {}, style: TextButton.styleFrom(foregroundColor: AppColors.danger), child: const Text('تسجيل خروج')),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.indigoSurface.withValues(alpha: 0.42),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
+                      ),
+                      child: Text(
+                        l10n.settingsDeviceOnlyNotice,
+                        style: TextStyle(
+                          color: AppColors.mutedText.withValues(alpha: 0.72),
+                          fontSize: 11,
+                          height: 1.7,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _SectionHeader(title: l10n.settingsSectionAccount),
+                    const _LogoutTile(),
                   ],
                 ),
               ),
@@ -66,14 +124,41 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _pickQuality() {
-    showModalBottomSheet(
+  void _pickQuality(BuildContext context, WidgetRef ref, AppSettings settings) {
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF0B1026),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: ['تلقائي', 'جودة عالية', 'توفير البيانات'].map((q) => ListTile(title: Text(q, style: const TextStyle(color: Colors.white)), trailing: q == _quality ? const Icon(Icons.check_rounded, color: AppColors.starGold) : null, onTap: () { setState(() => _quality = q); Navigator.pop(context); })).toList(),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final option in VideoQuality.values)
+              ListTile(
+                title: Text(
+                  option.label,
+                  style: TextStyle(
+                    color: option == settings.quality
+                        ? AppColors.starGold
+                        : Colors.white,
+                  ),
+                ),
+                trailing: option == settings.quality
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: AppColors.starGold,
+                      )
+                    : null,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  ref.read(settingsProvider.notifier).setQuality(option);
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -82,41 +167,272 @@ class _SettingsPageState extends State<SettingsPage> {
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title});
   final String title;
+
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(title, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.72), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.5)));
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Text(
+      title,
+      style: TextStyle(
+        color: AppColors.mutedText.withValues(alpha: 0.72),
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.5,
+      ),
+    ),
+  );
 }
 
 class _TileSwitch extends StatelessWidget {
-  const _TileSwitch({required this.title, required this.subtitle, required this.value, required this.onChanged});
+  const _TileSwitch({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
   final String title;
   final String subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
+
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(color: const Color(0xFF111A3A).withValues(alpha: 0.72), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withValues(alpha: 0.06))),
-        child: Row(children: [Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)), Text(subtitle, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.62), fontSize: 11))])), Switch(value: value, onChanged: onChanged, activeThumbColor: AppColors.starGold)]),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    decoration: BoxDecoration(
+      color: const Color(0xFF111A3A).withValues(alpha: 0.72),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: AppColors.mutedText.withValues(alpha: 0.62),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: AppColors.starGold,
+        ),
+      ],
+    ),
+  );
 }
 
 class _TileNav extends StatelessWidget {
-  const _TileNav({required this.title, required this.trailing, required this.onTap});
+  const _TileNav({
+    required this.title,
+    required this.trailing,
+    required this.onTap,
+  });
+
   final String title;
   final String trailing;
   final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) => Material(
-        color: const Color(0xFF111A3A).withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          onTap: onTap,
+    color: const Color(0xFF111A3A).withValues(alpha: 0.72),
+    borderRadius: BorderRadius.circular(14),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
           borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.06)), borderRadius: BorderRadius.circular(14)),
-            child: Row(children: [Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)), const Spacer(), Text(trailing, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.62), fontSize: 12)), const SizedBox(width: 6), const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 18)]),
+        ),
+        child: Row(
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              trailing,
+              style: TextStyle(
+                color: AppColors.mutedText.withValues(alpha: 0.62),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Icon(
+              Icons.chevron_left_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// Sign-out row.
+///
+/// Stateful so the button can show progress and refuse a second tap: the
+/// teardown makes a network call and clears several stores, and a double tap
+/// could interleave two wipes.
+class _LogoutTile extends ConsumerStatefulWidget {
+  const _LogoutTile();
+
+  @override
+  ConsumerState<_LogoutTile> createState() => _LogoutTileState();
+}
+
+class _LogoutTileState extends ConsumerState<_LogoutTile> {
+  bool _busy = false;
+
+  Future<void> _confirmAndLogout() async {
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF111A3A),
+        title: Text(
+          l10n.logoutTitle,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        content: Text(
+          l10n.logoutConfirmBody,
+          style: TextStyle(
+            color: AppColors.mutedText.withValues(alpha: 0.82),
+            fontSize: 12.5,
+            height: 1.7,
           ),
         ),
-      );
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.logoutTitle),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    await ref.read(authControllerProvider).logout();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    // The router guard also redirects on the auth flag flipping; going
+    // explicitly clears this page off the stack so back cannot return to it.
+    context.go('/login');
+  }
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: const Color(0xFF111A3A).withValues(alpha: 0.72),
+    borderRadius: BorderRadius.circular(14),
+    child: InkWell(
+      onTap: _busy ? null : _confirmAndLogout,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.danger.withValues(alpha: 0.24)),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.logout_rounded,
+              color: AppColors.danger,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'تسجيل الخروج',
+              style: TextStyle(
+                color: AppColors.danger,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const Spacer(),
+            if (_busy)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.danger,
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// Read-only row for a setting that currently has a single possible value.
+class _TileInfo extends StatelessWidget {
+  const _TileInfo({required this.title, required this.value});
+
+  final String title;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    decoration: BoxDecoration(
+      color: const Color(0xFF111A3A).withValues(alpha: 0.48),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+    ),
+    child: Row(
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.82),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            color: AppColors.mutedText.withValues(alpha: 0.62),
+            fontSize: 12,
+          ),
+        ),
+      ],
+    ),
+  );
 }

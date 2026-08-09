@@ -9,6 +9,7 @@ class CinematicImage extends StatelessWidget {
     this.networkUrl,
     this.fit = BoxFit.cover,
     this.alignment = Alignment.center,
+    this.decodeWidth,
     super.key,
   });
 
@@ -18,6 +19,11 @@ class CinematicImage extends StatelessWidget {
   final BoxFit fit;
   final AlignmentGeometry alignment;
 
+  /// Logical width the image will occupy. When provided, decoding is capped at
+  /// this width in device pixels so a 1080p poster is not decoded at full size
+  /// for a 148px card. Leave null when the slot size is unknown.
+  final double? decodeWidth;
+
   bool get _hasSafeNetworkUrl {
     final uri = Uri.tryParse(networkUrl ?? '');
     return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
@@ -25,10 +31,18 @@ class CinematicImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Decode at display size rather than source size. This is the single largest
+    // memory win on rail-heavy screens where dozens of posters are alive at once.
+    final ratio = MediaQuery.devicePixelRatioOf(context);
+    final cacheWidth = decodeWidth == null
+        ? null
+        : (decodeWidth! * ratio).round();
+
     final fallback = Image.asset(
       assetPath,
       fit: fit,
       alignment: alignment,
+      cacheWidth: cacheWidth,
       filterQuality: FilterQuality.medium,
       errorBuilder: (context, error, stackTrace) => const _ImageFallback(),
     );
@@ -37,25 +51,28 @@ class CinematicImage extends StatelessWidget {
       image: true,
       label: semanticLabel,
       child: ExcludeSemantics(
-        child: _hasSafeNetworkUrl
-            ? Image.network(
-                networkUrl!,
-                fit: fit,
-                alignment: alignment,
-                filterQuality: FilterQuality.medium,
-                errorBuilder: (context, error, stackTrace) => fallback,
-                frameBuilder: (context, child, frame, syncLoaded) {
-                  if (syncLoaded || MediaQuery.disableAnimationsOf(context)) {
-                    return child;
-                  }
-                  return AnimatedOpacity(
-                    opacity: frame == null ? 0 : 1,
-                    duration: const Duration(milliseconds: 260),
-                    child: child,
-                  );
-                },
-              )
-            : fallback,
+        child: RepaintBoundary(
+          child: _hasSafeNetworkUrl
+              ? Image.network(
+                  networkUrl!,
+                  fit: fit,
+                  alignment: alignment,
+                  cacheWidth: cacheWidth,
+                  filterQuality: FilterQuality.medium,
+                  errorBuilder: (context, error, stackTrace) => fallback,
+                  frameBuilder: (context, child, frame, syncLoaded) {
+                    if (syncLoaded || MediaQuery.disableAnimationsOf(context)) {
+                      return child;
+                    }
+                    return AnimatedOpacity(
+                      opacity: frame == null ? 0 : 1,
+                      duration: const Duration(milliseconds: 260),
+                      child: child,
+                    );
+                  },
+                )
+              : fallback,
+        ),
       ),
     );
   }

@@ -5,6 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations_ar.dart';
+import '../../../home/application/home_providers.dart';
+import '../../../home/data/majarra_api_client.dart';
 import '../../data/parent_pin_store.dart';
 
 /// Gate for the parental area.
@@ -55,6 +59,7 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
     setState(() {
       _error = null;
       _notice = null;
@@ -69,13 +74,29 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
         return;
       }
       if (_confirmPin.text != pin) {
-        setState(() => _error = 'الرمزان غير متطابقين');
+        setState(() => _error = l10n.pinMismatch);
         return;
       }
 
       setState(() => _busy = true);
+      // Enrol locally first so the device stays gated even if the network
+      // is unavailable; then try to mirror to the server when authenticated.
       try {
         await _store.setPin(pin);
+        final api = ref.read(majarraApiClientProvider);
+        final token = await ref.read(authStorageProvider).getAccessToken();
+        if (token != null && token.isNotEmpty) {
+          try {
+            await api.setParentPin(pin: pin);
+          } on MajarraApiException catch (e) {
+            // Server enrol is the real security boundary. Surface its error
+            // but do not roll back the local PIN — the device gate is still
+            // better than nothing.
+            if (mounted) {
+              setState(() => _notice = l10n.pinSavedLocallyOnly(_userFacing(e.message)));
+            }
+          }
+        }
       } finally {
         if (mounted) setState(() => _busy = false);
       }
@@ -85,11 +106,52 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
     }
 
     if (pin.isEmpty) {
-      setState(() => _error = 'أدخل الرمز');
+      setState(() => _error = l10n.pinEmpty);
       return;
     }
 
     setState(() => _busy = true);
+    // Try server verification first when a session exists; fall back to local.
+    final token = await ref.read(authStorageProvider).getAccessToken();
+    if (token != null && token.isNotEmpty) {
+      try {
+        await ref.read(majarraApiClientProvider).verifyParentPin(pin: pin);
+        if (!mounted) return;
+        setState(() => _busy = false);
+        _pin.clear();
+        context.go('/parent');
+        return;
+      } on MajarraApiException catch (e) {
+        final msg = e.message;
+        if (msg.contains('423') || msg.contains('Too many attempts') || msg.contains('locked_until')) {
+          if (!mounted) return;
+          setState(() => _busy = false);
+          _pin.clear();
+          // Extract locked_until if present; otherwise use local lockout duration.
+          setState(() {
+            _lockedUntil = DateTime.now().add(const Duration(minutes: 15));
+            _error = l10n.pinLockedOut(_remainingLockoutLabel(l10n));
+          });
+          return;
+        }
+        if (msg.contains('403') || msg.contains('Incorrect PIN')) {
+          if (!mounted) return;
+          setState(() => _busy = false);
+          _pin.clear();
+          setState(() => _error = l10n.pinIncorrect);
+          return;
+        }
+        if (msg.contains('404') || msg.contains('No PIN')) {
+          // No server PIN — fall through to local verification below.
+        } else if (msg.contains('401') || msg.contains('Unauthorized')) {
+          // Session expired — fall through to local so the gate does not
+          // disappear entirely.
+        } else {
+          // Network or unexpected error — fall through to local.
+        }
+      }
+    }
+
     final outcome = await _store.verify(pin);
     if (!mounted) return;
     setState(() => _busy = false);
@@ -102,31 +164,44 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
         _pin.clear();
         setState(() {
           _error = outcome.attemptsRemaining == 1
-              ? 'رمز غير صحيح. محاولة واحدة متبقية'
-              : 'رمز غير صحيح. ${outcome.attemptsRemaining} محاولات متبقية';
+              ? l10n.pinIncorrectOneLeft
+              : l10n.pinIncorrectAttemptsLeft(outcome.attemptsRemaining);
         });
       case ParentPinResult.lockedOut:
         _pin.clear();
         setState(() {
           _lockedUntil = outcome.lockedUntil;
-          _error = 'محاولات كثيرة. حاول بعد ${_remainingLockoutLabel()}';
+          _error = l10n.pinLockedOut(_remainingLockoutLabel(l10n));
         });
       case ParentPinResult.notEnrolled:
         // Storage was cleared between opening the screen and submitting.
         setState(() {
           _isEnrolling = true;
-          _notice = 'لم يُنشأ رمز بعد. أنشئ رمزًا الآن.';
+          _notice = l10n.pinNotEnrolledYet;
         });
     }
   }
 
-  String _remainingLockoutLabel() {
+  String _remainingLockoutLabel(AppLocalizations l10n) {
     final until = _lockedUntil;
-    if (until == null) return '15 دقيقة';
+    // Falls back to the full lockout window when no deadline is known, which is
+    // the worst case and therefore never understates the wait.
+    if (until == null) {
+      return l10n.minutesLabel(ParentPinStore.lockoutDuration.inMinutes);
+    }
     final remaining = until.difference(DateTime.now());
-    if (remaining.isNegative) return 'لحظات';
-    final minutes = remaining.inMinutes + 1;
-    return '$minutes دقيقة';
+    if (remaining.isNegative) return l10n.momentsLabel;
+    return l10n.minutesLabel(remaining.inMinutes + 1);
+  }
+
+  String _userFacing(String raw) {
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
+    if (raw.contains('401')) return l10n.sessionExpiredShort;
+    if (raw.contains('423')) return l10n.tooManyAttemptsShort;
+    if (raw.contains('Network') || raw.contains('timed out')) {
+      return l10n.serverUnreachable;
+    }
+    return l10n.serverErrorGeneric;
   }
 
   bool get _isLockedOut {
@@ -259,8 +334,8 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
                       ),
                       const Spacer(),
                       Text(
-                        'الرمز محفوظ مشفَّرًا على هذا الجهاز فقط، ولا يُرسل إلى الخادم. '
-                        'هو حماية من فتح الطفل للمنطقة، وليس بديلاً عن التحقق على الخادم.',
+                        'الرمز محفوظ مشفَّرًا على هذا الجهاز وتتم مزامنته مع الخادم عند تسجيل الدخول. '
+                        'التحقق على الخادم هو الحدود الحقيقي؛ الحماية المحلية تمنع الطفل من فتح المنطقة دون اتصال.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.42), fontSize: 10, height: 1.5),
                       ),

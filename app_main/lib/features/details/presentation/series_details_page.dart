@@ -12,6 +12,7 @@ import '../../../core/widgets/cinematic_image.dart';
 import '../../home/application/home_providers.dart';
 import '../../home/domain/content_models.dart';
 import '../../home/presentation/widgets/content_cards.dart';
+import '../../profile/data/watchlist_store.dart';
 
 class SeriesDetailsPage extends ConsumerWidget {
   const SeriesDetailsPage({required this.seriesId, super.key});
@@ -43,20 +44,23 @@ class SeriesDetailsPage extends ConsumerWidget {
   }
 }
 
-class _SeriesDetailsContent extends StatefulWidget {
+class _SeriesDetailsContent extends ConsumerStatefulWidget {
   const _SeriesDetailsContent({required this.catalog, required this.series, required this.isTelevision});
   final HomeCatalog catalog;
   final SeriesItem series;
   final bool isTelevision;
 
   @override
-  State<_SeriesDetailsContent> createState() => _SeriesDetailsContentState();
+  ConsumerState<_SeriesDetailsContent> createState() => _SeriesDetailsContentState();
 }
 
-class _SeriesDetailsContentState extends State<_SeriesDetailsContent> {
+class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
   bool _liked = false;
-  bool _inWatchlist = false;
   bool _expanded = false;
+
+  /// Whether this series is saved, read from the persisted watchlist rather than
+  /// from local widget state.
+  bool get _inWatchlist => ref.watch(watchlistProvider).contains(widget.series.id);
 
   /// Returns a real episode-count label, or null when the count is unknown.
   ///
@@ -79,8 +83,12 @@ class _SeriesDetailsContentState extends State<_SeriesDetailsContent> {
 
   void _toggleWatchlist() {
     HapticFeedback.selectionClick();
-    setState(() => _inWatchlist = !_inWatchlist);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_inWatchlist ? 'تمت الإضافة إلى قائمتي' : 'تمت الإزالة من قائمتي')));
+    // Persisted on the device via WatchlistStore, so the watchlist page shows
+    // what the user actually saved. Previously this only flipped a local bool,
+    // which was lost as soon as the page was popped.
+    final added = !ref.read(watchlistProvider).contains(widget.series.id);
+    ref.read(watchlistProvider.notifier).toggle(widget.series.id);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(added ? 'تمت الإضافة إلى قائمتي' : 'تمت الإزالة من قائمتي')));
   }
 
   void _share() {
@@ -183,7 +191,7 @@ class _SeriesDetailsContentState extends State<_SeriesDetailsContent> {
                         onPressed: () {
                           final firstEp = episodes.isNotEmpty ? episodes.first.id : '';
                           if (firstEp.isNotEmpty) {
-                            context.push('/playback/$firstEp');
+                            _openPlayback(context, firstEp);
                           } else {
                             _notPublished(context);
                           }
@@ -395,7 +403,7 @@ class _SeriesDetailsContentState extends State<_SeriesDetailsContent> {
                                         episode: ep,
                                         index: idx + 1,
                                         isFree: widget.series.isFree,
-                                        onTap: () => context.push('/playback/${ep.id}'),
+                                        onTap: () => _openPlayback(context, ep.id),
                                         onDownload: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('التحميل قادم قريباً'))),
                                       );
                                     },
@@ -468,13 +476,9 @@ class _SeriesDetailsContentState extends State<_SeriesDetailsContent> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الفيديو غير منشور بعد. سيعمل زر المشاهدة تلقائيًا عند إتاحة الحلقة.')));
   }
 
-  /// RETAINED, CURRENTLY UNREFERENCED (analyzer: unused_element).
-  ///
-  /// Kept deliberately during Phase 0 stabilisation rather than deleted: the
-  /// two call sites currently inline `context.push('/playback/...')`. Either
-  /// route both call sites through this helper or delete it once the real
-  /// player lands (AUDIT_FLUTTER_APP.md §9 H1).
-  void _openPlayback(BuildContext context, String episodeId) {
+  /// Single entry point to the player. Both the hero "watch now" button and the
+  /// episode list route through here so the playback path exists in one place.
+  static void _openPlayback(BuildContext context, String episodeId) {
     context.push('/playback/$episodeId');
   }
 }

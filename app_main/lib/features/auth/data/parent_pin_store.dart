@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'pin_kdf.dart';
@@ -180,3 +181,8 @@ class ParentPinStore {
     return null;
   }
 }
+
+/// Injectable so sign-out teardown can be exercised without a Keychain.
+final parentPinStoreProvider = Provider<ParentPinStore>(
+  (ref) => ParentPinStore(),
+);

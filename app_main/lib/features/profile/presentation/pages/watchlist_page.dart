@@ -1,19 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../home/application/home_providers.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../home/domain/content_models.dart';
 import '../../../home/presentation/widgets/content_cards.dart';
+import '../../data/watchlist_store.dart';
 
-class WatchlistPage extends ConsumerWidget {
+/// Saved titles.
+///
+/// Previously this page displayed `series.where(isFree)` with `items[index %
+/// items.length]` modulo indexing, so it listed titles the user had never saved
+/// and the "sort" button did nothing.
+///
+/// It now reads the persisted watchlist from [watchlistProvider] and resolves
+/// each saved id against the catalog, so the list is exactly what the user
+/// bookmarked on this device.
+class WatchlistPage extends ConsumerStatefulWidget {
   const WatchlistPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WatchlistPage> createState() => _WatchlistPageState();
+}
+
+enum _SortOrder { recent, title, age }
+
+class _WatchlistPageState extends ConsumerState<WatchlistPage> {
+  _SortOrder _sort = _SortOrder.recent;
+
+  @override
+  Widget build(BuildContext context) {
     final catalog = ref.watch(homeCatalogProvider).valueOrNull;
-    final items = catalog?.series.where((s) => s.isFree).toList() ?? [];
+    final savedIds = ref.watch(watchlistProvider);
+
+    // Resolve ids against the catalog. Ids that no longer match a title are
+    // skipped rather than rendered as blanks — a title can be unpublished after
+    // it was saved.
+    final items = <SeriesItem>[];
+    for (final id in savedIds) {
+      final match = catalog?.seriesById(id);
+      if (match != null) items.add(match);
+    }
+    _applySort(items);
+
+    final unresolved = savedIds.length - items.length;
 
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
@@ -23,50 +55,144 @@ class WatchlistPage extends ConsumerWidget {
             SliverAppBar(
               pinned: true,
               backgroundColor: const Color(0xFF0B1026).withValues(alpha: 0.88),
-              leading: IconButton(icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white), onPressed: () => context.pop()),
-              title: const Text('قائمتي', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-              centerTitle: true,
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
-                child: Row(
-                  children: [
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: AppColors.electricCyan.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)), child: Text('${items.length} عناصر', style: const TextStyle(color: AppColors.electricCyan, fontSize: 11, fontWeight: FontWeight.w700))),
-                    const Spacer(),
-                    TextButton.icon(onPressed: () {}, icon: const Icon(Icons.sort_rounded, size: 16), label: const Text('ترتيب')),
-                  ],
+              leading: IconButton(
+                icon: const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                ),
+                tooltip: 'رجوع',
+                onPressed: () => context.pop(),
+              ),
+              title: const Text(
+                'قائمتي',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
+              centerTitle: true,
             ),
-            if (items.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(width: 72, height: 72, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF111A3A), border: Border.all(color: Colors.white.withValues(alpha: 0.08))), child: const Icon(Icons.bookmark_add_rounded, color: AppColors.starGold, size: 32)),
-                        const SizedBox(height: 16),
-                        const Text('قائمتك فارغة', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 6),
-                        Text('أضف سلاسل بالضغط على ♡ في صفحة التفاصيل', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.72), fontSize: 12)),
-                      ],
-                    ),
+            if (savedIds.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.electricCyan.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          items.length == 1
+                              ? 'عنصر واحد'
+                              : '${items.length} عناصر',
+                          style: const TextStyle(
+                            color: AppColors.electricCyan,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      PopupMenuButton<_SortOrder>(
+                        initialValue: _sort,
+                        tooltip: 'ترتيب',
+                        color: const Color(0xFF111A3A),
+                        onSelected: (value) => setState(() => _sort = value),
+                        itemBuilder: (context) => const [
+                          PopupMenuItem(
+                            value: _SortOrder.recent,
+                            child: Text(
+                              'الأحدث إضافة',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: _SortOrder.title,
+                            child: Text(
+                              'الاسم',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: _SortOrder.age,
+                            child: Text(
+                              'الفئة العمرية',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.sort_rounded,
+                              size: 16,
+                              color: AppColors.starGold,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _sortLabel(_sort),
+                              style: const TextStyle(
+                                color: AppColors.starGold,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
+            if (items.isEmpty)
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: _EmptyWatchlist(),
               )
             else
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
                 sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.68),
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final item = items[index % items.length];
-                    return SeriesCard(item: item, isTelevision: false, onPressed: () => context.push('/series/${item.id}'));
-                  }, childCount: items.length),
+                  // Extent-based so tablets fill the row instead of showing the
+                  // phone's two columns stretched wide.
+                  gridDelegate:
+                      const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 200,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.68,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final item = items[index];
+                      return SeriesCard(
+                        item: item,
+                        isTelevision: false,
+                        onPressed: () => context.push('/series/${item.id}'),
+                      );
+                    },
+                    childCount: items.length,
+                  ),
+                ),
+              ),
+            if (unresolved > 0)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                  child: Text(
+                    'عنصر محفوظ لم يُعد متاحًا في المكتبة: $unresolved',
+                    style: TextStyle(
+                      color: AppColors.mutedText.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
                 ),
               ),
           ],
@@ -74,4 +200,72 @@ class WatchlistPage extends ConsumerWidget {
       ),
     );
   }
+
+  void _applySort(List<SeriesItem> items) {
+    switch (_sort) {
+      case _SortOrder.recent:
+        // The store already keeps newest-first order; nothing to do.
+        break;
+      case _SortOrder.title:
+        items.sort((a, b) => a.title.compareTo(b.title));
+      case _SortOrder.age:
+        items.sort((a, b) => a.ageMin.compareTo(b.ageMin));
+    }
+  }
+
+  static String _sortLabel(_SortOrder order) => switch (order) {
+    _SortOrder.recent => 'الأحدث',
+    _SortOrder.title => 'الاسم',
+    _SortOrder.age => 'العمر',
+  };
+}
+
+class _EmptyWatchlist extends StatelessWidget {
+  const _EmptyWatchlist();
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF111A3A),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+            child: const Icon(
+              Icons.bookmark_add_rounded,
+              color: AppColors.starGold,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'قائمتك فارغة',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'أضف سلاسل بالضغط على «قائمتي» في صفحة التفاصيل',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.mutedText.withValues(alpha: 0.72),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

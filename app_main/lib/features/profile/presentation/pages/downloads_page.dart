@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations_ar.dart';
 import '../../../home/application/home_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,6 +15,7 @@ class DownloadsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final catalog = ref.watch(homeCatalogProvider).valueOrNull;
     final episodes = catalog?.episodes.take(3).toList() ?? [];
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
 
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
@@ -23,9 +26,11 @@ class DownloadsPage extends ConsumerWidget {
               pinned: true,
               backgroundColor: const Color(0xFF0B1026).withValues(alpha: 0.88),
               leading: IconButton(icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white), onPressed: () => context.pop()),
-              title: const Text('التحميلات', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+              title: Text(l10n.downloadsTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
               centerTitle: true,
-              actions: [IconButton(icon: const Icon(Icons.settings_outlined, color: Colors.white), onPressed: () {})],
+              // A settings action used to sit here with an empty callback.
+              // Removed rather than wired: there are no download settings to
+              // show, and app-wide settings already live at `/settings`.
             ),
             SliverToBoxAdapter(
               child: Padding(
@@ -43,11 +48,11 @@ class DownloadsPage extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const Text('التخزين المستخدم', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                          Text(l10n.storageUsedTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
                           const SizedBox(height: 6),
                           ClipRRect(borderRadius: BorderRadius.circular(99), child: LinearProgressIndicator(value: 0.32, backgroundColor: Colors.white.withValues(alpha: 0.08), valueColor: const AlwaysStoppedAnimation(AppColors.electricCyan), minHeight: 6)),
                           const SizedBox(height: 4),
-                          Text('حجم التخزين يُحسب عند تفعيل التنزيل', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.62), fontSize: 10)),
+                          Text(l10n.storageComputedWhenEnabled, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.62), fontSize: 10)),
                         ]),
                       ),
                     ],
@@ -64,9 +69,9 @@ class DownloadsPage extends ConsumerWidget {
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Container(width: 72, height: 72, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF111A3A), border: Border.all(color: Colors.white.withValues(alpha: 0.08))), child: const Icon(Icons.download_rounded, color: AppColors.starGold, size: 32)),
                       const SizedBox(height: 16),
-                      const Text('لا يوجد تحميلات', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                      Text(l10n.noDownloadsTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 6),
-                      Text('حمّل من زر التحميل في صفحة التفاصيل', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.72), fontSize: 12)),
+                      Text(l10n.noDownloadsBody, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.72), fontSize: 12)),
                     ]),
                   ),
                 ),
@@ -90,10 +95,13 @@ class DownloadsPage extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Text(ep.seriesTitle, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.7), fontSize: 11)),
                               const SizedBox(height: 6),
-                              Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(4)), child: const Text('تم', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700))), const SizedBox(width: 6), Text(ep.durationLabel, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.6), fontSize: 10))]),
+                              Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(4)), child: Text(l10n.doneShort, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700))), const SizedBox(width: 6), Text(ep.durationLabel, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.6), fontSize: 10))]),
                             ]),
                           ),
-                          IconButton(icon: const Icon(Icons.delete_outline_rounded, color: AppColors.mutedText), onPressed: () {}),
+                          // Delete had an empty callback. Nothing is actually
+                          // downloaded — these rows are catalogue entries, not
+                          // files on disk — so there is nothing to delete.
+                          const IconButton(icon: Icon(Icons.delete_outline_rounded, color: AppColors.mutedText), onPressed: null),
                         ],
                       ),
                     ),

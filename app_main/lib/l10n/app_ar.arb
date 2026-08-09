@@ -1,0 +1,133 @@
+{
+  "@@locale": "ar",
+  "@@last_modified": "2026-08-08",
+  "appTitle": "مجرة",
+  "loginTitle": "أهلاً بك في مجرة",
+  "loginSubtitle": "مساحة آمنة للخيال ومجرة كاملة للتعلم",
+  "emailLabel": "البريد الإلكتروني",
+  "passwordLabel": "كلمة المرور",
+  "loginButton": "تسجيل دخول",
+  "enterEmailAndPassword": "أدخل البريد وكلمة المرور",
+  "termsNotice": "بالدخول توافق على الشروط وسياسة الخصوصية",
+  "registerButton": "إنشاء حساب",
+  "forgotPassword": "نسيت كلمة المرور؟",
+  "noAccount": "ليس لديك حساب؟",
+  "hasAccount": "لديك حساب؟",
+  "createFamilyAccount": "أنشئ حساب العائلة",
+  "oneAccountPerFamily": "حساب واحد لكل العائلة",
+  "parentNameLabel": "اسم ولي الأمر",
+  "passwordMinLength": "كلمة المرور {count} حرفًا على الأقل",
+  "@passwordMinLength": {
+    "description": "Validation message. The count is enforced by the server in IdentityState.register, so it is passed in rather than written into the translation.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "accountCreatedCheckEmail": "تم إنشاء الحساب - تحقق من بريدك",
+  "back": "رجوع",
+  "parentArea": "منطقة ولي الأمر",
+  "createParentPin": "أنشئ رمز ولي الأمر",
+  "enterParentPin": "أدخل رمز ولي الأمر",
+  "savePin": "حفظ الرمز",
+  "enter": "دخول",
+  "pinRangeHint": "اختر رمزًا من {min} إلى {max} أرقام يعرفه ولي الأمر فقط",
+  "@pinRangeHint": {
+    "placeholders": {
+      "min": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "pinConfirmLabel": "تأكيد الرمز",
+  "pinMismatch": "الرمزان غير متطابقين",
+  "pinEmpty": "أدخل الرمز",
+  "pinIncorrect": "رمز غير صحيح",
+  "pinIncorrectOneLeft": "رمز غير صحيح. محاولة واحدة متبقية",
+  "pinIncorrectAttemptsLeft": "رمز غير صحيح. {count} محاولات متبقية",
+  "@pinIncorrectAttemptsLeft": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "pinLockedOut": "محاولات كثيرة. حاول بعد {label}",
+  "@pinLockedOut": {
+    "description": "label is a pre-formatted duration such as '15 دقيقة'.",
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "pinNotEnrolledYet": "لم يُنشأ رمز بعد. أنشئ رمزًا الآن.",
+  "pinSavedLocallyOnly": "تم حفظ الرمز محليًا؛ تعذّر حفظه على الخادم: {reason}",
+  "@pinSavedLocallyOnly": {
+    "placeholders": {
+      "reason": { "type": "String" }
+    }
+  },
+  "minutesLabel": "{count} دقيقة",
+  "@minutesLabel": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "momentsLabel": "لحظات",
+  "serverErrorGeneric": "خطأ في الخادم",
+  "serverUnreachable": "تعذّر الاتصال بالخادم",
+  "tooManyAttemptsShort": "محاولات كثيرة — حاول لاحقًا",
+  "sessionExpiredShort": "انتهت الجلسة — سجّل الدخول مجددًا",
+  "parentPinDisclosure": "الرمز محفوظ مشفَّرًا على هذا الجهاز وتتم مزامنته مع الخادم عند تسجيل الدخول. التحقق على الخادم هو الحد الحقيقي؛ الحماية المحلية تمنع الطفل من فتح المنطقة دون اتصال.",
+  "biometricUnavailable": "البصمة / Face ID — غير متاح بعد",
+  "home": "الرئيسية",
+  "search": "بحث",
+  "profile": "ملفي",
+  "settings": "الإعدادات",
+  "settingsSectionPlayback": "التشغيل",
+  "settingsSectionDownload": "التنزيل",
+  "settingsSectionNotifications": "الإشعارات",
+  "settingsSectionGeneral": "عام",
+  "settingsSectionAccount": "الحساب",
+  "autoplayNextTitle": "تشغيل تلقائي للحلقة التالية",
+  "autoplayNextSubtitle": "ينتقل المشغّل إلى الحلقة التالية عند الانتهاء",
+  "videoQualityTitle": "جودة الفيديو",
+  "wifiOnlyTitle": "التحميل عبر Wi-Fi فقط",
+  "wifiOnlySubtitle": "توفير بيانات الهاتف",
+  "contentNotificationsTitle": "إشعارات المحتوى الجديد",
+  "contentNotificationsSubtitle": "حلقات وأعمال جديدة",
+  "languageLabel": "اللغة",
+  "languageValueArabic": "العربية",
+  "appearanceLabel": "المظهر",
+  "appearanceValueDark": "داكن سينمائي",
+  "settingsDeviceOnlyNotice": "تُحفظ هذه الإعدادات على هذا الجهاز فقط، ولا تُزامن بين أجهزة الأسرة بعد.",
+  "accountDataTitle": "بيانات الحساب",
+  "accountNotLinkedYet": "لم تُربط بيانات الحساب بعد",
+  "nameLabel": "الاسم",
+  "phoneLabel": "رقم الهاتف",
+  "addAction": "إضافة",
+  "changeAction": "تغيير",
+  "accountEditUnavailable": "تعديل البيانات غير متاح بعد",
+  "downloadsTitle": "التحميلات",
+  "storageUsedTitle": "التخزين المستخدم",
+  "storageComputedWhenEnabled": "حجم التخزين يُحسب عند تفعيل التنزيل",
+  "noDownloadsTitle": "لا يوجد تحميلات",
+  "noDownloadsBody": "حمّل من زر التحميل في صفحة التفاصيل",
+  "doneShort": "تم",
+  "supportTitle": "الدعم الفني",
+  "supportHeadline": "كيف نساعدك؟",
+  "supportResponseTime": "فريق مجرة جاهز للإجابة خلال 24 ساعة",
+  "supportChannelPending": "قناة التواصل قيد الإعداد",
+  "supportFaqTitle": "الأسئلة الشائعة",
+  "supportFaqSubtitle": "لم تُنشر بعد",
+  "supportReportTitle": "الإبلاغ عن مشكلة",
+  "supportSuggestTitle": "اقتراح ميزة",
+  "supportCallTitle": "اتصل بنا",
+  "supportCallSubtitle": "رقم الدعم يُعلن قريباً",
+  "notAvailableYet": "غير متاح بعد",
+  "licensesTitle": "تراخيص البرمجيات",
+  "licensesSubtitle": "الخطوط والحزم المستخدمة",
+  "logoutTitle": "تسجيل الخروج",
+  "logoutConfirmBody": "سيُطلب البريد وكلمة المرور في المرة القادمة، وسيُحذف رمز ولي الأمر من هذا الجهاز.",
+  "cancel": "إلغاء",
+  "retry": "إعادة المحاولة",
+  "offlineTitle": "لا يوجد اتصال",
+  "offlineMessage": "تحقق من الإنترنت وحاول مجددًا",
+  "contentUnavailable": "المحتوى غير متاح حاليًا",
+  "authExpired": "انتهت الجلسة. سجّل الدخول مجددًا"
+}

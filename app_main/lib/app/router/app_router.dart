@@ -23,7 +23,7 @@ import '../../features/child/presentation/pages/child_switcher_page.dart';
 import '../../features/parent/presentation/pages/parent_dashboard_page.dart';
 import '../../features/reader/presentation/pages/story_reader_page.dart';
 import '../../features/audio/presentation/pages/audio_player_page.dart';
-import '../../features/games/presentation/pages/game_page.dart';
+import '../../features/games/presentation/pages/game_route.dart';
 import '../../features/tv/presentation/pages/tv_pairing_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -214,16 +214,22 @@ final List<RouteBase> _routes = <RouteBase>[
         });
       },
     ),
+    // Games run from a server-supplied content pack.
+    //
+    // This route used to look the id up in the *local* catalogue and hand the
+    // resulting `ExperienceItem` to `game_page.dart`, which then generated its own
+    // board from emoji compiled into the app. The lookup was the tell: the only
+    // thing the route needed from the catalogue was a title, because the gameplay
+    // came from the binary rather than from content.
+    //
+    // `GameRoute` takes the path id as a `games` row id and fetches the published
+    // pack for the active child. The path parameter is renamed to match what it
+    // now means; both call sites already push `/game/${id}`, so nothing changes
+    // for them.
     GoRoute(
-      path: '/game/:experienceId',
-      builder: (context, state) {
-        return Consumer(builder: (context, ref, _) {
-          final catalog = ref.watch(homeCatalogProvider).valueOrNull;
-          final exp = catalog?.experiences.where((e) => e.id == state.pathParameters['experienceId']).firstOrNull;
-          if (exp == null) return Scaffold(body: Center(child: Text('اللعبة غير موجودة')));
-          return GamePage(experience: exp);
-        });
-      },
+      path: '/game/:gameId',
+      builder: (context, state) =>
+          GameRoute(gameId: state.pathParameters['gameId'] ?? ''),
     ),
     GoRoute(path: '/tv-pairing', builder: (context, state) => const TvPairingPage()),
     GoRoute(
