@@ -816,18 +816,23 @@ export interface AdminDeviceRecord {
   revoked_at: string | null
 }
 
-/**
- * نتيجة سحب جهاز.
- *
- * `parent_notified` يُعاد صريحًا لأن الإشعار غير مُنفَّذ بعد: الواجهة كانت
- * تعرض «تم إشعار ولي الأمر» بلا أي إشعار.
- */
-export interface DeviceRevokeResult {
-  id: string
-  status: string
-  audit_logged?: boolean
-  parent_notified?: boolean
-  already?: boolean
+/** حدود باقة كما يفرضها familyPolicy في FamilyState، وليست عقد أسعار متجر. */
+export interface PlanLimits {
+  children: number
+  devices: number
+  concurrent_streams: number
+  download_devices: number
+}
+
+export interface AdminPlanRecord {
+  id: 'free' | 'family' | 'family_plus'
+  limits: PlanLimits
+}
+
+export interface PlansCatalogue {
+  source: 'family_policy'
+  pricing_available: boolean
+  plans: AdminPlanRecord[]
 }
 
 export interface RightsLicenseRecord {
@@ -968,12 +973,11 @@ export interface BillingPurchaseRecord {
 }
 
 /**
- * استحقاق نشط من `family_projection`.
+ * آخر خطة مدفوعة مسقطة من `family_projection`.
  *
- * الخادم يستثني `plan = 'free'`: الاستحقاق يعني اشتراكًا مدفوعًا، والحساب
- * المجاني ليس استحقاقًا. و`family_projection` لا يحمل تواريخ بداية أو نهاية —
- * تلك في `billing_audit` — فهذا المسار يجيب «من يملك خطة مدفوعة الآن» لا «إلى
- * متى».
+ * الخادم يستثني `plan = 'free'`. هذا إسقاط تشغيلي غير متزامن وليس قرار
+ * استحقاق لحظيًا: FamilyState هو مصدر الخطة الفعلية. ولا يحمل الإسقاط تاريخ
+ * بداية أو نهاية؛ تلك في `billing_audit`.
  */
 export interface BillingEntitlementRecord {
   parent_id: string
@@ -1180,7 +1184,6 @@ export interface ContentReviewPayload {
   entity_type: ReviewEntityType
   entity_id: string
   reviewer_role: ReviewerRole
-  reviewer_id?: string | null
   status: ReviewStatus
   comments?: string | null
 }
@@ -1289,6 +1292,9 @@ export interface TtsPreviewResult {
   transport: string
   model: string
   voice: string
+  /// نفس الـblob الذي بُني منه `url`، محتفَظًا به لحفظه لاحقًا في مكتبة
+  /// الوسائط دون توليد جديد.
+  blob: Blob
 }
 
 /* ----------------------------------------------------- الإتقان والمحاولات */

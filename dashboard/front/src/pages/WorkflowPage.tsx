@@ -29,15 +29,15 @@ type Decision = typeof DECISIONS[number]
 const copy = {
   ar: {
     eyebrow: 'سير العمل',
-    title: 'تشغيلات المراجعة',
-    lede: 'مسار المحتوى: إنشاء → تحرير → مراجعة لغوية → مراجعة شرعية → صوت → فحص جودة → اعتماد → جدولة → نشر.',
+    title: 'سجل قرارات المراجعة',
+    lede: 'يسجل هذا السجل قرارات المراجعة للخطوة المخزنة. لا ينشئ تشغيلات، ولا يقدّم أو يعتمد أو يجدول أو ينشر المحتوى.',
     content: 'المحتوى',
     step: 'الخطوة',
     status: 'الحالة',
     reviews: 'المراجعات',
     actions: 'إجراءات',
-    review: 'مراجعة',
-    reviewTitle: 'قرار المراجعة',
+    review: 'تسجيل مراجعة',
+    reviewTitle: 'تسجيل قرار مراجعة',
     reviewFor: 'المحتوى',
     currentStep: 'الخطوة الحالية',
     decision: 'القرار',
@@ -47,7 +47,7 @@ const copy = {
     cancel: 'إلغاء',
     recorded: 'سُجّل القرار',
     empty: 'لا تشغيلات سير عمل',
-    emptyHint: 'التشغيلات تُنشأ عند إرسال محتوى للمراجعة.',
+    emptyHint: 'لا ينشئ النظام التشغيلات أو يقدّم المحتوى للمراجعة من هذه الصفحة.',
     loadError: 'تعذر تحميل التشغيلات',
     decisions: {
       approved: 'اعتماد',
@@ -57,15 +57,15 @@ const copy = {
   },
   en: {
     eyebrow: 'Workflow',
-    title: 'Review runs',
-    lede: 'Content path: draft → editing → language review → religious review → audio → QA → approval → scheduling → publish.',
+    title: 'Review decision records',
+    lede: 'This register records decisions for the stored step only. It does not create runs, advance or approve workflows, schedule, or publish content.',
     content: 'Content',
     step: 'Step',
     status: 'Status',
     reviews: 'Reviews',
     actions: 'Actions',
-    review: 'Review',
-    reviewTitle: 'Review decision',
+    review: 'Record review',
+    reviewTitle: 'Record review decision',
     reviewFor: 'Content',
     currentStep: 'Current step',
     decision: 'Decision',
@@ -75,7 +75,7 @@ const copy = {
     cancel: 'Cancel',
     recorded: 'Decision recorded',
     empty: 'No workflow runs',
-    emptyHint: 'Runs are created when content is submitted for review.',
+    emptyHint: 'This page does not create runs or submit content for review.',
     loadError: 'Unable to load runs',
     decisions: {
       approved: 'Approve',
@@ -128,8 +128,7 @@ export function WorkflowPage() {
     try {
       await api.reviewWorkflowRun(selected.id, {
         decision,
-        step: selected.current_step,
-        note: note.trim() || undefined,
+        comment: note.trim() || undefined,
       })
       setSelected(null)
       setNotice(text.recorded)
@@ -179,15 +178,17 @@ export function WorkflowPage() {
                     </td>
                     <td>{run.current_step ?? '—'}</td>
                     <td>
-                      <span className={`status-badge status-badge--${run.status === 'approved' ? 'published' : 'review_edu'}`}>
+                      <span className="status-badge status-badge--review_edu">
                         {run.status}
                       </span>
                     </td>
                     <td><span className="table-secondary">{Number(run.reviews_count ?? 0)}</span></td>
                     <td>
-                      <button className="button button--ghost" type="button" onClick={() => openReview(run)}>
-                        {text.review}
-                      </button>
+                      {run.status === 'running' ? (
+                        <button className="button button--ghost" type="button" onClick={() => openReview(run)}>
+                          {text.review}
+                        </button>
+                      ) : <span className="table-secondary">—</span>}
                     </td>
                   </tr>
                 ))}

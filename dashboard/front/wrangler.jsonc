@@ -1,3 +1,14 @@
+// ملاحظة مهمة قبل استخدام هذا الملف للنشر:
+//
+// النطاق majarra.app يخدمه مشروع Cloudflare Pages باسم majarra-dashboard
+// (فرع الإنتاج main)، وهو ما يستخدمه `npm run deploy`.
+//
+// محاولة ربط majarra.app بـWorker أصول عبر هذا الملف تفشل بـ:
+//   Hostname 'majarra.app' already has externally managed DNS records [code: 100117]
+// لأن Pages يملك سجل النطاق. الانتقال إلى Worker أصول يتطلب فصل النطاق عن
+// مشروع Pages أولًا، وهو تغيير على نطاق حي بانقطاع قصير — لا يُفعل ضمنًا.
+//
+// يبقى هذا الملف صالحًا لـ`wrangler dev` محليًا وللمعاينة على *.workers.dev.
 {
   "name": "majarra-web",
   "compatibility_date": "2025-06-01",

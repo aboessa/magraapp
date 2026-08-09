@@ -37,6 +37,9 @@ const copy = {
     allActions: 'كل الأفعال',
     allEntities: 'كل الأنواع',
     actorFilter: 'معرّف الفاعل...',
+    fromDate: 'من تاريخ',
+    toDate: 'إلى تاريخ',
+    invalidRange: 'تاريخ البداية يجب ألا يكون بعد تاريخ النهاية.',
     when: 'التاريخ',
     actor: 'الفاعل',
     action: 'الفعل',
@@ -64,6 +67,9 @@ const copy = {
     allActions: 'All actions',
     allEntities: 'All types',
     actorFilter: 'Actor id...',
+    fromDate: 'From date',
+    toDate: 'To date',
+    invalidRange: 'The start date must not be after the end date.',
     when: 'When',
     actor: 'Actor',
     action: 'Action',
@@ -159,11 +165,18 @@ export function AuditLogPage() {
   const [action, setAction] = useState('')
   const [entityType, setEntityType] = useState('')
   const [actor, setActor] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  // مدى معكوس يُعرض محليًا فورًا بدل انتظار رفض الخادم بـ400، فلا يبدو النداء
+  // معطوبًا بلا سبب واضح.
+  const rangeInvalid = Boolean(fromDate && toDate && fromDate > toDate)
+
   /// التحميل يبدأ من الصفر عند أي تغيير في التصفية، ويُضيف عند «تحميل المزيد».
   const load = useCallback(async (nextOffset: number, append: boolean) => {
+    if (rangeInvalid) return
     setLoading(true)
     setError('')
     try {
@@ -171,6 +184,8 @@ export function AuditLogPage() {
         action,
         entity_type: entityType,
         actor_id: actor.trim(),
+        from: fromDate,
+        to: toDate,
         limit: PAGE_SIZE,
         offset: nextOffset,
       })
@@ -182,7 +197,7 @@ export function AuditLogPage() {
     } finally {
       setLoading(false)
     }
-  }, [action, actor, entityType, text.loadError])
+  }, [action, actor, entityType, fromDate, toDate, rangeInvalid, text.loadError])
 
   // تأخير بسيط: حقل الفاعل نصّ حرّ فلا يُنادى الخادم على كل حرف
   useEffect(() => {
@@ -245,8 +260,18 @@ export function AuditLogPage() {
               <option value="">{text.allEntities}</option>
               {entityTypes.map((item) => <option value={item} key={item}>{item}</option>)}
             </select>
+            <label className="date-field">
+              <span>{text.fromDate}</span>
+              <input type="date" dir="ltr" value={fromDate} max={toDate || undefined} onChange={(event) => setFromDate(event.target.value)} />
+            </label>
+            <label className="date-field">
+              <span>{text.toDate}</span>
+              <input type="date" dir="ltr" value={toDate} min={fromDate || undefined} onChange={(event) => setToDate(event.target.value)} />
+            </label>
           </div>
         </header>
+
+        {rangeInvalid && <div className="inline-alert inline-alert--error">{text.invalidRange}</div>}
 
         {records.length ? (
           <>

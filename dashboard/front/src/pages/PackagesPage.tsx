@@ -1,53 +1,119 @@
-import { NotImplementedPage } from '../components/PageState'
+import { useCallback, useEffect, useState } from 'react'
+import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
+import { api } from '../lib/api'
+import type { PlansCatalogue } from '../types/api'
 
-/**
- * الباقات والأسعار.
- *
- * ## ما كانت عليه
- *
- * كانت تعرض «Family — 99.90 EGP» و«Family Plus — 149.90 EGP» كأسعار حقيقية،
- * وزرَّي «تعديل» و«إنشاء كود» كلاهما `alert()`.
- *
- * ## الفرق المهم: الحدود موجودة، الأسعار لا
- *
- * `subscription_plan_limits` (المهاجرة 0006) يحمل الحدود فعلًا ومبذورة:
- * free = 1 طفل/1 جهاز، family = 4/4، family_plus = 4/8. فتلك الأرقام كانت
- * صحيحة بالمصادفة لكنها منسوخة يدويًا، فتنحرف عن الجدول عند أي تعديل.
- *
- * **الأسعار لا وجود لها في أي جدول.** لا `packages` ولا `plans` ولا
- * `promo_codes`. رقم «99.90 EGP» مخترع بالكامل، وهو أخطر ما كان في الصفحة:
- * سعرٌ يُقرأ كأنه المُطبَّق فعلًا في المتجر.
- *
- * عرض الحدود وحدها كان يتطلّب نقطة API لا وجود لها
- * (`subscription_plan_limits` غير مكشوف)، فالصفحة تبقى غير مُنفَّذة حتى تُبنى.
- */
+const copy = {
+  ar: {
+    eyebrow: 'التجارة',
+    title: 'حدود الباقات',
+    lede: 'الحدود الفعلية التي يفرضها التطبيق على العائلة. لا تمثل أسعارًا أو عروضًا متجرية.',
+    plan: 'الباقة',
+    children: 'ملفات الأطفال',
+    devices: 'الأجهزة',
+    streams: 'المشاهدة المتزامنة',
+    downloads: 'أجهزة التنزيل',
+    empty: 'لا توجد باقات معرفة',
+    emptyHint: 'لم يرجع الخادم أي حدود للسياسة الحالية.',
+    loadError: 'تعذر تحميل حدود الباقات',
+    pricingTitle: 'الأسعار غير متاحة',
+    pricingHint: 'لا يوجد بعد نموذج أسعار أو ربط معرّفات منتجات المتاجر أو خصومات أو أسعار محفوظة للمشتركين. لا تعرض هذه الشاشة سعرًا ولا تغيّر اشتراكًا أو استحقاقًا.',
+    sourceTitle: 'مصدر الحدود',
+    sourceHint: 'تأتي هذه الحدود من سياسة FamilyState نفسها التي تُفرض عند إنشاء ملف طفل أو تسجيل جهاز أو طلب مشاهدة، وليست نسخة يدوية في لوحة التحكم.',
+  },
+  en: {
+    eyebrow: 'Commerce',
+    title: 'Plan limits',
+    lede: 'The live limits enforced for a family. They are not store prices or offers.',
+    plan: 'Plan',
+    children: 'Child profiles',
+    devices: 'Devices',
+    streams: 'Concurrent streams',
+    downloads: 'Download devices',
+    empty: 'No plans are defined',
+    emptyHint: 'The server returned no current policy limits.',
+    loadError: 'Unable to load plan limits',
+    pricingTitle: 'Pricing is unavailable',
+    pricingHint: 'There is no price model, store-product mapping, promotion, or grandfathered-price authority yet. This screen shows no price and cannot change a subscription or entitlement.',
+    sourceTitle: 'Limit source',
+    sourceHint: 'These limits come from the same FamilyState policy enforced when a child profile or device is created, or playback is requested. They are not a manual dashboard copy.',
+  },
+}
+
 export function PackagesPage() {
   const { locale } = usePreferences()
-  const ar = locale === 'ar'
+  const text = copy[locale]
+  const [catalogue, setCatalogue] = useState<PlansCatalogue | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await api.plans()
+      setCatalogue(response.data)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : text.loadError)
+    } finally {
+      setLoading(false)
+    }
+  }, [text.loadError])
+
+  useEffect(() => { void load() }, [load])
+
+  if (loading) return <LoadingState />
+  if (error) return <ErrorState message={error} onRetry={() => void load()} />
+
+  const plans = catalogue?.plans ?? []
   return (
-    <NotImplementedPage
-      eyebrow={ar ? 'التجارة' : 'Commerce'}
-      title={ar ? 'الباقات والأسعار' : 'Plans & pricing'}
-      lede={ar
-        ? 'إدارة الباقات حسب الدولة والعملة والمتجر، مع أكواد الخصم والأسعار المحفوظة للمشتركين القدامى.'
-        : 'Manage plans by country, currency and store, with promo codes and grandfathered pricing.'}
-      planned={ar ? [
-        'قراءة حدود كل باقة من subscription_plan_limits بدل نسخها في الكود',
-        'أسعار لكل دولة وعملة — يتطلّب جدول أسعار جديدًا',
-        'مطابقة معرّفات المنتجات مع Google Play و App Store',
-        'أكواد خصم وعروض موسمية وأكواد هدايا',
-        'الأسعار المحفوظة للمشتركين القدامى عند رفع السعر',
-        'يتطلّب أولًا: كشف subscription_plan_limits عبر API + جدول أسعار',
-      ] : [
-        'Read each plan\u2019s limits from subscription_plan_limits instead of copying them into code',
-        'Per-country and per-currency pricing — requires a new pricing table',
-        'Product ID mapping for Google Play and the App Store',
-        'Promo codes, seasonal offers and gift codes',
-        'Grandfathered pricing for existing subscribers after a price rise',
-        'Prerequisites: expose subscription_plan_limits via API plus a pricing table',
-      ]}
-    />
+    <div className="page-stack">
+      <section className="page-intro">
+        <div>
+          <span className="eyebrow">{text.eyebrow}</span>
+          <h2>{text.title}</h2>
+          <p>{text.lede}</p>
+        </div>
+      </section>
+
+      {plans.length ? (
+        <section className="panel panel--table">
+          <div className="table-scroll">
+            <table className="data-table data-table--wide">
+              <thead>
+                <tr>
+                  <th>{text.plan}</th>
+                  <th>{text.children}</th>
+                  <th>{text.devices}</th>
+                  <th>{text.streams}</th>
+                  <th>{text.downloads}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plans.map((plan) => (
+                  <tr key={plan.id}>
+                    <td><span className="table-primary">{plan.id}</span></td>
+                    <td>{plan.limits.children}</td>
+                    <td>{plan.limits.devices}</td>
+                    <td>{plan.limits.concurrent_streams}</td>
+                    <td>{plan.limits.download_devices}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : <EmptyState title={text.empty} description={text.emptyHint} />}
+
+      <section className="panel panel--notice">
+        <strong>{text.sourceTitle}</strong>
+        <p>{text.sourceHint}</p>
+      </section>
+      <section className="panel panel--notice">
+        <strong>{text.pricingTitle}</strong>
+        <p>{text.pricingHint}</p>
+      </section>
+    </div>
   )
 }

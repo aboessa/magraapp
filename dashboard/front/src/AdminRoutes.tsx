@@ -19,6 +19,9 @@ import { DevicesAdminPage } from './pages/DevicesAdminPage'
 import { EpisodesPage } from './pages/EpisodesPage'
 import { FailedEventsPage } from './pages/FailedEventsPage'
 import { GameDetailPage } from './pages/GameDetailPage'
+import { GamesOpsPage } from './pages/GamesOpsPage'
+import { AudioProductionQueuePage } from './pages/AudioProductionQueuePage'
+import { ArtProductionQueuePage } from './pages/ArtProductionQueuePage'
 import { LearningObjectivesPage } from './pages/LearningObjectivesPage'
 import { LibraryContentPage } from './pages/LibraryContentPage'
 import { MasteryPage } from './pages/MasteryPage'
@@ -57,6 +60,9 @@ import { TranslationCenterPage } from './pages/TranslationCenterPage'
 import { VisualStylesPage } from './pages/VisualStylesPage'
 import { WorkflowPage } from './pages/WorkflowPage'
 import './styles/dashboard.css'
+// أنماط استوديو المحرّكات في ملف مستقلّ: dashboard.css قارب التسعين كيلوبايت،
+// وإلحاق محرّرات أحد عشر محرّكًا به يجعل مراجعة أي تغيير فيه أصعب.
+import './styles/gameStudio.css'
 
 /**
  * كل مسارات لوحة الإدارة في وحدة واحدة تُحمّل عند الطلب فقط،
@@ -125,6 +131,12 @@ export default function AdminRoutes() {
         {/* استوديو الرسم: صفحة تأليف لحزمة اللعبة وهندستها ومعاينتها وجاهزيتها.
             منفصلة عن صفحة المكتبة لأن تلك تعرض الحزمة كـJSON للقراءة فقط. */}
         <Route path="games/:id" element={<GameDetailPage />} />
+        {/* عمليّات الألعاب وطوابير الإنتاج: ثلاث شاشات تقرأ المسارات الأربعة
+            الجديدة في adminGames.ts. مفصولة عن صفحة اللعبة لأن أسئلتها على
+            مستوى الكتالوج: ما يجب تسجيله، وما يجب رسمه، وأين تعطّل. */}
+        <Route path="games-ops" element={<GamesOpsPage />} />
+        <Route path="games-audio-queue" element={<AudioProductionQueuePage />} />
+        <Route path="games-art-queue" element={<ArtProductionQueuePage />} />
         <Route path="media" element={<MediaLibraryPage />} />
         <Route path="media/:id" element={<AssetDetailPage />} />
         <Route path="visual-styles" element={<VisualStylesPage />} />

@@ -179,7 +179,43 @@ async function ttsPreview(payload: {
     transport: response.headers.get('X-Tts-Transport') ?? '—',
     model: response.headers.get('X-Tts-Model') ?? '—',
     voice: response.headers.get('X-Tts-Voice') ?? payload.voice,
+    /// المتصل يحتفظ بالـblob نفسه لحفظه لاحقًا دون توليد جديد: الحفظ يجب أن
+    /// يخزّن ما سمعه المحرّر بالضبط في المعاينة، لا نداءً ثانيًا لـGoogle قد
+    /// يُعيد أداءً مختلفًا لنفس النص.
+    blob,
   }
+}
+
+/**
+ * يحفظ سردًا سبقت معاينته إلى مكتبة الوسائط، بلا نداء جديد لـGoogle.
+ *
+ * يرسل بايتات الصوت نفسها التي عاينها المحرّر (`result.blob` من `ttsPreview`)
+ * كجسم خام، والبيانات الوصفية في ترويسات `X-Narration-*` بدل JSON، لأن
+ * الجسم هنا صوت لا نص. الرؤية دائمًا خاصة من الخادم؛ لا حقل رؤية يُرسَل هنا.
+ */
+async function saveNarrationAsset(payload: {
+  title: string
+  blob: Blob
+  voice: string
+  language: string
+  model: string
+  transport: string
+}) {
+  const headers = authorizedHeaders()
+  headers.set('Content-Type', payload.blob.type || 'audio/mpeg')
+  headers.set('Content-Length', String(payload.blob.size))
+  headers.set('X-Narration-Title', encodeURIComponent(payload.title))
+  headers.set('X-Narration-Voice', payload.voice)
+  headers.set('X-Narration-Language', payload.language)
+  headers.set('X-Narration-Model', payload.model)
+  headers.set('X-Narration-Transport', payload.transport)
+  const response = await fetch(`${API_ROOT}/admin/tts/assets`, {
+    method: 'POST',
+    headers,
+    body: payload.blob,
+  })
+  if (!response.ok) throw await responseError(response)
+  return response.json() as Promise<ApiEnvelope<{ id: string; status: string; r2_key: string }>>
 }
 
 export const api = {
@@ -209,6 +245,7 @@ export const api = {
   seriesDetail: (id: string) => request<ApiEnvelope<import('../types/api').SeriesDetail>>(`/admin/series/${encodeURIComponent(id)}`),
   createSeries: (payload: SeriesPayload) => request<ApiEnvelope<{ id: string }>>('/admin/series', { method: 'POST', body: JSON.stringify(payload) }),
   updateSeries: (id: string, payload: Partial<SeriesPayload> & { status?: string }) => request<ApiEnvelope<{ id: string; updated: boolean }>>(`/admin/series/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  publishSeries: (id: string) => request<ApiEnvelope<{ id: string; status: 'published'; published: boolean }>>(`/admin/series/${id}/publish`, { method: 'POST' }),
   archiveSeries: (id: string) => request<ApiEnvelope<{ id: string; status: string }>>(`/admin/series/${id}`, { method: 'DELETE' }),
 
   seasons: (seriesId?: string) => request<ApiEnvelope<SeasonRecord[]>>(`/admin/seasons${queryString({ series_id: seriesId })}`),
@@ -221,6 +258,7 @@ export const api = {
   episodeDetail: (id: string) => request<ApiEnvelope<EpisodeRecord>>(`/admin/episodes/${encodeURIComponent(id)}`),
   createEpisode: (payload: EpisodePayload) => request<ApiEnvelope<{ id: string }>>('/admin/episodes', { method: 'POST', body: JSON.stringify(payload) }),
   updateEpisode: (id: string, payload: Partial<EpisodePayload> & { status?: string }) => request<ApiEnvelope<{ id: string; updated: boolean }>>(`/admin/episodes/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  publishEpisode: (id: string) => request<ApiEnvelope<{ id: string; status: 'published'; published: boolean }>>(`/admin/episodes/${id}/publish`, { method: 'POST' }),
   archiveEpisode: (id: string) => request<ApiEnvelope<{ id: string; status: string }>>(`/admin/episodes/${id}`, { method: 'DELETE' }),
 
   characters: (seriesId?: string) => request<ApiEnvelope<CharacterRecord[]>>(`/admin/characters${queryString({ series_id: seriesId })}`),
@@ -251,6 +289,18 @@ export const api = {
   gamePreview: (id: string, language?: string) => request<ApiEnvelope<import('../types/gamePack').GamePreview>>(`/admin/games/${encodeURIComponent(id)}/preview${queryString({ language })}`),
   gameLocalizations: (id: string) => request<ApiEnvelope<import('../types/gamePack').GameLocalizationsEnvelope>>(`/admin/games/${encodeURIComponent(id)}/localizations`),
   saveGameLocalization: (id: string, language: string, payload: import('../types/gamePack').GameLocalizationPayload) => request<ApiEnvelope<import('../types/gamePack').GameLocalizationRecord & { missing_prompt_keys: string[]; unused_prompt_keys: string[]; warnings: string[] }>>(`/admin/games/${encodeURIComponent(id)}/localizations/${encodeURIComponent(language)}`, { method: 'PUT', body: JSON.stringify(payload) }),
+
+  // طوابير الإنتاج والعمليّات والتحليلات. أربعة مسارات للقراءة فقط تجيب على
+  // أسئلة لا يستطيع فحص جاهزية لعبة واحدة أن يجيب عنها: ما يجب تسجيله، وما يجب
+  // رسمه، وأين تعطّل الكتالوج، وهل تُلعَب الألعاب الموجودة. المرشِّحات معاملات
+  // استعلام لا مسارات منفصلة، كما يقبلها الخادم.
+  gameAudioQueue: (filters: { language?: string; status?: string; production_status?: string; required?: string } = {}) =>
+    request<ApiEnvelope<import('../types/enginePack').AudioQueueEnvelope>>(`/admin/games/production/audio${queryString(filters)}`),
+  gameArtQueue: (filters: { role?: string; status?: string; production_status?: string } = {}) =>
+    request<ApiEnvelope<import('../types/enginePack').ArtQueueEnvelope>>(`/admin/games/production/art${queryString(filters)}`),
+  gamesOps: () => request<ApiEnvelope<import('../types/enginePack').GamesOpsOverview>>('/admin/games/ops'),
+  gamesAnalytics: (filters: { since?: string } = {}) =>
+    request<ApiEnvelope<import('../types/enginePack').GameAnalyticsEnvelope>>(`/admin/games/analytics${queryString(filters)}`),
 
   projects: (filters: Record<string, string | number | undefined> = {}) => request<ApiEnvelope<import('../types/api').ProjectRecord[]>>(`/admin/projects${queryString(filters)}`),
   project: (id: string) => request<ApiEnvelope<import('../types/api').ProjectDetail>>(`/admin/projects/${id}`),
@@ -313,9 +363,9 @@ export const api = {
   createTeam: (payload: import('../types/api').TeamPayload) => request<ApiEnvelope<{ id: string }>>('/admin/teams', { method: 'POST', body: JSON.stringify(payload) }),
   tasks: () => request<ApiEnvelope<import('../types/api').TaskRecord[]>>('/admin/tasks'),
   workflowRuns: () => request<ApiEnvelope<import('../types/api').WorkflowRunRecord[]>>('/admin/workflows/runs'),
-  reviewWorkflowRun: (id: string, payload: { decision: string; step?: string | null; note?: string }) => request<ApiEnvelope<{ id: string }>>(`/admin/workflows/runs/${id}/review`, { method: 'POST', body: JSON.stringify(payload) }),
+  reviewWorkflowRun: (id: string, payload: { decision: string; comment?: string }) => request<ApiEnvelope<{ id: string }>>(`/admin/workflows/runs/${id}/review`, { method: 'POST', body: JSON.stringify(payload) }),
   devices: () => request<ApiEnvelope<import('../types/api').AdminDeviceRecord[]>>('/admin/devices'),
-  revokeDevice: (id: string, reason: string) => request<ApiEnvelope<import('../types/api').DeviceRevokeResult>>(`/admin/devices/${id}/revoke`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  plans: () => request<ApiEnvelope<import('../types/api').PlansCatalogue>>('/admin/plans'),
   rights: () => request<ApiEnvelope<import('../types/api').RightsLicenseRecord[]>>('/admin/rights'),
   createRight: (payload: import('../types/api').RightsLicensePayload) => request<ApiEnvelope<{ id: string }>>('/admin/rights', { method: 'POST', body: JSON.stringify(payload) }),
   remoteConfig: () => request<ApiEnvelope<import('../types/api').RemoteConfigRecord[]>>('/admin/remote-config'),
@@ -362,10 +412,13 @@ export const api = {
 
   /// سجل التدقيق. النوع AuditRecord موجود سلفًا لأن /dashboard/stats يعيد آخر
   /// نشاط بالشكل نفسه، فلا يُكرَّر.
+  /// filters تقبل from/to بصيغة yyyy-mm-dd، وتُحوَّل في الخادم إلى بداية/نهاية
+  /// اليوم قبل المقارنة على created_at.
   auditLogs: (filters: Record<string, string | number | undefined> = {}) => request<PaginatedEnvelope<import('../types/api').AuditRecord>>(`/admin/audit-logs${queryString(filters)}`),
 
   ttsConfig: () => request<ApiEnvelope<import('../types/api').TtsConfig>>('/admin/tts/config'),
   ttsPreview,
+  saveNarrationAsset,
 
   // الإتقان والمحاولات. mastery و attempts جدولان من المهاجرة 0001، وكل ما كان
   // يقرأهما هو تجميع واحد داخل /analytics/overview — فلا سبيل لمعرفة أي طفل

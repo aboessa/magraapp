@@ -7,6 +7,7 @@ import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { StatusBadge } from '../components/StatusBadge'
 import { GameLocalizationPanel } from '../components/games/GameLocalizationPanel'
 import { GamePackForm } from '../components/games/GamePackForm'
+import { EnginePackForm } from '../components/games/EnginePackForm'
 import { GamePreviewPanel } from '../components/games/GamePreviewPanel'
 import { PublishReadinessPanel } from '../components/games/PublishReadinessPanel'
 import { usePreferences } from '../context/preferences'
@@ -14,8 +15,10 @@ import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
 import { statusLabels } from '../lib/labels'
 import { parsePack, promptKeysOf, usedModes } from '../lib/tracePack'
+import { parseEnginePack } from '../lib/enginePack'
 import type { GameDetail, LearningObjectiveDetail } from '../types/api'
 import type { GameReadiness, TracePack } from '../types/gamePack'
+import type { EnginePack } from '../types/enginePack'
 
 /**
  * صفحة لعبة واحدة: استوديو الرسم.
@@ -182,6 +185,10 @@ export function GameDetailPage() {
   const [objective, setObjective] = useState<LearningObjectiveDetail | null>(null)
   const [readiness, setReadiness] = useState<GameReadiness | null>(null)
   const [pack, setPack] = useState<TracePack | null>(null)
+  /// حزمة أي محرّك آخر. حالة ثانية لا واحدة عامّة: `TracePack` عقد `trace_color`
+  /// بحقوله الخاصّة، وتوحيدهما في نوع واحد كل حقوله اختيارية يفقد ما يمنعه كلٌّ
+  /// منهما.
+  const [enginePack, setEnginePack] = useState<EnginePack | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -191,7 +198,10 @@ export function GameDetailPage() {
     try {
       const response = await api.game(id)
       setGame(response.data)
-      setPack(parsePack(response.data.content_pack))
+      // `parsePack` عقد `trace_color`: تشغيله على حزمة `memory_flip` يُنتج نوعًا
+      // يبدو صالحًا وحقوله كلها غير ذات معنى، فيُعرض «أنماط رسم» لمحرّك لا يرسم.
+      setPack(response.data.engine_id === 'trace_color' ? parsePack(response.data.content_pack) : null)
+      setEnginePack(parseEnginePack(response.data.content_pack, response.data.engine_id))
       if (response.data.learning_objective_id) {
         // الهدف يُحمَّل على حدة: صفّ اللعبة يحمل عنوانه لا رمزه ولا معياره
         // المقيس، وهما ما يجعل الهدف قابلًا للتحقّق.
@@ -426,13 +436,28 @@ export function GameDetailPage() {
         {
           key: 'pack',
           label: text.tabs.pack,
-          badge: pack?.levels?.length,
-          content: (
+          badge: pack?.levels?.length ?? enginePack?.levels?.length,
+          content: isTraceColor ? (
             <GamePackForm
               gameId={game.id}
               packId={pack?.pack_id ?? game.id}
               pack={pack}
               onSaved={(next) => { setPack(next); void loadReadiness() }}
+            />
+          ) : (
+            /* المحرّكات الأحد عشر الأخرى: نفس التدفّق ونفس الظرف، ومحرّر مستوى
+               خاصّ بكل محرّك. الفصل بـengine_id لا بشكل الحزمة: الحزمة قد تكون
+               فارغة أو من إصدار سابق، وصفّ اللعبة هو من يعرف محرّكها. */
+            <EnginePackForm
+              gameId={game.id}
+              engineId={game.engine_id}
+              packId={enginePack?.pack_id ?? game.id}
+              pack={enginePack}
+              ageMin={game.age_min}
+              ageMax={game.age_max}
+              hasLearningObjective={Boolean(game.learning_objective_id)}
+              gameSupervisionLevel={game.supervision_level}
+              onSaved={(next) => { setEnginePack(next); void loadReadiness() }}
             />
           ),
         },

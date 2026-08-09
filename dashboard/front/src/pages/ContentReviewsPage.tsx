@@ -93,8 +93,6 @@ const copy = {
     entityIdHint: 'يتحقّق الخادم من وجوده قبل الحفظ.',
     roleField: 'نوع المراجعة *',
     statusField: 'الحالة *',
-    reviewerField: 'معرّف المراجع',
-    reviewerHint: 'يُترك فارغًا عادةً: هوية الجلسة هي المرجع في الاعتماد.',
     commentsField: 'الملاحظات',
     commentsRequired: 'الملاحظات *',
     commentsHint: 'إلزامية عند الرفض أو طلب التعديل.',
@@ -136,8 +134,6 @@ const copy = {
     entityIdHint: 'The server verifies it exists before saving.',
     roleField: 'Review type *',
     statusField: 'Status *',
-    reviewerField: 'Reviewer id',
-    reviewerHint: 'Usually left blank: the session identity is authoritative on approval.',
     commentsField: 'Comments',
     commentsRequired: 'Comments *',
     commentsHint: 'Mandatory when rejecting or requesting changes.',
@@ -159,7 +155,6 @@ type ReviewForm = {
   entity_type: ReviewEntityType
   entity_id: string
   reviewer_role: ReviewerRole
-  reviewer_id: string
   status: ReviewStatus
   comments: string
 }
@@ -168,7 +163,6 @@ const emptyForm: ReviewForm = {
   entity_type: 'series',
   entity_id: '',
   reviewer_role: 'edu',
-  reviewer_id: '',
   status: 'pending',
   comments: '',
 }
@@ -225,7 +219,6 @@ export function ContentReviewsPage() {
       entity_type: item.entity_type,
       entity_id: item.entity_id,
       reviewer_role: item.reviewer_role,
-      reviewer_id: item.reviewer_id ?? '',
       status: item.status,
       comments: item.comments ?? '',
     })
@@ -250,7 +243,6 @@ export function ContentReviewsPage() {
         await api.updateContentReview(editingId, {
           reviewer_role: form.reviewer_role,
           status: form.status,
-          reviewer_id: form.reviewer_id.trim() || null,
           comments: comments || null,
         })
       } else {
@@ -259,7 +251,6 @@ export function ContentReviewsPage() {
           entity_id: entityId,
           reviewer_role: form.reviewer_role,
           status: form.status,
-          reviewer_id: form.reviewer_id.trim() || null,
           comments: comments || null,
         })
       }
@@ -369,14 +360,16 @@ export function ContentReviewsPage() {
                     <td><span className="table-secondary">{item.comments || '—'}</span></td>
                     <td>{formatDate(item.created_at, locale)}</td>
                     <td>
-                      <div className="table-actions">
-                        <button className="icon-button icon-button--small" type="button" title={text.edit} onClick={() => openEdit(item)}>
-                          <Icon name="edit" size={15} />
-                        </button>
-                        <button className="icon-button icon-button--small icon-button--danger" type="button" title={text.remove} onClick={() => void remove(item)}>
-                          <Icon name="archive" size={15} />
-                        </button>
-                      </div>
+                      {item.status === 'approved' ? <span className="table-secondary">—</span> : (
+                        <div className="table-actions">
+                          <button className="icon-button icon-button--small" type="button" title={text.edit} onClick={() => openEdit(item)}>
+                            <Icon name="edit" size={15} />
+                          </button>
+                          <button className="icon-button icon-button--small icon-button--danger" type="button" title={text.remove} onClick={() => void remove(item)}>
+                            <Icon name="archive" size={15} />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -439,12 +432,6 @@ export function ContentReviewsPage() {
               </select>
             </label>
           </div>
-
-          <label className="field">
-            <span>{text.reviewerField}</span>
-            <input dir="ltr" value={form.reviewer_id} onChange={(event) => setForm({ ...form, reviewer_id: event.target.value })} />
-            <small>{text.reviewerHint}</small>
-          </label>
 
           <label className="field">
             <span>{commentsRequired ? text.commentsRequired : text.commentsField}</span>

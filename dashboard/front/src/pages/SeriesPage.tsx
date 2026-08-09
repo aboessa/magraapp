@@ -21,7 +21,8 @@ const productionLabels = {
   ar: { motion_story: 'قصة متحركة', limited_2d: 'تحريك ثنائي محدود', full_2d: 'تحريك ثنائي كامل', live: 'تصوير حي', stylized_3d: 'ثلاثي أبعاد مبسط' },
   en: { motion_story: 'Motion story', limited_2d: 'Limited 2D', full_2d: 'Full 2D', live: 'Live action', stylized_3d: 'Stylized 3D' },
 }
-const editableStatuses: ContentStatus[] = ['draft', 'writing', 'review_edu', 'review_lang', 'review_sharia', 'production', 'qa', 'ready', 'scheduled', 'published']
+const editableStatuses: ContentStatus[] = ['draft', 'writing', 'review_edu', 'review_lang', 'review_sharia', 'production', 'qa', 'ready', 'scheduled']
+const filterStatuses: ContentStatus[] = [...editableStatuses, 'published']
 const trackAges: Record<AgeTrack, [number, number]> = { preschool: [3, 5], kids: [6, 8], junior: [9, 12] }
 
 const copy = {
@@ -30,7 +31,11 @@ const copy = {
     confirmArchive: (title: string) => `هل تريد أرشفة «${title}»؟ لن تُحذف البيانات.`, network: 'شبكة المحتوى', headline: 'السلاسل هي الكيان الأساسي', intro: 'لكل سلسلة هوية وأهداف وشخصيات ومسار عمري مستقل.',
     newSeries: 'سلسلة جديدة', catalog: 'كتالوج المحتوى', allSeries: 'كل السلاسل', search: 'بحث بالاسم...', allTracks: 'كل المسارات', allStatuses: 'كل الحالات النشطة',
     loading: 'جارٍ تحميل السلاسل...', series: 'السلسلة', planet: 'الكوكب', type: 'النوع', track: 'المسار', production: 'الإنتاج', episodes: 'الحلقات', status: 'الحالة', actions: 'إجراءات',
-    edit: 'تعديل', archive: 'أرشفة', empty: 'لا توجد نتائج', emptyDesc: 'غيّر خيارات البحث أو أضف سلسلة جديدة.', addSeries: 'إضافة سلسلة',
+    edit: 'تعديل', archive: 'أرشفة', publish: 'نشر', empty: 'لا توجد نتائج', emptyDesc: 'غيّر خيارات البحث أو أضف سلسلة جديدة.', addSeries: 'إضافة سلسلة',
+    qualityWarningTitle: (title: string) => `تنبيهات جودة على «${title}»`,
+    qualityWarningIntro: 'فحص الجودة الموجود بالخادم يشير إلى نواقص. النشر لا يزال مسموحًا؛ هذا تنبيه لا بوابة إلزامية.',
+    qualityWarningConfirm: 'نشر مع هذه النواقص؟',
+    qualityCheckFailed: 'تعذر تشغيل فحص الجودة قبل النشر؛ استمرّ بحذر.',
     editTitle: 'تعديل السلسلة', createTitle: 'إضافة سلسلة جديدة', modalDesc: 'المسار المختار يحدد نطاق العمر تلقائيًا.', titleAr: 'اسم السلسلة بالعربية *', titlePlaceholder: 'مثال: حكاية وحكمة',
     planetRequired: 'الكوكب *', selectPlanet: 'اختر الكوكب', seriesType: 'نوع السلسلة', ageTrack: 'المسار العمري', productionLevel: 'مستوى الإنتاج', visualStyle: 'الأسلوب البصري',
     visualPlaceholder: 'مثال: رسوم ثنائية ناعمة', description: 'وصف السلسلة', descriptionPlaceholder: 'وصف مختصر يوضح الفكرة التعليمية...', cancel: 'إلغاء', saving: 'جارٍ الحفظ...', save: 'حفظ التعديلات', createDraft: 'إنشاء كمسودة',
@@ -40,7 +45,11 @@ const copy = {
     confirmArchive: (title: string) => `Archive “${title}”? The data will not be deleted.`, network: 'Content network', headline: 'Series are the core content entity', intro: 'Every series has its own identity, objectives, characters, and age track.',
     newSeries: 'New series', catalog: 'Content catalog', allSeries: 'All series', search: 'Search by name...', allTracks: 'All tracks', allStatuses: 'All active statuses',
     loading: 'Loading series...', series: 'Series', planet: 'Planet', type: 'Type', track: 'Track', production: 'Production', episodes: 'Episodes', status: 'Status', actions: 'Actions',
-    edit: 'Edit', archive: 'Archive', empty: 'No results', emptyDesc: 'Change the filters or add a new series.', addSeries: 'Add series',
+    edit: 'Edit', archive: 'Archive', publish: 'Publish', empty: 'No results', emptyDesc: 'Change the filters or add a new series.', addSeries: 'Add series',
+    qualityWarningTitle: (title: string) => `Quality warnings on “${title}”`,
+    qualityWarningIntro: 'The server-side quality check found issues. Publishing is still allowed; this is a warning, not a required gate.',
+    qualityWarningConfirm: 'Publish anyway?',
+    qualityCheckFailed: 'Unable to run the pre-publish quality check; proceeding without it.',
     editTitle: 'Edit series', createTitle: 'Add a new series', modalDesc: 'The selected track sets the age range automatically.', titleAr: 'Arabic series title *', titlePlaceholder: 'Example: A Tale and Wisdom',
     planetRequired: 'Planet *', selectPlanet: 'Select a planet', seriesType: 'Series type', ageTrack: 'Age track', productionLevel: 'Production level', visualStyle: 'Visual style',
     visualPlaceholder: 'Example: Soft 2D / Infographic', description: 'Series description', descriptionPlaceholder: 'A short description of the learning concept...', cancel: 'Cancel', saving: 'Saving...', save: 'Save changes', createDraft: 'Create as draft',
@@ -171,6 +180,35 @@ export function SeriesPage() {
     finally { setBusyId('') }
   }
 
+  async function publish(series: SeriesRecord) {
+    const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar
+
+    // فحص جودة تنبيهي لا حاجب: /admin/quality/series/:id موجود فعليًا ويحسب
+    // فحوصًا حقيقية (حلقات، كوكب، استايل بصري)، لكنه لم يكن مرتبطًا بعملية
+    // النشر إطلاقًا. لا نجعله بوابة تمنع النشر — ذلك قرار سياسة عمل لم
+    // يُعتمَد — بل نعرض نتيجته الحقيقية للمحرّر قبل تأكيد النشر، بدل تركه
+    // بلا أي إشارة حتى لو فشل كل فحص.
+    try {
+      const quality = await api.qualityReport('series', series.id)
+      if (!quality.data.allPassed) {
+        const failed = quality.data.checks.filter((item) => !item.passed).map((item) => `- ${item.message}`)
+        const confirmed = window.confirm(
+          `${text.qualityWarningTitle(title)}\n\n${text.qualityWarningIntro}\n\n${failed.join('\n')}\n\n${text.qualityWarningConfirm}`,
+        )
+        if (!confirmed) return
+      }
+    } catch {
+      // فشل الفحص نفسه (شبكة/خادم) لا يجوز أن يمنع النشر: العملية الأصلية لم
+      // تكن تتطلب هذا الفحص، وربطه الآن يجب ألا يضيف نقطة فشل جديدة.
+      setError(text.qualityCheckFailed)
+    }
+
+    setBusyId(series.id)
+    try { await api.publishSeries(series.id); await load() }
+    catch (caught) { setError(caught instanceof Error ? caught.message : text.statusError) }
+    finally { setBusyId('') }
+  }
+
   async function archive(series: SeriesRecord) {
     const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar
     if (!window.confirm(text.confirmArchive(title))) return
@@ -193,11 +231,11 @@ export function SeriesPage() {
           <div className="filters-row">
             <label className="search-field"><Icon name="search" size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search} /></label>
             <select value={track} onChange={(event) => setTrack(event.target.value)}><option value="">{text.allTracks}</option><option value="preschool">{trackLabels[locale].preschool}</option><option value="kids">{trackLabels[locale].kids}</option><option value="junior">{trackLabels[locale].junior}</option></select>
-            <select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">{text.allStatuses}</option>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select>
+            <select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">{text.allStatuses}</option>{filterStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select>
           </div>
         </header>
 
-        {loading && !records.length ? <LoadingState label={text.loading} /> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()} /> : records.length ? <><div className="table-scroll"><table className="data-table data-table--wide"><thead><tr><th>{text.series}</th><th>{text.planet}</th><th>{text.type}</th><th>{text.track}</th><th>{text.production}</th><th>{text.episodes}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead><tbody>{records.map((series) => { const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar; return <tr key={series.id}><td><Link className="entity-cell entity-cell--button" to={adminPath(`series/${series.id}`)}><EntityThumbnail src={series.cover_url} alt={title} label={title} color={series.planet_color} icon="series" /><div><strong>{title}</strong><small>{series.slug}</small></div></Link></td><td>{series.planet_name || '—'}</td><td>{typeLabels[locale][series.type]}</td><td><div className="badge-list">{series.track_ids.map((item) => <TrackBadge track={item} key={item} />)}</div></td><td>{productionLabels[locale][series.production_level]}</td><td>{formatNumber(Number(series.episodes_count ?? 0), locale)}</td><td><select className="status-select" value={series.status} disabled={busyId === series.id} onChange={(event) => void changeStatus(series.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={series.status} /></td><td><div className="table-actions"><button className="icon-button icon-button--small" type="button" onClick={() => openEdit(series)} title={text.edit}><Icon name="edit" size={16} /></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(series)} disabled={busyId === series.id} title={text.archive}><Icon name="archive" size={16} /></button></div></td></tr> })}</tbody></table></div><Pagination total={total} limit={limit} offset={offset} onOffsetChange={setOffset} locale={locale} /></> : <EmptyState title={text.empty} description={text.emptyDesc} action={<button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17} />{text.addSeries}</button>} />}
+        {loading && !records.length ? <LoadingState label={text.loading} /> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()} /> : records.length ? <><div className="table-scroll"><table className="data-table data-table--wide"><thead><tr><th>{text.series}</th><th>{text.planet}</th><th>{text.type}</th><th>{text.track}</th><th>{text.production}</th><th>{text.episodes}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead><tbody>{records.map((series) => { const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar; return <tr key={series.id}><td><Link className="entity-cell entity-cell--button" to={adminPath(`series/${series.id}`)}><EntityThumbnail src={series.cover_url} alt={title} label={title} color={series.planet_color} icon="series" /><div><strong>{title}</strong><small>{series.slug}</small></div></Link></td><td>{series.planet_name || '—'}</td><td>{typeLabels[locale][series.type]}</td><td><div className="badge-list">{series.track_ids.map((item) => <TrackBadge track={item} key={item} />)}</div></td><td>{productionLabels[locale][series.production_level]}</td><td>{formatNumber(Number(series.episodes_count ?? 0), locale)}</td><td>{series.status === 'published' ? <StatusBadge status={series.status} /> : <><select className="status-select" value={series.status} disabled={busyId === series.id} onChange={(event) => void changeStatus(series.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={series.status} /></>}</td><td><div className="table-actions">{series.status !== 'published' ? <button className="icon-button icon-button--small" type="button" onClick={() => void publish(series)} disabled={busyId === series.id} title={text.publish}><Icon name="upload" size={16} /></button> : null}<button className="icon-button icon-button--small" type="button" onClick={() => openEdit(series)} title={text.edit}><Icon name="edit" size={16} /></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(series)} disabled={busyId === series.id} title={text.archive}><Icon name="archive" size={16} /></button></div></td></tr> })}</tbody></table></div><Pagination total={total} limit={limit} offset={offset} onOffsetChange={setOffset} locale={locale} /></> : <EmptyState title={text.empty} description={text.emptyDesc} action={<button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17} />{text.addSeries}</button>} />}
       </section>
 
       <Modal open={modalOpen} onClose={() => !saving && setModalOpen(false)} title={editing ? text.editTitle : text.createTitle} description={text.modalDesc}>

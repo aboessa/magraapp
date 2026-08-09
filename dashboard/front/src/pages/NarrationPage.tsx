@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
+import { adminPath } from '../lib/adminPath'
 import { formatNumber } from '../lib/labels'
 import type { TtsConfig, TtsEncoding, TtsPreviewResult } from '../types/api'
 
@@ -30,11 +32,17 @@ import type { TtsConfig, TtsEncoding, TtsPreviewResult } from '../types/api'
  *    ويتجاهل الترميز. تُعرض القيمة الفعلية من ترويسة الاستجابة لا من الطلب، ولا
  *    يُعرض اختيار الترميز إلا على `cloud_tts`.
  *
- * ## المعاينة لا تحفظ شيئًا
+ * ## المعاينة لا تحفظ نفسها تلقائيًا
  *
- * المسار لا يكتب صفًّا في `content_assets` عن قصد: هذه حلقة «هل يناسب هذا الصوت
- * القصة»، وحفظ كل تجربة يُتخم مكتبة الوسائط بمحاولات مهملة. الحفظ في المكتبة
- * غير مُنفَّذ في الخادم، ويُعلَن ذلك بدل زرٍّ يُوهم به.
+ * `POST /tts/preview` لا يكتب صفًّا في `content_assets` عمدًا: هذه حلقة «هل
+ * يناسب هذا الصوت القصة»، وحفظ كل تجربة يُتخم مكتبة الوسائط بمحاولات مهملة.
+ *
+ * الحفظ الصريح بعد المعاينة أصبح متاحًا عبر `POST /tts/assets` (مسار مستقل):
+ * يرسل نفس بايتات الصوت التي عاينها المحرّر بالضبط — لا نداءً ثانيًا لـGoogle
+ * قد يُنتج أداءً مختلفًا لنفس النص — ويكتب صفًّا حقيقيًا في `content_assets`
+ * برؤية خاصة دائمًا (السرد يُصنَّف خاصًا لا فنًّا عامًا). الربط بحلقة أو قصة
+ * محدَّدة يتم بعدها من مكتبة الوسائط (`PUT /assets/:id/links`)، تمامًا كأي
+ * أصل آخر — لا حاجة لمسار ربط مكرَّر هنا.
  */
 
 const copy = {
@@ -78,8 +86,15 @@ const copy = {
     resultType: 'النوع',
     resultSize: 'الحجم',
     download: 'تنزيل',
-    notSaved: 'المعاينة غير محفوظة',
-    notSavedHint: 'حفظ السرد في مكتبة الوسائط غير مُنفَّذ في الخادم بعد. نزّل الملف واستخدم صفحة الوسائط لرفعه.',
+    saveTitleLabel: 'عنوان الأصل في مكتبة الوسائط *',
+    saveTitlePlaceholder: 'مثال: سرد صفحة 3 — قصة أرنوب والقمر',
+    saveTitleRequired: 'العنوان مطلوب قبل الحفظ.',
+    save: 'حفظ في مكتبة الوسائط',
+    saving: 'جارٍ الحفظ…',
+    savedOk: 'حُفظ السرد في مكتبة الوسائط.',
+    saveError: 'تعذر حفظ السرد',
+    savedHint: 'يمكن ربط الأصل المحفوظ بحلقة أو قصة من مكتبة الوسائط.',
+    openInLibrary: 'فتح في مكتبة الوسائط',
     loadError: 'تعذر تحميل إعدادات التوليد',
     generateError: 'تعذر توليد الصوت',
     limitsNote: 'الحدود بالبايت لا بالحرف: الحرف العربي بايتان في UTF-8.',
@@ -129,8 +144,15 @@ const copy = {
     resultType: 'Type',
     resultSize: 'Size',
     download: 'Download',
-    notSaved: 'The preview is not saved',
-    notSavedHint: 'Saving narration to the media library is not implemented on the server yet. Download the file and upload it from the media page.',
+    saveTitleLabel: 'Media library asset title *',
+    saveTitlePlaceholder: 'For example: Page 3 narration — Arnoub and the Moon',
+    saveTitleRequired: 'A title is required before saving.',
+    save: 'Save to media library',
+    saving: 'Saving…',
+    savedOk: 'The narration was saved to the media library.',
+    saveError: 'Unable to save the narration',
+    savedHint: 'The saved asset can be linked to an episode or story from the media library.',
+    openInLibrary: 'Open in media library',
     loadError: 'Unable to load generation settings',
     generateError: 'Unable to generate audio',
     limitsNote: 'Limits are in bytes, not characters: an Arabic letter is two bytes in UTF-8.',
@@ -193,6 +215,11 @@ export function NarrationPage() {
   const [result, setResult] = useState<TtsPreviewResult | null>(null)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
+
+  const [saveTitle, setSaveTitle] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+  const [savedAssetId, setSavedAssetId] = useState('')
 
   /// عناوين الـblob تُحرَّر يدويًا: كل معاينة تحتجز ذاكرة حتى تُلغى، وعشر
   /// معاينات بلا تحرير تُبقي عشرة ملفات صوتية في ذاكرة التبويب.
@@ -258,6 +285,9 @@ export function NarrationPage() {
       if (activeUrl.current) URL.revokeObjectURL(activeUrl.current)
       activeUrl.current = next.url
       setResult(next)
+      // نتيجة جديدة تعني حفظًا جديدًا محتملًا: تُمسح حالة الحفظ السابقة
+      setSavedAssetId('')
+      setSaveError('')
     } catch (caught) {
       // الخادم يُعيد كود خطأ لا رسالة بشرية، فيُترجَم متى عُرف
       const raw = caught instanceof Error ? caught.message : ''
@@ -265,6 +295,29 @@ export function NarrationPage() {
       setError(key ? text[key] : raw || text.generateError)
     } finally {
       setGenerating(false)
+    }
+  }
+
+  async function save() {
+    if (!result) return
+    if (!saveTitle.trim()) { setSaveError(text.saveTitleRequired); return }
+
+    setSaving(true)
+    setSaveError('')
+    try {
+      const response = await api.saveNarrationAsset({
+        title: saveTitle.trim(),
+        blob: result.blob,
+        voice: result.voice,
+        language,
+        model: result.model,
+        transport: result.transport,
+      })
+      setSavedAssetId(response.data.id)
+    } catch (caught) {
+      setSaveError(caught instanceof Error ? caught.message : text.saveError)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -441,10 +494,41 @@ export function NarrationPage() {
             </div>
           </section>
 
-          {/* الحفظ في المكتبة غير مُنفَّذ: يُعلَن بدل زرٍّ يُوهم به */}
-          <section className="panel panel--notice">
-            <strong>{text.notSaved}</strong>
-            <p>{text.notSavedHint}</p>
+          <section className="panel">
+            <div className="panel__header"><h3>{text.save}</h3></div>
+            <div className="entity-form">
+              {saveError && <div className="inline-alert inline-alert--error">{saveError}</div>}
+              {savedAssetId ? (
+                <div className="inline-alert inline-alert--success">
+                  <p>{text.savedOk}</p>
+                  <p>{text.savedHint}</p>
+                  <Link className="button button--secondary" to={adminPath(`media/${savedAssetId}`)}>
+                    {text.openInLibrary}
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <label className="field">
+                    <span>{text.saveTitleLabel}</span>
+                    <input
+                      value={saveTitle}
+                      onChange={(event) => setSaveTitle(event.target.value)}
+                      placeholder={text.saveTitlePlaceholder}
+                    />
+                  </label>
+                  <div className="form-actions">
+                    <button
+                      className="button button--primary"
+                      type="button"
+                      disabled={saving || !saveTitle.trim()}
+                      onClick={() => void save()}
+                    >
+                      {saving ? text.saving : text.save}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </section>
         </>
       )}
