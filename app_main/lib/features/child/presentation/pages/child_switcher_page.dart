@@ -6,6 +6,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../home/application/home_providers.dart';
 import '../../application/child_provider.dart';
+import '../widgets/child_avatars.dart';
 
 /// A child profile on the family account.
 class ChildProfile {
@@ -15,6 +16,7 @@ class ChildProfile {
     required this.ageTrack,
     required this.birthMonth,
     required this.birthYear,
+    this.avatarId = '',
   });
 
   factory ChildProfile.fromJson(Map<String, Object?> json) {
@@ -39,6 +41,7 @@ class ChildProfile {
       ageTrack: text('age_track'),
       birthMonth: number('birth_month'),
       birthYear: number('birth_year'),
+      avatarId: text('avatar_id'),
     );
   }
 
@@ -47,6 +50,7 @@ class ChildProfile {
   final String ageTrack;
   final int birthMonth;
   final int birthYear;
+  final String avatarId;
 
   String get displayName => nickname.isEmpty ? 'ملف طفل' : nickname;
 
@@ -275,10 +279,9 @@ class _CreateChildSheetState extends ConsumerState<_CreateChildSheet> {
   bool _submitting = false;
   String? _error;
 
-  /// Avatar identifiers are required by the server. Until an avatar picker
-  /// exists these are stable keys, not images, so nothing is fabricated.
-  static const _avatars = ['orbit', 'comet', 'nova', 'luna'];
-  String _avatarId = _avatars.first;
+  /// Avatar identifier stored on the family record. Chosen from the fixed
+  /// [ChildAvatars] catalogue via the picker below.
+  String _avatarId = ChildAvatars.all.first.id;
 
   @override
   void dispose() {
@@ -421,19 +424,11 @@ class _CreateChildSheetState extends ConsumerState<_CreateChildSheet> {
               fontSize: 11.5,
             ),
           ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final avatar in _avatars)
-                ChoiceChip(
-                  label: Text(avatar),
-                  selected: _avatarId == avatar,
-                  onSelected: _submitting
-                      ? null
-                      : (_) => setState(() => _avatarId = avatar),
-                ),
-            ],
+          const SizedBox(height: 10),
+          ChildAvatarPicker(
+            selectedId: _avatarId,
+            enabled: !_submitting,
+            onSelected: (id) => setState(() => _avatarId = id),
           ),
           if (_error != null) ...[
             const SizedBox(height: 14),
@@ -560,19 +555,9 @@ class _ChildCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Container(
-                width: isLarge ? 64 : 56,
-                height: isLarge ? 64 : 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withValues(alpha: 0.18),
-                  border: Border.all(color: color.withValues(alpha: 0.32)),
-                ),
-                child: Icon(
-                  profile.icon,
-                  color: color,
-                  size: isLarge ? 32 : 26,
-                ),
+              ChildAvatarView(
+                avatarId: profile.avatarId,
+                size: isLarge ? 64 : 56,
               ),
               const Spacer(),
               Text(
