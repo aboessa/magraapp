@@ -16,6 +16,7 @@ import adminTtsRoute from './adminTts'
 import adminPublishGateRoute, { evaluateFor, gateRefusal } from './adminPublishGate.ts'
 import adminAvailabilityRoute from './adminAvailability.ts'
 import adminWorkflowRoute from './adminWorkflow.ts'
+import adminSupportRoute from './adminSupport.ts'
 import { summarizeGate } from '../lib/publishGate.ts'
 import { validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
@@ -91,6 +92,9 @@ adminRoute.route('/', adminAvailabilityRoute)
 // المحرك أخصّ (templates/overdue/my-stages و/stages/:key/decision)، وسجل
 // القرارات القديم يبقى عاملًا بلا كسر.
 adminRoute.route('/', adminWorkflowRoute)
+// مركز الدعم: التذاكر وخطها الزمني وSLA والوسوم والعروض المحفوظة. مركّب بعد
+// adminAppExperience الذي يحمل `/support/family/:id`، ومساراته لا تتقاطع معه.
+adminRoute.route('/', adminSupportRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)
