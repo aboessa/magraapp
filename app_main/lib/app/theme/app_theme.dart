@@ -9,15 +9,14 @@ abstract final class AppTheme {
   /// (assets/fonts/OFL.txt).
   ///
   /// This replaces a runtime download of the same family via `google_fonts`.
-  /// The family is applied to the text theme only — deliberately not to
-  /// `ThemeData.fontFamily` — so that rendering matches the previous
-  /// `GoogleFonts.readexProTextTheme(...)` behaviour exactly.
   ///
-  /// KNOWN GAP, unchanged by this refactor: many widgets construct a raw
-  /// `TextStyle(...)` with no family, so those fall back to the platform
-  /// default (Roboto) rather than Readex Pro. Making the brand font apply
-  /// app-wide is a typography task, not a font-bundling task, because it
-  /// changes the appearance of dozens of screens.
+  /// The family is applied both to the text theme AND to `ThemeData.fontFamily`
+  /// (below), so that a widget which constructs a raw `TextStyle(...)` with no
+  /// explicit family still renders in Readex Pro rather than falling back to the
+  /// platform default (Roboto). This is safe for iconography: `Icon` resolves
+  /// its glyph through the font named in the `IconData` (e.g. `MaterialIcons`),
+  /// not through `ThemeData.fontFamily`, so setting a default text family does
+  /// not disturb icons or platform components that carry their own family.
   static const fontFamily = 'Readex Pro';
 
   static ThemeData get dark {
@@ -48,6 +47,7 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      fontFamily: fontFamily,
       colorScheme: baseScheme,
       scaffoldBackgroundColor: AppColors.deepSpace,
       canvasColor: AppColors.deepSpace,
