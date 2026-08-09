@@ -258,11 +258,19 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the registry exposes trace_color and nothing it cannot run', (tester) async {
+  testWidgets('the registry exposes every implemented engine and nothing else', (tester) async {
     final registry = buildDefaultRegistry();
+    // trace_color plus the Wave 1 engines, all pack-driven.
     expect(registry.supports('trace_color'), isTrue);
-    // Listing an engine without an implementation would make the registry lie.
-    expect(registry.supports('memory_flip'), isFalse);
-    expect(registry.engineIds, ['trace_color']);
+    expect(registry.supports('memory_flip'), isTrue);
+    expect(registry.supports('match_pairs'), isTrue);
+    expect(registry.supports('sort_bins'), isTrue);
+    expect(registry.supports('sequence_order'), isTrue);
+    // Listing an engine without an implementation would make the registry lie,
+    // and the game screen trusts it to decide what is playable.
+    expect(registry.supports('block_code'), isFalse);
+    expect(registry.supports('sim_lab'), isFalse);
+    expect(registry.supports('word_build'), isFalse);
+    expect(registry.engineIds.length, 5);
   });
 }

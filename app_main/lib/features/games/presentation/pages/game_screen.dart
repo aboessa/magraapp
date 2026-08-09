@@ -19,14 +19,19 @@ import '../../engine/game_engine_registry.dart';
 import '../../engine/game_pack.dart';
 import '../../engine/game_session_controller.dart';
 import '../../engine/trace_color_engine.dart';
+import '../../engine/wave_one_engines.dart';
 
 /// Engines this build can run.
 ///
-/// One place to register an implementation. `memory_flip` is intentionally absent
-/// until its existing hard-coded page is migrated onto the registry: listing it
-/// here without an implementation would make the registry lie.
+/// One place to register an implementation. Everything listed here has a real
+/// pack-driven implementation; an engine with no implementation must not appear,
+/// because the registry is what the catalogue and the game screen trust.
 GameEngineRegistry buildDefaultRegistry() => GameEngineRegistry(const [
       TraceColorEngine(),
+      MemoryFlipEngine(),
+      MatchPairsEngine(),
+      SortBinsEngine(),
+      SequenceOrderEngine(),
     ]);
 
 class GameScreen extends StatefulWidget {

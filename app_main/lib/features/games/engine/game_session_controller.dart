@@ -294,6 +294,48 @@ class GameSessionController extends ChangeNotifier {
 
   // --- reporting -----------------------------------------------------------
 
+  /// The raw level JSON for the current level, for engines whose level shape
+  /// [GameLevel] does not model.
+  Map<String, dynamic> get rawLevel =>
+      _levelIndex < pack.rawLevels.length ? pack.rawLevels[_levelIndex] : const {};
+
+  /// Reports an attempt on behalf of an engine that computes its own score.
+  ///
+  /// Trace levels go through [_reportAttempt], which derives the score from the
+  /// session. The other engines measure different things — matched pairs, sorted
+  /// items, a correct order — so they supply the numbers, and this keeps the
+  /// event id, idempotency and payload shape identical for all of them.
+  ///
+  /// `maxScore` may be 0 for an entertainment-first engine, which reports that it
+  /// was played without producing a mark.
+  Future<void> reportEngineAttempt({
+    required int score,
+    required int maxScore,
+    required List<Map<String, Object?>> answers,
+    bool helpUsed = false,
+    bool completed = true,
+  }) async {
+    if (_reportedForLevel) return;
+    _reportedForLevel = true;
+    final seconds = _clock().difference(_levelStartedAt).inSeconds;
+    await _reporter.report(GameAttempt(
+      eventId: _eventId,
+      childId: childId,
+      gameId: gameId,
+      episodeId: episodeId,
+      objectiveId: objectiveId,
+      score: score,
+      maxScore: maxScore,
+      timeSpentSeconds: seconds < 0 ? 0 : seconds,
+      helpUsed: helpUsed,
+      answers: answers,
+      completed: completed,
+    ));
+  }
+
+  /// Ends the level from an engine, after it has reported.
+  Future<void> finishLevelFromEngine() => _completeLevel();
+
   Future<void> _reportAttempt({required bool completed}) async {
     if (_reportedForLevel) return;
     _reportedForLevel = true;

@@ -339,6 +339,7 @@ class GamePack {
     required this.progression,
     required this.accessibility,
     required this.voiceManifest,
+    this.rawLevels = const [],
     this.packId,
     this.localization,
     this.supportsDpad = false,
@@ -364,6 +365,11 @@ class GamePack {
       localization: json['localization'] as String?,
       supportsDpad: json['supports_dpad'] == true,
       levels: levels,
+      // The untouched level JSON. `GameLevel` models trace_color; the other
+      // engines have entirely different level shapes (bins, panels, pairs), and
+      // forcing them through one Dart class would either lose fields or make it a
+      // union of everything. Each engine parses the shape it owns.
+      rawLevels: _asMapList(rawLevels),
       progression: GameProgression.fromJson(_asMap(json['progression'])),
       accessibility: PackAccessibility.fromJson(_asMap(json['accessibility'])),
       voiceManifest: {
@@ -379,6 +385,10 @@ class GamePack {
   final String? localization;
   final bool supportsDpad;
   final List<GameLevel> levels;
+
+  /// The level JSON exactly as authored, for engines whose level shape
+  /// [GameLevel] does not model.
+  final List<Map<String, dynamic>> rawLevels;
   final GameProgression progression;
   final PackAccessibility accessibility;
   final Map<String, String> voiceManifest;

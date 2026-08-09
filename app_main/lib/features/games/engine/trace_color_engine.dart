@@ -16,6 +16,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'free_draw_surface.dart';
 import 'game_engine_registry.dart';
 import 'game_pack.dart';
 import 'game_services.dart';
@@ -36,6 +37,15 @@ class TraceColorEngine extends GameEngine {
 
   @override
   Widget build(BuildContext context, GameSessionController controller) {
+    // A pack can mix measured tracing with free expression across its levels, so
+    // the surface is chosen per level rather than per pack. Free modes get a
+    // canvas with no guide path and no scoring; `complete_drawing` with authored
+    // geometry stays on the tracing surface, because then there *is* something
+    // objective to measure.
+    final level = controller.level;
+    if (isFreeDrawMode(level.mode) && level.strokes.isEmpty) {
+      return FreeDrawSurface(controller: controller);
+    }
     return TraceColorSurface(controller: controller);
   }
 }
@@ -153,6 +163,17 @@ class _TraceColorSurfaceState extends State<TraceColorSurface> {
       );
     }
 
+    if (level.mode == DrawingMode.connectDots) {
+      // Connect-the-dots is discrete: tap the next dot in order. Nothing to drag,
+      // so no continuous input is offered and no precision is demanded beyond
+      // hitting a target sized by the pack's own touch minimum.
+      return GestureDetector(
+        key: const Key('connect_dots_canvas'),
+        onTapUp: (details) => _tapDotAt(details.localPosition, size),
+        child: Semantics(label: 'وصّل النقاط بالترتيب', child: canvas),
+      );
+    }
+
     return Listener(
       // Stable handle for tests and for anything that needs to address the
       // drawing surface specifically; Flutter uses Listener internally, so
@@ -218,6 +239,31 @@ class _TraceColorSurfaceState extends State<TraceColorSurface> {
       return;
     }
     await controller.endStroke();
+  }
+
+  /// Registers a tap on the nearest connect-dots target.
+  ///
+  /// The hit radius is half the pack's minimum touch target, never the trace
+  /// tolerance: these are buttons, and a child should not have to be precise to
+  /// press one. Out-of-order taps are ignored by the controller rather than
+  /// punished.
+  void _tapDotAt(Offset local, double size) {
+    final dots = controller.level.dots;
+    if (dots.isEmpty) return;
+    final radius = effectiveTouchTarget(controller.pack.accessibility) / 2;
+
+    ConnectDot? nearest;
+    var best = double.infinity;
+    for (final dot in dots) {
+      final position = Offset(dot.at.x * size, dot.at.y * size);
+      final distance = (position - local).distance;
+      if (distance < best) {
+        best = distance;
+        nearest = dot;
+      }
+    }
+    if (nearest == null || best > radius) return;
+    controller.connectDot(nearest.id);
   }
 
   void _paintRegionAt(Offset local, double size) {
