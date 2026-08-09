@@ -635,7 +635,7 @@ route.post('/content-reviews', requirePermission('review'), async (c) => {
       db.prepare(`
         INSERT INTO content_reviews (id, entity_type, entity_id, reviewer_role, reviewer_id, status, comments)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).bind(id, payload.entityType, payload.entityId, payload.reviewerRole, payload.reviewerId, payload.status, payload.comments),
+      `).bind(id, payload.entityType, payload.entityId, payload.reviewerRole, actorId(c), payload.status, payload.comments),
       audit(db, c, 'create', 'content_review', id, {
         entity_type: payload.entityType,
         entity_id: payload.entityId,
@@ -658,6 +658,9 @@ route.patch('/content-reviews/:id', requirePermission('review'), async (c) => {
   const id = c.req.param('id');
   const existing = await queryFirst<Row>(db, 'SELECT * FROM content_reviews WHERE id = ?', [id]);
   if (!existing) return c.json({ success: false, error: 'Content review not found' }, 404);
+  if (existing.status === 'approved') {
+    return c.json({ success: false, error: 'Approved review decisions are immutable' }, 409);
+  }
 
   const sets: string[] = [];
   const params: unknown[] = [];
@@ -674,11 +677,13 @@ route.patch('/content-reviews/:id', requirePermission('review'), async (c) => {
     if (invalid) return c.json({ success: false, error: invalid }, 400);
     add('reviewer_role', text(body.reviewer_role));
   }
-  for (const field of ['reviewer_id', 'comments']) {
-    if (body[field] === undefined) continue;
-    const value = nullableText(body[field]);
-    if (value === undefined) return c.json({ success: false, error: `${field} must be text or null` }, 400);
-    add(field, value);
+  if (body.reviewer_id !== undefined) {
+    return c.json({ success: false, error: 'reviewer_id is assigned from the authenticated session' }, 400);
+  }
+  if (body.comments !== undefined) {
+    const value = nullableText(body.comments);
+    if (value === undefined) return c.json({ success: false, error: 'comments must be text or null' }, 400);
+    add('comments', value);
   }
 
   const finalComments = body.comments === undefined
@@ -686,6 +691,17 @@ route.patch('/content-reviews/:id', requirePermission('review'), async (c) => {
     : nullableText(body.comments) ?? null;
   if ((finalStatus === 'rejected' || finalStatus === 'needs_changes') && !finalComments) {
     return c.json({ success: false, error: 'comments are required when a review is rejected or needs changes' }, 400);
+  }
+  if (isApproval(finalStatus)) {
+    const separation = await checkSelfApproval(db, {
+      entityType: String(existing.entity_type),
+      entityId: String(existing.entity_id),
+      approverId: actorId(c),
+    });
+    if (!separation.ok) {
+      return c.json({ success: false, error: SELF_APPROVAL_ERROR }, 409);
+    }
+    add('reviewer_id', actorId(c));
   }
 
   if (!sets.length) return c.json({ success: false, error: 'No supported fields supplied' }, 400);
@@ -705,8 +721,12 @@ route.patch('/content-reviews/:id', requirePermission('review'), async (c) => {
 route.delete('/content-reviews/:id', requirePermission('review'), async (c) => {
   const db = c.env.DB;
   const id = c.req.param('id');
-  if (!await queryFirst(db, 'SELECT id FROM content_reviews WHERE id = ?', [id])) {
+  const existing = await queryFirst<Row>(db, 'SELECT status FROM content_reviews WHERE id = ?', [id]);
+  if (!existing) {
     return c.json({ success: false, error: 'Content review not found' }, 404);
+  }
+  if (existing.status === 'approved') {
+    return c.json({ success: false, error: 'Approved review decisions are immutable' }, 409);
   }
   await db.batch([
     db.prepare('DELETE FROM content_reviews WHERE id = ?').bind(id),

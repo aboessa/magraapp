@@ -3,6 +3,13 @@ import type { Env } from '../lib/db';
 import { queryAll, queryFirst } from '../lib/db';
 import { callDurable, familyStub } from '../lib/doClient';
 import { cachedPublicJson } from '../lib/publicCache';
+import { contentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass';
+import {
+  applyArtworkUrl,
+  artworkSelect,
+  EPISODE_THUMBNAIL_ROLES,
+  publicAssetBaseUrl,
+} from '../lib/assetUrls';
 import { authenticateParent, createMediaToken, mediaIsConfigured, type ParentPrincipal } from '../lib/parentAuth';
 import type { AgeTrack, Plan } from '../lib/familyPolicy';
 
@@ -93,17 +100,22 @@ episodesRoute.get('/', async (c) => {
   const offset = pagination(c.req.query('offset'), 0);
 
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
+    // thumbnail_url is resolved from asset_links/content_assets rather than the
+    // deprecated episodes.thumbnail_url column. See lib/assetUrls.ts.
     let sql = `SELECT e.id, e.series_id, e.episode_number, e.title_ar,
       e.description_ar, e.thumbnail_url, e.duration_seconds, e.age_min, e.age_max,
-      e.is_free, e.published_at, s.title_ar AS series_title
+      e.is_free, e.published_at, s.title_ar AS series_title,
+      ${artworkSelect('thumb_asset', 'episode', 'e.id', EPISODE_THUMBNAIL_ROLES)}
       FROM episodes e
       JOIN series s ON s.id = e.series_id
-      WHERE e.status = 'published' AND e.is_published = 1 AND s.status = 'published'`;
+      WHERE e.status = 'published' AND e.is_published = 1 AND s.status = 'published'${contentClassPredicate('s', shouldServeTestFixtures(c.env))}`;
     const params: unknown[] = [];
     if (seriesId) { sql += ' AND e.series_id = ?'; params.push(seriesId); }
     sql += ' ORDER BY e.published_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
-    const episodes = await queryAll(c.env.DB, sql, params);
+    const episodes = await queryAll<Record<string, unknown>>(c.env.DB, sql, params);
+    const base = publicAssetBaseUrl(c.env);
+    for (const row of episodes) applyArtworkUrl(row, 'thumb_asset', 'thumbnail_url', base);
     return { success: true, data: episodes, meta: { limit, offset } };
   });
 });
@@ -124,12 +136,16 @@ episodesRoute.get('/:id', async (c) => {
         e.parent_guide_ar, e.questions, e.linked_game_id, e.linked_book_id,
         e.printable_url, e.family_activity_ar, e.is_free, e.published_at,
         s.title_ar AS series_title, s.type AS series_type,
-        lo.title_ar AS objective_title
+        lo.title_ar AS objective_title,
+        ${artworkSelect('thumb_asset', 'episode', 'e.id', EPISODE_THUMBNAIL_ROLES)}
       FROM episodes e
       JOIN series s ON s.id = e.series_id
       LEFT JOIN learning_objectives lo ON e.learning_objective_id = lo.id
       WHERE e.id = ? AND e.status = 'published' AND e.is_published = 1 AND s.status = 'published'
     `, [id]);
+    if (episode) {
+      applyArtworkUrl(episode, 'thumb_asset', 'thumbnail_url', publicAssetBaseUrl(c.env));
+    }
     const linkedGameId = typeof episode?.linked_game_id === 'string' ? episode.linked_game_id : null;
     const game = linkedGameId ? await queryFirst(c.env.DB, `
       SELECT id, title_ar, instructions_ar, difficulty, max_attempts

@@ -2,6 +2,13 @@ import { Hono } from 'hono';
 import type { Env } from '../lib/db';
 import { queryAll, queryFirst } from '../lib/db';
 import { cachedPublicJson } from '../lib/publicCache';
+import { contentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass';
+import {
+  applyArtworkUrl,
+  artworkSelect,
+  publicAssetBaseUrl,
+  SERIES_COVER_ROLES,
+} from '../lib/assetUrls';
 
 type AppEnv = { Bindings: Env };
 
@@ -39,15 +46,18 @@ seriesRoute.get('/', async (c) => {
   }
 
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
+    // cover_url is resolved from asset_links/content_assets, not read straight
+    // from the deprecated series.cover_url column. See lib/assetUrls.ts.
     let sql = `SELECT s.id, s.title_ar, s.title_en, s.slug, s.planet_id, s.type,
       s.age_min, s.age_max, s.cover_url, s.description_ar, s.description_en,
       s.production_level, s.is_free, s.price_tier, s.sort_order, s.published_at,
       p.name_ar AS planet_name, p.color_hex AS planet_color,
+      ${artworkSelect('cover_asset', 'series', 's.id', SERIES_COVER_ROLES)},
       (SELECT COUNT(*) FROM seasons WHERE series_id = s.id AND status = 'published') AS seasons_count,
       (SELECT COUNT(*) FROM episodes WHERE series_id = s.id AND status = 'published' AND is_published = 1) AS episodes_count
       FROM series s
       LEFT JOIN planets p ON s.planet_id = p.id
-      WHERE s.status = 'published'`;
+      WHERE s.status = 'published'${contentClassPredicate('s', shouldServeTestFixtures(c.env))}`;
     const params: unknown[] = [];
 
     if (planet) { sql += ' AND s.planet_id = ?'; params.push(planet); }
@@ -59,7 +69,9 @@ seriesRoute.get('/', async (c) => {
 
     sql += ' ORDER BY s.sort_order ASC, s.published_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
-    const series = await queryAll(c.env.DB, sql, params);
+    const series = await queryAll<Record<string, unknown>>(c.env.DB, sql, params);
+    const base = publicAssetBaseUrl(c.env);
+    for (const row of series) applyArtworkUrl(row, 'cover_asset', 'cover_url', base);
     return {
       success: true,
       data: series,
@@ -79,15 +91,19 @@ seriesRoute.get('/:id', async (c) => {
   if (!exists) return c.json({ success: false, error: 'Series not found' }, 404);
 
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
-    const series = await queryFirst(c.env.DB, `
+    const series = await queryFirst<Record<string, unknown>>(c.env.DB, `
       SELECT s.id, s.title_ar, s.title_en, s.slug, s.planet_id, s.type,
         s.age_min, s.age_max, s.cover_url, s.logo_url, s.description_ar,
         s.description_en, s.production_level, s.is_free, s.price_tier,
-        s.published_at, p.name_ar AS planet_name
+        s.published_at, p.name_ar AS planet_name,
+        ${artworkSelect('cover_asset', 'series', 's.id', SERIES_COVER_ROLES)}
       FROM series s
       LEFT JOIN planets p ON s.planet_id = p.id
-      WHERE s.id = ? AND s.status = 'published'
+      WHERE s.id = ? AND s.status = 'published'${contentClassPredicate('s', shouldServeTestFixtures(c.env))}
     `, [id]);
+    if (series) {
+      applyArtworkUrl(series, 'cover_asset', 'cover_url', publicAssetBaseUrl(c.env));
+    }
     const [seasons, characters, objectives] = await Promise.all([
       queryAll(c.env.DB, `
         SELECT id, season_number, title_ar, theme_ar, description_ar, episode_count,

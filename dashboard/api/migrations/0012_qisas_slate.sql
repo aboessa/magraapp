@@ -1,31 +1,30 @@
--- Slate كوكب القصص: 16 قصة placeholder (5 preschool + 7 kids + 5 junior) - إجمالي 17 مع bedtime-stories الموجودة
--- كل قصة 60/250/500 كلمة حسب المسار، مع visual_style_id و track_ids
+-- 0012 — qisas planet: schema prerequisites and the default visual style.
+--
+-- CORRECTED 2026-08-08. This migration previously could not be applied at all:
+-- it inserted into `books` using `visual_style_id`, `languages` and `default_language`,
+-- none of which any migration ever added, so it failed with
+--   "table books has no column named visual_style_id: SQLITE_ERROR"
+-- and blocked 0013 through 0017 behind it. It has never been applied in any environment,
+-- because it cannot be: the columns do not exist in the schema 0001-0011 produce.
+--
+-- Two changes were made:
+--
+-- 1. The three missing columns are now added here, before they are used. That is the
+--    real fix and it unblocks the whole chain.
+--
+-- 2. The 16 placeholder books it inserted were removed. They were explicitly labelled
+--    "16 قصة placeholder" and modelled stories as `books` rows with `pages = '[]'`.
+--    The qisas slate is now authored properly as `stories` + `story_pages` +
+--    `story_page_localizations` under docs/content/planets/05-qisas/, with real
+--    page-by-page text. Re-inserting placeholder duplicates would create two competing
+--    sources of truth for the same content.
+--
+-- See 0013 for the matching correction to the page data.
 
--- نحتاج visual_style افتراضي إن لم يكن موجود
+ALTER TABLE books ADD COLUMN visual_style_id TEXT REFERENCES visual_styles(id) ON DELETE SET NULL;
+ALTER TABLE books ADD COLUMN languages TEXT NOT NULL DEFAULT '["ar"]';
+ALTER TABLE books ADD COLUMN default_language TEXT NOT NULL DEFAULT 'ar';
+
+-- The default qisas visual style is legitimate and is kept.
 INSERT OR IGNORE INTO visual_styles (id, slug, name_ar, name_en, medium, prompt_fragment, production_level, age_tracks, is_active)
 VALUES ('style-qisas-default', 'qisas-default', 'أسلوب القصص الدافئ', 'Warm Stories', '2d', 'warm soft colors, gentle lighting, child-friendly', 'motion_story', '["preschool","kids","junior"]', 1);
-
--- Preschool 4 جديدة (كان 1 موجودة bedtime-stories)
-INSERT INTO books (id, title_ar, type, pages, age_min, age_max, reading_level, interaction_mode, supervision_level, safety_notes, visual_style_id, is_free, status, languages, default_language) VALUES
-('book-qisas-p1', 'أرنوب والجزرة الذهبية', 'picture_book', '[]', 3, 5, 'pre_reader', 'tap', 'recommended', 'قصة هادئة', 'style-qisas-default', 1, 'draft', '["ar"]', 'ar'),
-('book-qisas-p2', 'نجمة تنام', 'picture_book', '[]', 3, 5, 'pre_reader', 'tap', 'none', 'قصة قبل النوم', 'style-qisas-default', 1, 'draft', '["ar"]', 'ar'),
-('book-qisas-p3', 'صوت الغابة', 'audio_story', '[]', 4, 5, 'pre_reader', 'tap', 'recommended', 'صوت هادئ', 'style-qisas-default', 1, 'draft', '["ar"]', 'ar'),
-('book-qisas-p4', 'ألوان السماء', 'picture_book', '[]', 3, 5, 'pre_reader', 'tap', 'none', 'ألوان', 'style-qisas-default', 1, 'draft', '["ar","en"]', 'ar');
-
--- Kids 6 جديدة (كان 1 موجودة bedtime-stories تحسب kids أيضاً لكن نضيف 6)
-INSERT INTO books (id, title_ar, type, pages, age_min, age_max, reading_level, interaction_mode, supervision_level, safety_notes, visual_style_id, is_free, status, languages, default_language) VALUES
-('book-qisas-k1', 'حكاية الصدق', 'picture_book', '[]', 6, 8, 'emerging', 'guided', 'recommended', 'قيمة الصدق', 'style-qisas-default', 1, 'draft', '["ar"]', 'ar'),
-('book-qisas-k2', 'مغامرة التعاون', 'interactive', '[]', 6, 8, 'emerging', 'mixed', 'recommended', 'اختيارات', 'style-qisas-default', 1, 'draft', '["ar"]', 'ar'),
-('book-qisas-k3', 'كوميكس الفضاء', 'comic', '[]', 7, 8, 'emerging', 'guided', 'none', 'كوميكس', 'style-qisas-default', 1, 'draft', '["ar"]', 'ar'),
-('book-qisas-k4', 'أنشودة الحروف', 'audio_story', '[]', 6, 7, 'emerging', 'tap', 'none', 'صوت', 'style-qisas-default', 1, 'draft', '["ar"]', 'ar'),
-('book-qisas-k5', 'لغز الغابة', 'picture_book', '[]', 6, 8, 'emerging', 'guided', 'recommended', 'لغز', 'style-qisas-default', 1, 'draft', '["ar"]', 'ar'),
-('book-qisas-k6', 'أصدقاء البحر', 'audio_story', '[]', 6, 8, 'emerging', 'tap', 'none', 'صوت', 'style-qisas-default', 1, 'draft', '["ar","en"]', 'ar'),
-('book-qisas-k7', 'حكاية الشجاعة', 'interactive', '[]', 6, 8, 'emerging', 'mixed', 'recommended', 'شجاعة', 'style-qisas-default', 1, 'draft', '["ar"]', 'ar');
-
--- Junior 5 جديدة
-INSERT INTO books (id, title_ar, type, pages, age_min, age_max, reading_level, interaction_mode, supervision_level, safety_notes, visual_style_id, is_free, status, languages, default_language) VALUES
-('book-qisas-j1', 'كوميكس الأبطال', 'comic', '[]', 9, 12, 'independent', 'mixed', 'none', 'أبطال', 'style-qisas-default', 0, 'draft', '["ar"]', 'ar'),
-('book-qisas-j2', 'لغز الحضارة', 'interactive', '[]', 9, 11, 'independent', 'mixed', 'none', 'حضارة', 'style-qisas-default', 0, 'draft', '["ar"]', 'ar'),
-('book-qisas-j3', 'حكاية المخترع', 'picture_book', '[]', 9, 12, 'independent', 'guided', 'none', 'اختراع', 'style-qisas-default', 0, 'draft', '["ar"]', 'ar'),
-('book-qisas-j4', 'كوميكس المستقبل', 'comic', '[]', 10, 12, 'independent', 'guided', 'none', 'مستقبل', 'style-qisas-default', 0, 'draft', '["ar"]', 'ar'),
-('book-qisas-j5', 'قصة الصوت والصدى', 'audio_story', '[]', 9, 10, 'independent', 'tap', 'none', 'صوت', 'style-qisas-default', 0, 'draft', '["ar"]', 'ar');

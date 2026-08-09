@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import type { Env } from '../lib/db'
 import { queryAll, queryFirst } from '../lib/db'
+import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, PLANET_ICON_ROLES, PLANET_COVER_ROLES } from '../lib/assetUrls'
 import { isIslamicContent, validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
 import { requirePermission } from '../lib/adminAuth'
@@ -153,17 +154,71 @@ function serializeStory(row: Row) {
 }
 
 // Planets and taxonomy -------------------------------------------------------
+// icon_url/cover_url resolve through asset_links + content_assets, matching the
+// public /planets endpoint (lib/assetUrls.ts). The admin list used to select
+// the deprecated planets.icon_url column directly — always NULL, since
+// planet artwork is attached through asset_links — so the admin UI never had
+// a real image to show and fell back to a plain colour circle for every
+// planet regardless of whether artwork had actually been uploaded.
 route.get('/planets', async (c) => {
   const includeInactive = c.req.query('include_inactive') === '1'
+  const baseUrl = publicAssetBaseUrl(c.env)
   const rows = await queryAll<Row>(c.env.DB, `
     SELECT p.*,
       (SELECT COUNT(*) FROM series s WHERE s.planet_id = p.id AND s.status <> 'archived') AS series_count,
-      (SELECT COUNT(*) FROM asset_links al WHERE al.entity_type = 'planet' AND al.entity_id = p.id) AS assets_count
+      (SELECT COUNT(*) FROM asset_links al WHERE al.entity_type = 'planet' AND al.entity_id = p.id) AS assets_count,
+      ${artworkSelect('icon_asset', 'planet', 'p.id', PLANET_ICON_ROLES)},
+      ${artworkSelect('cover_asset', 'planet', 'p.id', PLANET_COVER_ROLES)}
     FROM planets p
     ${includeInactive ? '' : 'WHERE p.is_active = 1'}
     ORDER BY p.sort_order, p.created_at
   `)
+  for (const row of rows) {
+    applyArtworkUrl(row, 'icon_asset', 'icon_url', baseUrl)
+    row.cover_url = null
+    applyArtworkUrl(row, 'cover_asset', 'cover_url', baseUrl)
+  }
   return c.json({ success: true, data: rows.map(serializePlanet) })
+})
+
+// Planet detail workspace: no GET /planets/:id existed before, so the admin
+// planet drill-down (DASHBOARD v3 UX-8) had nowhere to fetch a single planet's
+// full context. Series are included flat (no season/episode nesting) the same
+// way GET /admin/series/:id embeds seasons — deeper nesting stays a follow-up
+// endpoint rather than one oversized response.
+route.get('/planets/:id', async (c) => {
+  const id = c.req.param('id')
+  const baseUrl = publicAssetBaseUrl(c.env)
+  const row = await queryFirst<Row>(c.env.DB, `
+    SELECT p.*,
+      (SELECT COUNT(*) FROM series s WHERE s.planet_id = p.id AND s.status <> 'archived') AS series_count,
+      (SELECT COUNT(*) FROM asset_links al WHERE al.entity_type = 'planet' AND al.entity_id = p.id) AS assets_count,
+      ${artworkSelect('icon_asset', 'planet', 'p.id', PLANET_ICON_ROLES)},
+      ${artworkSelect('cover_asset', 'planet', 'p.id', PLANET_COVER_ROLES)}
+    FROM planets p WHERE p.id = ?
+  `, [id])
+  if (!row) return c.json({ success: false, error: 'Planet not found' }, 404)
+  applyArtworkUrl(row, 'icon_asset', 'icon_url', baseUrl)
+  row.cover_url = null
+  applyArtworkUrl(row, 'cover_asset', 'cover_url', baseUrl)
+
+  const series = await queryAll<Row>(c.env.DB, `
+    SELECT s.id, s.title_ar, s.title_en, s.slug, s.type, s.age_min, s.age_max, s.status, s.cover_url, s.sort_order,
+      (SELECT GROUP_CONCAT(track_id) FROM series_tracks WHERE series_id = s.id) AS track_ids,
+      (SELECT COUNT(*) FROM episodes WHERE series_id = s.id AND status <> 'archived') AS episodes_count,
+      ${artworkSelect('cover_asset', 'series', 's.id', ['poster', 'cover'])}
+    FROM series s WHERE s.planet_id = ? AND s.status <> 'archived'
+    ORDER BY s.sort_order ASC, s.updated_at DESC
+  `, [id])
+  for (const item of series) applyArtworkUrl(item, 'cover_asset', 'cover_url', baseUrl)
+
+  const categories = await queryAll<Row>(c.env.DB, `
+    SELECT c.id, c.name_ar, c.name_en, c.color_hex,
+      (SELECT COUNT(*) FROM series_categories sc JOIN series s ON s.id = sc.series_id WHERE sc.category_id = c.id AND s.planet_id = ? AND s.status <> 'archived') AS series_count
+    FROM categories c WHERE c.is_active = 1 ORDER BY c.sort_order
+  `, [id])
+
+  return c.json({ success: true, data: { ...serializePlanet(row), series, categories: categories.filter((item) => Number(item.series_count) > 0) } })
 })
 
 route.post('/planets', requirePermission('create'), async (c) => {

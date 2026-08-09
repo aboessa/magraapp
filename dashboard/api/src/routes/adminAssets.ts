@@ -1,6 +1,9 @@
 import { Hono } from 'hono'
 import type { Env } from '../lib/db'
 import { queryAll, queryFirst } from '../lib/db'
+import { bucketForAsset, keyScopeForAsset, type BucketName } from '../lib/assetBuckets'
+import { inferVisibilityFromPath } from '../lib/assetClassification'
+import { requirePermission } from '../lib/adminAuth'
 
 type AppEnv = { Bindings: Env }
 type Row = Record<string, unknown>
@@ -12,7 +15,8 @@ const ASSET_KINDS = ['image', 'audio', 'video', 'subtitle', 'document', 'manifes
 const ASSET_STATUSES = ['planned', 'uploading', 'processing', 'ready', 'failed', 'archived']
 const ASSET_SOURCES = ['catalog', 'upload', 'generated', 'import']
 const VISIBILITIES = ['public', 'private']
-const BUCKETS = ['media', 'thumbs']
+// The bucket is no longer accepted as an input; it is derived from the asset's
+// visibility and kind by lib/assetBuckets.ts.
 const ENTITY_TYPES = ['landing', 'planet', 'category', 'series', 'season', 'episode', 'character', 'story', 'story_page', 'game', 'book', 'project']
 const DIRECT_UPLOAD_LIMIT = 95 * 1024 * 1024
 const MULTIPART_PART_SIZE = 8 * 1024 * 1024
@@ -113,7 +117,10 @@ function safeExpectedPath(value: string | null) {
 }
 
 function objectKey(visibility: string, kind: string, filename: string, expectedPath?: string | null) {
-  const scope = visibility === 'public' ? 'public' : 'private'
+  // The scope prefix is derived from lib/assetBuckets so a key can never
+  // disagree with the bucket the object is actually written to. Video and
+  // archives are forced private there regardless of the visibility column.
+  const scope = keyScopeForAsset({ visibility, kind })
   const expected = safeExpectedPath(expectedPath ?? null)
   if (expected) {
     const stem = expected.replace(/^assets\//, '').replace(/\.[^.\/]+$/, '')
@@ -127,6 +134,18 @@ function bucket(binding: Env, name: string) {
   return name === 'thumbs' ? binding.THUMBS_BUCKET : binding.MEDIA_BUCKET
 }
 
+/// Resolves the bucket an asset must live in from the asset row itself.
+///
+/// The `bucket` column is no longer trusted as an input: it used to be
+/// caller-supplied and defaulted to `'media'`, which put public catalogue
+/// artwork in the private bucket. See lib/assetBuckets.ts for the architecture.
+function bucketForRow(asset: Row): BucketName {
+  return bucketForAsset({
+    visibility: asset.visibility as string | null,
+    kind: asset.kind as string | null,
+  })
+}
+
 function serializeAsset(row: Row) {
   return {
     ...row,
@@ -135,8 +154,17 @@ function serializeAsset(row: Row) {
   }
 }
 
+/// Catalogue artwork is served anonymously from the public CDN; only
+/// entitlement-controlled media stays private.
+///
+/// The rule itself now lives in lib/assetClassification.ts, shared with
+/// scripts/import-images.mjs and the bucket migration. It used to be duplicated
+/// here and in the import script, and the two copies had already drifted: both
+/// treated only `landing|marketing|worlds|store` as public, so every poster,
+/// banner and episode still was minted `private/…` and could never resolve on
+/// the CDN.
 function inferVisibility(path: string) {
-  return /\/landing\/|\/marketing\/|\/worlds\/|\/store\//.test(`/${path.toLowerCase()}`) ? 'public' : 'private'
+  return inferVisibilityFromPath(path)
 }
 
 function inferTitle(path: string) {
@@ -217,7 +245,7 @@ route.get('/assets/:id', async (c) => {
   return c.json({ success: true, data: { ...serializeAsset(asset), links } })
 })
 
-route.post('/assets', async (c) => {
+route.post('/assets', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const title = text(value.title_ar)
@@ -244,7 +272,7 @@ route.post('/assets', async (c) => {
   return c.json({ success: true, data: { id } }, 201)
 })
 
-route.patch('/assets/:id', async (c) => {
+route.patch('/assets/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const id = c.req.param('id')
@@ -303,7 +331,7 @@ route.patch('/assets/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-route.delete('/assets/:id', async (c) => {
+route.delete('/assets/:id', requirePermission('archive'), async (c) => {
   const id = c.req.param('id')
   const asset = await queryFirst<Row>(c.env.DB, 'SELECT id FROM content_assets WHERE id = ?', [id])
   if (!asset) return c.json({ success: false, error: 'Asset not found' }, 404)
@@ -314,7 +342,7 @@ route.delete('/assets/:id', async (c) => {
   return c.json({ success: true, data: { id, status: 'archived' } })
 })
 
-route.post('/assets/import-catalog', async (c) => {
+route.post('/assets/import-catalog', requirePermission('create'), async (c) => {
   const value = await body(c)
   const catalog = value ? text(value.catalog) : null
   if (!catalog) return c.json({ success: false, error: 'catalog text is required' }, 400)
@@ -349,7 +377,7 @@ route.post('/assets/import-catalog', async (c) => {
   return c.json({ success: true, data: { total: records.length, created, updated } })
 })
 
-route.put('/assets/:id/links', async (c) => {
+route.put('/assets/:id/links', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value || !Array.isArray(value.links)) return c.json({ success: false, error: 'links must be an array' }, 400)
   const assetId = c.req.param('id')
@@ -369,7 +397,7 @@ route.put('/assets/:id/links', async (c) => {
 })
 
 // Direct upload for images and other files below the Worker request limit ----
-route.put('/assets/:id/content', async (c) => {
+route.put('/assets/:id/content', requirePermission('upload_images'), async (c) => {
   const id = c.req.param('id')
   const asset = await queryFirst<Row>(c.env.DB, 'SELECT * FROM content_assets WHERE id = ?', [id])
   if (!asset) return c.json({ success: false, error: 'Asset not found' }, 404)
@@ -386,7 +414,10 @@ route.put('/assets/:id/content', async (c) => {
   const kind = kindFromMime(filename, mime)
   if (!kind || kind !== asset.kind) return c.json({ success: false, error: 'File type does not match the asset kind' }, 415)
   if (size > MAX_BYTES[kind]) return c.json({ success: false, error: `File exceeds the ${kind} size limit` }, 413)
-  const bucketName = String(asset.bucket || 'media')
+  // Derived, never read from the row: the stored column was caller-supplied and
+  // defaulted to 'media', which parked public catalogue artwork in the private
+  // bucket. lib/assetBuckets.ts is the single authority.
+  const bucketName = bucketForAsset({ visibility: asset.visibility as string | null, kind })
   const key = String(asset.r2_key || objectKey(String(asset.visibility), kind, filename, String(asset.expected_path || '')))
   const checksum = c.req.header('X-File-SHA256') || undefined
   const actualWidth = integer(c.req.header('X-Image-Width'))
@@ -419,7 +450,7 @@ route.put('/assets/:id/content', async (c) => {
 })
 
 // Multipart upload for video/audio/archive files ----------------------------
-route.post('/asset-upload-sessions', async (c) => {
+route.post('/asset-upload-sessions', requirePermission('upload_images'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
   const assetId = text(value.asset_id)
@@ -432,8 +463,10 @@ route.post('/asset-upload-sessions', async (c) => {
   const kind = kindFromMime(filename, mime)
   if (!kind || kind !== asset.kind) return c.json({ success: false, error: 'File type does not match the asset kind' }, 415)
   if (expectedSize > MAX_BYTES[kind]) return c.json({ success: false, error: `File exceeds the ${kind} size limit` }, 413)
-  const bucketName = text(value.bucket) ?? String(asset.bucket || 'media')
-  if (!BUCKETS.includes(bucketName)) return c.json({ success: false, error: 'Invalid bucket' }, 400)
+  // The requested bucket is ignored: it is derived from the asset itself so a
+  // multipart stream upload cannot be steered into the CDN-fronted public
+  // bucket. See lib/assetBuckets.ts.
+  const bucketName = bucketForAsset({ visibility: asset.visibility as string | null, kind })
   const key = String(asset.r2_key || objectKey(String(asset.visibility), kind, filename, String(asset.expected_path || '')))
   const upload = await bucket(c.env, bucketName).createMultipartUpload(key, {
     httpMetadata: { contentType: mime, cacheControl: asset.visibility === 'public' ? 'public, max-age=31536000, immutable' : 'private, no-store' },
@@ -452,7 +485,7 @@ route.post('/asset-upload-sessions', async (c) => {
   return c.json({ success: true, data: { id, asset_id: assetId, part_size: MULTIPART_PART_SIZE, expires_at: expires } }, 201)
 })
 
-route.put('/asset-upload-sessions/:id/parts/:part', async (c) => {
+route.put('/asset-upload-sessions/:id/parts/:part', requirePermission('upload_images'), async (c) => {
   const id = c.req.param('id')
   const partNumber = integer(c.req.param('part'))
   if (partNumber === null || partNumber < 1 || partNumber > 10000) return c.json({ success: false, error: 'Invalid part number' }, 400)
@@ -472,7 +505,7 @@ route.put('/asset-upload-sessions/:id/parts/:part', async (c) => {
   return c.json({ success: true, data: { part_number: partNumber, etag: uploaded.etag, size_bytes: partSize } })
 })
 
-route.post('/asset-upload-sessions/:id/complete', async (c) => {
+route.post('/asset-upload-sessions/:id/complete', requirePermission('upload_images'), async (c) => {
   const id = c.req.param('id')
   const value = await body(c) ?? {}
   const session = await queryFirst<Row>(c.env.DB, `SELECT au.*, ca.mime_type, ca.visibility FROM asset_uploads au JOIN content_assets ca ON ca.id = au.asset_id WHERE au.id = ? AND au.status = 'uploading'`, [id])
@@ -499,7 +532,7 @@ route.post('/asset-upload-sessions/:id/complete', async (c) => {
   return c.json({ success: true, data: { asset_id: session.asset_id, status: 'ready', size_bytes: total, etag: completed.etag } })
 })
 
-route.delete('/asset-upload-sessions/:id', async (c) => {
+route.delete('/asset-upload-sessions/:id', requirePermission('upload_images'), async (c) => {
   const id = c.req.param('id')
   const session = await queryFirst<Row>(c.env.DB, `SELECT * FROM asset_uploads WHERE id = ? AND status = 'uploading'`, [id])
   if (!session) return c.json({ success: false, error: 'Active upload session not found' }, 404)
@@ -517,7 +550,16 @@ route.get('/assets/:id/content', async (c) => {
   const asset = await queryFirst<Row>(c.env.DB, `SELECT * FROM content_assets WHERE id = ? AND status = 'ready'`, [c.req.param('id')])
   if (!asset || !asset.r2_key || !asset.bucket) return c.json({ success: false, error: 'Ready asset not found' }, 404)
   const range = c.req.header('Range')
-  const object = await bucket(c.env, String(asset.bucket)).get(String(asset.r2_key), range ? { range: c.req.raw.headers } : undefined)
+  const rangeOptions = range ? { range: c.req.raw.headers } : undefined
+  // Admin reads honour the stored bucket first, then fall back to the bucket the
+  // asset *should* live in. This keeps the admin library usable while the
+  // migration in scripts/migrate-asset-buckets.mjs is only partly applied.
+  const storedBucket = String(asset.bucket)
+  const derivedBucket = bucketForRow(asset)
+  let object = await bucket(c.env, storedBucket).get(String(asset.r2_key), rangeOptions)
+  if (!object && derivedBucket !== storedBucket) {
+    object = await bucket(c.env, derivedBucket).get(String(asset.r2_key), rangeOptions)
+  }
   if (!object) return c.json({ success: false, error: 'Asset object is missing from storage' }, 404)
   const headers = new Headers()
   object.writeHttpMetadata(headers)

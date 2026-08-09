@@ -1,4 +1,4 @@
-// Cloudflare Worker bindings. D1 is the content catalog only; parent and
+﻿// Cloudflare Worker bindings. D1 is the content catalog only; parent and
 // child state belongs to IdentityState and FamilyState Durable Objects.
 export interface Env {
   DB: D1Database;
@@ -10,6 +10,12 @@ export interface Env {
   THUMBS_BUCKET: R2Bucket;
   ENVIRONMENT: string;
   API_VERSION: string;
+  /// Base URL of the CDN fronting the public asset bucket, e.g.
+  /// https://cdn.majarra.app. When unset, catalogue artwork resolves to null
+  /// rather than to a broken or guessable URL. See lib/assetUrls.ts.
+  PUBLIC_ASSET_BASE_URL?: string;
+  /// Opt-in for serving platform test fixtures. Never honoured when ENVIRONMENT is production.
+  INCLUDE_TEST_FIXTURES?: string;
   ADMIN_API_KEY?: string;
   AUTH_TOKEN_SECRET?: string;
   MEDIA_TOKEN_SECRET?: string;
@@ -23,6 +29,32 @@ export interface Env {
   GOOGLE_PLAY_PRODUCTS?: string;
   GOOGLE_PUBSUB_AUDIENCE?: string;
   GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL?: string;
+
+  // --- Gemini-TTS (narration generation) ---
+  //
+  // Two auth paths are supported because the same models are reachable two ways
+  // and the credentials are not interchangeable:
+  //
+  //  * AI Studio  — a single API key, sent as `x-goog-api-key`. Fastest to set
+  //    up, and what a developer trying the model first will already have.
+  //  * Vertex / Cloud TTS — a service account that signs a JWT and exchanges it
+  //    for an OAuth token, the same flow `services/googlePlay.ts` already uses.
+  //    Required for data residency and for a Google Cloud billing account.
+  //
+  // When both are present the service account wins: it is the production path,
+  // and an API key left over from local testing must not silently take over.
+  //
+  // Deliberately NOT stored in `platform_settings`: that table's `value` column
+  // is plaintext TEXT (migration 0017), so a private key placed there would be
+  // readable by anything with D1 access and would appear in every backup. Model,
+  // voice and prompt choices are safe to keep in D1; the credential is not.
+  GOOGLE_TTS_API_KEY?: string;
+  GOOGLE_TTS_SERVICE_ACCOUNT_EMAIL?: string;
+  GOOGLE_TTS_PRIVATE_KEY?: string;
+
+  /// Google Cloud project id, required only by the service-account path: the
+  /// synthesize call sends it as `x-goog-user-project` for quota attribution.
+  GOOGLE_TTS_PROJECT_ID?: string;
 }
 
 export async function queryAll<T>(db: D1Database, sql: string, params: unknown[] = []): Promise<T[]> {

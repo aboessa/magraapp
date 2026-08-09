@@ -72,3 +72,45 @@ export const strictAuthLimit = rateLimit({ windowMs: 60_000, max: 5, keyPrefix: 
 export const billingLimit = rateLimit({ windowMs: 60_000, max: 20, keyPrefix: 'billing' })
 export const adminLimit = rateLimit({ windowMs: 60_000, max: 30, keyPrefix: 'admin' })
 export const generalLimit = rateLimit({ windowMs: 60_000, max: 120, keyPrefix: 'general' })
+
+/**
+ * عدّ يدوي بدل الوسيط، ليُستدعى بعد نجاح التحقق من المدخلات.
+ *
+ * الوسيط يعدّ كل طلب يصل، فالمدخلات الخاطئة تستهلك حصة المستخدم:
+ * خمس محاولات بخطأ مطبعي في البريد كانت تحجب صاحبها ساعة كاملة.
+ * الحصة الضيقة معنيّة بالإرسال المقبول، وحماية الطلبات الفاسدة
+ * وظيفة generalLimit الأوسع.
+ */
+export async function consumeRateLimit(
+  c: Context<{ Bindings: Env }>,
+  options: RateLimitOptions,
+): Promise<{ allowed: boolean; retryAfter: number }> {
+  const ip = c.req.header('CF-Connecting-IP') ?? c.req.header('X-Forwarded-For')?.split(',')[0]?.trim() ?? 'unknown'
+  const key = `${options.keyPrefix}:${ip}`
+  const now = Date.now()
+
+  let entry = memoryStore.get(key)
+  if (!entry && c.env.CACHE) {
+    try {
+      const raw = await c.env.CACHE.get(`rl:${key}`, 'json') as { count: number; resetAt: number } | null
+      if (raw && raw.resetAt > now) entry = raw
+    } catch { /* انقطاع الكاش لا يمنع الخدمة */ }
+  }
+
+  if (!entry || entry.resetAt <= now) entry = { count: 1, resetAt: now + options.windowMs }
+  else entry.count += 1
+
+  memoryStore.set(key, entry)
+  if (c.env.CACHE) {
+    try {
+      await c.env.CACHE.put(`rl:${key}`, JSON.stringify(entry), {
+        expirationTtl: Math.ceil(options.windowMs / 1000) + 5,
+      })
+    } catch { /* أفضل جهد */ }
+  }
+
+  return {
+    allowed: entry.count <= options.max,
+    retryAfter: Math.ceil((entry.resetAt - now) / 1000),
+  }
+}

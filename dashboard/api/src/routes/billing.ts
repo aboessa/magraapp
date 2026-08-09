@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../lib/db';
 import { queryFirst } from '../lib/db';
+import { callDurable, familyStub } from '../lib/doClient';
 import { authenticateParent } from '../lib/parentAuth';
 import { sha256Base64Url } from '../lib/security';
 import { verifyAuditAndApplyGooglePlay } from '../services/billing';
@@ -28,6 +29,25 @@ function verificationError(error: unknown) {
       : 'Google Play verification is temporarily unavailable',
   }, { status: 503 });
 }
+
+// GET /api/v1/billing/status
+//
+// The app called this endpoint before it existed, so `MembershipPage` had no
+// data source and rendered as a placeholder. The effective plan is read from the
+// same entitlement ledger that enforces limits, so the screen cannot claim a
+// tier the app does not actually grant.
+billingRoute.get('/status', async (c) => {
+  const auth = await authenticateParent(c.env, c.req.header('Authorization'));
+  if (!auth.ok) return unauthorized(auth.reason);
+  const result = await callDurable<unknown>(
+    familyStub(c.env, auth.principal.parentId),
+    '/billing/status',
+  );
+  return Response.json(
+    result.data ?? { success: false, error: 'Billing service unavailable' },
+    { status: result.status },
+  );
+});
 
 billingRoute.get('/google-play/context', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
