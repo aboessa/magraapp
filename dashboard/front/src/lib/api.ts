@@ -445,6 +445,26 @@ export const api = {
   /// جاهزية النشر الموحّدة. نفس المصدر الذي تستدعيه عملية النشر على الخادم،
   /// فما تعرضه هذه الشاشة هو ما سيفرضه الخادم فعلًا لا تقديرًا مستقلًا.
   publishReadiness: (type: import('../types/api').PublishableEntityType, id: string) => request<ApiEnvelope<import('../types/api').PublishGateResult>>(`/admin/publish-readiness/${type}/${encodeURIComponent(id)}`),
+
+  /// سياسة الإتاحة الجغرافية. `country` معاينة: «هل هذا ظاهر في فرنسا؟» سؤال
+  /// يجب أن يُجاب من اللوحة لا بالسفر.
+  availability: (type: import('../types/api').AvailabilityScope, id: string, country?: string) => request<ApiEnvelope<import('../types/api').AvailabilityView>>(`/admin/availability/${type}/${encodeURIComponent(id)}${queryString({ country })}`),
+  saveAvailability: (
+    type: import('../types/api').AvailabilityScope,
+    id: string,
+    payload: {
+      mode: import('../types/api').AvailabilityMode
+      countries: string[]
+      languages: string[]
+      platforms: string[]
+      starts_at: string | null
+      ends_at: string | null
+      reason: import('../types/api').AvailabilityReason
+      note: string | null
+    },
+  ) => request<ApiEnvelope<import('../types/api').AvailabilityView>>(`/admin/availability/${type}/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  clearAvailability: (type: import('../types/api').AvailabilityScope, id: string) => request<ApiEnvelope<import('../types/api').AvailabilityView>>(`/admin/availability/${type}/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  availabilityPolicies: () => request<PaginatedEnvelope<import('../types/api').AvailabilityListRow>>('/admin/availability'),
   backupExport: (type: import('../types/api').QualityEntityType, id: string) => request<ApiEnvelope<import('../types/api').BackupExport>>(`/admin/backup/${type}/${encodeURIComponent(id)}`),
 
   // أحداث العائلة الفاشلة. الجدول والمسارات أُضيفت مع المهاجرة 0021 لأن

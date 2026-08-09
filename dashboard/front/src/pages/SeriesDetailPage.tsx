@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon'
 import { EntityThumbnail } from '../components/EntityThumbnail'
 import { EntityHeader } from '../components/EntityHeader'
 import { DetailTabs } from '../components/DetailTabs'
+import { AvailabilityPanel } from '../components/AvailabilityPanel'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { StatusBadge, TrackBadge } from '../components/StatusBadge'
 import { usePreferences } from '../context/preferences'
@@ -207,13 +208,21 @@ export function SeriesDetailPage() {
           {
             key: 'rights',
             label: text.rightsTab,
-            content: rights.rights_owner ? (
-              <div className="form-grid form-grid--three" style={{ padding: 4 }}>
-                <div className="field"><span>{text.rightsOwner}</span><strong>{rights.rights_owner}</strong></div>
-                <div className="field"><span>{text.rightsExpiry}</span><strong>{rights.rights_expiry ? formatDate(rights.rights_expiry, locale) : '—'}</strong></div>
-                <div className="field"><span>{text.rightsTerritories}</span><strong>{rights.rights_territories || '—'}</strong></div>
-              </div>
-            ) : <div className="data-unavailable">{text.rightsUnavailable}</div>,
+            content: (
+              <>
+                {rights.rights_owner ? (
+                  <div className="form-grid form-grid--three" style={{ padding: 4 }}>
+                    <div className="field"><span>{text.rightsOwner}</span><strong>{rights.rights_owner}</strong></div>
+                    <div className="field"><span>{text.rightsExpiry}</span><strong>{rights.rights_expiry ? formatDate(rights.rights_expiry, locale) : '—'}</strong></div>
+                    <div className="field"><span>{text.rightsTerritories}</span><strong>{rights.rights_territories || '—'}</strong></div>
+                  </div>
+                ) : <div className="data-unavailable">{text.rightsUnavailable}</div>}
+                {/* الحقوق المسجّلة أعلاه هي نصّ العقد؛ الإتاحة أدناه هي ما يُفرَض
+                    فعليًا على الكتالوج والتشغيل. الفصل مقصود: العقد لا يُنفِّذ
+                    نفسه، وهذا بالضبط ما كان ناقصًا. */}
+                <AvailabilityPanel scope="series" entityId={id ?? ''} />
+              </>
+            ),
           },
           { key: 'analytics', label: text.analyticsTab, content: <div className="data-unavailable">{text.analyticsUnavailable}</div> },
           { key: 'history', label: text.historyTab, content: <div className="data-unavailable">{text.historyUnavailable}</div> },

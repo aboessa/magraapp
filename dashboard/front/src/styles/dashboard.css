@@ -3226,3 +3226,29 @@ body.modal-open {
 .readiness-item__items { margin: 6px 0 0; padding-inline-start: 18px; font-size: 0.83rem; color: var(--muted); }
 .readiness-item__action { margin: 6px 0 0; font-size: 0.83rem; color: var(--cyan); }
 .readiness-note { margin: 8px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+
+/* --- سياسة الإتاحة الجغرافية ---------------------------------------------
+ *
+ * الحالة الفعّالة أولًا وبأعلى تباين، ثم مصدرها (موروثة/مُلغاة) بنصّ صريح لا
+ * بلون فقط: الفرق بين «متاح لأن أحدًا لم يقيّده» و«متاح لأن أحدًا ألغى قيد
+ * الأصل» لا يجوز أن يُنقَل بدرجة لون.
+ */
+.availability-state {
+  margin-block-end: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-inline-start-width: 3px;
+  border-radius: 10px;
+}
+.availability-state--on { border-inline-start-color: rgba(70, 214, 148, 0.7); }
+.availability-state--off { border-inline-start-color: #f05d77; }
+.availability-state__head { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: baseline; }
+.availability-state__source {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.availability-state__message { margin: 6px 0 0; font-size: 0.88rem; line-height: 1.6; }

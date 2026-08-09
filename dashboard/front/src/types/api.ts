@@ -1439,6 +1439,63 @@ export interface PublishRefusal {
   warnings: PublishGateFinding[]
 }
 
+// --- سياسة الإتاحة الجغرافية ------------------------------------------------
+
+export type AvailabilityMode = 'worldwide' | 'worldwide_except' | 'selected_only' | 'unavailable'
+export type AvailabilityReason = 'rights' | 'commercial' | 'editorial' | 'legal'
+export type AvailabilityScope =
+  | 'global' | 'planet' | 'series' | 'season' | 'episode' | 'story' | 'book' | 'game' | 'project'
+
+export interface AvailabilityPolicy {
+  entity_type: AvailabilityScope
+  entity_id: string
+  mode: AvailabilityMode
+  countries: string[]
+  languages: string[]
+  platforms: string[]
+  starts_at: string | null
+  ends_at: string | null
+  reason: AvailabilityReason
+  note: string | null
+}
+
+export type AvailabilityCode =
+  | 'available' | 'unavailable' | 'country_excluded' | 'country_not_selected'
+  | 'country_unknown' | 'window_not_started' | 'window_ended'
+  | 'language_excluded' | 'platform_excluded'
+
+export interface AvailabilityDecision {
+  available: boolean
+  code: AvailabilityCode
+  /// explicit ⇒ مُلغاة على العنصر · inherited ⇒ موروثة · default ⇒ لا سياسة
+  source: 'explicit' | 'inherited' | 'default'
+  policy: AvailabilityPolicy | null
+  inherited_from: { entity_type: AvailabilityScope; entity_id: string } | null
+  reason: AvailabilityReason | null
+  message_ar: string
+}
+
+export interface AvailabilityChainEntry {
+  entity_type: AvailabilityScope
+  entity_id: string
+  policy: AvailabilityPolicy | null
+}
+
+export interface AvailabilityView {
+  entity_type: AvailabilityScope
+  entity_id: string
+  own_policy: AvailabilityPolicy | null
+  chain: AvailabilityChainEntry[]
+  evaluated_for: { country: string | null; platform: string | null; now: string }
+  decision: AvailabilityDecision
+}
+
+export interface AvailabilityListRow extends AvailabilityPolicy {
+  id: string
+  entity_title: string | null
+  updated_at: string
+}
+
 /// فحص واحد. `message` جاهزة للعرض بالعربية من الخادم، وتحمل السبب لا الحكم فقط.
 export interface QualityCheck {
   check: string

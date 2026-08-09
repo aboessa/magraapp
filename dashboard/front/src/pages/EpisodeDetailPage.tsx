@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon'
 import { EntityThumbnail } from '../components/EntityThumbnail'
 import { EntityHeader } from '../components/EntityHeader'
 import { DetailTabs } from '../components/DetailTabs'
+import { AvailabilityPanel } from '../components/AvailabilityPanel'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { StatusBadge } from '../components/StatusBadge'
 import { usePreferences } from '../context/preferences'
@@ -183,6 +184,13 @@ export function EpisodeDetailPage() {
                 </div>
               </div>
             ),
+          },
+          {
+            key: 'availability',
+            label: locale === 'en' ? 'Availability' : 'الإتاحة',
+            // الحلقة قد تُقيَّد وحدها أو ترث من الموسم/السلسلة/الكوكب، ولا فرق
+            // ظاهر بين الحالتين بلا عرضهما — لذلك تظهر السلسلة الكاملة هنا.
+            content: <AvailabilityPanel scope="episode" entityId={id} />,
           },
           { key: 'analytics', label: text.analyticsTab, content: <div className="data-unavailable">{text.analyticsUnavailable}</div> },
         ]}
