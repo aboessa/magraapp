@@ -260,17 +260,27 @@ void main() {
 
   testWidgets('the registry exposes every implemented engine and nothing else', (tester) async {
     final registry = buildDefaultRegistry();
-    // trace_color plus the Wave 1 engines, all pack-driven.
-    expect(registry.supports('trace_color'), isTrue);
-    expect(registry.supports('memory_flip'), isTrue);
-    expect(registry.supports('match_pairs'), isTrue);
-    expect(registry.supports('sort_bins'), isTrue);
-    expect(registry.supports('sequence_order'), isTrue);
+    // All twelve canonical engines now have a real pack-driven implementation.
+    for (final id in [
+      'trace_color',
+      'memory_flip',
+      'match_pairs',
+      'sort_bins',
+      'sequence_order',
+      'count_quantity',
+      'logic_pattern',
+      'word_build',
+      'rhythm_tap',
+      'block_code',
+      'sim_lab',
+      'timeline_map',
+    ]) {
+      expect(registry.supports(id), isTrue, reason: '$id must be registered');
+      expect(registry.resolve(id), isNotNull);
+    }
     // Listing an engine without an implementation would make the registry lie,
     // and the game screen trusts it to decide what is playable.
-    expect(registry.supports('block_code'), isFalse);
-    expect(registry.supports('sim_lab'), isFalse);
-    expect(registry.supports('word_build'), isFalse);
-    expect(registry.engineIds.length, 5);
+    expect(registry.supports('not_an_engine'), isFalse);
+    expect(registry.engineIds.length, 12);
   });
 }

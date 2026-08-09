@@ -143,6 +143,16 @@ class GameSessionController extends ChangeNotifier {
 
   Future<void> repeatInstruction() => _audio.repeatInstruction();
 
+  /// Plays one voice key from the pack's manifest.
+  ///
+  /// [FeedbackService.voiceKeyFor] covers the five events every engine shares.
+  /// Wave 2 engines have contracted keys of their own — `vo.count.7`,
+  /// `vo.stage_predict`, `vo.hint_older`, `vo.block.move` — enumerated in
+  /// `docs/games/engines/*.md`. Routing them through the session keeps the audio
+  /// service the single player, so a missing recording is reported in one place
+  /// instead of each engine inventing a fallback.
+  Future<void> speakVoiceKey(String voiceKey) => _audio.play(voiceKey);
+
   void resizeCanvas(double width, double height) {
     _traceSession?.resize(width, height);
   }

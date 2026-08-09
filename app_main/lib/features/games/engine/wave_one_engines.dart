@@ -25,86 +25,16 @@
 library;
 
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
 import 'game_session_controller.dart';
 
-/// Shared helpers for reading the authored level shapes.
-List<Map<String, dynamic>> _mapList(Object? value) {
-  if (value is! List) return const [];
-  return value
-      .map((entry) => entry is Map ? Map<String, dynamic>.from(entry) : null)
-      .whereType<Map<String, dynamic>>()
-      .toList(growable: false);
-}
-
-String _str(Map<String, dynamic> map, String key) {
-  final value = map[key];
-  return value is String ? value : '';
-}
-
-/// A deterministic shuffle seeded from the level, so a rebuild does not reshuffle
-/// the board under a child's finger.
-List<T> _seededShuffle<T>(List<T> items, int seed) {
-  final copy = List<T>.of(items);
-  copy.shuffle(math.Random(seed));
-  return copy;
-}
-
-/// Chrome shared by the board engines: the prompt, and the mandatory
-/// repeat-instruction control.
-class _BoardScaffold extends StatelessWidget {
-  const _BoardScaffold({
-    required this.controller,
-    required this.prompt,
-    required this.child,
-    this.footer,
-  });
-
-  final GameSessionController controller;
-  final String? prompt;
-  final Widget child;
-  final Widget? footer;
-
-  @override
-  Widget build(BuildContext context) {
-    final target = effectiveTouchTarget(controller.pack.accessibility);
-    return Column(
-      children: [
-        if (prompt != null && prompt!.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Semantics(
-              liveRegion: true,
-              child: Text(
-                prompt!,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ),
-        Expanded(child: Padding(padding: const EdgeInsets.all(16), child: child)),
-        if (footer != null) footer!,
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: OutlinedButton.icon(
-            // Mandatory in every pack per the data contract.
-            onPressed: controller.repeatInstruction,
-            icon: const Icon(Icons.volume_up_outlined),
-            label: const Text('أعد التعليمة'),
-            style: ButtonStyle(
-              minimumSize: WidgetStatePropertyAll(Size(target, target)),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
+// The level-JSON readers, the seeded shuffle and the board chrome now live in
+// `game_board_kit.dart`, shared with Wave 2.
 
 // ---------------------------------------------------------------- memory_flip
 
@@ -170,14 +100,14 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
   }
 
   void _build() {
-    final pairs = _mapList(_level['pairs']);
+    final pairs = mapList(_level['pairs']);
     final tiles = <_MemoryTile>[];
     for (var index = 0; index < pairs.length; index++) {
       final pair = pairs[index];
-      tiles.add(_MemoryTile(pairIndex: index, assetId: _str(pair, 'a')));
-      tiles.add(_MemoryTile(pairIndex: index, assetId: _str(pair, 'b')));
+      tiles.add(_MemoryTile(pairIndex: index, assetId: str(pair, 'a')));
+      tiles.add(_MemoryTile(pairIndex: index, assetId: str(pair, 'b')));
     }
-    _deck = _seededShuffle(tiles, widget.controller.gameId.hashCode + widget.controller.levelIndex);
+    _deck = seededShuffle(tiles, widget.controller.gameId.hashCode + widget.controller.levelIndex);
     _matched.clear();
     _revealed.clear();
     _misses = 0;
@@ -230,7 +160,7 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
   @override
   Widget build(BuildContext context) {
     final target = effectiveTouchTarget(widget.controller.pack.accessibility);
-    return _BoardScaffold(
+    return BoardScaffold(
       controller: widget.controller,
       prompt: widget.controller.prompt,
       child: GridView.builder(
@@ -321,26 +251,26 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
   final Set<String> _retried = {};
 
   Map<String, dynamic> get _level => widget.controller.rawLevel;
-  List<Map<String, dynamic>> get _targets => _mapList(_level['targets']);
-  List<Map<String, dynamic>> get _items => _mapList(_level['items']);
-  List<Map<String, dynamic>> get _distractors => _mapList(_level['distractors']);
+  List<Map<String, dynamic>> get _targets => mapList(_level['targets']);
+  List<Map<String, dynamic>> get _items => mapList(_level['items']);
+  List<Map<String, dynamic>> get _distractors => mapList(_level['distractors']);
 
   /// Items plus distractors. A distractor belongs to no target, so tapping it on
   /// one is simply returned.
   List<Map<String, dynamic>> get _tray {
     final all = [..._items, ..._distractors];
     if (_level['shuffle'] == false) return all;
-    return _seededShuffle(all, widget.controller.gameId.hashCode + widget.controller.levelIndex);
+    return seededShuffle(all, widget.controller.gameId.hashCode + widget.controller.levelIndex);
   }
 
   Future<void> _placeOn(String targetId) async {
     final itemId = _selectedItem;
     if (itemId == null) return;
     final item = _items.firstWhere(
-      (entry) => _str(entry, 'id') == itemId,
+      (entry) => str(entry, 'id') == itemId,
       orElse: () => const {},
     );
-    final belongsTo = _str(item, 'target');
+    final belongsTo = str(item, 'target');
 
     if (belongsTo != targetId) {
       // Wrong placement returns the piece and says nothing negative. The contract
@@ -368,7 +298,7 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
       score: _firstTry.length,
       maxScore: _items.length,
       answers: _items.map((item) {
-        final id = _str(item, 'id');
+        final id = str(item, 'id');
         return <String, Object?>{
           'item': id,
           'correct': _placed.containsKey(id),
@@ -383,7 +313,7 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
   @override
   Widget build(BuildContext context) {
     final target = effectiveTouchTarget(widget.controller.pack.accessibility);
-    return _BoardScaffold(
+    return BoardScaffold(
       controller: widget.controller,
       prompt: widget.controller.prompt,
       child: Column(
@@ -394,14 +324,14 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
                 for (final entry in _targets)
                   Expanded(
                     child: _DropTarget(
-                      label: _str(entry, 'id'),
+                      label: str(entry, 'id'),
                       minSize: target,
                       accepting: _selectedItem != null,
                       placed: _placed.entries
-                          .where((placed) => placed.value == _str(entry, 'id'))
+                          .where((placed) => placed.value == str(entry, 'id'))
                           .map((placed) => placed.key)
                           .toList(growable: false),
-                      onTap: () => _placeOn(_str(entry, 'id')),
+                      onTap: () => _placeOn(str(entry, 'id')),
                     ),
                   ),
               ],
@@ -413,12 +343,12 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
             runSpacing: 8,
             children: [
               for (final item in _tray)
-                if (!_placed.containsKey(_str(item, 'id')))
+                if (!_placed.containsKey(str(item, 'id')))
                   _TrayChip(
-                    id: _str(item, 'id'),
+                    id: str(item, 'id'),
                     minSize: target,
-                    selected: _selectedItem == _str(item, 'id'),
-                    onTap: () => setState(() => _selectedItem = _str(item, 'id')),
+                    selected: _selectedItem == str(item, 'id'),
+                    onTap: () => setState(() => _selectedItem = str(item, 'id')),
                   ),
             ],
           ),
@@ -460,17 +390,17 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
   final Set<String> _retried = {};
 
   Map<String, dynamic> get _level => widget.controller.rawLevel;
-  List<Map<String, dynamic>> get _bins => _mapList(_level['bins']);
-  List<Map<String, dynamic>> get _items => _mapList(_level['items']);
+  List<Map<String, dynamic>> get _bins => mapList(_level['bins']);
+  List<Map<String, dynamic>> get _items => mapList(_level['items']);
 
   Future<void> _drop(String binId) async {
     final itemId = _selected;
     if (itemId == null) return;
     final item = _items.firstWhere(
-      (entry) => _str(entry, 'id') == itemId,
+      (entry) => str(entry, 'id') == itemId,
       orElse: () => const {},
     );
-    if (_str(item, 'bin') != binId) {
+    if (str(item, 'bin') != binId) {
       setState(() {
         _retried.add(itemId);
         _selected = null;
@@ -491,7 +421,7 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
       score: _firstTry.length,
       maxScore: _items.length,
       answers: _items.map((item) {
-        final id = _str(item, 'id');
+        final id = str(item, 'id');
         return <String, Object?>{
           'item': id,
           'correct': _sorted.containsKey(id),
@@ -506,7 +436,7 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
   @override
   Widget build(BuildContext context) {
     final target = effectiveTouchTarget(widget.controller.pack.accessibility);
-    return _BoardScaffold(
+    return BoardScaffold(
       controller: widget.controller,
       prompt: widget.controller.prompt,
       child: Column(
@@ -520,14 +450,14 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
                       // A bin is distinguished by image, text and audio, never by
                       // colour alone — the contract is explicit, because colour
                       // alone excludes colour-blind children.
-                      label: _str(bin, 'id'),
+                      label: str(bin, 'id'),
                       minSize: target,
                       accepting: _selected != null,
                       placed: _sorted.entries
-                          .where((entry) => entry.value == _str(bin, 'id'))
+                          .where((entry) => entry.value == str(bin, 'id'))
                           .map((entry) => entry.key)
                           .toList(growable: false),
-                      onTap: () => _drop(_str(bin, 'id')),
+                      onTap: () => _drop(str(bin, 'id')),
                     ),
                   ),
               ],
@@ -539,12 +469,12 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
             runSpacing: 8,
             children: [
               for (final item in _items)
-                if (!_sorted.containsKey(_str(item, 'id')))
+                if (!_sorted.containsKey(str(item, 'id')))
                   _TrayChip(
-                    id: _str(item, 'id'),
+                    id: str(item, 'id'),
                     minSize: target,
-                    selected: _selected == _str(item, 'id'),
-                    onTap: () => setState(() => _selected = _str(item, 'id')),
+                    selected: _selected == str(item, 'id'),
+                    onTap: () => setState(() => _selected = str(item, 'id')),
                   ),
             ],
           ),
@@ -584,7 +514,7 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
   final List<String> _order = [];
 
   Map<String, dynamic> get _level => widget.controller.rawLevel;
-  List<Map<String, dynamic>> get _panels => _mapList(_level['panels']);
+  List<Map<String, dynamic>> get _panels => mapList(_level['panels']);
 
   /// Every logically acceptable order. More than one can be correct, which is why
   /// the schema stores a list rather than a single answer.
@@ -655,7 +585,7 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
         ),
     ];
 
-    return _BoardScaffold(
+    return BoardScaffold(
       controller: widget.controller,
       prompt: widget.controller.prompt,
       footer: Padding(
@@ -676,12 +606,12 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
               runSpacing: 8,
               children: [
                 for (final panel in _panels)
-                  if (!_order.contains(_str(panel, 'id')))
+                  if (!_order.contains(str(panel, 'id')))
                     _TrayChip(
-                      id: _str(panel, 'id'),
+                      id: str(panel, 'id'),
                       minSize: target,
                       selected: false,
-                      onTap: () => _place(_str(panel, 'id')),
+                      onTap: () => _place(str(panel, 'id')),
                     ),
               ],
             ),

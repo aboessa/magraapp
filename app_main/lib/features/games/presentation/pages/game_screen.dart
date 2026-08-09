@@ -15,23 +15,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 
 import '../../data/local_creation_store.dart';
+import '../../engine/block_code_engine.dart';
 import '../../engine/game_engine_registry.dart';
 import '../../engine/game_pack.dart';
 import '../../engine/game_session_controller.dart';
+import '../../engine/rhythm_tap_engine.dart';
+import '../../engine/sim_lab_engine.dart';
+import '../../engine/timeline_map_engine.dart';
 import '../../engine/trace_color_engine.dart';
 import '../../engine/wave_one_engines.dart';
+import '../../engine/wave_two_engines.dart';
 
 /// Engines this build can run.
 ///
 /// One place to register an implementation. Everything listed here has a real
 /// pack-driven implementation; an engine with no implementation must not appear,
 /// because the registry is what the catalogue and the game screen trust.
+///
+/// All twelve canonical engines in `docs/games/engines/` are now present. The list
+/// is asserted against that directory by `test/engine_matrix_test.dart`, so an
+/// engine cannot be documented without being runnable, or registered without being
+/// documented.
 GameEngineRegistry buildDefaultRegistry() => GameEngineRegistry(const [
       TraceColorEngine(),
       MemoryFlipEngine(),
       MatchPairsEngine(),
       SortBinsEngine(),
       SequenceOrderEngine(),
+      CountQuantityEngine(),
+      LogicPatternEngine(),
+      WordBuildEngine(),
+      RhythmTapEngine(),
+      BlockCodeEngine(),
+      SimLabEngine(),
+      TimelineMapEngine(),
     ]);
 
 class GameScreen extends StatefulWidget {

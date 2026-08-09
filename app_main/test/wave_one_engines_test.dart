@@ -82,9 +82,11 @@ void main() {
         expect(registry.supports(id), isTrue, reason: '$id must be registered');
         expect(registry.resolve(id), isNotNull);
       }
-      // Not implemented, so it must not be claimed.
-      expect(registry.supports('block_code'), isFalse);
-      expect(registry.supports('sim_lab'), isFalse);
+      // Wave 2 and 3 are implemented too; an id with no engine must still be
+      // refused rather than guessed at.
+      expect(registry.supports('block_code'), isTrue);
+      expect(registry.supports('sim_lab'), isTrue);
+      expect(registry.supports('no_such_engine'), isFalse);
     });
 
     test('only trace_color is hidden from television', () {
