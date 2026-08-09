@@ -67,8 +67,10 @@ export const SCORING_BY_MODE: Record<string, readonly string[]> = {
   line: ['geometric'],
   curve: ['geometric'],
   path: ['geometric'],
-  shape: ['geometric'],
-  number: ['geometric'],
+  // Shapes and numerals may be multi-stroke, and then the order is real: the
+  // crossbar of a `4` drawn before its stem produces a shape that is not a 4.
+  shape: ['geometric', 'geometric_ordered'],
+  number: ['geometric', 'geometric_ordered'],
   // Letters additionally require correct stroke order, which is the whole
   // pedagogical point: body before dots.
   letter: ['geometric_ordered'],
@@ -270,6 +272,18 @@ export function validateGamePack(
         if (Number.isFinite(minDot) && minDot < maxBody) {
           errors.push(`${label}: dots must be ordered after the letter body (body order ${maxBody}, dot order ${minDot})`);
         }
+      }
+
+      // A glyph drawn in more than one stroke has a correct order, and scoring it
+      // without enforcing that order would accept a shape that is not the glyph.
+      // The inverse of the rule above: not just "ordered is allowed" but "ordered
+      // is required once order exists".
+      if ((mode === 'letter' || mode === 'number') && strokes.length > 1
+        && scoring !== 'geometric_ordered') {
+        errors.push(
+          `${label}: "${mode}" with ${strokes.length} strokes must use scoring "geometric_ordered"; `
+          + 'drawing the strokes in the wrong order produces a different glyph.',
+        );
       }
     }
 

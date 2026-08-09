@@ -475,3 +475,124 @@ test('neither shipped pack is publishable yet, and the reasons are the honest on
   // Not a letter pack, so no linguistic review is demanded of it.
   assert.ok(!pinchResult.errors.some((e) => /linguistic review/.test(e)));
 });
+
+// --- the launch packs shipped by migration 0026 ----------------------------
+
+const LAUNCH_MIGRATION_PATH = new URL('../migrations/0026_trace_color_launch_packs.sql', import.meta.url);
+
+/// Pulls the pack literals out of the launch-pack migration, which embeds them in
+/// INSERT statements rather than UPDATEs.
+function launchPacks() {
+  const sql = readFileSync(LAUNCH_MIGRATION_PATH, 'utf8');
+  return [...sql.matchAll(/'(\{\s*\n\s*"pack_version"[\s\S]*?\n\})',/g)]
+    .map((match) => JSON.parse(match[1]));
+}
+
+test('migration 0026 ships the two declared launch packs', () => {
+  const packs = launchPacks();
+  assert.deepEqual(
+    packs.map((pack) => pack.pack_id).sort(),
+    ['tc-numbers-1-10', 'tc-shapes-basic'],
+  );
+});
+
+test('the shapes pack is valid and every level is a closed traceable shape', () => {
+  const shapes = launchPacks().find((pack) => pack.pack_id === 'tc-shapes-basic');
+  const result = validateGamePack(schema, shapes, baseContext({ ageMin: 3, ageMax: 5 }));
+  assert.deepEqual(result.errors, []);
+  assert.equal(shapes.levels.length, 3);
+
+  for (const level of shapes.levels) {
+    assert.equal(level.mode, 'shape');
+    assert.equal(level.scoring, 'geometric');
+    const points = level.stroke_paths[0].points;
+    // Closed: the last point returns to the first, or the shape has a gap a child
+    // would be asked to trace across empty space.
+    assert.deepEqual(points[0], points[points.length - 1],
+      `level ${level.level} must close`);
+    // Inside the canvas with margin, so a 40dp visual path is not clipped.
+    for (const [x, y] of points) {
+      assert.ok(x >= 0.1 && x <= 0.9, `x ${x} within margin`);
+      assert.ok(y >= 0.1 && y <= 0.9, `y ${y} within margin`);
+    }
+  }
+});
+
+test('the numbers pack is valid and multi-stroke digits are order-scored', () => {
+  const numbers = launchPacks().find((pack) => pack.pack_id === 'tc-numbers-1-10');
+  const result = validateGamePack(schema, numbers, baseContext({ ageMin: 4, ageMax: 5 }));
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(numbers.levels.map((level) => level.glyph), ['1', '2', '3', '4', '5']);
+
+  for (const level of numbers.levels) {
+    // Drawing the crossbar of a 4 before its stem produces a shape that is not a
+    // 4, so any multi-stroke digit must enforce order.
+    const expected = level.stroke_paths.length > 1 ? 'geometric_ordered' : 'geometric';
+    assert.equal(level.scoring, expected, `level ${level.level}`);
+  }
+});
+
+test('the launch packs need no linguistic review and could be published once assets exist', () => {
+  // The distinction that makes the review gate meaningful: a circle has no
+  // correct starting point for an Arabic linguist to rule on, whereas a letter
+  // does.
+  for (const pack of launchPacks()) {
+    assert.equal(pack.review.linguistic_review.status, 'not_required');
+    // Every asset the pack names, not only the voice manifest: levels also carry
+    // guide_audio and background/template references.
+    const referenced = new Set(Object.values(pack.voice_manifest));
+    for (const level of pack.levels) {
+      if (level.guide_audio) referenced.add(level.guide_audio);
+      if (level.background_asset) referenced.add(level.background_asset);
+      if (level.coloring?.template_asset) referenced.add(level.coloring.template_asset);
+    }
+    const result = validateGamePack(schema, pack, baseContext({
+      forPublish: true,
+      ageMin: 3,
+      ageMax: 5,
+      knownAssetIds: referenced,
+      readyAssetIds: referenced,
+    }));
+    assert.deepEqual(result.errors, [], `${pack.pack_id} should be publishable with ready assets`);
+  }
+});
+
+test('a multi-stroke glyph cannot be scored without enforcing order', () => {
+  // The inverse of allowing ordered scoring for numbers: once a glyph has more
+  // than one stroke, order is not optional.
+  const pack = validPack();
+  pack.levels[0] = {
+    level: 1,
+    mode: 'number',
+    scoring: 'geometric',
+    prompt_key: 'game.numbers.four.prompt',
+    completion: { rule: 'all_strokes_complete' },
+    glyph: '4',
+    guide_audio: 'asset-vo-number-four',
+    tolerance_dp: 26,
+    coverage_required: 0.8,
+    stroke_paths: [
+      { id: 's1', order: 1, type: 'stroke', points: [[0.6, 0.18], [0.34, 0.56]] },
+      { id: 's2', order: 2, type: 'stroke', points: [[0.6, 0.36], [0.6, 0.82]] },
+    ],
+  };
+  const result = validateGamePack(schema, pack, baseContext());
+  assert.ok(result.errors.some((e) => /must use scoring "geometric_ordered"/.test(e)));
+});
+
+test('all four shipped packs share the same accessibility guarantees', () => {
+  const all = [...packsFromMigration(), ...launchPacks()];
+  assert.equal(all.length, 4);
+  for (const pack of all) {
+    assert.equal(pack.supports_dpad, false, `${pack.pack_id} must be pointer-only`);
+    assert.equal(pack.accessibility.sequential_tap_alternative, true);
+    const simplified = pack.accessibility.simplified_motor;
+    for (const level of pack.levels) {
+      if (level.tolerance_dp === undefined) continue;
+      assert.ok(simplified.tolerance_dp >= level.tolerance_dp,
+        `${pack.pack_id} level ${level.level}: simplified tolerance must not be stricter`);
+      assert.ok(simplified.coverage_required <= level.coverage_required,
+        `${pack.pack_id} level ${level.level}: simplified coverage must not be higher`);
+    }
+  }
+});
