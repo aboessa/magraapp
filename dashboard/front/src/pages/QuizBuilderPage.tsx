@@ -1,50 +1,51 @@
-import { useState } from 'react'
+import { NotImplementedPage } from '../components/PageState'
+import { usePreferences } from '../context/preferences'
 
-type QType = 'choice' | 'true_false' | 'order' | 'match' | 'image'
-
+/**
+ * بنك الأسئلة.
+ *
+ * ## ما كانت عليه
+ *
+ * سؤال واحد مخترع («ماذا وجد الأرنب؟») في `useState`، وإضافة الأسئلة عبر
+ * `prompt()`، والحفظ لا وجود له — كل ما يُكتب يضيع عند تحديث الصفحة. وسطر
+ * «مرتبط بهدف: مهارة القراءة • صعوبة: متوسط • Randomization: مفعل» كان ثابتًا
+ * تحت كل سؤال بلا صلة بأي بيانات.
+ *
+ * ## أسمّي تناقضًا وجدته
+ *
+ * `attempts` (المهاجرة 0001) فيه عمود `answers` يخزّن أجوبة الأطفال، و`mastery`
+ * يحسب `correct_attempts`. أي أن النظام **يسجّل أجوبة على أسئلة لا يملك جدولًا
+ * يعرّفها**. الأسئلة تأتي حاليًا من داخل الألعاب (`games`) لا من بنك مركزي.
+ *
+ * فبناء هذه الصفحة يعني أولًا حسم قرار معماريّ: هل تبقى الأسئلة داخل كل لعبة،
+ * أم تُنقل إلى بنك مركزي تشير إليه `attempts`؟ وهو قرار لا تحسمه صفحة إدارة.
+ */
 export function QuizBuilderPage() {
-  const [questions, setQuestions] = useState<any[]>([
-    { id: 'q1', type: 'choice', text: 'ماذا وجد الأرنب؟', options: ['جزرة', 'خريطة', 'نجمة'], correct: 1 },
-  ])
-  const [type, setType] = useState<QType>('choice')
-
-  function add() {
-    const text = prompt('نص السؤال')
-    if (!text) return
-    setQuestions([...questions, { id: `q-${Date.now()}`, type, text, options: type === 'choice' ? ['أ', 'ب', 'ج'] : [], correct: 0 }])
-  }
+  const { locale } = usePreferences()
+  const ar = locale === 'ar'
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div><span className="eyebrow">التعليم</span><h2>بنك الأسئلة</h2><p>اختيار/صح وخطأ/ترتيب/مطابقة/صورة + تلميح + ربط بهدف تعليمي</p></div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <select value={type} onChange={e => setType(e.target.value as QType)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-            <option value="choice">اختيار</option><option value="true_false">صح/خطأ</option><option value="order">ترتيب</option><option value="match">مطابقة</option><option value="image">صورة</option>
-          </select>
-          <button className="button button--primary" onClick={add}>سؤال جديد</button>
-        </div>
-      </section>
-
-      <div style={{ display: 'grid', gap: 12 }}>
-        {questions.map((q, idx) => (
-          <div key={q.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <strong style={{ fontSize: 13 }}>{idx + 1}. {q.text} <small style={{ color: '#64748b' }}>({q.type})</small></strong>
-              <button className="icon-button" onClick={() => setQuestions(questions.filter(x => x.id !== q.id))}>×</button>
-            </div>
-            {q.options && <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>{q.options.map((o: string, i: number) => <span key={i} style={{ padding: '4px 10px', borderRadius: 6, background: i === q.correct ? '#dcfce7' : '#f1f5f9', fontSize: 12, border: i === q.correct ? '1px solid #16a34a' : '1px solid #e2e8f0' }}>{o} {i === q.correct ? '✓' : ''}</span>)}</div>}
-            <div style={{ marginTop: 8, fontSize: 11, color: '#64748b' }}>مرتبط بهدف: مهارة القراءة • صعوبة: متوسط • Randomization: مفعل</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 14, display: 'flex', gap: 8 }}>
-        <button className="button button--ghost" onClick={() => alert('معاينة على موبايل/تابلت')}>معاينة</button>
-        <button className="button button--ghost" onClick={() => alert('بنك أسئلة: استيراد/تصدير')}>استيراد</button>
-        <span style={{ flex: 1 }} />
-        <span style={{ fontSize: 11, color: '#64748b', alignSelf: 'center' }}>معاينة على الأجهزة + Randomization</span>
-      </div>
-    </div>
+    <NotImplementedPage
+      eyebrow={ar ? 'التعليم' : 'Learning'}
+      title={ar ? 'بنك الأسئلة' : 'Question bank'}
+      lede={ar
+        ? 'أسئلة اختيار وصح/خطأ وترتيب ومطابقة وصورة، مع تلميح وربط بهدف تعليمي.'
+        : 'Multiple choice, true/false, ordering, matching and image questions, with hints and learning-objective links.'}
+      planned={ar ? [
+        'قرار معماريّ أولًا: بنك أسئلة مركزي أم أسئلة داخل كل لعبة',
+        'جدول أسئلة يشير إليه attempts.answers الموجود بالفعل',
+        'أنواع الأسئلة: اختيار، صح/خطأ، ترتيب، مطابقة، صورة',
+        'ربط كل سؤال بهدف تعليمي من learning_objectives',
+        'درجة الصعوبة والتلميح وترتيب عشوائي للخيارات',
+        'معاينة على مقاسات الأجهزة، واستيراد/تصدير البنك',
+      ] : [
+        'Architectural decision first: a central question bank versus questions embedded per game',
+        'A questions table referenced by the existing attempts.answers column',
+        'Question types: multiple choice, true/false, ordering, matching, image',
+        'Linking each question to a learning objective from learning_objectives',
+        'Difficulty level, hints, and randomised answer order',
+        'Device-size preview, plus bank import and export',
+      ]}
+    />
   )
 }

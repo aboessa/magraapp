@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import type { IconName } from '../components/Icon'
 import { Modal } from '../components/Modal'
@@ -7,6 +8,7 @@ import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { StatusBadge } from '../components/StatusBadge'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
+import { adminPath } from '../lib/adminPath'
 import { formatNumber, statusLabels } from '../lib/labels'
 import type {
   BookPayload,
@@ -184,6 +186,7 @@ type ContentCardProps = {
   ageMax: number
   isFree: boolean
   metadata: string[]
+  openLabel: string
   editLabel: string
   archiveLabel: string
   ageLabel: string
@@ -191,6 +194,7 @@ type ContentCardProps = {
   paidLabel: string
   coverAlt: string
   busy: boolean
+  onOpen: () => void
   onEdit: () => void
   onArchive: () => void
 }
@@ -207,6 +211,7 @@ function ContentCard(props: ContentCardProps) {
         </div>
         <ul className="library-card__meta">{props.metadata.map((item) => <li key={item}>{item}</li>)}</ul>
         <footer>
+          <button className="button button--ghost" type="button" onClick={props.onOpen} disabled={props.busy}><Icon name="arrow" size={14} />{props.openLabel}</button>
           <button className="button button--ghost" type="button" onClick={props.onEdit} disabled={props.busy}><Icon name="edit" size={14} />{props.editLabel}</button>
           {props.status !== 'archived' && <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={props.onArchive} disabled={props.busy} title={props.archiveLabel} aria-label={`${props.archiveLabel}: ${props.title}`}><Icon name="archive" size={15} /></button>}
         </footer>
@@ -217,6 +222,7 @@ function ContentCard(props: ContentCardProps) {
 
 export function LibraryContentPage() {
   const { locale } = usePreferences()
+  const navigate = useNavigate()
   const text = copy[locale]
   const [active, setActive] = useState<LibraryContentKind>('books')
   const [books, setBooks] = useState<BookRecord[]>([])
@@ -438,9 +444,9 @@ export function LibraryContentPage() {
 
         {loading && counts[active] === 0 ? <LoadingState label={text.loading} /> : error && counts[active] === 0 ? <ErrorState message={error} onRetry={() => void load()} /> : counts[active] === 0 ? <EmptyState title={text.empty} description={text.emptyDescription} action={emptyAction} /> : (
           <div className="library-grid">
-            {active === 'books' && books.map((book) => <ContentCard title={book.title_ar} coverAssetId={book.cover_asset_id} icon="books" status={book.status} ageMin={book.age_min} ageMax={book.age_max} isFree={book.is_free} metadata={[`${text.type}: ${bookTypeLabels[locale][book.type]}`, `${text.series}: ${book.series_title || text.noSeries}`, `${text.reading}: ${readingLabels[locale][book.reading_level]}`]} editLabel={text.edit} archiveLabel={text.archive} ageLabel={text.years} freeLabel={text.free} paidLabel={text.paid} coverAlt={text.coverAlt(book.title_ar)} busy={busyKey === `books:${book.id}`} onEdit={() => void openEdit('books', book.id)} onArchive={() => void archive('books', book.id, book.title_ar)} key={book.id} />)}
-            {active === 'games' && games.map((game) => <ContentCard title={game.title_ar} coverAssetId={game.cover_asset_id} icon="games" status={game.status} ageMin={game.age_min} ageMax={game.age_max} isFree={game.is_free} metadata={[`${text.engine}: ${game.engine_name || '—'}`, `${text.series}: ${game.series_title || text.noSeries}`, `${text.difficulty}: ${difficultyLabels[locale][game.difficulty]}`]} editLabel={text.edit} archiveLabel={text.archive} ageLabel={text.years} freeLabel={text.free} paidLabel={text.paid} coverAlt={text.coverAlt(game.title_ar)} busy={busyKey === `games:${game.id}`} onEdit={() => void openEdit('games', game.id)} onArchive={() => void archive('games', game.id, game.title_ar)} key={game.id} />)}
-            {active === 'projects' && projects.map((project) => <ContentCard title={project.title_ar} coverAssetId={project.cover_asset_id} icon="objectives" status={project.status} ageMin={project.age_min} ageMax={project.age_max} isFree={project.is_free} metadata={[project.description_ar || '—', `${formatNumber(project.materials.length, locale)} ${text.materialsCount}`, `${text.supervision}: ${supervisionLabels[locale][project.supervision_level]}`]} editLabel={text.edit} archiveLabel={text.archive} ageLabel={text.years} freeLabel={text.free} paidLabel={text.paid} coverAlt={text.coverAlt(project.title_ar)} busy={busyKey === `projects:${project.id}`} onEdit={() => void openEdit('projects', project.id)} onArchive={() => void archive('projects', project.id, project.title_ar)} key={project.id} />)}
+            {active === 'books' && books.map((book) => <ContentCard title={book.title_ar} coverAssetId={book.cover_asset_id} icon="books" status={book.status} ageMin={book.age_min} ageMax={book.age_max} isFree={book.is_free} metadata={[`${text.type}: ${bookTypeLabels[locale][book.type]}`, `${text.series}: ${book.series_title || text.noSeries}`, `${text.reading}: ${readingLabels[locale][book.reading_level]}`]} openLabel={locale === 'ar' ? 'فتح' : 'Open'} onOpen={() => navigate(adminPath(`library-content/books/${book.id}`))} editLabel={text.edit} archiveLabel={text.archive} ageLabel={text.years} freeLabel={text.free} paidLabel={text.paid} coverAlt={text.coverAlt(book.title_ar)} busy={busyKey === `books:${book.id}`} onEdit={() => void openEdit('books', book.id)} onArchive={() => void archive('books', book.id, book.title_ar)} key={book.id} />)}
+            {active === 'games' && games.map((game) => <ContentCard title={game.title_ar} coverAssetId={game.cover_asset_id} icon="games" status={game.status} ageMin={game.age_min} ageMax={game.age_max} isFree={game.is_free} metadata={[`${text.engine}: ${game.engine_name || '—'}`, `${text.series}: ${game.series_title || text.noSeries}`, `${text.difficulty}: ${difficultyLabels[locale][game.difficulty]}`]} openLabel={locale === 'ar' ? 'فتح' : 'Open'} onOpen={() => navigate(adminPath(`library-content/games/${game.id}`))} editLabel={text.edit} archiveLabel={text.archive} ageLabel={text.years} freeLabel={text.free} paidLabel={text.paid} coverAlt={text.coverAlt(game.title_ar)} busy={busyKey === `games:${game.id}`} onEdit={() => void openEdit('games', game.id)} onArchive={() => void archive('games', game.id, game.title_ar)} key={game.id} />)}
+            {active === 'projects' && projects.map((project) => <ContentCard title={project.title_ar} coverAssetId={project.cover_asset_id} icon="objectives" status={project.status} ageMin={project.age_min} ageMax={project.age_max} isFree={project.is_free} metadata={[project.description_ar || '—', `${formatNumber(project.materials.length, locale)} ${text.materialsCount}`, `${text.supervision}: ${supervisionLabels[locale][project.supervision_level]}`]} openLabel={locale === 'ar' ? 'فتح' : 'Open'} onOpen={() => navigate(adminPath(`library-content/projects/${project.id}`))} editLabel={text.edit} archiveLabel={text.archive} ageLabel={text.years} freeLabel={text.free} paidLabel={text.paid} coverAlt={text.coverAlt(project.title_ar)} busy={busyKey === `projects:${project.id}`} onEdit={() => void openEdit('projects', project.id)} onArchive={() => void archive('projects', project.id, project.title_ar)} key={project.id} />)}
           </div>
         )}
       </section>

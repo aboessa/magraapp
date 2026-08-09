@@ -1,18 +1,24 @@
 import { useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Ico } from '../icons'
-import { AGE_TRACKS } from '../data'
+import { useLandingLocale } from '../i18n'
+import { useLandingContent } from '../useContent'
 
 export function AgeTracks() {
   const [active, setActive] = useState(0)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const { copy, ageTracks } = useLandingContent()
+  const { dir } = useLandingLocale()
+  const text = copy.ages
 
   const onKeyDown = (event: React.KeyboardEvent, index: number) => {
+    const forward = dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight'
+    const backward = dir === 'rtl' ? 'ArrowRight' : 'ArrowLeft'
     let next: number | null = null
-    if (event.key === 'ArrowLeft') next = (index + 1) % AGE_TRACKS.length
-    else if (event.key === 'ArrowRight') next = (index - 1 + AGE_TRACKS.length) % AGE_TRACKS.length
+    if (event.key === forward) next = (index + 1) % ageTracks.length
+    else if (event.key === backward) next = (index - 1 + ageTracks.length) % ageTracks.length
     else if (event.key === 'Home') next = 0
-    else if (event.key === 'End') next = AGE_TRACKS.length - 1
+    else if (event.key === 'End') next = ageTracks.length - 1
     if (next === null) return
     event.preventDefault()
     setActive(next)
@@ -23,16 +29,13 @@ export function AgeTracks() {
     <section className="mj-section" id="ages" data-section="ages">
       <div className="mj-container">
         <div className="mj-head mj-head--center mj-reveal">
-          <span className="mj-kicker">ثلاث تجارب في منصة واحدة</span>
-          <h2>المحتوى والواجهة يتغيران <span className="mj-grad">مع عمر طفلك</span></h2>
-          <p>
-            أدخل عمر الطفل عند إنشاء ملفه، فتتحدد طبيعة المحتوى ومستوى القراءة ومدة الجلسة ونوع الألعاب.
-            غيّر العمر أدناه لترى كيف تتغير التوصيات.
-          </p>
+          <span className="mj-kicker">{text.kicker}</span>
+          <h2>{text.heading} <span className="mj-grad">{text.accent}</span></h2>
+          <p>{text.copy}</p>
         </div>
 
-        <div className="mj-age-switch" role="tablist" aria-label="اختيار المرحلة العمرية">
-          {AGE_TRACKS.map((track, index) => (
+        <div className="mj-age-switch" role="tablist" aria-label={text.switchAria}>
+          {ageTracks.map((track, index) => (
             <button
               key={track.key}
               ref={(node) => { tabRefs.current[index] = node }}
@@ -51,7 +54,7 @@ export function AgeTracks() {
           ))}
         </div>
 
-        {AGE_TRACKS.map((track, index) => (
+        {ageTracks.map((track, index) => (
           <div
             key={track.key}
             role="tabpanel"
@@ -79,7 +82,7 @@ export function AgeTracks() {
               </div>
 
               <div className="mj-samples">
-                <h4>نماذج محتوى مقترحة لهذا العمر</h4>
+                <h4>{text.samplesHeading}</h4>
                 <div className="mj-sample-grid">
                   {track.samples.map((sample) => (
                     <div className="mj-sample" key={sample.title}>

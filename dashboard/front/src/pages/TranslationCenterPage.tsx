@@ -1,51 +1,54 @@
-import { useState } from 'react'
+import { NotImplementedPage } from '../components/PageState'
+import { usePreferences } from '../context/preferences'
 
+/**
+ * مركز الترجمة.
+ *
+ * ## ما كانت عليه
+ *
+ * ثلاث بطاقات لغات بنِسَب تقدّم ثابتة (ar 100%، en 72%، fr 18%) مع أشرطة تقدّم
+ * مرسومة على تلك النِسَب، ومصطلحات Glossary مكتوبة في الكود، وأربعة أزرار
+ * استيراد/تصدير كلها `alert()`.
+ *
+ * والأسوأ: تنبيه «تغيّر النص الأصلي — أعد فتح المراجعة» كان يظهر لكل لغة نسبتها
+ * أقل من 100%، أي أنه تنبيه مشروط برقم مخترع لا بأي تغيير حقيقي.
+ *
+ * ## ما هو متاح فعلًا وما ليس
+ *
+ * `story_page_localizations` (المهاجرة 0002) موجود ويحمل النص لكل صفحة ولغة،
+ * فنسبة التقدّم الحقيقية **قابلة للحساب**: عدد الصفحات المترجمة على إجمالي
+ * الصفحات. لكن لا نقطة API تُجمّع ذلك — الموجود هو
+ * `PUT /admin/story-pages/:id/localizations/:language` لصفحة واحدة، وحسابها في
+ * الواجهة يعني نداءً لكل صفحة في كل قصة.
+ *
+ * أما Glossary وذاكرة الترجمة فلا جدول لهما إطلاقًا.
+ */
 export function TranslationCenterPage() {
-  const [langs] = useState([
-    { code: 'ar', name: 'العربية', progress: 100, status: 'مكتمل' },
-    { code: 'en', name: 'English', progress: 72, status: 'قيد المراجعة' },
-    { code: 'fr', name: 'Français', progress: 18, status: 'غير مكتمل' },
-  ])
+  const { locale } = usePreferences()
+  const ar = locale === 'ar'
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div><span className="eyebrow">الترجمة والدبلجة</span><h2>مركز الترجمة</h2><p>Glossary + Memory + استيراد/تصدير + مقارنة النص الأصلي</p></div>
-        <button className="button button--primary" onClick={() => alert('استيراد Excel')}>استيراد</button>
-      </section>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-        {langs.map(l => (
-          <div key={l.code} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <strong>{l.name}</strong><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: l.progress === 100 ? '#dcfce7' : l.progress > 50 ? '#fef3c7' : '#f1f5f9', color: l.progress === 100 ? '#16a34a' : '#475569' }}>{l.status}</span>
-            </div>
-            <div style={{ marginTop: 12, height: 6, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}><div style={{ width: `${l.progress}%`, height: '100%', background: l.progress === 100 ? '#16a34a' : '#3b82f6' }} /></div>
-            <div style={{ marginTop: 6, fontSize: 11, color: '#64748b' }}>{l.progress}% مكتمل</div>
-            {l.progress < 100 && <div style={{ marginTop: 8, fontSize: 11, color: '#d97706' }}>تنبيه: تغير النص الأصلي - أعد فتح المراجعة</div>}
-          </div>
-        ))}
-      </div>
-
-      <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-          <h3 style={{ fontWeight: 700, fontSize: 13 }}>Glossary</h3>
-          <ul style={{ fontSize: 12, lineHeight: 1.8, paddingInlineStart: 16 }}>
-            <li>زيد - Zaid (ثابت)</li>
-            <li>مجرة - Majarra (لا تترجم)</li>
-            <li>كوكب - Planet</li>
-          </ul>
-          <button className="button button--ghost" style={{ marginTop: 8, fontSize: 12 }} onClick={() => alert('إضافة مصطلح')}>إضافة</button>
-        </div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-          <h3 style={{ fontWeight: 700, fontSize: 13 }}>ذاكرة الترجمة</h3>
-          <p style={{ fontSize: 12, color: '#64748b' }}>عند تغيير النص الأصلي، يُعاد فتح مراجعة اللغة تلقائياً</p>
-          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-            <button className="button button--ghost" onClick={() => alert('تصدير TMX')}>تصدير</button>
-            <button className="button button--ghost" onClick={() => alert('استيراد')}>استيراد</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <NotImplementedPage
+      eyebrow={ar ? 'الترجمة والدبلجة' : 'Translation & dubbing'}
+      title={ar ? 'مركز الترجمة' : 'Translation centre'}
+      lede={ar
+        ? 'تقدّم الترجمة لكل لغة، ومسرد المصطلحات الثابتة، وذاكرة الترجمة، ومقارنة بالنص الأصلي.'
+        : 'Per-language translation progress, a fixed-term glossary, translation memory, and source-text comparison.'}
+      planned={ar ? [
+        'نسبة التقدّم لكل لغة محسوبة من story_page_localizations',
+        'نقطة API تُجمّع الصفحات المترجمة لكل لغة بدل نداء لكل صفحة',
+        'مسرد مصطلحات: أسماء الشخصيات وما لا يُترجَم — يتطلّب جدولًا جديدًا',
+        'ذاكرة ترجمة واستيراد/تصدير TMX أو Excel',
+        'رصد تغيّر النص الأصلي وإعادة فتح مراجعة اللغة تلقائيًا',
+        'مقارنة جنبًا إلى جنب بين الأصل والترجمة',
+      ] : [
+        'Per-language progress computed from story_page_localizations',
+        'An API endpoint that aggregates translated pages per language instead of one call per page',
+        'Glossary of fixed terms: character names and do-not-translate entries — requires a new table',
+        'Translation memory with TMX or Excel import and export',
+        'Detecting source-text changes and automatically reopening language review',
+        'Side-by-side comparison of source and translation',
+      ]}
+    />
   )
 }

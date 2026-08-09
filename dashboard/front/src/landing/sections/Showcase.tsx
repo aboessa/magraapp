@@ -1,9 +1,16 @@
 import { useRef, useState } from 'react'
 import { Ico } from '../icons'
-import { accessLabel, SHOWCASE_TABS } from '../data'
-import type { PosterItem } from '../data'
+import { useLandingLocale } from '../i18n'
+import { useLandingContent } from '../useContent'
+import type { LandingContent } from '../useContent'
 
-function PosterCard({ item }: { item: PosterItem }) {
+type PosterItem = LandingContent['showcaseTabs'][number]['items'][number]
+
+function PosterCard({ item, detailsLabel, accessLabel }: {
+  item: PosterItem
+  detailsLabel: string
+  accessLabel: string
+}) {
   const badgeClass = item.access === 'free' ? 'mj-badge mj-badge--free' : 'mj-badge mj-badge--premium'
 
   return (
@@ -11,7 +18,7 @@ function PosterCard({ item }: { item: PosterItem }) {
       <div className="mj-poster-media">
         <img src={item.image} alt={item.alt} loading="lazy" />
         <div className="mj-poster-badges">
-          <span className={badgeClass}>{accessLabel(item.access)}</span>
+          <span className={badgeClass}>{accessLabel}</span>
           {/* dir=ltr يمنع قواعد الاتجاه الثنائي من عكس النطاق فيظهر 12–9 */}
           <span className="mj-badge" dir="ltr">{item.age}</span>
         </div>
@@ -27,7 +34,7 @@ function PosterCard({ item }: { item: PosterItem }) {
           {item.meta.map((entry) => <span key={entry}>{entry}</span>)}
         </p>
         <div className="mj-poster-actions">
-          <a className="is-solid" href={`/content/${item.slug}`}>التفاصيل</a>
+          <a className="is-solid" href={`/content/${item.slug}`}>{detailsLabel}</a>
           <a href={`/content/${item.slug}${item.secondary.hash}`}>{item.secondary.label}</a>
         </div>
       </div>
@@ -38,14 +45,19 @@ function PosterCard({ item }: { item: PosterItem }) {
 export function Showcase() {
   const [active, setActive] = useState(0)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const { copy, showcaseTabs } = useLandingContent()
+  const { dir } = useLandingLocale()
+  const text = copy.showcase
 
   const onKeyDown = (event: React.KeyboardEvent, index: number) => {
+    // في RTL يتقدّم السهم الأيسر ويرجع الأيمن، والعكس في LTR
+    const forward = dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight'
+    const backward = dir === 'rtl' ? 'ArrowRight' : 'ArrowLeft'
     let next: number | null = null
-    // في RTL يتقدّم السهم الأيسر ويرجع الأيمن
-    if (event.key === 'ArrowLeft') next = (index + 1) % SHOWCASE_TABS.length
-    else if (event.key === 'ArrowRight') next = (index - 1 + SHOWCASE_TABS.length) % SHOWCASE_TABS.length
+    if (event.key === forward) next = (index + 1) % showcaseTabs.length
+    else if (event.key === backward) next = (index - 1 + showcaseTabs.length) % showcaseTabs.length
     else if (event.key === 'Home') next = 0
-    else if (event.key === 'End') next = SHOWCASE_TABS.length - 1
+    else if (event.key === 'End') next = showcaseTabs.length - 1
     if (next === null) return
     event.preventDefault()
     setActive(next)
@@ -56,16 +68,13 @@ export function Showcase() {
     <section className="mj-section mj-section-alt" id="showcase" data-section="showcase">
       <div className="mj-container">
         <div className="mj-head mj-reveal">
-          <span className="mj-kicker">محتوى حقيقي قبل تسجيل الدخول</span>
-          <h2>شاهد ما ستحصل عليه فعلًا</h2>
-          <p>
-            صفحات المحتوى والتريلرات والعينات المجانية متاحة للزائر دون حساب.
-            كل عمل يعرض العمر واللغة والمدة، وهل هو مجاني أم داخل الاشتراك.
-          </p>
+          <span className="mj-kicker">{text.kicker}</span>
+          <h2>{text.heading}</h2>
+          <p>{text.copy}</p>
         </div>
 
-        <div className="mj-tabs" role="tablist" aria-label="تصنيفات المحتوى">
-          {SHOWCASE_TABS.map((tab, index) => (
+        <div className="mj-tabs" role="tablist" aria-label={text.tabsAria}>
+          {showcaseTabs.map((tab, index) => (
             <button
               key={tab.key}
               ref={(node) => { tabRefs.current[index] = node }}
@@ -84,7 +93,7 @@ export function Showcase() {
           ))}
         </div>
 
-        {SHOWCASE_TABS.map((tab, index) => (
+        {showcaseTabs.map((tab, index) => (
           <div
             key={tab.key}
             role="tabpanel"
@@ -93,14 +102,21 @@ export function Showcase() {
             hidden={index !== active}
           >
             <div className="mj-poster-row">
-              {tab.items.map((item) => <PosterCard item={item} key={`${tab.key}-${item.slug}`} />)}
+              {tab.items.map((item) => (
+                <PosterCard
+                  item={item}
+                  key={`${tab.key}-${item.slug}`}
+                  detailsLabel={copy.common.details}
+                  accessLabel={text.access[item.access]}
+                />
+              ))}
             </div>
           </div>
         ))}
 
         <div className="mj-center mj-mt-lg">
           <a className="mj-btn mj-btn-ghost" href="/explore">
-            استكشف كل المحتوى
+            {text.exploreAll}
             <Ico name="arrowNext" />
           </a>
         </div>

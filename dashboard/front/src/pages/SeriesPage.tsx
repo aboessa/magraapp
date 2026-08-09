@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import type { AgeTrack, ContentStatus, Planet, SeriesPayload, SeriesRecord, VisualStyleRecord } from '../types/api'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { EntityThumbnail } from '../components/EntityThumbnail'
+import { Pagination } from '../components/Pagination'
 import { StatusBadge, TrackBadge } from '../components/StatusBadge'
 import { formatNumber, statusLabels, trackLabels } from '../lib/labels'
+import { adminPath } from '../lib/adminPath'
 import { usePreferences } from '../context/preferences'
 
 const typeLabels = {
@@ -68,6 +71,9 @@ export function SeriesPage() {
   const [query, setQuery] = useState(requestedQuery)
   const [track, setTrack] = useState('')
   const [status, setStatus] = useState('')
+  const [offset, setOffset] = useState(0)
+  const [total, setTotal] = useState(0)
+  const limit = 50
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -83,14 +89,17 @@ export function SeriesPage() {
     setLoading(true)
     setError('')
     try {
-      const response = await api.series({ q: query, track, status, limit: 100 })
+      const response = await api.series({ q: query, track, status, limit, offset })
       setRecords(response.data)
+      setTotal(response.meta.total)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.loadError)
     } finally {
       setLoading(false)
     }
-  }, [query, status, text.loadError, track])
+  }, [query, status, text.loadError, track, offset])
+
+  useEffect(() => { setOffset(0) }, [query, track, status])
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 220)
@@ -180,7 +189,7 @@ export function SeriesPage() {
 
       <section className="panel panel--table">
         <header className="panel__header panel__header--filters">
-          <div><span className="panel__kicker">{text.catalog}</span><h3>{text.allSeries} <span className="title-count">{formatNumber(records.length, locale)}</span></h3></div>
+          <div><span className="panel__kicker">{text.catalog}</span><h3>{text.allSeries} <span className="title-count">{formatNumber(total, locale)}</span></h3></div>
           <div className="filters-row">
             <label className="search-field"><Icon name="search" size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search} /></label>
             <select value={track} onChange={(event) => setTrack(event.target.value)}><option value="">{text.allTracks}</option><option value="preschool">{trackLabels[locale].preschool}</option><option value="kids">{trackLabels[locale].kids}</option><option value="junior">{trackLabels[locale].junior}</option></select>
@@ -188,7 +197,7 @@ export function SeriesPage() {
           </div>
         </header>
 
-        {loading && !records.length ? <LoadingState label={text.loading} /> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()} /> : records.length ? <div className="table-scroll"><table className="data-table data-table--wide"><thead><tr><th>{text.series}</th><th>{text.planet}</th><th>{text.type}</th><th>{text.track}</th><th>{text.production}</th><th>{text.episodes}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead><tbody>{records.map((series) => { const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar; return <tr key={series.id}><td><div className="entity-cell"><span className="entity-avatar" style={{ background: series.planet_color || undefined }}>{title.charAt(0)}</span><div><strong>{title}</strong><small>{series.slug}</small></div></div></td><td>{series.planet_name || '—'}</td><td>{typeLabels[locale][series.type]}</td><td><div className="badge-list">{series.track_ids.map((item) => <TrackBadge track={item} key={item} />)}</div></td><td>{productionLabels[locale][series.production_level]}</td><td>{formatNumber(Number(series.episodes_count ?? 0), locale)}</td><td><select className="status-select" value={series.status} disabled={busyId === series.id} onChange={(event) => void changeStatus(series.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={series.status} /></td><td><div className="table-actions"><button className="icon-button icon-button--small" type="button" onClick={() => openEdit(series)} title={text.edit}><Icon name="edit" size={16} /></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(series)} disabled={busyId === series.id} title={text.archive}><Icon name="archive" size={16} /></button></div></td></tr> })}</tbody></table></div> : <EmptyState title={text.empty} description={text.emptyDesc} action={<button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17} />{text.addSeries}</button>} />}
+        {loading && !records.length ? <LoadingState label={text.loading} /> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()} /> : records.length ? <><div className="table-scroll"><table className="data-table data-table--wide"><thead><tr><th>{text.series}</th><th>{text.planet}</th><th>{text.type}</th><th>{text.track}</th><th>{text.production}</th><th>{text.episodes}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead><tbody>{records.map((series) => { const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar; return <tr key={series.id}><td><Link className="entity-cell entity-cell--button" to={adminPath(`series/${series.id}`)}><EntityThumbnail src={series.cover_url} alt={title} label={title} color={series.planet_color} icon="series" /><div><strong>{title}</strong><small>{series.slug}</small></div></Link></td><td>{series.planet_name || '—'}</td><td>{typeLabels[locale][series.type]}</td><td><div className="badge-list">{series.track_ids.map((item) => <TrackBadge track={item} key={item} />)}</div></td><td>{productionLabels[locale][series.production_level]}</td><td>{formatNumber(Number(series.episodes_count ?? 0), locale)}</td><td><select className="status-select" value={series.status} disabled={busyId === series.id} onChange={(event) => void changeStatus(series.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={series.status} /></td><td><div className="table-actions"><button className="icon-button icon-button--small" type="button" onClick={() => openEdit(series)} title={text.edit}><Icon name="edit" size={16} /></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(series)} disabled={busyId === series.id} title={text.archive}><Icon name="archive" size={16} /></button></div></td></tr> })}</tbody></table></div><Pagination total={total} limit={limit} offset={offset} onOffsetChange={setOffset} locale={locale} /></> : <EmptyState title={text.empty} description={text.emptyDesc} action={<button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17} />{text.addSeries}</button>} />}
       </section>
 
       <Modal open={modalOpen} onClose={() => !saving && setModalOpen(false)} title={editing ? text.editTitle : text.createTitle} description={text.modalDesc}>

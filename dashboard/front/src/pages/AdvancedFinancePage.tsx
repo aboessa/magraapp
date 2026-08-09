@@ -1,19 +1,49 @@
+import { NotImplementedPage } from '../components/PageState'
+import { usePreferences } from '../context/preferences'
+
+/**
+ * ربحية المحتوى.
+ *
+ * ## ما كانت عليه
+ *
+ * «تكلفة القصة EGP 4,200» و«إيراد 12,400 +194%» و«ميزانية الكوكب 45,000/60,000»
+ * و«LTV EGP 420» — كلها ثابتة في الكود، مع شريط تقدّم بنسبة 75% مكتوبة يدويًا.
+ * وزرّ «تصدير» كان `alert('تصدير CSV')` لا يصدّر شيئًا.
+ *
+ * لا جدول تكاليف في أي مهاجرة. تكلفة الإنتاج ليست بيانات يمكن استنتاجها من
+ * المحتوى: يجب أن تُدخَل يدويًا أو تُستورد من نظام محاسبة، وكلاهما غير موجود.
+ *
+ * حساب الربحية يتطلّب طرفين: التكلفة (غير مخزَّنة) والإيراد المنسوب لكل قطعة
+ * محتوى (غير محسوب — انظر RevenuePage).
+ */
 export function AdvancedFinancePage() {
+  const { locale } = usePreferences()
+  const ar = locale === 'ar'
+
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div><span className="eyebrow">المالية المتقدمة</span><h2>ربحية المحتوى</h2><p>تكلفة الإنتاج + الترجمة + الترخيص مقابل الإيراد</p></div>
-      </section>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}><div style={{ fontSize: 11, color: '#64748b' }}>تكلفة القصة</div><div style={{ fontSize: 18, fontWeight: 800 }}>EGP 4,200</div><small style={{ color: '#16a34a' }}>إيراد 12,400 +194%</small></div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}><div style={{ fontSize: 11, color: '#64748b' }}>ميزانية الكوكب</div><div style={{ fontSize: 18, fontWeight: 800 }}>45,000 / 60,000</div><div style={{ height: 6, background: '#f1f5f9', borderRadius: 99, marginTop: 8 }}><div style={{ width: '75%', height: '100%', background: '#3b82f6', borderRadius: 99 }} /></div></div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}><div style={{ fontSize: 11, color: '#64748b' }}>LTV</div><div style={{ fontSize: 18, fontWeight: 800 }}>EGP 420</div><small style={{ color: '#64748b' }}>متوسط عمر 8.4 شهر</small></div>
-      </div>
-      <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-        <h3 style={{ fontWeight: 700 }}>تصدير</h3>
-        <p style={{ fontSize: 12, color: '#64748b' }}>لا حاجة لبرنامج محاسبة كامل - صدّر CSV لـ Excel/Sheets</p>
-        <button className="button button--ghost" style={{ marginTop: 8 }} onClick={() => alert('تصدير CSV')}>تصدير</button>
-      </div>
-    </div>
+    <NotImplementedPage
+      eyebrow={ar ? 'المالية المتقدمة' : 'Advanced finance'}
+      title={ar ? 'ربحية المحتوى' : 'Content profitability'}
+      lede={ar
+        ? 'تكلفة الإنتاج والترجمة والترخيص مقابل الإيراد المنسوب لكل قطعة محتوى.'
+        : 'Production, translation and licensing cost against revenue attributed to each content item.'}
+      planned={ar ? [
+        'إدخال تكلفة الإنتاج لكل قصة أو حلقة',
+        'تكلفة الترجمة والدبلجة لكل لغة',
+        'رسوم الترخيص من rights_licenses',
+        'ميزانية لكل كوكب ومقدار المستهلك منها',
+        'القيمة الدائمة للمشترك (LTV) ومتوسط عمر الاشتراك',
+        'تصدير CSV فعليّ لا زرّ يُوهم بالتصدير',
+        'يتطلّب أولًا: جدول تكاليف + نسبة الإيراد لكل محتوى',
+      ] : [
+        'Manual entry of production cost per story or episode',
+        'Translation and dubbing cost per language',
+        'Licensing fees sourced from rights_licenses',
+        'Per-planet budget and consumed amount',
+        'Subscriber lifetime value and average subscription age',
+        'A real CSV export rather than a button that pretends to export',
+        'Prerequisites: a cost table and per-content revenue attribution',
+      ]}
+    />
   )
 }

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AgeTracks } from '../landing/sections/AgeTracks'
 import { Hero } from '../landing/sections/Hero'
 import { Languages } from '../landing/sections/Languages'
+import { Partners } from '../landing/sections/Partners'
 import { Plans } from '../landing/sections/Plans'
 import { Showcase } from '../landing/sections/Showcase'
 import { SiteHeader } from '../landing/sections/SiteHeader'
@@ -21,7 +22,18 @@ import {
   StoriesPlanet,
   TrustStrip,
 } from '../landing/sections/Static'
+import {
+  initialLandingLocale,
+  LandingLocaleContext,
+  localeMeta,
+  STORAGE_KEY,
+  type LandingLocale,
+} from '../landing/i18n'
+import { useCopy } from '../landing/useContent'
+import { applyDocumentLocale, claimDocumentLocale, releaseDocumentLocale } from '../lib/documentLocale'
 import '../styles/landing.css'
+
+const LOCALE_OWNER = 'landing'
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false)
@@ -79,26 +91,64 @@ function useRevealOnScroll(root: React.RefObject<HTMLDivElement | null>, enabled
 }
 
 export function LandingPage() {
-  const pageRef = useRef<HTMLDivElement>(null)
-  const reduceMotion = usePrefersReducedMotion()
-  useRevealOnScroll(pageRef, !reduceMotion)
+  const [locale, setLocaleState] = useState<LandingLocale>(() => initialLandingLocale())
+  const meta = localeMeta(locale)
 
-  // الصفحة داكنة دائمًا ومحتواها عربي، بصرف النظر عن تفضيلات لوحة الإدارة
-  useEffect(() => {
+  const setLocale = useCallback((next: LandingLocale) => {
+    setLocaleState(next)
+    try {
+      window.localStorage.setItem(STORAGE_KEY, next)
+    } catch {
+      // التخزين قد يكون محجوبًا في وضع التصفح الخاص، وهذا لا يمنع تغيير اللغة
+    }
+  }, [])
+
+  const value = useMemo(
+    () => ({ locale, dir: meta.dir, setLocale }),
+    [locale, meta.dir, setLocale],
+  )
+
+  // الصفحة داكنة دائمًا بصرف النظر عن تفضيلات لوحة الإدارة،
+  // لكن اللغة والاتجاه يتبعان اختيار الزائر.
+  // الملكية تُطلب في تأثير تخطيطي حتى تُحسم قبل تأثير مزوّد التفضيلات في الأب.
+  useLayoutEffect(() => {
     const root = document.documentElement
     const previousLang = root.lang
-    const previousDir = root.dir
-    root.lang = 'ar'
-    root.dir = 'rtl'
+    const previousDir = root.dir as 'rtl' | 'ltr'
+    claimDocumentLocale(LOCALE_OWNER)
     return () => {
+      releaseDocumentLocale(LOCALE_OWNER)
       root.lang = previousLang
       root.dir = previousDir
     }
   }, [])
 
+  useLayoutEffect(() => {
+    applyDocumentLocale(LOCALE_OWNER, meta.htmlLang, meta.dir)
+  }, [meta.htmlLang, meta.dir])
+
+  return (
+    <LandingLocaleContext.Provider value={value}>
+      <LandingBody />
+    </LandingLocaleContext.Provider>
+  )
+}
+
+function LandingBody() {
+  const pageRef = useRef<HTMLDivElement>(null)
+  const reduceMotion = usePrefersReducedMotion()
+  useRevealOnScroll(pageRef, !reduceMotion)
+  const copy = useCopy()
+
+  useEffect(() => {
+    document.title = copy.meta.title
+    const description = document.querySelector('meta[name="description"]')
+    if (description) description.setAttribute('content', copy.meta.description)
+  }, [copy.meta.title, copy.meta.description])
+
   return (
     <div className="mj-landing" ref={pageRef}>
-      <a className="mj-skip" href="#main">تجاوز إلى المحتوى</a>
+      <a className="mj-skip" href="#main">{copy.common.skip}</a>
 
       <SiteHeader />
 
@@ -120,6 +170,7 @@ export function LandingPage() {
         <Plans />
         <Reviews />
         <Faq />
+        <Partners />
         <DownloadCta />
       </main>
 

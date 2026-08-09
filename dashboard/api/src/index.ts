@@ -8,6 +8,7 @@ import booksRoute from './routes/books';
 import episodesRoute from './routes/episodes';
 import gamesRoute from './routes/games.ts';
 import creationsRoute from './routes/creations.ts';
+import adminGamesRoute from './routes/adminGames.ts';
 import familyRoute from './routes/family';
 import mediaRoute from './routes/media';
 import planetsRoute from './routes/planets';
@@ -84,6 +85,9 @@ app.route('/api/v1/admin/site-mode', adminSiteModeRoute);
 // تُطابق أولًا. مركّبة صراحةً لا داخل adminRoute حتى لا تعتمد على ترتيب
 // التركيب هناك.
 app.route('/api/v1/admin', adminUsersRoute);
+// Drawing-game readiness and preview. Mounted on the admin prefix like the
+// billing and analytics routes, whose handlers also declare full paths.
+app.route('/api/v1/admin', adminGamesRoute);
 
 app.notFound((c) => c.json({ success: false, error: 'Route not found' }, 404));
 app.onError((error, c) => {

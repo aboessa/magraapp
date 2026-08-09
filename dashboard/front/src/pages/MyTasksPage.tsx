@@ -1,32 +1,138 @@
-import { useEffect, useState } from 'react'
-import { LoadingState } from '../components/PageState'
+import { useCallback, useEffect, useState } from 'react'
+import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { usePreferences } from '../context/preferences'
+import { api } from '../lib/api'
+import type { TaskRecord } from '../types/api'
+
+/**
+ * مهامي.
+ *
+ * ## ما كانت عليه
+ *
+ * `.catch()` كان يضع **مهمتين مخترعتين**، إحداهما بأولوية عالية وموعد تسليم
+ * `2026-08-10`. مهمة مخترعة بموعد قد يتصرّف المستخدم بناءً عليها.
+ *
+ * وكان `LoadingState` يُعرض عند فراغ القائمة (`tasks.length ? ... : <LoadingState/>`)،
+ * فقائمة مهام فارغة فعلًا تبدو كأنها تُحمّل إلى الأبد.
+ */
+
+const copy = {
+  ar: {
+    eyebrow: 'مهامي',
+    title: 'ما المطلوب مني الآن',
+    lede: 'المهام المسنَدة إليّ من سير العمل: مطلوبة، بانتظار المراجعة، تعديلات مطلوبة، أو متأخرة.',
+    empty: 'لا مهام مسنَدة إليك',
+    emptyHint: 'المهام تُنشأ من سير عمل المحتوى. لا شيء ينتظرك الآن.',
+    loadError: 'تعذر تحميل المهام',
+    noDue: 'بدون موعد',
+    overdue: 'متأخرة',
+  },
+  en: {
+    eyebrow: 'My tasks',
+    title: 'What needs my attention',
+    lede: 'Tasks assigned to me by the workflow: required, awaiting review, changes requested, or overdue.',
+    empty: 'No tasks assigned to you',
+    emptyHint: 'Tasks are created by the content workflow. Nothing is waiting on you.',
+    loadError: 'Unable to load tasks',
+    noDue: 'No due date',
+    overdue: 'Overdue',
+  },
+}
+
+/// لون النقطة يتبع الأولوية ثم الحالة، بنفس ترتيب الأهمية للقارئ
+function dotColor(task: TaskRecord) {
+  if (task.priority === 'high') return 'var(--danger)'
+  if (task.status === 'review') return 'var(--warning)'
+  return 'var(--success)'
+}
+
+function isOverdue(due: string | null) {
+  if (!due) return false
+  const parsed = new Date(due)
+  return !Number.isNaN(parsed.getTime()) && parsed.getTime() < Date.now()
+}
 
 export function MyTasksPage() {
-  const [tasks, setTasks] = useState<any[]>([])
+  const { locale } = usePreferences()
+  const text = copy[locale]
 
-  useEffect(() => {
-    fetch('/api/v1/admin/tasks', { headers: { Authorization: `Bearer ${window.sessionStorage.getItem('majarra-admin-token') || ''}` } }).then(r => r.json()).then(j => setTasks(j.data || [])).catch(() => setTasks([
-      { id: '1', title_ar: 'رفع الصوت العربي للقصة 04', content_id: 'book-qisas-k1', status: 'pending', priority: 'high', due_date: '2026-08-10' },
-      { id: '2', title_ar: 'مراجعة لغوية - نجمة تنام', content_id: 'book-qisas-p2', status: 'review', priority: 'medium' },
-    ]))
-  }, [])
+  const [tasks, setTasks] = useState<TaskRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const response = await api.tasks()
+      setTasks(response.data)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : text.loadError)
+    } finally {
+      setLoading(false)
+    }
+  }, [text.loadError])
+
+  useEffect(() => { void load() }, [load])
+
+  if (loading) return <LoadingState />
+  if (error) return <ErrorState message={error} onRetry={() => void load()} />
 
   return (
     <div className="page-stack">
       <section className="page-intro">
-        <div><span className="eyebrow">مهامي</span><h2>ما المطلوب مني الآن</h2><p>مطلوب مني / بانتظار المراجعة / تعديلات مطلوبة / متأخرة</p></div>
+        <div>
+          <span className="eyebrow">{text.eyebrow}</span>
+          <h2>{text.title}</h2>
+          <p>{text.lede}</p>
+        </div>
       </section>
-      <div style={{ display: 'grid', gap: 10 }}>
-        {tasks.length ? tasks.map((t: any) => (
-          <div key={t.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ width: 8, height: 8, borderRadius: 99, background: t.priority === 'high' ? '#ef4444' : t.status === 'review' ? '#f59e0b' : '#22c55e' }} />
-            <div style={{ flex: 1 }}>
-              <strong style={{ fontSize: 13 }}>{t.title_ar}</strong><br/><small style={{ color: '#64748b' }}>{t.content_id} • {t.status} • {t.due_date || 'بدون موعد'}</small>
-            </div>
-            <span style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, background: t.priority === 'high' ? '#fef2f2' : '#f8fafc', color: t.priority === 'high' ? '#b91c1c' : '#475569' }}>{t.priority}</span>
+
+      {tasks.length ? (
+        <section className="panel panel--table">
+          <div className="table-scroll">
+            <table className="data-table data-table--wide">
+              <tbody>
+                {tasks.map((task) => (
+                  <tr key={task.id}>
+                    <td style={{ width: 20 }}>
+                      <span
+                        className="track-dot"
+                        style={{ background: dotColor(task) }}
+                        aria-hidden="true"
+                      />
+                    </td>
+                    <td>
+                      <span className="table-primary">{task.title_ar}</span>
+                      <span className="table-secondary">
+                        {task.series_title ?? task.content_id ?? '—'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-badge status-badge--${task.status}`}>{task.status}</span>
+                    </td>
+                    <td>
+                      {task.due_date
+                        ? (
+                          <span className={isOverdue(task.due_date) ? 'size-warning' : 'table-secondary'}>
+                            {task.due_date}{isOverdue(task.due_date) ? ` · ${text.overdue}` : ''}
+                          </span>
+                        )
+                        : <span className="table-secondary">{text.noDue}</span>}
+                    </td>
+                    <td>
+                      {task.priority ? <span className="track-badge">{task.priority}</span> : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )) : <LoadingState />}
-      </div>
+        </section>
+      ) : (
+        // فراغ حقيقي لا مؤشّر تحميل دائم
+        <EmptyState title={text.empty} description={text.emptyHint} />
+      )}
     </div>
   )
 }

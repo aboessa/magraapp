@@ -1,47 +1,58 @@
-import { useState } from 'react'
+import { NotImplementedPage } from '../components/PageState'
+import { usePreferences } from '../context/preferences'
 
+/**
+ * إدارة التوصيات.
+ *
+ * ## ما كانت عليه
+ *
+ * ثلاث بطاقات Pin/Boost/Exclude تعمل على `useState` فقط: الإضافة عبر
+ * `prompt()`، والقيم الابتدائية `'series-1'` و`'series-2'` معرّفات مخترعة قد
+ * لا توجد في `series` أصلًا. كل ما يُضاف يضيع عند تحديث الصفحة.
+ *
+ * وسطر «حد تكرار + منع أعلى من العمر مفعل» كان يعلن قاعدتَي حماية **غير
+ * مُنفَّذتين**، تمامًا كإعلان ضمانات الخصوصية في صفحة المدارس. وبلوك JSON
+ * المعروض كان مثالًا ثابتًا لا إعدادًا محفوظًا.
+ *
+ * ## ما هو متاح
+ *
+ * `home_experience_blocks` (المهاجرة 0015) يوفّر بالفعل ترتيبًا واستهدافًا
+ * لبلوكات الصفحة الرئيسية، وله واجهة عاملة في AppExperiencePage. فالتثبيت
+ * والإخفاء اليدويّ قد يكونان امتدادًا له بدل نظام توصيات مستقل — قرار معماريّ
+ * يسبق البناء.
+ *
+ * لا محرّك توصيات ولا جدول قواعد في أي مهاجرة.
+ */
 export function RecommendationsPage() {
-  const [pins, setPins] = useState<string[]>(['series-1'])
-  const [boosts] = useState([{ id: 'series-2', boost: 2.0 }])
-  const [excludes] = useState<string[]>([])
+  const { locale } = usePreferences()
+  const ar = locale === 'ar'
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div><span className="eyebrow">التوصيات</span><h2>إدارة التوصيات</h2><p>Pin / Boost / Exclude + معاينة على حساب تجريبي</p></div>
-        <button className="button button--primary" onClick={() => alert('إضافة قاعدة: لأنك شاهدت -> Pin')}>قاعدة جديدة</button>
-      </section>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-          <h3 style={{ fontWeight: 700, fontSize: 13 }}>Pin 📌</h3>
-          <p style={{ fontSize: 11, color: '#64748b' }}>ثبت محتوى في الأعلى</p>
-          <ul style={{ fontSize: 12, marginTop: 8, paddingInlineStart: 16 }}>{pins.map(id => <li key={id}>{id} <button onClick={() => setPins(pins.filter(x => x !== id))} style={{ color: '#dc2626', fontSize: 11, background: 'none', border: 'none', cursor: 'pointer' }}>×</button></li>)}</ul>
-          <button className="button button--ghost" style={{ marginTop: 8, fontSize: 12 }} onClick={() => { const id = prompt('ID المحتوى'); if (id) setPins([...pins, id]) }}>+ Pin</button>
-        </div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-          <h3 style={{ fontWeight: 700, fontSize: 13 }}>Boost 🚀</h3>
-          <p style={{ fontSize: 11, color: '#64748b' }}>ارفع ترتيب محتوى</p>
-          <ul style={{ fontSize: 12 }}>{boosts.map(b => <li key={b.id}>{b.id} - x{b.boost}</li>)}</ul>
-        </div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-          <h3 style={{ fontWeight: 700, fontSize: 13 }}>Exclude 🚫</h3>
-          <p style={{ fontSize: 11, color: '#64748b' }}>امنع اقتراح محتوى أعلى من العمر</p>
-          <ul style={{ fontSize: 12 }}>{excludes.length ? excludes.map(e => <li key={e}>{e}</li>) : <li style={{ color: '#94a3b8' }}>لا يوجد</li>}</ul>
-        </div>
-      </div>
-
-      <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-        <h3 style={{ fontWeight: 700, fontSize: 13 }}>قواعد "لأنك شاهدت"</h3>
-        <p style={{ fontSize: 11, color: '#64748b' }}>إذا شاهد الطفل X → اقترح Y • حد تكرار 3/أسبوع • منع أعلى من العمر</p>
-        <pre style={{ fontSize: 11, background: '#f8fafc', padding: 12, borderRadius: 8, marginTop: 8 }}>{JSON.stringify({ rule: 'because_you_watched', source: 'series-1', target: 'series-2', max_per_week: 3, age_check: true }, null, 2)}</pre>
-      </div>
-
-      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-        <button className="button button--ghost" onClick={() => alert('معاينة على حساب تجريبي: عمر 7 - كوكب القصص')}>معاينة</button>
-        <span style={{ flex: 1 }} />
-        <span style={{ fontSize: 11, color: '#64748b', alignSelf: 'center' }}>حد تكرار + منع أعلى من العمر مفعل</span>
-      </div>
-    </div>
+    <NotImplementedPage
+      eyebrow={ar ? 'التوصيات' : 'Recommendations'}
+      title={ar ? 'إدارة التوصيات' : 'Recommendation controls'}
+      lede={ar
+        ? 'تثبيت محتوى ورفع ترتيبه واستثناؤه، مع قواعد «لأنك شاهدت» ومعاينة على حساب تجريبي.'
+        : 'Pin, boost and exclude content, with “because you watched” rules and preview against a test account.'}
+      planned={ar ? [
+        'قرار معماريّ أولًا: توسيع home_experience_blocks أم نظام توصيات مستقل',
+        'تثبيت محتوى في أعلى صفّ محدَّد',
+        'رفع أو خفض ترتيب محتوى بمعامل',
+        'استثناء محتوى من الاقتراح',
+        'قواعد «إذا شاهد X فاقترح Y»',
+        'حدّ تكرار الاقتراح لكل طفل أسبوعيًا — غير مُنفَّذ وكان معروضًا كأنه مفعَّل',
+        'منع اقتراح محتوى أعلى من المسار العمري — غير مُنفَّذ وكان معروضًا كأنه مفعَّل',
+        'معاينة الصفحة الرئيسية بعمر ومسار مختارين',
+      ] : [
+        'Architectural decision first: extend home_experience_blocks or build a separate recommendation system',
+        'Pin content to the top of a specific row',
+        'Boost or demote content by a multiplier',
+        'Exclude content from suggestions',
+        '“If they watched X, suggest Y” rules',
+        'Weekly per-child suggestion frequency cap — not implemented, previously shown as active',
+        'Blocking suggestions above the child\u2019s age track — not implemented, previously shown as active',
+        'Preview the home page for a chosen age and track',
+      ]}
+    />
   )
 }

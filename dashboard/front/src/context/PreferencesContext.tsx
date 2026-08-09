@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { applyDocumentLocale } from '../lib/documentLocale'
 import { PreferencesContext } from './preferences'
 import type { Locale, PreferencesValue, Theme } from './preferences'
 
@@ -23,8 +24,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }, [theme])
 
   useEffect(() => {
-    document.documentElement.lang = locale
-    document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr'
+    // صفحة الهبوط تملك lang/dir أثناء ظهورها، فلا نكتب فوق اختيار الزائر هناك
+    applyDocumentLocale('preferences', locale, locale === 'ar' ? 'rtl' : 'ltr')
     window.localStorage.setItem('majarra-lang', locale)
     setMenuOpen(false)
   }, [locale])

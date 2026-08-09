@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Ico } from '../icons'
-import { WORLDS } from '../data'
+import { useLandingContent } from '../useContent'
 
 /** يحوّل نصف القطر والزاوية إلى موضع مئوي داخل مشهد المدار */
 function orbitStyle(radius: number, angle: number): CSSProperties {
@@ -13,19 +13,18 @@ function orbitStyle(radius: number, angle: number): CSSProperties {
 }
 
 export function Worlds() {
-  const [activeKey, setActiveKey] = useState(WORLDS[0].key)
-  const world = WORLDS.find((item) => item.key === activeKey) ?? WORLDS[0]
+  const { copy, worlds } = useLandingContent()
+  const [activeKey, setActiveKey] = useState(worlds[0].key)
+  const world = worlds.find((item) => item.key === activeKey) ?? worlds[0]
+  const text = copy.worlds
 
   return (
     <section className="mj-section" id="worlds" data-section="worlds">
       <div className="mj-container">
         <div className="mj-head mj-head--center mj-reveal">
-          <span className="mj-kicker">تسعة كواكب</span>
-          <h2>كواكب مجرة ليست تصنيفات… <span className="mj-grad">بل عوالم معرفة</span></h2>
-          <p>
-            كل كوكب عالم له محتواه الخاص: حلقات وقصص وصوتيات وألعاب ومشروعات مرتبطة بمهارة واضحة.
-            اختر كوكبًا لترى ما داخله.
-          </p>
+          <span className="mj-kicker">{text.kicker}</span>
+          <h2>{text.heading} <span className="mj-grad">{text.accent}</span></h2>
+          <p>{text.copy}</p>
         </div>
 
         <div className="mj-worlds">
@@ -36,7 +35,7 @@ export function Worlds() {
               <span className="mj-ring mj-ring--3" aria-hidden="true" />
               <span className="mj-core" aria-hidden="true" />
 
-              {WORLDS.map((item) => (
+              {worlds.map((item) => (
                 <button
                   key={item.key}
                   className="mj-planet"
@@ -46,7 +45,7 @@ export function Worlds() {
                   onClick={() => setActiveKey(item.key)}
                 >
                   <img src={item.image} alt={item.name} loading="lazy" />
-                  <span className="mj-planet-name">{item.name.replace('كوكب ', '')}</span>
+                  <span className="mj-planet-name">{item.short}</span>
                 </button>
               ))}
             </div>
@@ -80,7 +79,7 @@ export function Worlds() {
             </div>
 
             <a className="mj-btn mj-btn-primary" href={world.href}>
-              اكتشف الكوكب
+              {text.cta}
               <Ico name="arrowNext" />
             </a>
           </div>

@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import type { ContentStatus, EpisodePayload, EpisodeRecord, SeriesRecord } from '../types/api'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { EntityThumbnail } from '../components/EntityThumbnail'
+import { Pagination } from '../components/Pagination'
 import { StatusBadge, TrackBadge } from '../components/StatusBadge'
 import { formatNumber, localeCode, statusLabels } from '../lib/labels'
+import { adminPath } from '../lib/adminPath'
 import { usePreferences } from '../context/preferences'
 
 const editableStatuses: ContentStatus[] = ['draft', 'writing', 'review_edu', 'review_lang', 'review_sharia', 'production', 'qa', 'ready', 'scheduled', 'published']
@@ -48,6 +52,9 @@ export function EpisodesPage() {
   const [query, setQuery] = useState('')
   const [seriesFilter, setSeriesFilter] = useState('')
   const [status, setStatus] = useState('')
+  const [offset, setOffset] = useState(0)
+  const [total, setTotal] = useState(0)
+  const limit = 50
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -61,12 +68,15 @@ export function EpisodesPage() {
     setLoading(true)
     setError('')
     try {
-      const response = await api.episodes({ q: query, series_id: seriesFilter, status, limit: 100 })
+      const response = await api.episodes({ q: query, series_id: seriesFilter, status, limit, offset })
       setRecords(response.data)
+      setTotal(response.meta.total)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.loadError)
     } finally { setLoading(false) }
-  }, [query, seriesFilter, status, text.loadError])
+  }, [query, seriesFilter, status, text.loadError, offset])
+
+  useEffect(() => { setOffset(0) }, [query, seriesFilter, status])
 
   useEffect(() => { const timer = window.setTimeout(() => void load(), 220); return () => window.clearTimeout(timer) }, [load])
   useEffect(() => { void api.series({ status: 'all', limit: 100 }).then((response) => setSeries(response.data.filter((item) => item.status !== 'archived'))).catch(() => setSeries([])) }, [])
@@ -126,8 +136,8 @@ export function EpisodesPage() {
       <section className="page-intro"><div><span className="eyebrow">{text.level}</span><h2>{text.headline}</h2><p>{text.intro}</p></div><button className="button button--primary" type="button" onClick={openCreate} disabled={!series.length}><Icon name="plus" size={17} />{text.newEpisode}</button></section>
       {!series.length && !loading && <div className="inline-alert inline-alert--info">{text.needsSeries}</div>}
       <section className="panel panel--table">
-        <header className="panel__header panel__header--filters"><div><span className="panel__kicker">{text.library}</span><h3>{text.allEpisodes} <span className="title-count">{formatNumber(records.length, locale)}</span></h3></div><div className="filters-row"><label className="search-field"><Icon name="search" size={17}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search}/></label><select value={seriesFilter} onChange={(event) => setSeriesFilter(event.target.value)}><option value="">{text.allSeries}</option>{series.map((item) => <option value={item.id} key={item.id}>{locale === 'en' ? item.title_en || item.title_ar : item.title_ar}</option>)}</select><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">{text.allStatuses}</option>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select></div></header>
-        {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? <div className="table-scroll"><table className="data-table data-table--wide"><thead><tr><th>{text.episode}</th><th>{text.series}</th><th>{text.track}</th><th>{text.objective}</th><th>{text.familyActivity}</th><th>{text.duration}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead><tbody>{records.map((episode) => <tr key={episode.id}><td><div className="entity-cell"><span className="entity-avatar entity-avatar--episode"><Icon name="play" size={19}/></span><div><strong>{episode.title_ar}</strong><small>{episode.episode_number ? text.episodeNumber(episode.episode_number) : text.noNumber}</small></div></div></td><td>{episode.series_title}</td><td><div className="badge-list">{episode.track_ids.map((item) => <TrackBadge track={item} key={item}/>)}</div></td><td className="cell-wrap">{episode.objective_title || text.unspecified}</td><td className="cell-wrap">{episode.family_activity_ar || '—'}</td><td>{durationLabel(episode.duration_seconds, locale)}</td><td><select className="status-select" value={episode.status} disabled={busyId === episode.id} onChange={(event) => void changeStatus(episode.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={episode.status}/></td><td><div className="table-actions"><button className="icon-button icon-button--small" type="button" onClick={() => openEdit(episode)} title={text.edit}><Icon name="edit" size={16}/></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(episode)} disabled={busyId === episode.id} title={text.archive}><Icon name="archive" size={16}/></button></div></td></tr>)}</tbody></table></div> : <EmptyState title={text.empty} description={text.emptyDesc} action={series.length ? <button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17}/>{text.addEpisode}</button> : undefined}/>} 
+        <header className="panel__header panel__header--filters"><div><span className="panel__kicker">{text.library}</span><h3>{text.allEpisodes} <span className="title-count">{formatNumber(total, locale)}</span></h3></div><div className="filters-row"><label className="search-field"><Icon name="search" size={17}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search}/></label><select value={seriesFilter} onChange={(event) => setSeriesFilter(event.target.value)}><option value="">{text.allSeries}</option>{series.map((item) => <option value={item.id} key={item.id}>{locale === 'en' ? item.title_en || item.title_ar : item.title_ar}</option>)}</select><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">{text.allStatuses}</option>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select></div></header>
+        {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? <><div className="table-scroll"><table className="data-table data-table--wide"><thead><tr><th>{text.episode}</th><th>{text.series}</th><th>{text.track}</th><th>{text.objective}</th><th>{text.familyActivity}</th><th>{text.duration}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead><tbody>{records.map((episode) => <tr key={episode.id}><td><Link className="entity-cell entity-cell--button" to={adminPath(`episodes/${episode.id}`)}><EntityThumbnail src={episode.thumbnail_url} alt={episode.title_ar} icon="play" /><div><strong>{episode.title_ar}</strong><small>{episode.episode_number ? text.episodeNumber(episode.episode_number) : text.noNumber}</small></div></Link></td><td>{episode.series_title}</td><td><div className="badge-list">{episode.track_ids.map((item) => <TrackBadge track={item} key={item}/>)}</div></td><td className="cell-wrap">{episode.objective_title || text.unspecified}</td><td className="cell-wrap">{episode.family_activity_ar || '—'}</td><td>{durationLabel(episode.duration_seconds, locale)}</td><td><select className="status-select" value={episode.status} disabled={busyId === episode.id} onChange={(event) => void changeStatus(episode.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={episode.status}/></td><td><div className="table-actions"><button className="icon-button icon-button--small" type="button" onClick={() => openEdit(episode)} title={text.edit}><Icon name="edit" size={16}/></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(episode)} disabled={busyId === episode.id} title={text.archive}><Icon name="archive" size={16}/></button></div></td></tr>)}</tbody></table></div><Pagination total={total} limit={limit} offset={offset} onOffsetChange={setOffset} locale={locale} /></> : <EmptyState title={text.empty} description={text.emptyDesc} action={series.length ? <button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17}/>{text.addEpisode}</button> : undefined}/>} 
       </section>
 
       <Modal open={modalOpen} onClose={() => !saving && setModalOpen(false)} title={editing ? text.editTitle : text.createTitle} description={text.modalDesc}>

@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Ico } from '../icons'
-import { COMPARE_ROWS, CURRENCIES, PLANS } from '../data'
-import type { BillingCycle, Currency, Plan } from '../data'
+import type { BillingCycle, Currency } from '../structure'
+import { useLandingContent } from '../useContent'
+import type { LandingContent } from '../useContent'
+
+type PlanView = LandingContent['plans'][number]
 
 /** ينسّق السعر بأرقام لاتينية وفاصلة آلاف، ويبقي الكسور للدولار فقط */
 function formatPrice(value: number) {
@@ -12,7 +15,7 @@ function formatPrice(value: number) {
   })
 }
 
-function savingPercent(plan: Plan, currency: Currency) {
+function savingPercent(plan: PlanView, currency: Currency) {
   if (!plan.price) return 0
   const monthly = plan.price.monthly[currency]
   const yearly = plan.price.yearly[currency]
@@ -29,45 +32,44 @@ function toneClass(tone: 'yes' | 'no' | undefined) {
 export function Plans() {
   const [cycle, setCycle] = useState<BillingCycle>('monthly')
   const [currency, setCurrency] = useState<Currency>('SAR')
-  const symbol = CURRENCIES.find((item) => item.code === currency)?.symbol ?? currency
+  const { copy, plans, compareRows, currencies } = useLandingContent()
+  const text = copy.plans
+  const symbol = currencies.find((item) => item.code === currency)?.symbol ?? currency
 
   return (
     <section className="mj-section" id="plans" data-section="plans">
       <div className="mj-container">
         <div className="mj-head mj-head--center mj-reveal">
-          <span className="mj-kicker">الباقات</span>
-          <h2>اختر ما يناسب عائلتك</h2>
-          <p>
-            السعر ظاهر من أول خطوة، والإلغاء متاح في أي وقت.
-            لا نخفي فرق الباقات ولا نطلب بطاقة لبدء التجربة المجانية.
-          </p>
+          <span className="mj-kicker">{text.kicker}</span>
+          <h2>{text.heading}</h2>
+          <p>{text.copy}</p>
         </div>
 
         <div className="mj-plans-controls mj-reveal">
-          <div className="mj-billing" role="group" aria-label="دورة الفوترة">
+          <div className="mj-billing" role="group" aria-label={text.billingAria}>
             <button type="button" aria-pressed={cycle === 'monthly'} onClick={() => setCycle('monthly')}>
-              شهري
+              {text.monthly}
             </button>
             <button type="button" aria-pressed={cycle === 'yearly'} onClick={() => setCycle('yearly')}>
-              سنوي <span className="mj-save">وفّر حتى 25%</span>
+              {text.yearly} <span className="mj-save">{text.saveUpTo}</span>
             </button>
           </div>
 
-          <label className="mj-sr-only" htmlFor="mj-currency">العملة</label>
+          <label className="mj-sr-only" htmlFor="mj-currency">{text.currencyLabel}</label>
           <select
             className="mj-currency"
             id="mj-currency"
             value={currency}
             onChange={(event) => setCurrency(event.target.value as Currency)}
           >
-            {CURRENCIES.map((item) => (
+            {currencies.map((item) => (
               <option value={item.code} key={item.code}>{item.label}</option>
             ))}
           </select>
         </div>
 
         <div className="mj-plans">
-          {PLANS.map((plan) => {
+          {plans.map((plan) => {
             const amount = plan.price ? plan.price[cycle][currency] : null
             const saving = cycle === 'yearly' ? savingPercent(plan, currency) : 0
 
@@ -88,23 +90,25 @@ export function Plans() {
                   {amount === null ? (
                     <>
                       <span className="mj-amount">0</span>
-                      <span className="mj-cur">مجانًا</span>
+                      <span className="mj-cur">{text.freeAmount}</span>
                     </>
                   ) : (
                     <>
                       <span className="mj-amount">{formatPrice(amount)}</span>
                       <span className="mj-cur">{symbol}</span>
-                      <span className="mj-per">/ {cycle === 'monthly' ? 'شهريًا' : 'سنويًا'}</span>
+                      <span className="mj-per">{cycle === 'monthly' ? text.perMonth : text.perYear}</span>
                     </>
                   )}
                 </div>
 
                 <p className="mj-plan-note">
                   {amount === null
-                    ? 'للأبد · بلا بطاقة'
+                    ? text.freeNote
                     : cycle === 'monthly'
-                      ? 'يُجدد شهريًا · إلغاء في أي وقت'
-                      : `يُجدد سنويًا${saving > 0 ? ` · وفّر ${saving}%` : ''} · إلغاء في أي وقت`}
+                      ? text.renewMonthly
+                      : saving > 0
+                        ? text.renewYearlyWithSave(saving)
+                        : text.renewYearly}
                 </p>
 
                 <a
@@ -129,21 +133,20 @@ export function Plans() {
 
         <details className="mj-compare mj-reveal">
           <summary>
-            جدول مقارنة تفصيلي
+            {text.compare}
             <Ico name="chevronDown" />
           </summary>
           <div className="mj-table-wrap">
             <table className="mj-cmp">
               <thead>
                 <tr>
-                  <th scope="col">الميزة</th>
-                  <th scope="col">مجانية</th>
-                  <th scope="col">Lite</th>
-                  <th scope="col">Family</th>
+                  {text.compareHeaders.map((header) => (
+                    <th scope="col" key={header}>{header}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {COMPARE_ROWS.map((row) => (
+                {compareRows.map((row) => (
                   <tr key={row.feature}>
                     <th scope="row">{row.feature}</th>
                     <td className={toneClass(row.tone?.free)}>{row.free}</td>
@@ -157,10 +160,9 @@ export function Plans() {
         </details>
 
         <p className="mj-plans-note">
-          التجربة المجانية لباقة Family متاحة دون بطاقة، وتنتهي تلقائيًا بلا خصم إن لم تُكمل الاشتراك.
-          الإلغاء من لوحة ولي الأمر في أي وقت، ويستمر الاشتراك حتى نهاية المدة المدفوعة.
+          {text.note}
           <br />
-          الأسعار المعروضة إرشادية قبل الإطلاق، وتُثبَّت نهائيًا بعملة بلدك عند فتح الاشتراك.
+          {text.noteFine}
         </p>
       </div>
     </section>

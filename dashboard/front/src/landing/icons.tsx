@@ -6,6 +6,7 @@ const GLYPHS = {
   arrowNext: <path d="M14 6l-6 6 6 6" />,
   chevronDown: <path d="m6 9 6 6 6-6" />,
   play: <path d="M8 5v14l11-7z" />,
+  pause: <path d="M8 5h3v14H8zM13 5h3v14h-3z" />,
   check: <path d="m6 12 4 4 8-9" />,
   plus: <path d="M12 5v14M5 12h14" />,
   cross: <path d="M6 6l12 12M18 6 6 18" />,

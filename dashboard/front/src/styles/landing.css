@@ -58,7 +58,9 @@ body.mj-nav-open { overflow: hidden; }
 }
 
 .mj-container { width: min(var(--mj-container), calc(100% - 40px)); margin-inline: auto; }
-.mj-section { position: relative; padding: 104px 0; }
+/* overflow-x: clip يمنع أي عنصر مزخرف شارد من إنشاء تمرير أفقي،
+   ولا يُنشئ حاوية تمرير فلا يعطّل position: sticky داخل القسم */
+.mj-section { position: relative; padding: 104px 0; overflow-x: clip; }
 .mj-section-alt {
   background: rgba(11, 16, 38, 0.72);
   border-block: 1px solid rgba(255, 255, 255, 0.045);
@@ -69,7 +71,7 @@ body.mj-nav-open { overflow: hidden; }
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 .mj-skip {
-  position: fixed; top: -80px; right: 20px; z-index: 999;
+  position: fixed; top: -80px; inset-inline-start: 20px; z-index: 999;
   padding: 11px 18px; border-radius: 10px;
   background: var(--mj-star-yellow); color: var(--mj-ink);
   font-size: 13px; font-weight: 700; transition: top 0.2s;
@@ -158,7 +160,7 @@ body.mj-nav-open { overflow: hidden; }
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
 }
 .mj-header-inner { height: 100%; display: flex; align-items: center; gap: 24px; }
-.mj-brand { display: inline-flex; align-items: center; gap: 11px; flex: 0 0 auto; }
+.mj-brand { display: inline-flex; align-items: center; gap: 11px; flex: 0 0 auto; min-height: 44px; }
 .mj-brand-mark {
   position: relative; width: 46px; height: 36px; overflow: hidden; border-radius: 10px;
   background: #0a1024; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
@@ -170,7 +172,7 @@ body.mj-nav-open { overflow: hidden; }
 .mj-brand-name { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
 .mj-brand-name small {
   display: block; margin-top: 1px; color: var(--mj-comet-cyan);
-  font-size: 8px; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase;
+  font-size: 10px; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase;
 }
 
 .mj-nav { display: flex; align-items: center; gap: 4px; margin-inline: auto; }
@@ -224,7 +226,7 @@ body.mj-nav-open { overflow: hidden; }
 .mj-login { padding: 9px 12px; color: rgba(242, 246, 255, 0.82); font-size: 13px; font-weight: 500; }
 .mj-login:hover { color: #fff; }
 .mj-burger {
-  display: none; width: 42px; height: 42px; align-items: center; justify-content: center;
+  display: none; width: 44px; height: 44px; align-items: center; justify-content: center;
   flex-direction: column;
   border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
   background: rgba(255, 255, 255, 0.06); cursor: pointer;
@@ -323,13 +325,20 @@ body.mj-nav-open { overflow: hidden; }
   color: var(--mj-ink); background: var(--mj-comet-cyan);
 }
 .mj-tick .mj-icon { width: 11px; height: 11px; stroke-width: 3; }
-.mj-hero-dots { display: flex; gap: 8px; margin-top: 34px; }
+.mj-hero-dots { display: flex; gap: 4px; margin-top: 26px; }
+/* الشريط المرئي 4px، لكن مساحة اللمس 44px عبر padding شفاف
+   حتى لا يكون الهدف أصغر من أن يُلمس على الهاتف */
 .mj-hero-dots button {
-  width: 30px; height: 4px; border: 0; border-radius: 3px; cursor: pointer;
-  background: rgba(255, 255, 255, 0.18);
-  transition: background 0.25s, width 0.25s;
+  width: 44px; height: 44px; padding: 20px 5px; border: 0; background: none;
+  cursor: pointer; display: flex; align-items: center;
 }
-.mj-hero-dots button[aria-current="true"] { width: 52px; background: var(--mj-star-yellow); }
+.mj-hero-dots button::before {
+  content: ""; width: 100%; height: 4px; border-radius: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  transition: background 0.25s;
+}
+.mj-hero-dots button[aria-current="true"] { width: 56px; }
+.mj-hero-dots button[aria-current="true"]::before { background: var(--mj-star-yellow); }
 
 /* ---------- device mockups ---------- */
 .mj-stage { position: relative; display: grid; place-items: center; min-height: 520px; }
@@ -349,15 +358,17 @@ body.mj-nav-open { overflow: hidden; }
   display: block; width: 150px; height: 9px; margin: 0 auto; border-radius: 0 0 9px 9px;
   background: linear-gradient(180deg, #212c52, #131a34);
 }
+/* إزاحات ثابتة لا نسبية: النسبة المئوية تكبر مع عرض المشهد
+   فتخرج الأجهزة عن حدود الصفحة وتُنشئ تمريرًا أفقيًا على 1024px وما فوق */
 .mj-tablet {
-  position: absolute; bottom: -6%; right: -4%; width: 168px;
+  position: absolute; bottom: -18px; right: -10px; width: 168px;
   border: 6px solid #212c52; border-radius: 16px; overflow: hidden;
   background: #060b1b; box-shadow: 0 26px 60px rgba(0, 0, 0, 0.5);
   transform: rotate(-5deg);
 }
 .mj-tablet img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
 .mj-phone {
-  position: absolute; bottom: -8%; left: -3%; width: 108px;
+  position: absolute; bottom: -22px; left: -8px; width: 108px;
   border: 5px solid #212c52; border-radius: 18px; overflow: hidden;
   background: #060b1b; box-shadow: 0 22px 54px rgba(0, 0, 0, 0.52);
   transform: rotate(6deg);
@@ -375,8 +386,8 @@ body.mj-nav-open { overflow: hidden; }
 .mj-float span { color: var(--mj-moon-gray); }
 .mj-float-ico { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; }
 .mj-float-ico .mj-icon { width: 19px; height: 19px; }
-.mj-float--a { top: 2%; right: -6%; }
-.mj-float--b { top: 44%; left: -8%; }
+.mj-float--a { top: 2%; right: -10px; }
+.mj-float--b { top: 44%; left: -12px; }
 
 /* ---------- trust strip ---------- */
 .mj-trust {
@@ -436,8 +447,9 @@ body.mj-nav-open { overflow: hidden; }
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .mj-pillar-link {
-  position: relative; display: inline-flex; align-items: center; gap: 6px; margin-top: 16px;
-  color: var(--mj-c); font-size: 11.5px; font-weight: 600;
+  position: relative; display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 8px; min-height: 44px; padding: 6px 0;
+  color: var(--mj-c); font-size: 12px; font-weight: 600;
 }
 .mj-pillar-link .mj-icon { width: 14px; height: 14px; }
 .mj-pillar--watch { --mj-c: #7ea6ff; --mj-glow: rgba(40, 86, 216, 0.26); }
@@ -449,7 +461,7 @@ body.mj-nav-open { overflow: hidden; }
 /* ---------- tabs + poster cards ---------- */
 .mj-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; padding-bottom: 4px; }
 .mj-tab {
-  min-height: 40px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+  min-height: 44px; padding: 0 16px; border-radius: 999px; cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04);
   color: var(--mj-moon-gray); font-size: 12.5px; font-weight: 500;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
@@ -484,7 +496,7 @@ body.mj-nav-open { overflow: hidden; }
   display: flex; flex-wrap: wrap; gap: 5px;
 }
 .mj-badge {
-  padding: 3px 8px; border-radius: 999px; font-size: 9.5px; font-weight: 600;
+  padding: 3px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 600;
   background: rgba(6, 9, 26, 0.78); border: 1px solid rgba(255, 255, 255, 0.14);
   color: #e4ecfb; backdrop-filter: blur(8px);
 }
@@ -508,11 +520,11 @@ body.mj-nav-open { overflow: hidden; }
 .mj-poster-body h3 { margin: 0; font-size: 13.5px; font-weight: 600; line-height: 1.45; }
 .mj-poster-meta {
   margin: 7px 0 0; display: flex; flex-wrap: wrap; gap: 4px 8px;
-  color: var(--mj-dim); font-size: 10.5px;
+  color: var(--mj-dim); font-size: 11px;
 }
 .mj-poster-actions { display: flex; gap: 6px; margin-top: 11px; }
 .mj-poster-actions a {
-  flex: 1; min-height: 32px;
+  flex: 1; min-height: 36px;
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;
   border-radius: 8px; font-size: 10.5px; font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05);
@@ -561,7 +573,7 @@ body.mj-nav-open { overflow: hidden; }
 .mj-planet-name {
   position: absolute; inset: auto 0 0; padding: 5px 2px; line-height: 1.2;
   background: linear-gradient(to top, rgba(6, 9, 26, 0.94), rgba(6, 9, 26, 0.6));
-  color: #eaf0ff; font-size: 9.5px; font-weight: 600;
+  color: #eaf0ff; font-size: 10px; font-weight: 600;
 }
 .mj-planet[aria-pressed="true"] .mj-planet-name { color: var(--mj-star-yellow); }
 .mj-wpanel {
@@ -623,20 +635,38 @@ body.mj-nav-open { overflow: hidden; }
   border: 1px solid rgba(255, 255, 255, 0.09); background: rgba(6, 10, 28, 0.7);
 }
 .mj-play {
-  width: 34px; height: 34px; flex: 0 0 auto;
+  width: 44px; height: 44px; flex: 0 0 auto; padding: 0; border: 0; cursor: pointer;
   display: grid; place-items: center; border-radius: 50%;
   color: var(--mj-ink); background: var(--mj-star-yellow);
+  transition: transform 0.18s, box-shadow 0.18s;
 }
-.mj-play .mj-icon { width: 15px; height: 15px; fill: currentColor; stroke: none; }
-.mj-wave { flex: 1; display: flex; align-items: center; gap: 3px; height: 26px; }
+.mj-play:hover { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(255, 211, 77, 0.16); }
+.mj-play:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+.mj-play .mj-icon { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+.mj-play-spin {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid rgba(16, 22, 47, 0.25); border-top-color: var(--mj-ink);
+  animation: mjSpin 0.7s linear infinite;
+}
+
+/* الموجة زر انتقال: الأعمدة قمم مقيسة من الملف، والملوّن منها ما تم تشغيله */
+.mj-wave {
+  flex: 1; display: flex; align-items: center; gap: 3px;
+  height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
+}
+.mj-wave:disabled { cursor: not-allowed; opacity: 0.5; }
 .mj-wave i {
-  flex: 1; border-radius: 2px; height: var(--mj-h);
-  background: linear-gradient(180deg, var(--mj-comet-cyan), var(--mj-orbit-blue));
-  animation: mjWave 1.4s ease-in-out infinite alternate;
-  animation-delay: var(--mj-d);
+  flex: 1; border-radius: 2px; height: var(--mj-h); min-height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.15s ease;
 }
-@keyframes mjWave { from { transform: scaleY(0.4); } to { transform: scaleY(1); } }
-.mj-reader-audio small { color: var(--mj-dim); font-size: 10px; }
+.mj-wave i.is-played {
+  background: linear-gradient(180deg, var(--mj-comet-cyan), var(--mj-orbit-blue));
+}
+.mj-reader-audio small {
+  flex: 0 0 auto; color: var(--mj-dim); font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
 .mj-modes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 26px 0 0; }
 .mj-mode {
   display: flex; align-items: flex-start; gap: 11px; padding: 14px;
@@ -657,7 +687,10 @@ body.mj-nav-open { overflow: hidden; }
 /* ---------- age tracks ---------- */
 .mj-age-switch {
   display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-  margin: 0 auto 34px; padding: 6px; border-radius: 999px; width: max-content;
+  margin: 0 auto 34px; padding: 6px; border-radius: 999px;
+  /* max-content وحده يثبّت العرض على 459px فيتجاوز الشاشات الضيقة،
+     وmax-width يسمح للأزرار بالالتفاف بدل الخروج عن الصفحة */
+  width: max-content; max-width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04);
 }
 .mj-age-switch button {
@@ -707,7 +740,7 @@ body.mj-nav-open { overflow: hidden; }
 .mj-sample img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
 .mj-sample div { padding: 9px 10px; }
 .mj-sample b { display: block; font-size: 11px; font-weight: 600; line-height: 1.4; }
-.mj-sample small { color: var(--mj-dim); font-size: 9.5px; }
+.mj-sample small { color: var(--mj-dim); font-size: 10px; }
 .mj-track--preschool { --mj-tc: #ffd34d; --mj-tglow: rgba(255, 211, 77, 0.18); }
 .mj-track--kids { --mj-tc: #00d6f5; --mj-tglow: rgba(0, 214, 245, 0.18); }
 .mj-track--junior { --mj-tc: #a98bff; --mj-tglow: rgba(106, 61, 242, 0.24); }
@@ -773,8 +806,9 @@ body.mj-nav-open { overflow: hidden; }
 .mj-flow { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 48px; }
 .mj-flow-step { position: relative; padding: 0 16px; text-align: center; }
 .mj-flow-step:not(:last-child)::after {
-  content: ""; position: absolute; top: 29px; right: calc(50% + 34px);
-  width: calc(100% - 68px); height: 1px; transform: translateX(-100%);
+  /* منطقي لا فيزيائي: يمتد من الدائرة نحو الخطوة التالية في RTL و LTR */
+  content: ""; position: absolute; top: 29px; inset-inline-start: calc(50% + 34px);
+  width: calc(100% - 68px); height: 1px;
   background: linear-gradient(90deg, rgba(0, 214, 245, 0.1), rgba(0, 214, 245, 0.6), rgba(0, 214, 245, 0.1));
 }
 .mj-flow-num {
@@ -856,6 +890,11 @@ body.mj-nav-open { overflow: hidden; }
   margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--mj-dim); font-size: 11px;
 }
+/* المشغّل داخل بطاقة اللغات على سطح أغمق، فيخفّ إطاره ليندمج */
+.mj-lang-out .mj-reader-audio {
+  margin-top: 14px; padding: 10px 12px;
+  border-color: rgba(255, 255, 255, 0.07); background: rgba(255, 255, 255, 0.035);
+}
 .mj-lang-hint { margin: 18px 0 0; color: var(--mj-moon-gray); font-size: 12.5px; line-height: 1.85; }
 .mj-inline-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 
@@ -879,7 +918,7 @@ body.mj-nav-open { overflow: hidden; }
 .mj-store:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.24); }
 .mj-store .mj-icon { width: 22px; height: 22px; }
 .mj-store b { display: block; font-size: 13px; font-weight: 600; line-height: 1.2; }
-.mj-store small { color: var(--mj-dim); font-size: 9.5px; }
+.mj-store small { color: var(--mj-dim); font-size: 10px; }
 .mj-qr-box {
   display: flex; align-items: center; gap: 14px; padding: 13px 16px;
   border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px;
@@ -953,13 +992,13 @@ body.mj-nav-open { overflow: hidden; }
 }
 .mj-save {
   padding: 2px 7px; border-radius: 999px; background: rgba(34, 184, 120, 0.18);
-  color: #9af0c7; font-size: 9.5px; font-weight: 600;
+  color: #9af0c7; font-size: 10px; font-weight: 600;
 }
 .mj-billing button[aria-pressed="true"] .mj-save {
   background: rgba(16, 22, 47, 0.16); color: #10162f;
 }
 .mj-currency {
-  min-height: 40px; padding: 0 14px; border-radius: 999px;
+  min-height: 44px; padding: 0 14px; border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04);
   color: var(--mj-soft-white); font-size: 12.5px;
 }
@@ -977,7 +1016,8 @@ body.mj-nav-open { overflow: hidden; }
   box-shadow: 0 26px 66px rgba(0, 0, 0, 0.42), 0 0 40px rgba(255, 211, 77, 0.1);
 }
 .mj-plan-flag {
-  position: absolute; top: 0; left: 0; padding: 6px 14px; border-radius: 0 0 12px 0;
+  position: absolute; top: 0; inset-inline-end: 0; padding: 6px 14px;
+  border-radius: 0; border-end-start-radius: 12px;
   background: linear-gradient(90deg, #ffd34d, #ffb52e); color: var(--mj-ink);
   font-size: 10.5px; font-weight: 700;
 }
@@ -1250,6 +1290,37 @@ body.mj-nav-open { overflow: hidden; }
 @media (max-width: 580px) {
   .mj-landing { --mj-header-h: 64px; }
   .mj-container { width: min(100% - 28px, var(--mj-container)); }
+  /* رفع أصغر المقاسات على الهاتف: 9.5px غير مقروء على شاشة صغيرة */
+  .mj-badge { font-size: 11px; }
+  .mj-poster-meta { font-size: 11.5px; }
+  .mj-brand-name small { font-size: 9px; }
+  .mj-dash-mini figcaption,
+  .mj-identity-posters figcaption { font-size: 11.5px; }
+  .mj-sample small { font-size: 11px; }
+  .mj-reader-audio small { font-size: 11px; }
+  .mj-store small { font-size: 11px; }
+  .mj-device small { font-size: 11px; }
+  .mj-copyright { font-size: 11px; }
+  .mj-plan-note { font-size: 11.5px; }
+  .mj-universe-step small,
+  .mj-review-who small { font-size: 11.5px; }
+  .mj-save { font-size: 11px; }
+  .mj-plan-flag { font-size: 11.5px; }
+  /* الكوكب 58px فقط على الهاتف، فأي نص مقروء داخله يفيض.
+     الاسم يظهر كبيرًا في البانل عند الاختيار، وقارئ الشاشة يقرأه من alt الصورة. */
+  .mj-planet-name { display: none; }
+  .mj-dash-bar span { font-size: 11px; }
+  .mj-lang-src { font-size: 11.5px; }
+  .mj-qr-box p,
+  .mj-float { font-size: 11.5px; }
+  .mj-eyebrow { font-size: 11.5px; }
+  .mj-review-tag { font-size: 11.5px; }
+  .mj-mode span,
+  .mj-spec span,
+  .mj-float span,
+  .mj-device small,
+  .mj-store small,
+  .mj-wpick span { font-size: 11.5px; }
   .mj-section { padding: 64px 0; }
   .mj-hero { padding-top: 104px; }
   .mj-hero h1 { font-size: clamp(30px, 9.5vw, 44px); }
@@ -1282,6 +1353,47 @@ body.mj-nav-open { overflow: hidden; }
   .mj-footer-meta { flex-direction: column; align-items: flex-start; }
 }
 
+/* ==========================================================================
+   نطاق اللمس: كل عرض تظهر فيه قائمة البرجر (‏≤860px) يُعامل كجهاز لمس،
+   فتُرفع أهداف اللمس إلى 44px والنصوص الصغيرة إلى 11px على الأقل.
+   تُستثنى الكواكب لأنها دوائر بنسبة أبعاد ثابتة يفسدها min-height.
+   ========================================================================== */
+@media (max-width: 860px) {
+  .mj-poster-actions a,
+  .mj-footer-col a,
+  .mj-footer-select,
+  .mj-faq > summary,
+  .mj-compare > summary,
+  .mj-age-switch button,
+  .mj-seg button,
+  .mj-billing button,
+  .mj-tab,
+  .mj-currency,
+  .mj-pillar-link { min-height: 44px; }
+  .mj-footer-col a { display: flex; align-items: center; }
+  .mj-social a { width: 44px; height: 44px; }
+
+  .mj-badge { font-size: 11px; }
+  .mj-poster-meta,
+  .mj-poster-meta span { font-size: 11.5px; }
+  .mj-brand-name small,
+  .mj-planet-name,
+  .mj-sample small,
+  .mj-store small,
+  .mj-save,
+  .mj-wpick span,
+  .mj-reader-audio small,
+  .mj-dash-bar span,
+  .mj-dash-mini figcaption,
+  .mj-identity-posters figcaption,
+  .mj-device small,
+  .mj-plan-note,
+  .mj-plan-flag,
+  .mj-review-tag,
+  .mj-review-who small,
+  .mj-copyright { font-size: 11px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mj-landing *,
   .mj-landing *::before,
@@ -1291,4 +1403,86 @@ body.mj-nav-open { overflow: hidden; }
     transition-duration: 0.01ms !important;
   }
   .mj-reveal { opacity: 1; transform: none; }
+}
+
+/* ---------- partnerships ---------- */
+.mj-landing .mj-partners {
+  display: grid; grid-template-columns: 1fr 1.05fr; gap: 28px; align-items: start;
+  margin-top: 44px;
+}
+.mj-landing .mj-partner-audiences { display: grid; gap: 14px; }
+.mj-landing .mj-partner-card {
+  display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start;
+  padding: 18px; border: 1px solid var(--mj-border-soft); border-radius: var(--mj-r-lg);
+  background: var(--mj-card);
+}
+.mj-landing .mj-partner-ico {
+  display: inline-flex; width: 44px; height: 44px; align-items: center; justify-content: center;
+  border-radius: 13px; background: rgba(0, 214, 245, 0.12); color: var(--mj-comet-cyan);
+}
+.mj-landing .mj-partner-ico svg { width: 21px; height: 21px; }
+.mj-landing .mj-partner-card h3 { margin: 2px 0 6px; font-size: 15px; font-weight: 700; color: #fff; }
+.mj-landing .mj-partner-card p { margin: 0; font-size: 13px; line-height: 1.75; color: var(--mj-moon-gray); }
+
+.mj-landing .mj-partner-form-wrap {
+  padding: 24px; border: 1px solid var(--mj-border-soft); border-radius: var(--mj-r-xl);
+  background: var(--mj-card); box-shadow: var(--mj-shadow);
+}
+.mj-landing .mj-partner-form h3 { margin: 0 0 6px; font-size: 19px; font-weight: 800; color: #fff; }
+.mj-landing .mj-partner-lead { margin: 0 0 18px; font-size: 13px; line-height: 1.75; color: var(--mj-moon-gray); }
+.mj-landing .mj-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mj-landing .mj-field { display: grid; gap: 7px; margin-bottom: 14px; }
+.mj-landing .mj-field label { font-size: 12.5px; font-weight: 600; color: rgba(242, 246, 255, 0.86); }
+/* حجم صريح: small الافتراضي 0.8em ينزل إلى 10.4px وهو تحت حدّ القراءة */
+.mj-landing .mj-field label small { font-size: 11.5px; font-weight: 400; color: var(--mj-dim); }
+.mj-landing .mj-field input,
+.mj-landing .mj-field select,
+.mj-landing .mj-field textarea {
+  width: 100%; min-height: 44px; padding: 11px 13px; box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.12); border-radius: var(--mj-r-sm);
+  background: rgba(255, 255, 255, 0.04); color: #fff;
+  font-family: inherit; font-size: 13.5px; line-height: 1.6;
+  transition: border-color 0.2s, background 0.2s;
+}
+.mj-landing .mj-field textarea { min-height: 118px; resize: vertical; }
+.mj-landing .mj-field input::placeholder,
+.mj-landing .mj-field textarea::placeholder { color: var(--mj-dim); }
+.mj-landing .mj-field input:focus-visible,
+.mj-landing .mj-field select:focus-visible,
+.mj-landing .mj-field textarea:focus-visible {
+  outline: 2px solid var(--mj-comet-cyan); outline-offset: 1px;
+  border-color: transparent; background: rgba(255, 255, 255, 0.06);
+}
+.mj-landing .mj-field-error {
+  margin: 0 0 14px; padding: 10px 13px; border-radius: var(--mj-r-sm);
+  border: 1px solid rgba(255, 107, 107, 0.35); background: rgba(255, 107, 107, 0.1);
+  color: #ffc9c9; font-size: 12.5px; line-height: 1.7;
+}
+.mj-landing .mj-partner-privacy {
+  margin: 14px 0 0; font-size: 11.5px; line-height: 1.75; color: var(--mj-dim); text-align: center;
+}
+/* الفخ مخفي بلا display:none حتى تملأه البوتات التي تقرأ الـDOM */
+.mj-landing .mj-honeypot {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+.mj-landing .mj-partner-done { padding: 26px 8px; text-align: center; }
+.mj-landing .mj-partner-done-ico {
+  display: inline-flex; width: 56px; height: 56px; align-items: center; justify-content: center;
+  margin-bottom: 16px; border-radius: 50%;
+  background: rgba(56, 217, 150, 0.14); color: var(--mj-success);
+}
+.mj-landing .mj-partner-done-ico svg { width: 26px; height: 26px; }
+.mj-landing .mj-partner-done h3 { margin: 0 0 8px; font-size: 19px; font-weight: 800; color: #fff; }
+.mj-landing .mj-partner-done p {
+  margin: 0 auto 20px; max-width: 42ch; font-size: 13.5px; line-height: 1.8; color: var(--mj-moon-gray);
+}
+
+@media (max-width: 980px) {
+  .mj-landing .mj-partners { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .mj-landing .mj-field-row { grid-template-columns: 1fr; gap: 0; }
+  .mj-landing .mj-partner-form-wrap { padding: 18px; }
+  .mj-landing .mj-partner-card { grid-template-columns: 1fr; }
 }

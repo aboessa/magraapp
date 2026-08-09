@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react'
 import { Ico } from '../icons'
-import { HERO_NOTES, HERO_SLIDES } from '../data'
+import { HERO_STAGE } from '../structure'
+import { useLandingContent } from '../useContent'
 
 const SLIDE_MS = 7000
-
-const WAVE_BARS = [40, 75, 55, 95, 60, 85, 45, 70, 50, 90, 35, 65]
 
 export function Hero({ reduceMotion }: { reduceMotion: boolean }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
+  const { copy, heroSlides } = useLandingContent()
+  const hero = copy.hero
 
   useEffect(() => {
     if (reduceMotion || paused) return
     const timer = window.setInterval(() => {
-      setIndex((current) => (current + 1) % HERO_SLIDES.length)
+      setIndex((current) => (current + 1) % heroSlides.length)
     }, SLIDE_MS)
     return () => window.clearInterval(timer)
-  }, [reduceMotion, paused])
+  }, [reduceMotion, paused, heroSlides.length])
 
-  const slide = HERO_SLIDES[index]
+  const slide = heroSlides[index] ?? heroSlides[0]
 
   return (
     <section
@@ -40,7 +41,7 @@ export function Hero({ reduceMotion }: { reduceMotion: boolean }) {
 
       <div className="mj-container mj-hero-grid">
         <div className="mj-reveal">
-          <div className="mj-eyebrow"><span className="mj-dot" />منصة عربية آمنة للأطفال من 3 إلى 12 سنة</div>
+          <div className="mj-eyebrow"><span className="mj-dot" />{hero.eyebrow}</div>
 
           <div className="mj-slides" aria-live="polite">
             {/* المفتاح يعيد تشغيل حركة الظهور عند تغيير الشريحة */}
@@ -52,17 +53,17 @@ export function Hero({ reduceMotion }: { reduceMotion: boolean }) {
 
           <div className="mj-hero-actions">
             <a className="mj-btn mj-btn-primary mj-btn-lg" href="#start">
-              ابدأ تجربتك المجانية
+              {hero.ctaPrimary}
               <Ico name="arrowStart" />
             </a>
             <a className="mj-btn mj-btn-ghost mj-btn-lg" href="#showcase">
-              استكشف محتوى مجرة
+              {hero.ctaSecondary}
               <Ico name="play" />
             </a>
           </div>
 
           <p className="mj-hero-note">
-            {HERO_NOTES.map((note) => (
+            {hero.notes.map((note) => (
               <span key={note}>
                 <span className="mj-tick"><Ico name="check" /></span>
                 {note}
@@ -70,14 +71,14 @@ export function Hero({ reduceMotion }: { reduceMotion: boolean }) {
             ))}
           </p>
 
-          <div className="mj-hero-dots" role="tablist" aria-label="شرائح العرض">
-            {HERO_SLIDES.map((item, i) => (
+          <div className="mj-hero-dots" role="tablist" aria-label={hero.dotsAria}>
+            {heroSlides.map((item, i) => (
               <button
                 key={item.background}
                 type="button"
                 role="tab"
                 aria-current={i === index}
-                aria-label={`الشريحة ${i + 1}: ${item.title}`}
+                aria-label={hero.slideAria(i + 1, item.title)}
                 onClick={() => setIndex(i)}
               />
             ))}
@@ -88,22 +89,16 @@ export function Hero({ reduceMotion }: { reduceMotion: boolean }) {
           <div className="mj-stage">
             <div>
               <div className="mj-tv">
-                <img
-                  src="/landing/series/banners/kids-explorers-adventures-banner.webp"
-                  alt="مشهد من سلسلة مغامرات المستكشفين معروضًا على شاشة التلفزيون"
-                />
+                <img src={HERO_STAGE.tv} alt={hero.tvAlt} />
               </div>
               <span className="mj-tv-stand" aria-hidden="true" />
             </div>
 
             <div className="mj-tablet">
-              <img src="/landing/books/covers/book-arabic-letters-cover.webp" alt="قصة مصورة معروضة على تابلت" />
+              <img src={HERO_STAGE.tablet} alt={hero.tabletAlt} />
             </div>
             <div className="mj-phone">
-              <img
-                src="/landing/series/posters/preschool-luna-discovers-words-poster.webp"
-                alt="ملصق سلسلة لونا تكتشف الكلمات على الهاتف"
-              />
+              <img src={HERO_STAGE.phone} alt={hero.phoneAlt} />
             </div>
 
             <div className="mj-float mj-float--a">
@@ -111,8 +106,8 @@ export function Hero({ reduceMotion }: { reduceMotion: boolean }) {
                 <Ico name="star" />
               </span>
               <span>
-                <strong>ابدأ على التابلت</strong>
-                <span>وأكمل على التلفزيون من الصفحة نفسها</span>
+                <strong>{hero.floatA.title}</strong>
+                <span>{hero.floatA.text}</span>
               </span>
             </div>
             <div className="mj-float mj-float--b">
@@ -120,24 +115,13 @@ export function Hero({ reduceMotion }: { reduceMotion: boolean }) {
                 <Ico name="report" />
               </span>
               <span>
-                <strong>تقرير أسبوعي للأهل</strong>
-                <span>تقدم القراءة والمهارات بوضوح</span>
+                <strong>{hero.floatB.title}</strong>
+                <span>{hero.floatB.text}</span>
               </span>
             </div>
           </div>
         </div>
       </div>
     </section>
-  )
-}
-
-/** موجة صوتية توضيحية تستخدمها بطاقة القارئ في قسم كوكب القصص */
-export function AudioWave() {
-  return (
-    <span className="mj-wave" aria-hidden="true">
-      {WAVE_BARS.map((height, i) => (
-        <i key={`${height}-${i}`} style={{ '--mj-h': `${height}%`, '--mj-d': `${i * 0.1}s` } as React.CSSProperties} />
-      ))}
-    </span>
   )
 }

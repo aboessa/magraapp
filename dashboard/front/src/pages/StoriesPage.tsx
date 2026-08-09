@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { EmptyState, LoadingState } from '../components/PageState'
 import { StatusBadge } from '../components/StatusBadge'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
+import { adminPath } from '../lib/adminPath'
 import { statusLabels } from '../lib/labels'
 import type { AssetRecord, ContentStatus, SeriesRecord, StoryDetail, StoryPageRecord, StoryRecord, StoryType, VisualStyleRecord } from '../types/api'
 
@@ -38,21 +40,25 @@ function StoryPageEditor({ story, page, language, imageAssets, audioAssets, onRe
 
 export function StoriesPage() {
   const { locale } = usePreferences(); const ar = locale === 'ar'
+  const { id: routeStoryId } = useParams()
+  const navigate = useNavigate()
   const [items, setItems] = useState<StoryRecord[]>([]); const [series, setSeries] = useState<SeriesRecord[]>([]); const [styles, setStyles] = useState<VisualStyleRecord[]>([]); const [query, setQuery] = useState(''); const [typeFilter, setTypeFilter] = useState(''); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [open, setOpen] = useState(false); const [editing, setEditing] = useState<StoryRecord | null>(null); const [form, setForm] = useState<StoryForm>(initial); const [saving, setSaving] = useState(false); const [detail, setDetail] = useState<StoryDetail | null>(null); const [detailLoading, setDetailLoading] = useState(false); const [language, setLanguage] = useState('ar'); const [imageAssets, setImageAssets] = useState<AssetRecord[]>([]); const [audioAssets, setAudioAssets] = useState<AssetRecord[]>([])
   const load = useCallback(async () => { setLoading(true); setError(''); try { const [stories, seriesResponse, styleResponse] = await Promise.all([api.stories({ q: query, type: typeFilter }), api.series({ status: 'all', limit: 100 }), api.visualStyles()]); setItems(stories.data); setSeries(seriesResponse.data.filter((item) => item.status !== 'archived')); setStyles(styleResponse.data) } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل القصص' : 'Unable to load stories') } finally { setLoading(false) } }, [ar, query, typeFilter])
   useEffect(() => { const timer = setTimeout(() => void load(), 180); return () => clearTimeout(timer) }, [load])
   const loadDetail = useCallback(async (id = detail?.id) => { if (!id) return; setDetailLoading(true); try { const [storyResponse, images, audio] = await Promise.all([api.story(id), api.assets({ status: 'ready', kind: 'image', limit: 200 }), api.assets({ status: 'ready', kind: 'audio', limit: 200 })]); setDetail(storyResponse.data); setImageAssets(images.data); setAudioAssets(audio.data); if (!storyResponse.data.languages.includes(language)) setLanguage(storyResponse.data.default_language) } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل القصة' : 'Unable to load story') } finally { setDetailLoading(false) } }, [ar, detail?.id, language])
+  useEffect(() => { if (routeStoryId && routeStoryId !== detail?.id) void loadDetail(routeStoryId) }, [detail?.id, loadDetail, routeStoryId])
   function create() { setEditing(null); setForm({ ...initial, series_id: series[0]?.id || '', visual_style_id: styles[0]?.id || '' }); setOpen(true) }
   function edit(item: StoryRecord) { setEditing(item); setForm({ title_ar: item.title_ar, slug: item.slug, series_id: item.series_id ?? '', type: item.type, age_min: String(item.age_min), age_max: String(item.age_max), visual_style_id: item.visual_style_id ?? '', languages: item.languages.join(','), description_ar: item.description_ar ?? '', status: item.status }); setOpen(true) }
   async function submit(event: FormEvent) { event.preventDefault(); if (!form.title_ar.trim()) return; setSaving(true); const payload = { ...form, series_id: form.series_id || null, visual_style_id: form.visual_style_id || null, age_min: Number(form.age_min), age_max: Number(form.age_max), languages: form.languages.split(',').map((item) => item.trim()).filter(Boolean), default_language: form.languages.split(',')[0]?.trim() || 'ar' }; try { if (editing) await api.updateStory(editing.id, payload); else await api.createStory(payload); setOpen(false); await load() } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر حفظ القصة' : 'Unable to save story') } finally { setSaving(false) } }
-  async function selectStory(item: StoryRecord) { setDetail(null); setLanguage(item.default_language); await loadDetail(item.id) }
+  function selectStory(item: StoryRecord) { setLanguage(item.default_language); navigate(adminPath(`stories/${item.id}`)) }
   async function addPage() { if (!detail) return; await api.createStoryPage(detail.id, { layout: 'full_bleed' }); await loadDetail(detail.id) }
   async function archive(item: StoryRecord) { if (!window.confirm(ar ? 'أرشفة القصة؟' : 'Archive story?')) return; await api.archiveStory(item.id); await load() }
+  if (routeStoryId && detailLoading && !detail) return <LoadingState label={ar ? 'جارٍ تحميل القصة...' : 'Loading story...'} />
   if (detail) return (
     <div className="page-stack story-editor--three">
       <section className="page-intro">
         <div>
-          <button className="text-link story-back" type="button" onClick={() => { setDetail(null); void load() }}>← {ar ? 'كل القصص' : 'All stories'}</button>
+          <button className="text-link story-back" type="button" onClick={() => { setDetail(null); navigate(adminPath('stories')) }}>← {ar ? 'كل القصص' : 'All stories'}</button>
           <h2>{detail.title_ar}</h2>
           <p>{typeLabels[locale][detail.type]} — {detail.pages.length} {ar ? 'صفحة' : 'pages'} — {detail.visual_style_name || (ar ? 'بدون استايل' : 'No style')}</p>
         </div>
@@ -65,22 +71,21 @@ export function StoriesPage() {
 
       <div className="editor-summary">
         <StatusBadge status={detail.status} />
-        <span>{ar ? 'اسحب لإعادة الترتيب • ارفع صور/أصوات جماعياً • عاين قبل النشر' : 'Drag to reorder • Bulk upload • Preview before publish'}</span>
+        <span>{ar ? 'ترتيب الصفحات الحالي • رفع صور جماعي' : 'Current page order • Bulk image upload'}</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           <label className="button button--ghost file-button" style={{ fontSize: 12 }}>
             <Icon name="upload" size={13}/>{ar ? 'رفع صور جماعي' : 'Bulk images'}
             <input type="file" accept="image/*" multiple onChange={async (e) => { const files = Array.from(e.target.files || []); for (let i = 0; i < files.length; i++) { const f = files[i]; const created = await api.createAsset({ title_ar: `${detail.title_ar} - صورة ${detail.pages.length + i + 1}`, kind: 'image', source: 'upload', status: 'ready', original_filename: f.name, mime_type: f.type, visibility: 'private' }); await api.uploadAssetFile(created.data.id, f); await api.createStoryPage(detail.id, { layout: 'full_bleed', image_asset_id: created.data.id }); } await loadDetail(detail.id); (e.target as HTMLInputElement).value = '' }} />
           </label>
-          <button className="button button--ghost" type="button" onClick={() => window.alert(ar ? 'اسحب ZIP: images/page_*.webp + audio/ar/*.m4a + story.xlsx' : 'Drop ZIP with images/audio/xlsx')}><Icon name="archive" size={13}/>{ar ? 'رفع ZIP' : 'ZIP'}</button>
         </div>
       </div>
 
       <div className="story-editor-layout">
-        {/* Left: Page list with drag */}
+        {/* Left: Page list */}
         <aside className="story-editor__nav">
           <div className="story-editor__nav-header">
             <strong>{ar ? 'الصفحات' : 'Pages'} ({detail.pages.length})</strong>
-            <span style={{ fontSize: 11, color: '#64748b' }}>{ar ? 'اسحب للترتيب' : 'Drag to reorder'}</span>
+            <span style={{ fontSize: 11, color: '#64748b' }}>{ar ? 'الترتيب الحالي' : 'Current order'}</span>
           </div>
           <div className="story-pages-nav">
             {detail.pages.map((p, idx) => (
@@ -109,7 +114,7 @@ export function StoriesPage() {
               <div><small>{language.toUpperCase()} صوت</small><strong>{detail.pages.filter(p => p.localizations.find(l => l.language === language)?.narration_asset_id).length} / {detail.pages.length}</strong></div>
             </div>
             <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-              <button className="button button--primary" style={{ flex: 1 }} onClick={() => window.alert(ar ? 'معاينة: موبايل/تابلت/TV' : 'Preview: mobile/tablet/TV')}>👁 {ar ? 'معاينة' : 'Preview'}</button>
+              <span className="data-unavailable">{ar ? 'معاينة الأجهزة غير متاحة بعد' : 'Device preview is not available yet'}</span>
               <button className="button button--ghost" onClick={() => navigator.clipboard.writeText(JSON.stringify(detail, null, 2))}>JSON</button>
             </div>
           </div>

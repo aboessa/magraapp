@@ -4,7 +4,7 @@ export type IconName =
   | 'children' | 'devices' | 'subscriptions' | 'rights' | 'reviews'
   | 'search' | 'sun' | 'moon' | 'menu' | 'close' | 'plus' | 'edit'
   | 'archive' | 'refresh' | 'arrow' | 'sparkles' | 'logout' | 'play' | 'bell'
-  | 'media' | 'styles' | 'upload' | 'link'
+  | 'media' | 'styles' | 'upload' | 'link' | 'settings' | 'globe'
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }
@@ -45,5 +45,7 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
     case 'styles': return <svg {...common}><path d="M12 3a9 9 0 1 0 0 18h1.5a2 2 0 0 0 0-4H12a1.5 1.5 0 0 1 0-3h2a7 7 0 0 0-2-11Z"/><circle cx="7.5" cy="10" r=".7" fill="currentColor"/><circle cx="10" cy="6.8" r=".7" fill="currentColor"/><circle cx="15" cy="7.5" r=".7" fill="currentColor"/></svg>
     case 'upload': return <svg {...common}><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
     case 'link': return <svg {...common}><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg>
+    case 'settings': return <svg {...common}><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>
+    case 'globe': return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/></svg>
   }
 }

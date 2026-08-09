@@ -1,35 +1,36 @@
 import { useEffect, useRef, useState } from 'react'
 import logo from '../../assets/majarra-logo.webp'
 import { Ico } from '../icons'
-import { APP_URL, MEGA_COLUMNS, NAV_LINKS } from '../data'
-
-const LANGS = [
-  { code: 'ar', short: 'العربية', abbr: 'العربية', available: true },
-  { code: 'en', short: 'English', abbr: 'EN', available: false },
-  { code: 'fr', short: 'Français', abbr: 'FR', available: false },
-] as const
+import { LANDING_LOCALES, useLandingLocale } from '../i18n'
+import { APP_URL } from '../structure'
+import { useCopy, useLandingContent } from '../useContent'
 
 export function Brand({ onNavigate }: { onNavigate?: () => void }) {
+  const copy = useCopy()
   return (
-    <a className="mj-brand" href="#top" aria-label="مجرة، الصفحة الرئيسية" onClick={onNavigate}>
+    <a className="mj-brand" href="#top" aria-label={copy.common.brandLabel} onClick={onNavigate}>
       <span className="mj-brand-mark"><img src={logo} alt="" /></span>
       <span className="mj-brand-name">مجرة<small>Majarra</small></span>
     </a>
   )
 }
 
-function LangSwitch({ compact }: { compact?: boolean }) {
+export function LangSwitch({ compact }: { compact?: boolean }) {
+  const { locale, setLocale } = useLandingLocale()
+  const copy = useCopy()
+
   return (
-    <div className="mj-lang" role="group" aria-label="اختيار اللغة">
-      {LANGS.map((lang) => (
+    <div className="mj-lang" role="group" aria-label={copy.common.langAria}>
+      {LANDING_LOCALES.map((entry) => (
         <button
-          key={lang.code}
+          key={entry.code}
           type="button"
-          aria-pressed={lang.available}
-          disabled={!lang.available}
-          title={lang.available ? lang.short : 'قريبًا'}
+          lang={entry.htmlLang}
+          aria-pressed={entry.code === locale}
+          title={entry.native}
+          onClick={() => setLocale(entry.code)}
         >
-          {compact ? lang.abbr : lang.short}
+          {compact ? entry.short : entry.native}
         </button>
       ))}
     </div>
@@ -41,6 +42,7 @@ export function SiteHeader() {
   const [navOpen, setNavOpen] = useState(false)
   const [megaOpen, setMegaOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
+  const { copy, nav, mega } = useLandingContent()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
@@ -90,8 +92,8 @@ export function SiteHeader() {
       <div className="mj-container mj-header-inner">
         <Brand onNavigate={closeAll} />
 
-        <nav className={navOpen ? 'mj-nav is-open' : 'mj-nav'} id="mj-nav" aria-label="التنقل الرئيسي">
-          <a className="mj-nav-link" href={NAV_LINKS[0].href} onClick={closeAll}>{NAV_LINKS[0].label}</a>
+        <nav className={navOpen ? 'mj-nav is-open' : 'mj-nav'} id="mj-nav" aria-label={copy.nav.mainAria}>
+          <a className="mj-nav-link" href={nav[0].href} onClick={closeAll}>{nav[0].label}</a>
 
           <button
             className="mj-nav-link"
@@ -100,16 +102,16 @@ export function SiteHeader() {
             aria-controls="mj-mega"
             onClick={() => setMegaOpen((open) => !open)}
           >
-            اكتشف
+            {copy.nav.discover}
             <Ico name="chevronDown" className="mj-caret" />
           </button>
 
           {/* داخل الـnav حتى تعمل ضمن القائمة المنسدلة على الموبايل */}
           {megaOpen && (
-            <div className="mj-mega" id="mj-mega" role="region" aria-label="قائمة اكتشف">
+            <div className="mj-mega" id="mj-mega" role="region" aria-label={copy.nav.discoverAria}>
               <div className="mj-mega-inner">
-                {MEGA_COLUMNS.map((column) => (
-                  <div className="mj-mega-col" key={column.title}>
+                {mega.map((column) => (
+                  <div className="mj-mega-col" key={column.key}>
                     <h3><Ico name={column.icon} />{column.title}</h3>
                     {column.links.map((link) => (
                       <a href={link.href} key={link.label} onClick={closeAll}>{link.label}</a>
@@ -120,26 +122,26 @@ export function SiteHeader() {
             </div>
           )}
 
-          {NAV_LINKS.slice(1).map((link) => (
-            <a className="mj-nav-link" href={link.href} key={link.href} onClick={closeAll}>{link.label}</a>
+          {nav.slice(1).map((link) => (
+            <a className="mj-nav-link" href={link.href} key={link.key} onClick={closeAll}>{link.label}</a>
           ))}
 
           <div className="mj-nav-extra">
             <LangSwitch />
-            <a className="mj-btn mj-btn-ghost" href={APP_URL}>تسجيل الدخول</a>
+            <a className="mj-btn mj-btn-ghost" href={APP_URL}>{copy.common.login}</a>
           </div>
         </nav>
 
         <div className="mj-header-actions">
           <LangSwitch compact />
-          <a className="mj-login" href={APP_URL}>تسجيل الدخول</a>
-          <a className="mj-btn mj-btn-primary" href="#start">ابدأ مجانًا</a>
+          <a className="mj-login" href={APP_URL}>{copy.common.login}</a>
+          <a className="mj-btn mj-btn-primary" href="#start">{copy.common.startFree}</a>
           <button
             className="mj-burger"
             type="button"
             aria-expanded={navOpen}
             aria-controls="mj-nav"
-            aria-label={navOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+            aria-label={navOpen ? copy.common.menuClose : copy.common.menuOpen}
             onClick={() => setNavOpen((open) => !open)}
           >
             <span /><span /><span />
