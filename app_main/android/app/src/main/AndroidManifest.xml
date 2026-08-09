@@ -3,6 +3,8 @@
     <!-- Needed to distinguish "offline" from "server error" before playback and
          to decide whether a download can start. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Biometric parent-area unlock (local convenience over the server PIN). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <uses-feature
         android:name="android.software.leanback"

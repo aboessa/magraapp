@@ -312,4 +312,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get authExpired => 'انتهت الجلسة. سجّل الدخول مجددًا';
+
+  @override
+  String get biometricReason => 'أكّد هويتك لفتح منطقة ولي الأمر';
+
+  @override
+  String get biometricEnableTitle => 'تفعيل الدخول بالبصمة';
+
+  @override
+  String get biometricEnablePrompt =>
+      'هل تريد استخدام البصمة أو Face ID لفتح منطقة ولي الأمر على هذا الجهاز بدل إدخال الرمز في كل مرة؟';
+
+  @override
+  String get notNow => 'ليس الآن';
+
+  @override
+  String get enable => 'تفعيل';
 }

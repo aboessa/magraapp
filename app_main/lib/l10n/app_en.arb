@@ -95,5 +95,10 @@
   "offlineTitle": "No connection",
   "offlineMessage": "Check your internet and try again",
   "contentUnavailable": "Content is currently unavailable",
-  "authExpired": "Session expired. Please sign in again"
+  "authExpired": "Session expired. Please sign in again",
+  "biometricReason": "Confirm your identity to open the parent area",
+  "biometricEnableTitle": "Enable biometric unlock",
+  "biometricEnablePrompt": "Use fingerprint or Face ID to open the parent area on this device instead of entering the code each time?",
+  "notNow": "Not now",
+  "enable": "Enable"
 }

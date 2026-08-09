@@ -4,11 +4,13 @@ import android.app.UiModeManager
 import android.content.Context
 import android.content.res.Configuration
 import android.view.WindowManager
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity() {
+// FlutterFragmentActivity (rather than FlutterActivity) is required by the
+// local_auth plugin: the biometric prompt is a FragmentActivity-hosted dialog.
+class MainActivity : FlutterFragmentActivity() {
     private val deviceChannel = "com.majarra/device"
 
     /// Toggles FLAG_SECURE, which blocks screenshots, screen recording, and

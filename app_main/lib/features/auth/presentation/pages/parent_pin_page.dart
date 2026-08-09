@@ -7,6 +7,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../l10n/app_localizations_ar.dart';
+import '../../../../core/security/biometric_auth.dart';
 import '../../../home/application/home_providers.dart';
 import '../../../home/data/majarra_api_client.dart';
 import '../../data/parent_pin_store.dart';
@@ -36,6 +37,15 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
   String? _notice;
   DateTime? _lockedUntil;
 
+  bool _biometricEnabled = false;
+  BiometricAvailability _biometricAvailability =
+      BiometricAvailability.unsupported;
+
+  bool get _canUseBiometric =>
+      !_isEnrolling &&
+      _biometricEnabled &&
+      _biometricAvailability == BiometricAvailability.available;
+
   @override
   void initState() {
     super.initState();
@@ -51,11 +61,76 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
 
   Future<void> _loadEnrolmentState() async {
     final hasPin = await _store.hasPin();
+    final biometricEnabled = await _store.isBiometricEnabled();
+    final availability =
+        await ref.read(biometricAuthenticatorProvider).availability();
     if (!mounted) return;
     setState(() {
       _isEnrolling = !hasPin;
+      _biometricEnabled = biometricEnabled;
+      _biometricAvailability = availability;
       _loading = false;
     });
+    // Offer a one-tap unlock immediately when the parent already opted in, so a
+    // returning parent does not have to reach for the button.
+    if (_canUseBiometric) {
+      // A microtask so the first frame paints before the system dialog appears.
+      Future.microtask(_unlockWithBiometric);
+    }
+  }
+
+  /// Unlocks the LOCAL gate with device biometrics.
+  ///
+  /// This does not call the server verify endpoint — biometrics cannot produce
+  /// the PIN. It grants entry to the parent surface only; any server-consequential
+  /// action there re-verifies the PIN against the backend on its own.
+  Future<void> _unlockWithBiometric() async {
+    if (_busy || _isLockedOut) return;
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final ok = await ref.read(biometricAuthenticatorProvider).authenticate(
+          localizedReason: l10n.biometricReason,
+        );
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (ok) {
+      context.go('/parent');
+    }
+    // A failed/cancelled biometric silently leaves the PIN field ready; no
+    // error, because cancelling is a legitimate choice, not a failure.
+  }
+
+  /// After a successful PIN entry, invites the parent to enable biometrics.
+  Future<void> _maybeOfferBiometricOptIn() async {
+    if (_biometricEnabled ||
+        _biometricAvailability != BiometricAvailability.available) {
+      return;
+    }
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
+    final enable = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.fingerprint_rounded, size: 32),
+        title: Text(l10n.biometricEnableTitle),
+        content: Text(l10n.biometricEnablePrompt),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.notNow),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.enable),
+          ),
+        ],
+      ),
+    );
+    if (enable == true) {
+      await _store.setBiometricEnabled(true);
+    }
   }
 
   Future<void> _submit() async {
@@ -119,6 +194,8 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
         if (!mounted) return;
         setState(() => _busy = false);
         _pin.clear();
+        await _maybeOfferBiometricOptIn();
+        if (!mounted) return;
         context.go('/parent');
         return;
       } on MajarraApiException catch (e) {
@@ -159,6 +236,8 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
     switch (outcome.result) {
       case ParentPinResult.success:
         _pin.clear();
+        await _maybeOfferBiometricOptIn();
+        if (!mounted) return;
         context.go('/parent');
       case ParentPinResult.wrongPin:
         _pin.clear();
@@ -315,23 +394,34 @@ class _ParentPinPageState extends ConsumerState<ParentPinPage> {
                                 ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      // Biometric unlock is deliberately disabled rather than
-                      // silently doing nothing: it needs the `local_auth`
-                      // package plus Android/iOS platform configuration, which
-                      // is out of scope for this stabilisation pass.
-                      OutlinedButton.icon(
-                        onPressed: null,
-                        icon: Icon(Icons.fingerprint_rounded, color: Colors.white.withValues(alpha: 0.38)),
-                        label: Text(
-                          'البصمة / Face ID — غير متاح بعد',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.38)),
+                      // Biometric unlock: shown as an active convenience only
+                      // when the parent has opted in on a capable device. It
+                      // unlocks the local gate; server-consequential parent
+                      // actions still re-verify the PIN with the backend.
+                      if (_canUseBiometric) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: (_isLockedOut || _busy)
+                              ? null
+                              : _unlockWithBiometric,
+                          icon: const Icon(
+                            Icons.fingerprint_rounded,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            'الدخول بالبصمة / Face ID',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.28),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
                         ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                      ),
+                      ],
                       const Spacer(),
                       Text(
                         'الرمز محفوظ مشفَّرًا على هذا الجهاز وتتم مزامنته مع الخادم عند تسجيل الدخول. '

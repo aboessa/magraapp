@@ -76,6 +76,7 @@ class ParentPinStore {
   static const _verifierKey = 'majarra_parent_pin_verifier';
   static const _failuresKey = 'majarra_parent_pin_failures';
   static const _lockedUntilKey = 'majarra_parent_pin_locked_until';
+  static const _biometricKey = 'majarra_parent_biometric_enabled';
 
   static const minPinLength = PinKdf.minPinLength;
   static const maxPinLength = PinKdf.maxPinLength;
@@ -158,6 +159,22 @@ class ParentPinStore {
     );
   }
 
+  /// Whether the parent opted in to unlocking the local gate with biometrics.
+  ///
+  /// Opt-in is only offered after a successful PIN verification, so enabling
+  /// this can never bypass the initial proof that the parent knows the PIN.
+  Future<bool> isBiometricEnabled() async {
+    return (await _store.read(key: _biometricKey)) == 'true';
+  }
+
+  Future<void> setBiometricEnabled(bool enabled) async {
+    if (enabled) {
+      await _store.write(key: _biometricKey, value: 'true');
+    } else {
+      await _store.delete(key: _biometricKey);
+    }
+  }
+
   /// Removes the enrolled PIN. Must be called on sign-out so a PIN from one
   /// account can never unlock another account's parent area.
   Future<void> clear() async {
@@ -165,6 +182,9 @@ class ParentPinStore {
     await _store.delete(key: _verifierKey);
     await _store.delete(key: _failuresKey);
     await _store.delete(key: _lockedUntilKey);
+    // The biometric opt-in is tied to the enrolled PIN: clearing one must clear
+    // the other, or a new account's PIN could be unlocked by the old opt-in.
+    await _store.delete(key: _biometricKey);
   }
 
   Future<DateTime?> _lockedUntil() async {

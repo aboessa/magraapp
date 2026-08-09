@@ -315,4 +315,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authExpired => 'Session expired. Please sign in again';
+
+  @override
+  String get biometricReason => 'Confirm your identity to open the parent area';
+
+  @override
+  String get biometricEnableTitle => 'Enable biometric unlock';
+
+  @override
+  String get biometricEnablePrompt =>
+      'Use fingerprint or Face ID to open the parent area on this device instead of entering the code each time?';
+
+  @override
+  String get notNow => 'Not now';
+
+  @override
+  String get enable => 'Enable';
 }

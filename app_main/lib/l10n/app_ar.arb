@@ -129,5 +129,10 @@
   "offlineTitle": "لا يوجد اتصال",
   "offlineMessage": "تحقق من الإنترنت وحاول مجددًا",
   "contentUnavailable": "المحتوى غير متاح حاليًا",
-  "authExpired": "انتهت الجلسة. سجّل الدخول مجددًا"
+  "authExpired": "انتهت الجلسة. سجّل الدخول مجددًا",
+  "biometricReason": "أكّد هويتك لفتح منطقة ولي الأمر",
+  "biometricEnableTitle": "تفعيل الدخول بالبصمة",
+  "biometricEnablePrompt": "هل تريد استخدام البصمة أو Face ID لفتح منطقة ولي الأمر على هذا الجهاز بدل إدخال الرمز في كل مرة؟",
+  "notNow": "ليس الآن",
+  "enable": "تفعيل"
 }

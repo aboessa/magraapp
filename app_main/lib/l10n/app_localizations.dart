@@ -673,6 +673,36 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'انتهت الجلسة. سجّل الدخول مجددًا'**
   String get authExpired;
+
+  /// No description provided for @biometricReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكّد هويتك لفتح منطقة ولي الأمر'**
+  String get biometricReason;
+
+  /// No description provided for @biometricEnableTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل الدخول بالبصمة'**
+  String get biometricEnableTitle;
+
+  /// No description provided for @biometricEnablePrompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد استخدام البصمة أو Face ID لفتح منطقة ولي الأمر على هذا الجهاز بدل إدخال الرمز في كل مرة؟'**
+  String get biometricEnablePrompt;
+
+  /// No description provided for @notNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس الآن'**
+  String get notNow;
+
+  /// No description provided for @enable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل'**
+  String get enable;
 }
 
 class _AppLocalizationsDelegate
