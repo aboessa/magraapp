@@ -9,6 +9,7 @@ import {
   publicAssetUrl,
 } from '../lib/assetUrls';
 import { authenticateParent, createMediaToken, mediaIsConfigured } from '../lib/parentAuth';
+import { availabilityContext, availabilityFor, availabilityRefusal } from '../lib/requestGeo.ts';
 import type { Plan } from '../lib/familyPolicy';
 
 type AppEnv = { Bindings: Env };
@@ -230,6 +231,12 @@ booksRoute.get('/:id', async (c) => {
     [id],
   );
   if (!exists) return c.json({ success: false, error: 'Book not found' }, 404);
+
+  const context = availabilityContext(c.req.raw, c.env);
+  const decision = await availabilityFor(c.env, 'book', id, context);
+  if (!decision.available) {
+    return c.json(availabilityRefusal(decision, context.country), 451);
+  }
 
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
     const book = await queryFirst<Record<string, unknown>>(

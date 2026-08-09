@@ -14,6 +14,7 @@ import adminBackupRoute from './adminBackup'
 import adminMasteryRoute from './adminMastery'
 import adminTtsRoute from './adminTts'
 import adminPublishGateRoute, { evaluateFor, gateRefusal } from './adminPublishGate.ts'
+import adminAvailabilityRoute from './adminAvailability.ts'
 import { summarizeGate } from '../lib/publishGate.ts'
 import { validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
@@ -80,6 +81,8 @@ adminRoute.route('/', adminTtsRoute)
 // جاهزية النشر الموحّدة: مسار قراءة واحد لكل الأنواع القابلة للنشر، تستدعيه
 // الواجهة قبل زرّ النشر، وتستدعيه عمليات النشر نفسها عبر evaluateFor.
 adminRoute.route('/', adminPublishGateRoute)
+// سياسة الإتاحة الجغرافية: قراءة السلسلة الكاملة (موروثة أم مُلغاة) وكتابتها.
+adminRoute.route('/', adminAvailabilityRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)

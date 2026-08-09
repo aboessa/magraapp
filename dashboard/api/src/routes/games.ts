@@ -33,6 +33,7 @@ import { queryAll, queryFirst } from '../lib/db';
 import { callDurable, familyStub } from '../lib/doClient';
 import { contentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass';
 import { authenticateParent, createMediaToken, mediaIsConfigured } from '../lib/parentAuth';
+import { availabilityContext, availabilityFor, availabilityRefusal } from '../lib/requestGeo.ts';
 import {
   isGameLanguage,
   localizePack,
@@ -116,6 +117,17 @@ gamesRoute.get('/:id', async (c) => {
 
   const serveFixtures = shouldServeTestFixtures(c.env);
   const gameId = c.req.param('id');
+
+  // Territory enforcement before the pack is handed to a child's device.
+  //
+  // A game pack is downloadable content like any other: if its series is licensed
+  // for two countries, so is it. Applied here rather than only in the catalogue
+  // because this endpoint is what the app actually calls to play.
+  const gameContext = availabilityContext(c.req.raw, c.env);
+  const gameDecision = await availabilityFor(c.env, 'game', gameId, gameContext);
+  if (!gameDecision.available) {
+    return c.json(availabilityRefusal(gameDecision, gameContext.country), 451);
+  }
 
   // Published-only, and the parent series must be published too: a published
   // game hanging off a draft series is not reachable content.

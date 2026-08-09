@@ -11,6 +11,12 @@ import {
   publicAssetBaseUrl,
 } from '../lib/assetUrls';
 import { authenticateParent, createMediaToken, mediaIsConfigured, type ParentPrincipal } from '../lib/parentAuth';
+import {
+  availabilityContext,
+  availabilityFor,
+  availabilityForBatch,
+  availabilityRefusal,
+} from '../lib/requestGeo.ts';
 import type { AgeTrack, Plan } from '../lib/familyPolicy';
 
 type AppEnv = { Bindings: Env };
@@ -98,13 +104,14 @@ episodesRoute.get('/', async (c) => {
   const seriesId = c.req.query('series_id');
   const limit = pagination(c.req.query('limit'), 20) || 20;
   const offset = pagination(c.req.query('offset'), 0);
+  const context = availabilityContext(c.req.raw, c.env);
 
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
     // thumbnail_url is resolved from asset_links/content_assets rather than the
     // deprecated episodes.thumbnail_url column. See lib/assetUrls.ts.
-    let sql = `SELECT e.id, e.series_id, e.episode_number, e.title_ar,
+    let sql = `SELECT e.id, e.series_id, e.season_id, e.episode_number, e.title_ar,
       e.description_ar, e.thumbnail_url, e.duration_seconds, e.age_min, e.age_max,
-      e.is_free, e.published_at, s.title_ar AS series_title,
+      e.is_free, e.published_at, s.title_ar AS series_title, s.planet_id,
       ${artworkSelect('thumb_asset', 'episode', 'e.id', EPISODE_THUMBNAIL_ROLES)}
       FROM episodes e
       JOIN series s ON s.id = e.series_id
@@ -114,10 +121,26 @@ episodesRoute.get('/', async (c) => {
     sql += ' ORDER BY e.published_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
     const episodes = await queryAll<Record<string, unknown>>(c.env.DB, sql, params);
+
+    // Season, series and planet are already joined for this response, so the whole
+    // inheritance chain resolves with one extra query for the page. See
+    // lib/requestGeo.ts for why this is not a SQL predicate.
+    const decisions = await availabilityForBatch(c.env, 'episode', episodes, (row) => ({
+      id: String(row.id),
+      season_id: row.season_id ? String(row.season_id) : null,
+      series_id: row.series_id ? String(row.series_id) : null,
+      planet_id: row.planet_id ? String(row.planet_id) : null,
+    }), context);
+    const visible = episodes.filter((row) => decisions.get(String(row.id))?.available !== false);
+
     const base = publicAssetBaseUrl(c.env);
-    for (const row of episodes) applyArtworkUrl(row, 'thumb_asset', 'thumbnail_url', base);
-    return { success: true, data: episodes, meta: { limit, offset } };
-  });
+    for (const row of visible) applyArtworkUrl(row, 'thumb_asset', 'thumbnail_url', base);
+    return {
+      success: true,
+      data: visible,
+      meta: { limit, offset, withheld_in_territory: episodes.length - visible.length },
+    };
+  }, 300, context.country ?? 'unknown');
 });
 
 episodesRoute.get('/:id', async (c) => {
@@ -127,6 +150,12 @@ episodesRoute.get('/:id', async (c) => {
     WHERE e.id = ? AND e.status = 'published' AND e.is_published = 1 AND s.status = 'published'
   `, [id]);
   if (!exists) return c.json({ success: false, error: 'Episode not found' }, 404);
+
+  const context = availabilityContext(c.req.raw, c.env);
+  const decision = await availabilityFor(c.env, 'episode', id, context);
+  if (!decision.available) {
+    return c.json(availabilityRefusal(decision, context.country), 451);
+  }
 
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
     const episode = await queryFirst<Record<string, unknown>>(c.env.DB, `
@@ -179,6 +208,19 @@ episodesRoute.post('/:id/playback-sessions', async (c) => {
 
   const catalog = await catalogMedia(c.env, c.req.param('id'));
   if (!catalog) return c.json({ success: false, error: 'Protected episode media is unavailable' }, 404);
+
+  // Territory enforcement at the point that actually hands over the video.
+  //
+  // The catalogue endpoints already filter, but a client that cached an episode id
+  // before travelling — or any caller with curl — reaches this endpoint directly.
+  // Enforcing only in the listing would make the restriction cosmetic, which is the
+  // exact state the rights registry was in before: recorded and never consulted.
+  const playbackContext = availabilityContext(c.req.raw, c.env);
+  const playbackDecision = await availabilityFor(c.env, 'episode', catalog.media.id, playbackContext);
+  if (!playbackDecision.available) {
+    return c.json(availabilityRefusal(playbackDecision, playbackContext.country), 451);
+  }
+
   const requiredPlan: Plan = catalog.media.is_free ? 'free' : catalog.media.price_tier;
   const created = await callDurable<Envelope<PlaybackLease>>(familyStub(c.env, auth.principal.parentId), '/playback/start', {
     body: {

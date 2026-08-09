@@ -9,6 +9,12 @@ import {
   publicAssetBaseUrl,
   SERIES_COVER_ROLES,
 } from '../lib/assetUrls';
+import {
+  availabilityContext,
+  availabilityFor,
+  availabilityForBatch,
+  availabilityRefusal,
+} from '../lib/requestGeo.ts';
 
 type AppEnv = { Bindings: Env };
 
@@ -45,6 +51,8 @@ seriesRoute.get('/', async (c) => {
     return c.json({ success: false, error: 'age must use an inclusive range within 3-12, for example 6-8' }, 400);
   }
 
+  const context = availabilityContext(c.req.raw, c.env);
+
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
     // cover_url is resolved from asset_links/content_assets, not read straight
     // from the deprecated series.cover_url column. See lib/assetUrls.ts.
@@ -70,14 +78,41 @@ seriesRoute.get('/', async (c) => {
     sql += ' ORDER BY s.sort_order ASC, s.published_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
     const series = await queryAll<Record<string, unknown>>(c.env.DB, sql, params);
+
+    // Territory availability, applied after the page is fetched.
+    //
+    // Filtering in SQL was rejected: the decision involves an inheritance chain and
+    // a time window, so expressing it as a predicate would mean duplicating
+    // lib/availabilityPolicy.ts in SQL — a second implementation of a rights rule,
+    // which is the one place a divergence must never happen. One extra query per
+    // page resolves the whole page (see availabilityForBatch).
+    //
+    // The consequence is a page that can return fewer rows than `limit` in a
+    // restricted territory. That is honest: the alternative is refetching until the
+    // page is full, which leaks the existence of the hidden rows through timing and
+    // offset arithmetic.
+    const decisions = await availabilityForBatch(c.env, 'series', series, (row) => ({
+      id: String(row.id),
+      series_id: String(row.id),
+      planet_id: row.planet_id ? String(row.planet_id) : null,
+    }), context);
+    const visible = series.filter((row) => decisions.get(String(row.id))?.available !== false);
+
     const base = publicAssetBaseUrl(c.env);
-    for (const row of series) applyArtworkUrl(row, 'cover_asset', 'cover_url', base);
+    for (const row of visible) applyArtworkUrl(row, 'cover_asset', 'cover_url', base);
     return {
       success: true,
-      data: series,
-      meta: { limit, offset, model: 'series_network_not_fixed_mascots' },
+      data: visible,
+      meta: {
+        limit,
+        offset,
+        model: 'series_network_not_fixed_mascots',
+        // Stated so a client showing "20 of N" cannot present a filtered page as a
+        // complete one, and so support can see that filtering happened at all.
+        withheld_in_territory: series.length - visible.length,
+      },
     };
-  });
+  }, 300, context.country ?? 'unknown');
 });
 
 // GET /api/v1/series/:id - public presentation data only.
@@ -89,6 +124,17 @@ seriesRoute.get('/:id', async (c) => {
     [id, 'published'],
   );
   if (!exists) return c.json({ success: false, error: 'Series not found' }, 404);
+
+  // Territory enforcement before anything is rendered.
+  //
+  // Outside the cached block on purpose: the refusal must not be stored under the
+  // catalogue cache key, and a restricted request must not be able to warm the
+  // cache for a permitted one.
+  const context = availabilityContext(c.req.raw, c.env);
+  const decision = await availabilityFor(c.env, 'series', id, context);
+  if (!decision.available) {
+    return c.json(availabilityRefusal(decision, context.country), 451);
+  }
 
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
     const series = await queryFirst<Record<string, unknown>>(c.env.DB, `

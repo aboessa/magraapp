@@ -19,17 +19,34 @@ async function contentVersion(cache: KVNamespace): Promise<string> {
 /**
  * Caches only unauthenticated catalog responses. Never use this helper for a
  * child, parent, admin, entitlement, playback, or signed-media response.
+ *
+ * ## `variant`
+ *
+ * Any response whose *content* depends on something other than the URL must pass
+ * that something here, and territory availability is exactly such a dependency:
+ * a catalogue page filtered for a child in one country and stored under a
+ * country-agnostic key would be served verbatim to every other country, which
+ * turns an enforced restriction back into no restriction — with a cache hit as the
+ * only evidence. `routes/series.ts` and `routes/episodes.ts` pass the resolved
+ * request country.
+ *
+ * Kept as an explicit parameter rather than derived from `request.cf` inside this
+ * helper because most cached endpoints are country-independent, and adding a
+ * country to their keys would multiply their cache entries by the number of
+ * countries for no benefit.
  */
 export async function cachedPublicJson<T>(
   request: Request,
   cache: KVNamespace,
   load: () => Promise<T>,
   ttlSeconds = 300,
+  variant = '',
 ): Promise<Response> {
   const version = await contentVersion(cache)
   const url = normalizedPublicUrl(request)
+  const scope = variant ? `${version}/v-${encodeURIComponent(variant)}` : version
   const cacheKey = new Request(
-    `https://majarra-public-cache.invalid/${version}${url.pathname}${url.search}`,
+    `https://majarra-public-cache.invalid/${scope}${url.pathname}${url.search}`,
   )
 
   try {
