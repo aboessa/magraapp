@@ -420,6 +420,20 @@ export const api = {
   supportViews: () => request<ApiEnvelope<import('../types/api').SupportSavedView[]>>('/admin/support/views'),
   createSupportView: (payload: { name: string; filters: Record<string, unknown>; is_shared?: boolean }) => request<ApiEnvelope<{ id: string }>>('/admin/support/views', { method: 'POST', body: JSON.stringify(payload) }),
   deleteSupportView: (id: string) => request<ApiEnvelope<{ id: string }>>(`/admin/support/views/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+  /// مركز الإنتاج. `with_publish=0` يتجاوز تقييم بوابة النشر، وهو الجزء المكلف:
+  /// لوحة بأربعين عنصرًا تقيّم البوابة لكل عنصر.
+  productionBoard: (filters: { type?: string; status?: string; series_id?: string; with_publish?: string; limit?: number; offset?: number } = {}) =>
+    request<PaginatedEnvelope<import('../types/api').ProductionItem>>(`/admin/production/board${queryString(filters)}`),
+  productionItem: (type: 'episode' | 'story', id: string) =>
+    request<ApiEnvelope<import('../types/api').ProductionItem>>(`/admin/production/${type}/${encodeURIComponent(id)}`),
+  saveProductionAssignment: (
+    type: 'episode' | 'story',
+    id: string,
+    requirement: string,
+    payload: { assignee_id?: string | null; team_id?: string | null; due_at?: string | null; blocker?: string | null; note?: string | null },
+  ) => request<ApiEnvelope<{ requirement: string }>>(`/admin/production/${type}/${encodeURIComponent(id)}/${requirement}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  productionQueue: () => request<PaginatedEnvelope<import('../types/api').ProductionQueueRow>>('/admin/production/my-queue'),
   billingStats: () => request<ApiEnvelope<import('../types/api').BillingStats>>('/admin/billing/stats'),
   /// سجل الشراء الكامل من billing_audit. يحمل أعمدة أكثر من `recent_purchases`
   /// داخل /stats: يضيف purchase_token_hash و verified_at_ms.

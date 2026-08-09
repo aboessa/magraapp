@@ -229,6 +229,16 @@
     "evidence": "Employee, role, password-reset and session-revoke operations with server-side canManage enforcement, not UI-only gating.",
     "gaps": ["Add-employee is a single large modal rather than a structured create flow"]
   },
+  "/production": {
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-09; api test productionMatrix.test.mjs (19 tests)",
+    "evidence": "Requirement matrix per episode and story derived entirely from the artefacts: linked asset status, pages with a ready illustration, languages that actually have text or narration, review rows, and the publish gate's own verdict for the publish row. No endpoint accepts a status, asserted by test, so the board cannot claim work that does not exist. Percentages appear only where a denominator exists. Migration 0032 stores the human layer (assignee, team, due, blocker, note); a recorded blocker can turn in_progress into blocked and can never hide a finished asset. Three views: table, kanban grouped by requirement state, and my queue. The board is capped and states its cap.",
+    "gaps": [
+      "Covers episodes and stories only; books, games and projects have their own readiness surfaces",
+      "Assignment takes a user id typed in rather than a picker",
+      "No calendar view and no bulk reassignment"
+    ]
+  },
   "/tasks": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",

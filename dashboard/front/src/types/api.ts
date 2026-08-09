@@ -1719,6 +1719,71 @@ export interface SupportSavedView {
   created_at: string
 }
 
+// --- مركز الإنتاج ------------------------------------------------------------
+
+export type ProductionRequirementKey =
+  | 'script' | 'educational' | 'translation_ar' | 'translation_en' | 'translation_fr'
+  | 'voice_ar' | 'voice_en' | 'voice_fr' | 'artwork' | 'video' | 'thumbnail'
+  | 'captions' | 'qa' | 'publish'
+
+export type RequirementState =
+  | 'ready' | 'partial' | 'in_progress' | 'missing' | 'blocked' | 'not_applicable'
+
+/**
+ * صفّ متطلب واحد.
+ *
+ * الحالة مشتقّة على الخادم من الأصول نفسها ولا تُكتب من الواجهة: لا حقل حالة في
+ * أي مسار. ما يُكتب هو الطبقة البشرية فقط (مسؤول، فريق، استحقاق، عائق، ملاحظة).
+ */
+export interface ProductionRequirementRow {
+  key: ProductionRequirementKey
+  label_ar: string
+  state: RequirementState
+  /// نسبة حقيقية فقط حين يوجد مقام (صفحات القصة مثلًا)، وإلا null.
+  percent: number | null
+  detail: string
+  owner_role: string
+  items: string[]
+  depends_on: ProductionRequirementKey[]
+  assignee_id: string | null
+  team_id: string | null
+  due_at: string | null
+  blocker: string | null
+  note: string | null
+}
+
+export interface ProductionSummary {
+  total: number
+  ready: number
+  partial: number
+  in_progress: number
+  missing: number
+  blocked: number
+  not_applicable: number
+  percent: number
+  publish_state: RequirementState
+}
+
+export interface ProductionItem {
+  content_type: 'episode' | 'story'
+  content_id: string
+  title: string
+  status: string
+  requirements: ProductionRequirementRow[]
+  summary: ProductionSummary
+}
+
+export interface ProductionQueueRow {
+  content_type: 'episode' | 'story'
+  content_id: string
+  requirement: ProductionRequirementKey
+  due_at: string | null
+  blocker: string | null
+  note: string | null
+  title: string | null
+  content_status: string | null
+}
+
 /// فحص واحد. `message` جاهزة للعرض بالعربية من الخادم، وتحمل السبب لا الحكم فقط.
 export interface QualityCheck {
   check: string

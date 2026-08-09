@@ -9,12 +9,12 @@ read from the source on every run. The **Status** column comes from
 `docs/FEATURE_MATRIX_VERDICTS.json`, where each verdict records how it was
 verified; a route with no recorded verdict is `UNVERIFIED` rather than assumed.
 
-Registered admin routes: **57**. Server routes parsed: **262**.
-API client functions parsed: **186**.
+Registered admin routes: **58**. Server routes parsed: **266**.
+API client functions parsed: **190**.
 
 | Status | Routes |
 |---|---|
-| COMPLETE | 31 |
+| COMPLETE | 32 |
 | PARTIAL | 18 |
 | MISSING | 8 |
 
@@ -22,15 +22,15 @@ API client functions parsed: **186**.
 
 | Route | Page | Status | API calls | Server endpoints | Permissions | Audit | Tests |
 |---|---|---|---|---|---|---|---|
-| `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 12 |
-| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 41 |
+| `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 13 |
+| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 42 |
 | `/taxonomy` | TaxonomyPage.tsx | COMPLETE | 8 | 8/8 | edit_metadata, create, archive | — | 2 |
 | `/planets` | PlanetsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/planets/:id` | PlanetDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
 | `/skills` | SkillsPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 3 |
 | `/objectives` | LearningObjectivesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive | — | 3 |
 | `/content-reviews` | ContentReviewsPage.tsx | PARTIAL | 4 | 4/4 | review | — | 1 |
-| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 41 |
+| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 42 |
 | `/series/:id` | SeriesDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 12 |
 | `/seasons/:id` | SeasonDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
@@ -38,25 +38,26 @@ API client functions parsed: **186**.
 | `/episodes/:id` | EpisodeDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
 | `/characters` | CharactersPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 15 |
 | `/characters/:id` | CharacterDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 5 |
-| `/stories` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 22 |
-| `/stories/:id` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 22 |
-| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 29 |
-| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 27 |
+| `/stories` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 23 |
+| `/stories/:id` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 23 |
+| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 30 |
+| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 28 |
 | `/games/:id` | GameDetailPage.tsx | COMPLETE | 4 | 4/4 | — | — | 21 |
 | `/games-ops` | GamesOpsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/games-audio-queue` | AudioProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/games-art-queue` | ArtProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
-| `/media` | MediaLibraryPage.tsx | COMPLETE | 6 | 6/6 | upload_images, create | — | 16 |
-| `/media/:id` | AssetDetailPage.tsx | COMPLETE | 2 | 2/2 | — | — | 22 |
+| `/media` | MediaLibraryPage.tsx | COMPLETE | 6 | 6/6 | upload_images, create | — | 17 |
+| `/media/:id` | AssetDetailPage.tsx | COMPLETE | 2 | 2/2 | — | — | 23 |
 | `/visual-styles` | VisualStylesPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 0 |
 | `/parents` | ParentsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 0 |
 | `/children` | ChildrenPage.tsx | PARTIAL | 1 | 1/1 | — | — | 6 |
-| `/billing` | BillingPage.tsx | COMPLETE | 4 | 4/4 | — | — | 6 |
+| `/billing` | BillingPage.tsx | COMPLETE | 4 | 4/4 | — | — | 7 |
 | `/analytics` | AnalyticsPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
 | `/teams` | TeamsPage.tsx | COMPLETE | 3 | 3/3 | manage_team | — | 4 |
 | `/roles` | RolesPage.tsx | PARTIAL | 3 | 3/3 | manage_permissions | — | 9 |
 | `/team-access` | TeamAccessPage.tsx | COMPLETE | 6 | 6/6 | — | — | 7 |
 | `/tasks` | MyTasksPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
+| `/production` | ProductionPage.tsx | COMPLETE | 4 | 4/4 | assign_members | ✅ | 0 |
 | `/audit-logs` | AuditLogPage.tsx | COMPLETE | 1 | 1/1 | view_audit_log | — | 1 |
 | `/failed-events` | FailedEventsPage.tsx | COMPLETE | 3 | 3/3 | publish | — | 2 |
 | `/narration` | NarrationPage.tsx | PARTIAL | 3 | 3/3 | upload_audio | ✅ | 2 |
@@ -69,7 +70,7 @@ API client functions parsed: **186**.
 | `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 7 |
 | `/remote-config` | RemoteConfigPage.tsx | PARTIAL | 3 | 3/3 | publish | — | 1 |
 | `/packages` | PackagesPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
-| `/ops` | OpsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 6 |
+| `/ops` | OpsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 7 |
 | `/campaigns` | CampaignsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/revenue` | RevenuePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/translation` | TranslationCenterPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
@@ -78,7 +79,7 @@ API client functions parsed: **186**.
 | `/school` | SchoolAccountsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/finance-advanced` | AdvancedFinancePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/ops-sla` | OpsSlaPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
-| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 41 |
+| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 42 |
 
 ## 2. Collection UX affordances (static evidence)
 
@@ -122,6 +123,7 @@ that it behaves; behavioural findings belong in the verdict file.
 | `/roles` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
 | `/team-access` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
 | `/tasks` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
+| `/production` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/audit-logs` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
 | `/failed-events` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
 | `/narration` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -390,6 +392,15 @@ that it behaves; behavioural findings belong in the verdict file.
 - Gaps:
   - View-only by design: no assign, complete or reassign from the UI
   - No per-item production requirement line (script/voice/video/QA)
+
+### `/production` — COMPLETE
+
+- Verified by: code read 2026-08-09; api test productionMatrix.test.mjs (19 tests)
+- Evidence: Requirement matrix per episode and story derived entirely from the artefacts: linked asset status, pages with a ready illustration, languages that actually have text or narration, review rows, and the publish gate's own verdict for the publish row. No endpoint accepts a status, asserted by test, so the board cannot claim work that does not exist. Percentages appear only where a denominator exists. Migration 0032 stores the human layer (assignee, team, due, blocker, note); a recorded blocker can turn in_progress into blocked and can never hide a finished asset. Three views: table, kanban grouped by requirement state, and my queue. The board is capped and states its cap.
+- Gaps:
+  - Covers episodes and stories only; books, games and projects have their own readiness surfaces
+  - Assignment takes a user id typed in rather than a picker
+  - No calendar view and no bulk reassignment
 
 ### `/audit-logs` — COMPLETE
 
@@ -670,7 +681,7 @@ operator surface. Listed so the second case cannot hide.
 | series.ts | GET | `/api/v1/series/:id` | — | — |
 | siteMode.ts | GET | `/api/v1/site-mode` | — | — |
 
-Orphan count: **112** of 262.
+Orphan count: **112** of 266.
 
 ## 5. API client functions the matrix could not resolve to a server route
 

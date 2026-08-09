@@ -39,6 +39,7 @@ import { RemoteConfigPage } from './pages/RemoteConfigPage'
 import { RevenuePage } from './pages/RevenuePage'
 import { PartnershipsPage } from './pages/PartnershipsPage'
 import { PlanetsPage } from './pages/PlanetsPage'
+import { ProductionPage } from './pages/ProductionPage'
 import { PlanetDetailPage } from './pages/PlanetDetailPage'
 import { SeriesDetailPage } from './pages/SeriesDetailPage'
 import { EpisodeDetailPage } from './pages/EpisodeDetailPage'
@@ -148,6 +149,9 @@ export default function AdminRoutes() {
         <Route path="roles" element={<RolesPage />} />
         <Route path="team-access" element={<TeamAccessPage />} />
         <Route path="tasks" element={<MyTasksPage />} />
+        {/* مركز الإنتاج: مصفوفة متطلبات لكل حلقة/قصة، مشتقّة من الأصول.
+            منفصل عن /tasks لأن ذاك مهام عامة وهذا خطّ إنتاج المحتوى. */}
+        <Route path="production" element={<ProductionPage />} />
         <Route path="audit-logs" element={<AuditLogPage />} />
         <Route path="failed-events" element={<FailedEventsPage />} />
         <Route path="narration" element={<NarrationPage />} />

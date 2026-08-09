@@ -3277,3 +3277,36 @@ body.modal-open {
   font-size: 0.8rem;
   white-space: nowrap;
 }
+
+
+/* --- كانبان الإنتاج -------------------------------------------------------
+ *
+ * الأعمدة بحالة المتطلب لا بحالة العنصر: سؤال الإنتاج يقع على مستوى المتطلب،
+ * وعنصر واحد يظهر في عمودين بحق (رسومه جزئية وصوته ناقص).
+ *
+ * `overflow-x` على الحاوية لا على الصفحة: على 1366×768 تظهر ثلاثة أعمدة ويُسحَب
+ * الباقي أفقيًا، بدل ضغط كل الأعمدة حتى يصبح كل عنوان سطرين.
+ */
+.kanban {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-block-end: 6px;
+}
+.kanban__column {
+  flex: 0 0 240px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.012);
+}
+.kanban__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-block-end: 8px;
+  font-size: 0.9rem;
+}
+.kanban__list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.kanban__card { background: rgba(255, 255, 255, 0.02); }
+.kanban__card .form-actions { margin-block-start: 8px; }
