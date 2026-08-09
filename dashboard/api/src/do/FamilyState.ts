@@ -354,6 +354,7 @@ export class FamilyState {
       'POST /parent-pin/verify': (r) => this.verifyParentPin(r),
       'POST /rewards': (r) => this.grantReward(r),
       'GET /rewards': () => this.listRewards(),
+      'GET /mastery': () => this.listMastery(),
       'POST /creations': (r) => this.registerCreation(r),
       'GET /creations': () => this.listCreations(),
       'POST /creations/delete': (r) => this.deleteCreation(r),
@@ -827,13 +828,14 @@ export class FamilyState {
     // INSERT OR IGNORE against the unique constraint is the duplicate guard.
     // Replaying the same completion is normal — a child replays a game they
     // enjoyed — and must not mint a second sticker.
-    this.sql.exec(`
+    const inserted = this.sql.exec<{ id: string }>(`
       INSERT OR IGNORE INTO rewards (id, child_id, reward_key, source_type, source_id, earned_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `, crypto.randomUUID(), childId, rewardKey, sourceType, sourceId, now);
+      RETURNING id
+    `, crypto.randomUUID(), childId, rewardKey, sourceType, sourceId, now).toArray()[0];
 
-    const row = this.sql.exec<{ id: string; earned_at: number }>(`
-      SELECT id, earned_at FROM rewards
+    const row = inserted ?? this.sql.exec<{ id: string }>(`
+      SELECT id FROM rewards
        WHERE child_id = ? AND reward_key = ? AND source_type = ? AND source_id = ?
     `, childId, rewardKey, sourceType, sourceId).toArray()[0];
 
@@ -842,11 +844,26 @@ export class FamilyState {
       data: {
         id: row?.id ?? null,
         reward_key: rewardKey,
-        // False when the child already had it, so the client can celebrate only
-        // the first time rather than every replay.
-        newly_earned: Number(row?.earned_at ?? 0) === now,
+        // The returned row exists only for the write, not a duplicate replay.
+        newly_earned: Boolean(inserted),
       },
     });
+  }
+
+  /// Mastery per objective, for the parent report and for verifying that an
+  /// attempt actually moved the ladder.
+  ///
+  /// Read-only and descriptive: the level names a state, and nothing here exposes
+  /// a percentage or a comparison with another child.
+  private listMastery() {
+    const rows = this.sql.exec<{
+      child_id: string; objective_id: string; level: string;
+      attempts: number; correct_attempts: number; last_attempt_at: number | null;
+    }>(`
+      SELECT child_id, objective_id, level, attempts, correct_attempts, last_attempt_at
+        FROM mastery ORDER BY last_attempt_at DESC
+    `).toArray();
+    return json({ success: true, data: { mastery: rows } });
   }
 
   private listRewards() {

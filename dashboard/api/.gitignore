@@ -7,6 +7,11 @@
 # --- Secrets: never commit. Use `wrangler secret put` instead. ---
 .secrets.local.txt
 .secrets*
+# wrangler reads .dev.vars for local secrets. It holds real signing keys in any
+# developer's checkout, so it must never be committed.
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
 .env
 .env.*
 !.env.example

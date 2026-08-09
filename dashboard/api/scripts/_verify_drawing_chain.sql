@@ -1,4 +1,30 @@
 -- End-to-end verification of the drawing content chain.
+SELECT '--- drawing games by planet, mode and scoring ---' AS section;
+SELECT g.id,
+       s.planet_id,
+       json_extract(g.content_pack, '$.levels[0].mode') AS first_mode,
+       json_extract(g.content_pack, '$.levels[0].scoring') AS first_scoring,
+       CASE WHEN g.learning_objective_id IS NULL THEN 0 ELSE 1 END AS has_objective,
+       g.status
+  FROM games g LEFT JOIN series s ON s.id = g.series_id
+ WHERE g.engine_id = 'trace_color'
+ ORDER BY s.planet_id, g.id;
+
+SELECT '--- unscored packs must carry no objective ---' AS section;
+SELECT count(*) AS violations
+  FROM games g
+ WHERE g.engine_id = 'trace_color'
+   AND g.learning_objective_id IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1 FROM json_each(g.content_pack, '$.levels')
+      WHERE json_extract(json_each.value, '$.scoring') <> 'none'
+   );
+
+SELECT '--- no drawing content on tarikh or islamic ---' AS section;
+SELECT count(*) AS forbidden_planet_packs
+  FROM games g JOIN series s ON s.id = g.series_id
+ WHERE g.engine_id = 'trace_color' AND s.planet_id IN ('tarikh', 'islamic');
+
 SELECT '--- trace_color games ---' AS section;
 SELECT g.id,
        json_valid(g.content_pack) AS pack_valid,
@@ -38,6 +64,21 @@ SELECT (SELECT count(*) FROM learning_objectives WHERE skill_id = 'fine_motor') 
        (SELECT count(*) FROM learning_objective_skills WHERE skill_id = 'fine_motor') AS total_uses,
        (SELECT count(*) FROM skills) AS skills_total,
        (SELECT count(*) FROM game_localizations) AS localization_rows;
+
+SELECT '--- creations are not catalogue media ---' AS section;
+-- Child creations live in FamilyState and CREATIONS_BUCKET. If one ever reached
+-- content_assets the admin media library would classify it as catalogue artwork
+-- and bucketForAsset could place it in the public bucket.
+SELECT count(*) AS creations_leaked_into_content_assets
+  FROM content_assets
+ WHERE r2_key LIKE 'family/%'
+    OR id LIKE 'creation-%'
+    OR kind = 'creation';
+
+SELECT '--- no public asset carries a family-scoped key ---' AS section;
+SELECT count(*) AS public_assets_with_family_key
+  FROM content_assets
+ WHERE visibility = 'public' AND r2_key LIKE '%family/%';
 
 SELECT '--- consent types ---' AS section;
 SELECT sql LIKE '%child_creations%' AS has_creations_consent

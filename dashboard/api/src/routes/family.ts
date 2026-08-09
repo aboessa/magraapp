@@ -97,6 +97,29 @@ familyRoute.get('/progress', async (c) => {
   });
 });
 
+familyRoute.get('/mastery', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const childId = c.req.query('child_id') ?? c.req.query('childId');
+  if (!childId) return c.json({ success: false, error: 'child_id is required' }, 400);
+
+  const owned = await state(c.env, auth.principal);
+  if (!owned.ok || !owned.data?.success || !owned.data.data) return forward(owned);
+  if (!owned.data.data.children.some((child) => child.id === childId)) {
+    return c.json({ success: false, error: 'Active child profile not found' }, 404);
+  }
+
+  const result = await callDurable<{ success: boolean; data?: { mastery?: Array<Record<string, unknown>> } }>(
+    familyStub(c.env, auth.principal.parentId), '/mastery', {},
+  );
+  if (result.status !== 200) return forward(result);
+  const mastery = result.data?.data?.mastery ?? [];
+  return c.json({
+    success: true,
+    data: mastery.filter((row) => String(row.child_id) === childId),
+  });
+});
+
 // --- Rewards ---------------------------------------------------------------
 //
 // The stickers «مجموعتي» displays. Kept forever once earned, so there is no

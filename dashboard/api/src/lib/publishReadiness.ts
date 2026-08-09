@@ -174,13 +174,31 @@ export function evaluatePublishReadiness(input: ReadinessInput): PublishReadines
         items: input.packErrors,
       });
 
-  checks.push(input.objectiveId
-    ? { id: 'objective', label_ar: 'الهدف التعليمي', status: 'pass', detail: input.objectiveCode ?? undefined }
-    : {
-        id: 'objective', label_ar: 'الهدف التعليمي', status: 'blocked',
-        detail: 'لا هدف تعليمي مرتبط، فلا يمكن قياس الإتقان.',
-        owner: 'editor',
-      });
+  // A wholly unscored pack measures nothing, so demanding a learning objective
+  // would force an editor to attach one that can never be assessed. QISAS
+  // creative response and free drawing are exactly that: real content with no
+  // mark, and pretending otherwise is how a "creative reflection" ends up
+  // producing a mastery level.
+  const levelsForScoring = Array.isArray(input.pack?.levels)
+    ? input.pack!.levels as Array<Record<string, unknown>>
+    : [];
+  const whollyUnscored = levelsForScoring.length > 0 &&
+    levelsForScoring.every((level) => level?.scoring === 'none');
+
+  if (input.objectiveId) {
+    checks.push({ id: 'objective', label_ar: 'الهدف التعليمي', status: 'pass', detail: input.objectiveCode ?? undefined });
+  } else if (whollyUnscored) {
+    checks.push({
+      id: 'objective', label_ar: 'الهدف التعليمي', status: 'not_applicable',
+      detail: 'حزمة بلا تقييم: لا يُقاس فيها شيء، فلا هدف يُربَط بها.',
+    });
+  } else {
+    checks.push({
+      id: 'objective', label_ar: 'الهدف التعليمي', status: 'blocked',
+      detail: 'لا هدف تعليمي مرتبط، فلا يمكن قياس الإتقان.',
+      owner: 'editor',
+    });
+  }
 
   // Skills are a warning, not a blocker: an objective with no skill is legible to
   // a parent report through its own title, and 60 of the seeded objectives are in
@@ -190,11 +208,13 @@ export function evaluatePublishReadiness(input: ReadinessInput): PublishReadines
         id: 'skills', label_ar: 'المهارات', status: 'pass',
         detail: [input.primarySkillId, ...input.secondarySkillIds].join(' · '),
       }
-    : {
-        id: 'skills', label_ar: 'المهارات', status: 'warn',
-        detail: 'الهدف بلا مهارة أساسية.',
-        owner: 'editor',
-      });
+    : whollyUnscored
+      ? { id: 'skills', label_ar: 'المهارات', status: 'not_applicable' }
+      : {
+          id: 'skills', label_ar: 'المهارات', status: 'warn',
+          detail: 'الهدف بلا مهارة أساسية.',
+          owner: 'editor',
+        });
 
   checks.push(localizationCheck(input, REQUIRED_LANGUAGE, true));
   for (const language of OPTIONAL_LANGUAGES) {
