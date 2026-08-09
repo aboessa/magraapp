@@ -13,6 +13,8 @@ import adminPlansRoute from './adminPlans'
 import adminBackupRoute from './adminBackup'
 import adminMasteryRoute from './adminMastery'
 import adminTtsRoute from './adminTts'
+import adminPublishGateRoute, { evaluateFor, gateRefusal } from './adminPublishGate.ts'
+import { summarizeGate } from '../lib/publishGate.ts'
 import { validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
 import { requireAdmin, requirePermission } from '../lib/adminAuth'
@@ -75,6 +77,9 @@ adminRoute.route('/', adminBackupRoute)
 adminRoute.route('/', adminMasteryRoute)
 // Narration generation. Mounted last so it cannot shadow any existing handler.
 adminRoute.route('/', adminTtsRoute)
+// جاهزية النشر الموحّدة: مسار قراءة واحد لكل الأنواع القابلة للنشر، تستدعيه
+// الواجهة قبل زرّ النشر، وتستدعيه عمليات النشر نفسها عبر evaluateFor.
+adminRoute.route('/', adminPublishGateRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)
@@ -525,12 +530,39 @@ adminRoute.post('/series/:id/publish', requirePermission('publish'), async (c) =
   if (existing.status === 'archived') return c.json({ success: false, error: 'Archived series cannot be published' }, 409)
   if (existing.status === 'published') return c.json({ success: true, data: { id, status: 'published', published: false } })
 
+  // The readiness gate, server-side.
+  //
+  // Publish authority separation answered *who* may publish. This answers whether
+  // the content is finished, and it has to live here rather than in the UI: the
+  // endpoint is reachable with curl, and a gate the client can skip is decoration.
+  // Every blocker is returned at once — see lib/publishGate.ts for why one refusal
+  // at a time is the behaviour this replaces.
+  const gate = await evaluateFor(c.env, 'series', id)
+  if (gate && !gate.publishable) {
+    await auditStatement(db, actorId(c), 'publish_blocked', 'series', id, {
+      previous_status: existing.status,
+      blockers: gate.blockers.map((blocker) => blocker.id),
+      summary: summarizeGate(gate),
+    }).run()
+    return c.json(gateRefusal(gate), 409)
+  }
+
   await db.batch([
     db.prepare(`UPDATE series SET status = 'published', published_at = COALESCE(published_at, ?), updated_at = datetime('now') WHERE id = ?`)
       .bind(new Date().toISOString(), id),
-    auditStatement(db, actorId(c), 'publish', 'series', id, { previous_status: existing.status }),
+    // The warnings are recorded with the publish, not discarded. Six months later
+    // "was this published knowing the French translation was missing?" is a real
+    // question, and only the audit row can answer it.
+    auditStatement(db, actorId(c), 'publish', 'series', id, {
+      previous_status: existing.status,
+      readiness: gate ? summarizeGate(gate) : 'not evaluated',
+      warnings: gate?.warnings.map((warning) => warning.id) ?? [],
+    }),
   ])
-  return c.json({ success: true, data: { id, status: 'published', published: true } })
+  return c.json({
+    success: true,
+    data: { id, status: 'published', published: true, warnings: gate?.warnings ?? [] },
+  })
 })
 
 adminRoute.delete('/series/:id', requirePermission('archive'), async (c) => {
@@ -802,12 +834,32 @@ adminRoute.post('/episodes/:id/publish', requirePermission('publish'), async (c)
   if (existing.status === 'archived') return c.json({ success: false, error: 'Archived episode cannot be published' }, 409)
   if (existing.status === 'published') return c.json({ success: true, data: { id, status: 'published', published: false } })
 
+  // Same gate as series, and for episodes it carries the checks that matter most:
+  // an episode with no video file or no thumbnail is not a lesser episode, it is a
+  // dead tile in a child's library.
+  const gate = await evaluateFor(c.env, 'episode', id)
+  if (gate && !gate.publishable) {
+    await auditStatement(db, actorId(c), 'publish_blocked', 'episode', id, {
+      previous_status: existing.status,
+      blockers: gate.blockers.map((blocker) => blocker.id),
+      summary: summarizeGate(gate),
+    }).run()
+    return c.json(gateRefusal(gate), 409)
+  }
+
   await db.batch([
     db.prepare(`UPDATE episodes SET status = 'published', is_published = 1, published_at = COALESCE(published_at, ?), updated_at = datetime('now') WHERE id = ?`)
       .bind(new Date().toISOString(), id),
-    auditStatement(db, actorId(c), 'publish', 'episode', id, { previous_status: existing.status }),
+    auditStatement(db, actorId(c), 'publish', 'episode', id, {
+      previous_status: existing.status,
+      readiness: gate ? summarizeGate(gate) : 'not evaluated',
+      warnings: gate?.warnings.map((warning) => warning.id) ?? [],
+    }),
   ])
-  return c.json({ success: true, data: { id, status: 'published', published: true } })
+  return c.json({
+    success: true,
+    data: { id, status: 'published', published: true, warnings: gate?.warnings ?? [] },
+  })
 })
 
 adminRoute.delete('/episodes/:id', requirePermission('archive'), async (c) => {

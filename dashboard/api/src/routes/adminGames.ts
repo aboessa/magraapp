@@ -190,6 +190,14 @@ function serializeLocalization(row: LocalizationRow): NormalizedLocalization & {
   };
 }
 
+/// Exported as `loadGameRow` for `routes/adminPublishGate.ts`.
+///
+/// The unified publish gate must evaluate a game with the *same* engine readiness
+/// this file serves at `/admin/games/:id/readiness`. Re-implementing the load and
+/// the evaluation there would create a second opinion about whether a game is
+/// publishable, and the two would drift the first time an engine contract changed.
+export { loadGame as loadGameRow, readinessFor as gameReadinessFor };
+
 async function loadGame(db: D1Database, id: string): Promise<GameRow | null> {
   return queryFirst<GameRow>(db, `
     SELECT g.*, s.content_class,
