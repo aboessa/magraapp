@@ -4,13 +4,21 @@ import type { Env } from './lib/db';
 import adminRoute from './routes/admin';
 import authRoute from './routes/auth';
 import billingRoute from './routes/billing';
+import booksRoute from './routes/books';
 import episodesRoute from './routes/episodes';
+import gamesRoute from './routes/games.ts';
 import familyRoute from './routes/family';
 import mediaRoute from './routes/media';
 import planetsRoute from './routes/planets';
 import seriesRoute from './routes/series';
 import adminBillingRoute from './routes/adminBilling';
 import adminAnalyticsRoute from './routes/adminAnalytics';
+import adminPartnershipsRoute from './routes/adminPartnerships';
+import partnershipsRoute from './routes/partnerships';
+import adminSiteModeRoute from './routes/adminSiteMode';
+import siteModeRoute from './routes/siteMode';
+import adminAuthRoute from './routes/adminAuth';
+import adminUsersRoute from './routes/adminUsers';
 import { handleFamilyEvents } from './queue/familyEvents';
 import { handleFamilyEventsDlq } from './queue/dlq';
 import { handleScheduled } from './scheduled/cleanup';
@@ -22,7 +30,10 @@ const app = new Hono<AppEnv>();
 
 app.use('/api/*', cors({
   origin: '*',
-  allowHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'X-File-Name', 'X-File-Size', 'X-File-SHA256', 'X-Part-Size', 'X-Image-Width', 'X-Image-Height'],
+  // X-Admin-Actor يُرسله عميل اللوحة على كل نداء إدارة (lib/api.ts).
+  // غيابه من هذه القائمة يجعل المتصفح يحجب النداء بعد نجاح الـpreflight،
+  // فتفشل اللوحة كلها عبر الأصول (majarra.app ← api.majarra.app) بلا خطأ ظاهر.
+  allowHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'X-Admin-Actor', 'X-File-Name', 'X-File-Size', 'X-File-SHA256', 'X-Part-Size', 'X-Image-Width', 'X-Image-Height'],
   exposeHeaders: ['Content-Length', 'Content-Range', 'ETag'],
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
@@ -40,6 +51,9 @@ app.get('/', (c) => c.json({
 }));
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
+// مصادقة اللوحة قبل adminRoute: مسارات الدخول لا يمكن أن تتطلّب جلسة لأنها
+// هي التي تُنشئها، وترتيب التركيب يجعل حرس adminRoute لا يمسّها.
+app.route('/api/v1/admin/auth', adminAuthRoute);
 app.route('/api/v1/admin', adminRoute);
 app.route('/api/v1/auth', authRoute);
 app.route('/api/v1/billing', billingRoute);
@@ -47,9 +61,27 @@ app.route('/api/v1/media', mediaRoute);
 app.route('/api/v1/planets', planetsRoute);
 app.route('/api/v1/series', seriesRoute);
 app.route('/api/v1/episodes', episodesRoute);
+app.route('/api/v1/games', gamesRoute);
+app.route('/api/v1/books', booksRoute);
 app.route('/api/v1/family', familyRoute);
-app.route('/api/v1/admin/billing', adminBillingRoute);
-app.route('/api/v1/admin/analytics', adminAnalyticsRoute);
+app.route('/api/v1/partnerships', partnershipsRoute);
+// حالة الموقع عامة بلا مصادقة: صفحة الهبوط تستعلم عنها قبل أن تعرض أي شيء
+app.route('/api/v1/site-mode', siteModeRoute);
+// يُركَّبان على /api/v1/admin لا على بادئتهما الكاملة.
+//
+// معالِجاتهما تصرّح بمسارات كاملة بالفعل (`/billing/stats`، `/analytics/overview`)،
+// فتركيبهما على `/api/v1/admin/billing` كان يضاعف البادئة وينتج
+// `/api/v1/admin/billing/billing/stats`. النتيجة أن كل نقاط الفواتير
+// والتحليلات كانت تُعيد 404 ولم تعمل قط، وأخفى ذلك أن الحرس يرفض بـ401 قبل
+// أن يصل الطلب إلى التوجيه فبدت الاستجابة كأنها مشكلة صلاحيات.
+app.route('/api/v1/admin', adminBillingRoute);
+app.route('/api/v1/admin', adminAnalyticsRoute);
+app.route('/api/v1/admin/partnerships', adminPartnershipsRoute);
+app.route('/api/v1/admin/site-mode', adminSiteModeRoute);
+// إدارة المستخدمين تُركَّب على نفس البادئة قبل adminRoute، فمساراتها /users
+// تُطابق أولًا. مركّبة صراحةً لا داخل adminRoute حتى لا تعتمد على ترتيب
+// التركيب هناك.
+app.route('/api/v1/admin', adminUsersRoute);
 
 app.notFound((c) => c.json({ success: false, error: 'Route not found' }, 404));
 app.onError((error, c) => {
