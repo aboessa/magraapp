@@ -19,6 +19,7 @@ import adminPartnershipsRoute from './routes/adminPartnerships';
 import partnershipsRoute from './routes/partnerships';
 import adminSiteModeRoute from './routes/adminSiteMode';
 import siteModeRoute from './routes/siteMode';
+import publicSiteRoute, { siteFiles } from './routes/publicSite.ts';
 import adminAuthRoute from './routes/adminAuth';
 import adminUsersRoute from './routes/adminUsers';
 import { handleFamilyEvents } from './queue/familyEvents';
@@ -70,6 +71,11 @@ app.route('/api/v1/family', familyRoute);
 app.route('/api/v1/partnerships', partnershipsRoute);
 // حالة الموقع عامة بلا مصادقة: صفحة الهبوط تستعلم عنها قبل أن تعرض أي شيء
 app.route('/api/v1/site-mode', siteModeRoute);
+// المحتوى العام للموقع والمدونة: صفحات، مقالات، حلّ المسار والتحويلات، وكل
+// بيانات الرأس (canonical/robots/OG/hreflang/JSON-LD) محسوبة على الخادم.
+app.route('/api/v1/site', publicSiteRoute);
+// sitemap.xml وrobots.txt على الجذر: يجلبهما الزاحف مباشرةً ولا يشغّل التطبيق.
+app.route('/', siteFiles);
 // يُركَّبان على /api/v1/admin لا على بادئتهما الكاملة.
 //
 // معالِجاتهما تصرّح بمسارات كاملة بالفعل (`/billing/stats`، `/analytics/overview`)،
