@@ -1,5 +1,16 @@
 import type { Env } from '../lib/db';
-import { boundedInteger, deriveAgeTrack, isPlan, normalizeTracks, PLAN_LIMITS, planAllows, type AgeTrack, type Plan } from '../lib/familyPolicy';
+// امتدادات `.ts` صريحة: مجموعة الاختبارات تعمل بـ`node --experimental-strip-types`
+// الذي يطالب بالامتداد في الاستيراد النسبي ولا يستنتجه كما يفعل مُجمِّع wrangler.
+// بلا الامتداد لا يمكن استيراد هذا الكائن في اختبار إطلاقًا — وهو أكبر ملف منطق
+// في المشروع وكان بلا أي تغطية.
+import { boundedInteger, deriveAgeTrack, isPlan, normalizeTracks, PLAN_LIMITS, planAllows, type AgeTrack, type Plan } from '../lib/familyPolicy.ts';
+import { hashPassword, verifyPassword } from '../lib/security.ts';
+import {
+  deriveMastery,
+  isMasteryLevel,
+  masteryCounters,
+  type MasteryAttempt,
+} from '../lib/mastery.ts';
 
 type FamilyRow = {
   parent_id: string;
@@ -181,30 +192,164 @@ export class FamilyState {
       CREATE INDEX IF NOT EXISTS idx_leases_active ON playback_leases(status, expires_at);
       CREATE INDEX IF NOT EXISTS idx_outbox_pending ON outbox(status, available_at, created_at);
     `);
+    // C2 — parent PIN gate (server-side). Added after Phase 0 without a D1
+    // migration: existing DO instances need the column added in place.
+    try { this.sql.exec(`ALTER TABLE family ADD COLUMN parent_pin_hash TEXT`); } catch {}
+    try { this.sql.exec(`ALTER TABLE family ADD COLUMN parent_pin_failed_count INTEGER NOT NULL DEFAULT 0`); } catch {}
+    try { this.sql.exec(`ALTER TABLE family ADD COLUMN parent_pin_locked_until INTEGER`); } catch {}
+
+    // Game attempts: `attempts` was created with `episode_id` only, and
+    // `recordAttempt` was called with the game id in that column. D1's own
+    // `attempts` table has both `episode_id` and `game_id` with
+    // CHECK (episode_id IS NOT NULL OR game_id IS NOT NULL), so the DO and the
+    // projection had diverged and per-game reporting was impossible.
+    //
+    // Added in place rather than by recreating the table: existing rows keep the
+    // id they were written with, and `backfillGameAttempts` below moves the ones
+    // that were games. Same pattern as the PIN columns above.
+    try { this.sql.exec(`ALTER TABLE attempts ADD COLUMN game_id TEXT`); } catch {}
+    try { this.sql.exec(`ALTER TABLE attempts ADD COLUMN content_type TEXT`); } catch {}
+
+    this.sql.exec(`
+      CREATE INDEX IF NOT EXISTS idx_attempts_child_objective
+        ON attempts(child_id, objective_id, created_at);
+      CREATE INDEX IF NOT EXISTS idx_attempts_child_game
+        ON attempts(child_id, game_id, created_at);
+
+      /* Rewards. The smallest primitive that satisfies the ~15 content specs
+         promising a sticker in «مجموعتي», and nothing more: no currency, no
+         random drops, no streaks, no expiry. A reward, once earned, is kept. */
+      CREATE TABLE IF NOT EXISTS rewards (
+        id TEXT PRIMARY KEY,
+        child_id TEXT NOT NULL,
+        reward_key TEXT NOT NULL,
+        source_type TEXT NOT NULL,
+        source_id TEXT NOT NULL,
+        earned_at INTEGER NOT NULL,
+        /* One reward per child per source. Finishing the same game twice is
+           encouraged and must not mint a second sticker, which is what would
+           turn a keepsake into a farmable currency. */
+        UNIQUE (child_id, reward_key, source_type, source_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_rewards_child ON rewards(child_id, earned_at);
+
+      /* Child creations. Metadata only: the image itself lives in the private
+         creations bucket, and this row is what proves a family owns it. There is
+         deliberately no title or caption column - no free text written by a
+         child is stored anywhere. */
+      CREATE TABLE IF NOT EXISTS child_creations (
+        id TEXT PRIMARY KEY,
+        child_id TEXT NOT NULL,
+        game_id TEXT,
+        drawing_mode TEXT NOT NULL,
+        storage_key TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        width INTEGER NOT NULL,
+        height INTEGER NOT NULL,
+        byte_size INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        /* Soft delete so a deletion can be reconciled with the bucket before the
+           row disappears; hard-deleting first would orphan the object. */
+        deleted_at INTEGER
+      );
+      CREATE INDEX IF NOT EXISTS idx_creations_child
+        ON child_creations(child_id, deleted_at, created_at);
+    `);
+
+    this.backfillGameAttempts();
   }
 
+  /// Moves game attempts out of `episode_id` into `game_id`.
+  ///
+  /// Rows written before the column existed put the game id in `episode_id`,
+  /// because that was the only column available. They are identified by their
+  /// `objective_id` matching no episode-linked attempt and by `content_type`
+  /// being absent; rather than guess, only rows the DO itself can attribute are
+  /// moved, and the original value is left in place so nothing is lost.
+  private backfillGameAttempts(): void {
+    try {
+      this.sql.exec(`
+        UPDATE attempts
+           SET game_id = episode_id,
+               content_type = 'game'
+         WHERE game_id IS NULL
+           AND content_type IS NULL
+           AND episode_id IS NOT NULL
+           AND episode_id LIKE 'game-%'
+      `);
+    } catch {
+      // A backfill failure must not stop the object from serving requests; the
+      // rows remain readable under their original column either way.
+    }
+  }
+
+  /**
+   * موجّه الكائن.
+   *
+   * ## علّة كانت هنا: `catch` لا يمسك شيئًا
+   *
+   * كانت كل فروع التوجيه تُعيد وعد المعالِج مباشرةً داخل `try`:
+   *
+   *   try { return this.initialize(request) } catch { ... }
+   *
+   * و`return promise` بلا `await` **يخرج من نطاق `try` قبل أن يُرفَض الوعد**،
+   * فالـ`catch` لا يُنفَّذ أبدًا. أي أن مُعالِج الأخطاء كان ميتًا: أي رفض داخل
+   * أي معالِج — جسم JSON مشوّه، أو قيد قاعدة بيانات — يتسرّب من الكائن كخطأ
+   * غير مُلتقَط بدل أن يصير `500` بمظروف مفهوم. والأسوأ أن رسالة الخطأ الداخلية
+   * كانت تتسرّب للمتصل بدل أن تُحجب.
+   *
+   * الإصلاح `await` واحد. أُثبت الفرق بتجربة مباشرة:
+   *
+   *   return handler()        →  الرفض يتسرّب
+   *   return await handler()  →  الـcatch يعمل
+   *
+   * الجدول يفصل التوجيه عن التنفيذ فيصير `await` واحدًا لا تسعة عشر، ولا يبقى
+   * فرعٌ يُنسى.
+   */
   async fetch(request: Request): Promise<Response> {
     const path = new URL(request.url).pathname;
+    const key = `${request.method} ${path}`;
+
+    // Handlers may be synchronous (`getChildren`, `getState`) or asynchronous.
+    // The union is what lets both sit in one table; `await` below normalises them,
+    // which is also what keeps the catch reachable.
+    const routes: Record<string, (request: Request) => Response | Promise<Response>> = {
+      'POST /initialize': (r) => this.initialize(r),
+      'POST /sessions/create': (r) => this.createSession(r),
+      'POST /sessions/resolve': (r) => this.resolveSession(r),
+      'POST /sessions/refresh': (r) => this.refreshSession(r),
+      'POST /sessions/logout': (r) => this.logout(r),
+      'GET /children': () => this.getChildren(),
+      'POST /children': (r) => this.addChild(r),
+      'POST /progress': (r) => this.updateProgress(r),
+      'POST /favorites': (r) => this.updateFavorite(r),
+      'GET /devices': () => this.getDevices(),
+      'POST /devices/revoke': (r) => this.revokeDevice(r),
+      'POST /playback/start': (r) => this.startPlayback(r),
+      'POST /playback/heartbeat': (r) => this.heartbeatPlayback(r),
+      'POST /playback/end': (r) => this.endPlayback(r),
+      'POST /entitlements/apply': (r) => this.applyEntitlement(r),
+      'GET /billing/status': () => this.getBillingStatus(),
+      'GET /state': () => this.getState(),
+      'POST /parent-pin': (r) => this.setParentPin(r),
+      'POST /parent-pin/verify': (r) => this.verifyParentPin(r),
+      'POST /rewards': (r) => this.grantReward(r),
+      'GET /rewards': () => this.listRewards(),
+      'POST /creations': (r) => this.registerCreation(r),
+      'GET /creations': () => this.listCreations(),
+      'POST /creations/delete': (r) => this.deleteCreation(r),
+    };
+
+    const handler = routes[key];
+    if (!handler) return json({ success: false, error: 'Family operation not found' }, 404);
+
     try {
-      if (request.method === 'POST' && path === '/initialize') return this.initialize(request);
-      if (request.method === 'POST' && path === '/sessions/create') return this.createSession(request);
-      if (request.method === 'POST' && path === '/sessions/resolve') return this.resolveSession(request);
-      if (request.method === 'POST' && path === '/sessions/refresh') return this.refreshSession(request);
-      if (request.method === 'POST' && path === '/sessions/logout') return this.logout(request);
-      if (request.method === 'GET' && path === '/children') return this.getChildren();
-      if (request.method === 'POST' && path === '/children') return this.addChild(request);
-      if (request.method === 'POST' && path === '/progress') return this.updateProgress(request);
-      if (request.method === 'POST' && path === '/favorites') return this.updateFavorite(request);
-      if (request.method === 'GET' && path === '/devices') return this.getDevices();
-      if (request.method === 'POST' && path === '/devices/revoke') return this.revokeDevice(request);
-      if (request.method === 'POST' && path === '/playback/start') return this.startPlayback(request);
-      if (request.method === 'POST' && path === '/playback/heartbeat') return this.heartbeatPlayback(request);
-      if (request.method === 'POST' && path === '/playback/end') return this.endPlayback(request);
-      if (request.method === 'POST' && path === '/entitlements/apply') return this.applyEntitlement(request);
-      if (request.method === 'GET' && path === '/state') return this.getState();
-      return json({ success: false, error: 'Family operation not found' }, 404);
+      // `await` لا `return` مجرّدًا: بدونه يخرج التنفيذ من نطاق try قبل الرفض.
+      return await handler(request);
     } catch (error) {
       console.error('family_do_error', error instanceof Error ? error.message : String(error));
+      // الرسالة الداخلية لا تُعاد للمتصل: قد تحمل نصّ استعلام أو قيمة قيد.
       return json({ success: false, error: 'Family service unavailable' }, 500);
     }
   }
@@ -273,7 +418,10 @@ export class FamilyState {
     `, sessionId, now, family.auth_epoch).toArray()[0] ?? null;
   }
 
-  private addOutbox(type: string, payload: Record<string, unknown>, eventId = crypto.randomUUID()) {
+  /// `eventId` is typed as a plain string, not the template-literal type
+  /// `crypto.randomUUID()` returns: callers pass the client's `event_id`, which is
+  /// an opaque idempotency key rather than a guaranteed UUID.
+  private addOutbox(type: string, payload: Record<string, unknown>, eventId: string = crypto.randomUUID()) {
     const family = this.family();
     if (!family) throw new Error('family_not_initialized');
     const event: FamilyEvent = {
@@ -531,7 +679,7 @@ export class FamilyState {
             event_id = excluded.event_id,
             updated_at = excluded.updated_at
         `, childId, contentType, contentId, positionMs, durationMs, completed ? 1 : 0, session.device_id, sequence, eventId, now);
-        this.recordAttempt(body, childId, contentId, now);
+        this.recordAttempt(body, childId, contentType, contentId, now);
         this.addOutbox(completed ? 'content.completed' : 'progress.updated', {
           childId, contentType, contentId, positionMs, durationMs, completed, sequence,
         }, eventId);
@@ -545,35 +693,243 @@ export class FamilyState {
     return json(response);
   }
 
-  private recordAttempt(body: Record<string, unknown>, childId: string, episodeId: string, now: number) {
+  /// Records one attempt and re-derives mastery from the attempt history.
+  ///
+  /// ## Why `maxScore` may now be zero
+  ///
+  /// It was previously bounded at a minimum of 1, which made an unscored level
+  /// impossible to report: colouring and free drawing have nothing to measure,
+  /// and the engine reports 0 out of 0 for them. Rejecting that would have meant
+  /// either dropping the attempt entirely — losing the fact that the child played
+  /// — or inventing a score for a drawing, which the whole contract forbids. Zero
+  /// is now allowed and is excluded from the accuracy calculation rather than
+  /// counted as a failure.
+  private recordAttempt(
+    body: Record<string, unknown>,
+    childId: string,
+    contentType: string,
+    contentId: string,
+    now: number,
+  ) {
     if (body.answers === undefined) return;
     const score = boundedInteger(body.score, 0, Number.MAX_SAFE_INTEGER);
-    const maxScore = boundedInteger(body.max_score, 1, Number.MAX_SAFE_INTEGER);
+    const maxScore = boundedInteger(body.max_score, 0, Number.MAX_SAFE_INTEGER);
     const timeSpent = boundedInteger(body.time_spent, 0, Number.MAX_SAFE_INTEGER) ?? 0;
     const objectiveId = typeof body.objective_id === 'string' ? body.objective_id : null;
     if (score === null || maxScore === null || score > maxScore) throw new Error('invalid_attempt');
-    const passed = score / maxScore >= 0.5;
+
+    // A game attempt is filed under `game_id`; an episode attempt under
+    // `episode_id`. Previously everything went into `episode_id`, so a game's
+    // accuracy could not be reported at all. An explicit `game_id`/`episode_id`
+    // in the body wins over the inference, so a game linked to an episode can
+    // record both.
+    const isGame = contentType === 'game';
+    const gameId = typeof body.game_id === 'string'
+      ? body.game_id
+      : (isGame ? contentId : null);
+    const episodeId = typeof body.episode_id === 'string'
+      ? body.episode_id
+      : (isGame ? null : contentId);
+
     this.sql.exec(`
       INSERT INTO attempts (
-        id, child_id, episode_id, objective_id, score, max_score, answers_json,
-        time_spent_seconds, help_used, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, crypto.randomUUID(), childId, episodeId, objectiveId, score, maxScore, JSON.stringify(body.answers), timeSpent, body.help_used === true ? 1 : 0, now);
-    if (objectiveId) {
-      this.sql.exec(`
-        INSERT INTO mastery (child_id, objective_id, level, attempts, correct_attempts, last_attempt_at)
-        VALUES (?, ?, ?, 1, ?, ?)
-        ON CONFLICT(child_id, objective_id) DO UPDATE SET
-          attempts = mastery.attempts + 1,
-          correct_attempts = mastery.correct_attempts + excluded.correct_attempts,
-          level = CASE
-            WHEN mastery.correct_attempts + excluded.correct_attempts >= 3 THEN 'independent'
-            WHEN mastery.correct_attempts + excluded.correct_attempts >= 1 THEN 'practicing'
-            ELSE 'introduced'
-          END,
-          last_attempt_at = excluded.last_attempt_at
-      `, childId, objectiveId, passed ? 'practicing' : 'introduced', passed ? 1 : 0, now);
+        id, child_id, episode_id, game_id, content_type, objective_id, score, max_score,
+        answers_json, time_spent_seconds, help_used, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+      crypto.randomUUID(), childId, episodeId, gameId, contentType, objectiveId,
+      score, maxScore, JSON.stringify(body.answers), timeSpent,
+      body.help_used === true ? 1 : 0, now,
+    );
+
+    if (!objectiveId) return;
+
+    // Mastery is derived from the attempt history rather than accumulated into a
+    // counter. A lifetime counter never forgets, so one strong run years ago
+    // outweighed five recent failures and `needs_review` could never be reached.
+    const history = this.sql.exec<{ score: number; max_score: number; help_used: number; created_at: number }>(`
+      SELECT score, max_score, help_used, created_at
+        FROM attempts
+       WHERE child_id = ? AND objective_id = ?
+       ORDER BY created_at DESC
+       LIMIT 50
+    `, childId, objectiveId).toArray();
+
+    const previous = this.sql.exec<{ level: string }>(`
+      SELECT level FROM mastery WHERE child_id = ? AND objective_id = ?
+    `, childId, objectiveId).toArray()[0];
+
+    const attempts: MasteryAttempt[] = history.map((row) => ({
+      score: Number(row.score ?? 0),
+      maxScore: Number(row.max_score ?? 0),
+      helpUsed: Number(row.help_used ?? 0) === 1,
+      createdAt: Number(row.created_at ?? 0),
+    }));
+
+    const summary = deriveMastery(
+      attempts,
+      isMasteryLevel(previous?.level) ? previous.level : 'not_started',
+    );
+    const counters = masteryCounters(attempts);
+
+    this.sql.exec(`
+      INSERT INTO mastery (child_id, objective_id, level, attempts, correct_attempts, last_attempt_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(child_id, objective_id) DO UPDATE SET
+        level = excluded.level,
+        attempts = excluded.attempts,
+        correct_attempts = excluded.correct_attempts,
+        last_attempt_at = excluded.last_attempt_at
+    `, childId, objectiveId, summary.level, counters.attempts, counters.correctAttempts, now);
+  }
+
+  // --- Rewards -------------------------------------------------------------
+  //
+  // The smallest primitive that fulfils the sticker promised by ~15 content
+  // specs. Deliberately not a reward *system*: no currency, no random drops, no
+  // streaks, no expiry, no loot boxes. A reward is earned once and kept.
+
+  private async grantReward(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const childId = typeof body.child_id === 'string' ? body.child_id : '';
+    const rewardKey = typeof body.reward_key === 'string' ? body.reward_key.trim() : '';
+    const sourceType = typeof body.source_type === 'string' ? body.source_type : '';
+    const sourceId = typeof body.source_id === 'string' ? body.source_id : '';
+
+    if (!this.activeSession(sessionId) || !this.child(childId) || !rewardKey
+      || !['game', 'episode', 'project'].includes(sourceType) || !sourceId) {
+      return json({ success: false, error: 'Invalid reward grant' }, 400);
     }
+
+    const now = Date.now();
+    // INSERT OR IGNORE against the unique constraint is the duplicate guard.
+    // Replaying the same completion is normal — a child replays a game they
+    // enjoyed — and must not mint a second sticker.
+    this.sql.exec(`
+      INSERT OR IGNORE INTO rewards (id, child_id, reward_key, source_type, source_id, earned_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, crypto.randomUUID(), childId, rewardKey, sourceType, sourceId, now);
+
+    const row = this.sql.exec<{ id: string; earned_at: number }>(`
+      SELECT id, earned_at FROM rewards
+       WHERE child_id = ? AND reward_key = ? AND source_type = ? AND source_id = ?
+    `, childId, rewardKey, sourceType, sourceId).toArray()[0];
+
+    return json({
+      success: true,
+      data: {
+        id: row?.id ?? null,
+        reward_key: rewardKey,
+        // False when the child already had it, so the client can celebrate only
+        // the first time rather than every replay.
+        newly_earned: Number(row?.earned_at ?? 0) === now,
+      },
+    });
+  }
+
+  private listRewards() {
+    const rows = this.sql.exec<{
+      id: string; child_id: string; reward_key: string;
+      source_type: string; source_id: string; earned_at: number;
+    }>(`
+      SELECT id, child_id, reward_key, source_type, source_id, earned_at
+        FROM rewards ORDER BY earned_at DESC
+    `).toArray();
+    return json({ success: true, data: { rewards: rows } });
+  }
+
+  // --- Child creations -----------------------------------------------------
+  //
+  // Metadata only. The image lives in the private creations bucket and this row
+  // is what proves the family owns it. There is no title or caption column, so
+  // no text a child wrote is ever stored.
+
+  private async registerCreation(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const childId = typeof body.child_id === 'string' ? body.child_id : '';
+    const storageKey = typeof body.storage_key === 'string' ? body.storage_key : '';
+    const mimeType = typeof body.mime_type === 'string' ? body.mime_type : '';
+    const drawingMode = typeof body.drawing_mode === 'string' ? body.drawing_mode : '';
+    const gameId = typeof body.game_id === 'string' ? body.game_id : null;
+    const width = boundedInteger(body.width, 1, 4096);
+    const height = boundedInteger(body.height, 1, 4096);
+    const byteSize = boundedInteger(body.byte_size, 1, 8 * 1024 * 1024);
+    const creationId = typeof body.creation_id === 'string' && body.creation_id
+      ? body.creation_id
+      : crypto.randomUUID();
+
+    if (!this.activeSession(sessionId) || !this.child(childId) || !storageKey
+      || !drawingMode || width === null || height === null || byteSize === null) {
+      return json({ success: false, error: 'Invalid creation' }, 400);
+    }
+    // Only raster image types a canvas export can produce. Anything else would
+    // mean something other than a drawing is being stored here.
+    if (!['image/png', 'image/webp'].includes(mimeType)) {
+      return json({ success: false, error: 'Unsupported creation type' }, 415);
+    }
+    // The key must sit under this child's prefix. The route mints the key, but
+    // the DO is the ownership authority and must not take that on trust.
+    if (!storageKey.includes(`/child/${childId}/`)) {
+      return json({ success: false, error: 'Creation key does not belong to this child' }, 403);
+    }
+
+    const now = Date.now();
+    this.sql.exec(`
+      INSERT INTO child_creations (
+        id, child_id, game_id, drawing_mode, storage_key, mime_type,
+        width, height, byte_size, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        storage_key = excluded.storage_key,
+        byte_size = excluded.byte_size,
+        updated_at = excluded.updated_at,
+        deleted_at = NULL
+    `, creationId, childId, gameId, drawingMode, storageKey, mimeType,
+      width, height, byteSize, now, now);
+
+    return json({ success: true, data: { id: creationId, storage_key: storageKey } });
+  }
+
+  private listCreations() {
+    const rows = this.sql.exec<{
+      id: string; child_id: string; game_id: string | null; drawing_mode: string;
+      storage_key: string; mime_type: string; width: number; height: number;
+      byte_size: number; created_at: number; updated_at: number;
+    }>(`
+      SELECT id, child_id, game_id, drawing_mode, storage_key, mime_type,
+             width, height, byte_size, created_at, updated_at
+        FROM child_creations
+       WHERE deleted_at IS NULL
+       ORDER BY created_at DESC
+    `).toArray();
+    return json({ success: true, data: { creations: rows } });
+  }
+
+  private async deleteCreation(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const creationId = typeof body.creation_id === 'string' ? body.creation_id : '';
+    if (!this.activeSession(sessionId) || !creationId) {
+      return json({ success: false, error: 'Invalid creation delete' }, 400);
+    }
+
+    const row = this.sql.exec<{ id: string; child_id: string; storage_key: string }>(`
+      SELECT id, child_id, storage_key FROM child_creations WHERE id = ? AND deleted_at IS NULL
+    `, creationId).toArray()[0];
+    // A creation belonging to another family is simply not found here: this
+    // object only holds one family's rows, so cross-family access cannot be
+    // expressed, let alone granted.
+    if (!row) return json({ success: false, error: 'Creation not found' }, 404);
+
+    // Soft delete first. Hard-deleting the row before the object is removed would
+    // orphan the object in the bucket with nothing left pointing at it.
+    this.sql.exec(
+      `UPDATE child_creations SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+      Date.now(), Date.now(), creationId,
+    );
+    return json({ success: true, data: { id: creationId, storage_key: row.storage_key, deleted: true } });
   }
 
   private async updateFavorite(request: Request) {
@@ -765,6 +1121,68 @@ export class FamilyState {
     return json({ success: true, data: { revoked: true } });
   }
 
+  /// Subscription state for the account.
+  ///
+  /// Reports only what the entitlement ledger actually holds. The effective plan
+  /// comes from [currentPlan], which is the same value used to enforce limits, so
+  /// the screen cannot disagree with what the app allows.
+  private async getBillingStatus() {
+    const family = this.family();
+    if (!family) return json({ success: false, error: 'Family not found' }, 404);
+    const now = Date.now();
+
+    // The entitlement that is currently granting access, if any. Ordered the
+    // same way as `currentPlan` so both agree on which one wins.
+    const active = this.sql.exec<{
+      plan: string; status: string; source: string; starts_at: number; expires_at: number | null;
+    }>(`
+      SELECT plan, status, source, starts_at, expires_at FROM entitlements
+      WHERE status IN ('active', 'grace') AND (expires_at IS NULL OR expires_at > ?)
+      ORDER BY CASE plan WHEN 'family_plus' THEN 2 WHEN 'family' THEN 1 ELSE 0 END DESC
+      LIMIT 1
+    `, now).toArray()[0] ?? null;
+
+    const plan = this.currentPlan(now);
+    const limits = PLAN_LIMITS[plan];
+    const activeChildren = this.sql.exec<{ count: number }>(
+      `SELECT COUNT(*) AS count FROM children WHERE status = 'active'`,
+    ).toArray()[0]?.count ?? 0;
+    const activeDevices = this.sql.exec<{ count: number }>(
+      `SELECT COUNT(*) AS count FROM devices WHERE status = 'active'`,
+    ).toArray()[0]?.count ?? 0;
+
+    return json({
+      success: true,
+      data: {
+        plan,
+        // `base_plan` is what the account falls back to once every paid
+        // entitlement lapses.
+        base_plan: family.base_plan ?? 'free',
+        // Null when the account has never carried a paid entitlement, which the
+        // client renders as "no subscription" rather than as an error.
+        subscription: active === null ? null : {
+          plan: active.plan,
+          status: active.status,
+          source: active.source,
+          starts_at: new Date(active.starts_at).toISOString(),
+          expires_at: active.expires_at === null
+            ? null
+            : new Date(active.expires_at).toISOString(),
+          // A grace-period entitlement still grants access but signals a
+          // payment problem the parent should act on.
+          in_grace: active.status === 'grace',
+        },
+        limits: {
+          children: limits.children,
+          devices: limits.devices,
+          concurrent_streams: limits.concurrentStreams,
+          download_devices: limits.downloadDevices,
+        },
+        usage: { children: activeChildren, devices: activeDevices },
+      },
+    });
+  }
+
   private async getState() {
     const family = this.family();
     if (!family) return json({ success: false, error: 'Family not found' }, 404);
@@ -777,5 +1195,78 @@ export class FamilyState {
     `).toArray();
     const favorites = this.sql.exec(`SELECT child_id, entity_type, entity_id, created_at FROM favorites ORDER BY created_at DESC LIMIT 100`).toArray();
     return json({ success: true, data: { family: { parent_id: family.parent_id, display_name: family.display_name, plan: this.currentPlan() }, children, progress, favorites } });
+  }
+
+  // ---- C2: parent PIN (server-side gate) ----
+
+  private static validatePin(pin: string): string | null {
+    if (pin.length < 4 || pin.length > 6) return 'الرمز من 4 إلى 6 أرقام';
+    if (!/^\d+$/.test(pin)) return 'الرمز أرقام فقط';
+    if (/^(\d)\1*$/.test(pin)) return 'لا تستخدم رقمًا مكرّرًا';
+    let asc = true;
+    let desc = true;
+    for (let i = 1; i < pin.length; i++) {
+      const delta = pin.charCodeAt(i) - pin.charCodeAt(i - 1);
+      if (delta !== 1) asc = false;
+      if (delta !== -1) desc = false;
+    }
+    if (asc || desc) return 'لا تستخدم أرقامًا متتالية';
+    return null;
+  }
+
+  private async setParentPin(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const pin = typeof body.pin === 'string' ? body.pin : '';
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    const problem = FamilyState.validatePin(pin);
+    if (problem) return json({ success: false, error: problem }, 400);
+    const family = this.family();
+    if (!family) return json({ success: false, error: 'Family not found' }, 404);
+    const hash = await hashPassword(pin);
+    const now = Date.now();
+    this.sql.exec(
+      `UPDATE family SET parent_pin_hash = ?, parent_pin_failed_count = 0, parent_pin_locked_until = NULL, updated_at = ? WHERE singleton = 1`,
+      hash, now,
+    );
+    this.addOutbox('parent_pin.enrolled', { parentId: family.parent_id });
+    await this.scheduleOutbox();
+    return json({ success: true, data: { enrolled: true } });
+  }
+
+  private async verifyParentPin(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const pin = typeof body.pin === 'string' ? body.pin : '';
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    const row = this.sql.exec<{ parent_pin_hash: string | null; parent_pin_failed_count: number; parent_pin_locked_until: number | null }>(
+      `SELECT parent_pin_hash, parent_pin_failed_count, parent_pin_locked_until FROM family WHERE singleton = 1`,
+    ).toArray()[0];
+    if (!row?.parent_pin_hash) return json({ success: false, error: 'No PIN has been set' }, 404);
+    const now = Date.now();
+    if (row.parent_pin_locked_until !== null && row.parent_pin_locked_until > now) {
+      return json({ success: false, error: 'Too many attempts', locked_until: row.parent_pin_locked_until }, 423);
+    }
+    // Clear stale lockout
+    if (row.parent_pin_locked_until !== null && row.parent_pin_locked_until <= now) {
+      this.sql.exec(`UPDATE family SET parent_pin_failed_count = 0, parent_pin_locked_until = NULL WHERE singleton = 1`);
+      row.parent_pin_failed_count = 0;
+      row.parent_pin_locked_until = null;
+    }
+    const ok = await verifyPassword(pin, row.parent_pin_hash);
+    if (ok) {
+      this.sql.exec(`UPDATE family SET parent_pin_failed_count = 0, parent_pin_locked_until = NULL WHERE singleton = 1`);
+      return json({ success: true, data: { verified: true } });
+    }
+    const failures = (row.parent_pin_failed_count ?? 0) + 1;
+    const MAX_FAILURES = 5;
+    const LOCK_MS = 15 * 60 * 1000;
+    if (failures >= MAX_FAILURES) {
+      const until = now + LOCK_MS;
+      this.sql.exec(`UPDATE family SET parent_pin_failed_count = 0, parent_pin_locked_until = ? WHERE singleton = 1`, until);
+      return json({ success: false, error: 'Too many attempts', locked_until: until, attempts_remaining: 0 }, 423);
+    }
+    this.sql.exec(`UPDATE family SET parent_pin_failed_count = ? WHERE singleton = 1`, failures);
+    return json({ success: false, error: 'Incorrect PIN', attempts_remaining: MAX_FAILURES - failures }, 403);
   }
 }
