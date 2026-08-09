@@ -1,13 +1,21 @@
 import { Hono } from 'hono'
 import type { Env } from '../lib/db'
 import { queryAll, queryFirst } from '../lib/db'
+import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, SERIES_COVER_ROLES, EPISODE_THUMBNAIL_ROLES } from '../lib/assetUrls'
 import { bumpPublicContentCacheVersion } from '../lib/publicCache'
 import adminAssetsRoute from './adminAssets'
+import adminCatalogueRoute from './adminCatalogue'
 import adminContentRoute from './adminContent'
 import adminFamilyProjectionRoute from './adminFamilyProjection'
 import adminTeamsRoute from './adminTeams'
 import adminAppExperienceRoute from './adminAppExperience'
+import adminPlansRoute from './adminPlans'
 import adminBackupRoute from './adminBackup'
+import adminMasteryRoute from './adminMastery'
+import adminTtsRoute from './adminTts'
+import { validateIslamicFields } from '../lib/islamicContent'
+import { actorId, auditStatement } from '../lib/auditLog'
+import { requireAdmin, requirePermission } from '../lib/adminAuth'
 
 type AppEnv = { Bindings: Env }
 type DbRow = Record<string, unknown>
@@ -26,38 +34,18 @@ const PRODUCTION_LEVELS = ['motion_story', 'limited_2d', 'full_2d', 'live', 'sty
 const DIFFICULTIES = ['easy', 'medium', 'hard']
 const PLANS = ['free', 'family', 'family_plus']
 
-function isIslamicContent(planetId: string | null, sourceType: string | null): boolean {
-  return planetId === 'iman' || sourceType === 'quran' || sourceType === 'hadith' || sourceType === 'sira'
-}
+/// The religious-review gate lives in lib/islamicContent.ts so it can be unit
+/// tested. It previously compared planet_id against 'iman' while the seeded ID
+/// is 'islamic', which silently disabled the gate for all real Islamic content.
 
-function validateIslamicFields(body: JsonRecord, planetId: string | null): string | null {
-  const sourceType = typeof body.source_type === 'string' ? body.source_type : null
-  const isIslamic = isIslamicContent(planetId, sourceType)
-  if (!isIslamic) return null
-  if (!sourceType) return 'source_type مطلوب للمحتوى الإسلامي (quran/hadith/sira/adab)'
-  if (sourceType === 'quran' && (!body.verse_surah || !body.verse_ayah)) return 'verse_surah و verse_ayah مطلوبان للقرآن'
-  if (sourceType === 'hadith' && (!body.hadith_collection || !body.hadith_number)) return 'hadith_collection و hadith_number مطلوبان للحديث'
-  if (!body.religious_reviewer_id) return 'religious_reviewer_id مطلوب'
-  if (!body.religious_approved_at) return 'religious_approved_at مطلوب - لا يمكن النشر بدون موافقة شرعية'
-  return null
-}
+/// الحرس نفسه المستخدم في كل مسارات الإدارة، من lib/adminAuth.ts.
+///
+/// كان هذا الملف يكرّر منطق التحقق من المفتاح المشترك بدل استيراده، فوُجدت
+/// نسختان من فحص المصادقة. الآن نسخة واحدة تقبل جلسة مستخدم حقيقية وتُسقط
+/// المفتاح المشترك بعد بذر أول مستخدم.
+adminRoute.use('*', requireAdmin)
 
 adminRoute.use('*', async (c, next) => {
-  const configuredKey = c.env.ADMIN_API_KEY
-
-  // Local development remains frictionless. Staging and production fail closed
-  // until ADMIN_API_KEY is configured with `wrangler secret put ADMIN_API_KEY`.
-  if (!configuredKey && c.env.ENVIRONMENT !== 'development') {
-    return c.json({ success: false, error: 'Admin API is not configured' }, 503)
-  }
-
-  if (configuredKey) {
-    const suppliedKey = c.req.header('Authorization')?.replace(/^Bearer\s+/i, '')
-    if (!suppliedKey || suppliedKey !== configuredKey) {
-      return c.json({ success: false, error: 'Unauthorized' }, 401)
-    }
-  }
-
   await next()
 
   // Public catalog pages are cached at the edge. Any successful CMS write
@@ -72,11 +60,21 @@ adminRoute.use('*', async (c, next) => {
 // legacy D1 family handlers below and therefore remain the authoritative admin
 // read path while mutations fail closed.
 adminRoute.route('/', adminContentRoute)
+// Catalogue rows that had no HTTP surface at all: learning objectives and their
+// track rows, skills, content reviews, story-page reads and the cascading story
+// purge. Mounted after adminContent so nothing here shadows an existing handler.
+adminRoute.route('/', adminCatalogueRoute)
 adminRoute.route('/', adminAssetsRoute)
 adminRoute.route('/', adminFamilyProjectionRoute)
 adminRoute.route('/', adminTeamsRoute)
 adminRoute.route('/', adminAppExperienceRoute)
+adminRoute.route('/', adminPlansRoute)
 adminRoute.route('/', adminBackupRoute)
+// الإتقان والمحاولات: mastery و attempts كانا بلا أي مسار مخصَّص، والقراءة
+// الوحيدة لهما كانت تجميعًا واحدًا داخل /analytics/overview.
+adminRoute.route('/', adminMasteryRoute)
+// Narration generation. Mounted last so it cannot shadow any existing handler.
+adminRoute.route('/', adminTtsRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)
@@ -184,20 +182,6 @@ function serializeEpisode(row: DbRow) {
     is_free: Boolean(row.is_free),
     is_published: Boolean(row.is_published),
   }
-}
-
-function auditStatement(db: D1Database, actorId: string, action: string, entityType: string, entityId: string, details: unknown) {
-  return db.prepare(`
-    INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, details)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).bind(crypto.randomUUID(), actorId, action, entityType, entityId, JSON.stringify(details ?? {}))
-}
-
-function actorId(_c: { req: { header(name: string): string | undefined } }) {
-  // A shared API key cannot prove an individual actor identity. Do not accept a
-  // spoofable header as audit identity; replace this with Cloudflare Access
-  // identity when admin SSO is introduced.
-  return 'admin-api-key'
 }
 
 function databaseError(error: unknown): string {
@@ -311,17 +295,25 @@ adminRoute.get('/series', async (c) => {
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
   const totalRow = await queryFirst<{ total: number }>(db, `SELECT COUNT(*) AS total FROM series s ${where}`, params)
+  const baseUrl = publicAssetBaseUrl(c.env)
   const rows = await queryAll<DbRow>(db, `
     SELECT s.*, p.name_ar AS planet_name, p.color_hex AS planet_color,
       (SELECT GROUP_CONCAT(track_id) FROM series_tracks WHERE series_id = s.id) AS track_ids,
       (SELECT COUNT(*) FROM seasons WHERE series_id = s.id) AS seasons_count,
-      (SELECT COUNT(*) FROM episodes WHERE series_id = s.id AND status <> 'archived') AS episodes_count
+      (SELECT COUNT(*) FROM episodes WHERE series_id = s.id AND status <> 'archived') AS episodes_count,
+      ${artworkSelect('cover_asset', 'series', 's.id', SERIES_COVER_ROLES)}
     FROM series s
     LEFT JOIN planets p ON p.id = s.planet_id
     ${where}
     ORDER BY s.sort_order ASC, s.updated_at DESC
     LIMIT ? OFFSET ?
   `, [...params, limit, offset])
+  // cover_url resolves through asset_links (see lib/assetUrls.ts), matching the
+  // public /series endpoint. The admin list used to return the deprecated
+  // series.cover_url column as-is, which is null for every series whose poster
+  // was attached the normal way (through asset_links), so the admin table
+  // fell back to a plain letter avatar even for series with a real poster.
+  for (const row of rows) applyArtworkUrl(row, 'cover_asset', 'cover_url', baseUrl)
 
   return c.json({ success: true, data: rows.map(serializeSeries), meta: { total: Number(totalRow?.total ?? 0), limit, offset } })
 })
@@ -329,26 +321,35 @@ adminRoute.get('/series', async (c) => {
 adminRoute.get('/series/:id', async (c) => {
   const db = c.env.DB
   const id = c.req.param('id')
+  const baseUrl = publicAssetBaseUrl(c.env)
   const row = await queryFirst<DbRow>(db, `
     SELECT s.*, p.name_ar AS planet_name,
       (SELECT GROUP_CONCAT(track_id) FROM series_tracks WHERE series_id = s.id) AS track_ids,
-      (SELECT COUNT(*) FROM episodes WHERE series_id = s.id AND status <> 'archived') AS episodes_count
+      (SELECT COUNT(*) FROM episodes WHERE series_id = s.id AND status <> 'archived') AS episodes_count,
+      ${artworkSelect('cover_asset', 'series', 's.id', SERIES_COVER_ROLES)}
     FROM series s
     LEFT JOIN planets p ON p.id = s.planet_id
     WHERE s.id = ?
   `, [id])
 
   if (!row) return c.json({ success: false, error: 'Series not found' }, 404)
+  applyArtworkUrl(row, 'cover_asset', 'cover_url', baseUrl)
 
   const [seasons, characters] = await Promise.all([
     queryAll<DbRow>(db, 'SELECT * FROM seasons WHERE series_id = ? ORDER BY season_number', [id]),
     queryAll<DbRow>(db, 'SELECT * FROM characters WHERE series_id = ? ORDER BY created_at', [id]),
   ])
+  const episodeIds = await queryAll<DbRow>(db, `
+    SELECT e.*, ${artworkSelect('thumb_asset', 'episode', 'e.id', EPISODE_THUMBNAIL_ROLES)}
+    FROM episodes e WHERE e.series_id = ? AND e.status <> 'archived'
+    ORDER BY e.season_id, e.episode_number
+  `, [id])
+  for (const episode of episodeIds) applyArtworkUrl(episode, 'thumb_asset', 'thumbnail_url', baseUrl)
 
-  return c.json({ success: true, data: { ...serializeSeries(row), seasons, characters } })
+  return c.json({ success: true, data: { ...serializeSeries(row), seasons, characters, episodes: episodeIds.map(serializeEpisode) } })
 })
 
-adminRoute.post('/series', async (c) => {
+adminRoute.post('/series', requirePermission('create'), async (c) => {
   const body = await readBody(c)
   if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400)
 
@@ -379,18 +380,17 @@ adminRoute.post('/series', async (c) => {
   if (!PRODUCTION_LEVELS.includes(productionLevel) || !DIFFICULTIES.includes(difficulty) || !CONTENT_STATUSES.includes(status) || !PLANS.includes(priceTier)) {
     return c.json({ success: false, error: 'Invalid production, status, difficulty or price tier' }, 400)
   }
+  if (status === 'published') {
+    return c.json({ success: false, error: 'Create the series in a non-published state, then use the publish operation' }, 400)
+  }
 
   const db = c.env.DB
   const planetExists = await queryFirst<{ id: string }>(db, 'SELECT id FROM planets WHERE id = ? AND is_active = 1', [planetId])
   if (!planetExists) return c.json({ success: false, error: 'Planet not found' }, 400)
-  if (status === 'published') {
-    const islamicError = validateIslamicFields(body as JsonRecord, planetId)
-    if (islamicError) return c.json({ success: false, error: islamicError }, 400)
-  }
 
   const id = crypto.randomUUID()
   const slug = text(body.slug) ?? slugify(titleAr)
-  const publishedAt = status === 'published' ? new Date().toISOString() : null
+  const publishedAt = null
 
   const insert = db.prepare(`
     INSERT INTO series (
@@ -423,7 +423,7 @@ adminRoute.post('/series', async (c) => {
   return c.json({ success: true, data: { id, slug, status, track_ids: trackIds } }, 201)
 })
 
-adminRoute.patch('/series/:id', async (c) => {
+adminRoute.patch('/series/:id', requirePermission('edit_metadata'), async (c) => {
   const body = await readBody(c)
   if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400)
 
@@ -431,6 +431,9 @@ adminRoute.patch('/series/:id', async (c) => {
   const id = c.req.param('id')
   const existing = await queryFirst<DbRow>(db, 'SELECT * FROM series WHERE id = ?', [id])
   if (!existing) return c.json({ success: false, error: 'Series not found' }, 404)
+  if (text(body.status) === 'published') {
+    return c.json({ success: false, error: 'Use the publish operation to publish a series' }, 400)
+  }
 
   const ageMin = body.age_min === undefined ? Number(existing.age_min) : integer(body.age_min)
   const ageMax = body.age_max === undefined ? Number(existing.age_max) : integer(body.age_max)
@@ -490,12 +493,6 @@ adminRoute.patch('/series/:id', async (c) => {
     add('sort_order', value)
   }
   if (body.is_free !== undefined) add('is_free', asBooleanInteger(body.is_free))
-  if (finalStatus === 'published') {
-    const planetForCheck = text(body.planet_id) ?? String(existing.planet_id)
-    const islamicError = validateIslamicFields(body as JsonRecord, planetForCheck)
-    if (islamicError) return c.json({ success: false, error: islamicError }, 400)
-  }
-  if (body.status !== undefined && finalStatus === 'published' && !existing.published_at) add('published_at', new Date().toISOString())
 
   if (!sets.length && !updateTracks) return c.json({ success: false, error: 'No supported fields supplied' }, 400)
 
@@ -520,7 +517,23 @@ adminRoute.patch('/series/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-adminRoute.delete('/series/:id', async (c) => {
+adminRoute.post('/series/:id/publish', requirePermission('publish'), async (c) => {
+  const db = c.env.DB
+  const id = c.req.param('id')
+  const existing = await queryFirst<{ status: string }>(db, 'SELECT status FROM series WHERE id = ?', [id])
+  if (!existing) return c.json({ success: false, error: 'Series not found' }, 404)
+  if (existing.status === 'archived') return c.json({ success: false, error: 'Archived series cannot be published' }, 409)
+  if (existing.status === 'published') return c.json({ success: true, data: { id, status: 'published', published: false } })
+
+  await db.batch([
+    db.prepare(`UPDATE series SET status = 'published', published_at = COALESCE(published_at, ?), updated_at = datetime('now') WHERE id = ?`)
+      .bind(new Date().toISOString(), id),
+    auditStatement(db, actorId(c), 'publish', 'series', id, { previous_status: existing.status }),
+  ])
+  return c.json({ success: true, data: { id, status: 'published', published: true } })
+})
+
+adminRoute.delete('/series/:id', requirePermission('archive'), async (c) => {
   const db = c.env.DB
   const id = c.req.param('id')
   const exists = await queryFirst<{ id: string }>(db, 'SELECT id FROM series WHERE id = ?', [id])
@@ -559,10 +572,12 @@ adminRoute.get('/episodes', async (c) => {
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
   const totalRow = await queryFirst<{ total: number }>(db, `SELECT COUNT(*) AS total FROM episodes e ${where}`, params)
+  const baseUrl = publicAssetBaseUrl(c.env)
   const rows = await queryAll<DbRow>(db, `
     SELECT e.*, s.title_ar AS series_title,
       (SELECT GROUP_CONCAT(track_id) FROM episode_tracks WHERE episode_id = e.id) AS track_ids,
-      lo.title_ar AS objective_title
+      lo.title_ar AS objective_title,
+      ${artworkSelect('thumb_asset', 'episode', 'e.id', EPISODE_THUMBNAIL_ROLES)}
     FROM episodes e
     JOIN series s ON s.id = e.series_id
     LEFT JOIN learning_objectives lo ON lo.id = e.learning_objective_id
@@ -570,15 +585,22 @@ adminRoute.get('/episodes', async (c) => {
     ORDER BY e.updated_at DESC, e.episode_number ASC
     LIMIT ? OFFSET ?
   `, [...params, limit, offset])
+  // thumbnail_url resolves through asset_links, mirroring the public /episodes
+  // endpoint. Selecting episodes.thumbnail_url directly (the deprecated column)
+  // returned null for every episode whose thumbnail was attached the normal
+  // way, so the admin table always fell back to a static play-icon circle.
+  for (const row of rows) applyArtworkUrl(row, 'thumb_asset', 'thumbnail_url', baseUrl)
 
   return c.json({ success: true, data: rows.map(serializeEpisode), meta: { total: Number(totalRow?.total ?? 0), limit, offset } })
 })
 
 adminRoute.get('/episodes/:id', async (c) => {
+  const baseUrl = publicAssetBaseUrl(c.env)
   const row = await queryFirst<DbRow>(c.env.DB, `
     SELECT e.*, s.title_ar AS series_title,
       (SELECT GROUP_CONCAT(track_id) FROM episode_tracks WHERE episode_id = e.id) AS track_ids,
-      lo.title_ar AS objective_title
+      lo.title_ar AS objective_title,
+      ${artworkSelect('thumb_asset', 'episode', 'e.id', EPISODE_THUMBNAIL_ROLES)}
     FROM episodes e
     JOIN series s ON s.id = e.series_id
     LEFT JOIN learning_objectives lo ON lo.id = e.learning_objective_id
@@ -586,10 +608,11 @@ adminRoute.get('/episodes/:id', async (c) => {
   `, [c.req.param('id')])
 
   if (!row) return c.json({ success: false, error: 'Episode not found' }, 404)
+  applyArtworkUrl(row, 'thumb_asset', 'thumbnail_url', baseUrl)
   return c.json({ success: true, data: serializeEpisode(row) })
 })
 
-adminRoute.post('/episodes', async (c) => {
+adminRoute.post('/episodes', requirePermission('create'), async (c) => {
   const body = await readBody(c)
   if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400)
 
@@ -617,9 +640,12 @@ adminRoute.post('/episodes', async (c) => {
   if (!READING_LEVELS.includes(readingLevel) || !INTERACTION_MODES.includes(interactionMode) || !SUPERVISION_LEVELS.includes(supervisionLevel) || !DIFFICULTIES.includes(difficulty) || !CONTENT_STATUSES.includes(status)) {
     return c.json({ success: false, error: 'Invalid episode metadata' }, 400)
   }
+  if (status === 'published') {
+    return c.json({ success: false, error: 'Create the episode in a non-published state, then use the publish operation' }, 400)
+  }
 
   const id = crypto.randomUUID()
-  const published = status === 'published'
+  const published = false
   const insert = db.prepare(`
     INSERT INTO episodes (
       id, series_id, season_id, episode_number, title_ar, description_ar,
@@ -658,7 +684,7 @@ adminRoute.post('/episodes', async (c) => {
   return c.json({ success: true, data: { id, status, track_ids: trackIds } }, 201)
 })
 
-adminRoute.patch('/episodes/:id', async (c) => {
+adminRoute.patch('/episodes/:id', requirePermission('edit_metadata'), async (c) => {
   const body = await readBody(c)
   if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400)
 
@@ -666,6 +692,9 @@ adminRoute.patch('/episodes/:id', async (c) => {
   const id = c.req.param('id')
   const existing = await queryFirst<DbRow>(db, 'SELECT * FROM episodes WHERE id = ?', [id])
   if (!existing) return c.json({ success: false, error: 'Episode not found' }, 404)
+  if (text(body.status) === 'published') {
+    return c.json({ success: false, error: 'Use the publish operation to publish an episode' }, 400)
+  }
 
   const ageMin = body.age_min === undefined ? Number(existing.age_min) : integer(body.age_min)
   const ageMax = body.age_max === undefined ? Number(existing.age_max) : integer(body.age_max)
@@ -739,8 +768,7 @@ adminRoute.patch('/episodes/:id', async (c) => {
     const status = text(body.status)
     if (!status || !CONTENT_STATUSES.includes(status)) return c.json({ success: false, error: 'Invalid status' }, 400)
     add('status', status)
-    add('is_published', status === 'published' ? 1 : 0)
-    if (status === 'published' && !existing.published_at) add('published_at', new Date().toISOString())
+    add('is_published', 0)
   }
 
   if (!sets.length && !updateTracks) return c.json({ success: false, error: 'No supported fields supplied' }, 400)
@@ -766,7 +794,23 @@ adminRoute.patch('/episodes/:id', async (c) => {
   return c.json({ success: true, data: { id, updated: true } })
 })
 
-adminRoute.delete('/episodes/:id', async (c) => {
+adminRoute.post('/episodes/:id/publish', requirePermission('publish'), async (c) => {
+  const db = c.env.DB
+  const id = c.req.param('id')
+  const existing = await queryFirst<{ status: string }>(db, 'SELECT status FROM episodes WHERE id = ?', [id])
+  if (!existing) return c.json({ success: false, error: 'Episode not found' }, 404)
+  if (existing.status === 'archived') return c.json({ success: false, error: 'Archived episode cannot be published' }, 409)
+  if (existing.status === 'published') return c.json({ success: true, data: { id, status: 'published', published: false } })
+
+  await db.batch([
+    db.prepare(`UPDATE episodes SET status = 'published', is_published = 1, published_at = COALESCE(published_at, ?), updated_at = datetime('now') WHERE id = ?`)
+      .bind(new Date().toISOString(), id),
+    auditStatement(db, actorId(c), 'publish', 'episode', id, { previous_status: existing.status }),
+  ])
+  return c.json({ success: true, data: { id, status: 'published', published: true } })
+})
+
+adminRoute.delete('/episodes/:id', requirePermission('archive'), async (c) => {
   const db = c.env.DB
   const id = c.req.param('id')
   const exists = await queryFirst<{ id: string }>(db, 'SELECT id FROM episodes WHERE id = ?', [id])
