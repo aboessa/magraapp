@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/layout/app_layout.dart';
 import '../../../core/widgets/cinematic_background.dart';
+import '../../../core/analytics/analytics.dart';
 import '../../../core/speech/voice_search.dart';
 import '../../home/domain/content_models.dart';
 import '../data/recent_searches_store.dart';
@@ -68,7 +69,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 textInputAction: TextInputAction.search,
                 onChanged: _setQuery,
                 onSubmitted: (v) {
-                  if (v.trim().isNotEmpty) _remember(v);
+                  if (v.trim().isEmpty) return;
+                  _remember(v);
+                  // Measured by outcome only — the typed text is never sent.
+                  MajarraAnalytics.searchPerformed(
+                    resultCount: searchCatalog(widget.catalog, v).length,
+                  );
                 },
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
@@ -331,6 +337,7 @@ class _VoiceSearchButton extends ConsumerWidget {
       tooltip: listening ? 'إيقاف الاستماع' : 'بحث صوتي',
       onPressed: () async {
         final ok = await controller.start(onTranscript);
+        MajarraAnalytics.voiceSearchUsed(available: ok);
         if (!context.mounted) return;
         if (!ok) {
           ScaffoldMessenger.of(context).showSnackBar(

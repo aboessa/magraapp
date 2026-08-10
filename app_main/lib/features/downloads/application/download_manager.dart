@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../core/analytics/analytics.dart';
 import '../data/download_repository.dart';
 import '../domain/download_models.dart';
 
@@ -200,6 +201,7 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
         ),
       );
       await _repo.saveAll(state);
+      MajarraAnalytics.downloadSucceeded(current.contentType);
     } catch (_) {
       _fail(id);
     }
@@ -268,8 +270,11 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
     }
   }
 
-  void _fail(String id) =>
-      _update(id, (i) => i.copyWith(status: DownloadStatus.failed));
+  void _fail(String id) {
+    final item = byId(id);
+    _update(id, (i) => i.copyWith(status: DownloadStatus.failed));
+    if (item != null) MajarraAnalytics.downloadFailed(item.contentType);
+  }
 
   void _upsert(DownloadItem item) {
     final next = [for (final i in state) if (i.id != item.id) i, item];
