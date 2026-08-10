@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import type { AgeTrack, ContentStatus, Planet, SeriesPayload, SeriesRecord, VisualStyleRecord } from '../types/api'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { PublishReadinessDialog } from '../components/PublishReadinessDialog'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { SavedViewsMenu } from '../components/ListTools'
 import { EntityThumbnail } from '../components/EntityThumbnail'
 import { Pagination } from '../components/Pagination'
 import { StatusBadge, TrackBadge } from '../components/StatusBadge'
 import { formatNumber, statusLabels, trackLabels } from '../lib/labels'
 import { adminPath } from '../lib/adminPath'
+import { useUrlListState } from '../hooks/useUrlListState'
 import { useQuickCreate } from '../hooks/useQuickCreate'
 import { usePreferences } from '../context/preferences'
 
@@ -71,20 +75,65 @@ type SeriesForm = {
 
 const emptyForm: SeriesForm = { title_ar: '', planet_id: '', type: 'continuous', track: 'kids', production_level: 'limited_2d', visual_style: '', visual_style_id: '', description_ar: '' }
 
+/// أسماء الفلاتر هي أسماء معاملات الاستعلام التي يقبلها `GET /admin/series`
+/// بالحرف، فرابط من اللوحة التنفيذية يفتح المجموعة نفسها التي عدّها المقياس.
+const DEFAULT_FILTERS = { track: '', status: '' }
+const LIMIT = 50
+
+/// حقول الدرج، مُعرَّفة كبيانات لا كـJSX: نفس التعريف يقود الدرج والشرائح
+/// وعدّاد الفلاتر النشطة وزرّ المسح، فلا يمكن أن تنسى الشاشة واحدًا منها.
+const FILTER_FIELDS = (
+  text: { allTracks: string; allStatuses: string; track: string; status: string },
+  locale: 'ar' | 'en',
+): FilterField[] => [
+  {
+    key: 'track',
+    label: text.track,
+    type: 'select',
+    options: [
+      { value: '', label: text.allTracks },
+      { value: 'preschool', label: trackLabels[locale].preschool },
+      { value: 'kids', label: trackLabels[locale].kids },
+      { value: 'junior', label: trackLabels[locale].junior },
+    ],
+  },
+  {
+    key: 'status',
+    label: text.status,
+    type: 'select',
+    options: [
+      { value: '', label: text.allStatuses },
+      ...filterStatuses.map((item) => ({ value: item, label: statusLabels[locale][item] })),
+    ],
+  },
+]
+
 export function SeriesPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
-  const [searchParams] = useSearchParams()
-  const requestedQuery = searchParams.get('q') ?? ''
+  // حالة القائمة في العنوان لا في الذاكرة.
+  //
+  // ## ما كان مكسورًا
+  //
+  // كانت الفلاتر في `useState`، و`q` وحده يُقرأ من العنوان مرة عند التركيب. أثر
+  // ذلك ثلاثة:
+  //
+  // ١. **روابط اللوحة التنفيذية كانت تفتح قائمة غير مفلترة.** المقياس يقول
+  //    «١٢ سلسلة قيد الإنتاج» ويفتح كل السلاسل، فيقرأ المستخدم رقمًا ثم يرى
+  //    مجموعة أخرى. تدقيق المقاييس رصد هذا في ثلاثة عشر مسارًا.
+  // ٢. زرّ الرجوع في المتصفح لا يُعيد الفلترة السابقة.
+  // ٣. رابط منسوخ من شريط العنوان لا ينقل ما كان يراه صاحبه.
+  //
+  // `useUrlListState` يجعل العنوان المصدر الوحيد، فتغيير الفلتر يُصفّر الترقيم
+  // تلقائيًا ولا توجد نسخة ثانية تتزامن معه.
+  const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
+  const navigate = useNavigate()
+  const { query, filters, offset, limit } = list
+  const { track, status } = filters
   const [records, setRecords] = useState<SeriesRecord[]>([])
   const [planets, setPlanets] = useState<Planet[]>([])
   const [visualStyles, setVisualStyles] = useState<VisualStyleRecord[]>([])
-  const [query, setQuery] = useState(requestedQuery)
-  const [track, setTrack] = useState('')
-  const [status, setStatus] = useState('')
-  const [offset, setOffset] = useState(0)
   const [total, setTotal] = useState(0)
-  const limit = 50
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -96,7 +145,7 @@ export function SeriesPage() {
   /// السلسلة التي طُلب نشرها. غير فارغة ⇒ شاشة الجاهزية مفتوحة لها.
   const [publishTarget, setPublishTarget] = useState<SeriesRecord | null>(null)
 
-  useEffect(() => setQuery(requestedQuery), [requestedQuery])
+  // لا مزامنة بين العنوان والحالة: لم تبقَ نسخة محلية للفلاتر تحتاج مزامنة.
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -112,7 +161,8 @@ export function SeriesPage() {
     }
   }, [query, status, text.loadError, track, offset])
 
-  useEffect(() => { setOffset(0) }, [query, track, status])
+  // لا `setOffset(0)` هنا: `useUrlListState` يُصفّر الترقيم عند كل تغيير فلتر،
+  // فأثرٌ إضافي يفعل الشيء نفسه كان سيكتب في العنوان مرتين لكل ضغطة.
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 220)
@@ -216,14 +266,27 @@ export function SeriesPage() {
       <section className="panel panel--table">
         <header className="panel__header panel__header--filters">
           <div><span className="panel__kicker">{text.catalog}</span><h3>{text.allSeries} <span className="title-count">{formatNumber(total, locale)}</span></h3></div>
-          <div className="filters-row">
-            <label className="search-field"><Icon name="search" size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search} /></label>
-            <select value={track} onChange={(event) => setTrack(event.target.value)} aria-label={text.allTracks}><option value="">{text.allTracks}</option><option value="preschool">{trackLabels[locale].preschool}</option><option value="kids">{trackLabels[locale].kids}</option><option value="junior">{trackLabels[locale].junior}</option></select>
-            <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label={text.allStatuses}><option value="">{text.allStatuses}</option>{filterStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select>
-          </div>
+          <ListToolbar
+            searchValue={query}
+            onSearchChange={list.setQuery}
+            searchPlaceholder={text.search}
+            fields={FILTER_FIELDS(text, locale)}
+            values={filters}
+            defaults={DEFAULT_FILTERS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as 'track' | 'status', '')}
+            trailing={
+              <SavedViewsMenu
+                storageKey="series"
+                currentSearch={list.search}
+                onApply={(search) => navigate(`${adminPath('series')}${search}`)}
+              />
+            }
+          />
         </header>
 
-        {loading && !records.length ? <LoadingState label={text.loading} /> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()} /> : records.length ? <><div className="table-scroll" tabIndex={0}><table className="data-table data-table--wide"><thead><tr><th>{text.series}</th><th>{text.planet}</th><th>{text.type}</th><th>{text.track}</th><th>{text.production}</th><th>{text.episodes}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead><tbody>{records.map((series) => { const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar; return <tr key={series.id}><td><Link className="entity-cell entity-cell--button" to={adminPath(`series/${series.id}`)}><EntityThumbnail src={series.cover_url} alt={title} label={title} color={series.planet_color} icon="series" /><div><strong>{title}</strong><small>{series.slug}</small></div></Link></td><td>{series.planet_name || '—'}</td><td>{typeLabels[locale][series.type]}</td><td><div className="badge-list">{series.track_ids.map((item) => <TrackBadge track={item} key={item} />)}</div></td><td>{productionLabels[locale][series.production_level]}</td><td>{formatNumber(Number(series.episodes_count ?? 0), locale)}</td><td>{series.status === 'published' ? <StatusBadge status={series.status} /> : <><select className="status-select" value={series.status} disabled={busyId === series.id} aria-label={`${text.status}: ${title}`} onChange={(event) => void changeStatus(series.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={series.status} /></>}</td><td><div className="table-actions">{series.status !== 'published' ? <button className="icon-button icon-button--small" type="button" onClick={() => void publish(series)} disabled={busyId === series.id} title={text.publish}><Icon name="upload" size={16} /></button> : null}<button className="icon-button icon-button--small" type="button" onClick={() => openEdit(series)} title={text.edit}><Icon name="edit" size={16} /></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(series)} disabled={busyId === series.id} title={text.archive}><Icon name="archive" size={16} /></button></div></td></tr> })}</tbody></table></div><Pagination total={total} limit={limit} offset={offset} onOffsetChange={setOffset} locale={locale} /></> : <EmptyState title={text.empty} description={text.emptyDesc} action={<button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17} />{text.addSeries}</button>} />}
+        {loading && !records.length ? <LoadingState label={text.loading} /> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()} /> : records.length ? <><div className="table-scroll" tabIndex={0}><table className="data-table data-table--wide"><thead><tr><th>{text.series}</th><th>{text.planet}</th><th>{text.type}</th><th>{text.track}</th><th>{text.production}</th><th>{text.episodes}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead><tbody>{records.map((series) => { const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar; return <tr key={series.id}><td><Link className="entity-cell entity-cell--button" to={adminPath(`series/${series.id}`)}><EntityThumbnail src={series.cover_url} alt={title} label={title} color={series.planet_color} icon="series" /><div><strong>{title}</strong><small>{series.slug}</small></div></Link></td><td>{series.planet_name || '—'}</td><td>{typeLabels[locale][series.type]}</td><td><div className="badge-list">{series.track_ids.map((item) => <TrackBadge track={item} key={item} />)}</div></td><td>{productionLabels[locale][series.production_level]}</td><td>{formatNumber(Number(series.episodes_count ?? 0), locale)}</td><td>{series.status === 'published' ? <StatusBadge status={series.status} /> : <><select className="status-select" value={series.status} disabled={busyId === series.id} aria-label={`${text.status}: ${title}`} onChange={(event) => void changeStatus(series.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={series.status} /></>}</td><td><div className="table-actions">{series.status !== 'published' ? <button className="icon-button icon-button--small" type="button" onClick={() => void publish(series)} disabled={busyId === series.id} title={text.publish}><Icon name="upload" size={16} /></button> : null}<button className="icon-button icon-button--small" type="button" onClick={() => openEdit(series)} title={text.edit}><Icon name="edit" size={16} /></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(series)} disabled={busyId === series.id} title={text.archive}><Icon name="archive" size={16} /></button></div></td></tr> })}</tbody></table></div><Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} /></> : <EmptyState title={text.empty} description={text.emptyDesc} action={<button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17} />{text.addSeries}</button>} />}
       </section>
 
       <Modal open={modalOpen} onClose={() => !saving && setModalOpen(false)} title={editing ? text.editTitle : text.createTitle} description={text.modalDesc}>
