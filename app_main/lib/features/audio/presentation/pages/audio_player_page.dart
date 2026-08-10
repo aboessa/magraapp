@@ -9,6 +9,7 @@ import 'package:video_player/video_player.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../core/widgets/focusable_scale.dart';
+import '../../../../core/analytics/analytics.dart';
 import '../../../child/application/child_provider.dart';
 import '../../../downloads/application/download_manager.dart';
 import '../../../downloads/application/download_providers.dart';
@@ -128,9 +129,11 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
         _controller = controller;
         _initialising = false;
       });
+      MajarraAnalytics.contentStarted('audio_story', widget.bookId ?? 'public');
     } catch (_) {
       await controller.dispose();
       if (!mounted) return;
+      MajarraAnalytics.playbackError(widget.bookId ?? 'public');
       setState(() {
         _initialising = false;
         _error = 'تعذّر تشغيل القصة. تحقّق من الاتصال وحاول مرة أخرى.';

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/analytics/analytics.dart';
 import '../../../../core/env/app_environment.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../core/widgets/cinematic_image.dart';
@@ -83,6 +84,10 @@ class _StoryReaderPageState extends ConsumerState<StoryReaderPage> {
     // Only offer the mode picker when there is something to read.
     if (_pages.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showModePicker());
+    }
+    final bookId = widget.bookId;
+    if (bookId != null && bookId.isNotEmpty) {
+      MajarraAnalytics.readerOpened(bookId);
     }
   }
 
