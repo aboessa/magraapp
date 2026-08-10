@@ -128,6 +128,31 @@ export function slaDueDates(policy: SlaPolicy | null, from: string): SlaDueDates
   };
 }
 
+/// SQL predicate: has the deadline in [column] already passed?
+///
+/// ## Why this is not `column < datetime('now')`
+///
+/// It was, and it was wrong. Deadlines are stored by [slaDueDates] as
+/// `new Date().toISOString()` — `2026-08-11T02:09:03.591Z` — while SQLite's
+/// `datetime('now')` yields `2026-08-10 14:09:03`. Those are compared as text, and
+/// within one UTC day `'T'` (0x54) sorts above `' '` (0x20), so a deadline that passed an
+/// hour ago compares as still in the future. Cross-day comparisons happen to work, which
+/// is why the defect survived: **same-day SLA breaches were invisible** to the overdue
+/// filter and to the breach counters, while the same judgement computed in JavaScript per
+/// row reported them correctly. That is precisely the SQL-versus-badge disagreement the
+/// overdue filter exists to prevent.
+///
+/// The stored value is normalised to SQLite's shape rather than the other way round, so no
+/// migration is needed and rows written in either format compare correctly: the first
+/// nineteen characters are `YYYY-MM-DDTHH:MM:SS` in both, and replacing `T` with a space
+/// makes them directly comparable to `datetime('now')`. Both sides are UTC.
+///
+/// [column] is interpolated, so it must be a literal column reference from this codebase
+/// and never request input.
+export function SQL_DEADLINE_PASSED(column: string): string {
+  return `REPLACE(SUBSTR(${column}, 1, 19), 'T', ' ') < datetime('now')`;
+}
+
 /// Allowed status transitions.
 ///
 /// A closed ticket is terminal: reopening it would lose the distinction between "this

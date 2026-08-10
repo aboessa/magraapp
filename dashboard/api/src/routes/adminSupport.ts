@@ -36,6 +36,7 @@ import {
   resolveSlaPolicy,
   slaDueDates,
   slaState,
+  SQL_DEADLINE_PASSED,
   stampsFirstResponse,
   SUPPORTED_ACTIONS,
   ticketCreateInput,
@@ -147,9 +148,20 @@ route.get('/support/tickets', requireAdmin, async (c) => {
     clauses.push("t.status NOT IN ('resolved', 'closed')");
   }
   if (c.req.query('overdue') === '1') {
+    // `datetime('now')` is normalised to the stored format rather than compared to it
+    // directly. Deadlines are written by `slaDueDates()` as `new Date().toISOString()`
+    // — `2026-08-11T02:09:03.591Z` — while `datetime('now')` yields
+    // `2026-08-10 14:09:03`. Comparing those as text is wrong inside one UTC day,
+    // because 'T' (0x54) sorts above ' ' (0x20), so a deadline that passed an hour ago
+    // compares as still in the future. Cross-day comparisons happen to work, which is
+    // why this survived: same-day breaches were invisible to this filter and to the
+    // badge below, while the per-row `sla.resolution_breached` computed in JavaScript
+    // reported them correctly. That is exactly the SQL-versus-badge disagreement the
+    // comment above this handler claims to prevent. Found by
+    // scripts/verify-support-e2e.mjs.
     clauses.push(`t.resolution_due_at IS NOT NULL
       AND t.status NOT IN ('resolved', 'closed', 'waiting_customer')
-      AND t.resolution_due_at < datetime('now')`);
+      AND ${SQL_DEADLINE_PASSED('t.resolution_due_at')}`);
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
@@ -538,11 +550,11 @@ route.get('/support/sla', requireAdmin, async (c) => {
       (SELECT COUNT(*) FROM support_tickets
         WHERE first_response_at IS NULL AND first_response_due_at IS NOT NULL
           AND status NOT IN ('resolved', 'closed')
-          AND first_response_due_at < datetime('now')) AS response_breaches,
+          AND ${SQL_DEADLINE_PASSED('first_response_due_at')}) AS response_breaches,
       (SELECT COUNT(*) FROM support_tickets
         WHERE resolution_due_at IS NOT NULL
           AND status NOT IN ('resolved', 'closed', 'waiting_customer')
-          AND resolution_due_at < datetime('now')) AS resolution_breaches
+          AND ${SQL_DEADLINE_PASSED('resolution_due_at')}) AS resolution_breaches
   `);
   return c.json({
     success: true,

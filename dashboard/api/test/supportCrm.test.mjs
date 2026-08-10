@@ -223,9 +223,38 @@ test('escalation raises the priority and re-derives the clock', () => {
 
 test('overdue filtering happens in SQL so the count and the list agree', () => {
   const list = handler('/support/tickets', 'get');
-  assert.match(list, /resolution_due_at < datetime\('now'\)/);
+  // The predicate is shared with the breach counters through SQL_DEADLINE_PASSED, so the
+  // filter and the badge cannot drift apart in shape either.
+  assert.match(list, /SQL_DEADLINE_PASSED\('t\.resolution_due_at'\)/);
   assert.match(list, /waiting_customer/);
   assert.match(list, /COUNT\(\*\) AS total/);
+  // The raw text comparison must not come back: it was wrong inside one UTC day.
+  assert.doesNotMatch(list, /resolution_due_at < datetime\('now'\)/);
+});
+
+test('a deadline that passed an hour ago compares as passed, not as future', () => {
+  // The defect this pins: deadlines are stored as `2026-08-11T02:09:03.591Z` and
+  // `datetime('now')` yields `2026-08-10 14:09:03`. Compared as text, 'T' (0x54) sorts
+  // above ' ' (0x20), so within one UTC day every same-day breach read as still in the
+  // future — invisible to the SQL filter and the badge while the JavaScript judgement per
+  // row reported it correctly. Asserted as string algebra because that is what SQLite
+  // does with these two values.
+  const stored = '2026-08-11T02:09:03.591Z';
+  const sqliteNow = '2026-08-11 03:00:00';
+  assert.equal(stored < sqliteNow, false, 'the raw comparison is the defect');
+
+  const normalise = (value) => value.slice(0, 19).replace('T', ' ');
+  assert.equal(normalise(stored) < sqliteNow, true, 'the normalised comparison is correct');
+  // And a deadline still in the future stays in the future: a fix that reports everything
+  // as overdue would pass the first assertion alone.
+  assert.equal(normalise('2026-08-11T04:00:00.000Z') < sqliteNow, false);
+});
+
+test('the breach counters use the same predicate as the overdue filter', () => {
+  const sla = handler('/support/sla', 'get');
+  assert.match(sla, /SQL_DEADLINE_PASSED\('first_response_due_at'\)/);
+  assert.match(sla, /SQL_DEADLINE_PASSED\('resolution_due_at'\)/);
+  assert.doesNotMatch(sla, /due_at < datetime\('now'\)/);
 });
 
 test('reads need only requireAdmin while writes need a permission', () => {

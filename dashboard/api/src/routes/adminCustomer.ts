@@ -170,6 +170,39 @@ route.get('/customers/:id', requireAdmin, async (c) => {
         ? { available: false, reason: 'تعذّر قراءة ملخّص التقدّم من مصدر السلطة.' }
         : { records: (authority as { progress_records?: number }).progress_records },
     },
+    meta: {
+      /// Where every section came from.
+      ///
+      /// The header of this file names three sources and says which one answers which
+      /// question. Until now only `authority` carried that on the wire, so a screen
+      /// rendering "devices" beside "devices" had no way to label which was the live read
+      /// and which the projection — and `/admin/parents` already returns
+      /// `meta.source`, so the convention existed and this endpoint did not follow it.
+      /// Found by scripts/verify-customer360-e2e.mjs.
+      ///
+      /// `d1_projection` and `d1_history` are distinguished deliberately: a projection is
+      /// eventually consistent behind the authority and may be stale, while a history
+      /// table is the record of what happened and cannot be. An operator reading a device
+      /// list needs to know which of the two they are looking at.
+      sources: {
+        family: 'd1_projection',
+        authority: 'family_state',
+        children: 'd1_projection',
+        devices_projection: 'd1_projection',
+        billing: 'd1_history',
+        purchases: 'd1_history',
+        tickets: 'd1_admin',
+        audit: 'd1_admin',
+        consents: 'family_state',
+        progress_summary: 'family_state',
+      },
+      source_notes: {
+        d1_projection: 'إسقاط في D1 يكتبه طابور الأحداث، فقد يتأخّر عن مصدر السلطة.',
+        family_state: 'مصدر السلطة (Durable Object): الحاضر — الاستحقاق والأجهزة والجلسات.',
+        d1_history: 'سجلّ تاريخي في D1: ما حدث فعلًا، ولا يتأخّر عن شيء.',
+        d1_admin: 'جداول تشغيلية إدارية: التذاكر وسجل التدقيق.',
+      },
+    },
   });
 });
 

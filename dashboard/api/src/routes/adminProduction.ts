@@ -186,13 +186,24 @@ async function storyFacts(env: Env, ids: string[], withPublish: boolean): Promis
      ORDER BY p.page_number
   `, ids);
   const pageIds = pages.map((page) => page.id);
+  // Localisations are fetched by story, not by page.
+  //
+  // The previous version bound one parameter per page — `WHERE l.page_id IN (?, ?, …)` —
+  // and D1 refuses a statement with more than 100 variables. Six stories of eighteen
+  // pages is 98 bindings and works; the seventh returned 500, so the board answered
+  // `limit=6` and crashed at the cap of 40 it advertised in its own `meta.board_limit`.
+  // Found by scripts/verify-production-e2e.mjs.
+  //
+  // Joining through `story_pages` keeps the binding count at one per *story*, which the
+  // cap already bounds, and returns exactly the same rows.
   const localizations = pageIds.length
     ? await queryAll<{ page_id: string; language: string; body_text: string | null; narration_status: string | null }>(env.DB, `
         SELECT l.page_id, l.language, l.body_text, ca.status AS narration_status
           FROM story_page_localizations l
+          JOIN story_pages p ON p.id = l.page_id
           LEFT JOIN content_assets ca ON ca.id = l.narration_asset_id
-         WHERE l.page_id IN (${pageIds.map(() => '?').join(', ')})
-      `, pageIds)
+         WHERE p.story_id IN (${ids.map(() => '?').join(', ')})
+      `, ids)
     : [];
 
   const [assets, reviews, blockers] = await Promise.all([

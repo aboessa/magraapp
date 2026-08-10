@@ -182,8 +182,11 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     [],
   )
 
+  /// بلا استعلام تُعرض ثمانية أوامر فقط: قائمة مفتوحة بخمسة عشر أمرًا تُقرأ
+  /// كحائط لا كاختصار. مع استعلام تُعرض كل المطابقات، لأن من كتب «تذكرة» يريد
+  /// أمر التذكرة لا أول ثمانية أوامر أبجديًا.
   const visibleCommands = useMemo(
-    () => commands.filter((command) => commandMatches(command, query)).slice(0, 8),
+    () => commands.filter((command) => commandMatches(command, query)).slice(0, query.trim() ? 12 : 8),
     [commands, query],
   )
 
