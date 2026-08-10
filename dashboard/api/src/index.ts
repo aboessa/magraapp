@@ -23,6 +23,8 @@ import publicSiteRoute, { siteFiles } from './routes/publicSite.ts';
 import publicRenderRoute, { rootNegotiation } from './routes/publicRender.ts';
 import adminAuthRoute from './routes/adminAuth';
 import adminUsersRoute from './routes/adminUsers';
+import adminSearchRoute from './routes/adminSearch.ts';
+import adminCalendarRoute from './routes/adminCalendar.ts';
 import { handleFamilyEvents } from './queue/familyEvents';
 import { handleFamilyEventsDlq } from './queue/dlq';
 import { handleScheduled } from './scheduled/cleanup';
@@ -64,6 +66,11 @@ app.get('/health', (c) => c.json({ status: 'ok' }));
 // مصادقة اللوحة قبل adminRoute: مسارات الدخول لا يمكن أن تتطلّب جلسة لأنها
 // هي التي تُنشئها، وترتيب التركيب يجعل حرس adminRoute لا يمسّها.
 app.route('/api/v1/admin/auth', adminAuthRoute);
+// البحث الشامل والتقويم قبل adminRoute: كلاهما يعلن مساره الكامل (`/search`,
+// `/calendar`) ويحرس نفسه بـrequireAdmin، وتركيبهما هنا يجعلهما يُطابَقان قبل
+// أي مسار عام في adminRoute.
+app.route('/api/v1/admin', adminSearchRoute);
+app.route('/api/v1/admin', adminCalendarRoute);
 app.route('/api/v1/admin', adminRoute);
 app.route('/api/v1/auth', authRoute);
 app.route('/api/v1/billing', billingRoute);

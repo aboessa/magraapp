@@ -41,8 +41,8 @@
 ///   JSON a client reads and the markup a crawler reads cannot disagree.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
 import { CMS_LANGUAGES, direction, type CmsLanguage } from '../lib/cmsContent.ts';
 import { publicAssetBaseUrl, publicAssetUrl } from '../lib/assetUrls.ts';
 import {

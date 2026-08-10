@@ -60,6 +60,17 @@ export type AdminSessionUser = {
   roles: string[]
   /// الصلاحيات المستخلصة من كل أدواره مجتمعة
   permissions: string[]
+  /// المنح كاملة بنطاقاتها.
+  ///
+  /// ## علّة كانت هنا
+  ///
+  /// `resolveSession` كان يُحمّل المنح بـ`loadUserAccess` ثم يُسقطها، فتصل إلى
+  /// `requirePermission` جلسةٌ بلا `grants`. و`can()` — بحقّ — يطالب بمنح واحد
+  /// على الأقل يطابق المورد، فكانت النتيجة أن **كل** مستخدم غير مالك ولا مدير
+  /// نظام يُرفض في كل عملية محروسة بصلاحية، مهما كانت منحه. الصلاحيات المسطّحة
+  /// كانت تصل للواجهة فتُظهر الأزرار، والخادم يرفض. تحميلها هنا هو ما يجعل
+  /// النموذج المكتوب في `can()` نافذًا فعلًا.
+  grants: AccessGrant[]
   must_change_password: boolean
 }
 
@@ -316,6 +327,7 @@ export async function login(
       display_name: user.display_name,
       roles: access.roles,
       permissions: access.permissions,
+      grants: access.grants,
       must_change_password: credentials.must_change_password === 1,
     },
   }
@@ -357,6 +369,7 @@ export async function resolveSession(db: D1Database, token: string): Promise<Adm
     display_name: row.display_name,
     roles: access.roles,
     permissions: access.permissions,
+    grants: access.grants,
     must_change_password: Number(row.must_change_password) === 1,
   }
 }
