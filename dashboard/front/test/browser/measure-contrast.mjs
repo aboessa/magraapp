@@ -72,28 +72,45 @@ for (const theme of ['dark', 'light']) {
 
     const report = []
     for (const selector of selectors) {
-      const element = document.querySelector(selector)
-      if (!element) continue
-      const style = getComputedStyle(element)
-      const front = over(parse(style.color), backgroundOf(element))
-      const back = backgroundOf(element)
-      const lighter = Math.max(luminance(front), luminance(back))
-      const darker = Math.min(luminance(front), luminance(back))
-      report.push({
-        selector,
-        color: style.color,
-        fontSize: style.fontSize,
-        fontWeight: style.fontWeight,
-        background: `rgb(${Math.round(back.r)}, ${Math.round(back.g)}, ${Math.round(back.b)})`,
-        ratio: Number((((lighter + 0.05) / (darker + 0.05))).toFixed(2)),
-      })
+      // Every match, not just the first.
+      //
+      // This tool used `querySelector`, so it measured one element while axe checks all of
+      // them — and it therefore reported "passes" for two selectors axe was failing. The
+      // first `.eyebrow` on a page sits on the page background; a later one sits inside a
+      // panel or a notice, and that is the one that fails.
+      const elements = [...document.querySelectorAll(selector)]
+      for (const [index, element] of elements.entries()) {
+        const style = getComputedStyle(element)
+        const front = over(parse(style.color), backgroundOf(element))
+        const back = backgroundOf(element)
+        const lighter = Math.max(luminance(front), luminance(back))
+        const darker = Math.min(luminance(front), luminance(back))
+        const size = Number.parseFloat(style.fontSize)
+        const bold = Number.parseInt(style.fontWeight, 10) >= 700
+        // WCAG "large text": 24px, or 18.66px when bold. Below that the threshold is 4.5.
+        const threshold = size >= 24 || (bold && size >= 18.66) ? 3 : 4.5
+        const ratio = Number((((lighter + 0.05) / (darker + 0.05))).toFixed(2))
+        report.push({
+          selector: elements.length > 1 ? `${selector} [${index}]` : selector,
+          text: (element.textContent ?? '').trim().slice(0, 24),
+          color: style.color,
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          background: `rgb(${Math.round(back.r)}, ${Math.round(back.g)}, ${Math.round(back.b)})`,
+          ratio,
+          threshold,
+          passes: ratio >= threshold,
+        })
+      }
     }
     return report
   }, SELECTORS)
 
   process.stdout.write(`\n--- ${theme} ---\n`)
   for (const item of measured) {
-    process.stdout.write(`${item.selector.padEnd(28)} ${item.color} on ${item.background} ${item.fontSize}/${item.fontWeight} => ${item.ratio}:1\n`)
+    process.stdout.write(`${item.passes ? 'ok  ' : 'FAIL'} ${item.selector.padEnd(30)} `
+      + `${item.color} on ${item.background} ${item.fontSize}/${item.fontWeight} `
+      + `=> ${item.ratio}:1 (needs ${item.threshold}) "${item.text}"\n`)
   }
 }
 

@@ -196,6 +196,25 @@ function watchPage(page) {
 }
 
 async function runAxe(page, label) {
+  // Wait for the page to settle before auditing it.
+  //
+  // Two of this suite's four remaining failures were caused by auditing too early, and the
+  // colour data axe returns is what proved it: `.eyebrow` on mastery measured 2.07 in Arabic
+  // and 2.66 in English — two different values for one static rule, which only happens
+  // mid-transition — and `.button--secondary` measured 4.47 against a threshold of 4.5,
+  // because the refresh button is `disabled` while the first load is in flight and carries
+  // the reduced opacity that goes with it.
+  //
+  // Auditing the settled state is not a weaker assertion. A 200ms fade and a button that is
+  // disabled for the duration of a request are not what a reader is asked to read; the
+  // rendered result is. What *would* be weaker is excluding the selectors, which is why they
+  // are still audited — just after the page stops moving.
+  await page.waitForFunction(() => {
+    const animating = document.getAnimations().some((animation) => animation.playState === 'running')
+    const loading = document.querySelector('.page-state--loading, .spinner')
+    return !animating && !loading
+  }, { timeout: 8_000 }).catch(() => { /* audited as-is if it never settles; that is itself a finding */ })
+
   await page.evaluate(axeSource)
   const report = await page.evaluate(async () => {
     // Only the rules that matter for an internal admin tool, and only the two severities
@@ -210,15 +229,46 @@ async function runAxe(page, label) {
         id: violation.id,
         impact: violation.impact,
         help: violation.help,
-        nodes: violation.nodes.slice(0, 3).map((node) => node.target.join(' ')),
+        // The full node record, not just the selector.
+        //
+        // Recording selectors alone cost this session an hour: two colour-contrast failures
+        // were "investigated" by measuring the selector on the same page, where both passed,
+        // because axe was failing a *different* element or a different state. axe already
+        // knows the two colours, the ratio it measured and the ratio it wanted; throwing
+        // that away and re-deriving it by hand is how a real defect gets filed as a mystery.
+        nodes: violation.nodes.slice(0, 4).map((node) => {
+          const contrast = [...(node.any ?? []), ...(node.all ?? [])]
+            .map((check) => check.data)
+            .find((data) => data && data.contrastRatio !== undefined)
+          return {
+            target: node.target.join(' '),
+            html: (node.html ?? '').slice(0, 160),
+            ...(contrast
+              ? {
+                  fg: contrast.fgColor,
+                  bg: contrast.bgColor,
+                  ratio: contrast.contrastRatio,
+                  needs: contrast.expectedContrastRatio,
+                  fontSize: contrast.fontSize,
+                  fontWeight: contrast.fontWeight,
+                }
+              : {}),
+          }
+        }),
       }))
   })
   if (report.length) {
-    record(`a11y ${label}`, false, report.map((item) => `${item.id} (${item.impact}) ${item.nodes[0] ?? ''}`).join(' | '))
+    record(`a11y ${label}`, false, report.map((item) => {
+      const node = item.nodes[0]
+      const colours = node?.ratio
+        ? ` ${node.fg} on ${node.bg} ${node.ratio} needs ${node.needs} (${node.fontSize} ${node.fontWeight})`
+        : ''
+      return `${item.id} (${item.impact}) ${node?.target ?? ''}${colours}`
+    }).join(' | '))
   } else {
     record(`a11y ${label}`, true)
   }
-  return report
+  return report.map((item) => ({ ...item, route: label }))
 }
 
 async function checkOverflow(page, label) {
@@ -389,26 +439,18 @@ async function main() {
     })
     if (chosen) {
       await page.locator('aside.drawer select').nth(chosen.index).selectOption(chosen.value)
-      await page.locator('button:has-text("تطبيق")').first().click()
+      // Scoped to the drawer, and matched on the exact label.
+      //
+      // `button:has-text("تطبيق")` matches on substring across the whole page, and the
+      // restructured sidebar has a group button reading "التحكّم في التطبيق" — which contains
+      // it, and comes first in the DOM. So this clicked a navigation group instead of the
+      // apply button, and the check reported the URL as unchanged. The product was fine; the
+      // locator was not.
+      await page.locator('aside.drawer button', { hasText: /^تطبيق$/ }).first().click()
       await page.waitForTimeout(400)
-      const wrote = [...new URL(page.url()).searchParams.values()].includes(chosen.value)
-      // Recorded as unverified rather than as a pass or a failure when the drawer's own
-      // apply path does not write: the property being tested — filter state lives in the URL
-      // — is proven immediately below by arriving at a filtered link, and 18 tests in
-      // websiteCms.test.tsx drive this drawer directly with the same assertion. Reporting
-      // this as a product failure would be blaming the product for a harness limitation we
-      // have not isolated; reporting it as a pass would be worse.
-      if (wrote) {
-        record('applying a filter from the drawer writes it to the URL', true, page.url())
-      } else {
-        unverified.push({
-          name: 'applying a filter from the drawer writes it to the URL',
-          reason: `selecting "${chosen.value}" in the drawer and clicking apply left the URL at `
-            + `${page.url()}; the same interaction passes in websiteCms.test.tsx, so this is not `
-            + 'isolated to the product and is not counted either way',
-        })
-        process.stdout.write(`SKIP  applying a filter from the drawer writes it to the URL\n`)
-      }
+      record('applying a filter from the drawer writes it to the URL',
+        [...new URL(page.url()).searchParams.values()].includes(chosen.value),
+        `${page.url()} (chose ${chosen.value})`)
     } else {
       record('applying a filter from the drawer writes it to the URL', false, 'no select offered an alternative value')
     }
