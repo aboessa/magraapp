@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
-import type { ContentReviewRecord, DashboardStats, RightsLicenseRecord, TaskRecord } from '../types/api'
+import type { ContentReviewRecord, DashboardStats, ExecutiveOverview, RightsLicenseRecord, TaskRecord } from '../types/api'
 import { StatCard } from '../components/StatCard'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { Icon } from '../components/Icon'
@@ -10,6 +10,118 @@ import { formatDate, formatNumber, planLabels, trackLabels } from '../lib/labels
 import { adminPath } from '../lib/adminPath'
 import { readAdminUser } from '../lib/adminSession'
 import { usePreferences } from '../context/preferences'
+
+/**
+ * الوحدات التنفيذية: كل رقم من `GET /admin/dashboard/executive` وكل رقم قابل
+ * للنقر.
+ *
+ * ## القاعدة
+ *
+ * لا مؤشّر بلا مقصد. الشاشة السابقة كانت تعرض عدّادات، والسؤال التالي — «أي
+ * تذاكر؟ أي صفحات؟» — لم يكن له جواب إلا إعادة بناء الفلاتر يدويًا. كل مؤشّر هنا
+ * يحمل `drill` من الخادم: مسار الشاشة المفلترة على نفس المجموعة بالضبط، وبما أن
+ * الفلاتر محفوظة في العنوان فالرابط يكفي.
+ *
+ * ## الوحدة التي لا يمكن الإجابة عنها تقول ذلك
+ *
+ * `unavailable` نصّ من الخادم يشرح حدّ البيانات (مثل عدّ الأجهزة من إسقاط لم يعد
+ * يُكتب). يُعرض فوق المؤشّرات لا مخفيًّا في تلميح: مؤشّر بحدّ غير مقروء يُتَّخذ
+ * قرار على أساسه.
+ */
+function ExecutiveModules({ locale }: { locale: 'ar' | 'en' }) {
+  const [overview, setOverview] = useState<ExecutiveOverview | null>(null)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const response = await api.executiveOverview()
+      setOverview(response.data)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'executive_overview_failed')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { void load() }, [load])
+
+  const text = locale === 'ar'
+    ? { title: 'الوحدات التشغيلية', lede: 'كل رقم من قاعدة البيانات، وكل رقم يفتح الشاشة المفلترة على نفس المجموعة.', limits: 'ما لا تستطيع هذه اللوحة قوله', generated: 'محدَّثة في', retry: 'إعادة المحاولة', failed: 'تعذر تحميل الوحدات التشغيلية', source: 'المصدر' }
+    : { title: 'Operational modules', lede: 'Every number comes from the database, and every number opens the screen filtered to the same set.', limits: 'What this dashboard cannot say', generated: 'Generated at', retry: 'Try again', failed: 'Unable to load the operational modules', source: 'Source' }
+
+  if (loading && !overview) return <LoadingState />
+  if (error && !overview) {
+    return (
+      <section className="panel panel--notice">
+        <strong>{text.failed}</strong>
+        <p>{error}</p>
+        <button className="button button--secondary" type="button" onClick={() => void load()}>
+          <Icon name="refresh" size={15} />{text.retry}
+        </button>
+      </section>
+    )
+  }
+  if (!overview) return null
+
+  return (
+    <>
+      <section className="page-intro page-intro--sub">
+        <div>
+          <span className="eyebrow">{text.title}</span>
+          <p>{text.lede}</p>
+        </div>
+        <span className="data-note" dir="ltr">{text.generated} {new Date(overview.generated_at).toLocaleString(locale === 'ar' ? 'ar' : 'en-GB')}</span>
+      </section>
+
+      <div className="exec-grid">
+        {overview.modules.map((module) => (
+          <article className="panel exec-module" key={module.key}>
+            <header className="panel__header">
+              <div>
+                <h3>{locale === 'ar' ? module.label_ar : module.label_en}</h3>
+                <p className="panel__note"><code dir="ltr">{text.source}: {module.source}</code></p>
+              </div>
+            </header>
+            {module.unavailable && (
+              <p className="panel--notice panel--inline"><Icon name="warning" size={14} />{module.unavailable}</p>
+            )}
+            <ul className="exec-metrics">
+              {module.metrics.map((metric) => {
+                const label = locale === 'ar' ? metric.label_ar : metric.label_en
+                const body = (
+                  <>
+                    <strong>{formatNumber(metric.value, locale)}</strong>
+                    <span>{label}</span>
+                  </>
+                )
+                return (
+                  <li key={metric.key}>
+                    {metric.drill ? (
+                      <Link
+                        className={`exec-metric exec-metric--${metric.tone}`}
+                        to={adminPath(metric.drill.replace(/^\//, ''))}
+                      >{body}</Link>
+                    ) : (
+                      <span className={`exec-metric exec-metric--${metric.tone}`}>{body}</span>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          </article>
+        ))}
+      </div>
+
+      <section className="panel panel--notice">
+        <strong>{text.limits}</strong>
+        <ul className="planned-list">{overview.limits.map((limit) => <li key={limit}>{limit}</li>)}</ul>
+      </section>
+    </>
+  )
+}
 
 /**
  * ويدجتات العمليات الإضافية (UX-20 «مركز قيادة الأعمال» في DASHBOARD v3).
@@ -131,6 +243,8 @@ export function DashboardPage() {
       </section>
 
       {error && <div className="inline-alert inline-alert--error">{text.updateError} {error}</div>}
+
+      <ExecutiveModules locale={locale} />
 
       <section className="stats-grid" aria-label={text.statsAria}>
         <StatCard label={text.totalSeries} value={formatNumber(totals.total_series, locale)} description={`${formatNumber(totals.published_series, locale)} ${text.publishedNow}`} icon="series" tone="blue" />

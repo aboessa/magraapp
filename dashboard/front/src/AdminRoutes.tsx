@@ -62,10 +62,19 @@ import { TeamsPage } from './pages/TeamsPage'
 import { TranslationCenterPage } from './pages/TranslationCenterPage'
 import { VisualStylesPage } from './pages/VisualStylesPage'
 import { WorkflowPage } from './pages/WorkflowPage'
+import { WebsitePagesPage } from './pages/WebsitePagesPage'
+import { WebsitePageEditor } from './pages/WebsitePageEditor'
+import { BlogPostsPage } from './pages/BlogPostsPage'
+import { BlogPostEditor } from './pages/BlogPostEditor'
+import { BlogTaxonomyPage } from './pages/BlogTaxonomyPage'
+import { SeoOperationsPage } from './pages/SeoOperationsPage'
 import './styles/dashboard.css'
 // أنماط استوديو المحرّكات في ملف مستقلّ: dashboard.css قارب التسعين كيلوبايت،
 // وإلحاق محرّرات أحد عشر محرّكًا به يجعل مراجعة أي تغيير فيه أصعب.
 import './styles/gameStudio.css'
+// طبقة UX المشتركة (فلاتر، أدراج، تقويم، خطّ زمني، شجرة) وشاشات الموقع والمدوّنة
+// و SEO واللوحة التنفيذية. مفصولة لنفس سبب فصل gameStudio.css.
+import './styles/adminUx.css'
 
 /**
  * كل مسارات لوحة الإدارة في وحدة واحدة تُحمّل عند الطلب فقط،
@@ -180,6 +189,15 @@ export default function AdminRoutes() {
         <Route path="finance-advanced" element={<AdvancedFinancePage />} />
         <Route path="ops-sla" element={<OpsSlaPage />} />
         <Route path="partnerships" element={<PartnershipsPage />} />
+        {/* الموقع العام والمدوّنة و SEO: الواجهات الإدارية للـAPI الذي كان بلا
+            شاشات. القائمة والمحرِّر منفصلان لأن الأول سؤال «ما حالة الموقع» والثاني
+            مساحة عمل صفحة واحدة بأقسامها ومراجعاتها وسجلّها. */}
+        <Route path="website/pages" element={<WebsitePagesPage />} />
+        <Route path="website/pages/:id" element={<WebsitePageEditor />} />
+        <Route path="blog/posts" element={<BlogPostsPage />} />
+        <Route path="blog/posts/:id" element={<BlogPostEditor />} />
+        <Route path="blog/taxonomy" element={<BlogTaxonomyPage />} />
+        <Route path="seo" element={<SeoOperationsPage />} />
       </Route>
     </Routes>
   )

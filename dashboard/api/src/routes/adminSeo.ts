@@ -13,9 +13,9 @@
 
 import { Hono } from 'hono';
 import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { requireAdmin, requirePermission } from '../lib/adminAuth';
-import { actorId, auditStatement } from '../lib/auditLog';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { requireAdmin, requirePermission } from '../lib/adminAuth.ts';
+import { actorId, auditStatement } from '../lib/auditLog.ts';
 import {
   isValidSlug,
   SEO_DESCRIPTION_MAX,
@@ -202,23 +202,23 @@ route.get('/seo/audit', requireAdmin, async (c) => {
   const issues: Issue[] = [];
 
   const pages = await queryAll<{
-    id: string; path: string; title: string; language: string; status: string;
+    id: string; path: string; slug: string; kind: string; title: string; language: string; status: string;
     translation_group: string; is_indexable: number;
     seo_title: string | null; meta_description: string | null; canonical_url: string | null;
     robots_index: number | null;
   }>(c.env.DB, `
-    SELECT p.id, p.path, p.title, p.language, p.status, p.translation_group, p.is_indexable,
+    SELECT p.id, p.path, p.slug, p.kind, p.title, p.language, p.status, p.translation_group, p.is_indexable,
            m.seo_title, m.meta_description, m.canonical_url, m.robots_index
       FROM web_pages p
       LEFT JOIN seo_meta m ON m.entity_type = 'web_page' AND m.entity_id = p.id
   `);
   const posts = await queryAll<{
-    id: string; path: string; title: string; language: string; status: string;
+    id: string; path: string; slug: string; title: string; language: string; status: string;
     translation_group: string;
     seo_title: string | null; meta_description: string | null; canonical_url: string | null;
     robots_index: number | null;
   }>(c.env.DB, `
-    SELECT b.id, b.path, b.title, b.language, b.status, b.translation_group,
+    SELECT b.id, b.path, b.slug, b.title, b.language, b.status, b.translation_group,
            m.seo_title, m.meta_description, m.canonical_url, m.robots_index
       FROM blog_posts b
       LEFT JOIN seo_meta m ON m.entity_type = 'blog_post' AND m.entity_id = b.id
@@ -382,6 +382,113 @@ route.get('/seo/audit', requireAdmin, async (c) => {
     }
   }
 
+  // Structured data stored against a published entity, re-validated on read. The write
+  // path validates too, but a row edited directly in the database, or written before the
+  // rule existed, produces an error on the live page and nowhere else.
+  const structuredRows = await queryAll<{ entity_type: string; entity_id: string; structured_data_json: string }>(
+    c.env.DB,
+    "SELECT entity_type, entity_id, structured_data_json FROM seo_meta WHERE structured_data_json IS NOT NULL AND structured_data_json <> ''",
+  );
+  const publishedIds = new Set(publicEntities.map((entity) => `${entity.entity_type}:${entity.id}`));
+  const pathById = new Map(publicEntities.map((entity) => [`${entity.entity_type}:${entity.id}`, entity.path]));
+  for (const row of structuredRows) {
+    const key = `${row.entity_type}:${row.entity_id}`;
+    if (!publishedIds.has(key)) continue;
+    let detail: string | null = null;
+    try {
+      const parsed = JSON.parse(row.structured_data_json) as unknown;
+      const objects = Array.isArray(parsed) ? parsed : [parsed];
+      if (objects.some((item) => !item || typeof item !== 'object')) {
+        detail = 'البيانات المهيكلة ليست كائنًا ولا مصفوفة كائنات.';
+      } else if (objects.some((item) => !('@type' in (item as Record<string, unknown>)))) {
+        detail = 'كائن بلا @type؛ محرّك البحث يتجاهله ويسجّله خطأً.';
+      }
+    } catch {
+      detail = 'البيانات المهيكلة ليست JSON صالحًا.';
+    }
+    if (detail) {
+      issues.push({
+        id: 'structured_data_invalid', severity: 'error', entity_type: row.entity_type,
+        entity_id: row.entity_id, path: pathById.get(key) ?? null, detail,
+      });
+    }
+  }
+
+  // Internal links authored by editors: section CTAs and blog CTA blocks. Only
+  // site-relative hrefs are checked — an external URL cannot be verified without a
+  // network call from a worker, and a check that sometimes fails on a timeout trains
+  // people to ignore the report.
+  const redirectFrom = new Set(redirects.map((redirect) => redirect.from_path));
+  const resolvable = (target: string) => knownPaths.has(target) || redirectFrom.has(target);
+  const internalTargets: Array<{ entity_type: string; entity_id: string; path: string | null; target: string }> = [];
+
+  const sectionRows = await queryAll<{ page_id: string; cta_json: string; page_path: string; status: string }>(c.env.DB, `
+    SELECT s.page_id, s.cta_json, p.path AS page_path, p.status
+      FROM web_page_sections s JOIN web_pages p ON p.id = s.page_id
+     WHERE s.is_active = 1 AND p.status = 'published'
+  `);
+  for (const row of sectionRows) {
+    try {
+      const cta = JSON.parse(row.cta_json) as Record<string, unknown>;
+      const href = typeof cta.href === 'string' ? cta.href.trim() : '';
+      if (href.startsWith('/')) internalTargets.push({ entity_type: 'web_page', entity_id: row.page_id, path: row.page_path, target: href });
+    } catch { /* CTA غير قابل للتحليل يُرصد ضمن فحص آخر لا هنا */ }
+  }
+  for (const post of postBodies) {
+    try {
+      const blocks = JSON.parse(post.body_json) as Array<Record<string, unknown>>;
+      for (const block of blocks) {
+        const href = block.type === 'cta' && typeof block.href === 'string' ? block.href.trim() : '';
+        if (href.startsWith('/')) internalTargets.push({ entity_type: 'blog_post', entity_id: post.id, path: post.path, target: href });
+      }
+    } catch { /* الجسم غير القابل للتحليل مُرصود أعلاه */ }
+  }
+  for (const link of internalTargets) {
+    if (!resolvable(link.target)) {
+      issues.push({
+        id: 'internal_link_broken', severity: 'error', entity_type: link.entity_type,
+        entity_id: link.entity_id, path: link.path,
+        detail: `رابط داخلي إلى ${link.target} ولا صفحة ولا تحويل يخدمه.`,
+      });
+    }
+  }
+
+  // Orphan pages: published and reachable by no internal link from any other published
+  // entity. Index-like pages are excluded because they are reached from navigation the
+  // renderer emits, not from a section CTA — flagging them would flag the whole site.
+  const linkedTargets = new Set(internalTargets.map((link) => link.target));
+  for (const page of pages) {
+    if (page.status !== 'published') continue;
+    if (['home', 'index'].includes(page.kind)) continue;
+    if (linkedTargets.has(page.path)) continue;
+    issues.push({
+      id: 'orphan_page', severity: 'warning', entity_type: 'web_page', entity_id: page.id,
+      path: page.path, detail: 'صفحة منشورة لا يشير إليها أي رابط داخلي من صفحة أو مقال منشور.',
+    });
+  }
+
+  // The same slug under two different translation groups. Duplicate *paths* are impossible
+  // (UNIQUE), so the thing worth reporting is the case the constraint cannot see: two
+  // unrelated pages competing for the same words in different languages.
+  const slugGroups = new Map<string, Set<string>>();
+  for (const entity of [...pages, ...posts]) {
+    if (!entity.slug) continue;
+    const groups = slugGroups.get(entity.slug) ?? new Set<string>();
+    groups.add(entity.translation_group);
+    slugGroups.set(entity.slug, groups);
+  }
+  for (const entity of publicEntities) {
+    if (!entity.slug) continue;
+    const groups = slugGroups.get(entity.slug);
+    if (groups && groups.size > 1) {
+      issues.push({
+        id: 'slug_reused', severity: 'warning', entity_type: entity.entity_type, entity_id: entity.id,
+        path: entity.path,
+        detail: `الاختصار «${entity.slug}» مستخدم في ${groups.size} مجموعات ترجمة مختلفة.`,
+      });
+    }
+  }
+
   const errors = issues.filter((issue) => issue.severity === 'error');
   return c.json({
     success: true,
@@ -394,6 +501,49 @@ route.get('/seo/audit', requireAdmin, async (c) => {
         audited_posts: posts.filter((post) => post.status === 'published').length,
         redirects: redirects.length,
       },
+      /// حالة خريطة الموقع، محسوبة من نفس القواعد التي يطبّقها `/sitemap.xml`.
+      ///
+      /// لا «تاريخ آخر توليد»: الخريطة تُولَّد عند كل طلب من قاعدة البيانات، فلا ملف
+      /// مخزَّن يمكن أن يتقادم. ذكر تاريخ توليد وهمي كان سيجعل المشغّل يبحث عن مهمة
+      /// دورية لا وجود لها.
+      sitemap: {
+        generated_on_request: true,
+        included_urls: publicEntities.length,
+        excluded_unpublished: (pages.length + posts.length) - publicEntities.length,
+        noindex_published: publicEntities.filter((entity) => entity.robots_index === 0).length,
+      },
+      /// ما يفحصه هذا التدقيق وما لا يفحصه، بالاسم.
+      ///
+      /// قائمة الفحوص المطلوبة أطول مما يمكن إثباته من قاعدة البيانات. إعلان غير
+      /// المُنفَّذ هنا يمنع شاشةً من عرض «صفر مشاكل» على فحص لم يُجرَ.
+      coverage: [
+        { id: 'missing_title', implemented: true, note: null },
+        { id: 'duplicate_title', implemented: true, note: null },
+        { id: 'missing_description', implemented: true, note: null },
+        { id: 'duplicate_description', implemented: true, note: null },
+        { id: 'canonical_unknown', implemented: true, note: null },
+        { id: 'canonical_invalid', implemented: true, note: null },
+        { id: 'hreflang_incomplete', implemented: true, note: null },
+        { id: 'missing_alt', implemented: true, note: null },
+        { id: 'internal_link_broken', implemented: true, note: 'روابط داخلية فقط؛ الروابط الخارجية تحتاج نداءً شبكيًا لكل رابط.' },
+        { id: 'orphan_page', implemented: true, note: 'يستثني الصفحة الرئيسية وصفحات الفهرسة.' },
+        { id: 'slug_reused', implemented: true, note: 'المسار المكرَّر يستحيل (قيد UNIQUE)؛ المرصود هو تكرار الاختصار بين مجموعات ترجمة.' },
+        { id: 'structured_data_invalid', implemented: true, note: null },
+        { id: 'redirect_shadows_page', implemented: true, note: null },
+        { id: 'redirect_target_missing', implemented: true, note: null },
+        { id: 'published_noindex', implemented: true, note: null },
+        { id: 'sitemap_state', implemented: true, note: 'تُولَّد عند الطلب؛ لا ملف مخزَّن يتقادم.' },
+        {
+          id: 'index_status',
+          implemented: false,
+          note: 'حالة الفهرسة في محركات البحث تحتاج تكامل Search Console أو ما يعادله. غير مُهيَّأ.',
+        },
+        {
+          id: 'external_link_broken',
+          implemented: false,
+          note: 'يحتاج زحفًا شبكيًا للروابط الخارجية؛ فحص يفشل عند انقطاع مؤقّت يُدرَّب الناس على تجاهله.',
+        },
+      ],
       // The limit, stated in the payload rather than left to a screen to remember.
       source: 'internal_audit',
       index_status_available: false,

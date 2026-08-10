@@ -1879,3 +1879,328 @@ export interface BackupExport extends Record<string, unknown> {
   exported_at: string
   version: number
 }
+
+
+// --- إدارة الموقع العام والمدوّنة و SEO ---------------------------------------
+
+/**
+ * لغات المحتوى العام. ثلاث لغات، والعربية هي الأصل ومنها `x-default`.
+ *
+ * الاتجاه مشتقّ لا مُخزَّن: `dir` قيمة واحدة لكل لغة، وتخزينها في الصفوف يسمح
+ * بصفحة عربية موسومة `ltr` — وهي حالة لا معنى لها ولا وسيلة لتصحيحها بعد الحفظ.
+ */
+export type CmsLanguage = 'ar' | 'en' | 'fr'
+export type CmsStatus = 'draft' | 'review' | 'scheduled' | 'published' | 'archived'
+
+export type WebSectionType =
+  | 'hero' | 'rich_text' | 'feature_grid' | 'media' | 'cta' | 'faq' | 'plans'
+  | 'content_rail' | 'testimonials' | 'steps' | 'stats' | 'partners' | 'legal_text'
+
+export interface CmsBlocker {
+  id: string
+  detail: string
+  severity: 'blocker' | 'warning'
+}
+
+export interface WebPageListRow {
+  id: string
+  page_key: string
+  language: CmsLanguage
+  path: string
+  slug: string
+  title: string
+  status: CmsStatus
+  scheduled_at: string | null
+  published_at: string | null
+  kind: string
+  is_indexable: number
+  translation_group: string
+  updated_at: string
+  active_sections: number
+  language_variants: number
+  has_seo: number
+}
+
+/// قسم صفحة كما يعيده الخادم: المحتوى و CTA نصّان JSON، لا كائنان.
+export interface WebSectionRow {
+  id: string
+  section_type: WebSectionType
+  sort_order: number
+  is_active: number
+  content_json: string
+  cta_json: string
+  media_asset_id: string | null
+  media_status: string | null
+  media_title: string | null
+}
+
+/// قسم داخل المحرِّر: نفس الصفّ بعد تحليل الـJSON، مع مفتاح محلّي للسحب والترتيب.
+export interface WebSectionDraft {
+  key: string
+  section_type: WebSectionType
+  is_active: boolean
+  content: Record<string, unknown>
+  cta: Record<string, unknown>
+  media_asset_id: string | null
+}
+
+export interface SeoRecord {
+  seo_title: string | null
+  meta_description: string | null
+  canonical_url: string | null
+  robots_index: number
+  robots_follow: number
+  og_title: string | null
+  og_description: string | null
+  og_image_asset_id: string | null
+  structured_data_json: string | null
+  updated_at?: string
+}
+
+export interface SeoGuidance {
+  title_max: number
+  description_min: number
+  description_max: number
+}
+
+export interface SeoEnvelope {
+  entity_type: string
+  entity_id: string
+  seo: SeoRecord | null
+  guidance: SeoGuidance
+}
+
+export interface CmsRevision {
+  id: string
+  version: number
+  note: string | null
+  created_at: string
+  created_by_name: string | null
+  is_autosave?: number
+}
+
+export interface CmsTranslation {
+  id: string
+  language: CmsLanguage
+  path: string
+  status: CmsStatus
+}
+
+export interface WebPageDetail {
+  page: {
+    id: string
+    page_key: string
+    language: CmsLanguage
+    path: string
+    slug: string
+    title: string
+    summary: string | null
+    translation_group: string
+    status: CmsStatus
+    scheduled_at: string | null
+    published_at: string | null
+    kind: string
+    is_indexable: number
+    created_at: string
+    updated_at: string
+  }
+  sections: WebSectionRow[]
+  seo: SeoRecord | null
+  translations: CmsTranslation[]
+  revisions: CmsRevision[]
+  readiness: CmsBlocker[]
+}
+
+export type BlogBlockType =
+  | 'heading' | 'paragraph' | 'list' | 'image' | 'quote' | 'callout'
+  | 'embed' | 'cta' | 'related_content' | 'divider'
+
+export interface BlogBlock {
+  type: BlogBlockType
+  [key: string]: unknown
+}
+
+/// كتلة داخل المحرِّر. `key` محلّي فقط ولا يُرسَل إلى الخادم.
+export interface BlogBlockDraft extends BlogBlock {
+  key: string
+}
+
+export interface BlogPostListRow {
+  id: string
+  post_key: string
+  language: CmsLanguage
+  slug: string
+  path: string
+  title: string
+  status: CmsStatus
+  scheduled_at: string | null
+  published_at: string | null
+  updated_at: string
+  translation_group: string
+  hero_asset_id: string | null
+  source_type: string | null
+  religious_approved_at: string | null
+  author_name: string | null
+  category_name: string | null
+  category_key: string | null
+  language_variants: number
+  has_seo: number
+}
+
+export interface BlogAuthor {
+  id: string
+  display_name: string
+  bio: string | null
+  avatar_asset_id: string | null
+  is_active: number
+}
+
+export interface BlogCategory {
+  id: string
+  category_key: string
+  language: CmsLanguage
+  name: string
+  slug: string
+  sort_order: number
+}
+
+export interface BlogTag {
+  slug: string
+  name_ar: string
+  name_en: string | null
+  name_fr: string | null
+  post_count: number
+}
+
+export interface BlogTaxonomy {
+  authors: BlogAuthor[]
+  categories: BlogCategory[]
+  tags: BlogTag[]
+}
+
+export interface BlogPostDetail {
+  post: {
+    id: string
+    post_key: string
+    language: CmsLanguage
+    slug: string
+    path: string
+    title: string
+    excerpt: string | null
+    body: BlogBlock[]
+    body_json: string
+    hero_asset_id: string | null
+    author_id: string | null
+    category_id: string | null
+    translation_group: string
+    status: CmsStatus
+    scheduled_at: string | null
+    published_at: string | null
+    related_posts_json: string
+    related_content_json: string
+    cta_json: string
+    source_type: string | null
+    source_reference: string | null
+    religious_reviewer_id: string | null
+    religious_approved_at: string | null
+    created_at: string
+    updated_at: string
+  }
+  tags: string[]
+  translations: CmsTranslation[]
+  revisions: CmsRevision[]
+  seo: Pick<SeoRecord, 'seo_title' | 'meta_description'> | null
+  word_count: number
+  is_religious: boolean
+  readiness: CmsBlocker[]
+}
+
+export interface WebRedirect {
+  id: string
+  from_path: string
+  to_path: string
+  status_code: number
+  reason: string | null
+  created_at: string
+  created_by_name: string | null
+}
+
+export interface SeoIssue {
+  id: string
+  severity: 'error' | 'warning'
+  entity_type: string
+  entity_id: string
+  path: string | null
+  detail: string
+}
+
+/**
+ * تدقيق SEO الداخلي.
+ *
+ * `index_status_available` تبقى false ويجب أن تُعرض كذلك: التدقيق يثبت ما في
+ * قاعدة البيانات ولا يعرف شيئًا عن فهرسة محرّكات البحث. خلط الاثنين على شاشة
+ * واحدة يجعل «صفر أخطاء» تُقرأ كـ«الموقع مفهرس»، وهما ادّعاءان مختلفان.
+ */
+export interface SeoAudit {
+  issues: SeoIssue[]
+  summary: {
+    errors: number
+    warnings: number
+    audited_pages: number
+    audited_posts: number
+    redirects: number
+  }
+  /// حالة خريطة الموقع. لا تاريخ توليد: تُولَّد عند كل طلب من قاعدة البيانات.
+  sitemap: {
+    generated_on_request: boolean
+    included_urls: number
+    excluded_unpublished: number
+    noindex_published: number
+  }
+  /// ما يفحصه التدقيق وما لا يفحصه، بالاسم والسبب.
+  coverage: Array<{ id: string; implemented: boolean; note: string | null }>
+  source: string
+  index_status_available: boolean
+  index_status_note: string
+}
+
+export interface SeoSlugCheck {
+  available: boolean
+  reason: string | null
+}
+
+// --- اللوحة التنفيذية --------------------------------------------------------
+
+/**
+ * وحدة واحدة في اللوحة التنفيذية.
+ *
+ * كل وحدة تحمل مصدرها والمسار الذي تُفصَّل فيه: رقم بلا مكان يُفتح فيه هو رقم لا
+ * يمكن التصرّف بناءً عليه، وهو ما جعل اللوحة السابقة تُقرأ ولا تُستخدم.
+ * `unavailable` تُستخدم حين لا تكون البيانات موجودة أصلًا، فتُعلَن ولا تُصفَّر:
+ * صفر ملفّق أخطر من فراغ مُعلَن.
+ */
+export interface ExecutiveMetric {
+  key: string
+  label_ar: string
+  label_en: string
+  value: number
+  tone: 'neutral' | 'good' | 'warn' | 'danger'
+  /// المسار داخل اللوحة الذي يعرض هذه المجموعة بالضبط، بفلاترها
+  drill: string | null
+}
+
+export interface ExecutiveModule {
+  key: string
+  label_ar: string
+  label_en: string
+  source: string
+  metrics: ExecutiveMetric[]
+  unavailable: string | null
+}
+
+export interface ExecutiveOverview {
+  generated_at: string
+  modules: ExecutiveModule[]
+  /// ما لا تستطيع هذه اللوحة قوله، ولماذا.
+  limits: string[]
+}

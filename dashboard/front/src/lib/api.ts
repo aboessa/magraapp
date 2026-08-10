@@ -538,4 +538,63 @@ export const api = {
   createContentReview: (payload: import('../types/api').ContentReviewPayload) => request<ApiEnvelope<{ id: string; status: string }>>('/admin/content-reviews', { method: 'POST', body: JSON.stringify(payload) }),
   updateContentReview: (id: string, payload: Partial<import('../types/api').ContentReviewPayload>) => request<ApiEnvelope<{ id: string; updated: boolean; status: string }>>(`/admin/content-reviews/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteContentReview: (id: string) => request<ApiEnvelope<{ id: string; deleted: boolean }>>(`/admin/content-reviews/${id}`, { method: 'DELETE' }),
+
+  // --- إدارة الموقع العام (adminWebsite.ts) ---------------------------------
+  //
+  // النشر عملية مستقلّة لا حقل حالة: `updateWebPage` يرفض `status: 'published'`
+  // في الخادم، و`publishWebPage` هي المسار الوحيد إليه ويردّ 409 بقائمة العوائق.
+  // الواجهة تعرض تلك القائمة كما هي بدل «تعذر النشر».
+  webPages: (filters: { language?: string; status?: string } = {}) =>
+    request<PaginatedEnvelope<import('../types/api').WebPageListRow>>(`/admin/website/pages${queryString(filters)}`),
+  webPage: (id: string) => request<ApiEnvelope<import('../types/api').WebPageDetail>>(`/admin/website/pages/${encodeURIComponent(id)}`),
+  createWebPage: (payload: { page_key: string; language: string; title: string; kind?: string; slug?: string; summary?: string; translation_group?: string }) =>
+    request<ApiEnvelope<{ id: string; path: string }>>('/admin/website/pages', { method: 'POST', body: JSON.stringify(payload) }),
+  updateWebPage: (id: string, payload: Record<string, unknown>) =>
+    request<ApiEnvelope<{ id: string; updated: boolean }>>(`/admin/website/pages/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  /// استبدال قائمة الأقسام كاملة: ترتيب المصفوفة هو الترتيب المحفوظ.
+  saveWebPageSections: (id: string, sections: Array<Record<string, unknown>>) =>
+    request<ApiEnvelope<{ id: string; sections: number }>>(`/admin/website/pages/${encodeURIComponent(id)}/sections`, { method: 'PUT', body: JSON.stringify({ sections }) }),
+  publishWebPage: (id: string) =>
+    request<ApiEnvelope<{ id: string; path: string; warnings: import('../types/api').CmsBlocker[] }>>(`/admin/website/pages/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
+  rollbackWebPage: (id: string, version: number) =>
+    request<ApiEnvelope<{ id: string; restored_version: number }>>(`/admin/website/pages/${encodeURIComponent(id)}/rollback`, { method: 'POST', body: JSON.stringify({ version }) }),
+
+  // --- المدوّنة (adminBlog.ts) ----------------------------------------------
+  blogTaxonomy: () => request<ApiEnvelope<import('../types/api').BlogTaxonomy>>('/admin/blog/taxonomy'),
+  createBlogAuthor: (payload: { display_name: string; bio?: string; avatar_asset_id?: string | null; admin_user_id?: string | null }) =>
+    request<ApiEnvelope<{ id: string }>>('/admin/blog/authors', { method: 'POST', body: JSON.stringify(payload) }),
+  createBlogCategory: (payload: { category_key: string; language: string; name: string; slug?: string; description?: string; sort_order?: number }) =>
+    request<ApiEnvelope<{ id: string }>>('/admin/blog/categories', { method: 'POST', body: JSON.stringify(payload) }),
+  createBlogTag: (payload: { slug: string; name_ar: string; name_en?: string; name_fr?: string }) =>
+    request<ApiEnvelope<{ slug: string }>>('/admin/blog/tags', { method: 'POST', body: JSON.stringify(payload) }),
+  blogPosts: (filters: { language?: string; status?: string; category_id?: string; q?: string } = {}) =>
+    request<PaginatedEnvelope<import('../types/api').BlogPostListRow>>(`/admin/blog/posts${queryString(filters)}`),
+  blogPost: (id: string) => request<ApiEnvelope<import('../types/api').BlogPostDetail>>(`/admin/blog/posts/${encodeURIComponent(id)}`),
+  createBlogPost: (payload: Record<string, unknown>) =>
+    request<ApiEnvelope<{ id: string; path: string }>>('/admin/blog/posts', { method: 'POST', body: JSON.stringify(payload) }),
+  /// `autosave: true` يجعل الخادم يكتب النسخة كحفظ تلقائي ويتخطّى سجلّ التدقيق.
+  updateBlogPost: (id: string, payload: Record<string, unknown>) =>
+    request<ApiEnvelope<{ id: string; autosave: boolean }>>(`/admin/blog/posts/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  publishBlogPost: (id: string) =>
+    request<ApiEnvelope<{ id: string; path: string; warnings: import('../types/api').CmsBlocker[] }>>(`/admin/blog/posts/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
+  rollbackBlogPost: (id: string, version: number) =>
+    request<ApiEnvelope<{ id: string; restored_version: number }>>(`/admin/blog/posts/${encodeURIComponent(id)}/rollback`, { method: 'POST', body: JSON.stringify({ version }) }),
+
+  // --- SEO (adminSeo.ts) ---------------------------------------------------
+  seoMeta: (type: string, id: string) =>
+    request<ApiEnvelope<import('../types/api').SeoEnvelope>>(`/admin/seo/${type}/${encodeURIComponent(id)}`),
+  saveSeoMeta: (type: string, id: string, payload: Record<string, unknown>) =>
+    request<ApiEnvelope<{ entity_type: string; entity_id: string; warnings: string[] }>>(`/admin/seo/${type}/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  seoRedirects: () => request<PaginatedEnvelope<import('../types/api').WebRedirect>>('/admin/seo/redirects'),
+  createSeoRedirect: (payload: { from_path: string; to_path: string; status_code?: number; reason?: string }) =>
+    request<ApiEnvelope<{ id: string }>>('/admin/seo/redirects', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteSeoRedirect: (id: string) =>
+    request<ApiEnvelope<{ id: string; deleted: boolean }>>(`/admin/seo/redirects/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  /// تدقيق داخلي على قاعدة البيانات. ليس حالة فهرسة، والجسم يقول ذلك.
+  seoAudit: () => request<ApiEnvelope<import('../types/api').SeoAudit>>('/admin/seo/audit'),
+  seoSlugCheck: (path: string, slug?: string) =>
+    request<ApiEnvelope<import('../types/api').SeoSlugCheck>>(`/admin/seo/slug-check${queryString({ path, slug })}`),
+
+  // --- اللوحة التنفيذية ----------------------------------------------------
+  executiveOverview: () => request<ApiEnvelope<import('../types/api').ExecutiveOverview>>('/admin/dashboard/executive'),
 }

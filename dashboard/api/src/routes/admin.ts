@@ -23,6 +23,7 @@ import adminCustomerRoute from './adminCustomer.ts'
 import adminWebsiteRoute from './adminWebsite.ts'
 import adminBlogRoute from './adminBlog.ts'
 import adminSeoRoute from './adminSeo.ts'
+import adminExecutiveRoute from './adminExecutive.ts'
 import { summarizeGate } from '../lib/publishGate.ts'
 import { validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
@@ -116,6 +117,9 @@ adminRoute.route('/', adminWebsiteRoute)
 // المدونة وSEO. مركّبان بعد الموقع لأن كليهما يشترك معه في seo_meta والتحويلات.
 adminRoute.route('/', adminBlogRoute)
 adminRoute.route('/', adminSeoRoute)
+// اللوحة التنفيذية: تجميعة واحدة على الجداول التشغيلية. مركّبة بعدها كلها لأنها
+// تقرأ من جداولها جميعًا ولا تملك جدولًا خاصًّا بها.
+adminRoute.route('/', adminExecutiveRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)

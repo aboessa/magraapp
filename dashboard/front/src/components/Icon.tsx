@@ -5,6 +5,11 @@ export type IconName =
   | 'search' | 'sun' | 'moon' | 'menu' | 'close' | 'plus' | 'edit'
   | 'archive' | 'refresh' | 'arrow' | 'sparkles' | 'logout' | 'play' | 'bell'
   | 'media' | 'styles' | 'upload' | 'link' | 'settings' | 'globe'
+  // أيقونات طبقة UX المشتركة (فلاتر، أعمدة، تقويم، خطّ زمني، شجرة) وشاشات
+  // الموقع والمدوّنة و SEO. أُضيفت هنا لا كرموز نصّية في كل شاشة: الرمز النصّي
+  // يختلف عرضه بين الخطوط ولا يورَث لونه، فتظهر الأزرار غير متناسقة.
+  | 'filter' | 'columns' | 'calendar' | 'timeline' | 'tree' | 'trash' | 'eye'
+  | 'check' | 'warning' | 'clock' | 'text' | 'grip' | 'blog' | 'seo' | 'website'
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }
@@ -47,5 +52,20 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
     case 'link': return <svg {...common}><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg>
     case 'settings': return <svg {...common}><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>
     case 'globe': return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/></svg>
+    case 'filter': return <svg {...common}><path d="M3 5h18l-7 8v6l-4-2v-4Z"/></svg>
+    case 'columns': return <svg {...common}><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="16" rx="1.5"/><rect x="17" y="4" width="4" height="16" rx="1.5"/></svg>
+    case 'calendar': return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+    case 'timeline': return <svg {...common}><path d="M6 3v18"/><circle cx="6" cy="8" r="2"/><circle cx="6" cy="16" r="2"/><path d="M10 8h10M10 16h7"/></svg>
+    case 'tree': return <svg {...common}><rect x="3" y="3" width="6" height="4" rx="1"/><rect x="14" y="10" width="7" height="4" rx="1"/><rect x="14" y="17" width="7" height="4" rx="1"/><path d="M6 7v10h8M6 12h8"/></svg>
+    case 'trash': return <svg {...common}><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>
+    case 'eye': return <svg {...common}><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>
+    case 'check': return <svg {...common}><path d="m4 12 5 5L20 6"/></svg>
+    case 'warning': return <svg {...common}><path d="M12 3 2 20h20Z"/><path d="M12 9v5M12 17h.01"/></svg>
+    case 'clock': return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>
+    case 'text': return <svg {...common}><path d="M4 6h16M4 11h16M4 16h10"/></svg>
+    case 'grip': return <svg {...common}><circle cx="9" cy="6" r="1.2" fill="currentColor"/><circle cx="15" cy="6" r="1.2" fill="currentColor"/><circle cx="9" cy="12" r="1.2" fill="currentColor"/><circle cx="15" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="18" r="1.2" fill="currentColor"/><circle cx="15" cy="18" r="1.2" fill="currentColor"/></svg>
+    case 'blog': return <svg {...common}><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h10M7 17h7"/></svg>
+    case 'seo': return <svg {...common}><circle cx="10" cy="10" r="6"/><path d="m19 19-4.5-4.5M8 10h4M10 8v4"/></svg>
+    case 'website': return <svg {...common}><rect x="2" y="4" width="20" height="15" rx="2"/><path d="M2 9h20M6 6.5h.01M9 6.5h.01"/></svg>
   }
 }

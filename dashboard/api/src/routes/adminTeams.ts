@@ -250,6 +250,10 @@ route.get('/audit-logs', requirePermission('view_audit_log'), async (c) => {
   const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'), UNBOUNDED_LIST_PAGINATION)
   const actor = c.req.query('actor_id')?.trim()
   const entityType = c.req.query('entity_type')?.trim()
+  // `entity_id` أُضيف ليتمكّن مساحةُ عمل كيان واحد من عرض سجلّه وحده. بلا هذا
+  // الفلتر كان على الواجهة جلب الصفحات ثم التصفية محليًا، فتُعرض «لا سجلّ» على
+  // كيان له سجلّ خارج أول خمسين صفًّا — وهو أسوأ من غياب القسم.
+  const entityId = c.req.query('entity_id')?.trim()
   const action = c.req.query('action')?.trim()
   const from = c.req.query('from')?.trim()
   const to = c.req.query('to')?.trim()
@@ -264,6 +268,7 @@ route.get('/audit-logs', requirePermission('view_audit_log'), async (c) => {
   const params: unknown[] = []
   if (actor) { clauses.push('actor_id = ?'); params.push(actor) }
   if (entityType) { clauses.push('entity_type = ?'); params.push(entityType) }
+  if (entityId) { clauses.push('entity_id = ?'); params.push(entityId) }
   if (action) { clauses.push('action = ?'); params.push(action) }
   // "from" بلا وقت يعني بداية اليوم، و"to" بلا وقت يعني نهايته — لا منتصف
   // الليل فقط، وإلا يُستبعَد اليوم كله المطلوب تضمينه.
