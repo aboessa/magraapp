@@ -2,19 +2,19 @@
 
 > GENERATED FILE. Do not edit by hand.
 > `node tools/dashboard-audit/feature-matrix.mjs`
-> Last generated: 2026-08-09
+> Last generated: 2026-08-10
 
 Evidence columns (page, endpoints, permission, audit, tests, UX affordances) are
 read from the source on every run. The **Status** column comes from
 `docs/FEATURE_MATRIX_VERDICTS.json`, where each verdict records how it was
 verified; a route with no recorded verdict is `UNVERIFIED` rather than assumed.
 
-Registered admin routes: **60**. Server routes parsed: **301**.
-API client functions parsed: **196**.
+Registered admin routes: **66**. Server routes parsed: **302**.
+API client functions parsed: **221**.
 
 | Status | Routes |
 |---|---|
-| COMPLETE | 34 |
+| COMPLETE | 40 |
 | PARTIAL | 18 |
 | MISSING | 8 |
 
@@ -22,38 +22,38 @@ API client functions parsed: **196**.
 
 | Route | Page | Status | API calls | Server endpoints | Permissions | Audit | Tests |
 |---|---|---|---|---|---|---|---|
-| `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 13 |
-| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 43 |
+| `/` | DashboardPage.tsx | PARTIAL | 5 | 5/5 | — | — | 15 |
+| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 46 |
 | `/taxonomy` | TaxonomyPage.tsx | COMPLETE | 8 | 8/8 | edit_metadata, create, archive | — | 2 |
 | `/planets` | PlanetsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/planets/:id` | PlanetDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
 | `/skills` | SkillsPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 3 |
 | `/objectives` | LearningObjectivesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive | — | 3 |
 | `/content-reviews` | ContentReviewsPage.tsx | PARTIAL | 4 | 4/4 | review | — | 1 |
-| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 43 |
+| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 46 |
 | `/series/:id` | SeriesDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
-| `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 12 |
+| `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 13 |
 | `/seasons/:id` | SeasonDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
-| `/episodes` | EpisodesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive, publish | ✅ | 12 |
+| `/episodes` | EpisodesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive, publish | ✅ | 13 |
 | `/episodes/:id` | EpisodeDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
-| `/characters` | CharactersPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 15 |
+| `/characters` | CharactersPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 16 |
 | `/characters/:id` | CharacterDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 5 |
-| `/stories` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 24 |
-| `/stories/:id` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 24 |
-| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 31 |
-| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 29 |
-| `/games/:id` | GameDetailPage.tsx | COMPLETE | 4 | 4/4 | — | — | 21 |
+| `/stories` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 25 |
+| `/stories/:id` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 25 |
+| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 32 |
+| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 30 |
+| `/games/:id` | GameDetailPage.tsx | COMPLETE | 4 | 4/4 | — | — | 22 |
 | `/games-ops` | GamesOpsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
 | `/games-audio-queue` | AudioProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/games-art-queue` | ArtProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/media` | MediaLibraryPage.tsx | COMPLETE | 6 | 6/6 | upload_images, create | — | 17 |
-| `/media/:id` | AssetDetailPage.tsx | COMPLETE | 2 | 2/2 | — | — | 23 |
+| `/media/:id` | AssetDetailPage.tsx | COMPLETE | 2 | 2/2 | — | — | 24 |
 | `/visual-styles` | VisualStylesPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 0 |
-| `/parents` | ParentsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 0 |
-| `/customers` | CustomersPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
+| `/parents` | ParentsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 1 |
+| `/customers` | CustomersPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/customers/:id` | CustomerDetailPage.tsx | COMPLETE | 4 | 4/4 | manage_permissions | ✅ | 0 |
-| `/children` | ChildrenPage.tsx | PARTIAL | 1 | 1/1 | — | — | 6 |
-| `/billing` | BillingPage.tsx | COMPLETE | 4 | 4/4 | — | — | 7 |
+| `/children` | ChildrenPage.tsx | PARTIAL | 1 | 1/1 | — | — | 7 |
+| `/billing` | BillingPage.tsx | COMPLETE | 4 | 4/4 | — | — | 9 |
 | `/analytics` | AnalyticsPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
 | `/teams` | TeamsPage.tsx | COMPLETE | 3 | 3/3 | manage_team | — | 4 |
 | `/roles` | RolesPage.tsx | PARTIAL | 3 | 3/3 | manage_permissions | — | 10 |
@@ -66,13 +66,13 @@ API client functions parsed: **196**.
 | `/quality` | QualityPage.tsx | PARTIAL | 2 | 2/2 | — | — | 1 |
 | `/mastery` | MasteryPage.tsx | PARTIAL | 3 | 3/3 | — | — | 8 |
 | `/app-experience` | AppExperiencePage.tsx | PARTIAL | 6 | 6/6 | edit_metadata, create | — | 0 |
-| `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 5 |
+| `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 6 |
 | `/support-center` | SupportCenterPage.tsx | COMPLETE | 2 | 2/2 | — | ✅ | 2 |
 | `/workflows` | WorkflowPage.tsx | COMPLETE | 8 | 8/8 | assign_members, review | ✅ | 2 |
-| `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 7 |
+| `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 8 |
 | `/remote-config` | RemoteConfigPage.tsx | PARTIAL | 3 | 3/3 | publish | — | 1 |
-| `/packages` | PackagesPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
-| `/ops` | OpsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 7 |
+| `/packages` | PackagesPage.tsx | COMPLETE | 1 | 1/1 | — | — | 3 |
+| `/ops` | OpsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 9 |
 | `/campaigns` | CampaignsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/revenue` | RevenuePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/translation` | TranslationCenterPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
@@ -81,7 +81,13 @@ API client functions parsed: **196**.
 | `/school` | SchoolAccountsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/finance-advanced` | AdvancedFinancePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/ops-sla` | OpsSlaPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
-| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 43 |
+| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 46 |
+| `/website/pages` | WebsitePagesPage.tsx | COMPLETE | 4 | 4/4 | publish, create | ✅ | 0 |
+| `/website/pages/:id` | WebsitePageEditor.tsx | COMPLETE | 7 | 7/7 | view_audit_log, edit_text, edit_metadata, publish | ✅ | 1 |
+| `/blog/posts` | BlogPostsPage.tsx | COMPLETE | 4 | 4/4 | create | ✅ | 0 |
+| `/blog/posts/:id` | BlogPostEditor.tsx | COMPLETE | 7 | 7/7 | view_audit_log, edit_text, publish | ✅ | 1 |
+| `/blog/taxonomy` | BlogTaxonomyPage.tsx | COMPLETE | 4 | 4/4 | create | ✅ | 0 |
+| `/seo` | SeoOperationsPage.tsx | COMPLETE | 4 | 4/4 | publish | ✅ | 1 |
 
 ## 2. Collection UX affordances (static evidence)
 
@@ -150,6 +156,12 @@ that it behaves; behavioural findings belong in the verdict file.
 | `/finance-advanced` | — | — | — | — | — | — | — | — | — |
 | `/ops-sla` | — | — | — | — | — | — | — | — | — |
 | `/partnerships` | ✅ | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ |
+| `/website/pages` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/website/pages/:id` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/blog/posts` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/blog/posts/:id` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/blog/taxonomy` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+| `/seo` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ## 3. Verdicts and how each was verified
 
@@ -582,6 +594,54 @@ that it behaves; behavioural findings belong in the verdict file.
 - Verified by: code read 2026-08-09
 - Evidence: Status changes, notes, real e-mail resend through a configured provider and settings persistence — every control performs a real submit, and changes are audited.
 
+### `/website/pages` — COMPLETE
+
+- Verified by: code read 2026-08-10; front test websiteCms.test.tsx (18 tests); browser run verify-dashboard.mjs 2026-08-10
+- Evidence: Pages list over GET /admin/website/pages with table, cards, calendar and translation-group tree views, a filter drawer whose state lives in the URL, removable chips, saved views, a column manager, and bulk publish that reports each refusal with the blockers the server returned. One row is one page in one language, because web_pages is keyed (page_key, language) and publication is per language.
+- Gaps:
+  - The server route accepts no text search and no paging, so search and paging are applied in the browser over the full set; this is stated on screen
+  - Saved views are stored in localStorage for this browser only; a shared mechanism exists for support tickets alone
+
+### `/website/pages/:id` — COMPLETE
+
+- Verified by: code read 2026-08-10; front test websiteCms.test.tsx; browser run verify-dashboard.mjs 2026-08-10 (six tabs opened, publish attempt surfaced its blockers)
+- Evidence: Page workspace: typed section editor per section type with reorder, activation, media picker with upload, and CTA validation mirroring the server; settings with slug, schedule and indexability; the shared SEO editor; translations; revisions with confirmed rollback; the page audit trail from audit_logs filtered by entity_id; and a structure preview in the page language direction. Publish is a separate operation and its 409 blocker list is rendered item by item.
+- Gaps:
+  - Preview is an internal structure preview, not the public renderer
+  - Section reordering is by move buttons rather than drag and drop
+
+### `/blog/posts` — COMPLETE
+
+- Verified by: code read 2026-08-10; front test blogCms.test.tsx (22 tests); browser run verify-dashboard.mjs 2026-08-10
+- Evidence: Post collection with table, cards carrying the real hero image, and a calendar over scheduled and published dates. Language, status, category and text search are sent to the server; author and SEO state are filtered in the browser and that split is stated on screen. A post with no author is flagged in the list because it blocks publication.
+- Gaps:
+  - The server caps the list at 100 rows and has no offset, so paging is local
+  - Creating a post requires a latin slug; an Arabic-only title cannot be submitted, matching the server rule
+
+### `/blog/posts/:id` — COMPLETE
+
+- Verified by: code read 2026-08-10; front test blogCms.test.tsx; browser run verify-dashboard.mjs 2026-08-10 (blocks rendered, rtl confirmed, autosave state on screen)
+- Evidence: Structured block editor for the ten server block types with the same validation the server applies, so an invalid block is shown before the save rather than after a 400. Autosave every thirty seconds, paused with an explicit notice while a block is invalid. Taxonomy, translations, the religious review gate as reviewer plus date, revisions labelled autosave or manual with rollback, the audit trail, the SEO editor, and a preview in the post language direction.
+- Gaps:
+  - Related Majarra content is entered as ids; there is no content picker yet
+  - Rollback restores content only, matching the server: status and path are not restored
+
+### `/blog/taxonomy` — COMPLETE
+
+- Verified by: code read 2026-08-10; front test blogCms.test.tsx; browser run verify-dashboard.mjs 2026-08-10
+- Evidence: Authors, per-language categories and shared tags over the three POST routes that previously had no caller. Categories are per language because a category is navigation a visitor reads; a tag is one row with three names because a tag is a filter, not a page.
+- Gaps:
+  - Create only: the server exposes no update or delete for authors, categories or tags
+  - Tag post counts are read-only
+
+### `/seo` — COMPLETE
+
+- Verified by: code read 2026-08-10; api test seoAudit.test.mjs (25 tests); front test seo.test.tsx (19 tests); browser run verify-dashboard.mjs 2026-08-10
+- Evidence: SEO operations over GET /admin/seo/audit: issues grouped by check and filterable by check, severity and entity, each linking to the editor that fixes it; a coverage tab naming every check that is not implemented and why; sitemap state; and redirect management. The internal audit and external search-engine indexing are separate tabs, and index_status_available is false and displayed as such.
+- Gaps:
+  - Live index status needs a Search Console integration that is not configured; the screen says so rather than showing a number
+  - External link checking is not implemented because it needs a network crawl per link
+
 ## 4. Server endpoints with no admin-UI caller
 
 Either a deliberate app-facing or public route, or backend-only work with no
@@ -609,16 +669,6 @@ operator surface. Listed so the second case cannot hide.
 | adminAvailability.ts | DELETE | `/api/v1/admin/availability/:type/:id` | publish | ✅ |
 | adminAvailability.ts | GET | `/api/v1/admin/availability` | — | — |
 | adminBackup.ts | POST | `/api/v1/admin/restore` | publish | — |
-| adminBlog.ts | GET | `/api/v1/admin/blog/taxonomy` | — | — |
-| adminBlog.ts | POST | `/api/v1/admin/blog/authors` | create | ✅ |
-| adminBlog.ts | POST | `/api/v1/admin/blog/categories` | create | ✅ |
-| adminBlog.ts | POST | `/api/v1/admin/blog/tags` | create | — |
-| adminBlog.ts | GET | `/api/v1/admin/blog/posts` | — | — |
-| adminBlog.ts | GET | `/api/v1/admin/blog/posts/:id` | — | — |
-| adminBlog.ts | POST | `/api/v1/admin/blog/posts` | create | ✅ |
-| adminBlog.ts | PATCH | `/api/v1/admin/blog/posts/:id` | edit_text | ✅ |
-| adminBlog.ts | POST | `/api/v1/admin/blog/posts/:id/publish` | publish | ✅ |
-| adminBlog.ts | POST | `/api/v1/admin/blog/posts/:id/rollback` | edit_text | ✅ |
 | adminCatalogue.ts | GET | `/api/v1/admin/skills/:id` | — | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/content-reviews/:id` | — | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/stories/:id/pages` | — | — |
@@ -641,10 +691,6 @@ operator surface. Listed so the second case cannot hide.
 | adminPublishGate.ts | GET | `/publish-readiness/:type/:id` | — | — |
 | adminSeo.ts | GET | `/api/v1/admin/seo/:type/:id` | — | — |
 | adminSeo.ts | PUT | `/api/v1/admin/seo/:type/:id` | edit_metadata | ✅ |
-| adminSeo.ts | GET | `/api/v1/admin/seo/redirects` | — | — |
-| adminSeo.ts | POST | `/api/v1/admin/seo/redirects` | publish | ✅ |
-| adminSeo.ts | DELETE | `/api/v1/admin/seo/redirects/:id` | publish | ✅ |
-| adminSeo.ts | GET | `/api/v1/admin/seo/audit` | — | — |
 | adminSeo.ts | GET | `/api/v1/admin/seo/slug-check` | — | — |
 | adminSiteMode.ts | POST | `/api/v1/admin/site-mode/reset` | publish | ✅ |
 | adminSupport.ts | GET | `/api/v1/admin/support/tickets` | — | — |
@@ -667,13 +713,6 @@ operator surface. Listed so the second case cannot hide.
 | adminUsers.ts | POST | `/api/v1/admin/users/:id/grants` | — | — |
 | adminUsers.ts | DELETE | `/api/v1/admin/users/:id/grants/:grantId` | — | — |
 | adminUsers.ts | GET | `/api/v1/admin/users/:id/sessions` | — | — |
-| adminWebsite.ts | GET | `/api/v1/admin/website/pages` | — | — |
-| adminWebsite.ts | GET | `/api/v1/admin/website/pages/:id` | — | — |
-| adminWebsite.ts | POST | `/api/v1/admin/website/pages` | create | ✅ |
-| adminWebsite.ts | PATCH | `/api/v1/admin/website/pages/:id` | edit_metadata | ✅ |
-| adminWebsite.ts | PUT | `/api/v1/admin/website/pages/:id/sections` | edit_text | ✅ |
-| adminWebsite.ts | POST | `/api/v1/admin/website/pages/:id/publish` | publish | ✅ |
-| adminWebsite.ts | POST | `/api/v1/admin/website/pages/:id/rollback` | publish | ✅ |
 | adminWorkflow.ts | GET | `/api/v1/adminadminUser` | — | — |
 | auth.ts | POST | `/api/v1/auth/register` | — | — |
 | auth.ts | POST | `/api/v1/auth/resend-verification` | — | — |
@@ -732,7 +771,7 @@ operator surface. Listed so the second case cannot hide.
 | series.ts | GET | `/api/v1/series/:id` | — | — |
 | siteMode.ts | GET | `/api/v1/site-mode` | — | — |
 
-Orphan count: **142** of 301.
+Orphan count: **121** of 302.
 
 ## 5. API client functions the matrix could not resolve to a server route
 

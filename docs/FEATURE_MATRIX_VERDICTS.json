@@ -16,7 +16,6 @@
     "status vocabulary: COMPLETE PARTIAL MOCK UI_ONLY BACKEND_ONLY BROKEN MISSING",
     "EXTERNAL_BLOCKER UNVERIFIED"
   ],
-
   "/": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09; api test qualityChecks/masteryReports touch the same aggregates",
@@ -31,25 +30,34 @@
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09; api test siteMode.test.mjs",
     "evidence": "site-mode GET/PUT is real against D1 behind the publish permission.",
-    "gaps": ["Only site mode is settable; no other platform setting is editable here"]
+    "gaps": [
+      "Only site mode is settable; no other platform setting is editable here"
+    ]
   },
   "/taxonomy": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09",
     "evidence": "Full create/update/archive on planets and categories, 8/8 calls resolved, guards create/edit_metadata/archive.",
-    "gaps": ["No bulk actions, no saved views"]
+    "gaps": [
+      "No bulk actions, no saved views"
+    ]
   },
   "/planets": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09",
     "evidence": "Real planet list with artwork thumbnails and card/table view modes; drills into /planets/:id.",
-    "gaps": ["No URL-persisted filter state"]
+    "gaps": [
+      "No URL-persisted filter state"
+    ]
   },
   "/planets/:id": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09",
     "evidence": "Real D1 detail with joins and COUNT(*) child counts; sections that cannot be filled say so explicitly instead of showing placeholders.",
-    "gaps": ["Edit navigates to the list page where the form lives (deliberate split, not a defect)", "No planet media or analytics section yet"]
+    "gaps": [
+      "Edit navigates to the list page where the form lives (deliberate split, not a defect)",
+      "No planet media or analytics section yet"
+    ]
   },
   "/skills": {
     "status": "COMPLETE",
@@ -61,25 +69,35 @@
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test objectiveSkills.test.mjs",
     "evidence": "Full CRUD, db.batch age-track derivation, usage checks across episodes/games/projects, audit.",
-    "gaps": ["No curriculum coverage report (planet -> age -> skill -> objective -> content gaps)"]
+    "gaps": [
+      "No curriculum coverage report (planet -> age -> skill -> objective -> content gaps)"
+    ]
   },
   "/content-reviews": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09; api test separationOfDuties.test.mjs",
     "evidence": "Reviewer identity comes from the session, creator/approver separation is re-checked on approval, approved decisions cannot be edited or deleted.",
-    "gaps": ["Reviews do not gate publication of series or episodes yet", "No SLA or escalation"]
+    "gaps": [
+      "Reviews do not gate publication of series or episodes yet",
+      "No SLA or escalation"
+    ]
   },
   "/series": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test routeGuards.test.mjs and publishGate.test.mjs",
     "evidence": "CRUD plus publish authority separation, and publication now passes a real readiness gate: the operation evaluates lib/publishGate.ts server-side, refuses with 409 and the full blocker list, audits the blocked attempt as publish_blocked, and records the accepted warnings with the publish. The UI opens the same readiness result before the button.",
-    "gaps": ["No bulk actions", "No saved views or column manager"]
+    "gaps": [
+      "No bulk actions",
+      "No saved views or column manager"
+    ]
   },
   "/series/:id": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09",
     "evidence": "Real detail workspace with seasons, episodes and related entities from D1.",
-    "gaps": ["No rights/availability or production section"]
+    "gaps": [
+      "No rights/availability or production section"
+    ]
   },
   "/seasons": {
     "status": "COMPLETE",
@@ -91,19 +109,26 @@
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09",
     "evidence": "Real D1 detail with episode list.",
-    "gaps": ["Season media section declared unavailable rather than shown"]
+    "gaps": [
+      "Season media section declared unavailable rather than shown"
+    ]
   },
   "/episodes": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test routeGuards.test.mjs and publishGate.test.mjs",
     "evidence": "CRUD plus the same publish authority separation, and the readiness gate now blocks an episode with no video file, no thumbnail, no Arabic voicing, an unpublished parent series, an expired licence or an unapproved blocking workflow stage - all reported at once with owner and required action.",
-    "gaps": ["No bulk actions", "The legacy /admin/quality endpoint still has no episode checks; the publish gate covers episodes instead"]
+    "gaps": [
+      "No bulk actions",
+      "The legacy /admin/quality endpoint still has no episode checks; the publish gate covers episodes instead"
+    ]
   },
   "/episodes/:id": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09",
     "evidence": "Real detail from D1 with characters and assets.",
-    "gaps": ["Analytics section declared unavailable rather than faked"]
+    "gaps": [
+      "Analytics section declared unavailable rather than faked"
+    ]
   },
   "/characters": {
     "status": "COMPLETE",
@@ -131,19 +156,26 @@
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",
     "evidence": "Same component as /stories with an id parameter.",
-    "gaps": ["Not a distinct detail workspace: it reuses the collection page"]
+    "gaps": [
+      "Not a distinct detail workspace: it reuses the collection page"
+    ]
   },
   "/library-content": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test gamePackValidation/enginePacks",
     "evidence": "Books, games and projects with real CRUD and archive guards; engine pack authoring and validation behind real server rules.",
-    "gaps": ["No bulk actions", "No saved views"]
+    "gaps": [
+      "No bulk actions",
+      "No saved views"
+    ]
   },
   "/library-content/:kind/:id": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09",
     "evidence": "Switches across three entity kinds with the correct route per kind and real asset_links.",
-    "gaps": ["Book page editor and analytics declared not built rather than mocked"]
+    "gaps": [
+      "Book page editor and analytics declared not built rather than mocked"
+    ]
   },
   "/games/:id": {
     "status": "COMPLETE",
@@ -155,25 +187,34 @@
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test gamesOps.test.mjs",
     "evidence": "Reads the real ops aggregate over game rows, packs and reviews.",
-    "gaps": ["No retry/resolve actions from this screen"]
+    "gaps": [
+      "No retry/resolve actions from this screen"
+    ]
   },
   "/games-audio-queue": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test audioProductionQueue.test.mjs",
     "evidence": "Derives the recording queue from pack-declared audio and asset state, not from a status column.",
-    "gaps": ["Assignment and due dates are not stored per queue item"]
+    "gaps": [
+      "Assignment and due dates are not stored per queue item"
+    ]
   },
   "/games-art-queue": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test artProductionQueue.test.mjs",
     "evidence": "Derives the art queue from pack-referenced assets and their content_assets status.",
-    "gaps": ["Assignment and due dates are not stored per queue item"]
+    "gaps": [
+      "Assignment and due dates are not stored per queue item"
+    ]
   },
   "/media": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test assetBuckets/assetUrls/assetClassification",
     "evidence": "Real multipart upload sessions to R2 through bucketForAsset, classification rules enforced server-side.",
-    "gaps": ["No orphan-asset sweep", "One lint warning outstanding in this file"]
+    "gaps": [
+      "No orphan-asset sweep",
+      "One lint warning outstanding in this file"
+    ]
   },
   "/media/:id": {
     "status": "COMPLETE",
@@ -185,31 +226,43 @@
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09",
     "evidence": "Full CRUD on visual_styles.",
-    "gaps": ["No backend test covers this route"]
+    "gaps": [
+      "No backend test covers this route"
+    ]
   },
   "/parents": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",
     "evidence": "Read-only by design: family_projection, child_projection and progress, with no write route existing server-side. Matches FamilyState authority.",
-    "gaps": ["Not a Customer 360 workspace: no tabs for devices, downloads, payments, tickets, consents", "No family detail route at all"]
+    "gaps": [
+      "Not a Customer 360 workspace: no tabs for devices, downloads, payments, tickets, consents",
+      "No family detail route at all"
+    ]
   },
   "/children": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",
     "evidence": "Was BROKEN (create/edit/archive controls calling routes that always answered 405); the controls were removed, not disabled, and the page states why child profiles are managed through the Family APIs.",
-    "gaps": ["No admin-command path to FamilyState for legitimate support operations"]
+    "gaps": [
+      "No admin-command path to FamilyState for legitimate support operations"
+    ]
   },
   "/billing": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09",
     "evidence": "Real transaction and entitlement records from D1; deliberately shows no monetary totals because no pricing exists to compute them from.",
-    "gaps": ["No revenue, refund or chargeback view (no data model for them yet)"]
+    "gaps": [
+      "No revenue, refund or chargeback view (no data model for them yet)"
+    ]
   },
   "/analytics": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",
     "evidence": "Real joined D1 aggregates; the masking .catch(() => ({})) was removed so failures surface.",
-    "gaps": ["No business analytics (conversion, churn, campaign performance)", "No contextual per-entity analytics"]
+    "gaps": [
+      "No business analytics (conversion, churn, campaign performance)",
+      "No contextual per-entity analytics"
+    ]
   },
   "/teams": {
     "status": "COMPLETE",
@@ -221,13 +274,17 @@
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09; api test adminUsers.test.mjs",
     "evidence": "Roles, permissions and grants are all real reads behind manage_permissions.",
-    "gaps": ["No route exists to create a custom role or change a role's permissions; roles are seeded by migration only"]
+    "gaps": [
+      "No route exists to create a custom role or change a role's permissions; roles are seeded by migration only"
+    ]
   },
   "/team-access": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test adminUsers/adminScope",
     "evidence": "Employee, role, password-reset and session-revoke operations with server-side canManage enforcement, not UI-only gating.",
-    "gaps": ["Add-employee is a single large modal rather than a structured create flow"]
+    "gaps": [
+      "Add-employee is a single large modal rather than a structured create flow"
+    ]
   },
   "/production": {
     "status": "COMPLETE",
@@ -243,7 +300,10 @@
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test adminDeviceOperations.test.mjs (17 tests)",
     "evidence": "Family list from the D1 projection with child, device and open-ticket counts, search and plan/status filters, server-side paging. Counts come from the projection deliberately: a list calling the Durable Object per row would be 25 calls per page, and the live read belongs in the workspace where it is declared.",
-    "gaps": ["No saved views or column manager yet", "Search matches the family id only; there is no e-mail index by design"]
+    "gaps": [
+      "No saved views or column manager yet",
+      "Search matches the family id only; there is no e-mail index by design"
+    ]
   },
   "/customers/:id": {
     "status": "COMPLETE",
@@ -259,13 +319,18 @@
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",
     "evidence": "Real task list from D1 via /admin/tasks.",
-    "gaps": ["View-only by design: no assign, complete or reassign from the UI", "No per-item production requirement line (script/voice/video/QA)"]
+    "gaps": [
+      "View-only by design: no assign, complete or reassign from the UI",
+      "No per-item production requirement line (script/voice/video/QA)"
+    ]
   },
   "/audit-logs": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test auditLogDateFilter.test.mjs",
     "evidence": "Actor/action/entity filters and server-side pagination, plus from/to date filtering that rejects malformed and inverted ranges with 400.",
-    "gaps": ["Central audit covers the main sensitive actions, not every action"]
+    "gaps": [
+      "Central audit covers the main sensitive actions, not every action"
+    ]
   },
   "/failed-events": {
     "status": "COMPLETE",
@@ -286,25 +351,36 @@
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09; api test qualityChecks.test.mjs",
     "evidence": "Per-type checks computed from D1 for series/story/book/game/project; export is real, restore refuses with 501.",
-    "gaps": ["On-demand only: the publish operation does not require it to pass", "No episode checks exist"]
+    "gaps": [
+      "On-demand only: the publish operation does not require it to pass",
+      "No episode checks exist"
+    ]
   },
   "/mastery": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09; api test masteryReports.test.mjs",
     "evidence": "Real joined reads over behaviourally derived mastery data.",
-    "gaps": ["Read-only by design (derived data)", "No prerequisite or coverage view"]
+    "gaps": [
+      "Read-only by design (derived data)",
+      "No prerequisite or coverage view"
+    ]
   },
   "/app-experience": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",
     "evidence": "Real targeting (track/country/platform/plan/new-user), draft and schedule columns, and a preview endpoint that actually filters by targeting.",
-    "gaps": ["Rollback restores the first-created state only: one version row, not a version history, while the UI says 'previous version'"]
+    "gaps": [
+      "Rollback restores the first-created state only: one version row, not a version history, while the UI says 'previous version'"
+    ]
   },
   "/devices-admin": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",
     "evidence": "Read-only; the revoke control was removed rather than left disabled, and the page explains that FamilyState owns device state (server answers 501).",
-    "gaps": ["No live device projection from FamilyState", "No audited admin-command path for revoke or resync"]
+    "gaps": [
+      "No live device projection from FamilyState",
+      "No audited admin-command path for revoke or resync"
+    ]
   },
   "/support-center": {
     "status": "COMPLETE",
@@ -341,55 +417,75 @@
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",
     "evidence": "rollout_percent and targeting_json are really stored, behind the publish permission.",
-    "gaps": ["No scheduling, no history or rollback, no typed value validation", "No dedicated kill switches for registration/playback/downloads/games/uploads"]
+    "gaps": [
+      "No scheduling, no history or rollback, no typed value validation",
+      "No dedicated kill switches for registration/playback/downloads/games/uploads"
+    ]
   },
   "/packages": {
     "status": "COMPLETE",
     "verified_by": "code read 2026-08-09; api test familyState.test.mjs covers the same PLAN_LIMITS source",
     "evidence": "Reads familyPolicy.PLAN_LIMITS, the same authority FamilyState enforces, and returns pricing_available:false rather than inventing prices.",
-    "gaps": ["No pricing, country, currency, versioning or grandfathering model — provider not configured"]
+    "gaps": [
+      "No pricing, country, currency, versioning or grandfathering model — provider not configured"
+    ]
   },
   "/ops": {
     "status": "PARTIAL",
     "verified_by": "code read 2026-08-09",
     "evidence": "Shows only real D1-derived counters and names the metrics it cannot show (D1 latency, queue backlog, DLQ depth, cache hit) as requiring Cloudflare Analytics Engine.",
-    "gaps": ["No Worker/queue/DO health, latency, retry or incident data", "EXTERNAL_BLOCKER: Analytics Engine binding not configured"]
+    "gaps": [
+      "No Worker/queue/DO health, latency, retry or incident data",
+      "EXTERNAL_BLOCKER: Analytics Engine binding not configured"
+    ]
   },
   "/campaigns": {
     "status": "MISSING",
     "verified_by": "code read 2026-08-09",
     "evidence": "NotImplementedPage; no campaigns or notifications table in any migration and no API route. The page documents that push tokens must be stored in account_devices first.",
-    "gaps": ["Whole marketing operations block absent"]
+    "gaps": [
+      "Whole marketing operations block absent"
+    ]
   },
   "/revenue": {
     "status": "MISSING",
     "verified_by": "code read 2026-08-09",
     "evidence": "NotImplementedPage; no revenue or MRR table exists and no monetary figure is computed. The previous version displayed entirely invented numbers.",
-    "gaps": ["Requires per-plan, per-country pricing that does not exist yet"]
+    "gaps": [
+      "Requires per-plan, per-country pricing that does not exist yet"
+    ]
   },
   "/translation": {
     "status": "MISSING",
     "verified_by": "code read 2026-08-09",
     "evidence": "NotImplementedPage; no aggregate translation-status route exists, although story_page_localizations and game_localizations hold the underlying rows.",
-    "gaps": ["No translator/reviewer assignment, due dates, glossary or stale-translation detection"]
+    "gaps": [
+      "No translator/reviewer assignment, due dates, glossary or stale-translation detection"
+    ]
   },
   "/quiz": {
     "status": "MISSING",
     "verified_by": "code read 2026-08-09",
     "evidence": "NotImplementedPage; no quiz, question or answer table in any migration.",
-    "gaps": ["Architecture decision open: central question bank versus per-game questions"]
+    "gaps": [
+      "Architecture decision open: central question bank versus per-game questions"
+    ]
   },
   "/recommendations": {
     "status": "MISSING",
     "verified_by": "code read 2026-08-09",
     "evidence": "NotImplementedPage; no recommendation, pin or boost table and no route.",
-    "gaps": ["Architecture decision open: extend home_experience_blocks versus a separate engine"]
+    "gaps": [
+      "Architecture decision open: extend home_experience_blocks versus a separate engine"
+    ]
   },
   "/school": {
     "status": "MISSING",
     "verified_by": "code read 2026-08-09",
     "evidence": "NotImplementedPage; no schools or classrooms table. The previous version displayed an invented school, invented pupils and invented mastery figures alongside privacy guarantees that were never implemented.",
-    "gaps": ["Whole B2B block absent"]
+    "gaps": [
+      "Whole B2B block absent"
+    ]
   },
   "/finance-advanced": {
     "status": "MISSING",
@@ -408,5 +504,59 @@
     "verified_by": "code read 2026-08-09",
     "evidence": "Status changes, notes, real e-mail resend through a configured provider and settings persistence — every control performs a real submit, and changes are audited.",
     "gaps": []
+  },
+  "/website/pages": {
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-10; front test websiteCms.test.tsx (18 tests); browser run verify-dashboard.mjs 2026-08-10",
+    "evidence": "Pages list over GET /admin/website/pages with table, cards, calendar and translation-group tree views, a filter drawer whose state lives in the URL, removable chips, saved views, a column manager, and bulk publish that reports each refusal with the blockers the server returned. One row is one page in one language, because web_pages is keyed (page_key, language) and publication is per language.",
+    "gaps": [
+      "The server route accepts no text search and no paging, so search and paging are applied in the browser over the full set; this is stated on screen",
+      "Saved views are stored in localStorage for this browser only; a shared mechanism exists for support tickets alone"
+    ]
+  },
+  "/website/pages/:id": {
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-10; front test websiteCms.test.tsx; browser run verify-dashboard.mjs 2026-08-10 (six tabs opened, publish attempt surfaced its blockers)",
+    "evidence": "Page workspace: typed section editor per section type with reorder, activation, media picker with upload, and CTA validation mirroring the server; settings with slug, schedule and indexability; the shared SEO editor; translations; revisions with confirmed rollback; the page audit trail from audit_logs filtered by entity_id; and a structure preview in the page language direction. Publish is a separate operation and its 409 blocker list is rendered item by item.",
+    "gaps": [
+      "Preview is an internal structure preview, not the public renderer",
+      "Section reordering is by move buttons rather than drag and drop"
+    ]
+  },
+  "/blog/posts": {
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-10; front test blogCms.test.tsx (22 tests); browser run verify-dashboard.mjs 2026-08-10",
+    "evidence": "Post collection with table, cards carrying the real hero image, and a calendar over scheduled and published dates. Language, status, category and text search are sent to the server; author and SEO state are filtered in the browser and that split is stated on screen. A post with no author is flagged in the list because it blocks publication.",
+    "gaps": [
+      "The server caps the list at 100 rows and has no offset, so paging is local",
+      "Creating a post requires a latin slug; an Arabic-only title cannot be submitted, matching the server rule"
+    ]
+  },
+  "/blog/posts/:id": {
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-10; front test blogCms.test.tsx; browser run verify-dashboard.mjs 2026-08-10 (blocks rendered, rtl confirmed, autosave state on screen)",
+    "evidence": "Structured block editor for the ten server block types with the same validation the server applies, so an invalid block is shown before the save rather than after a 400. Autosave every thirty seconds, paused with an explicit notice while a block is invalid. Taxonomy, translations, the religious review gate as reviewer plus date, revisions labelled autosave or manual with rollback, the audit trail, the SEO editor, and a preview in the post language direction.",
+    "gaps": [
+      "Related Majarra content is entered as ids; there is no content picker yet",
+      "Rollback restores content only, matching the server: status and path are not restored"
+    ]
+  },
+  "/blog/taxonomy": {
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-10; front test blogCms.test.tsx; browser run verify-dashboard.mjs 2026-08-10",
+    "evidence": "Authors, per-language categories and shared tags over the three POST routes that previously had no caller. Categories are per language because a category is navigation a visitor reads; a tag is one row with three names because a tag is a filter, not a page.",
+    "gaps": [
+      "Create only: the server exposes no update or delete for authors, categories or tags",
+      "Tag post counts are read-only"
+    ]
+  },
+  "/seo": {
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-10; api test seoAudit.test.mjs (25 tests); front test seo.test.tsx (19 tests); browser run verify-dashboard.mjs 2026-08-10",
+    "evidence": "SEO operations over GET /admin/seo/audit: issues grouped by check and filterable by check, severity and entity, each linking to the editor that fixes it; a coverage tab naming every check that is not implemented and why; sitemap state; and redirect management. The internal audit and external search-engine indexing are separate tabs, and index_status_available is false and displayed as such.",
+    "gaps": [
+      "Live index status needs a Search Console integration that is not configured; the screen says so rather than showing a number",
+      "External link checking is not implemented because it needs a network crawl per link"
+    ]
   }
 }
