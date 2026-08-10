@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/device/device_profile.dart';
+import '../../core/env/app_environment.dart';
 import '../../features/details/presentation/series_details_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/planets/presentation/planets_page.dart';
@@ -70,6 +71,12 @@ String? _guardRedirect(GoRouterState state, AuthGuard guard) {
     '/watchlist',
     '/downloads',
   };
+
+  // Home consolidation (§24): `/` is the single canonical production home. The
+  // experimental v2 home is kept in the codebase for side-by-side evaluation on
+  // real devices, but it is reachable only in non-production builds so shipping
+  // never exposes two competing home experiences.
+  if (loc == '/home-v2' && AppConfig.isProduction) return '/';
 
   final isPublic = public.contains(loc);
   final needsChild = childRequired.contains(loc) || loc.startsWith('/playback') || loc.startsWith('/reader') || loc.startsWith('/game') || loc.startsWith('/series');
