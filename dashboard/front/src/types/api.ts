@@ -2204,3 +2204,83 @@ export interface ExecutiveOverview {
   /// ما لا تستطيع هذه اللوحة قوله، ولماذا.
   limits: string[]
 }
+
+// --- البحث الشامل (adminSearch.ts) ------------------------------------------
+
+export interface GlobalSearchResult {
+  id: string
+  type: string
+  title: string
+  subtitle: string | null
+  status: string | null
+  /// مسار نسبي داخل اللوحة. القاعدة تُضاف بـ`adminPath()` في العميل، فالخادم
+  /// لا يعرف مسار اللوحة ولا يجب أن يعرفه.
+  admin_route: string
+  image_url: string | null
+  context: string | null
+}
+
+export interface GlobalSearchGroup {
+  type: string
+  results: GlobalSearchResult[]
+}
+
+export interface GlobalSearch {
+  query: string
+  groups: GlobalSearchGroup[]
+  total: number
+  /// أنواع في برنامج العمل بلا جدول في أي مهاجرة. تُعرض كتصريح لا كنتيجة فارغة.
+  unavailable: Array<{ type: string; reason: string }>
+  /// مصادر فشلت في هذا النداء. مصدر واحد فاشل لا يُفرِّغ اللوحة.
+  failed: Array<{ type: string; reason: string }>
+  scope: {
+    restricted: boolean
+    omitted_types: Array<{ type: string; reason: string }>
+  }
+  min_length?: number
+  types: Array<{ type: string; group: 'catalogue' | 'platform' }>
+}
+
+// --- تقويم المحتوى (adminCalendar.ts) ---------------------------------------
+
+export interface CalendarEventRecord {
+  id: string
+  type: string
+  title: string
+  date: string
+  date_kind: 'scheduled' | 'published' | 'due' | 'expires'
+  status: string | null
+  language: string | null
+  planet_id: string | null
+  owner_id: string | null
+  team_id: string | null
+  context: string | null
+  admin_route: string
+  reschedule: {
+    supported: boolean
+    method?: 'PATCH' | 'PUT'
+    route?: string
+    field?: string
+    permission?: string
+    reason?: string
+  }
+  conflicts: string[]
+}
+
+export interface ContentCalendar {
+  from: string
+  to: string
+  events: CalendarEventRecord[]
+  total: number
+  total_unfiltered: number
+  conflict_summary: {
+    no_scheduler: number
+    lapsed_schedule: number
+    rights_expiry_before_publication: number
+    same_day_collision: number
+  }
+  unavailable: Array<{ type: string; reason: string }>
+  /// خطأ أن يُرسم المجدول كأن مؤقّتًا سينشره: لا مُشغِّل دوري للنشر.
+  scheduler_available: boolean
+  scheduler_note: string
+}

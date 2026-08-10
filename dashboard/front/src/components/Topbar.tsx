@@ -1,6 +1,4 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { Icon } from './Icon'
 import { adminPath } from '../lib/adminPath'
 import { usePreferences } from '../context/preferences'
@@ -34,6 +32,7 @@ const PAGES: Record<Locale, Record<string, PageMeta>> = {
 
     // نظرة عامة
     analytics: { title: 'التحليلات', subtitle: 'أرقام سلوكية مجهولة الهوية: تشغيل ومسارات وإتقان' },
+    calendar: { title: 'تقويم المحتوى', subtitle: 'كل ما تجدوله المنصّة في نافذة واحدة، مع تنبيهات الجدولة' },
     tasks: { title: 'مهامي', subtitle: 'المهام المسنَدة إليك من سير عمل المحتوى' },
     ops: { title: 'المراقبة', subtitle: 'أرقام مقروءة من قاعدة البيانات مباشرة' },
     'ops-sla': { title: 'مستويات الخدمة', subtitle: 'زمن المراجعة والتصعيد عند التأخير' },
@@ -88,6 +87,7 @@ const PAGES: Record<Locale, Record<string, PageMeta>> = {
     '': { title: 'Dashboard', subtitle: 'Live content and family data from the database' },
 
     analytics: { title: 'Analytics', subtitle: 'Anonymous behavioural figures: plays, tracks and mastery' },
+    calendar: { title: 'Content calendar', subtitle: 'Everything the platform schedules in one window, with scheduling alerts' },
     tasks: { title: 'My tasks', subtitle: 'Tasks assigned to you by the content workflow' },
     ops: { title: 'Monitoring', subtitle: 'Figures read directly from the database' },
     'ops-sla': { title: 'Service levels', subtitle: 'Review turnaround and escalation on delay' },
@@ -143,31 +143,29 @@ function pageMap(locale: Locale): Record<string, PageMeta> {
 }
 
 const copy = {
-  ar: { menu: 'فتح القائمة', placeholder: 'بحث في السلاسل...', search: 'بحث السلاسل', light: 'تفعيل الوضع الفاتح', dark: 'تفعيل الوضع الداكن', language: 'اللغة', account: 'حساب الإدارة', role: 'مدير المحتوى', org: 'إدارة مجرة' },
-  en: { menu: 'Open menu', placeholder: 'Search series...', search: 'Search series', light: 'Enable light mode', dark: 'Enable dark mode', language: 'Language', account: 'Admin account', role: 'Content manager', org: 'Majarra administration' },
+  ar: { menu: 'فتح القائمة', placeholder: 'ابحث في كل شيء…', search: 'بحث شامل', shortcut: 'Ctrl+K', light: 'تفعيل الوضع الفاتح', dark: 'تفعيل الوضع الداكن', language: 'اللغة', account: 'حساب الإدارة', role: 'مدير المحتوى', org: 'إدارة مجرة' },
+  en: { menu: 'Open menu', placeholder: 'Search everything…', search: 'Global search', shortcut: 'Ctrl+K', light: 'Enable light mode', dark: 'Enable dark mode', language: 'Language', account: 'Admin account', role: 'Content manager', org: 'Majarra administration' },
 }
 
-export function Topbar() {
+/**
+ * ## علّة ثانية أُصلحت هنا
+ *
+ * كان حقل البحث في هذا الشريط يوجّه **كل** استعلام إلى `/series?q=`، فالبحث عن
+ * تذكرة أو عائلة أو مقال ينتهي على قائمة سلاسل فارغة. لا شيء في الشاشة يقول إن
+ * البحث للسلاسل وحدها، فالنتيجة الفارغة تُقرأ كـ«لا يوجد».
+ *
+ * الآن الحقل زرّ يفتح لوحة الأوامر، وهي تبحث في سبعة عشر نوعًا عبر
+ * `/admin/search` وتُفلتر بالصلاحيات في الخادم.
+ */
+export function Topbar({ onOpenPalette }: { onOpenPalette: () => void }) {
   const location = useLocation()
-  const navigate = useNavigate()
   const { theme, toggleTheme, locale, setLocale, setMenuOpen } = usePreferences()
-  const [search, setSearch] = useState('')
   const text = copy[locale]
 
   // المسار قد ينتهي بشرطة مائلة، فتُقصّ قبل المطابقة لئلا يفشل مفتاح صحيح
   const path = location.pathname.replace(/\/+$/, '') || adminPath()
   const pages = pageMap(locale)
   const page = pages[path] ?? pages[adminPath()]
-
-  function submitSearch(event: FormEvent) {
-    event.preventDefault()
-    const value = search.trim()
-    // كان يوجّه إلى `/admin/series?q=…`، وApp.tsx يمسك `/admin/*` ويُحوّل إلى
-    // قاعدة اللوحة فيُسقط سلسلة الاستعلام — فكان البحث ينتهي دائمًا على لوحة
-    // التحكم بلا نتيجة.
-    const target = adminPath('series')
-    navigate(value ? `${target}?q=${encodeURIComponent(value)}` : target)
-  }
 
   return (
     <header className="topbar">
@@ -177,10 +175,11 @@ export function Topbar() {
       </div>
 
       <div className="topbar__actions">
-        <form className="global-search" role="search" onSubmit={submitSearch}>
+        <button className="global-search global-search--button" type="button" onClick={onOpenPalette} aria-label={text.search}>
           <Icon name="search" size={17} />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={text.placeholder} aria-label={text.search} />
-        </form>
+          <span className="global-search__label">{text.placeholder}</span>
+          <kbd>{text.shortcut}</kbd>
+        </button>
         <div className="language-toggle" aria-label={text.language}>
           <button className={locale === 'ar' ? 'active' : ''} type="button" aria-pressed={locale === 'ar'} onClick={() => setLocale('ar')}>العربية</button>
           <button className={locale === 'en' ? 'active' : ''} type="button" aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>EN</button>

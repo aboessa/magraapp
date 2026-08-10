@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
+import { useQuickCreate } from '../hooks/useQuickCreate'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { Pagination } from '../components/Pagination'
@@ -171,6 +172,9 @@ export function BlogPostsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
+  // ‏?new=1 من لوحة الأوامر يفتح حوار الإنشاء نفسه.
+  useQuickCreate(() => setCreating(true))
+
   const [quickId, setQuickId] = useState<string | null>(null)
   const [quick, setQuick] = useState<BlogPostDetail | null>(null)
   const [quickLoading, setQuickLoading] = useState(false)

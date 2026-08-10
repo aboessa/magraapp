@@ -1,73 +1,19 @@
-import { useEffect, useState } from 'react'
+import { lazy, useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { AdminLayout } from './components/AdminLayout'
 import { AdminLoginPage } from './pages/AdminLoginPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { TeamAccessPage } from './pages/TeamAccessPage'
-import { hasAdminSession, verifySession } from './lib/adminSession'
-import { AdvancedFinancePage } from './pages/AdvancedFinancePage'
-import { AnalyticsPage } from './pages/AnalyticsPage'
-import { AuditLogPage } from './pages/AuditLogPage'
-import { AppExperiencePage } from './pages/AppExperiencePage'
-import { BillingPage } from './pages/BillingPage'
-import { CampaignsPage } from './pages/CampaignsPage'
-import { CharactersPage } from './pages/CharactersPage'
-import { ChildrenPage } from './pages/ChildrenPage'
-import { CustomersPage } from './pages/CustomersPage'
-import { CustomerDetailPage } from './pages/CustomerDetailPage'
-import { ContentReviewsPage } from './pages/ContentReviewsPage'
 import { DashboardPage } from './pages/DashboardPage'
-import { DevicesAdminPage } from './pages/DevicesAdminPage'
-import { EpisodesPage } from './pages/EpisodesPage'
-import { FailedEventsPage } from './pages/FailedEventsPage'
-import { GameDetailPage } from './pages/GameDetailPage'
-import { GamesOpsPage } from './pages/GamesOpsPage'
-import { AudioProductionQueuePage } from './pages/AudioProductionQueuePage'
-import { ArtProductionQueuePage } from './pages/ArtProductionQueuePage'
-import { LearningObjectivesPage } from './pages/LearningObjectivesPage'
-import { LibraryContentPage } from './pages/LibraryContentPage'
-import { MasteryPage } from './pages/MasteryPage'
-import { MediaLibraryPage } from './pages/MediaLibraryPage'
-import { MyTasksPage } from './pages/MyTasksPage'
-import { NarrationPage } from './pages/NarrationPage'
-import { OpsPage } from './pages/OpsPage'
+import { hasAdminSession, verifySession } from './lib/adminSession'
+// الشاشات غير المُنفَّذة تبقى ساكنة: كل واحدة ٢–٣ كيلوبايت وتتشارك
+// NotImplementedPage، فتقسيمها ينتج ثماني حِزَم صغيرة بلا مكسب.
+import { AdvancedFinancePage } from './pages/AdvancedFinancePage'
+import { CampaignsPage } from './pages/CampaignsPage'
 import { OpsSlaPage } from './pages/OpsSlaPage'
-import { PackagesPage } from './pages/PackagesPage'
-import { ParentsPage } from './pages/ParentsPage'
-import { QualityPage } from './pages/QualityPage'
 import { QuizBuilderPage } from './pages/QuizBuilderPage'
 import { RecommendationsPage } from './pages/RecommendationsPage'
-import { RemoteConfigPage } from './pages/RemoteConfigPage'
 import { RevenuePage } from './pages/RevenuePage'
-import { PartnershipsPage } from './pages/PartnershipsPage'
-import { PlanetsPage } from './pages/PlanetsPage'
-import { ProductionPage } from './pages/ProductionPage'
-import { PlanetDetailPage } from './pages/PlanetDetailPage'
-import { SeriesDetailPage } from './pages/SeriesDetailPage'
-import { EpisodeDetailPage } from './pages/EpisodeDetailPage'
-import { SeasonDetailPage } from './pages/SeasonDetailPage'
-import { CharacterDetailPage } from './pages/CharacterDetailPage'
-import { LibraryContentDetailPage } from './pages/LibraryContentDetailPage'
-import { AssetDetailPage } from './pages/AssetDetailPage'
-import { RightsPage } from './pages/RightsPage'
-import { RolesPage } from './pages/RolesPage'
 import { SchoolAccountsPage } from './pages/SchoolAccountsPage'
-import { SeasonsPage } from './pages/SeasonsPage'
-import { SeriesPage } from './pages/SeriesPage'
-import { SkillsPage } from './pages/SkillsPage'
-import { StoriesPage } from './pages/StoriesPage'
-import { SupportCenterPage } from './pages/SupportCenterPage'
-import { TaxonomyPage } from './pages/TaxonomyPage'
-import { TeamsPage } from './pages/TeamsPage'
 import { TranslationCenterPage } from './pages/TranslationCenterPage'
-import { VisualStylesPage } from './pages/VisualStylesPage'
-import { WorkflowPage } from './pages/WorkflowPage'
-import { WebsitePagesPage } from './pages/WebsitePagesPage'
-import { WebsitePageEditor } from './pages/WebsitePageEditor'
-import { BlogPostsPage } from './pages/BlogPostsPage'
-import { BlogPostEditor } from './pages/BlogPostEditor'
-import { BlogTaxonomyPage } from './pages/BlogTaxonomyPage'
-import { SeoOperationsPage } from './pages/SeoOperationsPage'
 import './styles/dashboard.css'
 // أنماط استوديو المحرّكات في ملف مستقلّ: dashboard.css قارب التسعين كيلوبايت،
 // وإلحاق محرّرات أحد عشر محرّكًا به يجعل مراجعة أي تغيير فيه أصعب.
@@ -80,6 +26,21 @@ import './styles/adminUx.css'
  * كل مسارات لوحة الإدارة في وحدة واحدة تُحمّل عند الطلب فقط،
  * حتى لا تحمل صفحة الهبوط العامة حزمة اللوحة كاملة.
  *
+ * ## تقسيم على مستوى المسار
+ *
+ * كانت الوحدة تستورد ٦٧ صفحة استيرادًا ساكنًا، فأصبحت حزمة واحدة بـ١٫١ ميغابايت
+ * تُنزَّل بالكامل قبل ظهور لوحة التحكم. أثقل ما فيها ليس الصفحات نفسها بل ما
+ * تجرّه: `lib/enginePackIssues.ts` وحده سبعون كيلوبايت، و`enginePack.ts` و
+ * `tracePack.ts` ثمانية وخمسون، وكلها لا يحتاجها أحد إلا في استوديو الألعاب.
+ *
+ * الآن كل صفحة `lazy`، وحدود `Suspense` واحدة حول `Outlet` في `AdminLayout`.
+ * ثلاث صفحات تبقى ساكنة:
+ *
+ * * **لوحة التحكم** هي أول ما يُفتح بعد الدخول؛ تقسيمها يعني نداءً إضافيًا قبل
+ *   أول بكسل.
+ * * **شاشة الدخول** تُعرض قبل أي مسار.
+ * * **الشاشات غير المُنفَّذة** صغيرة وتتشارك مكوّنًا واحدًا.
+ *
  * ## حرس الجلسة
  *
  * قبل أي مسار: إن لم تكن هناك جلسة صالحة تُعرض شاشة الدخول.
@@ -91,6 +52,82 @@ import './styles/adminUx.css'
  * وكلها لا تُعرف إلا من الخادم. لذلك يُتحقَّق منه بنداء `/admin/auth/me` مرة
  * عند التحميل، وتُعرض شاشة الدخول عند رفضه.
  */
+
+// --- المحتوى ---------------------------------------------------------------
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
+const TaxonomyPage = lazy(() => import('./pages/TaxonomyPage').then((module) => ({ default: module.TaxonomyPage })))
+const PlanetsPage = lazy(() => import('./pages/PlanetsPage').then((module) => ({ default: module.PlanetsPage })))
+const PlanetDetailPage = lazy(() => import('./pages/PlanetDetailPage').then((module) => ({ default: module.PlanetDetailPage })))
+const SkillsPage = lazy(() => import('./pages/SkillsPage').then((module) => ({ default: module.SkillsPage })))
+const LearningObjectivesPage = lazy(() => import('./pages/LearningObjectivesPage').then((module) => ({ default: module.LearningObjectivesPage })))
+const ContentReviewsPage = lazy(() => import('./pages/ContentReviewsPage').then((module) => ({ default: module.ContentReviewsPage })))
+const SeriesPage = lazy(() => import('./pages/SeriesPage').then((module) => ({ default: module.SeriesPage })))
+const SeriesDetailPage = lazy(() => import('./pages/SeriesDetailPage').then((module) => ({ default: module.SeriesDetailPage })))
+const SeasonsPage = lazy(() => import('./pages/SeasonsPage').then((module) => ({ default: module.SeasonsPage })))
+const SeasonDetailPage = lazy(() => import('./pages/SeasonDetailPage').then((module) => ({ default: module.SeasonDetailPage })))
+const EpisodesPage = lazy(() => import('./pages/EpisodesPage').then((module) => ({ default: module.EpisodesPage })))
+const EpisodeDetailPage = lazy(() => import('./pages/EpisodeDetailPage').then((module) => ({ default: module.EpisodeDetailPage })))
+const CharactersPage = lazy(() => import('./pages/CharactersPage').then((module) => ({ default: module.CharactersPage })))
+const CharacterDetailPage = lazy(() => import('./pages/CharacterDetailPage').then((module) => ({ default: module.CharacterDetailPage })))
+const StoriesPage = lazy(() => import('./pages/StoriesPage').then((module) => ({ default: module.StoriesPage })))
+const LibraryContentPage = lazy(() => import('./pages/LibraryContentPage').then((module) => ({ default: module.LibraryContentPage })))
+const LibraryContentDetailPage = lazy(() => import('./pages/LibraryContentDetailPage').then((module) => ({ default: module.LibraryContentDetailPage })))
+const VisualStylesPage = lazy(() => import('./pages/VisualStylesPage').then((module) => ({ default: module.VisualStylesPage })))
+const NarrationPage = lazy(() => import('./pages/NarrationPage').then((module) => ({ default: module.NarrationPage })))
+const QualityPage = lazy(() => import('./pages/QualityPage').then((module) => ({ default: module.QualityPage })))
+
+// --- استوديو الألعاب -------------------------------------------------------
+// أثقل مجموعة في اللوحة: صفحة اللعبة تجرّ محرّرات أحد عشر محرّكًا وقواعد التحقّق
+// (١٢٦ كيلوبايت من lib وحدها). لا أحد يحتاجها إلا داخل الاستوديو.
+const GameDetailPage = lazy(() => import('./pages/GameDetailPage').then((module) => ({ default: module.GameDetailPage })))
+const GamesOpsPage = lazy(() => import('./pages/GamesOpsPage').then((module) => ({ default: module.GamesOpsPage })))
+const AudioProductionQueuePage = lazy(() => import('./pages/AudioProductionQueuePage').then((module) => ({ default: module.AudioProductionQueuePage })))
+const ArtProductionQueuePage = lazy(() => import('./pages/ArtProductionQueuePage').then((module) => ({ default: module.ArtProductionQueuePage })))
+
+// --- الوسائط ---------------------------------------------------------------
+const MediaLibraryPage = lazy(() => import('./pages/MediaLibraryPage').then((module) => ({ default: module.MediaLibraryPage })))
+const AssetDetailPage = lazy(() => import('./pages/AssetDetailPage').then((module) => ({ default: module.AssetDetailPage })))
+
+// --- العملاء والدعم --------------------------------------------------------
+const ParentsPage = lazy(() => import('./pages/ParentsPage').then((module) => ({ default: module.ParentsPage })))
+const CustomersPage = lazy(() => import('./pages/CustomersPage').then((module) => ({ default: module.CustomersPage })))
+const CustomerDetailPage = lazy(() => import('./pages/CustomerDetailPage').then((module) => ({ default: module.CustomerDetailPage })))
+const ChildrenPage = lazy(() => import('./pages/ChildrenPage').then((module) => ({ default: module.ChildrenPage })))
+const DevicesAdminPage = lazy(() => import('./pages/DevicesAdminPage').then((module) => ({ default: module.DevicesAdminPage })))
+const SupportCenterPage = lazy(() => import('./pages/SupportCenterPage').then((module) => ({ default: module.SupportCenterPage })))
+
+// --- التجارة ---------------------------------------------------------------
+const BillingPage = lazy(() => import('./pages/BillingPage').then((module) => ({ default: module.BillingPage })))
+const PackagesPage = lazy(() => import('./pages/PackagesPage').then((module) => ({ default: module.PackagesPage })))
+const RightsPage = lazy(() => import('./pages/RightsPage').then((module) => ({ default: module.RightsPage })))
+const PartnershipsPage = lazy(() => import('./pages/PartnershipsPage').then((module) => ({ default: module.PartnershipsPage })))
+
+// --- التشغيل ---------------------------------------------------------------
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage').then((module) => ({ default: module.AnalyticsPage })))
+const MasteryPage = lazy(() => import('./pages/MasteryPage').then((module) => ({ default: module.MasteryPage })))
+const MyTasksPage = lazy(() => import('./pages/MyTasksPage').then((module) => ({ default: module.MyTasksPage })))
+const ProductionPage = lazy(() => import('./pages/ProductionPage').then((module) => ({ default: module.ProductionPage })))
+const WorkflowPage = lazy(() => import('./pages/WorkflowPage').then((module) => ({ default: module.WorkflowPage })))
+const ContentCalendarPage = lazy(() => import('./pages/ContentCalendarPage').then((module) => ({ default: module.ContentCalendarPage })))
+const AuditLogPage = lazy(() => import('./pages/AuditLogPage').then((module) => ({ default: module.AuditLogPage })))
+const FailedEventsPage = lazy(() => import('./pages/FailedEventsPage').then((module) => ({ default: module.FailedEventsPage })))
+const OpsPage = lazy(() => import('./pages/OpsPage').then((module) => ({ default: module.OpsPage })))
+const AppExperiencePage = lazy(() => import('./pages/AppExperiencePage').then((module) => ({ default: module.AppExperiencePage })))
+const RemoteConfigPage = lazy(() => import('./pages/RemoteConfigPage').then((module) => ({ default: module.RemoteConfigPage })))
+
+// --- الفريق ----------------------------------------------------------------
+const TeamsPage = lazy(() => import('./pages/TeamsPage').then((module) => ({ default: module.TeamsPage })))
+const RolesPage = lazy(() => import('./pages/RolesPage').then((module) => ({ default: module.RolesPage })))
+const TeamAccessPage = lazy(() => import('./pages/TeamAccessPage').then((module) => ({ default: module.TeamAccessPage })))
+
+// --- الموقع والمدوّنة و SEO -------------------------------------------------
+const WebsitePagesPage = lazy(() => import('./pages/WebsitePagesPage').then((module) => ({ default: module.WebsitePagesPage })))
+const WebsitePageEditor = lazy(() => import('./pages/WebsitePageEditor').then((module) => ({ default: module.WebsitePageEditor })))
+const BlogPostsPage = lazy(() => import('./pages/BlogPostsPage').then((module) => ({ default: module.BlogPostsPage })))
+const BlogPostEditor = lazy(() => import('./pages/BlogPostEditor').then((module) => ({ default: module.BlogPostEditor })))
+const BlogTaxonomyPage = lazy(() => import('./pages/BlogTaxonomyPage').then((module) => ({ default: module.BlogTaxonomyPage })))
+const SeoOperationsPage = lazy(() => import('./pages/SeoOperationsPage').then((module) => ({ default: module.SeoOperationsPage })))
+
 export default function AdminRoutes() {
   // 'checking' حالة ثالثة ضرورية: بلا فصلها عن 'signed-out' تظهر شاشة الدخول
   // لحظةً لكل مستخدم بجلسة صالحة قبل أن تُستبدل، وهو وميض مزعج.
@@ -167,6 +204,9 @@ export default function AdminRoutes() {
         {/* مركز الإنتاج: مصفوفة متطلبات لكل حلقة/قصة، مشتقّة من الأصول.
             منفصل عن /tasks لأن ذاك مهام عامة وهذا خطّ إنتاج المحتوى. */}
         <Route path="production" element={<ProductionPage />} />
+        {/* تقويم المحتوى: شاشة تخطيط واحدة عبر تسعة جداول مجدولة. منفصلة عن
+            تبويب التقويم في المدوّنة والموقع لأن سؤالها أوسع من أي قائمة. */}
+        <Route path="calendar" element={<ContentCalendarPage />} />
         <Route path="audit-logs" element={<AuditLogPage />} />
         <Route path="failed-events" element={<FailedEventsPage />} />
         <Route path="narration" element={<NarrationPage />} />

@@ -12,6 +12,7 @@ import { Modal } from './Modal'
 import { Pagination } from './Pagination'
 import { EmptyState, ErrorState, LoadingState } from './PageState'
 import { usePreferences } from '../context/preferences'
+import { useQuickCreate } from '../hooks/useQuickCreate'
 
 /**
  * طابور تذاكر الدعم ومساحة تفاصيل التذكرة.
@@ -225,6 +226,8 @@ export function SupportTickets({ familyId }: { familyId?: string }) {
 
   const [detail, setDetail] = useState<SupportTicketDetail | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+  // ‏?new=1 من لوحة الأوامر يفتح نموذج التذكرة نفسه.
+  useQuickCreate(() => setCreateOpen(true))
   const [form, setForm] = useState({ subject: '', category: 'billing', priority: 'normal', family_id: familyId ?? '', body: '', tags: '' })
   const [note, setNote] = useState('')
   const [channel, setChannel] = useState('')

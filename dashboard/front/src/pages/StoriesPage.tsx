@@ -8,6 +8,7 @@ import { StatusBadge } from '../components/StatusBadge'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
+import { useQuickCreate } from '../hooks/useQuickCreate'
 import { statusLabels } from '../lib/labels'
 import type { AssetRecord, ContentStatus, SeriesRecord, StoryDetail, StoryPageRecord, StoryRecord, StoryType, VisualStyleRecord } from '../types/api'
 
@@ -47,6 +48,9 @@ export function StoriesPage() {
   useEffect(() => { const timer = setTimeout(() => void load(), 180); return () => clearTimeout(timer) }, [load])
   const loadDetail = useCallback(async (id = detail?.id) => { if (!id) return; setDetailLoading(true); try { const [storyResponse, images, audio] = await Promise.all([api.story(id), api.assets({ status: 'ready', kind: 'image', limit: 200 }), api.assets({ status: 'ready', kind: 'audio', limit: 200 })]); setDetail(storyResponse.data); setImageAssets(images.data); setAudioAssets(audio.data); if (!storyResponse.data.languages.includes(language)) setLanguage(storyResponse.data.default_language) } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل القصة' : 'Unable to load story') } finally { setDetailLoading(false) } }, [ar, detail?.id, language])
   useEffect(() => { if (routeStoryId && routeStoryId !== detail?.id) void loadDetail(routeStoryId) }, [detail?.id, loadDetail, routeStoryId])
+  // ‏?new=1 من لوحة الأوامر يفتح نموذج القصة نفسه.
+  useQuickCreate(() => create())
+
   function create() { setEditing(null); setForm({ ...initial, series_id: series[0]?.id || '', visual_style_id: styles[0]?.id || '' }); setOpen(true) }
   function edit(item: StoryRecord) { setEditing(item); setForm({ title_ar: item.title_ar, slug: item.slug, series_id: item.series_id ?? '', type: item.type, age_min: String(item.age_min), age_max: String(item.age_max), visual_style_id: item.visual_style_id ?? '', languages: item.languages.join(','), description_ar: item.description_ar ?? '', status: item.status }); setOpen(true) }
   async function submit(event: FormEvent) { event.preventDefault(); if (!form.title_ar.trim()) return; setSaving(true); const payload = { ...form, series_id: form.series_id || null, visual_style_id: form.visual_style_id || null, age_min: Number(form.age_min), age_max: Number(form.age_max), languages: form.languages.split(',').map((item) => item.trim()).filter(Boolean), default_language: form.languages.split(',')[0]?.trim() || 'ar' }; try { if (editing) await api.updateStory(editing.id, payload); else await api.createStory(payload); setOpen(false); await load() } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر حفظ القصة' : 'Unable to save story') } finally { setSaving(false) } }

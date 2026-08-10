@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
+import { useQuickCreate } from '../hooks/useQuickCreate'
 import { api } from '../lib/api'
 import { formatNumber, trackLabels } from '../lib/labels'
 import type { AgeTrack, LearningObjectiveRecord, SkillRecord } from '../types/api'
@@ -252,6 +253,9 @@ export function LearningObjectivesPage() {
         : [...current.track_ids, value],
     }))
   }
+
+  // ‏?new=1 من لوحة الأوامر يفتح النموذج نفسه الذي يفتحه زرّ الصفحة.
+  useQuickCreate(() => openCreate())
 
   function openCreate() {
     setEditingId(null)

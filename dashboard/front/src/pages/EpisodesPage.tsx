@@ -12,6 +12,7 @@ import { Pagination } from '../components/Pagination'
 import { StatusBadge, TrackBadge } from '../components/StatusBadge'
 import { formatNumber, localeCode, statusLabels } from '../lib/labels'
 import { adminPath } from '../lib/adminPath'
+import { useQuickCreate } from '../hooks/useQuickCreate'
 import { usePreferences } from '../context/preferences'
 
 const editableStatuses: ContentStatus[] = ['draft', 'writing', 'review_edu', 'review_lang', 'review_sharia', 'production', 'qa', 'ready', 'scheduled']
@@ -83,6 +84,9 @@ export function EpisodesPage() {
 
   useEffect(() => { const timer = window.setTimeout(() => void load(), 220); return () => window.clearTimeout(timer) }, [load])
   useEffect(() => { void api.series({ status: 'all', limit: 100 }).then((response) => setSeries(response.data.filter((item) => item.status !== 'archived'))).catch(() => setSeries([])) }, [])
+
+  // ‏?new=1 من لوحة الأوامر يفتح النموذج نفسه الذي يفتحه زرّ الصفحة.
+  useQuickCreate(() => openCreate())
 
   function openCreate() {
     setEditing(null)

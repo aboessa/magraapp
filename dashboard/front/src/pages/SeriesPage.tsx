@@ -12,6 +12,7 @@ import { Pagination } from '../components/Pagination'
 import { StatusBadge, TrackBadge } from '../components/StatusBadge'
 import { formatNumber, statusLabels, trackLabels } from '../lib/labels'
 import { adminPath } from '../lib/adminPath'
+import { useQuickCreate } from '../hooks/useQuickCreate'
 import { usePreferences } from '../context/preferences'
 
 const typeLabels = {
@@ -124,6 +125,9 @@ export function SeriesPage() {
       setVisualStyles(styleResponse.data)
     }).catch(() => { setPlanets([]); setVisualStyles([]) })
   }, [])
+
+  // ‏?new=1 من لوحة الأوامر يفتح النموذج نفسه الذي يفتحه زرّ الصفحة.
+  useQuickCreate(() => openCreate())
 
   function openCreate() {
     setEditing(null)

@@ -597,4 +597,38 @@ export const api = {
 
   // --- اللوحة التنفيذية ----------------------------------------------------
   executiveOverview: () => request<ApiEnvelope<import('../types/api').ExecutiveOverview>>('/admin/dashboard/executive'),
+
+  // --- البحث الشامل والتقويم (adminSearch.ts، adminCalendar.ts) -------------
+  /// بحث واحد عبر كل الكيانات، للوحة الأوامر. الخادم يُصفّي بالصلاحيات لا العميل.
+  globalSearch: (query: string, options: { types?: string[]; limit?: number } = {}) =>
+    request<ApiEnvelope<import('../types/api').GlobalSearch>>(`/admin/search${queryString({
+      q: query,
+      types: options.types?.length ? options.types.join(',') : undefined,
+      limit: options.limit,
+    })}`),
+  /// تقويم المحتوى: كل ما تجدوله المنصّة في نافذة واحدة.
+  contentCalendar: (filters: {
+    from: string; to: string; types?: string[]; planet?: string; language?: string;
+    status?: string; owner?: string; team?: string;
+  }) =>
+    request<ApiEnvelope<import('../types/api').ContentCalendar>>(`/admin/calendar${queryString({
+      ...filters,
+      types: filters.types?.length ? filters.types.join(',') : undefined,
+    })}`),
+  /// إعادة جدولة عنصر من التقويم عبر مسار الكيان نفسه.
+  ///
+  /// التقويم لا يكتب: كل حدث يُعلن مساره وحقله وصلاحيته، وهذه الدالة تنادي ذلك
+  /// المسار كما هو. أي كتابة مباشرة على عمود `scheduled_at` من التقويم كانت
+  /// ستتجاوز المراجعة والتدقيق الذي يكتبه مسار الكيان قبل التغيير.
+  rescheduleCalendarEvent: (
+    event: { reschedule: { method?: 'PATCH' | 'PUT'; route?: string; field?: string } },
+    value: string,
+  ) => {
+    const { method = 'PATCH', route, field } = event.reschedule
+    if (!route || !field) throw new Error('This event declares no reschedule route')
+    return request<ApiEnvelope<Record<string, unknown>>>(route, {
+      method,
+      body: JSON.stringify({ [field]: value }),
+    })
+  },
 }
