@@ -28,6 +28,12 @@ import { queryAll, queryFirst } from '../lib/db';
 import { requireAdmin, requirePermission } from '../lib/adminAuth';
 import { actorId, auditStatement } from '../lib/auditLog';
 import { checkSelfApproval, SELF_APPROVAL_ERROR } from '../lib/separationOfDuties.ts';
+// The deadline predicate lives with the support CRM because that is where the format mismatch
+// was first diagnosed, but it is not support-specific: workflow stage deadlines are written
+// the same way (`new Date().toISOString()`) and compared against the same `datetime('now')`,
+// so this handler had the identical defect — same-day stage breaches were invisible while
+// cross-day ones happened to work. Found by the executive metric audit.
+import { SQL_DEADLINE_PASSED } from '../lib/supportCrm.ts';
 import {
   actionableStages,
   applyDecision,
@@ -436,7 +442,7 @@ route.get('/workflows/overdue', requireAdmin, async (c) => {
      WHERE rs.due_at IS NOT NULL
        AND rs.status NOT IN ('approved', 'skipped')
        AND wr.status = 'running'
-       AND rs.due_at < datetime('now')
+       AND ${SQL_DEADLINE_PASSED('rs.due_at')}
      ORDER BY rs.due_at ASC
   `);
 
