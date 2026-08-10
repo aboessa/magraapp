@@ -9,12 +9,12 @@ read from the source on every run. The **Status** column comes from
 `docs/FEATURE_MATRIX_VERDICTS.json`, where each verdict records how it was
 verified; a route with no recorded verdict is `UNVERIFIED` rather than assumed.
 
-Registered admin routes: **66**. Server routes parsed: **302**.
-API client functions parsed: **221**.
+Registered admin routes: **67**. Server routes parsed: **315**.
+API client functions parsed: **223**.
 
 | Status | Routes |
 |---|---|
-| COMPLETE | 40 |
+| COMPLETE | 41 |
 | PARTIAL | 18 |
 | MISSING | 8 |
 
@@ -22,57 +22,58 @@ API client functions parsed: **221**.
 
 | Route | Page | Status | API calls | Server endpoints | Permissions | Audit | Tests |
 |---|---|---|---|---|---|---|---|
-| `/` | DashboardPage.tsx | PARTIAL | 5 | 5/5 | — | — | 15 |
-| `/settings` | SettingsPage.tsx | PARTIAL | 2 | 2/2 | publish | ✅ | 46 |
-| `/taxonomy` | TaxonomyPage.tsx | COMPLETE | 8 | 8/8 | edit_metadata, create, archive | — | 2 |
-| `/planets` | PlanetsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
-| `/planets/:id` | PlanetDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
-| `/skills` | SkillsPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 3 |
-| `/objectives` | LearningObjectivesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive | — | 3 |
-| `/content-reviews` | ContentReviewsPage.tsx | PARTIAL | 4 | 4/4 | review | — | 1 |
-| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 46 |
-| `/series/:id` | SeriesDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
-| `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 13 |
-| `/seasons/:id` | SeasonDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
-| `/episodes` | EpisodesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive, publish | ✅ | 13 |
-| `/episodes/:id` | EpisodeDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
-| `/characters` | CharactersPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 16 |
-| `/characters/:id` | CharacterDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 5 |
-| `/stories` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 25 |
-| `/stories/:id` | StoriesPage.tsx | PARTIAL | 17 | 17/17 | edit_metadata, create, upload_images, archive | — | 25 |
-| `/library-content` | LibraryContentPage.tsx | COMPLETE | 19 | 19/19 | edit_metadata, create, archive | — | 32 |
-| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 30 |
-| `/games/:id` | GameDetailPage.tsx | COMPLETE | 4 | 4/4 | — | — | 22 |
-| `/games-ops` | GamesOpsPage.tsx | COMPLETE | 1 | 1/1 | — | — | 2 |
-| `/games-audio-queue` | AudioProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
-| `/games-art-queue` | ArtProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
-| `/media` | MediaLibraryPage.tsx | COMPLETE | 6 | 6/6 | upload_images, create | — | 17 |
-| `/media/:id` | AssetDetailPage.tsx | COMPLETE | 2 | 2/2 | — | — | 24 |
-| `/visual-styles` | VisualStylesPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 0 |
-| `/parents` | ParentsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 1 |
-| `/customers` | CustomersPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
-| `/customers/:id` | CustomerDetailPage.tsx | COMPLETE | 4 | 4/4 | manage_permissions | ✅ | 0 |
-| `/children` | ChildrenPage.tsx | PARTIAL | 1 | 1/1 | — | — | 7 |
-| `/billing` | BillingPage.tsx | COMPLETE | 4 | 4/4 | — | — | 9 |
-| `/analytics` | AnalyticsPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
-| `/teams` | TeamsPage.tsx | COMPLETE | 3 | 3/3 | manage_team | — | 4 |
-| `/roles` | RolesPage.tsx | PARTIAL | 3 | 3/3 | manage_permissions | — | 10 |
-| `/team-access` | TeamAccessPage.tsx | COMPLETE | 6 | 6/6 | — | — | 7 |
-| `/tasks` | MyTasksPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
-| `/production` | ProductionPage.tsx | COMPLETE | 4 | 4/4 | assign_members | ✅ | 0 |
-| `/audit-logs` | AuditLogPage.tsx | COMPLETE | 1 | 1/1 | view_audit_log | — | 1 |
-| `/failed-events` | FailedEventsPage.tsx | COMPLETE | 3 | 3/3 | publish | — | 2 |
-| `/narration` | NarrationPage.tsx | PARTIAL | 3 | 3/3 | upload_audio | ✅ | 2 |
-| `/quality` | QualityPage.tsx | PARTIAL | 2 | 2/2 | — | — | 1 |
-| `/mastery` | MasteryPage.tsx | PARTIAL | 3 | 3/3 | — | — | 8 |
-| `/app-experience` | AppExperiencePage.tsx | PARTIAL | 6 | 6/6 | edit_metadata, create | — | 0 |
-| `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 6 |
-| `/support-center` | SupportCenterPage.tsx | COMPLETE | 2 | 2/2 | — | ✅ | 2 |
-| `/workflows` | WorkflowPage.tsx | COMPLETE | 8 | 8/8 | assign_members, review | ✅ | 2 |
-| `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 8 |
-| `/remote-config` | RemoteConfigPage.tsx | PARTIAL | 3 | 3/3 | publish | — | 1 |
-| `/packages` | PackagesPage.tsx | COMPLETE | 1 | 1/1 | — | — | 3 |
-| `/ops` | OpsPage.tsx | PARTIAL | 3 | 3/3 | — | — | 9 |
+| `/` | DashboardPage.tsx | PARTIAL | 5 | 5/5 | — | — | 16 |
+| `/settings` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/taxonomy` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/planets` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/planets/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/skills` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/objectives` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/content-reviews` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/series` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/series/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/seasons` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/seasons/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/episodes` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/episodes/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/characters` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/characters/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/stories` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/stories/:id` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/library-content` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/library-content/:kind/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/games/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/games-ops` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/games-audio-queue` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/games-art-queue` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/media` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/media/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/visual-styles` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/parents` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/customers` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/customers/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/children` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/billing` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/analytics` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/teams` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/roles` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/team-access` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/tasks` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/production` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/calendar` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/audit-logs` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/failed-events` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/narration` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/quality` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/mastery` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/app-experience` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/devices-admin` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/support-center` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/workflows` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/rights` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/remote-config` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
+| `/packages` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/ops` | — | PARTIAL | 0 | 0/0 | — | — | 0 |
 | `/campaigns` | CampaignsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/revenue` | RevenuePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/translation` | TranslationCenterPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
@@ -81,13 +82,13 @@ API client functions parsed: **221**.
 | `/school` | SchoolAccountsPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/finance-advanced` | AdvancedFinancePage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
 | `/ops-sla` | OpsSlaPage.tsx | MISSING | 0 | 0/0 | — | — | 0 |
-| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 46 |
-| `/website/pages` | WebsitePagesPage.tsx | COMPLETE | 4 | 4/4 | publish, create | ✅ | 0 |
-| `/website/pages/:id` | WebsitePageEditor.tsx | COMPLETE | 7 | 7/7 | view_audit_log, edit_text, edit_metadata, publish | ✅ | 1 |
-| `/blog/posts` | BlogPostsPage.tsx | COMPLETE | 4 | 4/4 | create | ✅ | 0 |
-| `/blog/posts/:id` | BlogPostEditor.tsx | COMPLETE | 7 | 7/7 | view_audit_log, edit_text, publish | ✅ | 1 |
-| `/blog/taxonomy` | BlogTaxonomyPage.tsx | COMPLETE | 4 | 4/4 | create | ✅ | 0 |
-| `/seo` | SeoOperationsPage.tsx | COMPLETE | 4 | 4/4 | publish | ✅ | 1 |
+| `/partnerships` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/website/pages` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/website/pages/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/blog/posts` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/blog/posts/:id` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/blog/taxonomy` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
+| `/seo` | — | COMPLETE | 0 | 0/0 | — | — | 0 |
 
 ## 2. Collection UX affordances (static evidence)
 
@@ -97,56 +98,6 @@ that it behaves; behavioural findings belong in the verdict file.
 | Route | Filters | Pagination | View modes | Thumbnails | Detail link | Loading | Empty | Error | Mutations |
 |---|---|---|---|---|---|---|---|---|---|
 | `/` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/settings` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/taxonomy` | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/planets` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/planets/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/skills` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/objectives` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/content-reviews` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/series` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/series/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/seasons` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/seasons/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/episodes` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/episodes/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/characters` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/characters/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/stories` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/stories/:id` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/library-content` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/library-content/:kind/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/games/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/games-ops` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/games-audio-queue` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/games-art-queue` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/media` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/media/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/visual-styles` | ✅ | — | — | — | — | ✅ | — | ✅ | ✅ |
-| `/parents` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/customers` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/customers/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/children` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/billing` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/analytics` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/teams` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/roles` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/team-access` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/tasks` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/production` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/audit-logs` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/failed-events` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/narration` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/quality` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/mastery` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/app-experience` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/devices-admin` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/support-center` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| `/workflows` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/rights` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/remote-config` | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/packages` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
-| `/ops` | — | — | — | — | — | ✅ | — | ✅ | — |
 | `/campaigns` | — | — | — | — | — | — | ✅ | — | — |
 | `/revenue` | — | — | — | — | — | — | — | — | — |
 | `/translation` | — | — | — | — | — | — | — | — | — |
@@ -155,13 +106,6 @@ that it behaves; behavioural findings belong in the verdict file.
 | `/school` | — | — | — | — | — | — | — | — | — |
 | `/finance-advanced` | — | — | — | — | — | — | — | — | — |
 | `/ops-sla` | — | — | — | — | — | — | — | — | — |
-| `/partnerships` | ✅ | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/website/pages` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/website/pages/:id` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/blog/posts` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/blog/posts/:id` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/blog/taxonomy` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| `/seo` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ## 3. Verdicts and how each was verified
 
@@ -313,8 +257,8 @@ that it behaves; behavioural findings belong in the verdict file.
 
 ### `/games-ops` — COMPLETE
 
-- Verified by: code read 2026-08-09; api test gamesOps.test.mjs
-- Evidence: Reads the real ops aggregate over game rows, packs and reviews.
+- Verified by: code read 2026-08-10; api test gamesOps.test.mjs; live HTTP 2026-08-10 after the mount-order fix
+- Evidence: Reads the real ops aggregate over game rows, packs and reviews. The endpoint was unreachable until 2026-08-10: adminGamesRoute was mounted after adminRoute, so GET /admin/games/ops and /admin/games/analytics were swallowed by route.get('/games/:id') in adminContent.ts and answered 404 Game not found. Unit tests could not see it because they call the route module directly. Found by the browser run watching the console; all four games endpoints now return 200 over HTTP.
 - Gaps:
   - No retry/resolve actions from this screen
 
@@ -370,7 +314,7 @@ that it behaves; behavioural findings belong in the verdict file.
 
 ### `/customers/:id` — COMPLETE
 
-- Verified by: code read 2026-08-09; api test adminDeviceOperations.test.mjs asserts the data boundaries and the operator path
+- Verified by: code read 2026-08-09; api test adminDeviceOperations.test.mjs asserts the data boundaries and the operator path; live E2E scripts/verify-customer360-e2e.mjs 43/43 2026-08-10
 - Evidence: Customer 360 workspace with eight tabs. The authority (FamilyState) answers present-tense questions - effective plan, entitlement ledger, devices, sessions, active leases, auth epoch, progress count - and D1 answers history; every section names its source. One failed section degrades alone rather than failing the page. Device revoke, download revoke and projection resync call the operator command path with a mandatory reason, a stated irreversible-effect warning and audit written before the command. No store credentials and no child viewing history are exposed; reading the family is audited as customer_360.
 - Gaps:
   - Consents are rendered as raw records because FamilyState returns an untyped shape
@@ -428,12 +372,21 @@ that it behaves; behavioural findings belong in the verdict file.
 
 ### `/production` — COMPLETE
 
-- Verified by: code read 2026-08-09; api test productionMatrix.test.mjs (19 tests)
+- Verified by: code read 2026-08-09; api test productionMatrix.test.mjs (19 tests); live E2E scripts/verify-production-e2e.mjs 63/63 2026-08-10
 - Evidence: Requirement matrix per episode and story derived entirely from the artefacts: linked asset status, pages with a ready illustration, languages that actually have text or narration, review rows, and the publish gate's own verdict for the publish row. No endpoint accepts a status, asserted by test, so the board cannot claim work that does not exist. Percentages appear only where a denominator exists. Migration 0032 stores the human layer (assignee, team, due, blocker, note); a recorded blocker can turn in_progress into blocked and can never hide a finished asset. Three views: table, kanban grouped by requirement state, and my queue. The board is capped and states its cap.
 - Gaps:
   - Covers episodes and stories only; books, games and projects have their own readiness surfaces
   - Assignment takes a user id typed in rather than a picker
   - No calendar view and no bulk reassignment
+
+### `/calendar` — COMPLETE
+
+- Verified by: code read 2026-08-10; api test adminSearchCalendar.test.mjs (26 tests); front test paletteCalendar.test.tsx (24 tests); browser run verify-dashboard.mjs 2026-08-10 (three views, keyboard move path)
+- Evidence: One calendar over nine scheduled sources - episodes, series, stories, website pages, blog posts, home modules, production requirements, tasks and licence expiry - in one server window. Day, week and month; filters and the view in the URL; saved views; conflict chips that filter the set they count. It is a read model: every event declares the route, field and permission that can move it, and both the drag and the per-card date field call that route, so the entity endpoint stays the only writer and its revision, validation and audit still run. The screen states that no cron publishes a scheduled row (scheduled/cleanup.ts is the only cron and it deletes processed events), marks every scheduled event with that conflict, and reports two more: content scheduled past its licence expiry, and two episodes of one series on one day. Entities with no schedulable column (campaigns, releases, books, games) are named with the reason.
+- Gaps:
+  - Tasks and derived publication dates cannot be moved from here; each event says why
+  - Text search is applied in the browser because the route accepts no q, and that is stated on screen
+  - No scheduler exists to publish a scheduled row, so every scheduled date needs a manual publish
 
 ### `/audit-logs` — COMPLETE
 
@@ -480,7 +433,7 @@ that it behaves; behavioural findings belong in the verdict file.
 
 ### `/devices-admin` — PARTIAL
 
-- Verified by: code read 2026-08-09
+- Verified by: code read 2026-08-09; live E2E scripts/verify-device-e2e.mjs 44/44 2026-08-10
 - Evidence: Read-only; the revoke control was removed rather than left disabled, and the page explains that FamilyState owns device state (server answers 501).
 - Gaps:
   - No live device projection from FamilyState
@@ -488,7 +441,7 @@ that it behaves; behavioural findings belong in the verdict file.
 
 ### `/support-center` — COMPLETE
 
-- Verified by: code read 2026-08-09; api test supportCrm.test.mjs (21 tests) and supportFamilyDevices.test.mjs (6 tests)
+- Verified by: code read 2026-08-09; api test supportCrm.test.mjs (21 tests) and supportFamilyDevices.test.mjs (6 tests); live E2E scripts/verify-support-e2e.mjs 80/80 2026-08-10
 - Evidence: Real CRM (migration 0031): tickets with reference, category, priority, status, family/subscription/purchase/device links, assignee and team, tags as rows, an event timeline, saved views, and stored SLA policies resolved most-specific-first. Two clocks are tracked and measured separately, a settled ticket is judged at resolution time rather than at now, and waiting_customer pauses the resolution clock. Status transitions are enforced (closed is terminal), raising priority re-derives both deadlines, escalation raises priority and moves the clock, and every write leaves both a timeline event and an audit row. Overdue filtering happens in SQL so the badge and the list agree. Operational actions accept only what the platform can perform; each unavailable one is refused with 501 and its own specific reason, which the UI lists instead of rendering a control that fails. Account lookup keeps its narrow field set, plus a live device read from FamilyState.
 - Gaps:
   - No customer messaging, deliberately: no channel exists and no table pretends one does
@@ -649,15 +602,49 @@ operator surface. Listed so the second case cannot hide.
 
 | File | Verb | Path | Permission | Audit |
 |---|---|---|---|---|
+| admin.ts | GET | `/api/v1/admin/series` | — | — |
+| admin.ts | GET | `/api/v1/admin/series/:id` | — | — |
+| admin.ts | POST | `/api/v1/admin/series` | create | ✅ |
+| admin.ts | PATCH | `/api/v1/admin/series/:id` | edit_metadata | ✅ |
+| admin.ts | POST | `/api/v1/admin/series/:id/publish` | publish | ✅ |
+| admin.ts | DELETE | `/api/v1/admin/series/:id` | archive | ✅ |
+| admin.ts | GET | `/api/v1/admin/episodes` | — | — |
+| admin.ts | GET | `/api/v1/admin/episodes/:id` | — | — |
+| admin.ts | POST | `/api/v1/admin/episodes` | create | ✅ |
+| admin.ts | PATCH | `/api/v1/admin/episodes/:id` | edit_metadata | ✅ |
+| admin.ts | POST | `/api/v1/admin/episodes/:id/publish` | publish | ✅ |
+| admin.ts | DELETE | `/api/v1/admin/episodes/:id` | archive | ✅ |
+| adminAnalytics.ts | GET | `/api/v1/admin/analytics/overview` | — | — |
+| adminAnalytics.ts | GET | `/api/v1/admin/analytics/children/:childId` | — | — |
+| adminAppExperience.ts | GET | `/api/v1/admin/home-experience` | — | — |
+| adminAppExperience.ts | POST | `/api/v1/admin/home-experience` | create | — |
+| adminAppExperience.ts | PATCH | `/api/v1/admin/home-experience/:id` | edit_metadata | — |
+| adminAppExperience.ts | POST | `/api/v1/admin/home-experience/:id/rollback` | edit_metadata | — |
+| adminAppExperience.ts | POST | `/api/v1/admin/home-experience/reorder` | edit_metadata | — |
 | adminAppExperience.ts | DELETE | `/api/v1/admin/home-experience/:id` | archive | — |
+| adminAppExperience.ts | GET | `/api/v1/admin/home-experience/preview` | — | — |
+| adminAppExperience.ts | GET | `/api/v1/admin/devices` | — | — |
 | adminAppExperience.ts | POST | `/api/v1/admin/devices/:id/revoke` | archive | — |
+| adminAppExperience.ts | GET | `/api/v1/admin/remote-config` | — | — |
+| adminAppExperience.ts | PUT | `/api/v1/admin/remote-config/:key` | publish | — |
+| adminAppExperience.ts | GET | `/api/v1/admin/feature-flags` | — | — |
+| adminAppExperience.ts | GET | `/api/v1/admin/support/family/:id` | — | ✅ |
+| adminAppExperience.ts | GET | `/api/v1/admin/support/family/:id/devices` | — | ✅ |
+| adminAppExperience.ts | POST | `/api/v1/admin/rights` | create | ✅ |
+| adminAssets.ts | GET | `/api/v1/admin/assets` | — | — |
+| adminAssets.ts | GET | `/api/v1/admin/assets/stats` | — | — |
+| adminAssets.ts | GET | `/api/v1/admin/assets/:id` | — | — |
+| adminAssets.ts | POST | `/api/v1/admin/assets` | create | — |
 | adminAssets.ts | PATCH | `/api/v1/admin/assets/:id` | edit_metadata | — |
 | adminAssets.ts | DELETE | `/api/v1/admin/assets/:id` | archive | — |
+| adminAssets.ts | POST | `/api/v1/admin/assets/import-catalog` | create | — |
 | adminAssets.ts | PUT | `/api/v1/admin/assets/:id/links` | edit_metadata | — |
+| adminAssets.ts | PUT | `/api/v1/admin/assets/:id/content` | upload_images | — |
 | adminAssets.ts | POST | `/api/v1/admin/asset-upload-sessions` | upload_images | — |
 | adminAssets.ts | PUT | `/api/v1/admin/asset-upload-sessions/:id/parts/:part` | upload_images | — |
 | adminAssets.ts | POST | `/api/v1/admin/asset-upload-sessions/:id/complete` | upload_images | — |
 | adminAssets.ts | DELETE | `/api/v1/admin/asset-upload-sessions/:id` | upload_images | — |
+| adminAssets.ts | GET | `/api/v1/admin/assets/:id/content` | — | — |
 | adminAuth.ts | GET | `/api/v1/admin/auth/status` | — | — |
 | adminAuth.ts | POST | `/api/v1/admin/auth/login` | — | — |
 | adminAuth.ts | GET | `/api/v1/admin/auth/me` | — | — |
@@ -668,30 +655,144 @@ operator surface. Listed so the second case cannot hide.
 | adminAvailability.ts | PUT | `/api/v1/admin/availability/:type/:id` | publish | ✅ |
 | adminAvailability.ts | DELETE | `/api/v1/admin/availability/:type/:id` | publish | ✅ |
 | adminAvailability.ts | GET | `/api/v1/admin/availability` | — | — |
+| adminBackup.ts | GET | `/api/v1/admin/backup/:type/:id` | — | — |
 | adminBackup.ts | POST | `/api/v1/admin/restore` | publish | — |
+| adminBackup.ts | GET | `/api/v1/admin/quality/:type/:id` | — | — |
+| adminBilling.ts | GET | `/api/v1/admin/billing/stats` | — | — |
+| adminBilling.ts | GET | `/api/v1/admin/billing/purchases` | — | — |
+| adminBilling.ts | GET | `/api/v1/admin/billing/entitlements` | — | — |
+| adminBlog.ts | GET | `/api/v1/admin/blog/taxonomy` | — | — |
+| adminBlog.ts | POST | `/api/v1/admin/blog/authors` | create | ✅ |
+| adminBlog.ts | POST | `/api/v1/admin/blog/categories` | create | ✅ |
+| adminBlog.ts | POST | `/api/v1/admin/blog/tags` | create | — |
+| adminBlog.ts | GET | `/api/v1/admin/blog/posts` | — | — |
+| adminBlog.ts | GET | `/api/v1/admin/blog/posts/:id` | — | — |
+| adminBlog.ts | POST | `/api/v1/admin/blog/posts` | create | ✅ |
+| adminBlog.ts | PATCH | `/api/v1/admin/blog/posts/:id` | edit_text | ✅ |
+| adminBlog.ts | POST | `/api/v1/admin/blog/posts/:id/publish` | publish | ✅ |
+| adminBlog.ts | POST | `/api/v1/admin/blog/posts/:id/rollback` | edit_text | ✅ |
+| adminCalendar.ts | GET | `/api/v1/admin/calendar` | — | — |
+| adminCatalogue.ts | GET | `/api/v1/admin/skills` | — | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/skills/:id` | — | — |
+| adminCatalogue.ts | POST | `/api/v1/admin/skills` | create | — |
+| adminCatalogue.ts | PATCH | `/api/v1/admin/skills/:id` | edit_metadata | — |
+| adminCatalogue.ts | DELETE | `/api/v1/admin/skills/:id` | archive | — |
+| adminCatalogue.ts | GET | `/api/v1/admin/learning-objectives` | — | — |
+| adminCatalogue.ts | GET | `/api/v1/admin/learning-objectives/:id` | — | — |
+| adminCatalogue.ts | POST | `/api/v1/admin/learning-objectives` | create | — |
+| adminCatalogue.ts | PATCH | `/api/v1/admin/learning-objectives/:id` | edit_metadata | — |
+| adminCatalogue.ts | DELETE | `/api/v1/admin/learning-objectives/:id` | archive | — |
+| adminCatalogue.ts | POST | `/api/v1/admin/learning-objectives/:id/tracks/rederive` | edit_metadata | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/content-reviews/:id` | — | — |
+| adminCatalogue.ts | POST | `/api/v1/admin/content-reviews` | review | — |
+| adminCatalogue.ts | PATCH | `/api/v1/admin/content-reviews/:id` | review | — |
+| adminCatalogue.ts | DELETE | `/api/v1/admin/content-reviews/:id` | review | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/stories/:id/pages` | — | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/story-pages/:id` | — | — |
 | adminCatalogue.ts | DELETE | `/api/v1/admin/story-pages/:id/localizations/:language` | edit_text | — |
 | adminCatalogue.ts | DELETE | `/api/v1/admin/stories/:id/purge` | delete_draft | — |
+| adminCatalogue.ts | GET | `/api/v1/admin/seasons/:id` | — | — |
+| adminCatalogue.ts | GET | `/api/v1/admin/characters/:id` | — | — |
+| adminContent.ts | GET | `/api/v1/admin/planets` | — | — |
+| adminContent.ts | GET | `/api/v1/admin/planets/:id` | — | — |
+| adminContent.ts | POST | `/api/v1/admin/planets` | create | — |
+| adminContent.ts | PATCH | `/api/v1/admin/planets/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/planets/:id` | archive | — |
+| adminContent.ts | GET | `/api/v1/admin/categories` | — | — |
+| adminContent.ts | POST | `/api/v1/admin/categories` | create | — |
+| adminContent.ts | PATCH | `/api/v1/admin/categories/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/categories/:id` | archive | — |
 | adminContent.ts | PUT | `/api/v1/admin/series/:id/categories` | edit_metadata | — |
+| adminContent.ts | GET | `/api/v1/admin/visual-styles` | — | — |
+| adminContent.ts | POST | `/api/v1/admin/visual-styles` | create | — |
+| adminContent.ts | PATCH | `/api/v1/admin/visual-styles/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/visual-styles/:id` | archive | — |
+| adminContent.ts | GET | `/api/v1/admin/seasons` | — | — |
+| adminContent.ts | POST | `/api/v1/admin/seasons` | create | — |
+| adminContent.ts | PATCH | `/api/v1/admin/seasons/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/seasons/:id` | archive | — |
+| adminContent.ts | GET | `/api/v1/admin/characters` | — | — |
+| adminContent.ts | POST | `/api/v1/admin/characters` | create | — |
+| adminContent.ts | PATCH | `/api/v1/admin/characters/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/characters/:id` | archive | — |
+| adminContent.ts | GET | `/api/v1/admin/game-engines` | — | — |
+| adminContent.ts | GET | `/api/v1/admin/books` | — | — |
+| adminContent.ts | GET | `/api/v1/admin/books/:id` | — | — |
+| adminContent.ts | POST | `/api/v1/admin/books` | create | — |
+| adminContent.ts | PATCH | `/api/v1/admin/books/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/books/:id` | archive | — |
+| adminContent.ts | GET | `/api/v1/admin/games` | — | — |
+| adminContent.ts | GET | `/api/v1/admin/games/:id` | — | — |
+| adminContent.ts | POST | `/api/v1/admin/games` | create | — |
+| adminContent.ts | PATCH | `/api/v1/admin/games/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/games/:id` | archive | — |
+| adminContent.ts | GET | `/api/v1/admin/projects` | — | — |
+| adminContent.ts | GET | `/api/v1/admin/projects/:id` | — | — |
+| adminContent.ts | POST | `/api/v1/admin/projects` | create | — |
+| adminContent.ts | PATCH | `/api/v1/admin/projects/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/projects/:id` | archive | — |
+| adminContent.ts | GET | `/api/v1/admin/stories` | — | — |
+| adminContent.ts | GET | `/api/v1/admin/stories/:id` | — | — |
+| adminContent.ts | POST | `/api/v1/admin/stories` | create | — |
+| adminContent.ts | PATCH | `/api/v1/admin/stories/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/stories/:id` | archive | — |
+| adminContent.ts | POST | `/api/v1/admin/stories/:id/pages` | create | — |
+| adminContent.ts | PATCH | `/api/v1/admin/story-pages/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/story-pages/:id` | archive | — |
+| adminContent.ts | PUT | `/api/v1/admin/story-pages/:id/localizations/:language` | edit_metadata | — |
+| adminContent.ts | POST | `/api/v1/admin/story-pages/:id/bubbles` | create | — |
 | adminContent.ts | PATCH | `/api/v1/admin/story-bubbles/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/story-bubbles/:id` | archive | — |
+| adminCustomer.ts | GET | `/api/v1/admin/customers` | — | — |
+| adminCustomer.ts | GET | `/api/v1/admin/customers/:id` | — | ✅ |
 | adminDevices.ts | GET | `/api/v1/admin/families/:id/device-state` | — | ✅ |
+| adminDevices.ts | POST | `/api/v1/admin/families/:id/devices/:deviceId/revoke` | manage_permissions | ✅ |
+| adminDevices.ts | POST | `/api/v1/admin/families/:id/downloads/revoke` | manage_permissions | ✅ |
+| adminDevices.ts | POST | `/api/v1/admin/families/:id/resync` | manage_permissions | ✅ |
+| adminFamilyProjection.ts | GET | `/api/v1/admin/parents` | — | — |
+| adminFamilyProjection.ts | GET | `/api/v1/admin/parents/:id` | — | — |
+| adminFamilyProjection.ts | GET | `/api/v1/admin/children` | — | — |
 | adminFamilyProjection.ts | GET | `/api/v1/admin/children/:id` | — | — |
 | adminFamilyProjection.ts | POST | `/api/v1/admin/children` | — | — |
 | adminFamilyProjection.ts | PATCH | `/api/v1/admin/children/:id` | — | — |
 | adminFamilyProjection.ts | DELETE | `/api/v1/admin/children/:id` | — | — |
+| adminFamilyProjection.ts | GET | `/api/v1/admin/failed-family-events` | — | — |
+| adminFamilyProjection.ts | POST | `/api/v1/admin/failed-family-events/:id/replay` | publish | — |
+| adminFamilyProjection.ts | POST | `/api/v1/admin/failed-family-events/:id/discard` | publish | — |
+| adminGames.ts | GET | `/api/v1/admin/games/:id/readiness` | — | — |
 | adminGames.ts | GET | `/api/v1/admin/games/:id/preview` | — | — |
 | adminGames.ts | GET | `/api/v1/admin/games/:id/localizations` | — | — |
 | adminGames.ts | GET | `/api/v1/admin/games/:id/localizations/:language` | — | — |
 | adminGames.ts | PUT | `/api/v1/admin/games/:id/localizations/:language` | edit_text | ✅ |
+| adminGames.ts | GET | `/api/v1/admin/games/production/audio` | — | — |
+| adminGames.ts | GET | `/api/v1/admin/games/production/art` | — | — |
 | adminGames.ts | GET | `/api/v1/admin/games/analytics` | — | — |
+| adminGames.ts | GET | `/api/v1/admin/games/ops` | — | — |
+| adminMastery.ts | GET | `/api/v1/admin/mastery/by-objective` | — | — |
+| adminMastery.ts | GET | `/api/v1/admin/mastery/by-child` | — | — |
+| adminMastery.ts | GET | `/api/v1/admin/attempts` | — | — |
+| adminPartnerships.ts | GET | `/api/v1/admin/partnerships` | — | — |
+| adminPartnerships.ts | GET | `/api/v1/admin/partnerships/settings` | — | — |
+| adminPartnerships.ts | PUT | `/api/v1/admin/partnerships/settings` | publish | ✅ |
 | adminPartnerships.ts | GET | `/api/v1/admin/partnerships/:id` | — | — |
+| adminPartnerships.ts | PATCH | `/api/v1/admin/partnerships/:id` | edit_metadata | ✅ |
+| adminPartnerships.ts | POST | `/api/v1/admin/partnerships/:id/resend` | edit_metadata | ✅ |
+| adminPlans.ts | GET | `/api/v1/admin/plans` | — | — |
+| adminProduction.ts | GET | `/api/v1/admin/production/:type/:id` | — | — |
+| adminProduction.ts | GET | `/api/v1/admin/production/board` | — | — |
+| adminProduction.ts | PUT | `/api/v1/admin/production/:type/:id/:requirement` | assign_members | ✅ |
+| adminProduction.ts | GET | `/api/v1/admin/production/my-queue` | — | — |
 | adminPublishGate.ts | GET | `/publish-readiness/:type/:id` | — | — |
+| adminSearch.ts | GET | `/api/v1/admin/search` | — | — |
 | adminSeo.ts | GET | `/api/v1/admin/seo/:type/:id` | — | — |
 | adminSeo.ts | PUT | `/api/v1/admin/seo/:type/:id` | edit_metadata | ✅ |
+| adminSeo.ts | GET | `/api/v1/admin/seo/redirects` | — | — |
+| adminSeo.ts | POST | `/api/v1/admin/seo/redirects` | publish | ✅ |
+| adminSeo.ts | DELETE | `/api/v1/admin/seo/redirects/:id` | publish | ✅ |
+| adminSeo.ts | GET | `/api/v1/admin/seo/audit` | — | — |
 | adminSeo.ts | GET | `/api/v1/admin/seo/slug-check` | — | — |
+| adminSiteMode.ts | GET | `/api/v1/admin/site-mode` | — | — |
+| adminSiteMode.ts | PUT | `/api/v1/admin/site-mode` | publish | ✅ |
 | adminSiteMode.ts | POST | `/api/v1/admin/site-mode/reset` | publish | ✅ |
 | adminSupport.ts | GET | `/api/v1/admin/support/tickets` | — | — |
 | adminSupport.ts | POST | `/api/v1/admin/support/tickets` | assign_members | ✅ |
@@ -705,15 +806,44 @@ operator surface. Listed so the second case cannot hide.
 | adminSupport.ts | GET | `/api/v1/admin/support/views` | — | — |
 | adminSupport.ts | POST | `/api/v1/admin/support/views` | assign_members | — |
 | adminSupport.ts | DELETE | `/api/v1/admin/support/views/:id` | assign_members | — |
+| adminTeams.ts | GET | `/api/v1/admin/teams` | — | — |
+| adminTeams.ts | POST | `/api/v1/admin/teams` | manage_team | — |
 | adminTeams.ts | GET | `/api/v1/admin/teams/:id` | — | — |
+| adminTeams.ts | GET | `/api/v1/admin/roles` | — | — |
+| adminTeams.ts | GET | `/api/v1/admin/permissions` | — | — |
+| adminTeams.ts | GET | `/api/v1/admin/grants` | manage_permissions | — |
 | adminTeams.ts | POST | `/api/v1/admin/grants` | manage_permissions | — |
 | adminTeams.ts | DELETE | `/api/v1/admin/grants/:id` | manage_permissions | — |
+| adminTeams.ts | GET | `/api/v1/admin/workflows/runs` | — | — |
 | adminTeams.ts | POST | `/api/v1/admin/workflows/runs/:id/review` | approve | ✅ |
+| adminTeams.ts | GET | `/api/v1/admin/audit-logs` | view_audit_log | — |
+| adminTts.ts | GET | `/api/v1/admin/tts/config` | — | — |
+| adminTts.ts | POST | `/api/v1/admin/tts/preview` | upload_audio | — |
+| adminTts.ts | POST | `/api/v1/admin/tts/assets` | upload_audio | ✅ |
 | adminUsers.ts | GET | `/api/v1/adminadminUser` | — | ✅ |
+| adminUsers.ts | GET | `/api/v1/admin/users` | — | — |
+| adminUsers.ts | POST | `/api/v1/admin/users` | — | — |
+| adminUsers.ts | PATCH | `/api/v1/admin/users/:id` | — | — |
+| adminUsers.ts | POST | `/api/v1/admin/users/:id/reset-password` | — | — |
 | adminUsers.ts | POST | `/api/v1/admin/users/:id/grants` | — | — |
 | adminUsers.ts | DELETE | `/api/v1/admin/users/:id/grants/:grantId` | — | — |
 | adminUsers.ts | GET | `/api/v1/admin/users/:id/sessions` | — | — |
+| adminUsers.ts | POST | `/api/v1/admin/users/:id/revoke-sessions` | — | — |
+| adminWebsite.ts | GET | `/api/v1/admin/website/pages` | — | — |
+| adminWebsite.ts | GET | `/api/v1/admin/website/pages/:id` | — | — |
+| adminWebsite.ts | POST | `/api/v1/admin/website/pages` | create | ✅ |
+| adminWebsite.ts | PATCH | `/api/v1/admin/website/pages/:id` | edit_metadata | ✅ |
+| adminWebsite.ts | PUT | `/api/v1/admin/website/pages/:id/sections` | edit_text | ✅ |
+| adminWebsite.ts | POST | `/api/v1/admin/website/pages/:id/publish` | publish | ✅ |
+| adminWebsite.ts | POST | `/api/v1/admin/website/pages/:id/rollback` | publish | ✅ |
 | adminWorkflow.ts | GET | `/api/v1/adminadminUser` | — | — |
+| adminWorkflow.ts | GET | `/api/v1/admin/workflows/templates` | — | — |
+| adminWorkflow.ts | POST | `/api/v1/admin/workflows/runs` | assign_members | ✅ |
+| adminWorkflow.ts | GET | `/api/v1/admin/workflows/runs/:id` | — | — |
+| adminWorkflow.ts | POST | `/api/v1/admin/workflows/runs/:id/stages/:key/assign` | assign_members | ✅ |
+| adminWorkflow.ts | POST | `/api/v1/admin/workflows/runs/:id/stages/:key/decision` | review | ✅ |
+| adminWorkflow.ts | GET | `/api/v1/admin/workflows/overdue` | — | — |
+| adminWorkflow.ts | GET | `/api/v1/admin/workflows/my-stages` | — | — |
 | auth.ts | POST | `/api/v1/auth/register` | — | — |
 | auth.ts | POST | `/api/v1/auth/resend-verification` | — | — |
 | auth.ts | POST | `/api/v1/auth/verify-email` | — | — |
@@ -761,17 +891,29 @@ operator surface. Listed so the second case cannot hide.
 | media.ts | GET | `/api/v1/media/assets/:assetId` | — | — |
 | partnerships.ts | POST | `/api/v1/partnerships` | — | — |
 | partnerships.ts | GET | `/api/v1/partnerships/status` | — | — |
+| planets.ts | GET | `/api/v1/planets` | — | — |
 | planets.ts | GET | `/api/v1/planets/:id` | — | — |
+| publicRender.ts | GET | `/` | — | — |
+| publicRender.ts | GET | `/:language/blog` | — | — |
+| publicRender.ts | GET | `/:language/blog/:slug` | — | — |
+| publicRender.ts | GET | `/:language/series/:slug` | — | — |
+| publicRender.ts | GET | `/:language/planets/:planetId` | — | — |
+| publicRender.ts | GET | `/:language` | — | — |
+| publicRender.ts | GET | `/:language/:slug` | — | — |
 | publicSite.ts | GET | `/resolve` | — | — |
 | publicSite.ts | GET | `/page` | — | — |
 | publicSite.ts | GET | `/blog` | — | — |
 | publicSite.ts | GET | `/blog/post` | — | — |
 | publicSite.ts | GET | `/sitemap.xml` | — | — |
+| publicSite.ts | GET | `/sitemap-pages.xml` | — | — |
+| publicSite.ts | GET | `/sitemap-blog.xml` | — | — |
+| publicSite.ts | GET | `/sitemap-catalogue.xml` | — | — |
+| publicSite.ts | GET | `/sitemap-index.xml` | — | — |
 | series.ts | GET | `/api/v1/series` | — | — |
 | series.ts | GET | `/api/v1/series/:id` | — | — |
 | siteMode.ts | GET | `/api/v1/site-mode` | — | — |
 
-Orphan count: **121** of 302.
+Orphan count: **310** of 315.
 
 ## 5. API client functions the matrix could not resolve to a server route
 

@@ -185,8 +185,8 @@
   },
   "/games-ops": {
     "status": "COMPLETE",
-    "verified_by": "code read 2026-08-09; api test gamesOps.test.mjs",
-    "evidence": "Reads the real ops aggregate over game rows, packs and reviews.",
+    "verified_by": "code read 2026-08-10; api test gamesOps.test.mjs; live HTTP 2026-08-10 after the mount-order fix",
+    "evidence": "Reads the real ops aggregate over game rows, packs and reviews. The endpoint was unreachable until 2026-08-10: adminGamesRoute was mounted after adminRoute, so GET /admin/games/ops and /admin/games/analytics were swallowed by route.get('/games/:id') in adminContent.ts and answered 404 Game not found. Unit tests could not see it because they call the route module directly. Found by the browser run watching the console; all four games endpoints now return 200 over HTTP.",
     "gaps": [
       "No retry/resolve actions from this screen"
     ]
@@ -288,7 +288,7 @@
   },
   "/production": {
     "status": "COMPLETE",
-    "verified_by": "code read 2026-08-09; api test productionMatrix.test.mjs (19 tests)",
+    "verified_by": "code read 2026-08-09; api test productionMatrix.test.mjs (19 tests); live E2E scripts/verify-production-e2e.mjs 63/63 2026-08-10",
     "evidence": "Requirement matrix per episode and story derived entirely from the artefacts: linked asset status, pages with a ready illustration, languages that actually have text or narration, review rows, and the publish gate's own verdict for the publish row. No endpoint accepts a status, asserted by test, so the board cannot claim work that does not exist. Percentages appear only where a denominator exists. Migration 0032 stores the human layer (assignee, team, due, blocker, note); a recorded blocker can turn in_progress into blocked and can never hide a finished asset. Three views: table, kanban grouped by requirement state, and my queue. The board is capped and states its cap.",
     "gaps": [
       "Covers episodes and stories only; books, games and projects have their own readiness surfaces",
@@ -307,7 +307,7 @@
   },
   "/customers/:id": {
     "status": "COMPLETE",
-    "verified_by": "code read 2026-08-09; api test adminDeviceOperations.test.mjs asserts the data boundaries and the operator path",
+    "verified_by": "code read 2026-08-09; api test adminDeviceOperations.test.mjs asserts the data boundaries and the operator path; live E2E scripts/verify-customer360-e2e.mjs 43/43 2026-08-10",
     "evidence": "Customer 360 workspace with eight tabs. The authority (FamilyState) answers present-tense questions - effective plan, entitlement ledger, devices, sessions, active leases, auth epoch, progress count - and D1 answers history; every section names its source. One failed section degrades alone rather than failing the page. Device revoke, download revoke and projection resync call the operator command path with a mandatory reason, a stated irreversible-effect warning and audit written before the command. No store credentials and no child viewing history are exposed; reading the family is audited as customer_360.",
     "gaps": [
       "Consents are rendered as raw records because FamilyState returns an untyped shape",
@@ -375,7 +375,7 @@
   },
   "/devices-admin": {
     "status": "PARTIAL",
-    "verified_by": "code read 2026-08-09",
+    "verified_by": "code read 2026-08-09; live E2E scripts/verify-device-e2e.mjs 44/44 2026-08-10",
     "evidence": "Read-only; the revoke control was removed rather than left disabled, and the page explains that FamilyState owns device state (server answers 501).",
     "gaps": [
       "No live device projection from FamilyState",
@@ -384,7 +384,7 @@
   },
   "/support-center": {
     "status": "COMPLETE",
-    "verified_by": "code read 2026-08-09; api test supportCrm.test.mjs (21 tests) and supportFamilyDevices.test.mjs (6 tests)",
+    "verified_by": "code read 2026-08-09; api test supportCrm.test.mjs (21 tests) and supportFamilyDevices.test.mjs (6 tests); live E2E scripts/verify-support-e2e.mjs 80/80 2026-08-10",
     "evidence": "Real CRM (migration 0031): tickets with reference, category, priority, status, family/subscription/purchase/device links, assignee and team, tags as rows, an event timeline, saved views, and stored SLA policies resolved most-specific-first. Two clocks are tracked and measured separately, a settled ticket is judged at resolution time rather than at now, and waiting_customer pauses the resolution clock. Status transitions are enforced (closed is terminal), raising priority re-derives both deadlines, escalation raises priority and moves the clock, and every write leaves both a timeline event and an audit row. Overdue filtering happens in SQL so the badge and the list agree. Operational actions accept only what the platform can perform; each unavailable one is refused with 501 and its own specific reason, which the UI lists instead of rendering a control that fails. Account lookup keeps its narrow field set, plus a live device read from FamilyState.",
     "gaps": [
       "No customer messaging, deliberately: no channel exists and no table pretends one does",
@@ -557,6 +557,16 @@
     "gaps": [
       "Live index status needs a Search Console integration that is not configured; the screen says so rather than showing a number",
       "External link checking is not implemented because it needs a network crawl per link"
+    ]
+  },
+  "/calendar": {
+    "status": "COMPLETE",
+    "verified_by": "code read 2026-08-10; api test adminSearchCalendar.test.mjs (26 tests); front test paletteCalendar.test.tsx (24 tests); browser run verify-dashboard.mjs 2026-08-10 (three views, keyboard move path)",
+    "evidence": "One calendar over nine scheduled sources - episodes, series, stories, website pages, blog posts, home modules, production requirements, tasks and licence expiry - in one server window. Day, week and month; filters and the view in the URL; saved views; conflict chips that filter the set they count. It is a read model: every event declares the route, field and permission that can move it, and both the drag and the per-card date field call that route, so the entity endpoint stays the only writer and its revision, validation and audit still run. The screen states that no cron publishes a scheduled row (scheduled/cleanup.ts is the only cron and it deletes processed events), marks every scheduled event with that conflict, and reports two more: content scheduled past its licence expiry, and two episodes of one series on one day. Entities with no schedulable column (campaigns, releases, books, games) are named with the reason.",
+    "gaps": [
+      "Tasks and derived publication dates cannot be moved from here; each event says why",
+      "Text search is applied in the browser because the route accepts no q, and that is stated on screen",
+      "No scheduler exists to publish a scheduled row, so every scheduled date needs a manual publish"
     ]
   }
 }
