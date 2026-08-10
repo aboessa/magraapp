@@ -22,7 +22,7 @@
   --cyan: #00d6f5;
   --yellow: #ffd34d;
   --purple: #9b7bff;
-  /// اللون البنفسجي حين يكون نصًّا صغيرًا على سطح لوحة. انظر .track-badge--junior.
+  /* اللون البنفسجي حين يكون نصًّا صغيرًا على سطح لوحة. انظر .track-badge--junior. */
   --purple-text: #9b7bff;
   --success: #22b878;
   --warning: #f5a524;
