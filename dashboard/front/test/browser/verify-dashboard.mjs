@@ -157,9 +157,17 @@ function watchPage(page) {
   page.on('console', (message) => {
     if (message.type() !== 'error') return
     const text = message.text()
-    // A failed favicon or an aborted fetch during navigation is noise, not a defect.
-    if (/favicon|net::ERR_ABORTED|Failed to load resource/i.test(text)) return
-    problems.push(`console: ${text}`)
+    const url = message.location()?.url ?? ''
+    // يُستثنى الأيقونة المفضّلة والطلبات المُلغاة أثناء التنقّل فقط. كان الاستثناء
+    // يشمل «Failed to load resource» كاملةً، وهو يُخفي أي 4xx/5xx حقيقي — أي
+    // بالضبط ما يُراد رصده. (رُصد بذلك انهيار العامل المحلّي في منتصف تشغيل.)
+    if (/favicon/i.test(text)) return
+    if (/net::ERR_ABORTED/i.test(text)) return
+    // 404 على معاينة أصل: صفٌّ في D1 حالته `ready` بلا كائن في دلو R2 المحلّي.
+    // الخادم يجيب بالصواب والواجهة تتراجع إلى أيقونة، فهذا شرط بيانات محلّية لا
+    // عيب في الشاشة. الاستثناء بالمسار لا بالنصّ، فأي 404 آخر يبقى فشلًا.
+    if (/\/admin\/assets\/[^/]+\/content/.test(url) && /404/.test(text)) return
+    problems.push(`console: ${text} (${url})`)
   })
   page.on('pageerror', (error) => problems.push(`pageerror: ${error.message}`))
   return problems
@@ -228,12 +236,23 @@ async function main() {
       await page.locator('form button[type="submit"], button:has-text("دخول"), button:has-text("Sign in")').first().click()
     }
     await page.waitForSelector('.sidebar', { timeout: 15_000 })
-    record('sign-in through the real form reaches the dashboard', true)
+    // مقياس حقيقي لا ثابت: القائمة الجانبية ظاهرة **و**نموذج الدخول اختفى. تسجيل
+    // `true` بعد `waitForSelector` لا يفحص شيئًا، لأن الفشل يرمي قبل الوصول إليه.
+    const sidebarVisible = await page.locator('.sidebar').isVisible()
+    const loginGone = (await page.locator('input[type="password"]').count()) === 0
+    record('sign-in through the real form reaches the dashboard', sidebarVisible && loginGone,
+      `sidebar=${sidebarVisible} loginForm=${loginGone ? 'gone' : 'still present'}`)
 
     const storage = await context.storageState()
-    const origins = storage.origins.find((origin) => origin.origin.includes(new URL(FRONT).host))
-    record('session is stored in sessionStorage, not localStorage', !!origins || true,
-      'the token is written to sessionStorage by lib/adminSession.ts')
+    // فحص فعليّ للتخزين: الرمز في sessionStorage ولا يوجد في localStorage. الرمز
+    // في localStorage يبقى بعد إغلاق التبويب على جهاز مشترك.
+    const tokenLocation = await page.evaluate(() => ({
+      session: window.sessionStorage.getItem('majarra-admin-token') ? 'present' : 'absent',
+      local: window.localStorage.getItem('majarra-admin-token') ? 'present' : 'absent',
+    }))
+    record('the session token is in sessionStorage and not in localStorage',
+      tokenLocation.session === 'present' && tokenLocation.local === 'absent',
+      `sessionStorage=${tokenLocation.session} localStorage=${tokenLocation.local}`)
 
     // --- Navigation across every route, both locales ----------------------
     for (const locale of ['ar', 'en']) {
@@ -317,7 +336,12 @@ async function main() {
       await page.locator('button:has-text("نشر")').first().click()
       await page.waitForTimeout(800)
       const dialogText = await page.locator('[role="dialog"]').first().innerText().catch(() => '')
-      record('a publish attempt reports its outcome in a dialog', dialogText.trim().length > 0, dialogText.replace(/\s+/g, ' ').slice(0, 90))
+      // يجب أن يحمل الحوار **معرّف عائق أو تحذير بعينه**، لا مجرّد نصّ. حوار غير
+      // فارغ يمكن أن يكون «تعذر النشر» بلا سبب، وهو بالضبط ما بُنيت البوابة
+      // لإنهائه. المعرّفات من `pagePublishBlockers` في الخادم.
+      const namedFinding = /\b(title|sections|seo_title|meta_description)\b/.test(dialogText)
+      record('a publish attempt names the blocker or warning that produced it', namedFinding,
+        dialogText.replace(/\s+/g, ' ').slice(0, 110))
       await page.keyboard.press('Escape')
     }
 
@@ -353,7 +377,15 @@ async function main() {
       const href = await drill.getAttribute('href')
       await drill.click()
       await page.waitForLoadState('networkidle')
-      record('a dashboard metric navigates to its filtered screen', page.url().includes(href.split('?')[0]), page.url())
+      // المقارنة على المسار **وسلسلة الاستعلام** معًا: الفلتر هو الفارق بين
+      // «افتح الدعم» و«افتح التذاكر التي ينتجها هذا الرقم».
+      const landed = new URL(page.url())
+      const expected = new URL(href, page.url())
+      const samePath = landed.pathname === expected.pathname
+      const sameQuery = landed.search === expected.search
+      record('a dashboard metric navigates to its filtered screen', samePath && sameQuery,
+        `${landed.pathname}${landed.search} (expected ${expected.pathname}${expected.search})`)
+      record('the drill target carries a filter, not a bare screen', expected.search.length > 1, expected.search)
     }
 
     // Keyboard reachability of the primary navigation
