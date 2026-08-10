@@ -6,7 +6,9 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../l10n/app_localizations_ar.dart';
+import '../../../../core/security/biometric_auth.dart';
 import '../../../auth/application/auth_controller.dart';
+import '../../../auth/data/parent_pin_store.dart';
 import '../../data/settings_store.dart';
 
 /// App settings.
@@ -111,6 +113,9 @@ class SettingsPage extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    const _SectionHeader(title: 'الأمان'),
+                    const _BiometricTile(),
                     const SizedBox(height: 24),
                     _SectionHeader(title: l10n.settingsSectionAccount),
                     const _LogoutTile(),
@@ -435,4 +440,129 @@ class _TileInfo extends StatelessWidget {
       ],
     ),
   );
+}
+
+
+/// Manages the biometric parent-area unlock (§8).
+///
+/// This is where a parent turns the convenience on or off after the fact, and
+/// the only place it can be turned off. Enabling requires a live biometric check
+/// (proving the device owner is present) and an enrolled PIN — biometrics unlock
+/// the local gate but never replace the server-verified PIN. When there is no
+/// PIN or no biometric hardware, the row states why rather than offering a
+/// switch that would silently fail.
+class _BiometricTile extends ConsumerStatefulWidget {
+  const _BiometricTile();
+
+  @override
+  ConsumerState<_BiometricTile> createState() => _BiometricTileState();
+}
+
+class _BiometricTileState extends ConsumerState<_BiometricTile> {
+  bool _hasPin = false;
+  bool _enabled = false;
+  bool _busy = false;
+  BiometricAvailability _availability = BiometricAvailability.unsupported;
+
+  ParentPinStore get _store => ref.read(parentPinStoreProvider);
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    // Guarded: on a platform without the secure-storage/biometric plugins (e.g.
+    // a widget test host) these throw MissingPluginException. Treating that as
+    // "no pin / unsupported" keeps the page building instead of crashing.
+    var hasPin = false;
+    var enabled = false;
+    var availability = BiometricAvailability.unsupported;
+    try {
+      hasPin = await _store.hasPin();
+      enabled = await _store.isBiometricEnabled();
+      availability = await ref.read(biometricAuthenticatorProvider).availability();
+    } catch (_) {
+      // Safe defaults already set above.
+    }
+    if (!mounted) return;
+    setState(() {
+      _hasPin = hasPin;
+      _enabled = enabled;
+      _availability = availability;
+    });
+  }
+
+  String get _subtitle {
+    if (!_hasPin) return 'أنشئ رمز ولي الأمر أولًا لتفعيل البصمة';
+    switch (_availability) {
+      case BiometricAvailability.unsupported:
+        return 'لا يدعم هذا الجهاز البصمة أو Face ID';
+      case BiometricAvailability.notEnrolled:
+        return 'سجّل بصمة أو Face ID في إعدادات الجهاز أولًا';
+      case BiometricAvailability.available:
+        return 'افتح منطقة ولي الأمر بالبصمة بدل إدخال الرمز';
+    }
+  }
+
+  bool get _canToggle =>
+      !_busy &&
+      _hasPin &&
+      _availability == BiometricAvailability.available;
+
+  Future<void> _onChanged(bool value) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    if (value) {
+      // Prove presence before enabling, so turning it on is itself gated.
+      final ok = await ref.read(biometricAuthenticatorProvider).authenticate(
+            localizedReason: 'أكّد هويتك لتفعيل الدخول بالبصمة',
+          );
+      if (ok) await _store.setBiometricEnabled(true);
+      if (mounted) setState(() => _enabled = ok);
+    } else {
+      await _store.setBiometricEnabled(false);
+      if (mounted) setState(() => _enabled = false);
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111A3A).withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.fingerprint_rounded, color: AppColors.starGold, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'الدخول بالبصمة / Face ID',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+                Text(
+                  _subtitle,
+                  style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.62), fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _enabled,
+            onChanged: _canToggle ? _onChanged : null,
+            activeThumbColor: AppColors.starGold,
+          ),
+        ],
+      ),
+    );
+  }
 }
