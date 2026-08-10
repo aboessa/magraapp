@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { Env } from '../lib/db'
+import { pathParam } from '../lib/routeParams.ts'
 import { queryAll, queryFirst } from '../lib/db'
 import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, PLANET_ICON_ROLES, PLANET_COVER_ROLES } from '../lib/assetUrls'
 import { isIslamicContent, validateIslamicFields } from '../lib/islamicContent'
@@ -187,7 +188,7 @@ route.get('/planets', async (c) => {
 // way GET /admin/series/:id embeds seasons — deeper nesting stays a follow-up
 // endpoint rather than one oversized response.
 route.get('/planets/:id', async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const baseUrl = publicAssetBaseUrl(c.env)
   const row = await queryFirst<Row>(c.env.DB, `
     SELECT p.*,
@@ -248,7 +249,7 @@ route.post('/planets', requirePermission('create'), async (c) => {
 route.patch('/planets/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM planets WHERE id = ?', [id])) return c.json({ success: false, error: 'Planet not found' }, 404)
 
   const sets: string[] = []
@@ -281,7 +282,7 @@ route.patch('/planets/:id', requirePermission('edit_metadata'), async (c) => {
 })
 
 route.delete('/planets/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM planets WHERE id = ?', [id])) return c.json({ success: false, error: 'Planet not found' }, 404)
   await c.env.DB.batch([
     c.env.DB.prepare('UPDATE planets SET is_active = 0 WHERE id = ?').bind(id),
@@ -329,7 +330,7 @@ route.post('/categories', requirePermission('create'), async (c) => {
 route.patch('/categories/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM categories WHERE id = ?', [id])) return c.json({ success: false, error: 'Category not found' }, 404)
   const sets: string[] = []
   const params: unknown[] = []
@@ -374,7 +375,7 @@ route.patch('/categories/:id', requirePermission('edit_metadata'), async (c) => 
 })
 
 route.delete('/categories/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM categories WHERE id = ?', [id])) return c.json({ success: false, error: 'Category not found' }, 404)
   await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE categories SET is_active = 0, updated_at = datetime('now') WHERE id = ?`).bind(id),
@@ -386,7 +387,7 @@ route.delete('/categories/:id', requirePermission('archive'), async (c) => {
 route.put('/series/:id/categories', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value || !Array.isArray(value.category_ids)) return c.json({ success: false, error: 'category_ids must be an array' }, 400)
-  const seriesId = c.req.param('id')
+  const seriesId = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM series WHERE id = ?', [seriesId])) return c.json({ success: false, error: 'Series not found' }, 404)
   const ids = [...new Set(value.category_ids.filter((item): item is string => typeof item === 'string' && Boolean(item.trim())).map((item) => item.trim()))]
   if (ids.length) {
@@ -450,7 +451,7 @@ route.post('/visual-styles', requirePermission('create'), async (c) => {
 route.patch('/visual-styles/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM visual_styles WHERE id = ?', [id])) return c.json({ success: false, error: 'Visual style not found' }, 404)
   const sets: string[] = []
   const params: unknown[] = []
@@ -499,7 +500,7 @@ route.patch('/visual-styles/:id', requirePermission('edit_metadata'), async (c) 
 })
 
 route.delete('/visual-styles/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM visual_styles WHERE id = ?', [id])) return c.json({ success: false, error: 'Visual style not found' }, 404)
   await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE visual_styles SET is_active = 0, updated_at = datetime('now') WHERE id = ?`).bind(id),
@@ -561,7 +562,7 @@ route.post('/seasons', requirePermission('create'), async (c) => {
 route.patch('/seasons/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM seasons WHERE id = ?', [id])) return c.json({ success: false, error: 'Season not found' }, 404)
   const sets: string[] = []
   const params: unknown[] = []
@@ -616,7 +617,7 @@ route.patch('/seasons/:id', requirePermission('edit_metadata'), async (c) => {
 })
 
 route.delete('/seasons/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM seasons WHERE id = ?', [id])) return c.json({ success: false, error: 'Season not found' }, 404)
   // Archiving a season that published episodes or stories still sit in would
   // hide the grouping the public catalogue orders them by.
@@ -683,7 +684,7 @@ route.post('/characters', requirePermission('create'), async (c) => {
 route.patch('/characters/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM characters WHERE id = ?', [id])) return c.json({ success: false, error: 'Character not found' }, 404)
   const sets: string[] = []
   const params: unknown[] = []
@@ -743,7 +744,7 @@ route.patch('/characters/:id', requirePermission('edit_metadata'), async (c) => 
 })
 
 route.delete('/characters/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM characters WHERE id = ?', [id])) return c.json({ success: false, error: 'Character not found' }, 404)
   // story_bubbles.character_id is ON DELETE SET NULL and speech bubbles in a
   // published story would lose their speaker.
@@ -872,7 +873,7 @@ route.get('/books', async (c) => {
 })
 
 route.get('/books/:id', async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const book = await queryFirst<Row>(c.env.DB, `
     SELECT b.*, s.title_ar AS series_title
     FROM books b
@@ -943,7 +944,7 @@ route.post('/books', requirePermission('create'), async (c) => {
 route.patch('/books/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const existing = await queryFirst<Row>(c.env.DB, 'SELECT * FROM books WHERE id = ?', [id])
   if (!existing) return c.json({ success: false, error: 'Book not found' }, 404)
   const ageMin = value.age_min === undefined ? Number(existing.age_min) : integer(value.age_min)
@@ -1038,7 +1039,7 @@ route.patch('/books/:id', requirePermission('edit_metadata'), async (c) => {
 })
 
 route.delete('/books/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM books WHERE id = ?', [id])) return c.json({ success: false, error: 'Book not found' }, 404)
   // episodes.linked_book_id has no foreign key, so archiving a book a published
   // episode still points at would leave that episode linking to hidden content.
@@ -1090,7 +1091,7 @@ route.get('/games', async (c) => {
 })
 
 route.get('/games/:id', async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const game = await queryFirst<Row>(c.env.DB, `
     SELECT g.*, ge.name_ar AS engine_name, s.title_ar AS series_title,
       e.title_ar AS episode_title, lo.title_ar AS learning_objective_title
@@ -1176,7 +1177,7 @@ route.post('/games', requirePermission('create'), async (c) => {
 route.patch('/games/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const existing = await queryFirst<Row>(c.env.DB, 'SELECT * FROM games WHERE id = ?', [id])
   if (!existing) return c.json({ success: false, error: 'Game not found' }, 404)
   const ageMin = value.age_min === undefined ? Number(existing.age_min) : integer(value.age_min)
@@ -1288,7 +1289,7 @@ route.patch('/games/:id', requirePermission('edit_metadata'), async (c) => {
 })
 
 route.delete('/games/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM games WHERE id = ?', [id])) return c.json({ success: false, error: 'Game not found' }, 404)
   // episodes.linked_game_id carries no foreign key, so archiving a game a
   // published episode links to would strand that episode's activity.
@@ -1332,7 +1333,7 @@ route.get('/projects', async (c) => {
 })
 
 route.get('/projects/:id', async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const project = await queryFirst<Row>(c.env.DB, `
     SELECT p.*, s.title_ar AS series_title, e.title_ar AS episode_title
     FROM projects p
@@ -1415,7 +1416,7 @@ route.post('/projects', requirePermission('create'), async (c) => {
 route.patch('/projects/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const existing = await queryFirst<Row>(c.env.DB, 'SELECT * FROM projects WHERE id = ?', [id])
   if (!existing) return c.json({ success: false, error: 'Project not found' }, 404)
   const ageMin = value.age_min === undefined ? Number(existing.age_min) : integer(value.age_min)
@@ -1512,7 +1513,7 @@ route.patch('/projects/:id', requirePermission('edit_metadata'), async (c) => {
 })
 
 route.delete('/projects/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM projects WHERE id = ?', [id])) return c.json({ success: false, error: 'Project not found' }, 404)
   await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE projects SET status = 'archived', updated_at = datetime('now') WHERE id = ?`).bind(id),
@@ -1552,7 +1553,7 @@ route.get('/stories', async (c) => {
 })
 
 route.get('/stories/:id', async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const story = await queryFirst<Row>(c.env.DB, `
     SELECT st.*, s.title_ar AS series_title, vs.name_ar AS visual_style_name
     FROM stories st
@@ -1658,7 +1659,7 @@ async function publicationReadiness(db: D1Database, storyId: string) {
 route.patch('/stories/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const existing = await queryFirst<Row>(c.env.DB, 'SELECT * FROM stories WHERE id = ?', [id])
   if (!existing) return c.json({ success: false, error: 'Story not found' }, 404)
   const nextStatus = value.status === undefined ? String(existing.status) : stringValue(value.status)
@@ -1730,7 +1731,7 @@ route.patch('/stories/:id', requirePermission('edit_metadata'), async (c) => {
 })
 
 route.delete('/stories/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM stories WHERE id = ?', [id])) return c.json({ success: false, error: 'Story not found' }, 404)
   await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE stories SET status = 'archived', updated_at = datetime('now') WHERE id = ?`).bind(id),
@@ -1742,7 +1743,7 @@ route.delete('/stories/:id', requirePermission('archive'), async (c) => {
 route.post('/stories/:id/pages', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const storyId = c.req.param('id')
+  const storyId = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, `SELECT id FROM stories WHERE id = ? AND status <> 'archived'`, [storyId])) return c.json({ success: false, error: 'Story not found' }, 404)
   const last = await queryFirst<{ maximum: number }>(c.env.DB, 'SELECT COALESCE(MAX(page_number), 0) AS maximum FROM story_pages WHERE story_id = ?', [storyId])
   const pageNumber = value.page_number === undefined ? Number(last?.maximum ?? 0) + 1 : integer(value.page_number)
@@ -1767,7 +1768,7 @@ route.post('/stories/:id/pages', requirePermission('create'), async (c) => {
 route.patch('/story-pages/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM story_pages WHERE id = ?', [id])) return c.json({ success: false, error: 'Story page not found' }, 404)
   const sets: string[] = []
   const params: unknown[] = []
@@ -1821,7 +1822,7 @@ route.patch('/story-pages/:id', requirePermission('edit_metadata'), async (c) =>
 })
 
 route.delete('/story-pages/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM story_pages WHERE id = ?', [id])) return c.json({ success: false, error: 'Story page not found' }, 404)
   await c.env.DB.batch([
     c.env.DB.prepare('DELETE FROM story_pages WHERE id = ?').bind(id),
@@ -1833,8 +1834,8 @@ route.delete('/story-pages/:id', requirePermission('archive'), async (c) => {
 route.put('/story-pages/:id/localizations/:language', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const pageId = c.req.param('id')
-  const language = c.req.param('language')
+  const pageId = pathParam(c, 'id')
+  const language = pathParam(c, 'language')
   if (!validLanguage(language)) return c.json({ success: false, error: 'Invalid language code' }, 400)
   if (!await queryFirst(c.env.DB, 'SELECT id FROM story_pages WHERE id = ?', [pageId])) return c.json({ success: false, error: 'Story page not found' }, 404)
   const cues = value.timing_cues === undefined ? '[]' : jsonArray(value.timing_cues)
@@ -1858,7 +1859,7 @@ route.put('/story-pages/:id/localizations/:language', requirePermission('edit_me
 route.post('/story-pages/:id/bubbles', requirePermission('create'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const pageId = c.req.param('id')
+  const pageId = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM story_pages WHERE id = ?', [pageId])) return c.json({ success: false, error: 'Story page not found' }, 404)
   const kind = stringValue(value.kind) ?? 'dialogue'
   if (!BUBBLE_KINDS.includes(kind)) return c.json({ success: false, error: 'Invalid bubble kind' }, 400)
@@ -1884,7 +1885,7 @@ route.post('/story-pages/:id/bubbles', requirePermission('create'), async (c) =>
 route.patch('/story-bubbles/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM story_bubbles WHERE id = ?', [id])) return c.json({ success: false, error: 'Story bubble not found' }, 404)
   const sets: string[] = []
   const params: unknown[] = []
@@ -1922,7 +1923,7 @@ route.patch('/story-bubbles/:id', requirePermission('edit_metadata'), async (c) 
 })
 
 route.delete('/story-bubbles/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM story_bubbles WHERE id = ?', [id])) return c.json({ success: false, error: 'Story bubble not found' }, 404)
   await c.env.DB.batch([
     c.env.DB.prepare('DELETE FROM story_bubbles WHERE id = ?').bind(id),

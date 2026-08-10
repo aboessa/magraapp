@@ -32,8 +32,18 @@ function parseJson(value: unknown, fallback: unknown) {
 
 // Home Experience Builder - يتحكم في تركيب الصفحة الرئيسية
 route.get('/home-experience', async (c) => {
-  const rows = await queryAll(c.env.DB, `SELECT * FROM home_experience_blocks ORDER BY sort_order, created_at`)
-  return c.json({ success: true, data: rows.map(r => ({ ...r, targeting: JSON.parse((r as any).targeting_json || '{}'), config: JSON.parse((r as any).config_json || '{}') })) })
+  const rows = await queryAll<Record<string, unknown>>(c.env.DB, `SELECT * FROM home_experience_blocks ORDER BY sort_order, created_at`)
+  // `queryAll<Record<string, unknown>>` rather than the untyped default: spreading a row of
+  // type `unknown` is not allowed (TS2698), and the previous code worked around the symptom
+  // with `(r as any)` on each field while leaving the spread itself broken.
+  return c.json({
+    success: true,
+    data: rows.map((row) => ({
+      ...row,
+      targeting: JSON.parse(String(row.targeting_json ?? '{}')),
+      config: JSON.parse(String(row.config_json ?? '{}')),
+    })),
+  })
 })
 
 route.post('/home-experience', requirePermission('create'), async (c) => {

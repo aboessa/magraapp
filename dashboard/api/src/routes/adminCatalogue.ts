@@ -15,6 +15,7 @@
 
 import { Hono } from 'hono';
 import type { Env } from '../lib/db';
+import { pathParam } from '../lib/routeParams.ts';
 import { queryAll, queryFirst } from '../lib/db';
 import { actorId, auditStatement, claimedActor } from '../lib/auditLog';
 import { requirePermission } from '../lib/adminAuth';
@@ -112,7 +113,7 @@ route.get('/skills', async (c) => {
 
 route.get('/skills/:id', async (c) => {
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   const row = await queryFirst<Row>(db, 'SELECT * FROM skills WHERE id = ?', [id]);
   if (!row) return c.json({ success: false, error: 'Skill not found' }, 404);
   const objectives = await queryAll<Row>(db, 'SELECT id, code, title_ar, age_min, age_max FROM learning_objectives WHERE skill_id = ? ORDER BY code', [id]);
@@ -163,7 +164,7 @@ route.patch('/skills/:id', requirePermission('edit_metadata'), async (c) => {
   if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400);
 
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   if (!await queryFirst(db, 'SELECT id FROM skills WHERE id = ?', [id])) {
     return c.json({ success: false, error: 'Skill not found' }, 404);
   }
@@ -199,7 +200,7 @@ route.patch('/skills/:id', requirePermission('edit_metadata'), async (c) => {
 
 route.delete('/skills/:id', requirePermission('archive'), async (c) => {
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   if (!await queryFirst(db, 'SELECT id FROM skills WHERE id = ?', [id])) {
     return c.json({ success: false, error: 'Skill not found' }, 404);
   }
@@ -359,7 +360,7 @@ route.get('/learning-objectives', async (c) => {
 
 route.get('/learning-objectives/:id', async (c) => {
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   const row = await queryFirst<Row>(db, `
     SELECT lo.*, sk.name_ar AS skill_name, sk.category AS skill_category,
       (SELECT GROUP_CONCAT(track_id) FROM learning_objective_tracks WHERE objective_id = lo.id) AS track_ids
@@ -421,7 +422,7 @@ route.patch('/learning-objectives/:id', requirePermission('edit_metadata'), asyn
   if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400);
 
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   const existing = await queryFirst<Row>(db, 'SELECT * FROM learning_objectives WHERE id = ?', [id]);
   if (!existing) return c.json({ success: false, error: 'Learning objective not found' }, 404);
 
@@ -505,7 +506,7 @@ route.patch('/learning-objectives/:id', requirePermission('edit_metadata'), asyn
 
 route.delete('/learning-objectives/:id', requirePermission('archive'), async (c) => {
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   if (!await queryFirst(db, 'SELECT id FROM learning_objectives WHERE id = ?', [id])) {
     return c.json({ success: false, error: 'Learning objective not found' }, 404);
   }
@@ -538,7 +539,7 @@ route.delete('/learning-objectives/:id', requirePermission('archive'), async (c)
 /// import left objectives without tracks - 116 objectives were loaded that way.
 route.post('/learning-objectives/:id/tracks/rederive', requirePermission('edit_metadata'), async (c) => {
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   const existing = await queryFirst<{ age_min: number; age_max: number }>(db, 'SELECT age_min, age_max FROM learning_objectives WHERE id = ?', [id]);
   if (!existing) return c.json({ success: false, error: 'Learning objective not found' }, 404);
 
@@ -593,7 +594,7 @@ route.get('/content-reviews', async (c) => {
 });
 
 route.get('/content-reviews/:id', async (c) => {
-  const row = await queryFirst<Row>(c.env.DB, 'SELECT * FROM content_reviews WHERE id = ?', [c.req.param('id')]);
+  const row = await queryFirst<Row>(c.env.DB, 'SELECT * FROM content_reviews WHERE id = ?', [pathParam(c, 'id')]);
   if (!row) return c.json({ success: false, error: 'Content review not found' }, 404);
   return c.json({ success: true, data: row });
 });
@@ -655,7 +656,7 @@ route.patch('/content-reviews/:id', requirePermission('review'), async (c) => {
   if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400);
 
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   const existing = await queryFirst<Row>(db, 'SELECT * FROM content_reviews WHERE id = ?', [id]);
   if (!existing) return c.json({ success: false, error: 'Content review not found' }, 404);
   if (existing.status === 'approved') {
@@ -720,7 +721,7 @@ route.patch('/content-reviews/:id', requirePermission('review'), async (c) => {
 
 route.delete('/content-reviews/:id', requirePermission('review'), async (c) => {
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   const existing = await queryFirst<Row>(db, 'SELECT status FROM content_reviews WHERE id = ?', [id]);
   if (!existing) {
     return c.json({ success: false, error: 'Content review not found' }, 404);
@@ -742,7 +743,7 @@ route.delete('/content-reviews/:id', requirePermission('review'), async (c) => {
 
 route.get('/stories/:id/pages', async (c) => {
   const db = c.env.DB;
-  const storyId = c.req.param('id');
+  const storyId = pathParam(c, 'id');
   if (!await queryFirst(db, 'SELECT id FROM stories WHERE id = ?', [storyId])) {
     return c.json({ success: false, error: 'Story not found' }, 404);
   }
@@ -783,7 +784,7 @@ route.get('/stories/:id/pages', async (c) => {
 
 route.get('/story-pages/:id', async (c) => {
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   const page = await queryFirst<Row>(db, `
     SELECT sp.*, st.title_ar AS story_title, st.default_language
     FROM story_pages sp
@@ -816,8 +817,8 @@ route.get('/story-pages/:id', async (c) => {
 /// language in the story's language list.
 route.delete('/story-pages/:id/localizations/:language', requirePermission('edit_text'), async (c) => {
   const db = c.env.DB;
-  const pageId = c.req.param('id');
-  const language = c.req.param('language');
+  const pageId = pathParam(c, 'id');
+  const language = pathParam(c, 'language');
   if (!isValidLanguage(language)) return c.json({ success: false, error: 'Invalid language code' }, 400);
 
   const page = await queryFirst<{ story_id: string }>(db, 'SELECT story_id FROM story_pages WHERE id = ?', [pageId]);
@@ -845,7 +846,7 @@ route.delete('/story-pages/:id/localizations/:language', requirePermission('edit
 /// foreign_keys on every connection.
 route.delete('/stories/:id/purge', requirePermission('delete_draft'), async (c) => {
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   const story = await queryFirst<{ id: string; status: string; slug: string }>(db, 'SELECT id, status, slug FROM stories WHERE id = ?', [id]);
   if (!story) return c.json({ success: false, error: 'Story not found' }, 404);
   if (story.status === 'published') {
@@ -875,7 +876,7 @@ route.delete('/stories/:id/purge', requirePermission('delete_draft'), async (c) 
 
 route.get('/seasons/:id', async (c) => {
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   const row = await queryFirst<Row>(db, `
     SELECT se.*, s.title_ar AS series_title
     FROM seasons se
@@ -898,7 +899,7 @@ route.get('/seasons/:id', async (c) => {
 
 route.get('/characters/:id', async (c) => {
   const db = c.env.DB;
-  const id = c.req.param('id');
+  const id = pathParam(c, 'id');
   const row = await queryFirst<Row>(db, `
     SELECT ch.*, s.title_ar AS series_title
     FROM characters ch

@@ -1,5 +1,6 @@
-﻿import { Hono } from 'hono'
+import { Hono } from 'hono'
 import type { Env } from '../lib/db'
+import { pathParam } from '../lib/routeParams.ts'
 import { queryAll, queryFirst } from '../lib/db'
 import { auditActor, requireAdmin, requirePermission } from '../lib/adminAuth'
 import { actorId, auditStatement } from '../lib/auditLog'
@@ -58,9 +59,9 @@ route.post('/teams', requirePermission('manage_team'), async (c) => {
 })
 
 route.get('/teams/:id', async (c) => {
-  const team = await queryFirst(c.env.DB, `SELECT * FROM teams WHERE id=?`, [c.req.param('id')])
+  const team = await queryFirst(c.env.DB, `SELECT * FROM teams WHERE id=?`, [pathParam(c, 'id')])
   if (!team) return c.json({ success: false, error: 'Team not found' }, 404)
-  const members = await queryAll(c.env.DB, `SELECT u.id, u.display_name, u.email FROM team_members tm JOIN admin_users u ON u.id=tm.user_id WHERE tm.team_id=?`, [c.req.param('id')])
+  const members = await queryAll(c.env.DB, `SELECT u.id, u.display_name, u.email FROM team_members tm JOIN admin_users u ON u.id=tm.user_id WHERE tm.team_id=?`, [pathParam(c, 'id')])
   return c.json({ success: true, data: { ...team, members } })
 })
 
@@ -138,7 +139,7 @@ route.post('/grants', requirePermission('manage_permissions'), async (c) => {
 })
 
 route.delete('/grants/:id', requirePermission('manage_permissions'), async (c) => {
-  await c.env.DB.prepare(`DELETE FROM access_grants WHERE id=?`).bind(c.req.param('id')).run()
+  await c.env.DB.prepare(`DELETE FROM access_grants WHERE id=?`).bind(pathParam(c, 'id')).run()
   return c.json({ success: true, data: { deleted: true } })
 })
 
@@ -181,7 +182,7 @@ route.post('/workflows/runs/:id/review', requirePermission('approve'), async (c)
   const body = await c.req.json().catch(() => null) as any
   const decision = body?.decision
   if (!['approved', 'rejected', 'changes_requested'].includes(decision)) return c.json({ success: false, error: 'Invalid decision' }, 400)
-  const runId = c.req.param('id')
+  const runId = pathParam(c, 'id')
 
   // Ø§Ù„ØªØ´ØºÙŠÙ„Ø© ØªÙÙ‚Ø±Ø£ Ø£ÙˆÙ„Ù‹Ø§: Ø§Ù„Ø§Ø¹ØªÙ…Ø§Ø¯ Ø¹Ù„Ù‰ ØªØ´ØºÙŠÙ„Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø© ÙƒØ§Ù† ÙŠÙØ¯Ø±Ø¬ ØµÙÙ‹Ø§ ÙŠØªÙŠÙ…Ù‹Ø§
   // ÙˆÙŠÙØ¹ÙŠØ¯ Ù†Ø¬Ø§Ø­Ù‹Ø§ØŒ Ù„Ø£Ù† D1 Ù„Ø§ ÙŠÙØ±Ø¶ Ø§Ù„Ù…ÙØ§ØªÙŠØ­ Ø§Ù„Ø£Ø¬Ù†Ø¨ÙŠØ© Ø¨Ù„Ø§ PRAGMA Ù„ÙƒÙ„ Ø§ØªØµØ§Ù„.

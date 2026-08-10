@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { requireAdmin, requirePermission } from '../lib/adminAuth'
+import { pathParam } from '../lib/routeParams.ts'
 import { actorId, auditStatement } from '../lib/auditLog'
 import type { Env } from '../lib/db'
 import type { AdminSessionUser } from '../lib/adminUsers'
@@ -165,14 +166,14 @@ adminPartnershipsRoute.get('/:id', async (c) => {
   const row = await queryFirst<PartnershipRequestRow>(
     c.env.DB,
     'SELECT * FROM partnership_requests WHERE id = ?',
-    [c.req.param('id')],
+    [pathParam(c, 'id')],
   )
   if (!row) return c.json({ success: false, error: 'الطلب غير موجود' }, 404)
   return c.json({ success: true, data: row })
 })
 
 adminPartnershipsRoute.patch('/:id', requirePermission('edit_metadata'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
   if (!body) return c.json({ success: false, error: 'صيغة الطلب غير صالحة' }, 400)
 
@@ -223,7 +224,7 @@ adminPartnershipsRoute.patch('/:id', requirePermission('edit_metadata'), async (
 
 /** إعادة محاولة إرسال الإشعار لطلب فشل بريده أو لم يُضبط بريده وقتها */
 adminPartnershipsRoute.post('/:id/resend', requirePermission('edit_metadata'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const row = await queryFirst<PartnershipRequestRow>(
     c.env.DB,
     'SELECT * FROM partnership_requests WHERE id = ?',

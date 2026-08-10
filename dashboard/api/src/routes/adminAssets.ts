@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { Env } from '../lib/db'
+import { pathParam } from '../lib/routeParams.ts'
 import { queryAll, queryFirst } from '../lib/db'
 import { bucketForAsset, keyScopeForAsset, type BucketName } from '../lib/assetBuckets'
 import { inferVisibilityFromPath } from '../lib/assetClassification'
@@ -239,9 +240,9 @@ route.get('/assets/stats', async (c) => {
 })
 
 route.get('/assets/:id', async (c) => {
-  const asset = await queryFirst<Row>(c.env.DB, `SELECT ca.*, vs.name_ar AS visual_style_name FROM content_assets ca LEFT JOIN visual_styles vs ON vs.id = ca.visual_style_id WHERE ca.id = ?`, [c.req.param('id')])
+  const asset = await queryFirst<Row>(c.env.DB, `SELECT ca.*, vs.name_ar AS visual_style_name FROM content_assets ca LEFT JOIN visual_styles vs ON vs.id = ca.visual_style_id WHERE ca.id = ?`, [pathParam(c, 'id')])
   if (!asset) return c.json({ success: false, error: 'Asset not found' }, 404)
-  const links = await queryAll<Row>(c.env.DB, 'SELECT * FROM asset_links WHERE asset_id = ? ORDER BY entity_type, sort_order', [c.req.param('id')])
+  const links = await queryAll<Row>(c.env.DB, 'SELECT * FROM asset_links WHERE asset_id = ? ORDER BY entity_type, sort_order', [pathParam(c, 'id')])
   return c.json({ success: true, data: { ...serializeAsset(asset), links } })
 })
 
@@ -275,7 +276,7 @@ route.post('/assets', requirePermission('create'), async (c) => {
 route.patch('/assets/:id', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM content_assets WHERE id = ?', [id])) return c.json({ success: false, error: 'Asset not found' }, 404)
   const sets: string[] = []
   const params: unknown[] = []
@@ -332,7 +333,7 @@ route.patch('/assets/:id', requirePermission('edit_metadata'), async (c) => {
 })
 
 route.delete('/assets/:id', requirePermission('archive'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const asset = await queryFirst<Row>(c.env.DB, 'SELECT id FROM content_assets WHERE id = ?', [id])
   if (!asset) return c.json({ success: false, error: 'Asset not found' }, 404)
   await c.env.DB.batch([
@@ -380,7 +381,7 @@ route.post('/assets/import-catalog', requirePermission('create'), async (c) => {
 route.put('/assets/:id/links', requirePermission('edit_metadata'), async (c) => {
   const value = await body(c)
   if (!value || !Array.isArray(value.links)) return c.json({ success: false, error: 'links must be an array' }, 400)
-  const assetId = c.req.param('id')
+  const assetId = pathParam(c, 'id')
   if (!await queryFirst(c.env.DB, 'SELECT id FROM content_assets WHERE id = ?', [assetId])) return c.json({ success: false, error: 'Asset not found' }, 404)
   const links = value.links.map((item) => item as JsonObject)
   for (const link of links) {
@@ -398,7 +399,7 @@ route.put('/assets/:id/links', requirePermission('edit_metadata'), async (c) => 
 
 // Direct upload for images and other files below the Worker request limit ----
 route.put('/assets/:id/content', requirePermission('upload_images'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const asset = await queryFirst<Row>(c.env.DB, 'SELECT * FROM content_assets WHERE id = ?', [id])
   if (!asset) return c.json({ success: false, error: 'Asset not found' }, 404)
   if (!c.req.raw.body) return c.json({ success: false, error: 'File body is required' }, 400)
@@ -486,8 +487,8 @@ route.post('/asset-upload-sessions', requirePermission('upload_images'), async (
 })
 
 route.put('/asset-upload-sessions/:id/parts/:part', requirePermission('upload_images'), async (c) => {
-  const id = c.req.param('id')
-  const partNumber = integer(c.req.param('part'))
+  const id = pathParam(c, 'id')
+  const partNumber = integer(pathParam(c, 'part'))
   if (partNumber === null || partNumber < 1 || partNumber > 10000) return c.json({ success: false, error: 'Invalid part number' }, 400)
   const session = await queryFirst<Row>(c.env.DB, `SELECT * FROM asset_uploads WHERE id = ? AND status = 'uploading'`, [id])
   if (!session) return c.json({ success: false, error: 'Active upload session not found' }, 404)
@@ -506,7 +507,7 @@ route.put('/asset-upload-sessions/:id/parts/:part', requirePermission('upload_im
 })
 
 route.post('/asset-upload-sessions/:id/complete', requirePermission('upload_images'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const value = await body(c) ?? {}
   const session = await queryFirst<Row>(c.env.DB, `SELECT au.*, ca.mime_type, ca.visibility FROM asset_uploads au JOIN content_assets ca ON ca.id = au.asset_id WHERE au.id = ? AND au.status = 'uploading'`, [id])
   if (!session) return c.json({ success: false, error: 'Active upload session not found' }, 404)
@@ -533,7 +534,7 @@ route.post('/asset-upload-sessions/:id/complete', requirePermission('upload_imag
 })
 
 route.delete('/asset-upload-sessions/:id', requirePermission('upload_images'), async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const session = await queryFirst<Row>(c.env.DB, `SELECT * FROM asset_uploads WHERE id = ? AND status = 'uploading'`, [id])
   if (!session) return c.json({ success: false, error: 'Active upload session not found' }, 404)
   const multipart = bucket(c.env, String(session.bucket)).resumeMultipartUpload(String(session.r2_key), String(session.upload_id))
@@ -547,7 +548,7 @@ route.delete('/asset-upload-sessions/:id', requirePermission('upload_images'), a
 })
 
 route.get('/assets/:id/content', async (c) => {
-  const asset = await queryFirst<Row>(c.env.DB, `SELECT * FROM content_assets WHERE id = ? AND status = 'ready'`, [c.req.param('id')])
+  const asset = await queryFirst<Row>(c.env.DB, `SELECT * FROM content_assets WHERE id = ? AND status = 'ready'`, [pathParam(c, 'id')])
   if (!asset || !asset.r2_key || !asset.bucket) return c.json({ success: false, error: 'Ready asset not found' }, 404)
   const range = c.req.header('Range')
   const rangeOptions = range ? { range: c.req.raw.headers } : undefined

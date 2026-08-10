@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import type { Env } from '../lib/db'
+import { pathParam } from '../lib/routeParams.ts'
 import { queryAll, queryFirst } from '../lib/db'
 import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, SERIES_COVER_ROLES, EPISODE_THUMBNAIL_ROLES } from '../lib/assetUrls'
 import { bumpPublicContentCacheVersion } from '../lib/publicCache'
@@ -130,7 +132,20 @@ function parsePagination(limitValue?: string, offsetValue?: string) {
   }
 }
 
-async function readBody(c: Parameters<typeof adminRoute.post>[1] extends never ? never : any): Promise<JsonRecord | null> {
+/// The JSON body of an admin request, or null when it is not a JSON object.
+///
+/// ## Why the parameter is typed this way
+///
+/// It used to read `Parameters<typeof adminRoute.post>[1] extends never ? never : any`, which
+/// was an attempt to borrow Hono's handler context type and did not work: that overload's
+/// parameter tuple has one element, so index 1 does not exist (TS2493). The conditional then
+/// resolved through the `any` branch anyway, so the expression cost a compiler error and
+/// bought nothing.
+///
+/// `Context` is the type it was reaching for. The three generics are left open because this
+/// helper only ever touches `c.req.json()`, which is present on every context regardless of
+/// bindings or path.
+async function readBody(c: Context<any, any, any>): Promise<JsonRecord | null> {
   const value = await c.req.json().catch(() => null)
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   return value as JsonRecord
@@ -365,7 +380,7 @@ adminRoute.get('/series', async (c) => {
 
 adminRoute.get('/series/:id', async (c) => {
   const db = c.env.DB
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const baseUrl = publicAssetBaseUrl(c.env)
   const row = await queryFirst<DbRow>(db, `
     SELECT s.*, p.name_ar AS planet_name,
@@ -473,7 +488,7 @@ adminRoute.patch('/series/:id', requirePermission('edit_metadata'), async (c) =>
   if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400)
 
   const db = c.env.DB
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const existing = await queryFirst<DbRow>(db, 'SELECT * FROM series WHERE id = ?', [id])
   if (!existing) return c.json({ success: false, error: 'Series not found' }, 404)
   if (text(body.status) === 'published') {
@@ -564,7 +579,7 @@ adminRoute.patch('/series/:id', requirePermission('edit_metadata'), async (c) =>
 
 adminRoute.post('/series/:id/publish', requirePermission('publish'), async (c) => {
   const db = c.env.DB
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const existing = await queryFirst<{ status: string }>(db, 'SELECT status FROM series WHERE id = ?', [id])
   if (!existing) return c.json({ success: false, error: 'Series not found' }, 404)
   if (existing.status === 'archived') return c.json({ success: false, error: 'Archived series cannot be published' }, 409)
@@ -607,7 +622,7 @@ adminRoute.post('/series/:id/publish', requirePermission('publish'), async (c) =
 
 adminRoute.delete('/series/:id', requirePermission('archive'), async (c) => {
   const db = c.env.DB
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const exists = await queryFirst<{ id: string }>(db, 'SELECT id FROM series WHERE id = ?', [id])
   if (!exists) return c.json({ success: false, error: 'Series not found' }, 404)
 
@@ -677,7 +692,7 @@ adminRoute.get('/episodes/:id', async (c) => {
     JOIN series s ON s.id = e.series_id
     LEFT JOIN learning_objectives lo ON lo.id = e.learning_objective_id
     WHERE e.id = ?
-  `, [c.req.param('id')])
+  `, [pathParam(c, 'id')])
 
   if (!row) return c.json({ success: false, error: 'Episode not found' }, 404)
   applyArtworkUrl(row, 'thumb_asset', 'thumbnail_url', baseUrl)
@@ -761,7 +776,7 @@ adminRoute.patch('/episodes/:id', requirePermission('edit_metadata'), async (c) 
   if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400)
 
   const db = c.env.DB
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const existing = await queryFirst<DbRow>(db, 'SELECT * FROM episodes WHERE id = ?', [id])
   if (!existing) return c.json({ success: false, error: 'Episode not found' }, 404)
   if (text(body.status) === 'published') {
@@ -868,7 +883,7 @@ adminRoute.patch('/episodes/:id', requirePermission('edit_metadata'), async (c) 
 
 adminRoute.post('/episodes/:id/publish', requirePermission('publish'), async (c) => {
   const db = c.env.DB
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const existing = await queryFirst<{ status: string }>(db, 'SELECT status FROM episodes WHERE id = ?', [id])
   if (!existing) return c.json({ success: false, error: 'Episode not found' }, 404)
   if (existing.status === 'archived') return c.json({ success: false, error: 'Archived episode cannot be published' }, 409)
@@ -904,7 +919,7 @@ adminRoute.post('/episodes/:id/publish', requirePermission('publish'), async (c)
 
 adminRoute.delete('/episodes/:id', requirePermission('archive'), async (c) => {
   const db = c.env.DB
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const exists = await queryFirst<{ id: string }>(db, 'SELECT id FROM episodes WHERE id = ?', [id])
   if (!exists) return c.json({ success: false, error: 'Episode not found' }, 404)
 

@@ -12,7 +12,18 @@ type JwtClaims = {
   email_verified?: unknown;
 };
 
-type CachedKeys = { keys: JsonWebKey[]; expiresAt: number };
+/// A JWK from Google's JWKS endpoint.
+///
+/// `JsonWebKey` is the lib.dom type for `crypto.subtle.importKey`, and it deliberately has no
+/// `kid`: key ids are a JWKS concern, not an import concern. Typing the cache as
+/// `JsonWebKey[]` therefore made `candidate.kid` an error (TS2339) even though every key in a
+/// JWKS carries one and the lookup below is the whole point of fetching the set.
+///
+/// This extends it rather than casting at the lookup, so the key id is typed where it is read
+/// and `importKey` still accepts the value unchanged.
+type GoogleJwk = JsonWebKey & { kid?: string };
+
+type CachedKeys = { keys: GoogleJwk[]; expiresAt: number };
 let cachedKeys: CachedKeys | null = null;
 
 function decodeBase64Url(value: string) {
@@ -42,7 +53,7 @@ async function googleKeys(forceRefresh = false) {
   if (!response?.ok) return null;
   const body = await response.json().catch(() => null) as { keys?: unknown } | null;
   if (!Array.isArray(body?.keys)) return null;
-  cachedKeys = { keys: body.keys as JsonWebKey[], expiresAt: Date.now() + 60 * 60 * 1000 };
+  cachedKeys = { keys: body.keys as GoogleJwk[], expiresAt: Date.now() + 60 * 60 * 1000 };
   return cachedKeys.keys;
 }
 
