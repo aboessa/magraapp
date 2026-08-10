@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/layout/app_layout.dart';
 import '../../../core/widgets/cinematic_background.dart';
+import '../../../core/speech/voice_search.dart';
 import '../../home/domain/content_models.dart';
 import '../data/recent_searches_store.dart';
 import '../domain/search_engine.dart';
@@ -74,16 +75,27 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   hintText: 'ابحث عن مسلسل، حلقة، قصة، لعبة، أو كوكب...',
                   hintStyle: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.6)),
                   prefixIcon: const Icon(Icons.search_rounded, color: AppColors.mutedText),
-                  suffixIcon: _query.isNotEmpty
-                      ? IconButton(
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _VoiceSearchButton(
+                        onTranscript: (text) {
+                          _ctrl.text = text;
+                          _ctrl.selection = TextSelection.collapsed(offset: text.length);
+                          _setQuery(text);
+                        },
+                      ),
+                      if (_query.isNotEmpty)
+                        IconButton(
                           icon: const Icon(Icons.clear_rounded, color: AppColors.mutedText),
                           tooltip: 'مسح',
                           onPressed: () {
                             _ctrl.clear();
                             _setQuery('');
                           },
-                        )
-                      : null,
+                        ),
+                    ],
+                  ),
                   filled: true,
                   fillColor: const Color(0xFF111A3A).withValues(alpha: 0.88),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
@@ -288,6 +300,48 @@ class _ResultTile extends StatelessWidget {
           onTap: onTap,
         ),
       ),
+    );
+  }
+}
+
+
+/// Microphone control for voice search (§9).
+///
+/// Tapping starts a time-bounded listening session through
+/// [voiceSearchControllerProvider]; the transcript flows into the search field
+/// as it arrives. While listening the icon pulses; if recognition is
+/// unavailable (permission denied or no engine) a short notice explains that
+/// the keyboard still works, and nothing pretends to transcribe.
+class _VoiceSearchButton extends ConsumerWidget {
+  const _VoiceSearchButton({required this.onTranscript});
+
+  final ValueChanged<String> onTranscript;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(voiceSearchControllerProvider);
+    final controller = ref.read(voiceSearchControllerProvider.notifier);
+    final listening = state.isListening;
+
+    return IconButton(
+      icon: Icon(
+        listening ? Icons.mic_rounded : Icons.mic_none_rounded,
+        color: listening ? AppColors.starGold : AppColors.mutedText,
+      ),
+      tooltip: listening ? 'إيقاف الاستماع' : 'بحث صوتي',
+      onPressed: () async {
+        final ok = await controller.start(onTranscript);
+        if (!context.mounted) return;
+        if (!ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'البحث الصوتي غير متاح — تأكّد من إذن الميكروفون، أو استخدم لوحة المفاتيح.',
+              ),
+            ),
+          );
+        }
+      },
     );
   }
 }

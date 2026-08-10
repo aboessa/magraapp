@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Biometric parent-area unlock (local convenience over the server PIN). -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Voice search. Recognition is initiated only on an explicit tap and is
+         time-bounded; raw audio is never stored. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <uses-feature
         android:name="android.software.leanback"
