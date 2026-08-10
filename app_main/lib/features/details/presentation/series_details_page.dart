@@ -10,6 +10,8 @@ import '../../../core/widgets/animated_brand_logo.dart';
 import '../../../core/widgets/cinematic_background.dart';
 import '../../../core/widgets/cinematic_image.dart';
 import '../../home/application/home_providers.dart';
+import 'package:share_plus/share_plus.dart';
+
 import '../../home/domain/content_models.dart';
 import '../../home/presentation/widgets/content_cards.dart';
 import '../../profile/data/watchlist_store.dart';
@@ -55,7 +57,6 @@ class _SeriesDetailsContent extends ConsumerStatefulWidget {
 }
 
 class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
-  bool _liked = false;
   bool _expanded = false;
 
   /// Whether this series is saved, read from the persisted watchlist rather than
@@ -73,14 +74,6 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
     return count == 1 ? 'حلقة واحدة' : '$count حلقة';
   }
 
-  void _toggleLike() {
-    HapticFeedback.lightImpact();
-    // Local-only preference. There is no likes endpoint in the API, so no
-    // aggregate count is shown: a fabricated total would be invented social
-    // proof. See AUDIT_FLUTTER_APP.md §7.2.
-    setState(() => _liked = !_liked);
-  }
-
   void _toggleWatchlist() {
     HapticFeedback.selectionClick();
     // Persisted on the device via WatchlistStore, so the watchlist page shows
@@ -92,8 +85,9 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
   }
 
   void _share() {
-    Clipboard.setData(ClipboardData(text: 'شاهد ${widget.series.title} على مجرة'));
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ رابط المشاركة')));
+    // OS share sheet with descriptive text. No public deep link is invented;
+    // the app has no confirmed public web URL scheme for content yet.
+    Share.share('شاهد "${widget.series.title}" على تطبيق مجرة');
   }
 
   @override
@@ -284,59 +278,46 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
                     const SizedBox(height: 16),
                     Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
                     const SizedBox(height: 14),
-                    // Actions: like/share/watchlist
+                    // Actions: watchlist (persisted, real) + OS share. Like and
+                    // comments were removed — there is no likes endpoint, and
+                    // child comments require a separate moderation/safety
+                    // decision, so neither is shown rather than faked.
                     Row(
                       children: [
-                        // Like + comment
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(color: const Color(0xFF111A3A), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
-                          child: Row(
-                            children: [
-                              InkWell(
-                                onTap: _toggleLike,
-                                borderRadius: BorderRadius.circular(20),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                  child: Row(
-                                    children: [
-                                      Icon(_liked ? Icons.thumb_up_rounded : Icons.thumb_up_outlined, color: _liked ? AppColors.starGold : Colors.white, size: 18),
-                                      const SizedBox(width: 6),
-                                      Text(_liked ? 'أعجبني' : 'إعجاب', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                                    ],
-                                  ),
-                                ),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _toggleWatchlist,
+                            icon: Icon(
+                              _inWatchlist ? Icons.check_rounded : Icons.add_rounded,
+                              color: _inWatchlist ? AppColors.starGold : Colors.white,
+                              size: 20,
+                            ),
+                            label: Text(
+                              _inWatchlist ? 'في قائمتي' : 'أضف إلى قائمتي',
+                              style: TextStyle(
+                                color: _inWatchlist ? AppColors.starGold : Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
                               ),
-                              Container(width: 1, height: 16, color: Colors.white.withValues(alpha: 0.12), margin: const EdgeInsets.symmetric(horizontal: 10)),
-                              InkWell(
-                                onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('التعليقات قادمة قريباً'))),
-                                child: Row(children: [const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 18), const SizedBox(width: 6), Text('تعليقات', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.8), fontSize: 12))]),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: (_inWatchlist ? AppColors.starGold : Colors.white)
+                                    .withValues(alpha: 0.4),
                               ),
-                            ],
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
                           ),
                         ),
-                        const Spacer(),
-                        // Share + Watchlist
+                        const SizedBox(width: 10),
                         Material(
                           color: const Color(0xFF111A3A),
                           shape: const CircleBorder(),
                           child: InkWell(
                             customBorder: const CircleBorder(),
                             onTap: _share,
-                            child: const Padding(padding: EdgeInsets.all(11), child: Icon(Icons.share_rounded, color: Colors.white, size: 20)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Material(
-                          color: _inWatchlist ? AppColors.starGold : const Color(0xFF111A3A),
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: _toggleWatchlist,
-                            child: Padding(
-                              padding: const EdgeInsets.all(11),
-                              child: Icon(_inWatchlist ? Icons.check_rounded : Icons.add_rounded, color: _inWatchlist ? AppColors.deepSpace : Colors.white, size: 20),
-                            ),
+                            child: const Padding(padding: EdgeInsets.all(12), child: Icon(Icons.share_rounded, color: Colors.white, size: 20)),
                           ),
                         ),
                       ],
@@ -348,76 +329,45 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
               ),
             ),
 
-            // Tabs: الحلقات / الإعلانات / أعمال
+            // Episodes — a real section, not tabs. The previous three-tab layout
+            // had two placeholder tabs ("الإعلانات المشوقة" / "أعمال") that only
+            // ever showed "قريباً"; there is no trailer or bundle data to fill
+            // them, so they are removed rather than shown empty.
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(padding, 14, padding, 0),
-                child: DefaultTabController(
-                  length: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TabBar(
-                              isScrollable: true,
-                              tabAlignment: TabAlignment.start,
-                              labelColor: Colors.white,
-                              unselectedLabelColor: AppColors.mutedText.withValues(alpha: 0.6),
-                              indicatorColor: AppColors.starGold,
-                              indicatorWeight: 3,
-                              dividerColor: Colors.transparent,
-                              labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-                              unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                              tabs: [
-                                Tab(text: 'الحلقات (${episodes.length})'),
-                                const Tab(text: 'الإعلانات المشوقة'),
-                                const Tab(text: 'أعمال'),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(color: const Color(0xFF111A3A), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
-                            child: const Icon(Icons.swap_vert_rounded, color: Colors.white, size: 18),
-                          ),
-                        ],
-                      ),
-                      Container(height: 1, color: Colors.white.withValues(alpha: 0.06), margin: const EdgeInsets.only(top: 8)),
-                      SizedBox(
-                        height: widget.isTelevision ? 360 : 300,
-                        child: TabBarView(
-                          children: [
-                            // الحلقات list
-                            episodes.isEmpty
-                                ? Center(child: Text('الحلقات قادمة قريباً', style: TextStyle(color: AppColors.mutedText)))
-                                : ListView.separated(
-                                    padding: const EdgeInsets.only(top: 14, bottom: 12),
-                                    itemCount: episodes.length,
-                                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                                    itemBuilder: (context, idx) {
-                                      final ep = episodes[idx];
-                                      return _EpisodeTile(
-                                        episode: ep,
-                                        index: idx + 1,
-                                        isFree: widget.series.isFree,
-                                        onTap: () => _openPlayback(context, ep.id),
-                                        onDownload: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('التحميل قادم قريباً'))),
-                                      );
-                                    },
-                                  ),
-                            Center(child: Text('الإعلانات قريباً', style: TextStyle(color: AppColors.mutedText))),
-                            Center(child: Text('أعمال مشابهة قريباً', style: TextStyle(color: AppColors.mutedText))),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                padding: EdgeInsetsDirectional.fromSTEB(padding, 16, padding, 0),
+                child: Row(
+                  children: [
+                    Text('الحلقات (${episodes.length})',
+                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                  ],
                 ),
               ),
             ),
+            if (episodes.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(padding, 20, padding, 0),
+                  child: Text('الحلقات قادمة قريباً', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.8))),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: EdgeInsetsDirectional.fromSTEB(padding, 12, padding, 0),
+                sliver: SliverList.separated(
+                  itemCount: episodes.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, idx) {
+                    final ep = episodes[idx];
+                    return _EpisodeTile(
+                      episode: ep,
+                      index: idx + 1,
+                      isFree: widget.series.isFree,
+                      onTap: () => _openPlayback(context, ep.id),
+                    );
+                  },
+                ),
+              ),
 
             // About section
             SliverToBoxAdapter(
@@ -434,8 +384,12 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
               ),
             ),
 
-            // More like this
-            if (widget.catalog.series.length > 1)
+            // From the same planet — a real relation, not a "first N series"
+            // fill. Series are related when they share a planet (by id, or by
+            // name as a fallback for local catalogue rows). When nothing shares
+            // the planet the section is hidden rather than padded with unrelated
+            // titles.
+            if (_relatedByPlanet().isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 22),
@@ -444,7 +398,8 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
                     children: [
                       Padding(
                         padding: EdgeInsetsDirectional.symmetric(horizontal: padding),
-                        child: const Text('المزيد مثل هذا', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                        child: Text('المزيد من ${widget.series.planetName}',
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
                       ),
                       const SizedBox(height: 12),
                       SizedBox(
@@ -452,10 +407,10 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           padding: EdgeInsetsDirectional.symmetric(horizontal: padding),
-                          itemCount: widget.catalog.series.take(6).length,
+                          itemCount: _relatedByPlanet().length,
                           separatorBuilder: (_, __) => const SizedBox(width: 12),
                           itemBuilder: (context, idx) {
-                            final s = widget.catalog.series[idx];
+                            final s = _relatedByPlanet()[idx];
                             return SeriesCard(item: s, isTelevision: widget.isTelevision, onPressed: () => context.push('/series/${s.id}'));
                           },
                         ),
@@ -470,6 +425,17 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
         ),
       ),
     );
+  }
+
+  /// Series sharing this one's planet, excluding itself. Matches on planet id
+  /// when present, else on planet name for local-catalogue rows.
+  List<SeriesItem> _relatedByPlanet() {
+    final planetId = widget.series.planetId;
+    return widget.catalog.series.where((s) {
+      if (s.id == widget.series.id) return false;
+      if (planetId != null && s.planetId != null) return s.planetId == planetId;
+      return s.planetName == widget.series.planetName;
+    }).toList(growable: false);
   }
 
   static void _notPublished(BuildContext context) {
@@ -499,12 +465,11 @@ class _MetaChip extends StatelessWidget {
 Widget _dot() => Container(width: 4, height: 4, decoration: BoxDecoration(color: AppColors.mutedText.withValues(alpha: 0.42), shape: BoxShape.circle));
 
 class _EpisodeTile extends StatelessWidget {
-  const _EpisodeTile({required this.episode, required this.index, required this.isFree, required this.onTap, required this.onDownload});
+  const _EpisodeTile({required this.episode, required this.index, required this.isFree, required this.onTap});
   final EpisodeItem episode;
   final int index;
   final bool isFree;
   final VoidCallback onTap;
-  final VoidCallback onDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -555,8 +520,12 @@ class _EpisodeTile extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(onPressed: onDownload, icon: const Icon(Icons.download_rounded, color: Colors.white, size: 20)),
-              const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.mutedText, size: 20),
+              // Per-episode download was a "coming soon" no-op. Video is
+              // protected content and offline playback needs a backend offline
+              // licence endpoint that does not exist yet, so a real download
+              // cannot be offered here; the fake affordance is removed. A play
+              // chevron remains as the affordance to open the episode.
+              const Icon(Icons.chevron_left_rounded, color: AppColors.mutedText, size: 22),
             ],
           ),
         ),
