@@ -20,6 +20,7 @@ import partnershipsRoute from './routes/partnerships';
 import adminSiteModeRoute from './routes/adminSiteMode';
 import siteModeRoute from './routes/siteMode';
 import publicSiteRoute, { siteFiles } from './routes/publicSite.ts';
+import publicRenderRoute, { rootNegotiation } from './routes/publicRender.ts';
 import adminAuthRoute from './routes/adminAuth';
 import adminUsersRoute from './routes/adminUsers';
 import { handleFamilyEvents } from './queue/familyEvents';
@@ -45,6 +46,12 @@ app.use('/api/*', cors({
 app.use('/api/v1/auth/*', strictAuthLimit);
 app.use('/api/v1/billing/*', billingLimit);
 app.use('/api/v1/admin/*', adminLimit);
+
+// تفاوض اللغة على الجذر قبل وصف الـAPI: المتصفّح يُحوَّل إلى /ar أو /en أو /fr،
+// وأي عميل غير HTML يمرّ بـnext() إلى الوصف أدناه. باقي عارض الصفحات العامة
+// مركّب في نهاية الملف بعد كل مسارات الـAPI، فلا يمكن لمقطع لغة أن يحجب
+// /health أو /robots.txt أو /api/*.
+app.route('/', rootNegotiation);
 
 app.get('/', (c) => c.json({
   name: 'Majarra API',
@@ -94,6 +101,13 @@ app.route('/api/v1/admin', adminUsersRoute);
 // Drawing-game readiness and preview. Mounted on the admin prefix like the
 // billing and analytics routes, whose handlers also declare full paths.
 app.route('/api/v1/admin', adminGamesRoute);
+
+// عارض الصفحات العامة كـHTML كامل في المستند الأول (SEO).
+//
+// آخر تركيب قبل notFound عن قصد: مقاطعه (`/:language`, `/:language/:slug`) عامّة،
+// فلو رُكِّب قبل مسارات الـAPI لحجب /health و/robots.txt و/api/*. كل معالِج فيه
+// يتحقّق أن المقطع الأول لغة CMS ويُمرّر ما عداه بـnext() إلى معالِج 404.
+app.route('/', publicRenderRoute);
 
 app.notFound((c) => c.json({ success: false, error: 'Route not found' }, 404));
 app.onError((error, c) => {

@@ -10,18 +10,19 @@
 /// deriving it. The sitemap and robots are served as XML and text from the same source of
 /// truth, which is the only way they cannot disagree with what is actually published.
 ///
-/// ## What this does not do
+/// ## Where the HTML is
 ///
-/// It does not render HTML. The public site is a client-rendered application, so these
-/// payloads still need a renderer that puts them in the initial document; that gap is
-/// recorded rather than papered over. What is fixed here is the harder half: there is now
-/// a single server-side answer for what every public URL should say.
+/// `routes/publicRender.ts` renders these same payloads into a complete initial document.
+/// It imports [head] from this file rather than recomputing anything, so the JSON a client
+/// reads and the markup a crawler reads cannot disagree about a canonical or a robots
+/// directive.
 
 import { Hono } from 'hono';
 import type { Env } from '../lib/db';
 import { queryAll, queryFirst } from '../lib/db';
 import { cachedPublicJson } from '../lib/publicCache';
 import { CMS_LANGUAGES, direction, type CmsLanguage } from '../lib/cmsContent.ts';
+import { planetLanguages, planetPath, seriesLanguages, seriesPath } from '../lib/publicRoutes.ts';
 
 type AppEnv = { Bindings: Env };
 
@@ -32,9 +33,9 @@ const route = new Hono<AppEnv>();
 /// Derived from the request rather than configured: the same Worker serves preview and
 /// production hostnames, and a hard-coded origin would put production URLs into a preview
 /// sitemap.
-const origin = (request: Request) => new URL(request.url).origin;
+export const origin = (request: Request) => new URL(request.url).origin;
 
-interface SeoRow {
+export interface SeoRow {
   seo_title: string | null;
   meta_description: string | null;
   canonical_url: string | null;
@@ -50,7 +51,7 @@ interface SeoRow {
 ///
 /// `robots` is emitted as a directive string because that is what the meta tag takes, and
 /// building it here keeps one place responsible for the noindex decision.
-function head(input: {
+export function head(input: {
   site: string;
   path: string;
   language: CmsLanguage;
@@ -60,6 +61,9 @@ function head(input: {
   alternates: Array<{ language: string; path: string }>;
   indexable: boolean;
   structured: unknown[];
+  /// `article` for a blog post, `website` for everything else. Open Graph uses the type to
+  /// decide which card to build, and a post shared as `website` loses its byline and date.
+  ogType?: string;
 }) {
   const seo = input.seo;
   const canonical = seo?.canonical_url ?? `${input.site}${input.path}`;
@@ -77,7 +81,7 @@ function head(input: {
       title: seo?.og_title ?? seo?.seo_title ?? input.title,
       description: seo?.og_description ?? seo?.meta_description ?? input.description,
       url: canonical,
-      type: 'website',
+      type: input.ogType ?? 'website',
       locale: input.language,
       image_asset_id: seo?.og_image_asset_id ?? null,
     },
@@ -344,6 +348,7 @@ route.get('/blog/post', async (c) => {
           alternates,
           indexable: true,
           structured: [...derived, ...editorStructured],
+          ogType: 'article',
         }),
       },
     };
@@ -358,52 +363,158 @@ export default route;
 /// these directly and never runs the application.
 export const siteFiles = new Hono<AppEnv>();
 
-siteFiles.get('/sitemap.xml', async (c) => {
-  const site = origin(c.req.raw);
-  const [pages, posts] = await Promise.all([
-    queryAll<{ path: string; updated_at: string; language: string; translation_group: string }>(c.env.DB, `
-      SELECT path, updated_at, language, translation_group FROM web_pages
-       WHERE status = 'published' AND is_indexable = 1 ORDER BY path
+interface SitemapEntry {
+  path: string;
+  updated_at: string;
+  language: string;
+  translation_group: string;
+}
+
+/// Published, indexable website pages.
+///
+/// The `seo_meta` join is the fix for a real disagreement: the previous query filtered on
+/// `web_pages.is_indexable` alone, so a page whose SEO record set `robots_index = 0` was
+/// advertised in the sitemap while its own document said `noindex`. A sitemap that lists a
+/// URL the page asks not to index is a contradiction a crawler resolves by trusting neither.
+const sitemapPages = (db: D1Database) => queryAll<SitemapEntry>(db, `
+  SELECT p.path, p.updated_at, p.language, p.translation_group
+    FROM web_pages p
+    LEFT JOIN seo_meta m ON m.entity_type = 'web_page' AND m.entity_id = p.id
+   WHERE p.status = 'published' AND p.is_indexable = 1 AND COALESCE(m.robots_index, 1) = 1
+   ORDER BY p.path
+`);
+
+const sitemapPosts = (db: D1Database) => queryAll<SitemapEntry>(db, `
+  SELECT b.path, b.updated_at, b.language, b.translation_group
+    FROM blog_posts b
+    LEFT JOIN seo_meta m ON m.entity_type = 'blog_post' AND m.entity_id = b.id
+   WHERE b.status = 'published' AND COALESCE(m.robots_index, 1) = 1
+   ORDER BY b.published_at DESC
+`);
+
+/// Catalogue pages, one entry per language the copy actually exists in.
+///
+/// `lib/publicRoutes.ts` owns that decision so the renderer cannot 404 a URL listed here.
+async function sitemapCatalogue(db: D1Database): Promise<SitemapEntry[]> {
+  const [series, planets] = await Promise.all([
+    queryAll<{
+      slug: string; updated_at: string; title_ar: string | null; title_en: string | null;
+      description_ar: string | null; description_en: string | null;
+    }>(db, `
+      SELECT s.slug, s.updated_at, s.title_ar, s.title_en, s.description_ar, s.description_en
+        FROM series s
+        LEFT JOIN seo_meta m ON m.entity_type = 'series' AND m.entity_id = s.id
+       WHERE s.status = 'published' AND COALESCE(m.robots_index, 1) = 1
+       ORDER BY s.slug
     `),
-    queryAll<{ path: string; updated_at: string; language: string; translation_group: string }>(c.env.DB, `
-      SELECT b.path, b.updated_at, b.language, b.translation_group FROM blog_posts b
-        LEFT JOIN seo_meta m ON m.entity_type = 'blog_post' AND m.entity_id = b.id
-       WHERE b.status = 'published' AND COALESCE(m.robots_index, 1) = 1
-       ORDER BY b.published_at DESC
+    queryAll<{ id: string; created_at: string; name_ar: string | null; name_en: string | null; description_ar: string | null }>(db, `
+      SELECT p.id, p.created_at, p.name_ar, p.name_en, p.description_ar
+        FROM planets p
+        LEFT JOIN seo_meta m ON m.entity_type = 'planet' AND m.entity_id = p.id
+       WHERE p.is_active = 1 AND COALESCE(m.robots_index, 1) = 1
+       ORDER BY p.sort_order, p.id
     `),
   ]);
 
-  // hreflang inside the sitemap as well as in the document: a crawler that finds a URL
-  // here should learn about its alternates without fetching the page first.
+  const entries: SitemapEntry[] = [];
+  for (const row of series) {
+    for (const language of seriesLanguages(row)) {
+      entries.push({
+        path: seriesPath(language, row.slug),
+        updated_at: row.updated_at,
+        language,
+        translation_group: `series:${row.slug}`,
+      });
+    }
+  }
+  for (const row of planets) {
+    for (const language of planetLanguages(row)) {
+      entries.push({
+        path: planetPath(language, row.id),
+        updated_at: row.created_at,
+        language,
+        translation_group: `planet:${row.id}`,
+      });
+    }
+  }
+  return entries;
+}
+
+/// One `<urlset>`, with `hreflang` alternates grouped by translation group.
+///
+/// Alternates appear here as well as in the document: a crawler that finds a URL in a
+/// sitemap should learn about its translations without fetching the page first.
+function urlset(site: string, entries: SitemapEntry[]): string {
   const byGroup = new Map<string, Array<{ language: string; path: string }>>();
-  for (const entry of [...pages, ...posts]) {
+  for (const entry of entries) {
     byGroup.set(entry.translation_group, [
       ...(byGroup.get(entry.translation_group) ?? []),
       { language: entry.language, path: entry.path },
     ]);
   }
 
-  const entries = [...pages, ...posts].map((entry) => {
+  const body = entries.map((entry) => {
     const alternates = byGroup.get(entry.translation_group) ?? [];
-    const links = alternates.map((alternate) =>
-      `    <xhtml:link rel="alternate" hreflang="${alternate.language}" href="${site}${alternate.path}"/>`).join('\n');
+    // A single-language group needs no alternates: one `xhtml:link` pointing at the URL
+    // itself is noise, and a cluster of one is not a cluster.
+    const links = alternates.length > 1
+      ? alternates.map((alternate) =>
+          `    <xhtml:link rel="alternate" hreflang="${alternate.language}" href="${site}${alternate.path}"/>`).join('\n')
+      : '';
     return `  <url>\n    <loc>${site}${entry.path}</loc>\n`
       + `    <lastmod>${(entry.updated_at ?? '').slice(0, 10)}</lastmod>\n`
       + (links ? `${links}\n` : '')
       + '  </url>';
   }).join('\n');
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
+  return `<?xml version="1.0" encoding="UTF-8"?>\n`
     + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`
-    + `${entries}\n</urlset>\n`;
+    + `${body}\n</urlset>\n`;
+}
 
-  return new Response(xml, {
-    headers: {
-      'Content-Type': 'application/xml; charset=UTF-8',
-      'Cache-Control': 'public, max-age=300, s-maxage=3600',
-    },
-  });
+const xmlResponse = (xml: string) => new Response(xml, {
+  headers: {
+    'Content-Type': 'application/xml; charset=UTF-8',
+    'Cache-Control': 'public, max-age=300, s-maxage=3600',
+  },
 });
+
+/// The complete sitemap, and the one `robots.txt` declares.
+///
+/// Declaring exactly one map keeps discovery unambiguous. The section maps below exist for
+/// operators and for the SEO screen's sitemap state, not as a second discovery path.
+siteFiles.get('/sitemap.xml', async (c) => {
+  const site = origin(c.req.raw);
+  const [pages, posts, catalogue] = await Promise.all([
+    sitemapPages(c.env.DB),
+    sitemapPosts(c.env.DB),
+    sitemapCatalogue(c.env.DB),
+  ]);
+  return xmlResponse(urlset(site, [...pages, ...posts, ...catalogue]));
+});
+
+siteFiles.get('/sitemap-pages.xml', async (c) =>
+  xmlResponse(urlset(origin(c.req.raw), await sitemapPages(c.env.DB))));
+
+siteFiles.get('/sitemap-blog.xml', async (c) =>
+  xmlResponse(urlset(origin(c.req.raw), await sitemapPosts(c.env.DB))));
+
+siteFiles.get('/sitemap-catalogue.xml', async (c) =>
+  xmlResponse(urlset(origin(c.req.raw), await sitemapCatalogue(c.env.DB))));
+
+/// A sitemap index over the three section maps.
+///
+/// No `lastmod`: every map is built per request from the database, so any date here would
+/// be the time of this request rather than the time the content changed, and a `lastmod`
+/// that always says "now" trains a crawler to ignore it.
+siteFiles.get('/sitemap-index.xml', (c) => {
+  const site = origin(c.req.raw);
+  const maps = ['/sitemap-pages.xml', '/sitemap-blog.xml', '/sitemap-catalogue.xml']
+    .map((path) => `  <sitemap>\n    <loc>${site}${path}</loc>\n  </sitemap>`).join('\n');
+  return xmlResponse(`<?xml version="1.0" encoding="UTF-8"?>\n`
+    + `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${maps}\n</sitemapindex>\n`);
+});
+
 
 siteFiles.get('/robots.txt', (c) => {
   const site = origin(c.req.raw);
