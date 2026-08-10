@@ -361,14 +361,55 @@ route.get('/rights', async (c) => {
   // rights_licenses ينمو بعدد اتفاقيات الترخيص ولا يُبذَر بشيء، فهو قائمة
   // مفتوحة الحجم بطبيعتها ويحتاج حدًّا.
   const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'), UNBOUNDED_LIST_PAGINATION)
-  const total = await queryFirst<{ total: number }>(c.env.DB, 'SELECT COUNT(*) AS total FROM rights_licenses')
+
+  // الفلترة في SQL لا في المتصفح.
+  //
+  // كانت الشاشة تُفلتر المجموعة المُحمَّلة، وهو ما يعمل إلى أن يكبر الجدول: عندها
+  // تُفلتر الصفحة الأولى فقط ويبدو أن نصف التراخيص اختفى. والأهم أن مقياس
+  // «تراخيص منتهية» في اللوحة التنفيذية يفتح هذه الشاشة، فبلا معامل يفهمه الخادم
+  // كان الرابط يفتح قائمة غير مفلترة ويُظهر مجموعة غير التي عدّها المقياس.
+  const clauses: string[] = []
+  const params: unknown[] = []
+
+  const search = c.req.query('q')?.trim()
+  if (search) {
+    clauses.push('(r.owner LIKE ? ESCAPE \'\\\' OR r.content_id LIKE ? ESCAPE \'\\\' OR s.title_ar LIKE ? ESCAPE \'\\\')')
+    const term = `%${search.replace(/[\\%_]/g, (character) => `\\${character}`)}%`
+    params.push(term, term, term)
+  }
+
+  const licenseType = c.req.query('license_type')
+  if (licenseType && ['exclusive', 'non_exclusive', 'owned'].includes(licenseType)) {
+    clauses.push('r.license_type = ?')
+    params.push(licenseType)
+  }
+
+  // `expiry` ثلاث حالات تشغيلية لا تاريخ: منتهٍ، ينتهي خلال ٦٠ يومًا، أو بلا
+  // تاريخ انتهاء. المقارنة على أول عشرة أحرف لأن العمود قد يحمل طابعًا كاملًا،
+  // ومقارنة طابع كامل بـ`date('now')` نصًّا تُخرج يوم الحدّ من النافذة.
+  const expiry = c.req.query('expiry')
+  if (expiry === 'expired') {
+    clauses.push("r.expiry_date IS NOT NULL AND SUBSTR(r.expiry_date, 1, 10) < date('now')")
+  } else if (expiry === 'soon') {
+    clauses.push("r.expiry_date IS NOT NULL AND SUBSTR(r.expiry_date, 1, 10) >= date('now')"
+      + " AND SUBSTR(r.expiry_date, 1, 10) <= date('now', '+60 days')")
+  } else if (expiry === 'none') {
+    clauses.push('r.expiry_date IS NULL')
+  }
+
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+  const total = await queryFirst<{ total: number }>(c.env.DB, `
+    SELECT COUNT(*) AS total FROM rights_licenses r
+      LEFT JOIN series s ON s.id = r.content_id ${where}
+  `, params)
   const rows = await queryAll(c.env.DB, `
     SELECT r.*, s.title_ar as series_title
       FROM rights_licenses r
       LEFT JOIN series s ON s.id = r.content_id
+     ${where}
      ORDER BY CASE WHEN r.expiry_date IS NULL THEN 1 ELSE 0 END, r.expiry_date
      LIMIT ? OFFSET ?
-  `, [limit, offset])
+  `, [...params, limit, offset])
   return c.json({ success: true, data: rows, meta: { total: Number(total?.total ?? 0), limit, offset } })
 })
 

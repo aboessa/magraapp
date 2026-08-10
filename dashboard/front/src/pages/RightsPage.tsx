@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { Modal } from '../components/Modal'
 import { Icon } from '../components/Icon'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { SavedViewsMenu } from '../components/ListTools'
+import { Pagination } from '../components/Pagination'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
+import { adminPath } from '../lib/adminPath'
+import { useUrlListState } from '../hooks/useUrlListState'
 import type { RightsLicenseRecord } from '../types/api'
 
 /**
@@ -39,6 +46,10 @@ const copy = {
     title: 'إدارة الحقوق',
     lede: 'سجل إداري لمالك الحق ونوع الترخيص والدول واللغات والأجهزة وتاريخ الانتهاء. لا يفرض هذا السجل حجب النشر أو التشغيل بعد؛ الحقوق المنتهية تُبرز للتنبيه فقط.',
     add: 'حق جديد',
+    search: 'بحث بالمالك أو معرّف المحتوى…',
+    filterNote: 'البحث والفلاتر والترقيم كلها على الخادم: الرابط قابل للمشاركة ويفتح المجموعة نفسها.',
+    expiringSoon: 'ينتهي خلال ٦٠ يومًا',
+    allTypes: 'كل الأنواع',
     content: 'المحتوى',
     owner: 'المالك',
     type: 'النوع',
@@ -80,6 +91,10 @@ const copy = {
     title: 'Rights management',
     lede: 'An administrative register of rights holder, licence type, territories, languages, devices and expiry. It does not yet block publishing or playback; expired rights are highlighted for attention only.',
     add: 'New right',
+    search: 'Search owner or content id…',
+    filterNote: 'Search, filters and paging all run on the server, so the link is shareable and opens the same set.',
+    expiringSoon: 'Expires within 60 days',
+    allTypes: 'All types',
     content: 'Content',
     owner: 'Owner',
     type: 'Type',
@@ -149,10 +164,56 @@ function isExpired(date: string | null) {
   return !Number.isNaN(parsed.getTime()) && parsed.getTime() < Date.now()
 }
 
+const LIMIT = 25
+
+/**
+ * فلاتر السجل، بأسماء المعاملات التي يقبلها `GET /admin/rights` بالحرف.
+ *
+ * كان المسار يقبل `limit` و`offset` وحدهما بلا أي شرط `WHERE`، و`api.rights()` لا
+ * تأخذ وسائط أصلًا — فكانت التصفية والبحث والترقيم كلها في المتصفح على المجموعة
+ * كاملة. ذلك يعمل إلى أن يكبر السجل: عندها تُفلتر الصفحة الأولى وحدها ويبدو أن
+ * نصف التراخيص اختفى.
+ *
+ * والأهم أن مقياس «تراخيص منتهية» في اللوحة التنفيذية يفتح هذه الشاشة، فمعامل لا
+ * يفهمه الخادم كان يعني أن الرابط يفتح قائمة غير مفلترة ويُظهر مجموعة غير التي
+ * عدّها المقياس. الآن الفلاتر في SQL، و`expiry` ثلاث حالات تشغيلية يفهمها الخادم:
+ * `expired` و`soon` (ستّون يومًا) و`none` (بلا تاريخ انتهاء).
+ */
+const DEFAULT_FILTERS = { license_type: '', expiry: '' }
+
+const FILTER_FIELDS = (text: (typeof copy)['ar']): FilterField[] => [
+  {
+    key: 'license_type',
+    label: text.type,
+    type: 'select',
+    options: [
+      { value: '', label: text.allTypes },
+      ...LICENSE_TYPES.map((value) => ({ value, label: text.types[value] ?? value })),
+    ],
+  },
+  {
+    key: 'expiry',
+    label: text.expires,
+    type: 'select',
+    options: [
+      { value: '', label: text.all },
+      { value: 'expired', label: text.expired },
+      // القيم هي ما يفهمه الخادم بالحرف. `perpetual` كان اسمًا محليًّا لا يعرفه.
+      { value: 'soon', label: text.expiringSoon },
+      { value: 'none', label: text.perpetual },
+    ],
+  },
+]
+
 export function RightsPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
+  const navigate = useNavigate()
 
+  // العنوان هو حالة القائمة حتى والتصفية محلّية: «التراخيص المنتهية» رابطٌ
+  // يُشارك مع الشؤون القانونية، والتحديث لا يُفقد ما كان معروضًا.
+  const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
+  const { query, filters, offset, limit } = list
   const [rights, setRights] = useState<RightsLicenseRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -161,21 +222,39 @@ export function RightsPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [total, setTotal] = useState(0)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const response = await api.rights()
+      // الفلترة والبحث والترقيم كلها على الخادم الآن. كانت في المتصفح لأن المسار
+      // لم يكن يقبل معاملات، وهو ما يعمل إلى أن يكبر السجل: عندها تُفلتر الصفحة
+      // الأولى وحدها ويبدو أن نصف التراخيص اختفى. والأهم أن مقياس «تراخيص منتهية»
+      // في اللوحة التنفيذية يفتح هذه الشاشة، فالمعامل يجب أن يعني شيئًا للخادم.
+      const response = await api.rights({
+        q: query.trim() || undefined,
+        license_type: filters.license_type || undefined,
+        expiry: filters.expiry || undefined,
+        limit,
+        offset,
+      })
       setRights(response.data)
+      setTotal(response.meta.total)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.loadError)
     } finally {
       setLoading(false)
     }
-  }, [text.loadError])
+  }, [filters.expiry, filters.license_type, limit, offset, query, text.loadError])
 
-  useEffect(() => { void load() }, [load])
+  // نداء واحد بعد سكون المفاتيح لا نداء لكل حرف.
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 220)
+    return () => window.clearTimeout(timer)
+  }, [load])
+
+  const paged = rights
 
   async function submit() {
     if (!form.content_id.trim() || !form.owner.trim()) {
@@ -230,66 +309,95 @@ export function RightsPage() {
 
       {notice ? <section className="panel panel--notice" role="status">{notice}</section> : null}
 
-      {rights.length ? (
-        <section className="panel panel--table">
-          <div className="table-scroll" tabIndex={0}>
-            <table className="data-table data-table--wide">
-              <thead>
-                <tr>
-                  <th>{text.content}</th>
-                  <th>{text.owner}</th>
-                  <th>{text.type}</th>
-                  <th>{text.countries}</th>
-                  <th>{text.languages}</th>
-                  <th>{text.expires}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rights.map((right) => {
-                  const countries = parseList(right.countries)
-                  const languages = parseList(right.languages)
-                  return (
-                    <tr key={right.id}>
-                      <td>
-                        <span className="table-primary">{right.series_title ?? right.content_id}</span>
-                        <span className="table-secondary" dir="ltr">{right.content_id}</span>
-                      </td>
-                      <td>{right.owner}</td>
-                      <td>
-                        <span className="track-badge">
-                          {text.types[right.license_type] ?? right.license_type}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="table-secondary" dir="ltr">
-                          {countries.length ? countries.join(', ') : text.all}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="table-secondary" dir="ltr">
-                          {languages.length ? languages.join(', ') : text.all}
-                        </span>
-                      </td>
-                      <td>
-                        {right.expiry_date ? (
-                          <span className={isExpired(right.expiry_date) ? 'size-warning' : 'table-secondary'}>
-                            {right.expiry_date}
-                            {isExpired(right.expiry_date) ? ` · ${text.expired}` : ''}
-                          </span>
-                        ) : (
-                          <span className="table-secondary">{text.perpetual}</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+      <section className="panel panel--table">
+        <header className="panel__header panel__header--filters">
+          <div>
+            <h3>{text.title} <span className="title-count">{total}</span></h3>
+            {/* نطاق التصفية مُعلَن: المسار لا يقبل فلاتر، فكلّها في المتصفح */}
+            <p className="panel__note">{text.filterNote}</p>
           </div>
-        </section>
-      ) : (
-        <EmptyState title={text.empty} description={text.emptyHint} />
-      )}
+          <ListToolbar
+            searchValue={query}
+            onSearchChange={list.setQuery}
+            searchPlaceholder={text.search}
+            fields={FILTER_FIELDS(text)}
+            values={filters}
+            defaults={DEFAULT_FILTERS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')}
+            trailing={
+              <SavedViewsMenu
+                storageKey="rights"
+                currentSearch={list.search}
+                onApply={(search) => navigate(`${adminPath('rights')}${search}`)}
+              />
+            }
+          />
+        </header>
+
+        {rights.length ? (
+          <>
+            <div className="table-scroll" tabIndex={0}>
+              <table className="data-table data-table--wide">
+                <thead>
+                  <tr>
+                    <th>{text.content}</th>
+                    <th>{text.owner}</th>
+                    <th>{text.type}</th>
+                    <th>{text.countries}</th>
+                    <th>{text.languages}</th>
+                    <th>{text.expires}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map((right) => {
+                    const countries = parseList(right.countries)
+                    const languages = parseList(right.languages)
+                    return (
+                      <tr key={right.id}>
+                        <td>
+                          <span className="table-primary">{right.series_title ?? right.content_id}</span>
+                          <span className="table-secondary" dir="ltr">{right.content_id}</span>
+                        </td>
+                        <td>{right.owner}</td>
+                        <td>
+                          <span className="track-badge">
+                            {text.types[right.license_type] ?? right.license_type}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="table-secondary" dir="ltr">
+                            {countries.length ? countries.join(', ') : text.all}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="table-secondary" dir="ltr">
+                            {languages.length ? languages.join(', ') : text.all}
+                          </span>
+                        </td>
+                        <td>
+                          {right.expiry_date ? (
+                            <span className={isExpired(right.expiry_date) ? 'size-warning' : 'table-secondary'}>
+                              {right.expiry_date}
+                              {isExpired(right.expiry_date) ? ` · ${text.expired}` : ''}
+                            </span>
+                          ) : (
+                            <span className="table-secondary">{text.perpetual}</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
+          </>
+        ) : (
+          <EmptyState title={text.empty} description={text.emptyHint} />
+        )}
+      </section>
 
       {open ? (
         <Modal open title={text.add} onClose={() => setOpen(false)}>

@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { SavedViewsMenu } from '../components/ListTools'
+import { Pagination } from '../components/Pagination'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
+import { adminPath } from '../lib/adminPath'
+import { useUrlListState } from '../hooks/useUrlListState'
 import { formatDate, formatNumber } from '../lib/labels'
 import type { FailedEventStatus, FailedFamilyEventRecord } from '../types/api'
 
@@ -82,8 +89,6 @@ const copy = {
     actionError: 'تعذر تنفيذ الإجراء',
     close: 'إغلاق',
     resolvedBy: 'بواسطة',
-    more: 'تحميل المزيد',
-    showing: (shown: string, total: string) => `يُعرض ${shown} من ${total}`,
     pendingNote: 'الأحداث المعلَّقة تحتاج قرارًا: إعادة تشغيل بعد إصلاح السبب، أو استبعاد بسبب مكتوب.',
   },
   en: {
@@ -133,8 +138,6 @@ const copy = {
     actionError: 'Unable to complete the action',
     close: 'Close',
     resolvedBy: 'by',
-    more: 'Load more',
-    showing: (shown: string, total: string) => `Showing ${shown} of ${total}`,
     pendingNote: 'Pending events need a decision: replay after fixing the cause, or discard with a written reason.',
   },
 }
@@ -187,18 +190,56 @@ function prettyPayload(raw: string) {
   }
 }
 
-const PAGE_SIZE = 50
+const LIMIT = 50
+
+/// مفاتيح الفلاتر هي أسماء معاملات `GET /admin/failed-family-events` بالحرف:
+/// `status` و`parent_id` (مع `limit` و`offset`) كما في
+/// `api/src/routes/adminFamilyProjection.ts`.
+///
+/// الافتراض `pending` لا فراغ، لأن الصفحة تُفتح على ما يحتاج قرارًا. ولأن القيمة
+/// الافتراضية لا تُكتب في العنوان، لا يمكن التعبير عن «كل الحالات» بقيمة فارغة —
+/// فتلك تُقرأ افتراضًا أي `pending`. لذلك «الكل» قيمةٌ صريحة `all` في العنوان
+/// تُترجَم إلى غياب المعامل عند النداء: الخادم يرفض `status=all` بـ400 فلا يُرسَل
+/// إليه أبدًا.
+const ANY_STATUS = 'all'
+const DEFAULT_FILTERS = { status: 'pending', parent_id: '' }
+
+const FILTER_FIELDS = (
+  text: (typeof copy)['ar'],
+  locale: 'ar' | 'en',
+): FilterField[] => [
+  {
+    key: 'parent_id',
+    label: text.family,
+    type: 'text',
+    chip: (value) => `${text.family}: ${value}`,
+  },
+  {
+    key: 'status',
+    label: text.status,
+    type: 'select',
+    options: [
+      { value: ANY_STATUS, label: text.allStatuses },
+      ...STATUSES.map((item) => ({ value: item, label: statusLabels[locale][item] })),
+    ],
+  },
+]
 
 export function FailedEventsPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
+  const navigate = useNavigate()
 
+  // حالة القائمة في العنوان: «الأحداث المعلَّقة لهذه العائلة» رابطٌ يُلصق في
+  // التذكرة، وزرّ الرجوع لا يُعيدك إلى قائمة غير مفلترة.
+  const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
+  const { filters, offset, limit } = list
+  const { status, parent_id: parentId } = filters
+  /// ما يُرسَل فعلًا إلى الخادم: `all` تعني غياب المعامل لا قيمة يفهمها.
+  const serverStatus = status === ANY_STATUS ? '' : status
   const [records, setRecords] = useState<FailedFamilyEventRecord[]>([])
   const [total, setTotal] = useState(0)
   const [pending, setPending] = useState(0)
-  const [offset, setOffset] = useState(0)
-  const [status, setStatus] = useState<string>('pending')
-  const [parentId, setParentId] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -209,29 +250,28 @@ export function FailedEventsPage() {
   const [note, setNote] = useState('')
   const [formError, setFormError] = useState('')
 
-  const load = useCallback(async (nextOffset: number, append: boolean) => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
       const response = await api.failedFamilyEvents({
-        status,
+        status: serverStatus,
         parent_id: parentId.trim(),
-        limit: PAGE_SIZE,
-        offset: nextOffset,
+        limit,
+        offset,
       })
-      setRecords((current) => append ? [...current, ...response.data] : response.data)
+      setRecords(response.data)
       setTotal(response.meta?.total ?? response.data.length)
       setPending(response.meta?.pending ?? 0)
-      setOffset(nextOffset)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.loadError)
     } finally {
       setLoading(false)
     }
-  }, [parentId, status, text.loadError])
+  }, [parentId, serverStatus, limit, offset, text.loadError])
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(0, false), 220)
+    const timer = window.setTimeout(() => void load(), 220)
     return () => window.clearTimeout(timer)
   }, [load])
 
@@ -243,7 +283,7 @@ export function FailedEventsPage() {
       const response = await api.replayFailedFamilyEvent(row.id)
       // «مكرَّر» ليس فشلًا: الحدث كان مُسقَطًا سلفًا فلم يُطبَّق مرتين
       setNotice(response.data.duplicate ? text.replayedDuplicate : text.replayedOk)
-      await load(0, false)
+      await load()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.actionError)
     } finally {
@@ -269,7 +309,7 @@ export function FailedEventsPage() {
       await api.discardFailedFamilyEvent(discarding.id, reason)
       setDiscarding(null)
       setNotice(text.discardedOk)
-      await load(0, false)
+      await load()
     } catch (caught) {
       setFormError(caught instanceof Error ? caught.message : text.actionError)
     } finally {
@@ -277,11 +317,10 @@ export function FailedEventsPage() {
     }
   }
 
-  const hasMore = records.length < total
-  const filtered = Boolean(status || parentId.trim())
+  const filtered = Boolean(serverStatus || parentId.trim())
 
   if (loading && !records.length) return <LoadingState label={text.loading} />
-  if (error && !records.length) return <ErrorState message={error} onRetry={() => void load(0, false)} />
+  if (error && !records.length) return <ErrorState message={error} onRetry={() => void load()} />
 
   return (
     <div className="page-stack">
@@ -292,7 +331,7 @@ export function FailedEventsPage() {
           <p>{text.intro}</p>
         </div>
         <div className="page-intro__actions">
-          <button className="button button--secondary" type="button" onClick={() => void load(0, false)}>
+          <button className="button button--secondary" type="button" onClick={() => void load()}>
             <Icon name="refresh" size={17} />{text.refresh}
           </button>
         </div>
@@ -315,23 +354,24 @@ export function FailedEventsPage() {
             <span className="panel__kicker">{text.list}</span>
             <h3>{text.total} <span className="title-count">{formatNumber(total, locale)}</span></h3>
           </div>
-          <div className="filters-row">
-            <label className="search-field">
-              <Icon name="search" size={17} />
-              <input
-                value={parentId}
-                dir="ltr"
-                onChange={(event) => setParentId(event.target.value)}
-                placeholder={text.parentFilter}
+          <ListToolbar
+            searchValue={parentId}
+            onSearchChange={(value) => list.setFilter('parent_id', value)}
+            searchPlaceholder={text.parentFilter}
+            fields={FILTER_FIELDS(text, locale)}
+            values={filters}
+            defaults={DEFAULT_FILTERS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')}
+            trailing={
+              <SavedViewsMenu
+                storageKey="failed-events"
+                currentSearch={list.search}
+                onApply={(search) => navigate(`${adminPath('failed-events')}${search}`)}
               />
-            </label>
-            <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label={text.allStatuses}>
-              <option value="">{text.allStatuses}</option>
-              {STATUSES.map((item) => (
-                <option value={item} key={item}>{statusLabels[locale][item]}</option>
-              ))}
-            </select>
-          </div>
+            }
+          />
         </header>
 
         {records.length ? (
@@ -435,19 +475,10 @@ export function FailedEventsPage() {
                 </tbody>
               </table>
             </div>
-            <footer className="panel__footer">
-              <span>{text.showing(formatNumber(records.length, locale), formatNumber(total, locale))}</span>
-              {hasMore && (
-                <button
-                  className="button button--ghost"
-                  type="button"
-                  disabled={loading}
-                  onClick={() => void load(offset + PAGE_SIZE, true)}
-                >
-                  {text.more}
-                </button>
-              )}
-            </footer>
+            {/* ترقيم صفحة صفحة بعد أن صار `offset` في العنوان: «تحميل المزيد»
+                التراكمي كان يجعل الرابط المنسوخ يصف مجموعة لا تُطابق ما رآه
+                صاحبه. */}
+            <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
           </>
         ) : (
           <EmptyState

@@ -272,7 +272,8 @@ export const api = {
   publishEpisode: (id: string) => request<ApiEnvelope<{ id: string; status: 'published'; published: boolean }>>(`/admin/episodes/${id}/publish`, { method: 'POST' }),
   archiveEpisode: (id: string) => request<ApiEnvelope<{ id: string; status: string }>>(`/admin/episodes/${id}`, { method: 'DELETE' }),
 
-  characters: (seriesId?: string) => request<ApiEnvelope<CharacterRecord[]>>(`/admin/characters${queryString({ series_id: seriesId })}`),
+  characters: (filters: { series_id?: string; limit?: number; offset?: number } = {}) =>
+    request<PaginatedEnvelope<CharacterRecord>>(`/admin/characters${queryString(filters)}`),
   character: (id: string) => request<ApiEnvelope<import('../types/api').CharacterDetail>>(`/admin/characters/${encodeURIComponent(id)}`),
   createCharacter: (payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string }>>('/admin/characters', { method: 'POST', body: JSON.stringify(payload) }),
   updateCharacter: (id: string, payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string }>>(`/admin/characters/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
@@ -386,7 +387,11 @@ export const api = {
   workflowMyStages: () => request<PaginatedEnvelope<import('../types/api').WorkflowMyStage>>('/admin/workflows/my-stages'),
   devices: () => request<ApiEnvelope<import('../types/api').AdminDeviceRecord[]>>('/admin/devices'),
   plans: () => request<ApiEnvelope<import('../types/api').PlansCatalogue>>('/admin/plans'),
-  rights: () => request<ApiEnvelope<import('../types/api').RightsLicenseRecord[]>>('/admin/rights'),
+  /// تراخيص المحتوى. الفلاتر بأسماء المعاملات التي يقبلها الخادم بالحرف، فرابط
+  /// «تراخيص منتهية» من اللوحة التنفيذية يفتح المجموعة نفسها التي عدّها المقياس.
+  rights: (filters: {
+    q?: string; license_type?: string; expiry?: string; limit?: number; offset?: number;
+  } = {}) => request<PaginatedEnvelope<import('../types/api').RightsLicenseRecord>>(`/admin/rights${queryString(filters)}`),
   createRight: (payload: import('../types/api').RightsLicensePayload) => request<ApiEnvelope<{ id: string }>>('/admin/rights', { method: 'POST', body: JSON.stringify(payload) }),
   remoteConfig: () => request<ApiEnvelope<import('../types/api').RemoteConfigRecord[]>>('/admin/remote-config'),
   saveRemoteConfig: (key: string, payload: { value: unknown; rollout_percent?: number; targeting?: Record<string, unknown> }) => request<ApiEnvelope<{ key: string; rollout_percent: number }>>(`/admin/remote-config/${encodeURIComponent(key)}`, { method: 'PUT', body: JSON.stringify(payload) }),

@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import type { ContentStatus, EpisodePayload, EpisodeRecord, SeriesRecord } from '../types/api'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { PublishReadinessDialog } from '../components/PublishReadinessDialog'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { ColumnManager, SavedViewsMenu, useColumnPreferences } from '../components/ListTools'
+import type { ColumnDefinition } from '../components/ListTools'
 import { EntityThumbnail } from '../components/EntityThumbnail'
 import { Pagination } from '../components/Pagination'
 import { StatusBadge, TrackBadge } from '../components/StatusBadge'
 import { formatNumber, localeCode, statusLabels } from '../lib/labels'
 import { adminPath } from '../lib/adminPath'
+import { useUrlListState } from '../hooks/useUrlListState'
 import { useQuickCreate } from '../hooks/useQuickCreate'
 import { usePreferences } from '../context/preferences'
 
@@ -47,17 +52,66 @@ function durationLabel(seconds: number | null | undefined, locale: 'ar' | 'en') 
   return `${formatNumber(minutes, locale)}:${remainder}`
 }
 
+/// مفاتيح الفلاتر هي أسماء معاملات الاستعلام التي يقبلها `GET /admin/episodes`
+/// بالحرف (`q`, `series_id`, `status`, `limit`, `offset` في
+/// `api/src/routes/admin.ts`)، فرابط من اللوحة التنفيذية يفتح المجموعة نفسها
+/// التي عدّها المقياس بلا ترجمة وسيطة تنحرف.
+const DEFAULT_FILTERS = { series_id: '', status: '' }
+const LIMIT = 50
+
+/// حقول الدرج بيانات لا JSX: نفس التعريف يقود الدرج والشرائح وعدّاد الفلاتر
+/// النشطة، فلكل `select` تسمية مقروءة بالضرورة لا بالتذكّر.
+const FILTER_FIELDS = (
+  text: { allSeries: string; allStatuses: string; series: string; status: string },
+  locale: 'ar' | 'en',
+  series: SeriesRecord[],
+): FilterField[] => [
+  {
+    key: 'series_id',
+    label: text.series,
+    type: 'select',
+    options: [
+      { value: '', label: text.allSeries },
+      ...series.map((item) => ({ value: item.id, label: locale === 'en' ? item.title_en || item.title_ar : item.title_ar })),
+    ],
+  },
+  {
+    key: 'status',
+    label: text.status,
+    type: 'select',
+    options: [
+      { value: '', label: text.allStatuses },
+      ...filterStatuses.map((item) => ({ value: item, label: statusLabels[locale][item] })),
+    ],
+  },
+]
+
+/// جدول الحلقات ثمانية أعمدة، وهو أعرض من شاشة محمول. مدير الأعمدة يجعل الإخفاء
+/// قرار المستخدم بدل تمرير أفقي إلزامي. عمود الحلقة مُقفل: جدول بلا اسم لكل صفّ
+/// لا هوية له.
+const COLUMNS: ColumnDefinition[] = [
+  { key: 'episode', label: 'episode', locked: true },
+  { key: 'series', label: 'series' },
+  { key: 'track', label: 'track' },
+  { key: 'objective', label: 'objective' },
+  { key: 'familyActivity', label: 'familyActivity' },
+  { key: 'duration', label: 'duration' },
+  { key: 'status', label: 'status' },
+]
+
 export function EpisodesPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
+  const navigate = useNavigate()
+  // حالة القائمة في العنوان لا في الذاكرة: رابط «١٢ حلقة قيد الإنتاج» من اللوحة
+  // التنفيذية يجب أن يفتح تلك الاثنتي عشرة، وزرّ الرجوع يجب أن يُعيد الفلترة
+  // السابقة. النسخة المحلية كانت تمنع الاثنين.
+  const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
+  const { query, filters, offset, limit } = list
+  const { series_id: seriesFilter, status } = filters
   const [records, setRecords] = useState<EpisodeRecord[]>([])
   const [series, setSeries] = useState<SeriesRecord[]>([])
-  const [query, setQuery] = useState('')
-  const [seriesFilter, setSeriesFilter] = useState('')
-  const [status, setStatus] = useState('')
-  const [offset, setOffset] = useState(0)
   const [total, setTotal] = useState(0)
-  const limit = 50
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -67,6 +121,7 @@ export function EpisodesPage() {
   const [formError, setFormError] = useState('')
   const [busyId, setBusyId] = useState('')
   const [publishTarget, setPublishTarget] = useState<EpisodeRecord | null>(null)
+  const columns = useColumnPreferences('episodes', COLUMNS)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -78,11 +133,13 @@ export function EpisodesPage() {
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.loadError)
     } finally { setLoading(false) }
-  }, [query, seriesFilter, status, text.loadError, offset])
+  }, [query, seriesFilter, status, text.loadError, limit, offset])
 
-  useEffect(() => { setOffset(0) }, [query, seriesFilter, status])
+  // لا `setOffset(0)` هنا: `useUrlListState` يُصفّر الترقيم مع كل تغيير فلتر،
+  // وأثرٌ إضافي يفعل الشيء نفسه كان يكتب في العنوان مرتين لكل ضغطة مفتاح.
 
   useEffect(() => { const timer = window.setTimeout(() => void load(), 220); return () => window.clearTimeout(timer) }, [load])
+
   useEffect(() => { void api.series({ status: 'all', limit: 100 }).then((response) => setSeries(response.data.filter((item) => item.status !== 'archived'))).catch(() => setSeries([])) }, [])
 
   // ‏?new=1 من لوحة الأوامر يفتح النموذج نفسه الذي يفتحه زرّ الصفحة.
@@ -152,8 +209,83 @@ export function EpisodesPage() {
       <section className="page-intro"><div><span className="eyebrow">{text.level}</span><h2>{text.headline}</h2><p>{text.intro}</p></div><button className="button button--primary" type="button" onClick={openCreate} disabled={!series.length}><Icon name="plus" size={17} />{text.newEpisode}</button></section>
       {!series.length && !loading && <div className="inline-alert inline-alert--info">{text.needsSeries}</div>}
       <section className="panel panel--table">
-        <header className="panel__header panel__header--filters"><div><span className="panel__kicker">{text.library}</span><h3>{text.allEpisodes} <span className="title-count">{formatNumber(total, locale)}</span></h3></div><div className="filters-row"><label className="search-field"><Icon name="search" size={17}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search}/></label><select value={seriesFilter} onChange={(event) => setSeriesFilter(event.target.value)} aria-label={text.allSeries}><option value="">{text.allSeries}</option>{series.map((item) => <option value={item.id} key={item.id}>{locale === 'en' ? item.title_en || item.title_ar : item.title_ar}</option>)}</select><select value={status} onChange={(event) => setStatus(event.target.value)} aria-label={text.allStatuses}><option value="">{text.allStatuses}</option>{filterStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select></div></header>
-        {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? <><div className="table-scroll" tabIndex={0}><table className="data-table data-table--wide"><thead><tr><th>{text.episode}</th><th>{text.series}</th><th>{text.track}</th><th>{text.objective}</th><th>{text.familyActivity}</th><th>{text.duration}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead><tbody>{records.map((episode) => <tr key={episode.id}><td><Link className="entity-cell entity-cell--button" to={adminPath(`episodes/${episode.id}`)}><EntityThumbnail src={episode.thumbnail_url} alt={episode.title_ar} icon="play" /><div><strong>{episode.title_ar}</strong><small>{episode.episode_number ? text.episodeNumber(episode.episode_number) : text.noNumber}</small></div></Link></td><td>{episode.series_title}</td><td><div className="badge-list">{episode.track_ids.map((item) => <TrackBadge track={item} key={item}/>)}</div></td><td className="cell-wrap">{episode.objective_title || text.unspecified}</td><td className="cell-wrap">{episode.family_activity_ar || '—'}</td><td>{durationLabel(episode.duration_seconds, locale)}</td><td>{episode.status === 'published' ? <StatusBadge status={episode.status}/> : <><select className="status-select" value={episode.status} disabled={busyId === episode.id} aria-label={`${text.status}: ${episode.title_ar}`} onChange={(event) => void changeStatus(episode.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={episode.status}/></>}</td><td><div className="table-actions">{episode.status !== 'published' ? <button className="icon-button icon-button--small" type="button" onClick={() => void publish(episode)} disabled={busyId === episode.id} title={locale === 'ar' ? 'نشر' : 'Publish'}><Icon name="upload" size={16}/></button> : null}<button className="icon-button icon-button--small" type="button" onClick={() => openEdit(episode)} title={text.edit}><Icon name="edit" size={16}/></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(episode)} disabled={busyId === episode.id} title={text.archive}><Icon name="archive" size={16}/></button></div></td></tr>)}</tbody></table></div><Pagination total={total} limit={limit} offset={offset} onOffsetChange={setOffset} locale={locale} /></> : <EmptyState title={text.empty} description={text.emptyDesc} action={series.length ? <button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17}/>{text.addEpisode}</button> : undefined}/>}
+        <header className="panel__header panel__header--filters">
+          <div><span className="panel__kicker">{text.library}</span><h3>{text.allEpisodes} <span className="title-count">{formatNumber(total, locale)}</span></h3></div>
+          <ListToolbar
+            searchValue={query}
+            onSearchChange={list.setQuery}
+            searchPlaceholder={text.search}
+            fields={FILTER_FIELDS(text, locale, series)}
+            values={filters}
+            defaults={DEFAULT_FILTERS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')}
+            trailing={
+              <>
+                <SavedViewsMenu
+                  storageKey="episodes"
+                  currentSearch={list.search}
+                  onApply={(search) => navigate(`${adminPath('episodes')}${search}`)}
+                />
+                <ColumnManager
+                  columns={COLUMNS.map((column) => ({ ...column, label: text[column.label as keyof typeof text] as string }))}
+                  hidden={columns.hidden}
+                  onToggle={columns.toggle}
+                  onReset={columns.reset}
+                />
+              </>
+            }
+          />
+        </header>
+        {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? (
+          <>
+            <div className="table-scroll" tabIndex={0}>
+              <table className="data-table data-table--wide">
+                <thead>
+                  <tr>
+                    <th>{text.episode}</th>
+                    {columns.isVisible('series') && <th>{text.series}</th>}
+                    {columns.isVisible('track') && <th>{text.track}</th>}
+                    {columns.isVisible('objective') && <th>{text.objective}</th>}
+                    {columns.isVisible('familyActivity') && <th>{text.familyActivity}</th>}
+                    {columns.isVisible('duration') && <th>{text.duration}</th>}
+                    {columns.isVisible('status') && <th>{text.status}</th>}
+                    <th>{text.actions}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {records.map((episode) => (
+                    <tr key={episode.id}>
+                      <td>
+                        <Link className="entity-cell entity-cell--button" to={adminPath(`episodes/${episode.id}`)}>
+                          <EntityThumbnail src={episode.thumbnail_url} alt={episode.title_ar} icon="play" />
+                          <div><strong>{episode.title_ar}</strong><small>{episode.episode_number ? text.episodeNumber(episode.episode_number) : text.noNumber}</small></div>
+                        </Link>
+                      </td>
+                      {columns.isVisible('series') && <td>{episode.series_title}</td>}
+                      {columns.isVisible('track') && <td><div className="badge-list">{episode.track_ids.map((item) => <TrackBadge track={item} key={item}/>)}</div></td>}
+                      {columns.isVisible('objective') && <td className="cell-wrap">{episode.objective_title || text.unspecified}</td>}
+                      {columns.isVisible('familyActivity') && <td className="cell-wrap">{episode.family_activity_ar || '—'}</td>}
+                      {columns.isVisible('duration') && <td>{durationLabel(episode.duration_seconds, locale)}</td>}
+                      {columns.isVisible('status') && (
+                        <td>{episode.status === 'published' ? <StatusBadge status={episode.status}/> : <><select className="status-select" value={episode.status} disabled={busyId === episode.id} aria-label={`${text.status}: ${episode.title_ar}`} onChange={(event) => void changeStatus(episode.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={episode.status}/></>}</td>
+                      )}
+                      <td>
+                        <div className="table-actions">
+                          {episode.status !== 'published' ? <button className="icon-button icon-button--small" type="button" onClick={() => void publish(episode)} disabled={busyId === episode.id} title={locale === 'ar' ? 'نشر' : 'Publish'}><Icon name="upload" size={16}/></button> : null}
+                          <button className="icon-button icon-button--small" type="button" onClick={() => openEdit(episode)} title={text.edit}><Icon name="edit" size={16}/></button>
+                          <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(episode)} disabled={busyId === episode.id} title={text.archive}><Icon name="archive" size={16}/></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
+          </>
+        ) : <EmptyState title={text.empty} description={text.emptyDesc} action={series.length ? <button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17}/>{text.addEpisode}</button> : undefined}/>}
       </section>
 
       <Modal open={modalOpen} onClose={() => !saving && setModalOpen(false)} title={editing ? text.editTitle : text.createTitle} description={text.modalDesc}>

@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { SavedViewsMenu } from '../components/ListTools'
+import { Pagination } from '../components/Pagination'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
+import { adminPath } from '../lib/adminPath'
+import { useUrlListState } from '../hooks/useUrlListState'
 import { formatDate, formatNumber } from '../lib/labels'
 import type { AuditRecord } from '../types/api'
 
@@ -54,8 +61,6 @@ const copy = {
     noDetails: 'لا تفاصيل',
     redacted: 'محجوب',
     redactedHint: 'الرموز وكلمات المرور وبيانات الأطفال تُحجب في الخادم قبل الكتابة.',
-    more: 'تحميل المزيد',
-    showing: (shown: string, total: string) => `يُعرض ${shown} من ${total}`,
   },
   en: {
     eyebrow: 'Accountability',
@@ -84,8 +89,6 @@ const copy = {
     noDetails: 'No details',
     redacted: 'Redacted',
     redactedHint: 'Tokens, passwords and child data are redacted on the server before writing.',
-    more: 'Load more',
-    showing: (shown: string, total: string) => `Showing ${shown} of ${total}`,
   },
 }
 
@@ -153,20 +156,56 @@ function readDetails(raw: string): { key: string; value: string }[] | { raw: str
     }))
 }
 
-const PAGE_SIZE = 50
+const LIMIT = 50
+
+/// مفاتيح الفلاتر هي أسماء معاملات `GET /admin/audit-logs` بالحرف: `actor_id`،
+/// `entity_type`، `action`، `from`، `to` (مع `entity_id` و`limit` و`offset`) كما
+/// في `api/src/routes/adminTeams.ts`. لا `q` هنا: المسار لا يقبل بحثًا نصيًّا
+/// حرًّا، وحقل البحث المعروض هو `actor_id` نفسه لا اسم آخر يُترجَم في الطريق.
+const DEFAULT_FILTERS = { actor_id: '', action: '', entity_type: '', from: '', to: '' }
+
+const FILTER_FIELDS = (
+  text: (typeof copy)['ar'],
+  locale: 'ar' | 'en',
+  entityTypes: string[],
+): FilterField[] => [
+  {
+    key: 'actor_id',
+    label: text.actor,
+    type: 'text',
+    chip: (value) => `${text.actor}: ${value}`,
+  },
+  {
+    key: 'action',
+    label: text.action,
+    type: 'select',
+    options: [
+      { value: '', label: text.allActions },
+      ...KNOWN_ACTIONS.map((item) => ({ value: item, label: actionLabels[locale][item] ?? item })),
+    ],
+  },
+  {
+    key: 'entity_type',
+    label: text.entity,
+    type: 'select',
+    options: [{ value: '', label: text.allEntities }, ...entityTypes.map((item) => ({ value: item, label: item }))],
+  },
+  { key: 'from', label: text.fromDate, type: 'date', chip: (value) => `${text.fromDate}: ${value}` },
+  { key: 'to', label: text.toDate, type: 'date', chip: (value) => `${text.toDate}: ${value}` },
+]
 
 export function AuditLogPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
+  const navigate = useNavigate()
 
+  // حالة القائمة في العنوان: «من غيّر هذا» سؤال يُحوَّل إلى تذكرة، والتذكرة
+  // تحتاج رابطًا يفتح نفس التصفية لا وصفًا لخطوات النقر.
+  const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
+  const { filters, offset, limit } = list
+  const { actor_id: actor, action, entity_type: entityType, from: fromDate, to: toDate } = filters
   const [records, setRecords] = useState<AuditRecord[]>([])
   const [total, setTotal] = useState(0)
-  const [offset, setOffset] = useState(0)
-  const [action, setAction] = useState('')
-  const [entityType, setEntityType] = useState('')
-  const [actor, setActor] = useState('')
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -174,8 +213,10 @@ export function AuditLogPage() {
   // معطوبًا بلا سبب واضح.
   const rangeInvalid = Boolean(fromDate && toDate && fromDate > toDate)
 
-  /// التحميل يبدأ من الصفر عند أي تغيير في التصفية، ويُضيف عند «تحميل المزيد».
-  const load = useCallback(async (nextOffset: number, append: boolean) => {
+  /// الترقيم صفحة صفحة لا «تحميل المزيد»: بعد أن صار `offset` في العنوان، الرابط
+  /// يصف موقعًا في السجل. الإضافة التراكمية كانت ستجعل `?offset=100` يعني عند
+  /// المشاركة شيئًا آخر عمّا رآه صاحب الرابط.
+  const load = useCallback(async () => {
     if (rangeInvalid) return
     setLoading(true)
     setError('')
@@ -186,22 +227,21 @@ export function AuditLogPage() {
         actor_id: actor.trim(),
         from: fromDate,
         to: toDate,
-        limit: PAGE_SIZE,
-        offset: nextOffset,
+        limit,
+        offset,
       })
-      setRecords((current) => append ? [...current, ...response.data] : response.data)
+      setRecords(response.data)
       setTotal(response.meta?.total ?? response.data.length)
-      setOffset(nextOffset)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.loadError)
     } finally {
       setLoading(false)
     }
-  }, [action, actor, entityType, fromDate, toDate, rangeInvalid, text.loadError])
+  }, [action, actor, entityType, fromDate, toDate, limit, offset, rangeInvalid, text.loadError])
 
   // تأخير بسيط: حقل الفاعل نصّ حرّ فلا يُنادى الخادم على كل حرف
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(0, false), 220)
+    const timer = window.setTimeout(() => void load(), 220)
     return () => window.clearTimeout(timer)
   }, [load])
 
@@ -212,10 +252,8 @@ export function AuditLogPage() {
     [records],
   )
 
-  const hasMore = records.length < total
-
   if (loading && !records.length) return <LoadingState label={text.loading} />
-  if (error && !records.length) return <ErrorState message={error} onRetry={() => void load(0, false)} />
+  if (error && !records.length) return <ErrorState message={error} onRetry={() => void load()} />
 
   return (
     <div className="page-stack">
@@ -226,7 +264,7 @@ export function AuditLogPage() {
           <p>{text.intro}</p>
         </div>
         <div className="page-intro__actions">
-          <button className="button button--secondary" type="button" onClick={() => void load(0, false)}>
+          <button className="button button--secondary" type="button" onClick={() => void load()}>
             <Icon name="refresh" size={17} />{text.refresh}
           </button>
         </div>
@@ -240,35 +278,24 @@ export function AuditLogPage() {
             <span className="panel__kicker">{text.list}</span>
             <h3>{text.total} <span className="title-count">{formatNumber(total, locale)}</span></h3>
           </div>
-          <div className="filters-row">
-            <label className="search-field">
-              <Icon name="search" size={17} />
-              <input
-                value={actor}
-                dir="ltr"
-                onChange={(event) => setActor(event.target.value)}
-                placeholder={text.actorFilter}
+          <ListToolbar
+            searchValue={actor}
+            onSearchChange={(value) => list.setFilter('actor_id', value)}
+            searchPlaceholder={text.actorFilter}
+            fields={FILTER_FIELDS(text, locale, entityTypes)}
+            values={filters}
+            defaults={DEFAULT_FILTERS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')}
+            trailing={
+              <SavedViewsMenu
+                storageKey="audit-logs"
+                currentSearch={list.search}
+                onApply={(search) => navigate(`${adminPath('audit-logs')}${search}`)}
               />
-            </label>
-            <select aria-label={text.allActions} value={action} onChange={(event) => setAction(event.target.value)}>
-              <option value="">{text.allActions}</option>
-              {KNOWN_ACTIONS.map((item) => (
-                <option value={item} key={item}>{actionLabels[locale][item] ?? item}</option>
-              ))}
-            </select>
-            <select aria-label={text.allEntities} value={entityType} onChange={(event) => setEntityType(event.target.value)}>
-              <option value="">{text.allEntities}</option>
-              {entityTypes.map((item) => <option value={item} key={item}>{item}</option>)}
-            </select>
-            <label className="date-field">
-              <span>{text.fromDate}</span>
-              <input type="date" dir="ltr" value={fromDate} max={toDate || undefined} onChange={(event) => setFromDate(event.target.value)} />
-            </label>
-            <label className="date-field">
-              <span>{text.toDate}</span>
-              <input type="date" dir="ltr" value={toDate} min={fromDate || undefined} onChange={(event) => setToDate(event.target.value)} />
-            </label>
-          </div>
+            }
+          />
         </header>
 
         {rangeInvalid && <div className="inline-alert inline-alert--error">{text.invalidRange}</div>}
@@ -344,19 +371,7 @@ export function AuditLogPage() {
                 </tbody>
               </table>
             </div>
-            <footer className="panel__footer">
-              <span>{text.showing(formatNumber(records.length, locale), formatNumber(total, locale))}</span>
-              {hasMore && (
-                <button
-                  className="button button--ghost"
-                  type="button"
-                  disabled={loading}
-                  onClick={() => void load(offset + PAGE_SIZE, true)}
-                >
-                  {text.more}
-                </button>
-              )}
-            </footer>
+            <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
           </>
         ) : <EmptyState title={text.empty} description={text.emptyDesc} />}
       </section>

@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { SavedViewsMenu } from '../components/ListTools'
+import { Pagination } from '../components/Pagination'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
+import { useUrlListState } from '../hooks/useUrlListState'
 import { EntityThumbnail } from '../components/EntityThumbnail'
 import type { CharacterRecord, SeriesRecord } from '../types/api'
 
@@ -16,14 +21,156 @@ const initial: Form = { series_id: '', name_ar: '', role: 'hero', age: '', descr
 const roles: Role[] = ['hero', 'side', 'villain', 'narrator', 'presenter']
 const labels = { ar: { hero: 'بطل', side: 'مساند', villain: 'خصم', narrator: 'راوٍ', presenter: 'مقدم' }, en: { hero: 'Hero', side: 'Supporting', villain: 'Antagonist', narrator: 'Narrator', presenter: 'Presenter' } }
 
+/// المفتاح هو اسم معامل الاستعلام الذي يقبله `GET /admin/characters` بالحرف:
+/// `series_id` (والمسار يقبل كذلك `include_archived` و`limit` و`offset` كما في
+/// `api/src/routes/adminContent.ts`)، فرابط «شخصيات هذه السلسلة» من أي شاشة يفتح
+/// نفس المجموعة.
+const DEFAULT_FILTERS = { series_id: '' }
+
+/// `api.characters(seriesId)` لا تُرسل `limit` ولا `offset`، فالخادم يُعيد أول
+/// عشرين صفًّا بالافتراض. الترقيم هنا على المجموعة المحمَّلة، وحدّ الخادم مُعلَن
+/// في الواجهة بدل قائمة مقتطعة صامتة.
+const SERVER_PAGE = 20
+const LIMIT = 20
+
+const FILTER_FIELDS = (ar: boolean, locale: 'ar' | 'en', series: SeriesRecord[]): FilterField[] => [
+  {
+    key: 'series_id',
+    label: ar ? 'السلسلة' : 'Series',
+    type: 'select',
+    options: [
+      { value: '', label: ar ? 'كل السلاسل' : 'All series' },
+      ...series.map((item) => ({ value: item.id, label: locale === 'en' ? item.title_en || item.title_ar : item.title_ar })),
+    ],
+  },
+]
+
 export function CharactersPage() {
   const { locale } = usePreferences(); const ar = locale === 'ar'
-  const [items, setItems] = useState<CharacterRecord[]>([]); const [series, setSeries] = useState<SeriesRecord[]>([]); const [filter, setFilter] = useState(''); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [open, setOpen] = useState(false); const [editing, setEditing] = useState<CharacterRecord | null>(null); const [form, setForm] = useState<Form>(initial); const [saving, setSaving] = useState(false)
-  const load = useCallback(async () => { setLoading(true); try { const [characters, allSeries] = await Promise.all([api.characters(filter || undefined), api.series({ status: 'all', limit: 100 })]); setItems(characters.data); setSeries(allSeries.data.filter((item) => item.status !== 'archived')); setError('') } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل الشخصيات' : 'Unable to load characters') } finally { setLoading(false) } }, [ar, filter])
+  const navigate = useNavigate()
+  // الفلتر في العنوان: رابط شخصيات سلسلة واحدة يُشارك ويُحدَّث ويعود بزرّ الرجوع.
+  const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
+  const { filters, offset, limit } = list
+  const filter = filters.series_id
+  const [items, setItems] = useState<CharacterRecord[]>([]); const [series, setSeries] = useState<SeriesRecord[]>([]); const [total, setTotal] = useState(0); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [open, setOpen] = useState(false); const [editing, setEditing] = useState<CharacterRecord | null>(null); const [form, setForm] = useState<Form>(initial); const [saving, setSaving] = useState(false)
+  const load = useCallback(async () => { setLoading(true); try { const [characters, allSeries] = await Promise.all([api.characters({ series_id: filter || undefined, limit, offset }), api.series({ status: 'all', limit: 100 })]); setItems(characters.data); setTotal(characters.meta.total); setSeries(allSeries.data.filter((item) => item.status !== 'archived')); setError('') } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل الشخصيات' : 'Unable to load characters') } finally { setLoading(false) } }, [ar, filter, limit, offset])
   useEffect(() => { void load() }, [load])
+  /// الترقيم على الخادم: `GET /admin/characters` يقبل limit و offset، وعميل الـAPI
+  /// يُرسلهما الآن. كان الترقيم على المجموعة المحمَّلة وحدّ الخادم عشرون صفًّا، فما
+  /// بعد الصفحة الأولى لم يكن قابلًا للوصول إطلاقًا.
+  const paged = items
   function create() { setEditing(null); setForm({ ...initial, series_id: filter || series[0]?.id || '' }); setOpen(true) }
   function edit(item: CharacterRecord) { setEditing(item); setForm({ series_id: item.series_id, name_ar: item.name_ar, role: item.role || 'hero', age: item.age ? String(item.age) : '', description_ar: item.description_ar ?? '', traits: item.traits.join('، '), speech_style: item.speech_style ?? '', voice_actor: item.voice_actor ?? '' }); setOpen(true) }
   async function submit(event: FormEvent) { event.preventDefault(); if (!form.series_id || !form.name_ar.trim()) return; setSaving(true); const payload = { ...form, age: form.age ? Number(form.age) : null, traits: form.traits.split(/[,،]/).map((item) => item.trim()).filter(Boolean), languages: ['ar'] }; try { if (editing) await api.updateCharacter(editing.id, payload); else await api.createCharacter(payload); setOpen(false); await load() } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر الحفظ' : 'Unable to save') } finally { setSaving(false) } }
   async function archive(id: string) { if (!window.confirm(ar ? 'أرشفة الشخصية؟' : 'Archive character?')) return; await api.archiveCharacter(id); await load() }
-  return <div className="page-stack"><section className="page-intro"><div><span className="eyebrow">{ar ? 'دليل الإنتاج' : 'Production bible'}</span><h2>{ar ? 'الشخصيات' : 'Characters'}</h2><p>{ar ? 'ثبّت وصف الشخصية وسماتها وصوتها ومراجعها داخل سلسلتها.' : 'Keep character descriptions, traits, voice, and references scoped to their series.'}</p></div><button className="button button--primary" type="button" onClick={create} disabled={!series.length}><Icon name="plus" size={17}/>{ar ? 'شخصية جديدة' : 'New character'}</button></section><section className="panel panel--table"><header className="panel__header panel__header--filters"><div><span className="panel__kicker">{ar ? 'كل الشخصيات' : 'All characters'}</span><h3>{items.length}</h3></div><div className="filters-row"><select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="">{ar ? 'كل السلاسل' : 'All series'}</option>{series.map((item) => <option value={item.id} key={item.id}>{item.title_ar}</option>)}</select></div></header>{loading ? <LoadingState label={ar ? 'جارٍ التحميل...' : 'Loading...'}/> : error && !items.length ? <ErrorState message={error} onRetry={() => void load()}/> : items.length ? <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>{ar ? 'الشخصية' : 'Character'}</th><th>{ar ? 'السلسلة' : 'Series'}</th><th>{ar ? 'الدور' : 'Role'}</th><th>{ar ? 'السمات' : 'Traits'}</th><th>{ar ? 'الصوت' : 'Voice'}</th><th/></tr></thead><tbody>{items.map((item) => <tr key={item.id}><td><Link className="entity-cell entity-cell--button" to={adminPath(`characters/${item.id}`)}><EntityThumbnail src={item.reference_images[0]} alt={item.name_ar} label={item.name_ar} icon="characters" size={34}/><div><strong>{item.name_ar}</strong><small>{item.age ? `${item.age} ${ar ? 'سنوات' : 'years'}` : '—'}</small></div></Link></td><td>{item.series_title}</td><td>{item.role ? labels[locale][item.role] : '—'}</td><td className="cell-wrap">{item.traits.join('، ') || '—'}</td><td>{item.voice_actor || '—'}</td><td><div className="table-actions"><button className="icon-button icon-button--small" type="button" onClick={() => edit(item)}><Icon name="edit" size={15}/></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(item.id)}><Icon name="archive" size={15}/></button></div></td></tr>)}</tbody></table></div> : <EmptyState title={ar ? 'لا توجد شخصيات' : 'No characters'} description={ar ? 'أضف الشخصيات الثابتة ومقدمي البرامج.' : 'Add recurring characters and presenters.'}/>}</section><Modal open={open} onClose={() => !saving && setOpen(false)} title={editing ? (ar ? 'تعديل الشخصية' : 'Edit character') : (ar ? 'شخصية جديدة' : 'New character')}><form className="entity-form" onSubmit={submit}><div className="form-grid"><label className="field"><span>{ar ? 'السلسلة *' : 'Series *'}</span><select value={form.series_id} onChange={(event) => setForm({ ...form, series_id: event.target.value })}>{series.map((item) => <option value={item.id} key={item.id}>{item.title_ar}</option>)}</select></label><label className="field"><span>{ar ? 'الاسم *' : 'Name *'}</span><input value={form.name_ar} onChange={(event) => setForm({ ...form, name_ar: event.target.value })}/></label></div><div className="form-grid"><label className="field"><span>{ar ? 'الدور' : 'Role'}</span><select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value as Role })}>{roles.map((role) => <option value={role} key={role}>{labels[locale][role]}</option>)}</select></label><label className="field"><span>{ar ? 'العمر' : 'Age'}</span><input type="number" min="0" value={form.age} onChange={(event) => setForm({ ...form, age: event.target.value })}/></label></div><label className="field"><span>{ar ? 'الوصف' : 'Description'}</span><textarea rows={3} value={form.description_ar} onChange={(event) => setForm({ ...form, description_ar: event.target.value })}/></label><label className="field"><span>{ar ? 'السمات — افصل بفاصلة' : 'Traits — comma separated'}</span><input value={form.traits} onChange={(event) => setForm({ ...form, traits: event.target.value })}/></label><div className="form-grid"><label className="field"><span>{ar ? 'أسلوب الكلام' : 'Speech style'}</span><input value={form.speech_style} onChange={(event) => setForm({ ...form, speech_style: event.target.value })}/></label><label className="field"><span>{ar ? 'المؤدي الصوتي' : 'Voice actor'}</span><input value={form.voice_actor} onChange={(event) => setForm({ ...form, voice_actor: event.target.value })}/></label></div><div className="form-actions"><button className="button button--ghost" type="button" onClick={() => setOpen(false)}>{ar ? 'إلغاء' : 'Cancel'}</button><button className="button button--primary" disabled={saving}>{ar ? 'حفظ' : 'Save'}</button></div></form></Modal></div>
+
+  return (
+    <div className="page-stack">
+      <section className="page-intro">
+        <div>
+          <span className="eyebrow">{ar ? 'دليل الإنتاج' : 'Production bible'}</span>
+          <h2>{ar ? 'الشخصيات' : 'Characters'}</h2>
+          <p>{ar ? 'ثبّت وصف الشخصية وسماتها وصوتها ومراجعها داخل سلسلتها.' : 'Keep character descriptions, traits, voice, and references scoped to their series.'}</p>
+        </div>
+        <button className="button button--primary" type="button" onClick={create} disabled={!series.length}>
+          <Icon name="plus" size={17}/>{ar ? 'شخصية جديدة' : 'New character'}
+        </button>
+      </section>
+
+      <section className="panel panel--table">
+        <header className="panel__header panel__header--filters">
+          <div>
+            <span className="panel__kicker">{ar ? 'كل الشخصيات' : 'All characters'}</span>
+            <h3>{total}</h3>
+            {/* حدّ الخادم مُعلَن: قائمة مقتطعة بلا إعلان تُقرأ كأنها كل ما هناك */}
+            <p className="panel__note">
+              {ar
+                ? `يُعيد المسار أول ${SERVER_PAGE} شخصية لكل استعلام؛ ضيّق بالسلسلة لرؤية البقية.`
+                : `The endpoint returns the first ${SERVER_PAGE} characters per query; narrow by series to see the rest.`}
+            </p>
+          </div>
+          <ListToolbar
+            fields={FILTER_FIELDS(ar, locale, series)}
+            values={filters}
+            defaults={DEFAULT_FILTERS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')}
+            trailing={
+              <SavedViewsMenu
+                storageKey="characters"
+                currentSearch={list.search}
+                onApply={(search) => navigate(`${adminPath('characters')}${search}`)}
+              />
+            }
+          />
+        </header>
+
+        {loading ? <LoadingState label={ar ? 'جارٍ التحميل...' : 'Loading...'}/> : error && !items.length ? <ErrorState message={error} onRetry={() => void load()}/> : items.length ? (
+          <>
+            <div className="table-scroll" tabIndex={0}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>{ar ? 'الشخصية' : 'Character'}</th>
+                    <th>{ar ? 'السلسلة' : 'Series'}</th>
+                    <th>{ar ? 'الدور' : 'Role'}</th>
+                    <th>{ar ? 'السمات' : 'Traits'}</th>
+                    <th>{ar ? 'الصوت' : 'Voice'}</th>
+                    <th/>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <Link className="entity-cell entity-cell--button" to={adminPath(`characters/${item.id}`)}>
+                          <EntityThumbnail src={item.reference_images[0]} alt={item.name_ar} label={item.name_ar} icon="characters" size={34}/>
+                          <div><strong>{item.name_ar}</strong><small>{item.age ? `${item.age} ${ar ? 'سنوات' : 'years'}` : '—'}</small></div>
+                        </Link>
+                      </td>
+                      <td>{item.series_title}</td>
+                      <td>{item.role ? labels[locale][item.role] : '—'}</td>
+                      <td className="cell-wrap">{item.traits.join('، ') || '—'}</td>
+                      <td>{item.voice_actor || '—'}</td>
+                      <td>
+                        <div className="table-actions">
+                          <button className="icon-button icon-button--small" type="button" onClick={() => edit(item)} title={ar ? 'تعديل' : 'Edit'}><Icon name="edit" size={15}/></button>
+                          <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(item.id)} title={ar ? 'أرشفة' : 'Archive'}><Icon name="archive" size={15}/></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
+          </>
+        ) : <EmptyState title={ar ? 'لا توجد شخصيات' : 'No characters'} description={ar ? 'أضف الشخصيات الثابتة ومقدمي البرامج.' : 'Add recurring characters and presenters.'}/>}
+      </section>
+
+      <Modal open={open} onClose={() => !saving && setOpen(false)} title={editing ? (ar ? 'تعديل الشخصية' : 'Edit character') : (ar ? 'شخصية جديدة' : 'New character')}>
+        <form className="entity-form" onSubmit={submit}>
+          <div className="form-grid">
+            <label className="field"><span>{ar ? 'السلسلة *' : 'Series *'}</span><select value={form.series_id} onChange={(event) => setForm({ ...form, series_id: event.target.value })}>{series.map((item) => <option value={item.id} key={item.id}>{item.title_ar}</option>)}</select></label>
+            <label className="field"><span>{ar ? 'الاسم *' : 'Name *'}</span><input value={form.name_ar} onChange={(event) => setForm({ ...form, name_ar: event.target.value })}/></label>
+          </div>
+          <div className="form-grid">
+            <label className="field"><span>{ar ? 'الدور' : 'Role'}</span><select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value as Role })}>{roles.map((role) => <option value={role} key={role}>{labels[locale][role]}</option>)}</select></label>
+            <label className="field"><span>{ar ? 'العمر' : 'Age'}</span><input type="number" min="0" value={form.age} onChange={(event) => setForm({ ...form, age: event.target.value })}/></label>
+          </div>
+          <label className="field"><span>{ar ? 'الوصف' : 'Description'}</span><textarea rows={3} value={form.description_ar} onChange={(event) => setForm({ ...form, description_ar: event.target.value })}/></label>
+          <label className="field"><span>{ar ? 'السمات — افصل بفاصلة' : 'Traits — comma separated'}</span><input value={form.traits} onChange={(event) => setForm({ ...form, traits: event.target.value })}/></label>
+          <div className="form-grid">
+            <label className="field"><span>{ar ? 'أسلوب الكلام' : 'Speech style'}</span><input value={form.speech_style} onChange={(event) => setForm({ ...form, speech_style: event.target.value })}/></label>
+            <label className="field"><span>{ar ? 'المؤدي الصوتي' : 'Voice actor'}</span><input value={form.voice_actor} onChange={(event) => setForm({ ...form, voice_actor: event.target.value })}/></label>
+          </div>
+          <div className="form-actions">
+            <button className="button button--ghost" type="button" onClick={() => setOpen(false)}>{ar ? 'إلغاء' : 'Cancel'}</button>
+            <button className="button button--primary" disabled={saving}>{ar ? 'حفظ' : 'Save'}</button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  )
 }
