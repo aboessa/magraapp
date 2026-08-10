@@ -322,8 +322,13 @@ async function main() {
 
       const firstActive = await combobox.getAttribute('aria-activedescendant')
       await page.keyboard.press('ArrowDown')
-      await page.waitForTimeout(120)
-      const secondActive = await combobox.getAttribute('aria-activedescendant')
+      // Polled rather than waited on a fixed delay: a single 120ms sleep made this check
+      // intermittent, and an intermittent check is one people learn to re-run.
+      let secondActive = firstActive
+      for (let attempt = 0; attempt < 20 && secondActive === firstActive; attempt += 1) {
+        await page.waitForTimeout(50)
+        secondActive = await combobox.getAttribute('aria-activedescendant')
+      }
       record('ArrowDown moves the announced selection', !!firstActive && firstActive !== secondActive,
         `${firstActive} → ${secondActive}`)
 
