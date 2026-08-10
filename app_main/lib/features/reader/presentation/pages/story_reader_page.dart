@@ -142,7 +142,7 @@ class _StoryReaderPageState extends ConsumerState<StoryReaderPage> {
     }
 
     final playable = source as NarrationPlayable;
-    final uri = Uri.parse(ApiEnvironment.baseUrl).resolve(playable.streamUrl);
+    final uri = Uri.parse(AppConfig.baseUrl).resolve(playable.streamUrl);
     final controller = VideoPlayerController.networkUrl(
       uri,
       httpHeaders: {'Authorization': playable.authorization},
