@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/env/app_environment.dart';
 import '../core/input/input_mode.dart';
+import '../core/l10n/locale_catalog.dart';
 import '../l10n/app_localizations.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
@@ -20,11 +21,13 @@ class MajarraApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       routerConfig: router,
-      // Arabic is pinned rather than following the device locale: the ARB for
-      // English exists but only covers the strings migrated so far, so letting
-      // an English device pick `en` would show a half-translated app. Remove
-      // this line once migration is complete.
-      locale: const Locale('ar'),
+      // The locale is pinned to the only language whose translation is actually
+      // complete (see `core/l10n/locale_catalog.dart`, enforced by
+      // locale_catalog_test). English/French delegates are declared so the
+      // architecture is ready, but the app never follows a device locale into a
+      // half-translated language. When a locale's coverage reaches the threshold
+      // its flag flips to `complete` and it becomes selectable.
+      locale: AppLocales.fallback.locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
         AppLocalizations.delegate,
