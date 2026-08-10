@@ -174,7 +174,10 @@ function ContentCover({ assetId, title, icon, alt }: { assetId?: string | null; 
     }
   }, [assetId])
 
-  return <div className="library-card__cover">{url ? <img src={url} alt={alt} /> : <span aria-label={title}><Icon name={icon} size={30} /></span>}</div>
+  // `role="img"` مع `aria-label`، لا `aria-label` وحده: عنصر بلا دور ضمني لا يقبل
+  // اسمًا في ARIA (axe: aria-prohibited-attr)، فالاسم كان يُهمَل ويبقى البديل
+  // للصورة الغائبة بلا نصّ.
+  return <div className="library-card__cover">{url ? <img src={url} alt={alt} /> : <span role="img" aria-label={title}><Icon name={icon} size={30} /></span>}</div>
 }
 
 type ContentCardProps = {

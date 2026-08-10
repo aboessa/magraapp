@@ -22,6 +22,8 @@
   --cyan: #00d6f5;
   --yellow: #ffd34d;
   --purple: #9b7bff;
+  /// اللون البنفسجي حين يكون نصًّا صغيرًا على سطح لوحة. انظر .track-badge--junior.
+  --purple-text: #9b7bff;
   --success: #22b878;
   --warning: #f5a524;
   --danger: #f05d77;
@@ -1042,9 +1044,17 @@ textarea {
 :root[data-theme='light'] .status-badge--published { color: #0e6340; }
 :root[data-theme='light'] .status-badge--archived { color: #a51f1f; }
 
-.track-badge--preschool { color: #f472b6; background: rgba(244, 114, 182, 0.09); }
+.track-badge--preschool { color: var(--pink-text); background: rgba(244, 114, 182, 0.09); }
 .track-badge--kids { color: var(--cyan); background: rgba(0, 214, 245, 0.08); }
-.track-badge--junior { color: var(--purple); background: rgba(155, 123, 255, 0.09); }
+/* `--purple-text`, not `--purple`.
+ *
+ * The dark theme overrides `--purple` to #6a3df2, which is the right colour for the solid
+ * gradients it also feeds and the wrong one for 11px text: measured 2.65:1 on the panel it
+ * sits on (rgb(24,32,74)), against the 4.5:1 WCAG AA needs. #9b7bff measures 4.90:1 on the
+ * same background, and the light theme keeps #6a3df2 because there it measures 5.39:1.
+ * Same split, and same reason, as `--primary-on-solid`. Found by the expanded browser run;
+ * measured with test/browser/measure-contrast.mjs. */
+.track-badge--junior { color: var(--purple-text); background: rgba(155, 123, 255, 0.09); }
 
 .plan-badge--free { color: var(--text-soft); background: var(--surface-3); }
 .plan-badge--family { color: var(--cyan); background: rgba(0, 214, 245, 0.08); }
@@ -1579,6 +1589,16 @@ body.modal-open {
   --cyan: #78a5ff;
   --yellow: #ffd34d;
   --purple: #6a3df2;
+  /* Text-only variant stays light in this block.
+   *
+   * This second `:root` is unconditional and later in the file, so it wins for both themes;
+   * the light theme overrides `--purple-text` back to #6a3df2 below, where it measures
+   * 5.39:1. Setting #6a3df2 here as well was the defect: on the dark panel it measures
+   * 2.65:1. */
+  --purple-text: #9b7bff;
+  /* Same split for the preschool badge: #f472b6 measures 5.91:1 on the dark panel and
+   * 2.44:1 on the light one, which the dark-theme browser run could not see. */
+  --pink-text: #f472b6;
   --warning: #f59e0b;
   --danger: #ef4444;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
@@ -1599,6 +1619,9 @@ body.modal-open {
   --primary: #5679f2;
   --primary-strong: #2856d8;
   --cyan: #2856d8;
+  /* Dark on light here: measured 5.39:1 on the badge surface. */
+  --purple-text: #6a3df2;
+  --pink-text: #be185d;
   --shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
 

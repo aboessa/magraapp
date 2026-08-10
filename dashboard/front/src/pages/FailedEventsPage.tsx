@@ -325,7 +325,7 @@ export function FailedEventsPage() {
                 placeholder={text.parentFilter}
               />
             </label>
-            <select value={status} onChange={(event) => setStatus(event.target.value)}>
+            <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label={text.allStatuses}>
               <option value="">{text.allStatuses}</option>
               {STATUSES.map((item) => (
                 <option value={item} key={item}>{statusLabels[locale][item]}</option>

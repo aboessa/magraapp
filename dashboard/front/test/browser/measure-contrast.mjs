@@ -11,6 +11,12 @@ const FRONT = (process.argv[2] ?? 'http://localhost:5174').replace(/\/$/, '')
 const ADMIN_BASE = '/iamnotsite'
 const EMAIL = process.argv[3]
 const PASSWORD = process.argv[4]
+/// Route and selectors come from the command line, so any violation axe reports can be
+/// measured without editing this file. Hard-coding one route and four badge selectors made
+/// the tool answer only the question it was written for.
+const ROUTE = process.argv[5] ?? 'audit-logs'
+const SELECTORS = (process.argv[6] ?? '.status-badge--archived,.status-badge--draft,.status-badge--review,.status-badge--published')
+  .split(',').map((value) => value.trim()).filter(Boolean)
 
 const browser = await chromium.launch()
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
@@ -26,11 +32,11 @@ if (await page.locator('input[type="email"]').first().isVisible().catch(() => fa
 
 for (const theme of ['dark', 'light']) {
   await page.evaluate((value) => { document.documentElement.dataset.theme = value }, theme)
-  await page.goto(`${FRONT}${ADMIN_BASE}/audit-logs`, { waitUntil: 'networkidle' })
+  await page.goto(`${FRONT}${ADMIN_BASE}/${ROUTE}`, { waitUntil: 'networkidle' })
   await page.evaluate((value) => { document.documentElement.dataset.theme = value }, theme)
   await page.waitForTimeout(400)
 
-  const measured = await page.evaluate(() => {
+  const measured = await page.evaluate((selectors) => {
     const parse = (value) => {
       const match = value.match(/rgba?\(([^)]+)\)/)
       if (!match) return null
@@ -65,7 +71,7 @@ for (const theme of ['dark', 'light']) {
     }
 
     const report = []
-    for (const selector of ['.status-badge--archived', '.status-badge--draft', '.status-badge--review', '.status-badge--published']) {
+    for (const selector of selectors) {
       const element = document.querySelector(selector)
       if (!element) continue
       const style = getComputedStyle(element)
@@ -83,7 +89,7 @@ for (const theme of ['dark', 'light']) {
       })
     }
     return report
-  })
+  }, SELECTORS)
 
   process.stdout.write(`\n--- ${theme} ---\n`)
   for (const item of measured) {

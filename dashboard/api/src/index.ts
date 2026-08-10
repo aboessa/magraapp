@@ -71,6 +71,18 @@ app.route('/api/v1/admin/auth', adminAuthRoute);
 // أي مسار عام في adminRoute.
 app.route('/api/v1/admin', adminSearchRoute);
 app.route('/api/v1/admin', adminCalendarRoute);
+// Drawing-game readiness, ops and production queues. **Before** adminRoute, not after.
+//
+// Mounted after it, `GET /admin/games/ops` and `GET /admin/games/analytics` were both
+// swallowed by `route.get('/games/:id')` in adminContent.ts — two segments each, so the
+// literal `ops` and `analytics` bound as an id and the answer was
+// `{"error":"Game not found"}` with a 404. The Games Operations screen therefore never
+// worked, and no unit test could see it: those tests call the route module directly, so the
+// shadowing only exists once both are mounted on one app. Found by the browser run, which
+// watches the console of every route.
+//
+// Same class of defect as the billing and analytics double-prefix bug recorded below.
+app.route('/api/v1/admin', adminGamesRoute);
 app.route('/api/v1/admin', adminRoute);
 app.route('/api/v1/auth', authRoute);
 app.route('/api/v1/billing', billingRoute);
@@ -105,9 +117,7 @@ app.route('/api/v1/admin/site-mode', adminSiteModeRoute);
 // تُطابق أولًا. مركّبة صراحةً لا داخل adminRoute حتى لا تعتمد على ترتيب
 // التركيب هناك.
 app.route('/api/v1/admin', adminUsersRoute);
-// Drawing-game readiness and preview. Mounted on the admin prefix like the
-// billing and analytics routes, whose handlers also declare full paths.
-app.route('/api/v1/admin', adminGamesRoute);
+// Drawing-game readiness and preview are mounted above, before adminRoute.
 
 // عارض الصفحات العامة كـHTML كامل في المستند الأول (SEO).
 //

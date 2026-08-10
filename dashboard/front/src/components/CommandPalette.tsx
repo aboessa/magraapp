@@ -245,6 +245,11 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     else navigate(adminPath(row.result.admin_route))
   }, [navigate, onClose])
 
+  /// معالِج المفاتيح على الحاوية لا على الحقل.
+  ///
+  /// الحدث يصعد من الحقل، فالكتابة تعمل كما هي؛ والفارق أن الأسهم تعمل أيضًا حين
+  /// يكون التركيز على صفّ نتيجة بعد Tab. تركيبه على الحقل وحده كان يجعل التنقّل
+  /// بالأسهم مرهونًا ببقاء التركيز في مكان واحد — وهو ما رصده فحص المتصفح.
   function onKeyDown(event: React.KeyboardEvent) {
     if (event.key === 'Escape') { event.preventDefault(); onClose(); return }
     if (event.key === 'ArrowDown') {
@@ -274,14 +279,13 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       role="presentation"
       onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}
     >
-      <div className="palette" role="dialog" aria-modal="true" aria-label={text.title}>
+      <div className="palette" role="dialog" aria-modal="true" aria-label={text.title} onKeyDown={onKeyDown}>
         <div className="palette__search">
           <Icon name="search" size={18} />
           <input
             ref={input}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={onKeyDown}
             placeholder={text.placeholder}
             aria-label={text.title}
             role="combobox"

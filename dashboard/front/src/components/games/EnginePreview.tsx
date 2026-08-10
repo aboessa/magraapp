@@ -320,7 +320,7 @@ function MemoryFlipPreview({ level, prompts, revealed, onToggle }: LevelProps & 
             <div className="engine-grid__cell" key={position}>
               {revealed
                 ? <><AssetThumb assetId={face.assetId} size={52} /><small><Translated keyName={face.key} prompts={prompts} /></small></>
-                : <span className="engine-card-back" aria-label={text.faceDown} />}
+                : <span className="engine-card-back" role="img" aria-label={text.faceDown} />}
             </div>
           )
         })}

@@ -179,17 +179,24 @@ export function ScheduleCalendar({
         </div>
       )}
 
-      <div className="sched__grid" role="grid" aria-label={`${MONTHS[locale][anchor.getMonth()]} ${anchor.getFullYear()}`}>
+      {/* لا `role="grid"` هنا عن قصد.
+          الشبكة في ARIA تتعهّد بتنقّل ثنائي الأبعاد بالأسهم وبصفوف `role="row"`
+          تحوي الخلايا. هذا العرض لا ينفّذ ذلك التنقّل — الأحداث أزرار تُطرَق
+          بـTab — فإعلان الدور كان يكسر العقد: axe رصد
+          `aria-required-children` على الشبكة و`aria-required-parent` على كل
+          خليّة، وقارئ الشاشة كان سيُعلن «صفّ ١ من ١» لشهر كامل.
+          الدلالة الصحيحة أبسط: قائمة أيام، كل يوم يحمل قائمة أحداثه. */}
+      <div className="sched__grid">
         {Array.from({ length: pad }, (_, index) => (
-          <div className="sched__cell sched__cell--pad" key={`pad-${index}`} />
+          <div className="sched__cell sched__cell--pad" key={`pad-${index}`} aria-hidden="true" />
         ))}
         {days.map((day) => {
           const key = dayKey(day)
           const dayEvents = byDay.get(key) ?? []
           return (
-            <div
+            <section
               key={key}
-              role="gridcell"
+              aria-label={`${day.getDate()} ${MONTHS[locale][day.getMonth()]}${dayEvents.length ? ` — ${dayEvents.length}` : ''}`}
               className={`sched__cell ${key === todayKey ? 'sched__cell--today' : ''} ${dropTarget === key ? 'sched__cell--drop' : ''}`}
               onDragOver={(dragEvent) => { dragEvent.preventDefault(); setDropTarget(key) }}
               onDragLeave={() => setDropTarget((current) => (current === key ? null : current))}
@@ -218,7 +225,7 @@ export function ScheduleCalendar({
                   ))}
                 </ul>
               )}
-            </div>
+            </section>
           )
         })}
       </div>
@@ -247,12 +254,15 @@ export function ScheduleToolbar({
 
   return (
     <div className="sched__toolbar">
+      {/* نفس أصناف `components/ViewSwitcher.tsx`: كتابة `view-switcher` وحدها بلا
+          `view-switcher__button` تركت الأزرار بلا أي نمط، فورثت خلفية المتصفح
+          الرمادية الفاتحة مع نصّ فاتح — قياس التبايُن 1.08:1. */}
       <div className="view-switcher" role="group">
         {(['day', 'week', 'month'] as ScheduleView[]).map((candidate) => (
           <button
             key={candidate}
             type="button"
-            className={view === candidate ? 'active' : ''}
+            className={`view-switcher__button ${view === candidate ? 'view-switcher__button--active' : ''}`}
             aria-pressed={view === candidate}
             onClick={() => onView(candidate)}
           >{text[candidate]}</button>

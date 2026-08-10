@@ -295,7 +295,7 @@ export function MasteryPage() {
           </div>
           <div className="filters-row">
             {tab === 'objectives' && (
-              <select value={level} onChange={(event) => setLevel(event.target.value)}>
+              <select value={level} onChange={(event) => setLevel(event.target.value)} aria-label={text.allLevels}>
                 <option value="">{text.allLevels}</option>
                 {LEVELS.map((item) => (
                   <option value={item} key={item}>{levelLabels[locale][item]}</option>
@@ -303,7 +303,7 @@ export function MasteryPage() {
               </select>
             )}
             {tab === 'children' && (
-              <select value={track} onChange={(event) => setTrack(event.target.value)}>
+              <select value={track} onChange={(event) => setTrack(event.target.value)} aria-label={text.allTracks}>
                 <option value="">{text.allTracks}</option>
                 {TRACKS.map((item) => (
                   <option value={item} key={item}>{trackLabels[locale][item]}</option>
