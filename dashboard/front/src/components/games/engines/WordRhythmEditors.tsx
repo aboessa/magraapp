@@ -590,7 +590,7 @@ export function RhythmTapEditor({ level, onChange }: { level: RhythmTapLevel; on
           </button>
         }
       >
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data-table">
             <thead>
               <tr><th>#</th><th>{text.time}</th><th>{text.lane}</th><th>{text.beat}</th><th /></tr>

@@ -70,7 +70,19 @@ export function rateLimit(options: RateLimitOptions) {
 // Presets
 export const strictAuthLimit = rateLimit({ windowMs: 60_000, max: 5, keyPrefix: 'auth' })
 export const billingLimit = rateLimit({ windowMs: 60_000, max: 20, keyPrefix: 'billing' })
-export const adminLimit = rateLimit({ windowMs: 60_000, max: 30, keyPrefix: 'admin' })
+/**
+ * حصّة الإدارة.
+ *
+ * كانت ثلاثين طلبًا في الدقيقة، وهو رقم يبدو معقولًا حتى تُفتح اللوحة فعلًا: كل
+ * شاشة تصدر بين ثلاثة وسبعة نداءات (قائمة + تصنيفات + إحصاءات + تدقيق)، فخمس
+ * شاشات تستهلك الحصّة كلها. النتيجة التي رُصدت في أول تشغيل حقيقي للمتصفح: بعد
+ * نحو ست شاشات يبدأ الخادم بردّ 429، فتُعرض شاشة الدخول للمسؤول في منتصف عمله.
+ *
+ * الحدّ الجديد يبقى حدًّا — عشرة طلبات في الثانية مستدامة تمنع الزحف والإساءة —
+ * لكنه لا يعاقب الاستخدام العادي. الحماية الحقيقية للإدارة هي المصادقة
+ * والصلاحيات، لا خنق المعدّل.
+ */
+export const adminLimit = rateLimit({ windowMs: 60_000, max: 600, keyPrefix: 'admin' })
 export const generalLimit = rateLimit({ windowMs: 60_000, max: 120, keyPrefix: 'general' })
 
 /**

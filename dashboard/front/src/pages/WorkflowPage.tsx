@@ -302,7 +302,7 @@ export function WorkflowPage() {
 
       {tab === 'runs' && (runs.length ? (
         <section className="panel panel--table">
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table data-table--wide">
               <thead><tr><th>{text.content}</th><th>{text.step}</th><th>{text.status}</th><th /></tr></thead>
               <tbody>
@@ -329,7 +329,7 @@ export function WorkflowPage() {
 
       {tab === 'mine' && (mine.length ? (
         <section className="panel panel--table">
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead><tr><th>{text.content}</th><th>{text.stages}</th><th>{text.status}</th><th>{text.due}</th><th /></tr></thead>
               <tbody>
@@ -350,7 +350,7 @@ export function WorkflowPage() {
 
       {tab === 'overdue' && (overdue.length ? (
         <section className="panel panel--table">
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead><tr><th>{text.content}</th><th>{text.stages}</th><th>{text.due}</th><th /><th /></tr></thead>
               <tbody>

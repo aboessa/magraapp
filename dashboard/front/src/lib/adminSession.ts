@@ -142,6 +142,14 @@ export async function signIn(email: string, password: string): Promise<LoginResu
  *
  * الرمز قد يكون منتهيًا أو مسحوبًا أو الحساب معطَّلًا، وكلها حالات لا يمكن
  * معرفتها من المتصفح وحده. بلا هذا الفحص تُعرض اللوحة ثم تفشل كل صفحة بـ401.
+ *
+ * ## 401 و403 فقط تعني «خارج الجلسة»
+ *
+ * كانت أي استجابة غير ناجحة تُعيد `null`، فيعرض الحرس شاشة الدخول. أول تشغيل
+ * حقيقي في المتصفح كشف ما يعنيه ذلك: حصّة الإدارة كانت تُستهلك بعد ست شاشات
+ * فيردّ الخادم 429، فتُعرض شاشة الدخول للمسؤول في منتصف عمله وتضيع كل مسوّدة
+ * مفتوحة. 429 و5xx حالتا «لا أعرف» لا حالتَي «مسحوب»: الجلسة تُترك كما هي،
+ * ويظهر الفشل في النداء الذي حدث فيه فعلًا حيث يمكن إعادة المحاولة.
  */
 export async function verifySession(): Promise<AdminUser | null> {
   const token = readAdminToken()
@@ -151,9 +159,13 @@ export async function verifySession(): Promise<AdminUser | null> {
       headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
     })
     if (!response.ok) {
-      // 401 يعني أن الجلسة لم تعد صالحة، فتُمسح بدل تركها تفشل عند كل نداء
-      if (response.status === 401) clearAdminSession()
-      return null
+      // 401/403 يعني أن الجلسة لم تعد صالحة، فتُمسح بدل تركها تفشل عند كل نداء
+      if (response.status === 401 || response.status === 403) {
+        clearAdminSession()
+        return null
+      }
+      // 429 أو خطأ خادم: الجلسة قد تكون صالحة تمامًا. تُعاد النسخة المحفوظة.
+      return readAdminUser()
     }
     const body = await response.json() as { data?: { user: AdminUser } }
     const user = body?.data?.user ?? null
@@ -164,7 +176,7 @@ export async function verifySession(): Promise<AdminUser | null> {
     return user
   } catch {
     // انقطاع شبكة: الجلسة تُترك كما هي، فقد تكون صالحة
-    return null
+    return readAdminUser()
   }
 }
 

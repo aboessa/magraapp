@@ -260,7 +260,7 @@ export function BillingPage() {
               </div>
             </header>
             {purchases.length ? (
-              <div className="table-scroll">
+              <div className="table-scroll" tabIndex={0}>
                 <table className="data-table data-table--wide">
                   <thead>
                     <tr>
@@ -317,7 +317,7 @@ export function BillingPage() {
             </div>
           </header>
           {entitlements.length ? (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>
@@ -386,7 +386,7 @@ export function BillingPage() {
           <span className="panel__kicker">{(stats.recent_purchases ?? []).length}</span>
         </div>
         {(stats.recent_purchases ?? []).length ? (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table data-table--wide">
               <thead>
                 <tr>
@@ -441,7 +441,7 @@ export function BillingPage() {
         </div>
         {/* recent_entitlements كانت تعود من الخادم ولا تُعرض إطلاقًا */}
         {(stats.recent_entitlements ?? []).length ? (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead>
                 <tr><th>{text.event}</th><th>{text.account}</th><th>{text.when}</th></tr>

@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# مخرجات التحقّق بالمتصفح: لقطات شاشة وتقرير JSON يُعاد توليدهما بكل تشغيل.
+.tmp/
+test-results/
+playwright-report/
+
 # Environment files may contain deployment configuration; never commit them.
 .env
 .env.*

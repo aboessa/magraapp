@@ -11,6 +11,14 @@
   --muted: #707c9f;
   --primary: #5679f2;
   --primary-strong: #7592ff;
+  /* خلفية العناصر الصلبة التي تحمل نصًّا أبيض.
+   *
+   * `--primary` (#5679f2) مع #fff تعطي تبايُنًا نحو 3.2:1، أي أقل من 4.5:1 التي
+   * يطلبها WCAG AA للنصّ الصغير — وهو ما رصده axe على مبدّل اللغة في شاشة الدخول
+   * (نصّ بحجم 11px). هذا التوكن أغمق فيبلغ التبايُن نحو 5.6:1، ويبقى نفس اللون
+   * أسريًّا فلا يتغيّر شكل الواجهة. لا يُستخدم `--primary` نفسه لأنه يخدم الحدود
+   * والتظليل حيث التبايُن الحالي كافٍ. */
+  --primary-on-solid: #33499f;
   --cyan: #00d6f5;
   --yellow: #ffd34d;
   --purple: #9b7bff;
@@ -35,6 +43,7 @@
   --muted: #7d87a2;
   --primary: #4167e8;
   --primary-strong: #3157da;
+  --primary-on-solid: #2e4bb8;
   --shadow: 0 18px 50px rgba(38, 58, 110, 0.1);
 }
 
@@ -996,7 +1005,11 @@ textarea {
   padding: 0 8px;
   border: 1px solid transparent;
   border-radius: 999px;
-  font-size: 7.5px;
+  /* كان 7.5px. قياس فعلي في المتصفح: نصّ بهذا الحجم يجعل كل شارة تحت عتبة
+   * 4.5:1 المطلوبة (لا ينطبق استثناء «النصّ الكبير» إلا من 18.66px عريضًا)،
+   * وهو قبل ذلك غير مقروء. 11px يحفظ حجم الشارة نفسه تقريبًا ويجعل النصّ
+   * مقروءًا فعلًا. */
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -1009,7 +1022,25 @@ textarea {
 .status-badge--production, .status-badge--qa { color: var(--cyan); border-color: rgba(0, 214, 245, 0.2); background: rgba(0, 214, 245, 0.08); }
 .status-badge--ready, .status-badge--scheduled { color: var(--purple); border-color: rgba(155, 123, 255, 0.2); background: rgba(155, 123, 255, 0.08); }
 .status-badge--published { color: var(--success); border-color: rgba(34, 184, 120, 0.22); background: rgba(34, 184, 120, 0.08); }
-.status-badge--archived { color: var(--danger); border-color: rgba(240, 93, 119, 0.2); background: rgba(240, 93, 119, 0.08); }
+/* قياس فعلي: `--danger` على تدرّجه الداكن يعطي 4.32:1، أي تحت العتبة بقليل.
+   هذا التدرّج الأفتح يرفعه إلى ما يزيد على 7:1 ويبقي المعنى (أحمر = مؤرشف). */
+.status-badge--archived { color: #ff8fa3; border-color: rgba(240, 93, 119, 0.2); background: rgba(240, 93, 119, 0.08); }
+
+/* السمة الفاتحة: التدرّجات نفسها على خلفية شبه بيضاء تعطي بين 2 و3.4:1 — قياس
+ * فعلي في المتصفح، وكلها راسبة. لون النصّ يُقلَب إلى تدرّج غامق من نفس العائلة،
+ * فتبقى دلالة اللون كما هي ويصير النصّ مقروءًا. */
+:root[data-theme='light'] .status-badge--draft,
+:root[data-theme='light'] .status-badge--writing { color: #47536f; }
+:root[data-theme='light'] .status-badge--review,
+:root[data-theme='light'] .status-badge--review_edu,
+:root[data-theme='light'] .status-badge--review_lang,
+:root[data-theme='light'] .status-badge--review_sharia { color: #7a4a00; }
+:root[data-theme='light'] .status-badge--production,
+:root[data-theme='light'] .status-badge--qa { color: #0a5766; }
+:root[data-theme='light'] .status-badge--ready,
+:root[data-theme='light'] .status-badge--scheduled { color: #543bb0; }
+:root[data-theme='light'] .status-badge--published { color: #0e6340; }
+:root[data-theme='light'] .status-badge--archived { color: #a51f1f; }
 
 .track-badge--preschool { color: #f472b6; background: rgba(244, 114, 182, 0.09); }
 .track-badge--kids { color: var(--cyan); background: rgba(0, 214, 245, 0.08); }
@@ -1728,14 +1759,20 @@ body.modal-open {
 .entity-cell strong,
 .table-primary { font-size: 11px; }
 .entity-cell small,
-.table-secondary { font-size: 9px; }
+/* كان 9px. نصّ ثانوي بهذا الحجم يحمل معلومة حقيقية (الاختصار، المسار، المصدر)
+ * ولا يمكن قراءته على شاشة 1920 من مسافة عمل عادية. 11px هو الحدّ الأدنى
+ * المستعمل في بقية الحقول، فتوحيده عليه لا يغيّر التخطيط. */
+.table-secondary { font-size: 11px; }
 .filters-row select,
-.search-field { height: 36px; border-radius: 10px; font-size: 10px; }
-.status-select { font-size: 9px; }
+.search-field { height: 36px; border-radius: 10px; font-size: 11px; }
+.status-select { font-size: 11px; }
 .status-badge,
 .track-badge,
 .plan-badge,
-.account-status { min-height: 24px; font-size: 9px; }
+/* قياس فعلي: 9px عريض يقع تحت استثناء «النصّ الكبير» في WCAG، فتلزمه عتبة
+ * 4.5:1، وكان تحتها في كل الشارات في السمة الفاتحة. اللون صُحّح أعلاه، والحجم
+ * يُرفع هنا لأن شارة الحالة عنصر يُقرأ في كل صفّ من كل جدول. */
+.account-status { min-height: 24px; font-size: 11px; }
 .modal { width: min(620px, 100%); border-color: var(--line-strong); border-radius: 20px; background: var(--surface-2); }
 .modal__header { min-height: 68px; padding: 14px 20px; background: var(--surface-2); }
 .modal__body { padding: 20px; }
@@ -2332,7 +2369,9 @@ body.modal-open {
   border-radius: 999px;
   cursor: pointer;
   background: transparent;
-  color: var(--muted);
+  /* `--muted` على `--surface-2` تعطي نحو 4:1، وهو أقل من 4.5:1 المطلوبة لنصّ
+   * بحجم 11px. `--text-soft` تعطي نحو 7:1 وتُبقي الحالة غير النشطة أقلّ بروزًا. */
+  color: var(--text-soft);
   font-family: inherit;
   font-size: 11px;
   font-weight: 600;
@@ -2340,7 +2379,7 @@ body.modal-open {
 }
 .login__lang button.is-active {
   color: #fff;
-  background: var(--primary);
+  background: var(--primary-on-solid);
 }
 
 .login__form { display: grid; gap: 16px; margin-block-start: 12px; }

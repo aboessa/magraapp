@@ -177,7 +177,7 @@ export function PublishReadinessPanel({
           </div>
         )}
 
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data-table">
             <thead>
               <tr><th /><th>{text.check}</th><th>{text.detail}</th><th>{text.owner}</th></tr>
@@ -215,7 +215,7 @@ export function PublishReadinessPanel({
 
         <h4>{text.assets}</h4>
         {readiness.assets.length === 0 ? <p className="data-unavailable">{text.noAssets}</p> : (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead>
                 <tr><th>{text.assetId}</th><th>{text.assetKind}</th><th>{text.assetState}</th><th>{text.assetReady}</th></tr>

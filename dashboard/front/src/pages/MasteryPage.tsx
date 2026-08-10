@@ -326,7 +326,7 @@ export function MasteryPage() {
 
         {tab === 'objectives' && (
           objectives.length ? (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>
@@ -380,7 +380,7 @@ export function MasteryPage() {
 
         {tab === 'children' && (
           children.length ? (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>
@@ -435,7 +435,7 @@ export function MasteryPage() {
 
         {tab === 'attempts' && (
           attempts.length ? (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>

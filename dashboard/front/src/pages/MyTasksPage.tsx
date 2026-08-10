@@ -90,7 +90,7 @@ export function MyTasksPage() {
 
       {tasks.length ? (
         <section className="panel panel--table">
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table data-table--wide">
               <tbody>
                 {tasks.map((task) => (

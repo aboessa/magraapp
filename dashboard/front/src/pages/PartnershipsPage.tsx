@@ -275,7 +275,7 @@ export function PartnershipsPage() {
         ) : items.length ? (
           <>
             {error && <p className="form-error" role="alert">{error}</p>}
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>

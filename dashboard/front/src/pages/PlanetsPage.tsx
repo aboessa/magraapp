@@ -106,7 +106,7 @@ export function PlanetsPage() {
               })}
             </div>
           ) : (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead><tr><th>{text.name}</th><th>{text.seriesCount}</th><th>{text.assetsCount}</th><th>{text.status}</th><th /></tr></thead>
                 <tbody>

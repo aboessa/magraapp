@@ -352,15 +352,15 @@ export function SupportTickets({ familyId }: { familyId?: string }) {
           <label className="search-field">
             <input value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0) }} placeholder={text.search} />
           </label>
-          <select value={status} onChange={(event) => { setStatus(event.target.value); setOffset(0) }}>
+          <select aria-label={text.allStatuses} value={status} onChange={(event) => { setStatus(event.target.value); setOffset(0) }}>
             <option value="">{text.allStatuses}</option>
             {STATUSES.map((item) => <option value={item} key={item}>{text.statuses[item]}</option>)}
           </select>
-          <select value={priority} onChange={(event) => { setPriority(event.target.value); setOffset(0) }}>
+          <select aria-label={text.allPriorities} value={priority} onChange={(event) => { setPriority(event.target.value); setOffset(0) }}>
             <option value="">{text.allPriorities}</option>
             {PRIORITIES.map((item) => <option value={item} key={item}>{text.priorities[item]}</option>)}
           </select>
-          <select value={category} onChange={(event) => { setCategory(event.target.value); setOffset(0) }}>
+          <select aria-label={text.allCategories} value={category} onChange={(event) => { setCategory(event.target.value); setOffset(0) }}>
             <option value="">{text.allCategories}</option>
             {CATEGORIES.map((item) => <option value={item} key={item}>{text.categories[item]}</option>)}
           </select>
@@ -425,7 +425,7 @@ export function SupportTickets({ familyId }: { familyId?: string }) {
 
         {loading ? <LoadingState /> : error ? <ErrorState message={error} onRetry={() => void load()} /> : tickets.length ? (
           <>
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table data-table--wide">
                 <thead>
                   <tr>

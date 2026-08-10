@@ -229,7 +229,7 @@ export function ParentsPage() {
     <div className="page-stack">
       <section className="page-intro"><div><span className="eyebrow">{text.account}</span><h2>{text.title}</h2><p>{text.intro}</p></div><button className="button button--secondary" type="button" onClick={() => void load()}><Icon name="refresh" size={17}/>{text.refresh}</button></section>
       <section className="panel panel--table"><header className="panel__header panel__header--filters"><div><span className="panel__kicker">{text.directory}</span><h3>{text.title} <span className="title-count">{formatNumber(records.length, locale)}</span></h3></div><div className="filters-row"><label className="search-field"><Icon name="search" size={17}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search}/></label><select value={plan} onChange={(event) => setPlan(event.target.value)}><option value="">{text.allPlans}</option><option value="free">{planLabels[locale].free}</option><option value="family">{planLabels[locale].family}</option><option value="family_plus">{planLabels[locale].family_plus}</option></select></div></header>
-        {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? <div className="table-scroll"><table className="data-table"><thead><tr><th>{text.parent}</th><th>{text.plan}</th><th>{text.children}</th><th>{text.language}</th><th>{text.timezone}</th><th>{text.status}</th><th>{text.joined}</th><th/></tr></thead><tbody>{records.map((parent) => <tr key={parent.id}><td><div className="entity-cell"><span className="entity-avatar entity-avatar--parent">{(parent.display_name || parent.email || (locale === 'ar' ? 'و' : 'P')).charAt(0)}</span><div><strong>{parent.display_name || text.noName}</strong><small>{parent.email || parent.id}</small></div></div></td><td><span className={`plan-badge plan-badge--${parent.plan}`}>{planLabels[locale][parent.plan]}</span></td><td>{formatNumber(Number(parent.children_count), locale)}</td><td>{parent.locale === 'ar' ? text.arabic : parent.locale === 'en' ? text.english : parent.locale}</td><td>{parent.timezone}</td><td><span className={`account-status account-status--${parent.status}`}>{accountStatusLabels[locale][parent.status]}</span></td><td>{formatDate(parent.created_at, locale)}</td><td><div className="table-actions"><button className="icon-button icon-button--small" type="button" title={text.open} onClick={() => void openDetail(parent.id)}><Icon name="arrow" size={15}/></button></div></td></tr>)}</tbody></table></div> : <EmptyState title={text.empty} description={text.emptyDesc}/>} 
+        {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>{text.parent}</th><th>{text.plan}</th><th>{text.children}</th><th>{text.language}</th><th>{text.timezone}</th><th>{text.status}</th><th>{text.joined}</th><th/></tr></thead><tbody>{records.map((parent) => <tr key={parent.id}><td><div className="entity-cell"><span className="entity-avatar entity-avatar--parent">{(parent.display_name || parent.email || (locale === 'ar' ? 'و' : 'P')).charAt(0)}</span><div><strong>{parent.display_name || text.noName}</strong><small>{parent.email || parent.id}</small></div></div></td><td><span className={`plan-badge plan-badge--${parent.plan}`}>{planLabels[locale][parent.plan]}</span></td><td>{formatNumber(Number(parent.children_count), locale)}</td><td>{parent.locale === 'ar' ? text.arabic : parent.locale === 'en' ? text.english : parent.locale}</td><td>{parent.timezone}</td><td><span className={`account-status account-status--${parent.status}`}>{accountStatusLabels[locale][parent.status]}</span></td><td>{formatDate(parent.created_at, locale)}</td><td><div className="table-actions"><button className="icon-button icon-button--small" type="button" title={text.open} onClick={() => void openDetail(parent.id)}><Icon name="arrow" size={15}/></button></div></td></tr>)}</tbody></table></div> : <EmptyState title={text.empty} description={text.emptyDesc}/>} 
       </section>
 
       {/* تفصيل الحساب: مسار كان بلا مستدعٍ */}
@@ -272,7 +272,7 @@ export function ParentsPage() {
 
             <h4>{text.childrenTitle} ({formatNumber(detail.children.length, locale)})</h4>
             {detail.children.length ? (
-              <div className="table-scroll">
+              <div className="table-scroll" tabIndex={0}>
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -356,7 +356,7 @@ export function ParentsPage() {
 
             <h4>{text.watchTitle} ({formatNumber(progress.watch_progress.length, locale)})</h4>
             {progress.watch_progress.length ? (
-              <div className="table-scroll">
+              <div className="table-scroll" tabIndex={0}>
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -389,7 +389,7 @@ export function ParentsPage() {
 
             <h4>{text.masteryTitle} ({formatNumber(progress.mastery.length, locale)})</h4>
             {progress.mastery.length ? (
-              <div className="table-scroll">
+              <div className="table-scroll" tabIndex={0}>
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -424,7 +424,7 @@ export function ParentsPage() {
 
             <h4>{text.attemptsTitle} ({formatNumber(progress.attempts.length, locale)})</h4>
             {progress.attempts.length ? (
-              <div className="table-scroll">
+              <div className="table-scroll" tabIndex={0}>
                 <table className="data-table">
                   <thead>
                     <tr>

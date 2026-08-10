@@ -262,7 +262,7 @@ export function AudioProductionQueuePage() {
 
       <section className="panel">
         <header className="panel__header"><h3>{text.rows} <span className="title-count">{data.rows.length}</span></h3></header>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data-table">
             <thead>
               <tr>

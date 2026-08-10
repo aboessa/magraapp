@@ -269,7 +269,7 @@ export function QualityPage() {
 
           <section className="panel panel--table">
             <div className="panel__header"><h3>{text.checksTitle}</h3></div>
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>

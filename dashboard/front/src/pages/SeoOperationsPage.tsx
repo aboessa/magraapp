@@ -344,7 +344,7 @@ export function SeoOperationsPage() {
                   ) : filteredIssues.length === 0 ? (
                     <EmptyState title={text.empty} description={text.emptyHint} />
                   ) : (
-                    <div className="table-scroll">
+                    <div className="table-scroll" tabIndex={0}>
                       <table className="data-table">
                         <thead>
                           <tr>
@@ -387,7 +387,7 @@ export function SeoOperationsPage() {
             content: (
               <section className="panel">
                 <div className="panel__header"><div><h3>{text.coverageTitle}</h3><p>{text.coverageHint}</p></div></div>
-                <div className="table-scroll">
+                <div className="table-scroll" tabIndex={0}>
                   <table className="data-table">
                     <thead><tr><th>{text.check}</th><th>{text.severity}</th><th>{text.detail}</th></tr></thead>
                     <tbody>
@@ -437,7 +437,7 @@ export function SeoOperationsPage() {
                   </button>
                 </header>
                 {redirects.length ? (
-                  <div className="table-scroll">
+                  <div className="table-scroll" tabIndex={0}>
                     <table className="data-table">
                       <thead>
                         <tr>

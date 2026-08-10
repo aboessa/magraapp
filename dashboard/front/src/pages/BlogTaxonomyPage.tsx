@@ -165,7 +165,7 @@ export function BlogTaxonomyPage() {
                 <section className="panel panel--table">
                   <div className="panel__header"><h3>{text.authors}</h3></div>
                   {taxonomy.authors.length ? (
-                    <div className="table-scroll">
+                    <div className="table-scroll" tabIndex={0}>
                       <table className="data-table">
                         <thead><tr><th>{text.displayName}</th><th>{text.bio}</th><th>{text.active}</th></tr></thead>
                         <tbody>
@@ -234,7 +234,7 @@ export function BlogTaxonomyPage() {
                 <section className="panel panel--table">
                   <div className="panel__header"><h3>{text.categories}</h3></div>
                   {taxonomy.categories.length ? (
-                    <div className="table-scroll">
+                    <div className="table-scroll" tabIndex={0}>
                       <table className="data-table">
                         <thead><tr><th>{text.name}</th><th>{text.categoryKey}</th><th>{text.language}</th><th>{text.slug}</th><th>{text.sortOrder}</th></tr></thead>
                         <tbody>
@@ -318,7 +318,7 @@ export function BlogTaxonomyPage() {
                 <section className="panel panel--table">
                   <div className="panel__header"><h3>{text.tags}</h3></div>
                   {taxonomy.tags.length ? (
-                    <div className="table-scroll">
+                    <div className="table-scroll" tabIndex={0}>
                       <table className="data-table">
                         <thead><tr><th>{text.tagSlug}</th><th>{text.nameAr}</th><th>{text.nameEn}</th><th>{text.nameFr}</th><th>{text.postCount}</th></tr></thead>
                         <tbody>

@@ -211,7 +211,7 @@ export function RemoteConfigPage() {
           <span className="panel__kicker">{entries.length}</span>
         </div>
         {entries.length ? (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table data-table--wide">
               <thead>
                 <tr>
@@ -265,7 +265,7 @@ export function RemoteConfigPage() {
           <span className="panel__kicker">{flags.length}</span>
         </div>
         {flags.length ? (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead>
                 <tr>

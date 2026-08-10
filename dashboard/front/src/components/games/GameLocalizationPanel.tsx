@@ -325,7 +325,7 @@ export function GameLocalizationPanel({ gameId }: { gameId: string }) {
         <h4>{text.voice}</h4>
         <small>{text.voiceHint}</small>
         {envelope.voice_keys.length === 0 ? <p className="data-unavailable">—</p> : (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <tbody>
                 {envelope.voice_keys.map((key) => (

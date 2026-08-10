@@ -241,7 +241,7 @@ export function ProductionPage() {
         ))}
         {view !== 'queue' && (
           <>
-            <select value={type} onChange={(event) => { setType(event.target.value as 'episode' | 'story'); setOffset(0) }}>
+            <select aria-label={text.episodes} value={type} onChange={(event) => { setType(event.target.value as 'episode' | 'story'); setOffset(0) }}>
               <option value="episode">{text.episodes}</option>
               <option value="story">{text.stories}</option>
             </select>
@@ -259,7 +259,7 @@ export function ProductionPage() {
       {!loading && !error && view === 'table' && (items.length ? (
         <section className="panel panel--table">
           <p className="readiness-note">{text.capped(boardLimit)}</p>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table data-table--wide">
               <thead>
                 <tr>
@@ -343,7 +343,7 @@ export function ProductionPage() {
 
       {!loading && !error && view === 'queue' && (queue.length ? (
         <section className="panel panel--table">
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead><tr><th>{text.item}</th><th>{text.requirement}</th><th>{text.due}</th><th>{text.blocker}</th><th /></tr></thead>
               <tbody>

@@ -355,7 +355,7 @@ export function BlogPostsPage() {
           </>
         ) : (
           <>
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>

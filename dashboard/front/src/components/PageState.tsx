@@ -7,15 +7,30 @@ const copy = {
   en: { loading: 'Loading data...', error: 'Unable to load data', retry: 'Try again' },
 }
 
+/**
+ * حالات الصفحة المشتركة.
+ *
+ * ## لماذا `role="status"` و`role="alert"` هنا
+ *
+ * قارئ الشاشة لا يرى دوّارة التحميل. بلا منطقة حيّة يبقى المستخدم على إعلان
+ * الصفحة السابق بلا أي إشارة إلى أن شيئًا يحدث، ثم تظهر النتيجة صامتة. `status`
+ * مؤدَّب (يُعلَن عند فراغ القارئ) و`alert` مُقاطِع — وهو الصحيح للخطأ لأن
+ * المستخدم ينتظر بيانات لن تأتي. أُضيفا بعد أن كشف اختبار الواجهة غيابهما.
+ */
 export function LoadingState({ label }: { label?: string }) {
   const { locale } = usePreferences()
-  return <div className="page-state page-state--loading"><span className="spinner" aria-hidden="true" /><p>{label ?? copy[locale].loading}</p></div>
+  return (
+    <div className="page-state page-state--loading" role="status" aria-live="polite">
+      <span className="spinner" aria-hidden="true" />
+      <p>{label ?? copy[locale].loading}</p>
+    </div>
+  )
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   const { locale } = usePreferences()
   return (
-    <div className="page-state page-state--error">
+    <div className="page-state page-state--error" role="alert">
       <span className="page-state__symbol">!</span>
       <h3>{copy[locale].error}</h3>
       <p>{message}</p>

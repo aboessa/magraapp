@@ -268,7 +268,7 @@ export function CustomerDetailPage() {
   )
 
   const childrenTab = data.children.length ? (
-    <div className="table-scroll">
+    <div className="table-scroll" tabIndex={0}>
       <table className="data-table">
         <thead><tr><th>{text.nickname}</th><th>{text.track}</th><th>{text.status}</th></tr></thead>
         <tbody>
@@ -288,7 +288,7 @@ export function CustomerDetailPage() {
     <div className="page-stack">
       <p className="readiness-note">{live ? text.liveSource : text.authorityUnavailable}</p>
       {live && live.entitlements.length ? (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data-table">
             <thead><tr><th>{text.plan}</th><th>{text.status}</th><th>{text.product}</th><th>{text.expires}</th></tr></thead>
             <tbody>
@@ -307,7 +307,7 @@ export function CustomerDetailPage() {
 
       <h4>{text.entitlements} — {text.projectionSource}</h4>
       {data.billing.length ? (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data-table">
             <thead><tr><th>{text.product}</th><th>{text.plan}</th><th>{text.entitlementStatus}</th><th>{text.date}</th></tr></thead>
             <tbody>
@@ -330,7 +330,7 @@ export function CustomerDetailPage() {
     <div className="page-stack">
       <p className="readiness-note">{live ? text.liveSource : text.authorityUnavailable}</p>
       {live && live.devices.length ? (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data-table">
             <thead><tr><th>{text.device}</th><th>{text.platform}</th><th>{text.status}</th><th>{text.lastSeen}</th><th /></tr></thead>
             <tbody>
@@ -372,7 +372,7 @@ export function CustomerDetailPage() {
 
       <h4>{text.projectionSource}</h4>
       {data.devices_projection.length ? (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data-table">
             <thead><tr><th>{text.device}</th><th>{text.platform}</th><th>{text.status}</th><th>{text.lastSeen}</th></tr></thead>
             <tbody>
@@ -392,7 +392,7 @@ export function CustomerDetailPage() {
   )
 
   const purchasesTab = data.purchases.length ? (
-    <div className="table-scroll">
+    <div className="table-scroll" tabIndex={0}>
       <table className="data-table">
         <thead><tr><th>{text.product}</th><th>{text.status}</th><th>{text.date}</th><th>{text.expires}</th></tr></thead>
         <tbody>
@@ -410,7 +410,7 @@ export function CustomerDetailPage() {
   ) : <EmptyState title={text.noPurchases} description={text.projectionSource} />
 
   const ticketsTab = data.tickets.length ? (
-    <div className="table-scroll">
+    <div className="table-scroll" tabIndex={0}>
       <table className="data-table">
         <thead><tr><th>{text.reference}</th><th>{text.subject}</th><th>{text.priority}</th><th>{text.status}</th><th /></tr></thead>
         <tbody>
@@ -444,7 +444,7 @@ export function CustomerDetailPage() {
   ) : <EmptyState title={text.noConsents} description={text.liveSource} />
 
   const auditTab = data.audit.length ? (
-    <div className="table-scroll">
+    <div className="table-scroll" tabIndex={0}>
       <table className="data-table">
         <thead><tr><th>{text.action}</th><th>{text.actor}</th><th>{text.date}</th></tr></thead>
         <tbody>

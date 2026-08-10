@@ -306,7 +306,7 @@ export function GamesOpsPage() {
 
         <section className="panel">
           <header className="panel__header"><h3>{text.topBlockers}</h3></header>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead><tr><th>{text.blockerCheck}</th><th>{text.blockerGames}</th><th>{text.blockerOwners}</th></tr></thead>
               <tbody>
@@ -393,7 +393,7 @@ export function GamesOpsPage() {
             </select>
           </label>
         </header>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data-table">
             <thead>
               <tr>

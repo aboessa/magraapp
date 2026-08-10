@@ -251,7 +251,7 @@ export function GameDetailPage() {
   const assetTable = (rows: typeof artAssets) => (rows.length === 0 ? (
     <p className="data-unavailable">{text.assetsEmpty}</p>
   ) : (
-    <div className="table-scroll">
+    <div className="table-scroll" tabIndex={0}>
       <table className="data-table">
         <tbody>
           {rows.map((asset) => (

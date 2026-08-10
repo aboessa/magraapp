@@ -680,7 +680,7 @@ export function GamePackForm(props: GamePackFormProps) {
               {level.mode === 'connect_dots' && (
                 <fieldset className="trace-editor__group">
                   <legend>{text.dots}</legend>
-                  <div className="table-scroll">
+                  <div className="table-scroll" tabIndex={0}>
                     <table className="data-table">
                       <thead><tr><th>{text.dotId}</th><th>{text.dotOrder}</th><th>{text.dotX}</th><th>{text.dotY}</th><th>{text.dotLabel}</th><th /></tr></thead>
                       <tbody>
@@ -785,7 +785,7 @@ export function GamePackForm(props: GamePackFormProps) {
         <header className="panel__header"><h3>{text.voice}</h3></header>
         <div className="entity-form">
           <small>{text.voiceHint}</small>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead><tr><th>{text.voiceKey}</th><th>{text.voiceAsset}</th></tr></thead>
               <tbody>

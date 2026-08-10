@@ -137,7 +137,7 @@ export function AnalyticsPage() {
         <section className="panel">
           <div className="panel__header"><h3>{text.byTrack}</h3></div>
           {(data.by_track ?? []).length ? (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead><tr><th>{text.track}</th><th>{text.count}</th></tr></thead>
                 <tbody>
@@ -163,7 +163,7 @@ export function AnalyticsPage() {
           <div className="panel__header"><h3>{text.mastery}</h3></div>
           {/* mastery كانت تعود من الخادم ولا تُعرض إطلاقًا */}
           {(data.mastery ?? []).length ? (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead><tr><th>{text.level}</th><th>{text.count}</th></tr></thead>
                 <tbody>
@@ -188,7 +188,7 @@ export function AnalyticsPage() {
           <span className="panel__kicker">{(data.recent_events ?? []).length}</span>
         </div>
         {(data.recent_events ?? []).length ? (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table data-table--wide">
               <thead>
                 <tr><th>{text.eventType}</th><th>{text.parent}</th><th>{text.when}</th></tr>

@@ -586,7 +586,7 @@ export function EnginePackForm(props: EnginePackFormProps) {
       <section className="panel">
         <header className="panel__header"><h3>{text.voice}</h3><p>{text.voiceHint}</p></header>
         <div className="entity-form">
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead><tr><th>{text.voiceKey}</th><th>{text.audio}</th></tr></thead>
               <tbody>

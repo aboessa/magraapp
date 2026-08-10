@@ -336,7 +336,7 @@ export function FailedEventsPage() {
 
         {records.length ? (
           <>
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>

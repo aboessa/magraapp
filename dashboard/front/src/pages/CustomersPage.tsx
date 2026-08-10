@@ -121,11 +121,11 @@ export function CustomersPage() {
               <Icon name="search" size={17} />
               <input value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0) }} placeholder={text.search} />
             </label>
-            <select value={plan} onChange={(event) => { setPlan(event.target.value); setOffset(0) }}>
+            <select aria-label={text.allPlans} value={plan} onChange={(event) => { setPlan(event.target.value); setOffset(0) }}>
               <option value="">{text.allPlans}</option>
               {PLANS.map((item) => <option value={item} key={item}>{item}</option>)}
             </select>
-            <select value={status} onChange={(event) => { setStatus(event.target.value); setOffset(0) }}>
+            <select aria-label={text.allStatuses} value={status} onChange={(event) => { setStatus(event.target.value); setOffset(0) }}>
               <option value="">{text.allStatuses}</option>
               {STATUSES.map((item) => <option value={item} key={item}>{item}</option>)}
             </select>
@@ -136,7 +136,7 @@ export function CustomersPage() {
           <ErrorState message={error} onRetry={() => void load()} />
         ) : rows.length ? (
           <>
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>

@@ -196,7 +196,7 @@ export function OpsPage() {
 
         <section className="panel">
           <div className="panel__header"><h3>{text.plansTitle}</h3></div>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <tbody>
                 {(billing?.by_plan ?? []).map((row) => (

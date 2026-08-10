@@ -274,7 +274,7 @@ export function SupportCenterPage() {
             <section className="panel">
               <div className="panel__header"><h3>{text.childrenTitle}</h3></div>
               {(family?.children ?? []).length ? (
-                <div className="table-scroll">
+                <div className="table-scroll" tabIndex={0}>
                   <table className="data-table">
                     <thead><tr><th>{text.name}</th><th>{text.track}</th></tr></thead>
                     <tbody>
@@ -318,7 +318,7 @@ export function SupportCenterPage() {
               {live && (
                 <>
                   <p className="readiness-note">{text.liveSource} · {live.authority}</p>
-                  <div className="table-scroll">
+                  <div className="table-scroll" tabIndex={0}>
                     <table className="data-table">
                       <thead><tr><th>{text.device}</th><th>{text.platform}</th><th>{text.status}</th><th>{text.lastSeen}</th></tr></thead>
                       <tbody>
@@ -347,7 +347,7 @@ export function SupportCenterPage() {
 
               <p className="readiness-note">{text.projectionSource}</p>
               {(family?.devices ?? []).length ? (
-                <div className="table-scroll">
+                <div className="table-scroll" tabIndex={0}>
                   <table className="data-table">
                     <thead><tr><th>{text.device}</th><th>{text.platform}</th><th>{text.status}</th></tr></thead>
                     <tbody>
@@ -374,7 +374,7 @@ export function SupportCenterPage() {
           <section className="panel panel--table">
             <div className="panel__header"><h3>{text.entitlementsTitle}</h3></div>
             {(family?.entitlements ?? []).length ? (
-              <div className="table-scroll">
+              <div className="table-scroll" tabIndex={0}>
                 <table className="data-table">
                   <thead><tr><th>{text.product}</th><th>{text.plan}</th><th>{text.status}</th></tr></thead>
                   <tbody>

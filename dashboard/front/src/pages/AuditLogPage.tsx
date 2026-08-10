@@ -250,13 +250,13 @@ export function AuditLogPage() {
                 placeholder={text.actorFilter}
               />
             </label>
-            <select value={action} onChange={(event) => setAction(event.target.value)}>
+            <select aria-label={text.allActions} value={action} onChange={(event) => setAction(event.target.value)}>
               <option value="">{text.allActions}</option>
               {KNOWN_ACTIONS.map((item) => (
                 <option value={item} key={item}>{actionLabels[locale][item] ?? item}</option>
               ))}
             </select>
-            <select value={entityType} onChange={(event) => setEntityType(event.target.value)}>
+            <select aria-label={text.allEntities} value={entityType} onChange={(event) => setEntityType(event.target.value)}>
               <option value="">{text.allEntities}</option>
               {entityTypes.map((item) => <option value={item} key={item}>{item}</option>)}
             </select>
@@ -275,7 +275,7 @@ export function AuditLogPage() {
 
         {records.length ? (
           <>
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>

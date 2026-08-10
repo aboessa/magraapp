@@ -97,7 +97,7 @@ export function ChildrenPage() {
           </div>
         </header>
         {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead><tr><th>{text.child}</th><th>{text.parent}</th><th>{text.birth}</th><th>{text.computedTrack}</th><th>{text.interests}</th><th>{text.status}</th></tr></thead>
               <tbody>

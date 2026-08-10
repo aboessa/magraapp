@@ -151,7 +151,7 @@ export function SeriesDetailPage() {
             label: text.seasonsTab,
             badge: series.seasons.length,
             content: series.seasons.length ? (
-              <div className="table-scroll">
+              <div className="table-scroll" tabIndex={0}>
                 <table className="data-table">
                   <thead><tr><th>{text.season}</th><th>{text.episodesTab}</th><th /></tr></thead>
                   <tbody>

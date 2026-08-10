@@ -147,7 +147,7 @@ export function RolesPage() {
                 القائمة تعرض ثلاثة أدوار مخترعة */}
             <span className="panel__kicker">{text.rolesCount(roles.length)}</span>
           </div>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="data-table">
               <thead>
                 <tr><th>{text.role}</th><th>{text.action}</th></tr>
@@ -177,7 +177,7 @@ export function RolesPage() {
             <span className="panel__kicker">{grants.length}</span>
           </div>
           {grants.length ? (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data-table">
                 <thead>
                   <tr>
@@ -218,7 +218,7 @@ export function RolesPage() {
           <h3>{text.matrixTitle}</h3>
           <span className="panel__kicker">{text.matrixHint}</span>
         </div>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data-table data-table--wide">
             <thead>
               <tr>
