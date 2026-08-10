@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,9 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../core/widgets/focusable_scale.dart';
 import '../../../child/application/child_provider.dart';
+import '../../../downloads/application/download_manager.dart';
+import '../../../downloads/application/download_providers.dart';
+import '../../../downloads/presentation/download_button.dart';
 import '../../../home/application/home_providers.dart';
 import '../../../home/data/majarra_api_client.dart';
 
@@ -133,12 +138,33 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
     }
   }
 
+  /// A stable download id for this book's public audio, or null when there is
+  /// no public source to download.
+  String? get _downloadId {
+    if ((widget.audioUrl ?? '').isEmpty) return null;
+    final book = widget.bookId;
+    return book != null && book.isNotEmpty
+        ? 'audio_$book'
+        : 'audio_${widget.audioUrl.hashCode}';
+  }
+
   /// Builds a controller for whichever source path applies.
   ///
-  /// The private path is preferred when a book id is present: a book may carry
-  /// both a public sample and real narration, and the narration is the one the
-  /// reader expects to hear.
+  /// Offline-first: if this book's audio has been downloaded and is ready, the
+  /// decrypted local file is played so the story works with no connection. Only
+  /// when nothing is stored does it fall back to the network — the private
+  /// narration path when a book id is present, or the public sample otherwise.
   Future<VideoPlayerController> _buildController() async {
+    final downloadId = _downloadId;
+    if (downloadId != null) {
+      final localPath = await ref
+          .read(downloadManagerProvider.notifier)
+          .preparePlayback(downloadId);
+      if (localPath != null) {
+        return VideoPlayerController.file(File(localPath));
+      }
+    }
+
     final bookId = widget.bookId;
     if (bookId != null && bookId.isNotEmpty) {
       return _privateController(bookId);
@@ -331,6 +357,23 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
                         ),
                         onPressed: controller == null ? null : _cycleSpeed,
                       ),
+                      // Offline download for the public audio, when one exists.
+                      // Private narration is not downloadable without an offline
+                      // licence endpoint, so the button appears only for a
+                      // public sample source.
+                      if (_downloadId != null && (widget.audioUrl ?? '').isNotEmpty) ...[
+                        const SizedBox(width: 10),
+                        DownloadButton(
+                          request: DownloadRequest(
+                            id: _downloadId!,
+                            childId: ref.read(childProvider).activeChildId ?? 'guest',
+                            contentType: 'audio_story',
+                            title: widget.title,
+                            subtitle: widget.subtitle ?? '',
+                            sourceUrl: widget.audioUrl!,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],
