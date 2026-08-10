@@ -257,6 +257,34 @@ test('the breach counters use the same predicate as the overdue filter', () => {
   assert.doesNotMatch(sla, /due_at < datetime\('now'\)/);
 });
 
+test('the transition table is served, so a board cannot hold a second copy of the workflow', async () => {
+  // A kanban board must know the legal targets before a drag starts. If it kept its own
+  // table, that table would be a second definition of the workflow and would drift from
+  // transitionError() the first time a status was added.
+  const { allowedTransitions, transitionError } = await import('../src/lib/supportCrm.ts');
+  const table = allowedTransitions();
+
+  assert.deepEqual(table.closed, [], 'closed is terminal');
+  assert.ok(table.resolved.includes('in_progress'), 'resolved may be reopened: it is a claim');
+
+  // The served table and the enforcer must agree in both directions, for every pair.
+  for (const [from, targets] of Object.entries(table)) {
+    for (const to of Object.keys(table)) {
+      const allowedByTable = targets.includes(to) || from === to;
+      const allowedByCheck = transitionError(from, to) === null;
+      assert.equal(allowedByTable, allowedByCheck, `${from} -> ${to}`);
+    }
+  }
+
+  assert.match(handler('/support/sla', 'get'), /transitions: allowedTransitions\(\)/);
+});
+
+test('the served transition table cannot be mutated by its caller', async () => {
+  const { allowedTransitions } = await import('../src/lib/supportCrm.ts');
+  allowedTransitions().closed.push('open');
+  assert.deepEqual(allowedTransitions().closed, [], 'a copy is returned, not the rules');
+});
+
 test('reads need only requireAdmin while writes need a permission', () => {
   assert.match(code, /route\.get\('\/support\/tickets', requireAdmin/);
   assert.match(code, /route\.post\('\/support\/tickets', requirePermission\('assign_members'\)/);

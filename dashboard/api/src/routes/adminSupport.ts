@@ -30,9 +30,11 @@ import { requireAdmin, requirePermission } from '../lib/adminAuth';
 import { actorId, auditStatement } from '../lib/auditLog';
 import { parsePagination } from '../lib/catalogueValidation';
 import {
+  allowedTransitions,
   isTicketAction,
   isTicketPriority,
   isTicketStatus,
+  TICKET_STATUSES,
   resolveSlaPolicy,
   slaDueDates,
   slaState,
@@ -564,6 +566,9 @@ route.get('/support/sla', requireAdmin, async (c) => {
         first_response: Number(breaches?.response_breaches ?? 0),
         resolution: Number(breaches?.resolution_breaches ?? 0),
       },
+      // The workflow itself, so a board can offer only legal moves. See allowedTransitions().
+      transitions: allowedTransitions(),
+      statuses: TICKET_STATUSES,
     },
   });
 });

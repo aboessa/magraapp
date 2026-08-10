@@ -149,6 +149,8 @@ const copy = {
     inactive: 'مُعطَّل',
     up: 'تحريك لأعلى',
     down: 'تحريك لأسفل',
+    dragHandle: 'مقبض السحب',
+    dragHint: 'اسحب لإعادة الترتيب، أو استعمل زرّي الأعلى والأسفل بلوحة المفاتيح.',
     remove: 'حذف القسم',
     items: 'العناصر',
     addItem: 'إضافة عنصر',
@@ -171,6 +173,8 @@ const copy = {
     inactive: 'Disabled',
     up: 'Move up',
     down: 'Move down',
+    dragHandle: 'Drag handle',
+    dragHint: 'Drag to reorder, or use the up and down buttons from the keyboard.',
     remove: 'Delete section',
     items: 'Items',
     addItem: 'Add item',
@@ -214,6 +218,9 @@ export function SectionEditor({
   const lang = locale === 'en' ? 'en' : 'ar'
   const text = copy[lang]
   const [adding, setAdding] = useState<WebSectionType>('hero')
+  /// `key` of the section being dragged, and of the card it is currently over.
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [over, setOver] = useState<string | null>(null)
 
   function update(index: number, patch: Partial<WebSectionDraft>) {
     onChange(sections.map((section, position) => (position === index ? { ...section, ...patch } : section)))
@@ -225,6 +232,30 @@ export function SectionEditor({
     const next = [...sections]
     const [moved] = next.splice(index, 1)
     next.splice(target, 0, moved)
+    onChange(next)
+  }
+
+  /// Moves the dragged section to the position of the card it was dropped on.
+  ///
+  /// ## Why order is array position and nothing else
+  ///
+  /// `PUT /admin/website/pages/:id/sections` ignores any client `sort_order` and uses the
+  /// array index. So a reorder is a reorder of this array, the server is the one that assigns
+  /// the numbers, and two editors cannot produce colliding `sort_order` values by dragging at
+  /// the same time — the second save simply replaces the set. A `sort_order` field the client
+  /// could set would reintroduce exactly that collision.
+  ///
+  /// Nothing is persisted here. The parent marks the page dirty and the editor saves
+  /// explicitly, which is what makes an accidental drag recoverable: the unsaved-changes
+  /// notice appears and reloading discards it.
+  function moveTo(fromKey: string, toKey: string) {
+    if (fromKey === toKey) return
+    const from = sections.findIndex((section) => section.key === fromKey)
+    const to = sections.findIndex((section) => section.key === toKey)
+    if (from === -1 || to === -1) return
+    const next = [...sections]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved!)
     onChange(next)
   }
 
@@ -247,9 +278,47 @@ export function SectionEditor({
           const spec = SECTION_SPECS[section.section_type]
           const list = items(section)
           return (
-            <li className={`section-card ${section.is_active ? '' : 'section-card--inactive'}`} key={section.key}>
+            <li
+              className={`section-card ${section.is_active ? '' : 'section-card--inactive'}`
+                + `${dragging === section.key ? ' section-card--dragging' : ''}`
+                + `${over === section.key && dragging !== section.key ? ' section-card--drop' : ''}`}
+              key={section.key}
+              onDragOver={(event) => {
+                if (!dragging) return
+                event.preventDefault()
+                setOver(section.key)
+              }}
+              onDragLeave={() => setOver((current) => (current === section.key ? null : current))}
+              onDrop={(event) => {
+                event.preventDefault()
+                const from = event.dataTransfer.getData('text/plain') || dragging
+                setOver(null)
+                setDragging(null)
+                if (from) moveTo(from, section.key)
+              }}
+            >
               <header className="section-card__header">
-                <span className="section-card__index" aria-hidden="true"><Icon name="grip" size={16} /></span>
+                {/* The handle is draggable, not the whole card.
+                    A draggable card swallows text selection inside its own fields, and an
+                    editor who drags to select a headline instead reorders the page. The
+                    up/down buttons beside it are not a fallback bolted on afterwards: they
+                    are the keyboard path to the identical operation, and a mouse drag cannot
+                    be performed from a keyboard at all. */}
+                <span
+                  className="section-card__index"
+                  draggable={canEdit}
+                  role={canEdit ? 'button' : undefined}
+                  tabIndex={-1}
+                  aria-hidden={canEdit ? undefined : 'true'}
+                  aria-label={canEdit ? `${text.dragHandle}: ${spec.label[lang]}` : undefined}
+                  title={canEdit ? text.dragHint : undefined}
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData('text/plain', section.key)
+                    event.dataTransfer.effectAllowed = 'move'
+                    setDragging(section.key)
+                  }}
+                  onDragEnd={() => { setDragging(null); setOver(null) }}
+                ><Icon name="grip" size={16} /></span>
                 <div className="section-card__title">
                   <strong>{index + 1}. {spec.label[lang]}</strong>
                   <code dir="ltr">{section.section_type}</code>

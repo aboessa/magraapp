@@ -178,6 +178,23 @@ export function transitionError(from: TicketStatus, to: TicketStatus): string | 
   return null;
 }
 
+/// The transition table, for clients that need to know what a move may offer.
+///
+/// ## Why this is served rather than copied
+///
+/// A kanban board has to decide, before a drag starts, which columns are legal targets. The
+/// client could hold its own copy of this table — and it would then be a second definition of
+/// the workflow, drifting from this one the first time a status is added. Serving it means the
+/// board can only ever offer what `transitionError` will accept, and a change here reaches
+/// every board without a client release.
+///
+/// Returned as a copy so a caller cannot mutate the rules it just asked about.
+export function allowedTransitions(): Record<TicketStatus, TicketStatus[]> {
+  return Object.fromEntries(
+    Object.entries(TRANSITIONS).map(([from, to]) => [from, [...to]]),
+  ) as Record<TicketStatus, TicketStatus[]>;
+}
+
 /// SLA state of one ticket at a point in time.
 export interface SlaState {
   first_response_breached: boolean;

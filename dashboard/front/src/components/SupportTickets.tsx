@@ -9,6 +9,7 @@ import type {
   TicketStatus,
 } from '../types/api'
 import { Modal } from './Modal'
+import { Kanban } from './Kanban'
 import { Pagination } from './Pagination'
 import { EmptyState, ErrorState, LoadingState } from './PageState'
 import { usePreferences } from '../context/preferences'
@@ -48,6 +49,11 @@ const copy = {
   ar: {
     queue: 'طابور التذاكر',
     newTicket: 'تذكرة جديدة',
+    viewMode: 'طريقة العرض',
+    tableView: 'جدول',
+    kanbanView: 'كانبان',
+    closedTerminal: 'المغلقة نهائية: افتح تذكرة جديدة مرتبطة بها.',
+    emptyColumn: 'لا تذاكر في هذه الحالة',
     search: 'بحث بالموضوع أو المرجع…',
     allStatuses: 'كل الحالات',
     allPriorities: 'كل الأولويات',
@@ -126,6 +132,11 @@ const copy = {
   en: {
     queue: 'Ticket queue',
     newTicket: 'New ticket',
+    viewMode: 'View mode',
+    tableView: 'Table',
+    kanbanView: 'Kanban',
+    closedTerminal: 'Closed is terminal: open a new linked ticket instead.',
+    emptyColumn: 'No tickets in this state',
     search: 'Search subject or reference…',
     allStatuses: 'All statuses',
     allPriorities: 'All priorities',
@@ -226,6 +237,8 @@ export function SupportTickets({ familyId }: { familyId?: string }) {
 
   const [detail, setDetail] = useState<SupportTicketDetail | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+  /// طريقة العرض: جدول أو كانبان. حالة عرض فقط — الفلاتر والترقيم مشتركان.
+  const [board, setBoard] = useState<'table' | 'kanban'>('table')
   // ‏?new=1 من لوحة الأوامر يفتح نموذج التذكرة نفسه.
   useQuickCreate(() => setCreateOpen(true))
   const [form, setForm] = useState({ subject: '', category: 'billing', priority: 'normal', family_id: familyId ?? '', body: '', tags: '' })
@@ -339,9 +352,27 @@ export function SupportTickets({ familyId }: { familyId?: string }) {
       <section className="panel">
         <div className="panel__header">
           <div><h3>{text.queue} <span className="title-count">{total}</span></h3></div>
-          <button className="button button--primary" type="button" onClick={() => { setCreateOpen(true); setModalError('') }}>
-            {text.newTicket}
-          </button>
+          <div className="page-intro__actions">
+            {/* مبدّل العرض: الفلاتر والعروض المحفوظة والترقيم كلها فوق هذا المستوى،
+                فتعمل في الجدول والكانبان بلا نسخة ثانية من الحالة. */}
+            <div className="view-switcher" role="group" aria-label={text.viewMode}>
+              <button
+                type="button"
+                className={`view-switcher__button ${board === 'table' ? 'view-switcher__button--active' : ''}`}
+                aria-pressed={board === 'table'}
+                onClick={() => setBoard('table')}
+              >{text.tableView}</button>
+              <button
+                type="button"
+                className={`view-switcher__button ${board === 'kanban' ? 'view-switcher__button--active' : ''}`}
+                aria-pressed={board === 'kanban'}
+                onClick={() => setBoard('kanban')}
+              >{text.kanbanView}</button>
+            </div>
+            <button className="button button--primary" type="button" onClick={() => { setCreateOpen(true); setModalError('') }}>
+              {text.newTicket}
+            </button>
+          </div>
         </div>
 
         {sla && (
@@ -428,6 +459,48 @@ export function SupportTickets({ familyId }: { familyId?: string }) {
 
         {loading ? <LoadingState /> : error ? <ErrorState message={error} onRetry={() => void load()} /> : tickets.length ? (
           <>
+            {board === 'kanban' ? (
+              <Kanban
+                columns={STATUSES.map((state) => ({
+                  key: state,
+                  label: text.statuses[state] ?? state,
+                  hint: state === 'closed' ? text.closedTerminal : undefined,
+                }))}
+                cards={tickets.map((ticket) => ({
+                  id: ticket.id,
+                  column: ticket.status,
+                  title: ticket.subject,
+                  subtitle: ticket.reference,
+                  tone: ticket.sla.resolution_breached ? 'danger'
+                    : ticket.sla.first_response_breached ? 'warn' : 'default',
+                  // From the server's own table, fetched with the SLA payload. The board
+                  // cannot offer a move `transitionError` would refuse, and cannot drift from
+                  // it when a status is added.
+                  allowedTargets: sla?.transitions?.[ticket.status] ?? [],
+                  lockedReason: ticket.status === 'closed' ? text.closedTerminal : undefined,
+                  meta: (
+                    <>
+                      <span className={`readiness-item readiness-item--${slaClass(ticket)} readiness-pill`}>
+                        {slaLabel(ticket)}
+                      </span>
+                      <span className="table-secondary">
+                        {text.priorities[ticket.priority] ?? ticket.priority}
+                        {ticket.assignee_name ? ` · ${ticket.assignee_name}` : ` · ${text.unassigned}`}
+                      </span>
+                    </>
+                  ),
+                }))}
+                onOpen={(card) => void openTicket(card.id)}
+                onMove={async (card, target) => {
+                  // The same endpoint the status select uses, so authorization, the transition
+                  // check, both SLA deadlines and the audit row all happen exactly as they do
+                  // from the detail drawer. The board adds no write path of its own.
+                  await api.updateSupportTicket(card.id, { status: target })
+                  await load()
+                }}
+                emptyLabel={text.emptyColumn}
+              />
+            ) : (
             <div className="table-scroll" tabIndex={0}>
               <table className="data-table data-table--wide">
                 <thead>
@@ -465,6 +538,7 @@ export function SupportTickets({ familyId }: { familyId?: string }) {
                 </tbody>
               </table>
             </div>
+            )}
             <Pagination total={total} limit={LIMIT} offset={offset} onOffsetChange={setOffset} locale={locale} />
           </>
         ) : <EmptyState title={text.empty} description={text.emptyHint} />}

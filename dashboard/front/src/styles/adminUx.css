@@ -1005,3 +1005,139 @@ a.exec-metric:hover { border-color: var(--accent, #6c8cff); }
   .sched__cell--pad { display: none; }
   .palette-backdrop { padding: 6vh 10px 10px; }
 }
+
+
+/* ==========================================================================
+   سحب وإفلات أقسام صفحة الموقع
+   ==========================================================================
+   المقبض هو القابل للسحب لا البطاقة كلها: بطاقة قابلة للسحب تمنع تحديد النصّ
+   في حقولها، فمن يسحب ليحدّد عنوانًا يُعيد ترتيب الصفحة بدل ذلك. */
+
+.section-card__index[draggable='true'] {
+  cursor: grab;
+  border-radius: 6px;
+}
+
+.section-card__index[draggable='true']:active { cursor: grabbing; }
+
+.section-card__index[draggable='true']:focus-visible {
+  outline: 2px solid var(--primary-strong);
+  outline-offset: 2px;
+}
+
+.section-card--dragging { opacity: 0.55; }
+
+/* هدف الإفلات يُعلَن بحدّ وخطّ علوي معًا لا باللون وحده. */
+.section-card--drop {
+  border-color: var(--primary-strong);
+  box-shadow: inset 0 3px 0 var(--primary-strong);
+}
+
+
+/* ==========================================================================
+   لوحة كانبان
+   ========================================================================== */
+
+.kanban {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(240px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.kanban__column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 240px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+/* هدف الإفلات بحدّ وظلّ داخلي معًا، فلا تعتمد الإشارة على اللون وحده. */
+.kanban__column--drop {
+  border-color: var(--primary-strong);
+  box-shadow: inset 0 0 0 1px var(--primary-strong);
+  background: var(--surface-3);
+}
+
+.kanban__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.kanban__head strong { font-size: 13px; }
+.kanban__head small { flex-basis: 100%; font-size: 10.5px; color: var(--muted); }
+
+.kanban__count {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  color: var(--text-soft);
+}
+
+.kanban__wip { color: var(--muted); }
+.kanban__wip--over { color: var(--warning); }
+
+.kanban__cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+
+.kanban__card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kanban__card[draggable='true'] { cursor: grab; }
+.kanban__card--dragging { opacity: 0.55; }
+.kanban__card--busy { opacity: 0.75; }
+.kanban__card--warn { border-inline-start: 3px solid var(--warning); }
+.kanban__card--danger { border-inline-start: 3px solid var(--danger); }
+
+.kanban__open {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.kanban__open:focus-visible { outline: 2px solid var(--primary-strong); outline-offset: 2px; }
+.kanban__title { font-weight: 600; font-size: 12.5px; }
+.kanban__open small { color: var(--muted); font-size: 10.5px; }
+.kanban__grip { color: var(--muted); }
+
+.kanban__meta { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: 10.5px; }
+
+.kanban__move { display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--muted); }
+.kanban__move select {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  padding: 2px 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+}
+
+.kanban__locked { margin: 0; font-size: 10.5px; color: var(--muted); font-style: italic; }
+.kanban__status { margin: 0; font-size: 10.5px; color: var(--muted); }
+.kanban__status--error { color: var(--danger); }
+.kanban__empty { margin: 0; font-size: 11px; color: var(--muted); font-style: italic; }
+
+@media (max-width: 900px) {
+  /* عمود واحد على الشاشة الضيّقة: خمسة أعمدة تُنتج تمريرًا أفقيًا للمستند لا
+     للوحة، وهو ما يرصده فحص الفيضان في المتصفح. */
+  .kanban { grid-auto-flow: row; grid-auto-columns: auto; }
+}

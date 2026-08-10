@@ -1708,6 +1708,13 @@ export interface SupportSlaOverview {
     updated_at: string
   }>
   open_breaches: { first_response: number; resolution: number }
+  /// جدول الانتقالات المسموحة، من `lib/supportCrm.ts` في الخادم.
+  ///
+  /// يأتي من الخادم لا يُكتب في العميل: لوحة الكانبان تحتاج معرفة الأعمدة
+  /// المسموحة قبل بدء السحب، ونسخة في العميل كانت ستصير تعريفًا ثانيًا لسير
+  /// العمل ينحرف عن الأول عند إضافة أي حالة.
+  transitions?: Record<TicketStatus, TicketStatus[]>
+  statuses?: TicketStatus[]
 }
 
 export interface SupportSavedView {
