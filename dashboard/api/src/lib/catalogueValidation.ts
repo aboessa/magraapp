@@ -210,6 +210,26 @@ export function normalizeTracks(value: unknown, ageMin: number, ageMax: number):
   return unique as AgeTrack[];
 }
 
+/// Reads a `GROUP_CONCAT(track_id)` column back into an array.
+///
+/// Every admin list selects tracks as a comma-joined subquery, so the raw row
+/// carries a string (`'preschool,kids'`) or NULL when the entity has no track
+/// rows at all. The dashboard types the field as `AgeTrack[]` and calls
+/// `.map()` on it, so any endpoint that returns the row unserialized crashes
+/// the page with `track_ids.map is not a function` — which is exactly what
+/// GET /admin/planets/:id did to the planet drill-down. Three routers had
+/// their own private copy of this split and the fourth simply forgot it, so it
+/// lives here now, once.
+///
+/// Arrays pass through filtered, which keeps the helper idempotent: serializing
+/// an already-serialized row is a no-op rather than an empty list.
+export function parseTrackIds(value: unknown): AgeTrack[] {
+  const parts = Array.isArray(value)
+    ? value
+    : typeof value === 'string' && value ? value.split(',') : [];
+  return parts.filter((track): track is AgeTrack => TRACKS.includes(track as AgeTrack));
+}
+
 // Publish gates --------------------------------------------------------------
 
 export function isReleaseStatus(status: unknown): boolean {

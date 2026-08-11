@@ -36,6 +36,7 @@ import {
   objectiveCreatePayload,
   parseJson,
   parsePagination,
+  parseTrackIds,
   reviewCreatePayload,
   text,
   tracksForRange,
@@ -73,11 +74,6 @@ function audit(db: D1Database, c: AuditContext, action: string, entityType: stri
     ? { ...details as JsonObject, claimed_actor: claimed }
     : { details, claimed_actor: claimed };
   return auditStatement(db, actorId(c), action, entityType, entityId, enriched);
-}
-
-function splitTracks(value: unknown): AgeTrack[] {
-  if (typeof value !== 'string' || !value) return [];
-  return value.split(',').filter((track): track is AgeTrack => TRACKS.includes(track as AgeTrack));
 }
 
 // Skills ---------------------------------------------------------------------
@@ -238,7 +234,7 @@ function serializeObjective(row: Row) {
   const { secondary_skill_ids: _raw, ...rest } = row;
   return {
     ...rest,
-    track_ids: splitTracks(row.track_ids),
+    track_ids: parseTrackIds(row.track_ids),
     // `skill_id` is left untouched for existing consumers; these are additive.
     primary_skill_id: typeof row.skill_id === 'string' ? row.skill_id : null,
     secondary_skill_ids: secondary,

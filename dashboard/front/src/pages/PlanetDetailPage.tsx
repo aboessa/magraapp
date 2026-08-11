@@ -9,7 +9,7 @@ import { StatusBadge, TrackBadge } from '../components/StatusBadge'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
-import { formatNumber } from '../lib/labels'
+import { formatNumber, trackList } from '../lib/labels'
 import type { PlanetDetail } from '../types/api'
 
 const copy = {
@@ -122,7 +122,7 @@ export function PlanetDetailPage() {
                       <strong>{title}</strong>
                       <small>{formatNumber(item.age_min, locale)}–{formatNumber(item.age_max, locale)}</small>
                       <div className="entity-card__meta">
-                        {item.track_ids.map((track) => <TrackBadge track={track} key={track} />)}
+                        {trackList(item.track_ids).map((track) => <TrackBadge track={track} key={track} />)}
                         <span>{formatNumber(Number(item.episodes_count ?? 0), locale)} {text.episodes}</span>
                       </div>
                       <div className="entity-card__footer"><StatusBadge status={item.status} /><Icon name="arrow" size={14} /></div>

@@ -1,11 +1,16 @@
 import { Hono } from 'hono'
 import type { Env } from '../lib/db'
 import { pathParam } from '../lib/routeParams.ts'
-import { queryAll, queryFirst } from '../lib/db'
-import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, PLANET_ICON_ROLES, PLANET_COVER_ROLES } from '../lib/assetUrls'
-import { isIslamicContent, validateIslamicFields } from '../lib/islamicContent'
-import { actorId, auditStatement } from '../lib/auditLog'
-import { requirePermission } from '../lib/adminAuth'
+// Explicit .ts specifiers, as in lib/routeParams.ts and lib/gamePackGate.ts
+// below: the extensionless form only resolves through a bundler, so this router
+// could not be imported by `node --experimental-strip-types --test` and none of
+// its 40+ handlers had test coverage. test/planetDetail.test.mjs now reaches
+// GET /planets/:id directly.
+import { queryAll, queryFirst } from '../lib/db.ts'
+import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, PLANET_ICON_ROLES, PLANET_COVER_ROLES } from '../lib/assetUrls.ts'
+import { isIslamicContent, validateIslamicFields } from '../lib/islamicContent.ts'
+import { actorId, auditStatement } from '../lib/auditLog.ts'
+import { requirePermission } from '../lib/adminAuth.ts'
 import {
   bookLanguagesError,
   bookPublishError,
@@ -13,10 +18,11 @@ import {
   gamePublishError,
   isReleaseStatus,
   parsePagination,
+  parseTrackIds,
   projectPublishError,
   storyPublishError,
   uniqueStringArray,
-} from '../lib/catalogueValidation'
+} from '../lib/catalogueValidation.ts'
 import { validatePackForGame } from '../lib/gamePackGate.ts'
 
 type AppEnv = { Bindings: Env }
@@ -142,6 +148,16 @@ function serializePlanet(row: Row) {
   return { ...row, is_active: Boolean(row.is_active) }
 }
 
+/// The series summaries embedded in GET /admin/planets/:id.
+///
+/// They were returned straight from D1, so `track_ids` reached the browser as
+/// the GROUP_CONCAT string (or null) while PlanetSeriesSummary declares
+/// `AgeTrack[]`. PlanetDetailPage maps over it, so opening any planet threw
+/// `track_ids.map is not a function` and the whole drill-down went blank.
+function serializePlanetSeries(row: Row) {
+  return { ...row, track_ids: parseTrackIds(row.track_ids) }
+}
+
 function serializeCategory(row: Row) {
   return { ...row, is_active: Boolean(row.is_active) }
 }
@@ -219,7 +235,14 @@ route.get('/planets/:id', async (c) => {
     FROM categories c WHERE c.is_active = 1 ORDER BY c.sort_order
   `, [id])
 
-  return c.json({ success: true, data: { ...serializePlanet(row), series, categories: categories.filter((item) => Number(item.series_count) > 0) } })
+  return c.json({
+    success: true,
+    data: {
+      ...serializePlanet(row),
+      series: series.map(serializePlanetSeries),
+      categories: categories.filter((item) => Number(item.series_count) > 0),
+    },
+  })
 })
 
 route.post('/planets', requirePermission('create'), async (c) => {

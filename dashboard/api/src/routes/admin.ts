@@ -30,6 +30,7 @@ import { summarizeGate } from '../lib/publishGate.ts'
 import { validateIslamicFields } from '../lib/islamicContent'
 import { actorId, auditStatement } from '../lib/auditLog'
 import { requireAdmin, requirePermission } from '../lib/adminAuth'
+import { parseTrackIds } from '../lib/catalogueValidation'
 
 type AppEnv = { Bindings: Env }
 type DbRow = Record<string, unknown>
@@ -222,15 +223,10 @@ function jsonArray(value: unknown): string | null {
   return Array.isArray(value) ? JSON.stringify(value) : null
 }
 
-function splitTrackIds(value: unknown): AgeTrack[] {
-  if (typeof value !== 'string' || !value) return []
-  return value.split(',').filter((track): track is AgeTrack => TRACKS.includes(track as AgeTrack))
-}
-
 function serializeSeries(row: DbRow) {
   return {
     ...row,
-    track_ids: splitTrackIds(row.track_ids),
+    track_ids: parseTrackIds(row.track_ids),
     is_free: Boolean(row.is_free),
   }
 }
@@ -238,7 +234,7 @@ function serializeSeries(row: DbRow) {
 function serializeEpisode(row: DbRow) {
   return {
     ...row,
-    track_ids: splitTrackIds(row.track_ids),
+    track_ids: parseTrackIds(row.track_ids),
     is_free: Boolean(row.is_free),
     is_published: Boolean(row.is_published),
   }

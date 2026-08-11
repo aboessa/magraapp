@@ -14,7 +14,7 @@ import type { ColumnDefinition } from '../components/ListTools'
 import { EntityThumbnail } from '../components/EntityThumbnail'
 import { Pagination } from '../components/Pagination'
 import { StatusBadge, TrackBadge } from '../components/StatusBadge'
-import { formatNumber, localeCode, statusLabels } from '../lib/labels'
+import { formatNumber, localeCode, statusLabels, trackList } from '../lib/labels'
 import { adminPath } from '../lib/adminPath'
 import { useUrlListState } from '../hooks/useUrlListState'
 import { useQuickCreate } from '../hooks/useQuickCreate'
@@ -264,7 +264,7 @@ export function EpisodesPage() {
                         </Link>
                       </td>
                       {columns.isVisible('series') && <td>{episode.series_title}</td>}
-                      {columns.isVisible('track') && <td><div className="badge-list">{episode.track_ids.map((item) => <TrackBadge track={item} key={item}/>)}</div></td>}
+                      {columns.isVisible('track') && <td><div className="badge-list">{trackList(episode.track_ids).map((item) => <TrackBadge track={item} key={item}/>)}</div></td>}
                       {columns.isVisible('objective') && <td className="cell-wrap">{episode.objective_title || text.unspecified}</td>}
                       {columns.isVisible('familyActivity') && <td className="cell-wrap">{episode.family_activity_ar || '—'}</td>}
                       {columns.isVisible('duration') && <td>{durationLabel(episode.duration_seconds, locale)}</td>}

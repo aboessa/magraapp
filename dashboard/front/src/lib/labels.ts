@@ -19,6 +19,21 @@ export const trackLabels: Record<Locale, Record<AgeTrack, string>> = {
   en: { preschool: 'Preschool 3–5', kids: 'Explorers 6–8', junior: 'Pioneers 9–12' },
 }
 
+const TRACKS: AgeTrack[] = ['preschool', 'kids', 'junior']
+
+/// المسارات العمرية كقائمة قابلة للعرض، أيًّا كان شكل الحقل القادم من الخادم.
+///
+/// `track_ids` مُعلَن `AgeTrack[]`، لكن كل استعلامات الإدارة تجمعه بـ
+/// GROUP_CONCAT، فأي مسار ينسى تفكيكه يُعيد نصًّا («kids,junior») أو null.
+/// النداء المباشر لـ`.map` على ذلك يرفع TypeError داخل التصيير، فتُفرَّغ الصفحة
+/// بكاملها بسبب حقل شارة واحد. التطبيع هنا يجعل الحقل التالف يُخفي الشارات فقط.
+export function trackList(value: unknown): AgeTrack[] {
+  const parts = Array.isArray(value)
+    ? value
+    : typeof value === 'string' && value ? value.split(',') : []
+  return parts.filter((track): track is AgeTrack => TRACKS.includes(track as AgeTrack))
+}
+
 export const planLabels: Record<Locale, Record<ParentRecord['plan'], string>> = {
   ar: { free: 'مجاني', family: 'عائلة', family_plus: 'عائلة بلس' },
   en: { free: 'Free', family: 'Family', family_plus: 'Family Plus' },

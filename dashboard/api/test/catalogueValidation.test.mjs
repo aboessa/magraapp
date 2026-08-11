@@ -30,6 +30,7 @@ import {
   normalizeTracks,
   objectiveCreatePayload,
   parsePagination,
+  parseTrackIds,
   projectPublishError,
   reviewCreatePayload,
   storyPublishError,
@@ -170,6 +171,35 @@ test('track lists must be arrays of known non-empty track ids', () => {
   // Duplicates collapse instead of producing a PRIMARY KEY collision on
   // learning_objective_tracks (objective_id, track_id).
   assert.deepEqual(normalizeTracks(['kids', 'kids'], 6, 8), ['kids']);
+});
+
+// Reading tracks back out of a GROUP_CONCAT column ---------------------------
+// The dashboard types track_ids as AgeTrack[] and calls .map() on it. A row
+// returned unserialized carries the comma-joined string instead, which threw
+// `track_ids.map is not a function` and blanked the planet drill-down.
+
+test('a GROUP_CONCAT track column is read back as an array', () => {
+  assert.deepEqual(parseTrackIds('kids'), ['kids']);
+  assert.deepEqual(parseTrackIds('preschool,kids'), ['preschool', 'kids']);
+  assert.deepEqual(parseTrackIds('preschool,kids,junior'), ['preschool', 'kids', 'junior']);
+});
+
+test('an entity with no track rows reads back as an empty array, never null', () => {
+  // The subquery returns NULL, not '', when series_tracks has no matching row.
+  for (const empty of [null, undefined, '', 0, {}]) {
+    assert.deepEqual(parseTrackIds(empty), [], `${JSON.stringify(empty)} must yield []`);
+  }
+});
+
+test('unknown track ids are dropped rather than reaching the badge renderer', () => {
+  assert.deepEqual(parseTrackIds('kids,toddler'), ['kids']);
+  assert.deepEqual(parseTrackIds('toddler'), []);
+});
+
+test('serializing an already-serialized row is a no-op', () => {
+  assert.deepEqual(parseTrackIds(['preschool', 'kids']), ['preschool', 'kids']);
+  assert.deepEqual(parseTrackIds([]), []);
+  assert.deepEqual(parseTrackIds([null, 'kids', 5]), ['kids']);
 });
 
 // Publish gates --------------------------------------------------------------

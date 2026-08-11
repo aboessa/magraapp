@@ -10,7 +10,7 @@ import { StatusBadge, TrackBadge } from '../components/StatusBadge'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
-import { formatDate, formatNumber } from '../lib/labels'
+import { formatDate, formatNumber, trackList } from '../lib/labels'
 import type { SeriesDetail } from '../types/api'
 
 const typeLabels = {
@@ -98,7 +98,7 @@ export function SeriesDetailPage() {
         title={title}
         subtitle={series.description_ar || undefined}
         meta={<>
-          {series.track_ids.map((track) => <TrackBadge track={track} key={track} />)}
+          {trackList(series.track_ids).map((track) => <TrackBadge track={track} key={track} />)}
           <span>{typeLabels[locale][series.type]}</span>
           <span>{formatNumber(Number(series.episodes_count ?? series.episodes.length), locale)} {text.episodesTab}</span>
         </>}
