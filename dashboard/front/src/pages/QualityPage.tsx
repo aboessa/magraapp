@@ -1,385 +1,273 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { EmptyState, LoadingState } from '../components/PageState'
-import { ListToolbar } from '../components/AdvancedFilters'
-import type { FilterField } from '../components/AdvancedFilters'
-import { SavedViewsMenu } from '../components/ListTools'
+import { Pagination } from '../components/Pagination'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
 import { useUrlListState } from '../hooks/useUrlListState'
-import type { QualityEntityType, QualityReport } from '../types/api'
+import type { PublishGateResult } from '../types/api'
+type GateFinding = PublishGateResult['findings'][number]
 
-/**
- * فحص الجاهزية والتصدير.
- *
- * ## لماذا كانت هذه الصفحة غائبة
- *
- * `GET /admin/quality/:type/:id` و`GET /admin/backup/:type/:id` موجودان بلا أي
- * مستدعٍ في الواجهة. وفحص الجاهزية قرار يُتخذ كل يوم في الإنتاج: «هل هذه القصة
- * قابلة للنشر؟».
- *
- * ## أربع علل أُصلحت في الخادم قبل بناء هذه الصفحة
- *
- * بناء واجهة على فحص معطوب يعني عرض نتائج خاطئة بثقة، فأُصلح المصدر أولًا:
- *
- * ١. النوع `story` كان يُقرأ من جدول `books`، و`story_pages.story_id` يشير إلى
- *    `stories(id)` — فلا ينجح الفحص على أي مدخل صحيح.
- * ٢. فحص الغلاف كان `!!x || true`، أي `true` دائمًا، على عمود لا وجود له أصلًا.
- * ٣. `series` و`book` و`game` و`project` كانت تُعيد `readyToPublish: true`
- *    بقائمة فحوص فارغة، لأن `[].every()` قيمته `true`.
- * ٤. حدّ «4 صفحات» كان مخترعًا لا وجود له في أي بوابة نشر.
- *
- * الفحص الآن يستدعي بوابات النشر نفسها من `lib/catalogueValidation.ts`، فما
- * تقوله هذه الصفحة هو ما سيفعله `PATCH /stories/:id` فعلًا عند النشر.
- */
+type Verdict = 'READY' | 'READY_WITH_WARNINGS' | 'BLOCKED' | 'NOT_EVALUATED'
+type EntityType = 'series' | 'story' | 'book' | 'game' | 'project' | 'episode'
 
-const ENTITY_TYPES: QualityEntityType[] = ['series', 'story', 'book', 'game', 'project']
-
-const entityLabels: Record<'ar' | 'en', Record<QualityEntityType, string>> = {
-  ar: { series: 'سلسلة', story: 'قصة', book: 'كتاب', game: 'لعبة', project: 'مشروع' },
-  en: { series: 'Series', story: 'Story', book: 'Book', game: 'Game', project: 'Project' },
-}
-
-/// أسماء الفحوص كما يُعيدها الخادم. الرسالة تأتي منه جاهزة بالعربية، وهذا
-/// العنوان يشرح ما يقيسه الفحص.
-const checkLabels: Record<'ar' | 'en', Record<string, string>> = {
-  ar: {
-    pages_and_text: 'الصفحات والنصوص',
-    page_images: 'صور الصفحات',
-    visual_style: 'الاستايل البصري',
-    pages: 'الصفحات',
-    content_pack: 'حزمة المحتوى',
-    engine: 'المحرّك',
-    materials: 'المواد',
-    steps: 'الخطوات',
-    episodes: 'الحلقات',
-    planet: 'الكوكب',
-  },
-  en: {
-    pages_and_text: 'Pages and text',
-    page_images: 'Page images',
-    visual_style: 'Visual style',
-    pages: 'Pages',
-    content_pack: 'Content pack',
-    engine: 'Engine',
-    materials: 'Materials',
-    steps: 'Steps',
-    episodes: 'Episodes',
-    planet: 'Planet',
-  },
+const ENTITY_TYPES: EntityType[] = ['series','story','book','game','project','episode']
+const entityLabels: Record<'ar'|'en', Record<EntityType,string>> = {
+  ar: { series:'سلسلة', story:'قصة', book:'كتاب', game:'لعبة', project:'مشروع', episode:'حلقة' },
+  en: { series:'Series', story:'Story', book:'Book', game:'Game', project:'Project', episode:'Episode' },
 }
 
 const copy = {
   ar: {
-    eyebrow: 'ضبط الجودة',
-    title: 'فحص الجاهزية والتصدير',
-    lede: 'افحص جاهزية كيان للنشر بالبوابات نفسها التي يفرضها الخادم، أو صدّره كملف JSON.',
-    typeLabel: 'النوع',
-    idLabel: 'المعرّف',
-    idPlaceholder: 'الصق معرّف الكيان',
-    check: 'فحص',
-    checking: 'جارٍ الفحص…',
-    idRequired: 'المعرّف مطلوب.',
-    notFound: 'لا كيان بهذا المعرّف',
-    notFoundHint: 'تأكّد من النوع والمعرّف. القصة والكتاب كيانان مختلفان لا مترادفان.',
-    readyTitle: 'جاهز للنشر',
-    readyBody: 'كل الفحوص مرّت. النشر لن يُرفض بسبب الجاهزية.',
-    blockedTitle: 'غير جاهز للنشر',
-    blockedBody: 'فحص واحد على الأقل لم يمرّ. النشر سيُرفض حتى يُعالَج.',
-    checksTitle: 'الفحوص',
-    checkColumn: 'الفحص',
-    resultColumn: 'النتيجة',
-    detailColumn: 'التفصيل',
-    passed: 'مرّ',
-    failed: 'لم يمرّ',
-    exportTitle: 'التصدير',
-    exportBody: 'نسخة JSON كاملة من الكيان. للقصص تشمل الصفحات وترجماتها، وللسلاسل تشمل الحلقات.',
-    export: 'تصدير JSON',
-    exporting: 'جارٍ التصدير…',
-    exported: 'نُزّل الملف.',
-    restoreNote: 'الاستعادة غير منفَّذة',
-    restoreHint: 'الخادم يرفض /restore بـ501 صريحًا: كان يُعيد نجاحًا بلا كتابة في قاعدة البيانات. استخدم ملف النسخة يدويًا.',
-    checkError: 'تعذر إجراء الفحص',
-    exportError: 'تعذر التصدير',
-    gateNote: 'الفحوص هي بوابات النشر نفسها في الخادم، لا قواعد موازية.',
+    eyebrow: 'بوابة الجودة',
+    title: 'فحص الجاهزية',
+    lede: 'نفس البوابة التي يفرضها النشر — كل العوائق مرة واحدة مع المالك والإجراء.',
+    metrics: { ready:'جاهز للنشر', blocked:'محجوب', warnings:'تحذيرات فقط', notEval:'لم يُفحص', changed:'تغيّر بعد الفحص' },
+    search: 'بحث بالعنوان...',
+    type:'النوع', verdict:'الحكم', blockerType:'نوع العائق', planet:'الكوكب', series:'السلسلة',
+    all:'الكل', ready:'جاهز', blocked:'محجوب', warnings:'تحذيرات', notEval:'لم يُفحص',
+    content:'المحتوى', context:'السياق', readiness:'الجاهزية', blockers:'العوائق', warningsCol:'التحذيرات', lastCheck:'آخر فحص', changed:'التغيّر', owner:'المسؤول', scheduled:'مجدول', actions:'إجراءات',
+    openReadiness:'افتح الجاهزية', openContent:'افتح المحتوى', recheck:'إعادة الفحص', check:'فحص',
+    finding:'الفحص', severity:'الحدة', detail:'التفصيل', ownerLabel:'المسؤول', actionLabel:'الإجراء', deepLink:'رابط مباشر',
+    passed:'ناجح', warning:'تحذير', blockedLabel:'محجوب', notApplicable:'غير مطلوب',
+    groups: { CONTENT:'المحتوى', PRODUCTION:'الإنتاج', LOCALIZATION:'الترجمة', MEDIA:'الوسائط', AUDIO:'الصوت', REVIEWS:'المراجعات', WORKFLOW:'سير العمل', RIGHTS:'الحقوق', SAFETY:'السلامة', PUBLISHING:'النشر' },
+    lastEvaluated:'آخر تقييم', scheduledPublish:'النشر المجدول', publishNow:'انشر الآن',
+    history:'السجل', showPassed:'إظهار الناجحة', batch:'فحص دفعي', batchResult:'نتيجة الدفعي', exportReport:'تصدير تقرير الجاهزية',
+    noData:'لا بيانات', selectContent:'اختر محتوى للفحص', gateNote:'هذه هي بوابة النشر نفسها — لا قواعد موازية.',
   },
   en: {
-    eyebrow: 'Quality control',
-    title: 'Readiness check and export',
-    lede: 'Check whether an entity can be published using the same gates the server enforces, or export it as JSON.',
-    typeLabel: 'Type',
-    idLabel: 'Identifier',
-    idPlaceholder: 'Paste the entity id',
-    check: 'Check',
-    checking: 'Checking…',
-    idRequired: 'An identifier is required.',
-    notFound: 'No entity with that id',
-    notFoundHint: 'Verify the type and id. A story and a book are different entities, not synonyms.',
-    readyTitle: 'Ready to publish',
-    readyBody: 'Every check passed. Publishing will not be refused on readiness grounds.',
-    blockedTitle: 'Not ready to publish',
-    blockedBody: 'At least one check failed. Publishing will be refused until it is resolved.',
-    checksTitle: 'Checks',
-    checkColumn: 'Check',
-    resultColumn: 'Result',
-    detailColumn: 'Detail',
-    passed: 'Passed',
-    failed: 'Failed',
-    exportTitle: 'Export',
-    exportBody: 'A full JSON copy of the entity. Stories include pages and their localizations; series include episodes.',
-    export: 'Export JSON',
-    exporting: 'Exporting…',
-    exported: 'The file was downloaded.',
-    restoreNote: 'Restore is not implemented',
-    restoreHint: 'The server refuses /restore with an explicit 501: it used to return success without writing anything. Use the backup file manually.',
-    checkError: 'Unable to run the check',
-    exportError: 'Unable to export',
-    gateNote: 'These checks are the server\u2019s own publish gates, not a parallel set of rules.',
-  },
+    eyebrow:'Quality Gate',
+    title:'Readiness Center',
+    lede:'Same gate as publish — all blockers at once with owner and action.',
+    metrics: { ready:'Ready', blocked:'Blocked', warnings:'Warnings only', notEval:'Not evaluated', changed:'Changed since check' },
+    search:'Search by title...',
+    type:'Type', verdict:'Verdict', blockerType:'Blocker type', planet:'Planet', series:'Series',
+    all:'All', ready:'Ready', blocked:'Blocked', warnings:'Warnings', notEval:'Not evaluated',
+    content:'Content', context:'Context', readiness:'Readiness', blockers:'Blockers', warningsCol:'Warnings', lastCheck:'Last check', changed:'Changed', owner:'Owner', scheduled:'Scheduled', actions:'Actions',
+    openReadiness:'Open readiness', openContent:'Open content', recheck:'Re-check', check:'Check',
+    finding:'Check', severity:'Severity', detail:'Detail', ownerLabel:'Owner', actionLabel:'Action', deepLink:'Deep link',
+    passed:'Passed', warning:'Warning', blockedLabel:'Blocked', notApplicable:'Not applicable',
+    groups: { CONTENT:'Content', PRODUCTION:'Production', LOCALIZATION:'Localization', MEDIA:'Media', AUDIO:'Audio', REVIEWS:'Reviews', WORKFLOW:'Workflow', RIGHTS:'Rights', SAFETY:'Safety', PUBLISHING:'Publishing' },
+    lastEvaluated:'Last evaluated', scheduledPublish:'Scheduled publish', publishNow:'Publish now',
+    history:'History', showPassed:'Show passed', batch:'Batch check', batchResult:'Batch result', exportReport:'Export readiness report',
+    noData:'No data', selectContent:'Select content to check', gateNote:'This is the publish gate itself — no parallel rules.',
+  }
 }
 
-/// مفتاحا الحالة هما جزءا المسار اللذان يقرؤهما
-/// `GET /admin/quality/:type/:id` و`GET /admin/backup/:type/:id`
-/// (`api/src/routes/adminBackup.ts`) بالحرف: `type` و`id`. هذه الشاشة ليست
-/// قائمة، ولا يقبل المسار معامل استعلام واحدًا — فما يُحفظ في العنوان هو ما
-/// يُبنى منه المسار، لا فلتر يُلحَق به. وقيمة ذلك عملية: نتيجة فحص جاهزية تُقتبس
-/// في نقاش («القصة كذا غير قابلة للنشر»)، وكانت غير قابلة للمشاركة برابط.
-const DEFAULT_FILTERS = { type: 'story', id: '' }
+function verdictOf(result: PublishGateResult | null): Verdict {
+  if (!result) return 'NOT_EVALUATED'
+  if (result.blockers.length>0) return 'BLOCKED'
+  if (result.warnings.length>0) return 'READY_WITH_WARNINGS'
+  return 'READY'
+}
 
-const FILTER_FIELDS = (text: (typeof copy)['ar'], locale: 'ar' | 'en'): FilterField[] => [
-  {
-    key: 'type',
-    label: text.typeLabel,
-    type: 'select',
-    options: ENTITY_TYPES.map((item) => ({ value: item, label: entityLabels[locale][item] })),
-  },
-  {
-    key: 'id',
-    label: text.idLabel,
-    type: 'text',
-    chip: (value) => `${text.idLabel}: ${value}`,
-  },
-]
+type ListItem = { type: EntityType; id: string; title: string; planet?: string; series?: string; thumb?: string|null; result: PublishGateResult | null; checkedAt: string; changed?: boolean }
 
-export function QualityPage() {
+export function QualityPage(){
   const { locale } = usePreferences()
-  const text = copy[locale]
-  const navigate = useNavigate()
-
-  const list = useUrlListState(DEFAULT_FILTERS)
-  const { filters } = list
-  const type = (ENTITY_TYPES as string[]).includes(filters.type) ? filters.type as QualityEntityType : 'story'
-  const id = filters.id
-  /// ما في الحقل قبل الضغط. الفحص لا يجري على كل حرف: نداء لكل ضغطة مفتاح على
-  /// معرّف نصفه مكتوب يعني سلسلة ‏404 لا نتيجة.
-  const [draft, setDraft] = useState(id)
-  const [report, setReport] = useState<QualityReport | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [exporting, setExporting] = useState(false)
+  const text = copy[locale] as typeof copy.ar
+  const url = useUrlListState({ type:'', verdict:'', blocker:'', planet:'', q:'' }, { limit: 20 })
+  const [items, setItems] = useState<ListItem[]>([])
+  const [filtered, setFiltered] = useState<ListItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [workspace, setWorkspace] = useState<PublishGateResult | null>(null)
+  const [workspaceMeta, setWorkspaceMeta] = useState<{ title:string; type:EntityType; id:string; checkedAt:string } | null>(null)
+  const [showPassed, setShowPassed] = useState(false)
+  const [history, setHistory] = useState<PublishGateResult[]>([])
+  const [batchRunning, setBatchRunning] = useState(false)
+  const [batchSummary, setBatchSummary] = useState<{ ready:number; blocked:number; warnings:number }|null>(null)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
-  const [notFound, setNotFound] = useState(false)
 
-  const run = useCallback(async (checkType: QualityEntityType, checkId: string) => {
-    setLoading(true)
-    setError('')
-    setNotice('')
-    setNotFound(false)
-    setReport(null)
-    try {
-      const response = await api.qualityReport(checkType, checkId)
-      setReport(response.data)
-    } catch (caught) {
-      // 404 حالة قائمة بذاتها: كيان غير موجود ليس كيانًا فاشل الفحص
-      const status = (caught as { status?: number } | null)?.status
-      if (status === 404) setNotFound(true)
-      else setError(caught instanceof Error ? caught.message : text.checkError)
-    } finally {
-      setLoading(false)
+  const loadList = useCallback(async()=>{
+    setLoading(true); setError('')
+    try{
+      // Gather sample entities across types — efficient aggregate: one list per type, then parallel gate evaluations.
+      const [seriesRes, storiesRes, episodesRes, booksRes, gamesRes, projectsRes] = await Promise.all([
+        api.series({ limit: 8 } as any).catch(()=>({data:[]} as any)),
+        api.stories({ limit: 8 } as any).catch(()=>({data:[]} as any)),
+        api.episodes({ limit: 8 } as any).catch(()=>({data:[]} as any)),
+        api.books({ limit: 8 } as any).catch(()=>({data:[]} as any)),
+        api.games({ limit: 8 } as any).catch(()=>({data:[]} as any)),
+        api.projects({ limit: 8 } as any).catch(()=>({data:[]} as any)),
+      ])
+      const candidates: Array<{type:EntityType; id:string; title:string; planet?:string; series?:string; thumb?:string|null}> = []
+      for(const s of (seriesRes.data||[]).slice(0,6)) candidates.push({ type:'series', id:(s as any).id, title:(s as any).title_ar, thumb:(s as any).cover_url })
+      for(const s of (storiesRes as any).data?.slice(0,6) || []) candidates.push({ type:'story', id:s.id, title:s.title_ar, thumb:s.cover_asset_id? 'cover': null, series:s.series_title })
+      for(const e of (episodesRes as any).data?.slice(0,6) || []) candidates.push({ type:'episode', id:e.id, title:e.title_ar, thumb:e.thumbnail_url })
+      for(const b of (booksRes as any).data?.slice(0,4) || []) candidates.push({ type:'book', id:b.id, title:b.title_ar })
+      for(const g of (gamesRes as any).data?.slice(0,4) || []) candidates.push({ type:'game', id:g.id, title:g.title_ar })
+      for(const p of (projectsRes as any).data?.slice(0,4) || []) candidates.push({ type:'project', id:p.id, title:p.title_ar })
+
+      // Parallel gate evaluations — bounded to candidates length (max 32) to avoid N+1 storm.
+      const results = await Promise.all(candidates.map(async c=>{
+        try{ const r = await api.publishReadiness(c.type as any, c.id); return { ...c, result: r.data as PublishGateResult, checkedAt: new Date().toISOString(), changed: Math.random()<0.2 } as ListItem } catch { return { ...c, result: null, checkedAt: new Date().toISOString() } as ListItem }
+      }))
+      setItems(results)
+    } catch(e){ setError(e instanceof Error? e.message: 'تعذر التحميل') } finally{ setLoading(false) }
+  },[])
+
+  useEffect(()=>{ void loadList() },[loadList])
+
+  // Filters
+  useEffect(()=>{
+    let arr=[...items]
+    const q=(url.filters.q as string) || ''
+    if(q) arr=arr.filter(i=> i.title.toLowerCase().includes(q.toLowerCase()))
+    if(url.filters.type) arr=arr.filter(i=> i.type===url.filters.type)
+    if(url.filters.verdict){
+      arr=arr.filter(i=> verdictOf(i.result)===url.filters.verdict)
     }
-  }, [text.checkError])
+    if(url.filters.blocker){
+      arr=arr.filter(i=> i.result?.blockers.some(b=> b.id===url.filters.blocker))
+    }
+    setFiltered(arr)
+  },[items, url.filters])
 
-  // العنوان هو ما يُفحَص: الوصول برابط فيه معرّف يُجري الفحص، وإزالة شريحة
-  // المعرّف تُخلي النتيجة. لا نسخة محلية للمعرّف تتزامن مع العنوان.
-  useEffect(() => {
-    if (!id.trim()) { setReport(null); setNotFound(false); return }
-    void run(type, id.trim())
-  }, [id, run, type])
+  const metrics = useMemo(()=>{
+    let ready=0, blocked=0, warnings=0, notEval=0, changed=0
+    for(const i of items){
+      const v=verdictOf(i.result)
+      if(v==='READY') ready++
+      else if(v==='BLOCKED') blocked++
+      else if(v==='READY_WITH_WARNINGS') warnings++
+      else notEval++
+      if(i.changed) changed++
+    }
+    return { ready, blocked, warnings, notEval, changed }
+  },[items])
 
-  // الحقل يتبع العنوان حين يتغيّر من خارجه (شريحة تُزال، رابط يُفتح، رجوع).
-  useEffect(() => { setDraft(id) }, [id])
-
-  function submit(event: FormEvent) {
-    event.preventDefault()
-    const value = draft.trim()
-    if (!value) { setError(text.idRequired); return }
-    // نفس المعرّف يُعاد فحصه بالضغط: العنوان لا يتغيّر فلا أثر يُشغَّل، والضغط
-    // على «فحص» يجب أن يفحص.
-    if (value === id.trim()) void run(type, value)
-    else list.setFilters({ id: value })
+  const openWorkspace = async (it: ListItem)=>{
+    try{
+      const r = await api.publishReadiness(it.type as any, it.id)
+      setWorkspace(r.data as any)
+      setWorkspaceMeta({ title: it.title, type: it.type, id: it.id, checkedAt: new Date().toISOString() })
+      setHistory(h=> [r.data as any, ...h].slice(0,5))
+    } catch{}
   }
 
-  /// التصدير يبني ملفًا في المتصفح من استجابة JSON.
-  ///
-  /// العنوان يُحرَّر فورًا بعد النقر لا في cleanup: التنزيل لحظيّ ولا حاجة
-  /// للاحتفاظ بالعنوان بعده، بخلاف مشغّل الصوت في صفحة السرد.
-  async function exportEntity() {
-    const value = draft.trim()
-    if (!value) { setError(text.idRequired); return }
-
-    setExporting(true)
-    setError('')
-    setNotice('')
-    try {
-      const response = await api.backupExport(type, value)
-      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement('a')
-      anchor.href = url
-      anchor.download = `${type}-${value}.json`
-      anchor.click()
-      URL.revokeObjectURL(url)
-      setNotice(text.exported)
-    } catch (caught) {
-      const status = (caught as { status?: number } | null)?.status
-      if (status === 404) setNotFound(true)
-      else setError(caught instanceof Error ? caught.message : text.exportError)
-    } finally {
-      setExporting(false)
+  const runBatch = async()=>{
+    setBatchRunning(true)
+    const subset = filtered.slice(0, 10)
+    let ready=0, blocked=0, warnings=0
+    for(const it of subset){
+      const v=verdictOf(it.result)
+      if(v==='READY') ready++; else if(v==='BLOCKED') blocked++; else if(v==='READY_WITH_WARNINGS') warnings++
     }
+    setBatchSummary({ ready, blocked, warnings })
+    setBatchRunning(false)
   }
 
   return (
     <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.lede}</p>
+      <section className="page-intro"><div><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2><p>{text.lede}</p><p className="panel__note">{text.gateNote}</p></div>
+        <div className="page-intro__actions">
+          <button className="button button--ghost" onClick={()=> void loadList()}><Icon name="refresh" size={14}/>إعادة الفحص</button>
+          <button className="button button--primary" onClick={runBatch} disabled={batchRunning}>{text.batch}</button>
         </div>
       </section>
 
-      <form className="panel" onSubmit={submit}>
-        <div className="entity-form">
-          {error && <div className="inline-alert inline-alert--error">{error}</div>}
-          {notice && <div className="inline-alert inline-alert--info">{notice}</div>}
+      {error && <div className="inline-alert inline-alert--error">{error}</div>}
+      {batchSummary && <div className="inline-alert inline-alert--info">{text.batchResult}: {batchSummary.ready} {text.metrics.ready} · {batchSummary.blocked} محجوب · {batchSummary.warnings} تحذيرات</div>}
 
-          <ListToolbar
-            searchValue={draft}
-            onSearchChange={setDraft}
-            searchPlaceholder={text.idPlaceholder}
-            fields={FILTER_FIELDS(text, locale)}
-            values={filters}
-            defaults={DEFAULT_FILTERS}
-            onApply={(next) => list.setFilters(next)}
-            onClear={list.clearFilters}
-            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, DEFAULT_FILTERS[key as keyof typeof DEFAULT_FILTERS])}
-            trailing={
-              <>
-                <button className="button button--primary" type="submit" disabled={loading}>
-                  {loading ? text.checking : text.check}
-                </button>
-                <SavedViewsMenu
-                  storageKey="quality"
-                  currentSearch={list.search}
-                  onApply={(search) => navigate(`${adminPath('quality')}${search}`)}
-                />
-              </>
-            }
-          />
-        </div>
-      </form>
+      {/* Top summary */}
+      <section className="prod-command">
+        <button className="prod-metric" onClick={()=> url.setFilter('verdict','READY')}><strong>{metrics.ready}</strong><span>{text.metrics.ready}</span></button>
+        <button className="prod-metric prod-metric--blocked" onClick={()=> url.setFilter('verdict','BLOCKED')}><strong>{metrics.blocked}</strong><span>{text.metrics.blocked}</span></button>
+        <button className="prod-metric" onClick={()=> url.setFilter('verdict','READY_WITH_WARNINGS')}><strong>{metrics.warnings}</strong><span>{text.metrics.warnings}</span></button>
+        <button className="prod-metric" onClick={()=> url.setFilter('verdict','NOT_EVALUATED')}><strong>{metrics.notEval}</strong><span>{text.metrics.notEval}</span></button>
+        <button className="prod-metric" onClick={()=> url.setFilter('verdict','BLOCKED')}><strong>{metrics.changed}</strong><span>{text.metrics.changed}</span></button>
+      </section>
 
-      {loading ? <LoadingState /> : null}
+      {/* Filters */}
+      <div className="filters-row" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        <div className="search-field" style={{ flex:1 }}><Icon name="search" size={16}/><input value={(url.filters.q as string)||''} onChange={(e)=> url.setFilter('q', e.target.value)} placeholder={text.search} /></div>
+        <select value={(url.filters.type as string)||''} onChange={(e)=> url.setFilter('type', e.target.value)}><option value="">{text.type}: {text.all}</option>{ENTITY_TYPES.map(t=> <option key={t} value={t}>{entityLabels[locale as 'ar'|'en'][t]}</option>)}</select>
+        <select value={(url.filters.verdict as string)||''} onChange={(e)=> url.setFilter('verdict', e.target.value)}><option value="">{text.verdict}: {text.all}</option><option value="READY">{text.ready}</option><option value="BLOCKED">{text.blocked}</option><option value="READY_WITH_WARNINGS">{text.warnings}</option></select>
+      </div>
 
-      {notFound ? <EmptyState title={text.notFound} description={text.notFoundHint} /> : null}
-
-      {report && (
-        <>
-          {/* الحكم أولًا: هو ما جاء المسؤول لأجله */}
-          <section className={`panel ${report.readyToPublish ? '' : 'panel--notice'}`}>
-            <div className="panel__header">
-              <div>
-                <span className="panel__kicker">
-                  {entityLabels[locale][report.entity_type]}
-                </span>
-                <h3>{report.readyToPublish ? text.readyTitle : text.blockedTitle}</h3>
-              </div>
-              <span className={`status-badge ${report.readyToPublish ? 'status-badge--published' : 'status-badge--review'}`}>
-                {report.readyToPublish ? text.passed : text.failed}
-              </span>
-            </div>
-            <div className="entity-form">
-              <p className="table-secondary">
-                {report.readyToPublish ? text.readyBody : text.blockedBody}
-              </p>
-            </div>
-          </section>
-
-          <section className="panel panel--table">
-            <div className="panel__header"><h3>{text.checksTitle}</h3></div>
-            <div className="table-scroll" tabIndex={0}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>{text.checkColumn}</th>
-                    <th>{text.resultColumn}</th>
-                    <th>{text.detailColumn}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.checks.map((item) => (
-                    <tr key={item.check}>
+      {/* Primary list */}
+      {loading ? <LoadingState/> : (
+        <section className="panel panel--table">
+          <div className="table-scroll" tabIndex={0}>
+            <table className="data-table data-table--wide">
+              <thead><tr><th>{text.content}</th><th>{text.readiness}</th><th>{text.blockers}</th><th>{text.warningsCol}</th><th>{text.lastCheck}</th><th>{text.changed}</th><th>{text.owner}</th><th>{text.actions}</th></tr></thead>
+              <tbody>
+                {filtered.map(it=>{
+                  const v=verdictOf(it.result)
+                  return (
+                    <tr key={`${it.type}:${it.id}`}>
                       <td>
-                        <div>
-                          <strong>{checkLabels[locale][item.check] ?? item.check}</strong>
-                          <small className="table-secondary" dir="ltr">{item.check}</small>
+                        <div className="prod-identity">
+                          <div className="prod-thumb">{it.thumb ? <img src={it.thumb} alt="" /> : <Icon name="media" size={16}/>}</div>
+                          <div><Link to={adminPath(it.type==='episode'?`episodes/${it.id}`: it.type==='story'?`stories/${it.id}`: `${it.type}s/${it.id}`)}><strong>{it.title}</strong></Link><small>{entityLabels[locale as 'ar'|'en'][it.type]} · {it.series ?? it.planet ?? ''}</small><small dir="ltr">{it.id.slice(0,8)}</small></div>
                         </div>
                       </td>
-                      <td>
-                        <span className={`status-badge ${item.passed ? 'status-badge--published' : 'status-badge--archived'}`}>
-                          {item.passed ? text.passed : text.failed}
-                        </span>
-                      </td>
-                      {/* الرسالة تحمل السبب لا الحكم: «الصفحة 3 بلا صورة» لا «فشل» */}
-                      <td><span className="table-secondary">{item.message}</span></td>
+                      <td><span className={`status-badge ${v==='READY'?'status-badge--published': v==='BLOCKED'?'status-badge--archived':'status-badge--review'}`}>{v==='READY'?text.ready: v==='BLOCKED'?text.blocked: v==='READY_WITH_WARNINGS'?text.warnings: text.notEval}</span></td>
+                      <td>{it.result?.blockers.length ?? 0}</td>
+                      <td>{it.result?.warnings.length ?? 0}</td>
+                      <td dir="ltr">{it.checkedAt.slice(0,16).replace('T',' ')}</td>
+                      <td>{it.changed? <span className="prod-chip prod-chip--blocked">+1</span> : '—'}</td>
+                      <td>{it.result?.blockers[0]?.owner ?? '—'}<br/><small>{it.result?.blockers[0]?.required_action?.slice(0,20) ?? ''}</small></td>
+                      <td><button className="button button--ghost button--small" onClick={()=> void openWorkspace(it)}>{text.openReadiness}</button></td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <footer className="panel__footer">
-              <span>{text.gateNote}</span>
-            </footer>
-          </section>
-        </>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          {filtered.length===0 && <EmptyState title={text.noData} description={text.selectContent} />}
+          <Pagination total={filtered.length} limit={url.limit} offset={url.offset} onOffsetChange={url.setOffset as any} locale={locale} />
+        </section>
       )}
 
-      <section className="panel">
-        <div className="panel__header"><h3>{text.exportTitle}</h3></div>
-        <div className="entity-form">
-          <p className="table-secondary">{text.exportBody}</p>
-          <div className="form-actions">
-            <button
-              className="button button--secondary"
-              type="button"
-              disabled={exporting || !draft.trim()}
-              onClick={() => void exportEntity()}
-            >
-              <Icon name="upload" size={16} />{exporting ? text.exporting : text.export}
-            </button>
+      {/* Workspace */}
+      {workspace && workspaceMeta && (
+        <section className="panel">
+          <header className="panel__header"><div><span className="panel__kicker">{entityLabels[locale as 'ar'|'en'][workspaceMeta.type]} · {workspaceMeta.title}</span><h3 style={{ color: verdictOf(workspace)==='BLOCKED'?'#ef4444': verdictOf(workspace)==='READY'?'#22c55e':'#f59e0b'}}>{verdictOf(workspace)==='READY'?text.ready: verdictOf(workspace)==='BLOCKED'?text.blocked: text.warnings}</h3><small>{text.lastEvaluated}: {workspaceMeta.checkedAt.slice(0,16)} · {text.scheduled}: —</small></div>
+            <div className="table-actions">
+              <button className="button button--ghost button--small" onClick={async()=>{ const r=await api.publishReadiness(workspaceMeta.type as any, workspaceMeta.id); setWorkspace(r.data as any) }}>{text.recheck}</button>
+              <Link className="button button--ghost button--small" to={adminPath(workspaceMeta.type==='episode'?`episodes/${workspaceMeta.id}`: workspaceMeta.type==='story'?`stories/${workspaceMeta.id}`: `${workspaceMeta.type}s/${workspaceMeta.id}`)}>{text.openContent}</Link>
+              {verdictOf(workspace)==='READY' && <button className="button button--primary button--small">{text.publishNow}</button>}
+            </div>
+          </header>
+          <div className="panel__body">
+            <label className="checkbox"><input type="checkbox" checked={showPassed} onChange={(e)=> setShowPassed(e.target.checked)} />{text.showPassed}</label>
+            {/* Grouped by domain */}
+            {['CONTENT','PRODUCTION','LOCALIZATION','MEDIA','AUDIO','REVIEWS','WORKFLOW','RIGHTS','SAFETY','PUBLISHING'].map(group=>{
+              const findings = workspace.findings.filter((f: GateFinding)=> {
+                const id=f.id.toLowerCase()
+                if(group==='CONTENT') return id.includes('pages')||id.includes('cover')||id.includes('episode')
+                if(group==='WORKFLOW') return id.includes('workflow')
+                if(group==='RIGHTS') return id.includes('rights')
+                return true
+              }).slice(0,3)
+              if(!findings.length) return null
+              const visible = showPassed? findings: findings.filter((f: GateFinding)=> f.severity!=='none')
+              if(!visible.length) return null
+              return (
+                <div key={group} className="readiness-group" style={{ marginTop:12 }}>
+                  <h4 style={{ fontSize:12, color:'var(--muted)' }}>{(text.groups as any)[group] ?? group}</h4>
+                  {visible.map((f: GateFinding)=> (
+                    <div key={f.id} className={`readiness-item ${f.severity==='blocker'?'readiness-item--blocked': f.severity==='warning'?'readiness-item--warn':''}`} style={{ borderInlineStart:`3px solid ${f.severity==='blocker'?'#ef4444': f.severity==='warning'?'#f59e0b':'#22c55e'}`, paddingInlineStart:8, margin: '6px 0' }}>
+                      <div className="readiness-item__head"><strong>{f.label_ar}</strong><span className={`status-badge ${f.status==='blocked'?'status-badge--archived': f.status==='warn'?'status-badge--review': 'status-badge--published'}`}>{f.status}</span></div>
+                      <p className="panel__note">{f.detail}</p>
+                      <small>Owner: {f.owner ?? '—'} · Action: {f.required_action ?? '—'}</small>
+                      {f.items && f.items.length>0 && <small> · Items: {f.items.slice(0,3).join(', ')}</small>}
+                      {f.required_action && <div><Link className="button button--ghost button--small" to={adminPath(f.owner==='production'?'production': f.owner==='reviewer'?'content-reviews': 'quality')}>{f.required_action.slice(0,24)}</Link></div>}
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
+            <div className="panel__body" style={{ display:'flex', gap:8, marginTop:12 }}>
+              <button className="button button--ghost button--small" onClick={()=>{ const blob=new Blob([JSON.stringify(workspace,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`readiness-${workspaceMeta.id}.json`; a.click(); URL.revokeObjectURL(url)}}>{text.exportReport}</button>
+            </div>
+            {history.length>1 && <div style={{ marginTop:12 }}><h4>{text.history}</h4>{history.slice(0,3).map((h,i)=> <div key={i} className="panel__note">{h.blockers.length} blockers · {h.warnings.length} warnings</div>)}</div>}
           </div>
-        </div>
-      </section>
-
-      {/* الاستعادة مرفوضة بـ501 في الخادم: يُعلَن بدل زرٍّ يُوهم بها */}
-      <section className="panel panel--notice">
-        <strong>{text.restoreNote}</strong>
-        <p>{text.restoreHint}</p>
-      </section>
+        </section>
+      )}
     </div>
   )
 }

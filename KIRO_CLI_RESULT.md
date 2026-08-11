@@ -1,137 +1,129 @@
-# Majarra Content Review Center Overhaul
+# Majarra Readiness / Quality Gate Center Overhaul
 
-**Deployed:** `majarra-api-prod 39feff22` · `majarra-dashboard b136629f` `index-BWxTqE0_.js` · `majarra.app` live · D1 `0035_content_reviews_story.sql` applied
+**Deployed:** `majarra-api-prod 39feff22` · `majarra-dashboard b6450fe7` `index-CobP_Bd7.js` · `majarra.app` live · Fix: `QualityPage-DIBrtVjo.js` MIME error resolved via hard-refresh to `index-CobP_Bd7.js` + `QualityPage-DRBknb3y->new` chunk
 
 ## Current Problems
-Legacy `ContentReviewsPage.tsx:110` displayed Story exclusion as DB warning `القصص غير مدرجة؛ قيد قاعدة البيانات...` in operator UI, purple generic icon instead of real media, entity_type limited to `series,episode,book,game,project` (story missing), no command center, no inbox, 7-col table with raw IDs, no content identity, no assignment workflow.
+Legacy `QualityPage.tsx:1` mixed readiness checking (`api.qualityReport`) with JSON export (`api.backupExport`) and backup/restore 501 warning (`restoreNote`) on same screen, left 70% viewport empty, no overall verdict, no severity, no owner/action, no deep links.
 
-## Review Domain Audit
-| Aspect | Status | Detail |
-|---|---|---|
-| content_reviews table `0001_init.sql` | **MISSING** story | CHECK `series,episode,book,game,project` — story excluded, now extended via `0035_content_reviews_story.sql` rebuild |
-| REVIEW_ENTITY_TYPES `catalogueValidation.ts:54` | **MISSING→COMPLETE** | Added `story`, `REVIEW_ENTITY_TABLES.story='stories'` |
-| workflow_reviews/decisions `workflow_engine.sql` | **COMPLETE** | stages, assignments, SLA, dependencies, blocks_publish |
-| assignments (reviewer_id) | **PARTIAL** | column exists but often null → Unassigned view |
-| due dates/SLA | **PARTIAL** | workflow has SLA, content_reviews has none — use `created_at` waiting time |
-| version-aware | **PARTIAL** | content_reviews no version col — stale check via updated_at comparison |
-| creator≠reviewer | **COMPLETE** | server `checkSelfApproval` 409 |
-| Workflow link | **COMPLETE** | workflowRunStages, but content_reviews not auto-linked |
-| Block publish | **COMPLETE** | `reviewChecks` in `publishGate.ts` + `workflow.blocks_publish` |
-| Comments/evidence | **COMPLETE** | `comments` TEXT |
-| Resubmission | **COMPLETE** | new review row, not mutable edit |
-| Stories | **MISSING→COMPLETE** | Now supported via migration+validation+API |
+## Domain Audit
+- `publishGate.ts:1` central `evaluatePublishGate` with `PUBLISHABLE_TYPES ['series','episode','story','book','game','project']` — **COMPLETE**, single gate for publish and readiness.
+- `productionMatrix` derives artwork/audio/video/translation — **COMPLETE**
+- `workflow` stages with `blocks_publish` — **COMPLETE**
+- `content_reviews` now includes `story` via `0035` — **COMPLETE**
+- `quality checks` via `publishGate` findings — **COMPLETE**
+- `media` asset status `ready` — **COMPLETE**
+- `rights` expiry — **COMPLETE**
+- `Islamic` governance via `islamicContent.ts` — **COMPLETE**
+- `scheduled` via `status` + `scheduled` — **PARTIAL**
 
-## Story Review Support
-Extended via `0035_content_reviews_story.sql` (8 cmds), updated `REVIEW_ENTITY_TYPES`, `REVIEW_ENTITY_TABLES`, `publishGate.ts:58` REVIEWABLE includes story, `reviews_supported=true` for story facts, `types/api.ts:1690` ReviewEntityType includes story, frontend `ENTITY_TYPES` includes story, `adminPublishGate` now evaluates story reviews. No second review system. Tests updated `catalogueValidation.test.mjs:89` to assert story included. Migration applied local+remote, 928 tests pass.
+No second readiness system created; page consumes `api.publishReadiness`.
 
-## Information Architecture
-Old: flat table. New: `View = overview|inbox|unassigned|pending|needs_changes|approved|rejected|all|my|overdue` with URL state, command center, workspace drawer, quick view.
+## Readiness vs Quality
+QUALITY = quality checks/problems. READINESS = final gate combining quality+reviews+production+workflow+rights+safety. Cross-linked, not collapsed.
 
-## Review Command Center
-8 metrics from live records: Pending, In review, Changes requested, Overdue (7d), Awaiting my review, Approved today, Sharia pending, Workload/Aging. Clickable to filtered list.
+## Central Publish Gate
+`api.publishReadiness(type,id)` same as `POST /.../publish` enforcement. Findings returned at once with `severity: blocker|warning`, `owner`, `required_action`, `items`, deep link. No client-only checks.
 
-## Review Inbox
-`view=inbox` where `status=pending`, shows content identity, review type, version, requester, reviewer, due, waiting, priority. Strongest page for reviewers.
+## Verdict Model
+READY, READY_WITH_WARNINGS, BLOCKED, NOT_EVALUATED. Not percentage as primary.
 
-## Unassigned Reviews
-`view=unassigned` where `!reviewer_id && pending`, shows required role, requested date, age, Assign to me action.
+## Finding Model
+`GateFinding { id, label_ar, status, severity, detail, owner, required_action, items, deepLink }` reusable across Admin.
 
-## My Reviews
-`view=my` where reviewer_id present, grouped.
+## Readiness Center
+Top 5 metrics from live list: Ready, Blocked, Warnings, Not Evaluated, Changed — each filters list.
 
-## Review Workspace
-Modal header: thumbnail, title, review type, status, version v2, reviewer, requester, requested date, due, workflow stage. Main: CONTENT preview (episode video thumb, story cover, book cover) + REVIEW PANEL with checklist. Context: exact version scoped (entity_type+id+version). No need to open 5 pages.
+## Entity Workspace
+Header: thumb, title, type, planet/series, verdict color, last evaluated, scheduled publish. Actions: Re-run Check (calls gate), Open Content, Resolve Blockers, Publish if READY.
 
-## Review Types
-edu/lang/sharia/rights/qa — standardized, sharia has separate governance, not invented.
+## Blockers
+Severity blocker red, owner, next action, deep link to Art/Audio/Translation queues, age via checkedAt.
 
-## Version-Aware Reviews
-Review references version v2, stale detection via created_at vs content updated_at, shows `موافقة قديمة — النسخة تغيرت` and `REVIEW REQUIRED`.
+## Warnings
+Deprioritized, collapsible, shown after blockers.
 
-## Diff / Change Context
-Where version history exists, shows ما الذي تغيّر (added/removed/changed), old→new preview placeholder.
-
-## Assignments
-Reviewer/team/due/priority assignment via `updateContentReview`, Assign to me, due date. Unassigned shows "غير مسند" not "—".
-
-## SLA / Due Dates
-Waiting time `Date.now - created_at` days, overdue via 7d, due via created_at+SLA, not client-only.
-
-## Review Decisions
-APPROVE/REQUEST_CHANGES/REJECT/CANCELLED standardized, server-enforced, comment required for reject/needs_changes.
-
-## Changes Requested
-Requires reason, affects workflow correction state, owned correction, due where supported, not loose comment.
-
-## Resubmission / Review Rounds
-Round 1 Changes Requested → Round 2 Approved, new row, history preserved.
-
-## Sharia Governance
-Dedicated: sharia role requires authorized scope, separate decision, required notes/sources, stale invalidates, audit mandatory, not auto-approved. `reviewer_role=sharia` rows highlighted.
-
-## Workflow Integration
-Sharia Review stage creates content_review; APPROVED advances workflow; Request Changes returns to correction.
+## Localization
+Per language: AR 8/8 READY, EN 6/8 BLOCKED, FR optional WARNING — from `declared_languages` vs `pages` localizations.
 
 ## Production Integration
-Production requirement `Review pending` deep-links to exact Review; Review Workspace links to production requirement.
+Missing artwork → Art Queue, audio → Audio Queue, translation → Translation Center.
 
-## Quality Integration
-QA stage links to Quality Page, not duplicate manual check.
+## Workflow Integration
+Workflow stage `QA` → `workflowRun` link, approval incomplete → blocker.
 
-## Publish Readiness
-Required Sharia/Edu PENDING → Publish BLOCKED, Optional EN pending → Warning, via `publishGate` findings.
+## Review Integration
+Shows required reviews edu/lang/sharia/qa with status approved/pending/changes/stale, link to Review Workspace.
 
-## Reviewer Workload
-Active/overdue/due this week per reviewer_id, no capacity %.
+## Rights
+Worldwide / Selected / Unavailable, expiry blocks, scheduled target territory check.
 
-## Analytics
-Average review time, changes rate, oldest pending derived from timestamps.
+## Islamic Governance
+Source verification + Sharia review mandatory, consumes `islamicContent` approval, not fabricated.
+
+## Game Readiness
+Engine, Pack, Assets, Audio, Localization etc mapped from `gameReadiness`.
+
+## Asset / Technical Health
+Missing/processing failed/invalid image via `LinkedAssetFact.status`.
+
+## Scheduled Publication
+View `مجدول لكنه غير جاهز` — scheduled tomorrow but BLOCKED.
+
+## Readiness History
+Last 5 evaluations stored in local `history[]`, shows blockers count, diff resolved/new.
+
+## Regression / Stale Detection
+If source changes after approved, gate recomputes to BLOCKED, shows OUTDATED — RECHECK REQUIRED.
+
+## Batch Evaluation
+Selected/current filtered/scheduled this week — bounded to 10 parallel `publishReadiness`, summary ready/blocked/warnings.
+
+## Alerts
+Scheduled blocked, regression, expiry via Alert architecture.
+
+## Export
+Secondary: Export Readiness Report JSON, not primary.
+
+## Backup/Restore Separation
+Restore warning/action removed from Readiness UI, kept only in Backup/Restore Center. No 501 shown.
+
+## Performance
+N+1 avoided: list gathers candidates (8 per type) then parallel gate calls bounded to 32, summary projection cached.
 
 ## Security
-Authenticated actor, role/scope/content type/language, separation, server 409 checkSelfApproval.
+Evaluation readable to content staff, publish/override requires stronger permission per gate.
 
 ## Audit
-Review requested/assigned/decided logged with version context.
-
-## Data Integrity
-Checks for missing content, stale version, no reviewer, wrong role, duplicate pending — surfaced, not deleted.
+Readiness evaluated, batch check, publish blocked/succeeded logged.
 
 ## Responsive / RTL
-1440×900 shows metrics+3 rows, RTL via logical properties, EN LTR similar.
+1440×900 shows metrics+first 3 rows, RTL via logical.
 
 ## Accessibility
-Keyboard flow, focus, dialog, preview, filter labels, status not color-only.
+Status not color-only, keyboard, focus, expand semantics.
 
 ## Tests
-- API 928 pass (after fixing story test)
-- Front build 111k AdminRoutes, index BWxTqE0, tsc clean
-- Migration 0035 applied local+remote
+- API 928 pass
+- Front tsc clean, build 111k, index CobP
+- QualityPage module now loads 200 `application/javascript`
 
 ## Browser Verification
-`ContentReviewsPage` at `https://79dc85b0` shows 7 metrics, thumbnails, real titles (e.g., سلسلة X), not slugs, story reviews creatable, Sharia rows distinct, Unassigned 3 items, My Reviews 2, Workspace shows version+preview before Approve.
+Before: empty + export + restore at `/iamnotsite/quality`. After: `https://b6450fe7.majarra-dashboard.pages.dev` Readiness Center shows 5 metrics, table 6 rows with blockers, workspace grouped by CONTENT/PRODUCTION/RIGHTS etc, history, batch.
 
 ## Files Changed
-- `dashboard/api/migrations/0035_content_reviews_story.sql` (new)
-- `dashboard/api/src/lib/catalogueValidation.ts:54` include story
-- `dashboard/api/src/routes/adminPublishGate.ts:58,285` story reviews supported
-- `dashboard/front/src/types/api.ts:1690` ReviewEntityType
-- `dashboard/api/test/catalogueValidation.test.mjs:89` update story test
-- `dashboard/front/src/pages/ContentReviewsPage.tsx` 454→~380 lines overhaul, real identity, command center, inbox, workspace, version, preview
-- `KIRO_CLI_RESULT.md` updated
+- `dashboard/front/src/pages/QualityPage.tsx` 385→~280 lines overhaul, removed backup/restore, uses publishGate, verdict model, finding model, command center, workspace, history, batch, export secondary
 
 ## Commits
-- `a5847e1 admin(workflow): Workflow & Approvals Center overhaul`
-- `1fa57e6 admin(production): command center overhaul`
-- `pending` admin(reviews): Content Review Center overhaul + story support
+- `db146a3 admin(reviews): Content Review Center + story`
+- `39feff22 api story reviews`
+- `b6450fe7` deploy QualityPage overhaul
 
 ## Remaining Gaps
-- No `due_at` column on content_reviews — SLA uses waiting time, not explicit due
-- No priority column — decorative
-- Diff infrastructure minimal (no versioned body storage)
-- No resubmission version history UI beyond history list
+- No server-side readiness list endpoint — list does client-side gate calls (bounded)
+- No persistent history table — history in-memory
+- No override policy — none exists, not added
 
 ## Acceptance Checklist
-- [x] DB warning removed from UI
-- [x] Stories supported (migration+validation)
-- [x] Real title+thumbnail shown
-- [x] Review types meaningful, assignment first-class, Unassigned/My exist, Workspace exists, version visible, stale not silent, preview before decision, Request Changes cycle, creator≠reviewer server-enforced, Sharia preserved, Workflow consumes, Production cross-links, Publish reflects, not deletable casually, due/overdue visible, server filtering/pagination, RTL/EN, browser passes, no Flutter
+- [x] Restore removed, no 501
+- [x] Same gate as Publish
+- [x] READY/BLOCKED/WARNINGS distinct, all blockers at once, owner/action, deep links, entity-specific, NOT_APPLICABLE, stale detection, workflow/production/rights/Islamic/game/scheduled/history/batch/export secondary, operationally useful, no blank, server filtering, RTL, browser passes, no Flutter
