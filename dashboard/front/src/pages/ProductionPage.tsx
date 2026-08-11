@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
 import { Modal } from '../components/Modal'
 import { Pagination } from '../components/Pagination'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { SavedViewsMenu } from '../components/ListTools'
+import { useUrlListState } from '../hooks/useUrlListState'
 import { usePreferences } from '../context/preferences'
 import type {
   ProductionItem,
@@ -48,7 +52,10 @@ const copy = {
     queueView: 'مهامي',
     episodes: 'الحلقات',
     stories: 'القصص',
+    typeLabel: 'النوع',
     withPublish: 'تقييم بوابة النشر',
+    publishEvaluated: 'مُقيَّم',
+    publishSkipped: 'غير مُقيَّم',
     withPublishHint: 'تقييم البوابة لكل عنصر مكلف؛ إطفاؤه يعرض بقية المصفوفة ويُعلن أن صفّ النشر غير مُقيَّم.',
     item: 'العنصر',
     progress: 'الإنجاز',
@@ -89,7 +96,10 @@ const copy = {
     queueView: 'My queue',
     episodes: 'Episodes',
     stories: 'Stories',
+    typeLabel: 'Type',
     withPublish: 'Evaluate the publish gate',
+    publishEvaluated: 'Evaluated',
+    publishSkipped: 'Not evaluated',
     withPublishHint: 'Evaluating the gate per item is expensive; turning it off shows the rest of the matrix and declares the publish row unevaluated.',
     item: 'Item',
     progress: 'Progress',
@@ -132,17 +142,62 @@ const stateClass = (state: RequirementState) => {
 
 const LIMIT = 20
 
+/// مفاتيح الفلاتر هي أسماء معاملات الاستعلام التي يقبلها
+/// `GET /admin/production/board` بالحرف (`type`, `status`, `series_id`,
+/// `with_publish`, `limit`, `offset` في `api/src/routes/adminProduction.ts`).
+/// هذه الشاشة هدف غوص من اللوحة التنفيذية، فاسم المعامل هنا ليس تفصيلًا: رابط
+/// المقياس يكتب المعامل الذي يفهمه المعالِج، وأي ترجمة وسيطة تعني قائمة غير
+/// المجموعة التي عُدَّت. تُعرض هنا الفلاتر التي كانت الشاشة تُرسلها فعلًا؛
+/// `status` و`series_id` يقبلهما المعالِج ولا تعرضهما الشاشة، فلا يُرسَلان.
+const DEFAULT_FILTERS = { type: 'episode', with_publish: '1' }
+
+/// حقول الدرج بيانات لا JSX: نفس التعريف يقود الدرج والشرائح وعدّاد الفلاتر
+/// النشطة، فلكل `select` تسمية مقروءة بالضرورة لا بالتذكّر. القائمة السابقة
+/// كانت `<select aria-label={text.episodes}>`، أي تسمية اسمها «الحلقات» على
+/// حقل يختار بين الحلقات والقصص.
+const FILTER_FIELDS = (text: (typeof copy)['ar']): FilterField[] => [
+  {
+    key: 'type',
+    label: text.typeLabel,
+    type: 'select',
+    options: [
+      { value: 'episode', label: text.episodes },
+      { value: 'story', label: text.stories },
+    ],
+  },
+  {
+    key: 'with_publish',
+    label: text.withPublish,
+    type: 'select',
+    hint: text.withPublishHint,
+    options: [
+      { value: '1', label: text.publishEvaluated },
+      { value: '0', label: text.publishSkipped },
+    ],
+  },
+]
+
 export function ProductionPage() {
   const { locale } = usePreferences()
   const text = copy[locale === 'en' ? 'en' : 'ar']
+  const navigate = useNavigate()
 
-  const [view, setView] = useState<'table' | 'kanban' | 'queue'>('table')
-  const [type, setType] = useState<'episode' | 'story'>('episode')
-  const [withPublish, setWithPublish] = useState(true)
+  // حالة اللوحة في العنوان لا في الذاكرة.
+  //
+  // كانت طريقة العرض والنوع والترقيم في `useState`، فرابطٌ إلى «مركز الإنتاج»
+  // يفتح دائمًا جدول الحلقات من الصفحة الأولى مهما كان ما يراه من أرسله. وهذه
+  // الشاشة تُقرأ في اجتماع: «انظر عمود المتوقّف في كانبان القصص» كان يحتاج ثلاث
+  // نقرات من المستلم بدل رابط واحد. طريقة العرض الآن معامل `view` في العنوان،
+  // فالرابط يفتح ما كان معروضًا.
+  const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
+  const { filters, offset, limit } = list
+  const { type, with_publish: withPublish } = filters
+  /// قيمة غير معروفة في `view` تُقرأ كجدول: عنوان مُحرَّر بيد لا يجوز أن يُفرغ الشاشة.
+  const view: 'table' | 'kanban' | 'queue' = list.view === 'kanban' || list.view === 'queue' ? list.view : 'table'
+
   const [items, setItems] = useState<ProductionItem[]>([])
   const [queue, setQueue] = useState<ProductionQueueRow[]>([])
   const [total, setTotal] = useState(0)
-  const [offset, setOffset] = useState(0)
   const [boardLimit, setBoardLimit] = useState(LIMIT)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -163,8 +218,8 @@ export function ProductionPage() {
       } else {
         const response = await api.productionBoard({
           type,
-          with_publish: withPublish ? '1' : '0',
-          limit: LIMIT,
+          with_publish: withPublish,
+          limit,
           offset,
         })
         setItems(response.data)
@@ -177,7 +232,10 @@ export function ProductionPage() {
     } finally {
       setLoading(false)
     }
-  }, [offset, text.loadError, type, view, withPublish])
+  }, [limit, offset, text.loadError, type, view, withPublish])
+
+  // لا `setOffset(0)` عند تغيير النوع: `useUrlListState` يُصفّر الترقيم مع كل
+  // تغيير فلتر، وأثرٌ إضافي يفعل الشيء نفسه كان يكتب في العنوان مرتين.
 
   useEffect(() => { void load() }, [load])
 
@@ -228,30 +286,33 @@ export function ProductionPage() {
         </div>
       </section>
 
-      <div className="filters-row">
-        {(['table', 'kanban', 'queue'] as const).map((item) => (
-          <button
-            key={item}
-            type="button"
-            className={`button ${view === item ? 'button--primary' : 'button--ghost'}`}
-            onClick={() => { setView(item); setOffset(0) }}
-          >
-            {item === 'table' ? text.tableView : item === 'kanban' ? text.kanbanView : text.queueView}
-          </button>
-        ))}
-        {view !== 'queue' && (
+      <ListToolbar
+        fields={view === 'queue' ? [] : FILTER_FIELDS(text)}
+        values={filters}
+        defaults={DEFAULT_FILTERS}
+        onApply={(next) => list.setFilters(next)}
+        onClear={list.clearFilters}
+        onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, DEFAULT_FILTERS[key as keyof typeof DEFAULT_FILTERS])}
+        trailing={
           <>
-            <select aria-label={text.episodes} value={type} onChange={(event) => { setType(event.target.value as 'episode' | 'story'); setOffset(0) }}>
-              <option value="episode">{text.episodes}</option>
-              <option value="story">{text.stories}</option>
-            </select>
-            <label className="field field--inline">
-              <input type="checkbox" checked={withPublish} onChange={(event) => setWithPublish(event.target.checked)} />
-              <span>{text.withPublish}</span>
-            </label>
+            {(['table', 'kanban', 'queue'] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`button ${view === item ? 'button--primary' : 'button--ghost'}`}
+                onClick={() => list.setView(item)}
+              >
+                {item === 'table' ? text.tableView : item === 'kanban' ? text.kanbanView : text.queueView}
+              </button>
+            ))}
+            <SavedViewsMenu
+              storageKey="production"
+              currentSearch={list.search}
+              onApply={(search) => navigate(`${adminPath('production')}${search}`)}
+            />
           </>
-        )}
-      </div>
+        }
+      />
       {view !== 'queue' && <p className="readiness-note">{text.withPublishHint}</p>}
 
       {loading ? <LoadingState /> : error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
@@ -298,7 +359,7 @@ export function ProductionPage() {
               </tbody>
             </table>
           </div>
-          <Pagination total={total} limit={LIMIT} offset={offset} onOffsetChange={setOffset} locale={locale} />
+          <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
         </section>
       ) : <EmptyState title={text.empty} description={text.emptyHint} />)}
 

@@ -259,7 +259,10 @@ export const api = {
   publishSeries: (id: string) => request<ApiEnvelope<{ id: string; status: 'published'; published: boolean }>>(`/admin/series/${id}/publish`, { method: 'POST' }),
   archiveSeries: (id: string) => request<ApiEnvelope<{ id: string; status: string }>>(`/admin/series/${id}`, { method: 'DELETE' }),
 
-  seasons: (seriesId?: string) => request<ApiEnvelope<SeasonRecord[]>>(`/admin/seasons${queryString({ series_id: seriesId })}`),
+  /// المواسم. الخادم يقبل `limit` و`offset` (parsePagination في adminContent.ts)،
+  /// وكان هذا العميل يُغفلهما فيحدّ العرض بصفحة الخادم الافتراضية وحدها.
+  seasons: (filters: { series_id?: string; limit?: number; offset?: number } = {}) =>
+    request<PaginatedEnvelope<SeasonRecord>>(`/admin/seasons${queryString(filters)}`),
   seasonDetail: (id: string) => request<ApiEnvelope<import('../types/api').SeasonDetail>>(`/admin/seasons/${encodeURIComponent(id)}`),
   createSeason: (payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string }>>('/admin/seasons', { method: 'POST', body: JSON.stringify(payload) }),
   updateSeason: (id: string, payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string }>>(`/admin/seasons/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
@@ -374,7 +377,11 @@ export const api = {
   team: (id: string) => request<ApiEnvelope<import('../types/api').TeamDetail>>(`/admin/teams/${id}`),
   createTeam: (payload: import('../types/api').TeamPayload) => request<ApiEnvelope<{ id: string }>>('/admin/teams', { method: 'POST', body: JSON.stringify(payload) }),
   tasks: () => request<ApiEnvelope<import('../types/api').TaskRecord[]>>('/admin/tasks'),
-  workflowRuns: () => request<ApiEnvelope<import('../types/api').WorkflowRunRecord[]>>('/admin/workflows/runs'),
+  /// تشغيلات سير العمل. الخادم يُرقّم بـ`UNBOUNDED_LIST_PAGINATION` لأن الجدول
+  /// ينمو بلا حدّ، وكان هذا العميل لا يُرسل الترقيم فيتعذّر الوصول لما بعد الصفحة
+  /// الأولى إطلاقًا.
+  workflowRuns: (filters: { limit?: number; offset?: number } = {}) =>
+    request<PaginatedEnvelope<import('../types/api').WorkflowRunRecord>>(`/admin/workflows/runs${queryString(filters)}`),
   reviewWorkflowRun: (id: string, payload: { decision: string; comment?: string }) => request<ApiEnvelope<{ id: string }>>(`/admin/workflows/runs/${id}/review`, { method: 'POST', body: JSON.stringify(payload) }),
 
   /// محرك سير العمل: قوالب ومراحل وتعيينات وقرارات وSLA.

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { Modal } from '../components/Modal'
+import { ListToolbar } from '../components/AdvancedFilters'
+import { SavedViewsMenu } from '../components/ListTools'
+import { Pagination } from '../components/Pagination'
+import { useUrlListState } from '../hooks/useUrlListState'
+import { adminPath } from '../lib/adminPath'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import type {
@@ -78,6 +84,7 @@ const copy = {
     emptyMine: 'لا مراحل مُسنَدة إليك',
     emptyOverdue: 'لا تجاوزات استحقاق',
     loadError: 'تعذر تحميل سير العمل',
+    runsScopeNote: 'قائمة التشغيلات مرقّمة على الخادم، وغير مفلترة: المسار GET /admin/workflows/runs يقبل limit وoffset ولا يقبل فلترة بحالة ولا بقالب. التبويب المختار والصفحة يُحفظان في العنوان، فالرابط يفتح ما كان معروضًا.',
     hoursLate: 'ساعة تأخّر',
     escalated: 'مُصعَّد',
     impliedStatus: 'الحالة المستنتجة من المراحل',
@@ -128,6 +135,7 @@ const copy = {
     emptyMine: 'No stages assigned to you',
     emptyOverdue: 'No overdue stages',
     loadError: 'Unable to load the workflow',
+    runsScopeNote: 'The runs list is paged on the server but not filtered: GET /admin/workflows/runs accepts limit and offset, and no status or template filter. The selected tab and the page are both kept in the URL, so a shared link opens what it was shared from.',
     hoursLate: 'hours late',
     escalated: 'Escalated',
     impliedStatus: 'Status implied by the stages',
@@ -143,12 +151,26 @@ const copy = {
 
 type Tab = 'runs' | 'mine' | 'overdue'
 
+/// لا فلاتر: `GET /admin/workflows/runs` (في `api/src/routes/adminTeams.ts`) لا
+/// يقبل إلا `limit` و`offset`، و`GET /admin/workflows/my-stages` و
+/// `GET /admin/workflows/overdue` (في `api/src/routes/adminWorkflow.ts`) لا
+/// يقبلان معاملًا واحدًا — كلٌّ منهما مقصور على هوية الجلسة. فلترة في المتصفح
+/// على مجموعة يحدّها الخادم كانت ستقول للمستخدم إنه يرى الكل وهو لا يراه، وهي
+/// نفس العلّة التي أُصلحت في شاشة الحقوق بإضافة معاملات للخادم. لذلك يبقى
+/// المُحفوظ في العنوان طريقة العرض وحدها، والحدّ مُعلَن في الشاشة.
+const DEFAULT_FILTERS = {}
+
 export function WorkflowPage() {
   const { locale } = usePreferences()
   const text = copy[locale === 'en' ? 'en' : 'ar']
+  const navigate = useNavigate()
 
-  const [tab, setTab] = useState<Tab>('runs')
+  // التبويب في العنوان لا في الذاكرة: «افتح المتأخّر» رابط لا وصف شفهي، وزرّ
+  // الرجوع يُعيد التبويب السابق.
+  const list = useUrlListState(DEFAULT_FILTERS, { defaultView: 'runs' })
+  const tab: Tab = list.view === 'mine' || list.view === 'overdue' ? list.view : 'runs'
   const [runs, setRuns] = useState<WorkflowRunRecord[]>([])
+  const [runsTotal, setRunsTotal] = useState(0)
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([])
   const [mine, setMine] = useState<WorkflowMyStage[]>([])
   const [overdue, setOverdue] = useState<WorkflowOverdueRow[]>([])
@@ -172,12 +194,16 @@ export function WorkflowPage() {
     setError('')
     try {
       const [runsResponse, templatesResponse, mineResponse, overdueResponse] = await Promise.all([
-        api.workflowRuns(),
+        // الترقيم يُرسَل الآن: `workflow_runs` ينمو بلا حدّ والخادم يُرقّمه
+        // بـ`UNBOUNDED_LIST_PAGINATION`، وكان العميل لا يُرسل شيئًا فيتعذّر الوصول
+        // لما بعد الصفحة الأولى إطلاقًا.
+        api.workflowRuns({ limit: list.limit, offset: list.offset }),
         api.workflowTemplates(),
         api.workflowMyStages(),
         api.workflowOverdue(),
       ])
       setRuns(runsResponse.data)
+      setRunsTotal(runsResponse.meta.total)
       setTemplates(templatesResponse.data)
       setMine(mineResponse.data)
       setOverdue(overdueResponse.data)
@@ -192,7 +218,7 @@ export function WorkflowPage() {
     // startForm.template_id مقصود استثناؤه: إدراجه يجعل الدالة تتغيّر بعد أول
     // تهيئة فيُعاد التحميل بلا سبب.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text.loadError])
+  }, [list.limit, list.offset, text.loadError])
 
   useEffect(() => { void load() }, [load])
 
@@ -285,20 +311,38 @@ export function WorkflowPage() {
         </button>
       </section>
 
-      <div className="filters-row">
-        {(['runs', 'mine', 'overdue'] as Tab[]).map((item) => (
-          <button
-            key={item}
-            type="button"
-            className={`button ${tab === item ? 'button--primary' : 'button--ghost'}`}
-            onClick={() => setTab(item)}
-          >
-            {text.tabs[item]}
-            {item === 'overdue' && overdue.length ? ` (${overdue.length})` : ''}
-            {item === 'mine' && mine.length ? ` (${mine.length})` : ''}
-          </button>
-        ))}
-      </div>
+      <ListToolbar
+        fields={[]}
+        values={list.filters}
+        defaults={DEFAULT_FILTERS}
+        onApply={() => {}}
+        onClear={list.clearFilters}
+        onRemove={() => {}}
+        trailing={
+          <>
+            {(['runs', 'mine', 'overdue'] as Tab[]).map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`button ${tab === item ? 'button--primary' : 'button--ghost'}`}
+                onClick={() => list.setView(item)}
+              >
+                {text.tabs[item]}
+                {item === 'overdue' && overdue.length ? ` (${overdue.length})` : ''}
+                {item === 'mine' && mine.length ? ` (${mine.length})` : ''}
+              </button>
+            ))}
+            <SavedViewsMenu
+              storageKey="workflows"
+              currentSearch={list.search}
+              onApply={(search) => navigate(`${adminPath('workflows')}${search}`)}
+            />
+          </>
+        }
+      />
+
+      {/* الحدّ مُعلَن لا مُكتشَف: المسار لا يقبل فلترة ولا ترقيمًا من هذا العميل */}
+      {tab === 'runs' && <p className="readiness-note">{text.runsScopeNote}</p>}
 
       {tab === 'runs' && (runs.length ? (
         <section className="panel panel--table">
@@ -324,6 +368,7 @@ export function WorkflowPage() {
               </tbody>
             </table>
           </div>
+          <Pagination total={runsTotal} limit={list.limit} offset={list.offset} onOffsetChange={list.setOffset} locale={locale} />
         </section>
       ) : <EmptyState title={text.empty} description={text.emptyHint} />)}
 

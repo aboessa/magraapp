@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { ColumnManager, SavedViewsMenu, useColumnPreferences } from '../components/ListTools'
+import type { ColumnDefinition } from '../components/ListTools'
+import { Pagination } from '../components/Pagination'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
+import { useUrlListState } from '../hooks/useUrlListState'
 import type { AssetKind, AssetRecord, AssetStats } from '../types/api'
 
 const kinds: AssetKind[] = ['image', 'audio', 'video', 'subtitle', 'document', 'manifest', 'archive']
@@ -14,6 +20,58 @@ const supported = /\.(?:avif|gif|jpe?g|png|webp|mp3|m4a|ogg|wav|mp4|m4v|webm|srt
 
 type UploadForm = { title_ar: string; kind: AssetKind; visibility: 'public' | 'private'; language: string; file: File | null }
 const initialForm: UploadForm = { title_ar: '', kind: 'image', visibility: 'private', language: '', file: null }
+
+/// مفاتيح الفلاتر هي أسماء معاملات الاستعلام التي يقبلها `GET /admin/assets`
+/// بالحرف (`q`, `status`, `kind`, `source`, `visibility`, `limit`, `offset` في
+/// `api/src/routes/adminAssets.ts`). `source` و`visibility` يقبلهما المعالِج ولا
+/// تعرضهما الشاشة، فلا يُرسَلان. `status=all` قيمة يفهمها المعالِج (تشمل
+/// المؤرشف) لا اسمًا محليًّا، ولذلك تُرسَل كما هي.
+const DEFAULT_FILTERS = { kind: '', status: '' }
+const LIMIT = 48
+
+/// حقول الدرج بيانات لا JSX: التسمية تأتي من التعريف، فلا يبقى `select` بلا اسم
+/// مقروء. الحقلان السابقان كانا يحملان `aria-label` نصّه «كل الأنواع» — وهو اسم
+/// الخيار الأول لا اسم الحقل.
+const FILTER_FIELDS = (ar: boolean): FilterField[] => [
+  {
+    key: 'kind',
+    label: ar ? 'النوع' : 'Kind',
+    type: 'select',
+    options: [
+      { value: '', label: ar ? 'كل الأنواع' : 'All kinds' },
+      ...kinds.map((item) => ({ value: item, label: item })),
+    ],
+  },
+  {
+    key: 'status',
+    label: ar ? 'الحالة' : 'Status',
+    type: 'select',
+    options: [
+      { value: '', label: ar ? 'الحالات النشطة' : 'Active statuses' },
+      { value: 'all', label: ar ? 'الكل' : 'All' },
+      { value: 'planned', label: 'planned' },
+      { value: 'ready', label: 'ready' },
+      { value: 'failed', label: 'failed' },
+    ],
+  },
+]
+
+/// بطاقة الأصل تحمل ستة حقول، وهي أعرض من عمود واحد على شاشة محمول. مدير
+/// الأعمدة هنا يحكم حقول البطاقة لا أعمدة جدول — الشاشة شبكة بطاقات لا جدولًا —
+/// والأثر نفسه: ما لا يحتاجه المستخدم يختفي بقراره لا بتمرير إلزامي. الاسم
+/// والحالة مُقفلان: بطاقة بلا اسم لا هوية لها.
+const COLUMNS: ColumnDefinition[] = [
+  { key: 'title', label: 'title', locked: true },
+  { key: 'path', label: 'path' },
+  { key: 'meta', label: 'meta' },
+  { key: 'quality', label: 'quality' },
+  { key: 'links', label: 'links' },
+]
+
+const columnLabels = {
+  ar: { title: 'الاسم', path: 'المسار', meta: 'النوع والحجم', quality: 'تنبيه المقاس', links: 'الروابط' },
+  en: { title: 'Title', path: 'Path', meta: 'Kind and size', quality: 'Size warning', links: 'Links' },
+}
 
 function bytes(value?: number | null) {
   if (!value) return '—'
@@ -71,11 +129,18 @@ function AssetPreview({ asset }: { asset: AssetRecord }) {
 
 export function MediaLibraryPage() {
   const { locale } = usePreferences(); const ar = locale === 'ar'
-  const [items, setItems] = useState<AssetRecord[]>([]); const [stats, setStats] = useState<AssetStats | null>(null); const [total, setTotal] = useState(0); const [offset, setOffset] = useState(0); const [query, setQuery] = useState(''); const [status, setStatus] = useState(''); const [kind, setKind] = useState(''); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [open, setOpen] = useState(false); const [form, setForm] = useState<UploadForm>(initialForm); const [saving, setSaving] = useState(false); const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set()); const [progress, setProgress] = useState<{ done: number; total: number; failed: number } | null>(null)
-  const pageSize = 48
-  const load = useCallback(async () => { setLoading(true); setError(''); try { const [assets, assetStats] = await Promise.all([api.assets({ q: query, status, kind, limit: pageSize, offset }), api.assetStats()]); setItems(assets.data); setTotal(assets.meta.total); setStats(assetStats.data) } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل الوسائط' : 'Unable to load media') } finally { setLoading(false) } }, [ar, kind, offset, query, status])
+  const navigate = useNavigate()
+  // حالة القائمة في العنوان لا في الذاكرة: رابط «الأصول الناقصة» يجب أن يفتح
+  // تلك الأصول، وزرّ الرجوع بعد فتح أصل يجب أن يُعيد نفس التصفية والصفحة.
+  const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
+  const { query, filters, offset, limit } = list
+  const { kind, status } = filters
+  const columns = useColumnPreferences('media', COLUMNS)
+  const [items, setItems] = useState<AssetRecord[]>([]); const [stats, setStats] = useState<AssetStats | null>(null); const [total, setTotal] = useState(0); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [open, setOpen] = useState(false); const [form, setForm] = useState<UploadForm>(initialForm); const [saving, setSaving] = useState(false); const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set()); const [progress, setProgress] = useState<{ done: number; total: number; failed: number } | null>(null)
+  const load = useCallback(async () => { setLoading(true); setError(''); try { const [assets, assetStats] = await Promise.all([api.assets({ q: query, status, kind, limit, offset }), api.assetStats()]); setItems(assets.data); setTotal(assets.meta.total); setStats(assetStats.data) } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل الوسائط' : 'Unable to load media') } finally { setLoading(false) } }, [ar, kind, limit, offset, query, status])
   useEffect(() => { const timer = window.setTimeout(() => void load(), 180); return () => clearTimeout(timer) }, [load])
-  useEffect(() => setOffset(0), [kind, query, status])
+  // لا أثر يُصفّر الترقيم: `useUrlListState` يفعله مع كل تغيير فلتر، ونسخة ثانية
+  // منه كانت تكتب في العنوان مرتين لكل حرف يُكتب في البحث.
 
   async function allCatalogAssets() {
     const first = await api.assets({ status: 'all', limit: 200, offset: 0 })
@@ -142,5 +207,5 @@ export function MediaLibraryPage() {
   }
 
   const statusCount = (name: string) => Number(stats?.by_status.find((item) => item.status === name)?.count ?? 0)
-  return <div className="page-stack"><section className="page-intro"><div><span className="eyebrow">R2 Media Library</span><h2>{ar ? 'مكتبة الوسائط' : 'Media library'}</h2><p>{ar ? 'ارفع الصور والصوت والفيديو والترجمات، أو اختر مجلد الصور كاملًا ليُطابق أسماء الكتالوج تلقائيًا.' : 'Upload images, audio, video, and subtitles, or select the entire image folder for automatic catalog matching.'}</p></div><div className="page-intro__actions"><label className="button button--ghost file-button"><Icon name="refresh" size={16}/>{ar ? 'استيراد الكتالوج' : 'Import catalog'}<input type="file" accept=".md,.txt" onChange={(event) => void importCatalog(event)}/></label><label className="button button--secondary file-button"><Icon name="upload" size={16}/>{ar ? 'رفع مجلد كامل' : 'Upload folder'}<input type="file" multiple {...({ webkitdirectory: '', directory: '' } as Record<string, string>)} onChange={(event) => void folderUpload(event)}/></label><button className="button button--primary" type="button" onClick={() => { setForm(initialForm); setOpen(true) }}><Icon name="plus" size={16}/>{ar ? 'رفع ملف' : 'Upload file'}</button></div></section>{progress && <div className="upload-progress"><div><strong>{ar ? 'جاري رفع الملفات' : 'Uploading files'}</strong><span>{progress.done}/{progress.total}{progress.failed ? ` — ${progress.failed} ${ar ? 'فشل' : 'failed'}` : ''}</span></div><progress max={progress.total} value={progress.done}/></div>}{error && <div className="inline-alert inline-alert--error">{error}</div>}<div className="media-stats"><article><span>{ar ? 'جاهز' : 'Ready'}</span><strong>{statusCount('ready')}</strong></article><article><span>{ar ? 'بانتظار الملف' : 'Planned'}</span><strong>{statusCount('planned')}</strong></article><article className="media-stats__warning"><span>{ar ? 'مقاس مؤقت' : 'Temporary size'}</span><strong>{items.filter((item) => item.quality === 'temporary_size_mismatch').length}</strong></article><article><span>{ar ? 'المساحة' : 'Storage'}</span><strong>{bytes(Number(stats?.storage.total_bytes ?? 0))}</strong></article></div><section className="panel"><header className="panel__header panel__header--filters"><div><span className="panel__kicker">{ar ? 'الأصول' : 'Assets'}</span><h3>{total}</h3></div><div className="filters-row"><label className="search-field"><Icon name="search" size={16}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ar ? 'اسم أو مسار...' : 'Name or path...'}/></label><select aria-label={ar ? 'كل الأنواع' : 'All kinds'} value={kind} onChange={(event) => setKind(event.target.value)}><option value="">{ar ? 'كل الأنواع' : 'All kinds'}</option>{kinds.map((item) => <option value={item} key={item}>{item}</option>)}</select><select aria-label={ar ? 'الحالة' : 'Status'} value={status} onChange={(event) => setStatus(event.target.value)}><option value="">{ar ? 'الحالات النشطة' : 'Active statuses'}</option><option value="all">{ar ? 'الكل' : 'All'}</option><option value="planned">planned</option><option value="ready">ready</option><option value="failed">failed</option></select></div></header>{loading && !items.length ? <LoadingState label={ar ? 'جارٍ تحميل الوسائط...' : 'Loading media...'}/> : error && !items.length ? <ErrorState message={error} onRetry={() => void load()}/> : items.length ? <><div className="asset-grid">{items.map((asset) => { const actual = asset.metadata.actual_dimensions; const expected = asset.expected_width && asset.expected_height ? `${asset.expected_width}×${asset.expected_height}` : null; return <article className="asset-card" key={asset.id}><AssetPreview asset={asset}/><div className="asset-card__body"><div className="asset-card__title"><strong>{asset.title_ar}</strong><span className={`asset-status asset-status--${asset.status}`}>{asset.status}</span></div><small title={asset.expected_path || asset.original_filename || ''}>{asset.expected_path || asset.original_filename}</small><div className="asset-card__meta"><span>{asset.kind}</span><span>{bytes(asset.size_bytes)}</span><span>{asset.visibility}</span></div>{asset.quality === 'temporary_size_mismatch' && <div className="size-warning"><Icon name="refresh" size={14}/><span>{ar ? 'مؤقت' : 'Temporary'}: {actual ? `${actual.width}×${actual.height}` : '—'} → {expected || '—'}</span></div>}<div className="asset-card__actions"><label className="button button--ghost file-button"><Icon name="upload" size={14}/>{asset.status === 'ready' ? (ar ? 'استبدال' : 'Replace') : (ar ? 'رفع' : 'Upload')}<input type="file" disabled={uploadingIds.has(asset.id)} onChange={(event) => void replaceAsset(asset, event)}/></label><Link className="button button--ghost" to={adminPath(`media/${asset.id}`)}>{ar ? 'فتح' : 'Open'}</Link><span>{Number(asset.links_count ?? 0)} {ar ? 'روابط' : 'links'}</span></div></div></article> })}</div><footer className="pagination"><button className="button button--ghost" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - pageSize))}>{ar ? 'السابق' : 'Previous'}</button><span>{offset + 1}–{Math.min(offset + pageSize, total)} / {total}</span><button className="button button--ghost" disabled={offset + pageSize >= total} onClick={() => setOffset(offset + pageSize)}>{ar ? 'التالي' : 'Next'}</button></footer></> : <EmptyState title={ar ? 'مكتبة الوسائط فارغة' : 'Media library is empty'} description={ar ? 'استورد IMAGE_PROMPTS_CATALOG.md أو ارفع أول ملف.' : 'Import IMAGE_PROMPTS_CATALOG.md or upload the first file.'}/>}</section><Modal open={open} onClose={() => !saving && setOpen(false)} title={ar ? 'رفع أصل جديد' : 'Upload new asset'}><form className="entity-form" onSubmit={submit}><label className="field"><span>{ar ? 'الاسم *' : 'Title *'}</span><input value={form.title_ar} onChange={(event) => setForm({ ...form, title_ar: event.target.value })}/></label><div className="form-grid form-grid--three"><label className="field"><span>{ar ? 'النوع' : 'Kind'}</span><select value={form.kind} onChange={(event) => setForm({ ...form, kind: event.target.value as AssetKind })}>{kinds.map((item) => <option value={item} key={item}>{item}</option>)}</select></label><label className="field"><span>{ar ? 'الوصول' : 'Visibility'}</span><select value={form.visibility} onChange={(event) => setForm({ ...form, visibility: event.target.value as UploadForm['visibility'] })}><option value="private">private</option><option value="public">public</option></select></label><label className="field"><span>{ar ? 'اللغة' : 'Language'}</span><input value={form.language} placeholder="ar" onChange={(event) => setForm({ ...form, language: event.target.value })}/></label></div><label className="field"><span>{ar ? 'الملف *' : 'File *'}</span><input type="file" required onChange={(event) => { const file = event.target.files?.[0] || null; setForm({ ...form, file, title_ar: form.title_ar || file?.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ') || '', kind: file ? kindFor(file) : form.kind }) }}/></label><div className="form-actions"><button className="button button--ghost" type="button" onClick={() => setOpen(false)}>{ar ? 'إلغاء' : 'Cancel'}</button><button className="button button--primary" disabled={saving || !form.file}>{saving ? (ar ? 'جارٍ الرفع...' : 'Uploading...') : (ar ? 'رفع' : 'Upload')}</button></div></form></Modal></div>
+  return <div className="page-stack"><section className="page-intro"><div><span className="eyebrow">R2 Media Library</span><h2>{ar ? 'مكتبة الوسائط' : 'Media library'}</h2><p>{ar ? 'ارفع الصور والصوت والفيديو والترجمات، أو اختر مجلد الصور كاملًا ليُطابق أسماء الكتالوج تلقائيًا.' : 'Upload images, audio, video, and subtitles, or select the entire image folder for automatic catalog matching.'}</p></div><div className="page-intro__actions"><label className="button button--ghost file-button"><Icon name="refresh" size={16}/>{ar ? 'استيراد الكتالوج' : 'Import catalog'}<input type="file" accept=".md,.txt" onChange={(event) => void importCatalog(event)}/></label><label className="button button--secondary file-button"><Icon name="upload" size={16}/>{ar ? 'رفع مجلد كامل' : 'Upload folder'}<input type="file" multiple {...({ webkitdirectory: '', directory: '' } as Record<string, string>)} onChange={(event) => void folderUpload(event)}/></label><button className="button button--primary" type="button" onClick={() => { setForm(initialForm); setOpen(true) }}><Icon name="plus" size={16}/>{ar ? 'رفع ملف' : 'Upload file'}</button></div></section>{progress && <div className="upload-progress"><div><strong>{ar ? 'جاري رفع الملفات' : 'Uploading files'}</strong><span>{progress.done}/{progress.total}{progress.failed ? ` — ${progress.failed} ${ar ? 'فشل' : 'failed'}` : ''}</span></div><progress max={progress.total} value={progress.done}/></div>}{error && <div className="inline-alert inline-alert--error">{error}</div>}<div className="media-stats"><article><span>{ar ? 'جاهز' : 'Ready'}</span><strong>{statusCount('ready')}</strong></article><article><span>{ar ? 'بانتظار الملف' : 'Planned'}</span><strong>{statusCount('planned')}</strong></article><article className="media-stats__warning"><span>{ar ? 'مقاس مؤقت' : 'Temporary size'}</span><strong>{items.filter((item) => item.quality === 'temporary_size_mismatch').length}</strong></article><article><span>{ar ? 'المساحة' : 'Storage'}</span><strong>{bytes(Number(stats?.storage.total_bytes ?? 0))}</strong></article></div><section className="panel"><header className="panel__header panel__header--filters"><div><span className="panel__kicker">{ar ? 'الأصول' : 'Assets'}</span><h3>{total}</h3></div><ListToolbar searchValue={query} onSearchChange={list.setQuery} searchPlaceholder={ar ? 'اسم أو مسار...' : 'Name or path...'} fields={FILTER_FIELDS(ar)} values={filters} defaults={DEFAULT_FILTERS} onApply={(next) => list.setFilters(next)} onClear={list.clearFilters} onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')} trailing={<><SavedViewsMenu storageKey="media" currentSearch={list.search} onApply={(search) => navigate(`${adminPath('media')}${search}`)}/><ColumnManager columns={COLUMNS.map((column) => ({ ...column, label: columnLabels[locale][column.label as keyof (typeof columnLabels)['ar']] }))} hidden={columns.hidden} onToggle={columns.toggle} onReset={columns.reset}/></>}/></header>{loading && !items.length ? <LoadingState label={ar ? 'جارٍ تحميل الوسائط...' : 'Loading media...'}/> : error && !items.length ? <ErrorState message={error} onRetry={() => void load()}/> : items.length ? <><div className="asset-grid">{items.map((asset) => { const actual = asset.metadata.actual_dimensions; const expected = asset.expected_width && asset.expected_height ? `${asset.expected_width}×${asset.expected_height}` : null; return <article className="asset-card" key={asset.id}><AssetPreview asset={asset}/><div className="asset-card__body"><div className="asset-card__title"><strong>{asset.title_ar}</strong><span className={`asset-status asset-status--${asset.status}`}>{asset.status}</span></div>{columns.isVisible('path') && <small title={asset.expected_path || asset.original_filename || ''}>{asset.expected_path || asset.original_filename}</small>}{columns.isVisible('meta') && <div className="asset-card__meta"><span>{asset.kind}</span><span>{bytes(asset.size_bytes)}</span><span>{asset.visibility}</span></div>}{columns.isVisible('quality') && asset.quality === 'temporary_size_mismatch' && <div className="size-warning"><Icon name="refresh" size={14}/><span>{ar ? 'مؤقت' : 'Temporary'}: {actual ? `${actual.width}×${actual.height}` : '—'} → {expected || '—'}</span></div>}<div className="asset-card__actions"><label className="button button--ghost file-button"><Icon name="upload" size={14}/>{asset.status === 'ready' ? (ar ? 'استبدال' : 'Replace') : (ar ? 'رفع' : 'Upload')}<input type="file" disabled={uploadingIds.has(asset.id)} onChange={(event) => void replaceAsset(asset, event)}/></label><Link className="button button--ghost" to={adminPath(`media/${asset.id}`)}>{ar ? 'فتح' : 'Open'}</Link>{columns.isVisible('links') && <span>{Number(asset.links_count ?? 0)} {ar ? 'روابط' : 'links'}</span>}</div></div></article> })}</div><Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale}/></> : <EmptyState title={ar ? 'مكتبة الوسائط فارغة' : 'Media library is empty'} description={ar ? 'استورد IMAGE_PROMPTS_CATALOG.md أو ارفع أول ملف.' : 'Import IMAGE_PROMPTS_CATALOG.md or upload the first file.'}/>}</section><Modal open={open} onClose={() => !saving && setOpen(false)} title={ar ? 'رفع أصل جديد' : 'Upload new asset'}><form className="entity-form" onSubmit={submit}><label className="field"><span>{ar ? 'الاسم *' : 'Title *'}</span><input value={form.title_ar} onChange={(event) => setForm({ ...form, title_ar: event.target.value })}/></label><div className="form-grid form-grid--three"><label className="field"><span>{ar ? 'النوع' : 'Kind'}</span><select value={form.kind} onChange={(event) => setForm({ ...form, kind: event.target.value as AssetKind })}>{kinds.map((item) => <option value={item} key={item}>{item}</option>)}</select></label><label className="field"><span>{ar ? 'الوصول' : 'Visibility'}</span><select value={form.visibility} onChange={(event) => setForm({ ...form, visibility: event.target.value as UploadForm['visibility'] })}><option value="private">private</option><option value="public">public</option></select></label><label className="field"><span>{ar ? 'اللغة' : 'Language'}</span><input value={form.language} placeholder="ar" onChange={(event) => setForm({ ...form, language: event.target.value })}/></label></div><label className="field"><span>{ar ? 'الملف *' : 'File *'}</span><input type="file" required onChange={(event) => { const file = event.target.files?.[0] || null; setForm({ ...form, file, title_ar: form.title_ar || file?.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ') || '', kind: file ? kindFor(file) : form.kind }) }}/></label><div className="form-actions"><button className="button button--ghost" type="button" onClick={() => setOpen(false)}>{ar ? 'إلغاء' : 'Cancel'}</button><button className="button button--primary" disabled={saving || !form.file}>{saving ? (ar ? 'جارٍ الرفع...' : 'Uploading...') : (ar ? 'رفع' : 'Upload')}</button></div></form></Modal></div>
 }

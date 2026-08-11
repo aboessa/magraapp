@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { SavedViewsMenu } from '../components/ListTools'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
+import { adminPath } from '../lib/adminPath'
+import { useUrlListState } from '../hooks/useUrlListState'
 import { formatDate, formatNumber, trackLabels } from '../lib/labels'
 import type {
   AgeTrack,
@@ -83,6 +89,7 @@ const copy = {
     tabAttempts: 'المحاولات',
     total: 'الإجمالي',
     allLevels: 'كل المستويات',
+    levelLabel: 'المستوى',
     allTracks: 'كل المسارات',
     childFilter: 'معرّف الطفل...',
     objective: 'الهدف',
@@ -130,6 +137,7 @@ const copy = {
     tabAttempts: 'Attempts',
     total: 'Total',
     allLevels: 'All levels',
+    levelLabel: 'Level',
     allTracks: 'All tracks',
     childFilter: 'Child id...',
     objective: 'Objective',
@@ -171,6 +179,64 @@ const copy = {
 
 const PAGE_SIZE = 50
 
+/// إضافة صفحة إلى المعروض بلا تكرار.
+///
+/// «تحميل المزيد» يُضيف إلى القائمة، والأثر الذي يُضيف قد يُعاد تشغيله على نفس
+/// المؤشّر (تبدّل اللغة يُعيد بناء الدالة، وStrictMode يُضاعف التركيب). صفٌّ
+/// مكرّر في جدول إتقان يبدو طفلًا آخر بنفس الاسم، فتُقرأ الأعداد خطأ — والإضافة
+/// المُصفَّاة بالمفتاح تجعل إعادة التشغيل بلا أثر بدل أن تكون خطأً في العرض.
+function mergeBy<T>(rows: T[], key: (row: T) => string): T[] {
+  const seen = new Set<string>()
+  return rows.filter((row) => {
+    const value = key(row)
+    if (seen.has(value)) return false
+    seen.add(value)
+    return true
+  })
+}
+
+/// مفاتيح الفلاتر هي أسماء معاملات الاستعلام التي تقبلها المسارات الثلاثة
+/// بالحرف، كلٌّ في تبويبه: `level` في `GET /admin/mastery/by-objective`،
+/// و`track` في `GET /admin/mastery/by-child` (كلاهما في
+/// `api/src/routes/adminMastery.ts`)، و`child_id` في `GET /admin/attempts`
+/// (المسار نفسه). `skill_id` و`parent_id` و`game_id` و`episode_id` تقبلها
+/// المسارات ولا تعرضها الشاشة، فلا تُرسَل.
+const DEFAULT_FILTERS = { level: '', track: '', child_id: '' }
+
+/// كل تبويب يُصرّح بحقله وحده: عرض فلتر لا يقبله مسار التبويب الحالي يعني وعدًا
+/// بتصفية لا تحدث. والتعريف بيانات لا JSX، فالتسمية التي تُقرأ بقارئ الشاشة هي
+/// نفسها التي تُرسم في الشريحة.
+const FILTER_FIELDS = (text: (typeof copy)['ar'], locale: 'ar' | 'en', tab: Tab): FilterField[] => {
+  if (tab === 'objectives') {
+    return [{
+      key: 'level',
+      label: text.levelLabel,
+      type: 'select',
+      options: [
+        { value: '', label: text.allLevels },
+        ...LEVELS.map((item) => ({ value: item, label: levelLabels[locale][item] })),
+      ],
+    }]
+  }
+  if (tab === 'children') {
+    return [{
+      key: 'track',
+      label: text.track,
+      type: 'select',
+      options: [
+        { value: '', label: text.allTracks },
+        ...TRACKS.map((item) => ({ value: item, label: trackLabels[locale][item] })),
+      ],
+    }]
+  }
+  return [{
+    key: 'child_id',
+    label: text.child,
+    type: 'text',
+    chip: (value) => `${text.child}: ${value}`,
+  }]
+}
+
 /// نسبة مئوية أو شُرطة. `null` تعني غياب محاولات لا نسبة صفر.
 function Rate({ value, hint }: { value: number | null; hint: string }) {
   if (value == null) return <span className="table-secondary" title={hint}>—</span>
@@ -184,17 +250,20 @@ function Rate({ value, hint }: { value: number | null; hint: string }) {
 export function MasteryPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
+  const navigate = useNavigate()
 
-  const [tab, setTab] = useState<Tab>('objectives')
+  // التبويب والفلاتر والمؤشّر في العنوان لا في الذاكرة: «الأطفال الذين يحتاجون
+  // مراجعة في مسار الصغار» سؤال يُعاد طرحه كل أسبوع، وكان يحتاج ثلاث نقرات من
+  // كل من يُرسل إليه الرابط لأن لا شيء منه كان في العنوان.
+  const list = useUrlListState(DEFAULT_FILTERS, { limit: PAGE_SIZE, defaultView: 'objectives' })
+  const tab: Tab = list.view === 'children' || list.view === 'attempts' ? list.view : 'objectives'
+  const { filters, offset } = list
+  const { level, track, child_id: childId } = filters
+
   const [objectives, setObjectives] = useState<MasteryByObjective[]>([])
   const [children, setChildren] = useState<MasteryByChild[]>([])
   const [attempts, setAttempts] = useState<AttemptRecord[]>([])
   const [total, setTotal] = useState(0)
-  const [offset, setOffset] = useState(0)
-
-  const [level, setLevel] = useState('')
-  const [track, setTrack] = useState('')
-  const [childId, setChildId] = useState('')
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -205,18 +274,17 @@ export function MasteryPage() {
     try {
       if (tab === 'objectives') {
         const response = await api.masteryByObjective({ level, limit: PAGE_SIZE, offset: nextOffset })
-        setObjectives((current) => append ? [...current, ...response.data] : response.data)
+        setObjectives((current) => append ? mergeBy([...current, ...response.data], (row) => row.id) : response.data)
         setTotal(response.meta?.total ?? response.data.length)
       } else if (tab === 'children') {
         const response = await api.masteryByChild({ track, limit: PAGE_SIZE, offset: nextOffset })
-        setChildren((current) => append ? [...current, ...response.data] : response.data)
+        setChildren((current) => append ? mergeBy([...current, ...response.data], (row) => row.child_id) : response.data)
         setTotal(response.meta?.total ?? response.data.length)
       } else {
         const response = await api.attempts({ child_id: childId.trim(), limit: PAGE_SIZE, offset: nextOffset })
-        setAttempts((current) => append ? [...current, ...response.data] : response.data)
+        setAttempts((current) => append ? mergeBy([...current, ...response.data], (row) => row.id) : response.data)
         setTotal(response.meta?.total ?? response.data.length)
       }
-      setOffset(nextOffset)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.loadError)
     } finally {
@@ -224,24 +292,30 @@ export function MasteryPage() {
     }
   }, [childId, level, tab, text.loadError, track])
 
-  // تأخير بسيط: حقل معرّف الطفل نصّ حرّ فلا يُنادى الخادم على كل حرف
+  // تأخير بسيط: حقل معرّف الطفل نصّ حرّ فلا يُنادى الخادم على كل حرف.
+  //
+  // المؤشّر يُقرأ من العنوان: `offset > 0` يعني إضافةً إلى المعروض لا استبدالًا،
+  // و«تحميل المزيد» يكتب المؤشّر في العنوان فيُعاد نفس ما كان معروضًا عند
+  // التحديث. تغيير الفلتر يمسح `offset` في `useUrlListState`، فلا حاجة لأثر
+  // يُصفّره هنا — ونسخة ثانية منه كانت ستكتب في العنوان مرتين لكل ضغطة.
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(0, false), 220)
+    const timer = window.setTimeout(() => void load(offset, offset > 0), 220)
     return () => window.clearTimeout(timer)
-  }, [load])
+  }, [load, offset])
 
   const rows = tab === 'objectives' ? objectives.length : tab === 'children' ? children.length : attempts.length
   const hasMore = rows < total
 
+  /// التبويب يُبدَّل بعنوان جديد لا بكتابتين متتاليتين: لكل تبويب فلتره الخاص
+  /// ومؤشّره، فحمل فلتر تبويب إلى تبويب لا يقبله يعني نداءً بمعامل يُهمَل.
   function switchTab(next: Tab) {
     if (next === tab) return
-    setTab(next)
-    setOffset(0)
     setTotal(0)
+    navigate(`${adminPath('mastery')}${next === 'objectives' ? '' : `?view=${next}`}`, { replace: true })
   }
 
   if (loading && !rows) return <LoadingState label={text.loading} />
-  if (error && !rows) return <ErrorState message={error} onRetry={() => void load(0, false)} />
+  if (error && !rows) return <ErrorState message={error} onRetry={() => void load(offset, false)} />
 
   return (
     <div className="page-stack">
@@ -252,7 +326,7 @@ export function MasteryPage() {
           <p>{text.intro}</p>
         </div>
         <div className="page-intro__actions">
-          <button className="button button--secondary" type="button" onClick={() => void load(0, false)}>
+          <button className="button button--secondary" type="button" onClick={() => void load(offset, false)}>
             <Icon name="refresh" size={17} />{text.refresh}
           </button>
         </div>
@@ -293,35 +367,24 @@ export function MasteryPage() {
             </span>
             <h3>{text.total} <span className="title-count">{formatNumber(total, locale)}</span></h3>
           </div>
-          <div className="filters-row">
-            {tab === 'objectives' && (
-              <select value={level} onChange={(event) => setLevel(event.target.value)} aria-label={text.allLevels}>
-                <option value="">{text.allLevels}</option>
-                {LEVELS.map((item) => (
-                  <option value={item} key={item}>{levelLabels[locale][item]}</option>
-                ))}
-              </select>
-            )}
-            {tab === 'children' && (
-              <select value={track} onChange={(event) => setTrack(event.target.value)} aria-label={text.allTracks}>
-                <option value="">{text.allTracks}</option>
-                {TRACKS.map((item) => (
-                  <option value={item} key={item}>{trackLabels[locale][item]}</option>
-                ))}
-              </select>
-            )}
-            {tab === 'attempts' && (
-              <label className="search-field">
-                <Icon name="search" size={17} />
-                <input
-                  value={childId}
-                  dir="ltr"
-                  onChange={(event) => setChildId(event.target.value)}
-                  placeholder={text.childFilter}
-                />
-              </label>
-            )}
-          </div>
+          <ListToolbar
+            searchValue={tab === 'attempts' ? childId : undefined}
+            onSearchChange={tab === 'attempts' ? ((value) => list.setFilter('child_id', value)) : undefined}
+            searchPlaceholder={text.childFilter}
+            fields={FILTER_FIELDS(text, locale, tab)}
+            values={filters}
+            defaults={DEFAULT_FILTERS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')}
+            trailing={
+              <SavedViewsMenu
+                storageKey="mastery"
+                currentSearch={list.search}
+                onApply={(search) => navigate(`${adminPath('mastery')}${search}`)}
+              />
+            }
+          />
         </header>
 
         {tab === 'objectives' && (
@@ -494,7 +557,7 @@ export function MasteryPage() {
                 className="button button--ghost"
                 type="button"
                 disabled={loading}
-                onClick={() => void load(offset + PAGE_SIZE, true)}
+                onClick={() => list.setOffset(offset + PAGE_SIZE)}
               >
                 {text.more}
               </button>

@@ -1,9 +1,15 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { EmptyState, LoadingState } from '../components/PageState'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { SavedViewsMenu } from '../components/ListTools'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
+import { adminPath } from '../lib/adminPath'
+import { useUrlListState } from '../hooks/useUrlListState'
 import type { QualityEntityType, QualityReport } from '../types/api'
 
 /**
@@ -135,12 +141,41 @@ const copy = {
   },
 }
 
+/// مفتاحا الحالة هما جزءا المسار اللذان يقرؤهما
+/// `GET /admin/quality/:type/:id` و`GET /admin/backup/:type/:id`
+/// (`api/src/routes/adminBackup.ts`) بالحرف: `type` و`id`. هذه الشاشة ليست
+/// قائمة، ولا يقبل المسار معامل استعلام واحدًا — فما يُحفظ في العنوان هو ما
+/// يُبنى منه المسار، لا فلتر يُلحَق به. وقيمة ذلك عملية: نتيجة فحص جاهزية تُقتبس
+/// في نقاش («القصة كذا غير قابلة للنشر»)، وكانت غير قابلة للمشاركة برابط.
+const DEFAULT_FILTERS = { type: 'story', id: '' }
+
+const FILTER_FIELDS = (text: (typeof copy)['ar'], locale: 'ar' | 'en'): FilterField[] => [
+  {
+    key: 'type',
+    label: text.typeLabel,
+    type: 'select',
+    options: ENTITY_TYPES.map((item) => ({ value: item, label: entityLabels[locale][item] })),
+  },
+  {
+    key: 'id',
+    label: text.idLabel,
+    type: 'text',
+    chip: (value) => `${text.idLabel}: ${value}`,
+  },
+]
+
 export function QualityPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
+  const navigate = useNavigate()
 
-  const [type, setType] = useState<QualityEntityType>('story')
-  const [id, setId] = useState('')
+  const list = useUrlListState(DEFAULT_FILTERS)
+  const { filters } = list
+  const type = (ENTITY_TYPES as string[]).includes(filters.type) ? filters.type as QualityEntityType : 'story'
+  const id = filters.id
+  /// ما في الحقل قبل الضغط. الفحص لا يجري على كل حرف: نداء لكل ضغطة مفتاح على
+  /// معرّف نصفه مكتوب يعني سلسلة ‏404 لا نتيجة.
+  const [draft, setDraft] = useState(id)
   const [report, setReport] = useState<QualityReport | null>(null)
   const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -148,18 +183,14 @@ export function QualityPage() {
   const [notice, setNotice] = useState('')
   const [notFound, setNotFound] = useState(false)
 
-  const run = useCallback(async (event: FormEvent) => {
-    event.preventDefault()
-    const value = id.trim()
-    if (!value) { setError(text.idRequired); return }
-
+  const run = useCallback(async (checkType: QualityEntityType, checkId: string) => {
     setLoading(true)
     setError('')
     setNotice('')
     setNotFound(false)
     setReport(null)
     try {
-      const response = await api.qualityReport(type, value)
+      const response = await api.qualityReport(checkType, checkId)
       setReport(response.data)
     } catch (caught) {
       // 404 حالة قائمة بذاتها: كيان غير موجود ليس كيانًا فاشل الفحص
@@ -169,14 +200,34 @@ export function QualityPage() {
     } finally {
       setLoading(false)
     }
-  }, [id, text.checkError, text.idRequired, type])
+  }, [text.checkError])
+
+  // العنوان هو ما يُفحَص: الوصول برابط فيه معرّف يُجري الفحص، وإزالة شريحة
+  // المعرّف تُخلي النتيجة. لا نسخة محلية للمعرّف تتزامن مع العنوان.
+  useEffect(() => {
+    if (!id.trim()) { setReport(null); setNotFound(false); return }
+    void run(type, id.trim())
+  }, [id, run, type])
+
+  // الحقل يتبع العنوان حين يتغيّر من خارجه (شريحة تُزال، رابط يُفتح، رجوع).
+  useEffect(() => { setDraft(id) }, [id])
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    const value = draft.trim()
+    if (!value) { setError(text.idRequired); return }
+    // نفس المعرّف يُعاد فحصه بالضغط: العنوان لا يتغيّر فلا أثر يُشغَّل، والضغط
+    // على «فحص» يجب أن يفحص.
+    if (value === id.trim()) void run(type, value)
+    else list.setFilters({ id: value })
+  }
 
   /// التصدير يبني ملفًا في المتصفح من استجابة JSON.
   ///
   /// العنوان يُحرَّر فورًا بعد النقر لا في cleanup: التنزيل لحظيّ ولا حاجة
   /// للاحتفاظ بالعنوان بعده، بخلاف مشغّل الصوت في صفحة السرد.
   async function exportEntity() {
-    const value = id.trim()
+    const value = draft.trim()
     if (!value) { setError(text.idRequired); return }
 
     setExporting(true)
@@ -211,33 +262,34 @@ export function QualityPage() {
         </div>
       </section>
 
-      <form className="panel" onSubmit={run}>
+      <form className="panel" onSubmit={submit}>
         <div className="entity-form">
           {error && <div className="inline-alert inline-alert--error">{error}</div>}
           {notice && <div className="inline-alert inline-alert--info">{notice}</div>}
 
-          <div className="filters-row">
-            <label className="field">
-              <span>{text.typeLabel}</span>
-              <select value={type} onChange={(event) => setType(event.target.value as QualityEntityType)}>
-                {ENTITY_TYPES.map((item) => (
-                  <option value={item} key={item}>{entityLabels[locale][item]}</option>
-                ))}
-              </select>
-            </label>
-            <label className="field search-field">
-              <span>{text.idLabel}</span>
-              <input
-                value={id}
-                dir="ltr"
-                onChange={(event) => setId(event.target.value)}
-                placeholder={text.idPlaceholder}
-              />
-            </label>
-            <button className="button button--primary" type="submit" disabled={loading}>
-              {loading ? text.checking : text.check}
-            </button>
-          </div>
+          <ListToolbar
+            searchValue={draft}
+            onSearchChange={setDraft}
+            searchPlaceholder={text.idPlaceholder}
+            fields={FILTER_FIELDS(text, locale)}
+            values={filters}
+            defaults={DEFAULT_FILTERS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, DEFAULT_FILTERS[key as keyof typeof DEFAULT_FILTERS])}
+            trailing={
+              <>
+                <button className="button button--primary" type="submit" disabled={loading}>
+                  {loading ? text.checking : text.check}
+                </button>
+                <SavedViewsMenu
+                  storageKey="quality"
+                  currentSearch={list.search}
+                  onApply={(search) => navigate(`${adminPath('quality')}${search}`)}
+                />
+              </>
+            }
+          />
         </div>
       </form>
 
@@ -314,7 +366,7 @@ export function QualityPage() {
             <button
               className="button button--secondary"
               type="button"
-              disabled={exporting || !id.trim()}
+              disabled={exporting || !draft.trim()}
               onClick={() => void exportEntity()}
             >
               <Icon name="upload" size={16} />{exporting ? text.exporting : text.export}

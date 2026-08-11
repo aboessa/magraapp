@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import type { ChildRecord } from '../types/api'
-import { Icon } from '../components/Icon'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { TrackBadge } from '../components/StatusBadge'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
+import { SavedViewsMenu } from '../components/ListTools'
+import { useUrlListState } from '../hooks/useUrlListState'
+import { adminPath } from '../lib/adminPath'
 import { accountStatusLabels, formatNumber, trackLabels } from '../lib/labels'
 import { usePreferences } from '../context/preferences'
 import type { Locale } from '../context/preferences'
@@ -65,19 +70,44 @@ function interestsText(value: string, locale: Locale) {
   } catch { return '' }
 }
 
+/// مفاتيح الفلاتر هي أسماء معاملات الاستعلام التي يقبلها `GET /admin/children`
+/// بالحرف (`q`, `track`, `parent_id`, `status`, `limit`, `offset` في
+/// `api/src/routes/adminFamilyProjection.ts`). `parent_id` و`status` يقبلهما
+/// المعالِج ولا تعرضهما الشاشة، فلا يُرسَلان.
+const DEFAULT_FILTERS = { track: '' }
+const LIMIT = 100
+
+/// حقل الدرج بيانات لا JSX: القائمة السابقة كانت `<select>` بلا أي تسمية —
+/// يقرؤها قارئ الشاشة «قائمة منسدلة» بلا ذكر ما تختاره.
+const FILTER_FIELDS = (text: (typeof copy)['ar'], locale: Locale): FilterField[] => [
+  {
+    key: 'track',
+    label: text.computedTrack,
+    type: 'select',
+    options: [
+      { value: '', label: text.allTracks },
+      ...Object.entries(trackLabels[locale]).map(([value, label]) => ({ value, label })),
+    ],
+  },
+]
+
 export function ChildrenPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
+  const navigate = useNavigate()
+  // حالة القائمة في العنوان لا في الذاكرة: رابط «أطفال مسار الصغار» يجب أن يفتح
+  // تلك المجموعة، والتحديث لا يجوز أن يُفقد التصفية.
+  const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
+  const { query, filters } = list
+  const { track } = filters
   const [records, setRecords] = useState<ChildRecord[]>([])
-  const [query, setQuery] = useState('')
-  const [track, setTrack] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
-    try { const response = await api.children({ q: query, track, limit: 100 }); setRecords(response.data) }
+    try { const response = await api.children({ q: query, track, limit: LIMIT }); setRecords(response.data) }
     catch (caught) { setError(caught instanceof Error ? caught.message : text.loadError) }
     finally { setLoading(false) }
   }, [query, text.loadError, track])
@@ -91,10 +121,24 @@ export function ChildrenPage() {
       <section className="panel panel--table">
         <header className="panel__header panel__header--filters">
           <div><span className="panel__kicker">{text.familyProfiles}</span><h3>{text.allProfiles} <span className="title-count">{formatNumber(records.length, locale)}</span></h3></div>
-          <div className="filters-row">
-            <label className="search-field"><Icon name="search" size={17}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search}/></label>
-            <select value={track} onChange={(event) => setTrack(event.target.value)}><option value="">{text.allTracks}</option>{Object.entries(trackLabels[locale]).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select>
-          </div>
+          <ListToolbar
+            searchValue={query}
+            onSearchChange={list.setQuery}
+            searchPlaceholder={text.search}
+            fields={FILTER_FIELDS(text, locale)}
+            values={filters}
+            defaults={DEFAULT_FILTERS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')}
+            trailing={
+              <SavedViewsMenu
+                storageKey="children"
+                currentSearch={list.search}
+                onApply={(search) => navigate(`${adminPath('children')}${search}`)}
+              />
+            }
+          />
         </header>
         {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? (
           <div className="table-scroll" tabIndex={0}>
