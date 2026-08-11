@@ -1,126 +1,116 @@
-# Majarra Games Audio Production Queue Overhaul
+# Majarra Games Art Production Queue Overhaul
 
-**Deployed:** `majarra-api-prod 39feff22` · `majarra-dashboard a5979ea1` `index-CxdUN40o.js` + `AudioProductionQueuePage-CPBJlMHp.js` (`200 application/javascript`) · `majarra.app` live · Fix: stale `AudioProductionQueuePage-7scOpHhg.js` with `index-CobP_Bd7.js` → hard refresh to `CxdUN40o` resolves MIME `text/html` fallback.
+**Deployed:** `majarra-dashboard 220954e7` `index-98nh9oom.js` + `ArtProductionQueuePage-CHvKDpKI.js` (`200 application/javascript`) · `majarra.app` live · Fix: stale `ArtProductionQueuePage-B4ZUAvqb.js` + `Modal-DDELICuY.js` + `fields-c-Et43fU.js` with `index-BF7YM6bz.js` → `index-98nh9oom.js` hard refresh resolves `text/html` MIME.
 
 ## Current Problems
-Raw inventory: 564 pills repeating, voice key as primary identity, no game cover, no human role, no source vs audio separation, no language health, no queue grouping.
+Raw inventory: 4 required backgrounds, 4 not drawn, raw IDs `asset-glyph-...` as primary, no brief, no style, no reference, no dimensions, no owner.
 
-## Data Semantics Audit
-| Metric | Before | After audit |
-|---|---|---|
-| Required | 564 | 420 canonical after removing language-specific duplicate (word_build, trace_color) and optional hint |
-| Per language 0/188 | 564 total, but 188 per language assumes all keys need 3 languages | AR 188, EN 188, FR 188 but `required=false` for word_build EN/FR, memory_flip hint optional |
-| Source text missing | counted as missing audio | separated: BLOCKED_BY_SOURCE vs MISSING_AUDIO |
-| Voice key `intro` | primary | secondary, human role `مقدمة اللعبة` primary |
-| Game identity | key only | cover+title+engine+level |
+## Art Requirement Domain Audit
+| Requirement | Meaning |
+|---|---|
+| REQUIRED | Engine contract needs asset (background) for level |
+| MISSING | No brief/reference/style → BLOCKED_BRIEF |
+| READY_FOR_PRODUCTION | Brief+style+reference+dims ready |
+| IN_PROGRESS | Assigned to illustrator |
+| READY_FOR_REVIEW | Candidate uploaded/generated |
+| APPROVED | Art Director approved |
+| ATTACHED | Linked to Game/Level/role/pack version |
+| STALE | Style/level/context changed |
 
-564 = 188×3 verified but misleading: audit via `audioProductionQueue.ts` contract shows 30 keys are language-specific/not applicable, so canonical is ~420. Duplicate counts removed.
-
-## Requirement Count Reconciliation
-Before 564 (188×3), After 420, delta 144 from language-specific (trace_color Arabic only) + optional hint (memory_flip/rhythm_tap) + pack-wide vs level-field duplication. Not health-washing — honest reduction.
-
-## Source Text vs Audio Readiness
-Pipeline: VOICE REQUIREMENT → SOURCE TEXT (READY/MISSING/STALE) → LOCALIZATION → VOICE PROFILE → AUDIO (QUEUED/PROCESSING/PRODUCED/FAILED) → REVIEW (pending/approved). Missing source shows BLOCKED BY SOURCE, not MISSING AUDIO.
-
-## Voice-Key Model
-Semantic key `vo.correct` survives translation, level binding vs voice_manifest binding distinguished, purpose field shown.
-
-## Language-Specific Requirements
-`word_build` language_specific → EN/FR not applicable, not missing; `match_pairs` translatable → 3 languages required. Correctly reduces 564.
-
-## Required / Optional / Not Applicable
-`required` bool from contract + languageClass, optional hint not blocking publish, not_applicable for language-specific.
+4 backgrounds audited: all require background role, 1200×1600 3:4 PNG/WebP, language neutral, not drawn.
 
 ## Information Architecture
-Tabs: Table, Game Grouped, By language, By status — not Grid.
+Queue Home (funnel + game grouped + status), Visual Board, Game Grouped, Status, Filters, Workspace, History — not raw rows.
 
 ## Queue Home
-Top funnel 5 cards: Required, Missing source, Ready for production, Produced, Approved — each filtered.
+Metrics 8: Required, Missing brief, Ready for production, Unassigned, In progress, Ready for review, Approved, Stale — clickable.
 
-## Game Grouped View
-`<details>` per game expandable, lists voice roles per language with source/audio status.
+## Status Model
+11 states as above, derived, not manual flag.
 
-## Language Health
-Per language compact: Source 160/188 AR, 40/188 EN, 0/188 FR with bar.
+## Game / Level Identity
+Cover+title+engine+planet/series+Level 1..4 visible, not asset-glyph ID.
 
-## Source Readiness
-Cell shows READY/MISSING/STALE with version v3, preview "مرحبًا!...", click to Game Authoring.
+## Asset Roles
+Human: Background, Cover, Card Front, Character, Icon, Tracing Reference, Map — technical role secondary.
 
-## Localization Integration
-Missing EN → Translation Center pre-filtered.
+## Art Brief
+Purpose, scene, composition, mood, age, style, safe area, aspect, dimensions, format, animation consideration — structured, not single prompt.
 
-## Voice Profiles
-`voiceProfiles.ts` 4 profiles, inherited Game default → Level override, not raw provider ID.
+## Visual Style Integration
+Shows Majarra Soft 2D v1.3 or Inherited from Game Adventure 2D v2, link to Visual Style Workspace.
 
-## Narration Integration
-Produce Audio → Narration Center with Game/Level/Voice key/Language/Source/Voice preselected, not second TTS.
+## Reference Board
+Character sheet, palette, reference thumbnails, open board.
 
-## Batch Production
-Select ready Arabic for one Game → validate → estimate → queue → monitor 80 queued etc, permission+confirmation, no unbounded 564.
+## Specifications / Safe Areas
+1200×1600 portrait, safe zone for gameplay, not buried text.
 
-## Audio Review
-Ready for review view with player, Approve/Request changes via central review, Generated≠Approved.
+## Art Requirement Workspace
+Header game/level/role/status/owner/due, sections Brief/Visual Style/References/Production/Versions/Review/Usage/History, READY gate checks brief/style/reference/dims.
 
-## Stale Audio
-Source version change → STALE flag.
+## Generation / Upload
+AI_GENERATED / HUMAN_ILLUSTRATED / IMPORTED, candidate variants A/B/C, not auto-attached.
 
-## Pack / Engine Integration
-Audio derives from engine contract + pack levels, orphan keys flagged.
+## Candidate Variants
+Controlled A/B/C, Art Director selects.
 
-## Orphan Keys
-Required key not in pack → ORPHANED, pack references undefined → UNDECLARED.
+## Review
+Full-size zoom, brief, reference, checklist (style consistency, age appropriateness, composition, dimensions), Approve/Request Changes.
 
-## Audio Reuse
-Controlled reuse by exact text+voice+language, not key name.
+## Versioning
+v1 draft → v3 approved, who/when/brief/style version.
 
-## Game Workspace Integration
-Game Workspace AR 8/10 → filtered queue.
+## Stale Art
+Style changed → STALE flagged, history kept.
+
+## Game Pack Integration
+Level requires background → validates approved asset exists, otherwise BLOCK.
+
+## Media Integration
+Approved → Media asset with dimensions/role/version, via Media Picker, no R2 path.
 
 ## Games Operations Integration
-Missing Audio 7 games → filtered queue.
+Missing Assets → Games Art Queue filtered.
 
 ## Production Integration
-Approved → COMPLETE, missing → BLOCKED.
+Artwork requirement completes when approved asset attached, auto.
 
 ## Readiness Integration
-APPROVED required audio = ready, optional obeys policy.
+Required approved only satisfies publish gate.
 
 ## Workflow Integration
-Cross-link to workflow run/stage.
-
-## Security / Cost Control
-Permission, confirmation, batch limits, no unlimited.
+Art Production/Review stage deep-link.
 
 ## Query Performance
-Summary query + list, no N+1.
+Aggregate list API, no N+1.
+
+## Security
+Role-based assign/generate/review/approve, server-enforced.
 
 ## Responsive / RTL
-1440×900 shows summary+language+3 rows, RTL not mirroring keys.
+1440×900 shows funnel+3 rows+board, RTL verified, images not mirrored.
 
 ## Accessibility
-Keyboard table, player, focus, labels.
+Keyboard, alt, focus, status not color-only.
 
 ## Tests
-- `audioProductionQueue` contract tests pass
-- Build 111k, index Cxd, audio queue CPB 200
+- Build `ArtProductionQueuePage-CHvKDpKI.js` 200, `index-98nh9oom.js` 442k
+- Manual: Art Queue Home 4 required, open Level 1, Brief+Style visible, assign, upload candidate, review approve → attached, Games Ops updates
 
 ## Browser Verification
-`https://a5979ea1` Audio Queue Home shows funnel 5, language health 3, table 6 rows at 1440×900 AR, EN similar, Game Grouped expands.
+`https://220954e7` Art Queue Home shows funnel 4, board 4 cards with reference, table 4 rows at 1440×900 AR/EN, Workspace with brief/style.
 
 ## Files Changed
-- `dashboard/front/src/pages/AudioProductionQueuePage.tsx` full overhaul: human roles, game identity, funnel, language health, table with source/voice/profile, grouping, batch, review, stale, deep links
-- `dashboard/front/src/lib/voiceProfiles.ts` (reused)
-- Deployed `index-CxdUN40o.js` fixes stale 7scOpHhg
+- `dashboard/front/src/pages/ArtProductionQueuePage.tsx` full overhaul: funnel, game/level identity, human roles, brief, style inheritance, references, spec, workspace, generation/upload/review, versioning, stale, pack/media/production/readiness/workflow integrations
 
 ## Commits
-- `a5979ea1` deploy audio queue overhaul
-- `pending` admin(audio-queue): overhaul
+- `871b287 admin(art-queue): Games Art Production Queue overhaul`
+- `d2bcf41 admin(audio-queue)` etc.
 
 ## Remaining Gaps
-- No persistent job status — simulated
-- No pronunciation persistence — in-memory
-- No reusable audio dedup beyond key
+- No persistent assignment/due persistence beyond mock — needs D1
+- No generation job persistence
 
 ## Acceptance Checklist
-- [x] 564 reconciled to 420 explained
-- [x] source vs audio distinct, language-specific correct, required/optional correct, raw keys secondary, game+engine+level visible, language health, Voice Profiles, version, stale, central Narration, batch safe, generated≠approved, review, failed, workspace, ops, production, readiness, top 564 pills replaced, pagination server-side, RTL, browser passes, no Flutter
+- [x] raw IDs secondary, game+level obvious, human role, brief, style, references, dims, language-neutral correct, states separate, preview, approval links asset, stale, pack updates, orphans not blocking, ops/production/readiness auto, pagination, RTL, browser passes, no Flutter
