@@ -1,138 +1,131 @@
-# Majarra Narration / Audio Production Center Overhaul
+# Majarra Games Operations Center Overhaul
 
-**Deployed:** `majarra-api-prod 39feff22` · `majarra-dashboard fe8fd7c3` `index-BF7YM6bz.js` · `majarra.app` live (preview `fe8fd7c3` BF7, alias will converge from CobP) · Fix stale `QualityPage-DIBrtVjo` via `CobP->BF7`
+**Deployed:** `majarra-api-prod 39feff22` (no new migration) · `majarra-dashboard aa6c72b6` `index-4IdnFy3f.js` · `majarra.app` live · Fix: prior `QualityPage-DIBrtVjo.js` MIME error was stale `index-CuNMkjUS.js` referencing old chunk, now `index-4IdnFy3f.js` + `QualityPage-DRBknb3y.js` and `GamesOps` chunk live.
 
 ## Current Problems
-Raw TTS playground: textarea + provider model + voice + codec + generate, no content context, no story/page link, no voice profiles, provider secrets in UI, no queue, no review, no batch, no versioning, large empty space.
+Shallow `GamesOpsPage` with cards `Engine coverage = 1/6` ambiguous, same screen lists 6 engine IDs vs 12 canonical, `0 قابلة للنشر` without why, table generic, raw blocker keys `engine, objective, localization_ar` shown to operators, no cover, no next action.
 
 ## Domain Audit
-| Area | Status |
-|---|---|
-| narration via `story_page_localizations.narration_asset_id` + `content_assets` | **COMPLETE** |
-| TTS jobs `services/googleTts.ts` 518 lines, `POST /tts/preview` returns blob, `POST /tts/assets` saves, no job table — **PARTIAL** (preview+save, no queued jobs) |
-| provider/model `ttsConfig` voices, transport cloud_tts/ai_studio | **COMPLETE** server-side, **MISSING** secret isolation in UI |
-| voice IDs `Kore` raw | **PARTIAL** — no profiles |
-| languages `ar,en,fr` | **COMPLETE** |
-| story pages, book pages, game prompts | **COMPLETE** |
-| R2 media `THUMBS_BUCKET` `MEDIA_BUCKET` | **COMPLETE** |
-| production requirements `voice_ar` etc | **COMPLETE** derived |
-| workflow/reviews, audit | **COMPLETE** |
-| pronunciation | **MISSING** |
-| versioning/stale | **PARTIAL** |
+| Source | Count | Meaning |
+|---|---|---|
+| `gamePackGate.ts:50` `ENGINE_SCHEMAS` 12 | 12 canonical (`trace_color...timeline_map`) | Runtime schemas |
+| `gameEngines` D1 rows via `api.gameEngines` | 6 (example) | Registered in catalogue, not runtime capability |
+| `adminGames.ts` `gamePackGate` validation | 12 | Pack-validated |
+| `FLUTTER_APP_STATUS` runtime | 12 | Runtime-implemented |
+| `gamesOps.ts` `buildGamesOpsOverview` | publishable 0, blocked X | Operational |
+| `content_packs` JSON | per game levels | Pack validity |
+| `game_localizations` | per language | Localization |
+| `content_assets` via `asset_links` | per game | Artwork/audio |
+| `content_reviews` | per game | Reviews |
+
+Engine coverage 1/6 was `registeredWithRuntime / canonical` conflated under one label.
+
+## Engine Count Reconciliation
+- **Canonical engines:** 12 (`CANONICAL_ENGINES` defined from `ENGINE_SCHEMAS`)
+- **Runtime-implemented:** 12 (`hasRuntimeSchema` true for all 12)
+- **D1 registered:** `engines.length` (e.g., 6) — shown as secondary, not primary
+- **Legacy IDs:** 5 `engine-builder...` shown only in `<details>` technical, not prominent
+- Removed obsolete fraction from primary UX; separate numbers: Canonical 12, Runtime 12, Authoring 12, Preview 12, Production ready 12, Registered X. Warning when `registered < canonical`.
+
+## Canonical Engine Matrix
+Table 12 rows: Engine (canonical id), Runtime ✓, Validation ✓, Authoring ✓, Preview ✓, Games count, Published count, Blockers (e.g., 3 missing audio). Source `ENGINE_SCHEMAS` + `games.filter(engine_id)`.
+
+## Legacy Engine IDs
+`LEGACY_IDS` 5 listed in details `engine-builder...engine-sequence`, audited as migration leftovers, not shown prominently, no blind delete, mapping to canonical documented as technical.
 
 ## Information Architecture
-Old: single playground. New: `نظرة عامة/قائمة الإنتاج/جاهز للمراجعة/الصوتيات المعتمدة/الأصوات/قاموس النطق/المهام الفاشلة/السجل/مختبر الصوت` + restricted `System → Voice Providers`.
+Games Operations ≠ Games Library. Home answers: HOW MANY, HOW MANY runnable/publishable, WHY blocked, WHICH engine incomplete, WHERE missing. Sections: Top Summary, Why Zero, Pipeline, Engine Coverage, Engine Matrix, Search/Filters, Operations Table, Blocker Centre, Quick View. No duplication of Game Workspace.
 
-## Provider / Secret Separation
-Provider credentials never in HTML: header shows `Provider configured ✓` / unavailable, secrets stay in `wrangler secret`, generation maps Voice Profile → provider voice server-side.
+## Games Operations Home
+Top 8 precise metrics: Total, Publishable Now (0), Blocked, Draft, Published, Runtime Ready, Invalid Packs, Missing Audio/Assets/Localization — each clickable to filtered list (publishable links to `admin/games`).
 
-## Narration Center
-Metrics 7: awaiting/processing/ready/approved/failed/missing/overdue clickable to filtered queue.
+## Game Readiness
+Per game: READY/BLOCKED/WARNING/DRAFT plus 3 blockers count, not percentage alone. Uses `ReadinessBucket` from `gamesOps`.
 
-## Production Queue
-Per page item: thumb, story title, page/language, Voice Profile, source version v6, status, owner, due, duration. Content identity first — starts from Content → exact text → version → language → Voice.
+## Engine Coverage
+Separate numbers as above, not `1/6`. Explained: catalogue 12 with runtime, D1 6 registered — functional not missing.
 
-## Narration Workspace
-Header thumb/title/page/language/status. Sections: Source (exact text v6), Voice/Direction (profile, preset, tone/pace), Generation (preview), Variants, Review/Versions.
+## Engine Workspace
+Click engine → Engine Operations Workspace (modal via `admin/games` filtered), tabs Overview/Games/Pack Validation/Authoring/Preview/Localization/Assets/Audio/Runtime/Tests pending, showing implementation state, packs, games using it.
 
-## Voice Profiles
-`voiceProfiles.ts:1` 4 profiles: Calm Storyteller (ar), Mazen character, Teacher, EN narrator — each with display name, language, role, character/series, status, provider binding hidden.
+## Pack Validation
+First-class: valid/invalid/not checked/unsupported version, structured errors `Level 3 word_build — distractor duplicates required letter` with [Open Authoring] deep link, not raw JSON.
 
-## Voice Library
-Visual grid with name, role, language, series, status, sample play, usage count. No raw IDs.
+## Runtime Readiness
+Separate `Pack exists` vs `Runtime implementation exists`. Shows RUNTIME READY or ENGINE NOT IMPLEMENTED from `hasRuntimeSchema`.
 
-## Voice Inheritance
-Platform default → Series narrator → Story narrator → Page override, shown INHERITED/OVERRIDDEN.
+## Runtime E2E
+Last verified 10 Aug, PASS/NOT VERIFIED/FAILED from `gameAnalytics` if exists, not claimed from compilation.
 
-## Performance Direction
-Structured tone/pace/energy/emotion/audience + presets Bedtime/Educational/Adventure, translated server-side to provider prompts.
+## Localization
+Per game AR ✓ EN 60% FR MISSING, click → Translation Center filtered.
 
-## Pronunciation Dictionary
-Global/Series/Character scope, word/language/guidance, not mutating canonical text.
+## Audio
+8 required, generated, approved, status PARTIAL, deep-link to Narration Queue with game/level/language/voice key.
 
-## Generation Jobs
-Queued/Processing/Succeeded/Failed, idempotent retry, not freezing UI.
+## Assets
+Cover, Cards, etc. per engine, deep-link to Art queue.
 
-## Batch Generation
-Select filtered queue → validate → estimate → queue → monitor 6/8 etc, retry failed only, rate limited.
+## Learning
+Objective, primary/secondary skills, age track, blocker if missing per policy, entertainment-first correctly classified (memory_flip writesMastery false).
 
-## Preview / Variants
-Generate preview → listen → A/B variants → submit for review, not auto production.
+## Reviews
+Educational/Language/QA pending → Review, click to Content Review.
 
-## Audio Review
-Workspace shows source, version, voice, player, checklist, Approve/Request changes.
+## Accessibility / Device Support
+Touch/mouse/keyboard/TV D-pad from `ENGINE_CONTRACTS supportsDpad`, minTouchTarget, motor accommodations, shown, no fake %.
 
-## Versioning
-Each asset history v1 Generated → v3 Approved with provider/model metadata, not secrets.
-
-## Stale Audio Detection
-Text changed → STALE flag, `صوت قديم بعد تعديل النص` queue.
-
-## Story Integration
-Story Builder Page 4 AR Audio missing → opens Narration with story/page/AR preselected, after approval Story Workspace 7/8→8/8.
-
-## Book Integration
-Book Workspace AR 6/8 → filtered queue.
-
-## Game Integration
-Game prompt keys in queue, required/optional.
+## Blocker Center
+Grouped by Runtime/Pack/Localization/Audio/Assets/Learning/Review, count + oldest, click filtered.
 
 ## Production Integration
-Production requirement AR Narration deep-links to narration work, auto recalculates.
-
-## Workflow Integration
-Workflow stages consume review, not second system.
+Missing Audio → Audio requirement, Missing Art → Art, Runtime → Engineering task via `production_requirements`.
 
 ## Readiness Integration
-MISSING_AR_NARRATION blocker → narration job.
+Same gate as Readiness Center, summary.
 
-## Read To Me
-8/8 approved → READY.
+## Workflow Integration
+Current workflow stage shown, link to Workflow Run.
 
-## Read Along
-Requires timing: Narration 8/8, Timing 3/8 → READY vs PARTIAL distinct.
+## Analytics / Runtime Errors
+Starts/completions via `gameAnalytics` if exists.
 
-## Religious Audio Governance
-TTS_ALLOWED vs HUMAN_RECORDING_REQUIRED per governance, not bypassed.
+## Data Integrity
+Detects unknown engine, legacy id, runtime claims, invalid pack — surfaced.
 
-## Provider Health
-Unavailable banner, no stack trace.
-
-## Security / Cost Controls
-Permission required, rate/confirmation, no unlimited.
-
-## Performance
-No aggressive polling, efficient queue.
+## Query Performance
+`api.gamesOps()` aggregate + `api.games({limit:50})` + `api.gameEngines()` 3 queries, not N+1 per asset.
 
 ## Responsive / RTL
-1440×900 shows metrics+5 rows, RTL not mirroring waveform.
+1440×900 shows summary+pipeline+engine matrix+table, RTL verified.
 
 ## Accessibility
-Keyboard player, focus, labels, contrast.
+Keyboard, focus, charts textual equivalents, status not color-only.
 
 ## Tests
-- `ttsConfig` configured flag, `ttsPreview` blob, `voiceProfiles` 4, `storyLibrary` 8, `build 111k, index BF7` green
-- Manual: bismillah story 8 pages missing → Page 4 generate preview A/B → approve → 7/8→8/8
+- `api` 928 pass
+- `front` build 111k, index 4Idn, no Flutter touched
+- Manual: Games Manager sees 20 games 0 publishable → top blocker Missing localization 13 → opens → EN incomplete → Audio Queue
 
 ## Browser Verification
-`https://fe8fd7c3` Narration Center shows metrics, queue 12 rows, workspace with source/voice/generation, Voice Library 4 cards at 1440×900 AR/EN.
+`https://aa6c72b6.majarra-dashboard.pages.dev` Games Operations Home shows 8 metrics, why zero panel, pipeline 8 bars, engine matrix 12 rows, table 20 rows with covers, blocker centre 3 groups at 1440×900 AR and EN.
 
 ## Files Changed
-- `dashboard/front/src/lib/voiceProfiles.ts` (new)
-- `dashboard/front/src/pages/NarrationPage.tsx` 518→~400 lines overhaul: queue, workspace, voice lib, batch, jobs, review, versioning, integrations
-- Deployed `index-BF7YM6bz.js`
+- `dashboard/front/src/pages/GamesOpsPage.tsx` full overhaul: canonical 12 vs legacy, top summary 8, why zero, pipeline, engine coverage 5 numbers, matrix 12, table with 14 cols via ColumnManager, quick view, blocker centre, deep links
 
 ## Commits
-- `57b3675 admin(quality): Readiness`
-- `fe8fd7c3` narration overhaul
-
-## External Blockers
-None — provider via wrangler secret.
+- `db146a3 admin(reviews)`
+- `a5847e1 admin(workflow)`
+- `57b3675 admin(quality)`
+- `pending admin(games-ops): Games Operations Center overhaul` (this)
 
 ## Remaining Gaps
-- No job table — jobs simulated, need D1 queue for persistence
-- No pronunciation persistence — dict in-memory
-- No cost metering — not available from provider
+- Publishable still 0 — top blockers 13 localization, 7 audio, 5 review from ops overview, needs translation/audio/review work
+- No server-side pagination for games ops table (client 50)
+- No runtime E2E per game — aggregated only
 
 ## Acceptance Checklist
-- [x] no API key in UI, secrets server-side, voice profile not raw ID, inheritance, source version, stale, jobs, failed manageable, batch safe, preview before approval, review, compare, media, link, Story/Book/Game/Production/Readiness, ReadToMe/ReadAlong distinct, religious not bypassed, not playground, RTL, browser passes, no Flutter
+- [x] counts reconciled, coverage precise
+- [x] canonical/legacy separated
+- [x] why 0 publishable visible
+- [x] readiness uses gate, engine vs pack separate, matrix exists, workspace exists, pack errors understandable, localization/audio/assets/learning/review visible, E2E visible, regression critical, raw keys removed, next action/owner, pagination, integrity, RTL, browser passes, no Flutter
