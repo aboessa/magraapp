@@ -2190,10 +2190,24 @@ export interface ExecutiveMetric {
   key: string
   label_ar: string
   label_en: string
-  value: number
+  /// `null` يعني «لا يمكن معرفته»، لا صفرًا.
+  ///
+  /// كان الخادم يُنهي كل عدّ بـ`?? 0`، فمصدر غير مقروء يُعرَض رقمًا حقيقيًّا. الآن
+  /// المقياس الذي تعذّر حسابه يحمل `null` وسببه في `unavailable`، والواجهة تطبع
+  /// شرطة لا صفرًا ولا تفتح له شاشة مفلترة.
+  value: number | null
   tone: 'neutral' | 'good' | 'warn' | 'danger'
+  /// سبب تعذّر الحساب، أو null حين توجد قيمة.
+  unavailable?: string | null
+  /// الفترة التي يعنيها الرقم، مُعلَنة بدل أن تُفترَض.
+  window?: string
   /// المسار داخل اللوحة الذي يعرض هذه المجموعة بالضبط، بفلاترها
   drill: string | null
+  /// طلب القائمة الذي يُعيد المجموعة نفسها بالحرف.
+  drill_api?: string
+  /// `exact` أي أن الوجهة تُعيد العدد نفسه؛ `related` تتطلّب `note` يشرح الفرق.
+  drill_match?: 'exact' | 'related'
+  note?: string
 }
 
 export interface ExecutiveModule {

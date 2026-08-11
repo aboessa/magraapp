@@ -1141,3 +1141,27 @@ a.exec-metric:hover { border-color: var(--accent, #6c8cff); }
      للوحة، وهو ما يرصده فحص الفيضان في المتصفح. */
   .kanban { grid-auto-flow: row; grid-auto-columns: auto; }
 }
+
+
+/* ==========================================================================
+   ترتيب اللوحة الرئيسية حسب الدور
+   ========================================================================== */
+
+.exec-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* مقياس بلا قيمة يُقرأ كمقياس بلا قيمة: شرطة باهتة وسبب تحتها، لا رقم. */
+.exec-metric--unknown { opacity: 0.72; cursor: default; }
+.exec-metric--unknown strong { color: var(--muted); }
+
+.exec-metric__note {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-style: italic;
+}

@@ -9,6 +9,8 @@ import { StatusBadge } from '../components/StatusBadge'
 import { formatDate, formatNumber, planLabels, trackLabels } from '../lib/labels'
 import { adminPath } from '../lib/adminPath'
 import { readAdminUser } from '../lib/adminSession'
+import { orderModules, readPreset, writePreset } from '../lib/dashboardPresets'
+import type { DashboardPreset } from '../lib/dashboardPresets'
 import { usePreferences } from '../context/preferences'
 
 /**
@@ -28,8 +30,16 @@ import { usePreferences } from '../context/preferences'
  * يُكتب). يُعرض فوق المؤشّرات لا مخفيًّا في تلميح: مؤشّر بحدّ غير مقروء يُتَّخذ
  * قرار على أساسه.
  */
-function ExecutiveModules({ locale }: { locale: 'ar' | 'en' }) {
+/**
+ * الوحدات التشغيلية من `/admin/dashboard/executive`.
+ *
+ * مُصدَّرة ليُختبَر ترتيبها وعرض المقياس غير المتاح وحدها: تركيب `DashboardPage`
+ * كاملة يستلزم تزييف أربعة مسارات أخرى، فيصير الاختبار عن شكل استجاباتها لا عن
+ * ما يُقاس هنا.
+ */
+export function ExecutiveModules({ locale }: { locale: 'ar' | 'en' }) {
   const [overview, setOverview] = useState<ExecutiveOverview | null>(null)
+  const [preset, setPreset] = useState<DashboardPreset>(() => readPreset())
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -49,8 +59,8 @@ function ExecutiveModules({ locale }: { locale: 'ar' | 'en' }) {
   useEffect(() => { void load() }, [load])
 
   const text = locale === 'ar'
-    ? { title: 'الوحدات التشغيلية', lede: 'كل رقم من قاعدة البيانات، وكل رقم يفتح الشاشة المفلترة على نفس المجموعة.', limits: 'ما لا تستطيع هذه اللوحة قوله', generated: 'محدَّثة في', retry: 'إعادة المحاولة', failed: 'تعذر تحميل الوحدات التشغيلية', source: 'المصدر' }
-    : { title: 'Operational modules', lede: 'Every number comes from the database, and every number opens the screen filtered to the same set.', limits: 'What this dashboard cannot say', generated: 'Generated at', retry: 'Try again', failed: 'Unable to load the operational modules', source: 'Source' }
+    ? { title: 'الوحدات التشغيلية', lede: 'كل رقم من قاعدة البيانات، وكل رقم يفتح الشاشة المفلترة على نفس المجموعة.', limits: 'ما لا تستطيع هذه اللوحة قوله', generated: 'محدَّثة في', retry: 'إعادة المحاولة', failed: 'تعذر تحميل الوحدات التشغيلية', source: 'المصدر', layout: 'الترتيب', more: 'وحدات أخرى', unavailable: 'غير متاح', localPreset: 'الترتيب تفضيل في هذا المتصفح، ولا يُشارك مع الفريق.', presets: { executive: 'تنفيذي', content: 'مدير محتوى', production: 'مدير إنتاج', support: 'مدير دعم', marketing: 'تسويق و SEO', tech: 'تشغيل تقني', all: 'الكل' } as Record<DashboardPreset, string> }
+    : { title: 'Operational modules', lede: 'Every number comes from the database, and every number opens the screen filtered to the same set.', limits: 'What this dashboard cannot say', generated: 'Generated at', retry: 'Try again', failed: 'Unable to load the operational modules', source: 'Source', layout: 'Layout', more: 'Other modules', unavailable: 'Unavailable', localPreset: 'The layout is a preference in this browser and is not shared with the team.', presets: { executive: 'Executive', content: 'Content manager', production: 'Production manager', support: 'Support manager', marketing: 'Marketing & SEO', tech: 'Technical ops', all: 'All' } as Record<DashboardPreset, string> }
 
   if (loading && !overview) return <LoadingState />
   if (error && !overview) {
@@ -66,6 +76,8 @@ function ExecutiveModules({ locale }: { locale: 'ar' | 'en' }) {
   }
   if (!overview) return null
 
+  const { primary, secondary } = orderModules(overview.modules, preset)
+
   return (
     <>
       <section className="page-intro page-intro--sub">
@@ -73,47 +85,42 @@ function ExecutiveModules({ locale }: { locale: 'ar' | 'en' }) {
           <span className="eyebrow">{text.title}</span>
           <p>{text.lede}</p>
         </div>
-        <span className="data-note" dir="ltr">{text.generated} {new Date(overview.generated_at).toLocaleString(locale === 'ar' ? 'ar' : 'en-GB')}</span>
+        <div className="exec-head">
+          <label className="field field--inline">
+            <span>{text.layout}</span>
+            <select
+              value={preset}
+              onChange={(event) => {
+                const next = event.target.value as DashboardPreset
+                setPreset(next)
+                writePreset(next)
+              }}
+            >
+              {(['executive', 'content', 'production', 'support', 'marketing', 'tech', 'all'] as DashboardPreset[])
+                .map((value) => <option value={value} key={value}>{text.presets[value]}</option>)}
+            </select>
+          </label>
+          <span className="data-note" dir="ltr">{text.generated} {new Date(overview.generated_at).toLocaleString(locale === 'ar' ? 'ar' : 'en-GB')}</span>
+        </div>
       </section>
+      <p className="panel__note">{text.localPreset}</p>
 
       <div className="exec-grid">
-        {overview.modules.map((module) => (
-          <article className="panel exec-module" key={module.key}>
-            <header className="panel__header">
-              <div>
-                <h3>{locale === 'ar' ? module.label_ar : module.label_en}</h3>
-                <p className="panel__note"><code dir="ltr">{text.source}: {module.source}</code></p>
-              </div>
-            </header>
-            {module.unavailable && (
-              <p className="panel--notice panel--inline"><Icon name="warning" size={14} />{module.unavailable}</p>
-            )}
-            <ul className="exec-metrics">
-              {module.metrics.map((metric) => {
-                const label = locale === 'ar' ? metric.label_ar : metric.label_en
-                const body = (
-                  <>
-                    <strong>{formatNumber(metric.value, locale)}</strong>
-                    <span>{label}</span>
-                  </>
-                )
-                return (
-                  <li key={metric.key}>
-                    {metric.drill ? (
-                      <Link
-                        className={`exec-metric exec-metric--${metric.tone}`}
-                        to={adminPath(metric.drill.replace(/^\//, ''))}
-                      >{body}</Link>
-                    ) : (
-                      <span className={`exec-metric exec-metric--${metric.tone}`}>{body}</span>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          </article>
-        ))}
+        {primary.map((module) => renderModule(module))}
       </div>
+
+      {secondary.length > 0 && (
+        <>
+          {/* الوحدات خارج إعداد الدور تُنقل لا تُخفى: مدير الدعم يجب أن يعرف أن
+              وحدة الحقوق موجودة، حتى وهي ليست أولويته. */}
+          <section className="page-intro page-intro--sub">
+            <div><span className="eyebrow">{text.more}</span></div>
+          </section>
+          <div className="exec-grid">
+            {secondary.map((module) => renderModule(module))}
+          </div>
+        </>
+      )}
 
       <section className="panel panel--notice">
         <strong>{text.limits}</strong>
@@ -121,6 +128,52 @@ function ExecutiveModules({ locale }: { locale: 'ar' | 'en' }) {
       </section>
     </>
   )
+
+  function renderModule(module: ExecutiveOverview['modules'][number]) {
+    return (
+      <article className="panel exec-module" key={module.key}>
+        <header className="panel__header">
+          <div>
+            <h3>{locale === 'ar' ? module.label_ar : module.label_en}</h3>
+            <p className="panel__note"><code dir="ltr">{text.source}: {module.source}</code></p>
+          </div>
+        </header>
+        {module.unavailable && (
+          <p className="panel--notice panel--inline"><Icon name="warning" size={14} />{module.unavailable}</p>
+        )}
+        <ul className="exec-metrics">
+          {module.metrics.map((metric) => {
+            const label = locale === 'ar' ? metric.label_ar : metric.label_en
+            // `value: null` يعني «لا يمكن معرفته» لا «صفر». طباعته عبر formatNumber
+            // كانت ستُخرج صفرًا، وهو بالضبط الخلط الذي أُصلح في الخادم: مصدر غير
+            // متاح كان يُعرَض رقمًا حقيقيًّا.
+            const unknown = metric.value === null || metric.value === undefined
+            const body = (
+              <>
+                <strong>{unknown ? '—' : formatNumber(metric.value as number, locale)}</strong>
+                <span>{label}</span>
+                {unknown && <small className="exec-metric__note">{metric.unavailable ?? text.unavailable}</small>}
+              </>
+            )
+            // مقياس بلا قيمة لا يفتح شاشة مفلترة: الرابط كان سيوعد بمجموعة لا
+            // يعرف حجمها.
+            return (
+              <li key={metric.key}>
+                {metric.drill && !unknown ? (
+                  <Link
+                    className={`exec-metric exec-metric--${metric.tone}`}
+                    to={adminPath(metric.drill.replace(/^\//, ''))}
+                  >{body}</Link>
+                ) : (
+                  <span className={`exec-metric exec-metric--${metric.tone}${unknown ? ' exec-metric--unknown' : ''}`}>{body}</span>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      </article>
+    )
+  }
 }
 
 /**
