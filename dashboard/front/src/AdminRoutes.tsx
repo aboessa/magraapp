@@ -82,6 +82,8 @@ const GamesPage = lazy(() => import('./pages/GamesPage').then((module) => ({ def
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then((module) => ({ default: module.ProjectsPage })))
 const ProjectWorkspacePage = lazy(() => import('./pages/ProjectWorkspacePage').then((module) => ({ default: module.ProjectWorkspacePage })))
 const VisualStylesPage = lazy(() => import('./pages/VisualStylesPage').then((module) => ({ default: module.VisualStylesPage })))
+const VisualStyleWorkspacePage = lazy(() => import('./pages/VisualStyleWorkspacePage').then((module) => ({ default: module.VisualStyleWorkspacePage })))
+const VisualStyleComparePage = lazy(() => import('./pages/VisualStyleComparePage').then((module) => ({ default: module.VisualStyleComparePage })))
 const NarrationPage = lazy(() => import('./pages/NarrationPage').then((module) => ({ default: module.NarrationPage })))
 const QualityPage = lazy(() => import('./pages/QualityPage').then((module) => ({ default: module.QualityPage })))
 
@@ -208,6 +210,8 @@ export default function AdminRoutes() {
         <Route path="games-art-queue" element={<ArtProductionQueuePage />} />
         <Route path="media" element={<MediaLibraryPage />} />
         <Route path="media/:id" element={<AssetDetailPage />} />
+        <Route path="visual-styles/compare" element={<VisualStyleComparePage />} />
+        <Route path="visual-styles/:id" element={<VisualStyleWorkspacePage />} />
         <Route path="visual-styles" element={<VisualStylesPage />} />
         <Route path="parents" element={<ParentsPage />} />
         {/* Customer 360: القائمة ثم مساحة العمل. منفصلة عن /parents لأن تلك قراءة
