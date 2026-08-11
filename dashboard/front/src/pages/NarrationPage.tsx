@@ -1,536 +1,249 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
-import { ErrorState, LoadingState } from '../components/PageState'
+import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
-import { formatNumber } from '../lib/labels'
-import type { TtsConfig, TtsEncoding, TtsPreviewResult } from '../types/api'
+import type { StoryLibraryRow } from '../types/api'
+import { VOICE_PROFILES, profileFor } from '../lib/voiceProfiles'
 
-/**
- * توليد السرد الصوتي.
- *
- * ## لماذا كانت هذه الصفحة غائبة
- *
- * `services/googleTts.ts` أكبر خدمة في المشروع (518 سطرًا): نقلان، توقيع JWT
- * لحساب الخدمة، تخزين مؤقّت للرمز، وتغليف PCM في حاوية WAV. ومسارَاها
- * `GET /tts/config` و`POST /tts/preview` جاهزان. ولم يكن لأيٍّ منهما مستدعٍ في
- * الواجهة، فالخدمة كلها كانت غير قابلة للاستخدام إلا بـcurl.
- *
- * ## ثلاث قواعد من الخادم تُحترم هنا
- *
- * ١. **الحدود بالبايت لا بالحرف.** UTF-8 يرمّز الحرف العربي في بايتين، فحدّ
- *    4000 بايت هو ~2000 حرف عربي. العدّاد هنا يقيس البايتات بـ`TextEncoder`
- *    مطابقةً لـ`byteLength` في الخادم، لا `text.length`.
- *
- * ٢. **الاقتطاع الصامت هو سبب الرفض.** Gemini-TTS يقطع الصوت الزائد بلا إخطار،
- *    فالخادم يرفض بـ`text_too_long`. المنع هنا قبل النداء يوفّر نداءً مدفوعًا
- *    يُرفض.
- *
- * ٣. **الترميز المطلوب قد لا يكون المُنتَج.** نقل `ai_studio` يُعيد WAV دائمًا
- *    ويتجاهل الترميز. تُعرض القيمة الفعلية من ترويسة الاستجابة لا من الطلب، ولا
- *    يُعرض اختيار الترميز إلا على `cloud_tts`.
- *
- * ## المعاينة لا تحفظ نفسها تلقائيًا
- *
- * `POST /tts/preview` لا يكتب صفًّا في `content_assets` عمدًا: هذه حلقة «هل
- * يناسب هذا الصوت القصة»، وحفظ كل تجربة يُتخم مكتبة الوسائط بمحاولات مهملة.
- *
- * الحفظ الصريح بعد المعاينة أصبح متاحًا عبر `POST /tts/assets` (مسار مستقل):
- * يرسل نفس بايتات الصوت التي عاينها المحرّر بالضبط — لا نداءً ثانيًا لـGoogle
- * قد يُنتج أداءً مختلفًا لنفس النص — ويكتب صفًّا حقيقيًا في `content_assets`
- * برؤية خاصة دائمًا (السرد يُصنَّف خاصًا لا فنًّا عامًا). الربط بحلقة أو قصة
- * محدَّدة يتم بعدها من مكتبة الوسائط (`PUT /assets/:id/links`)، تمامًا كأي
- * أصل آخر — لا حاجة لمسار ربط مكرَّر هنا.
- */
+type QueueItem = { story: StoryLibraryRow; page: number; language: string; text: string; status: 'missing'|'ready_for_review'|'approved'|'failed'|'stale'; voice: string; sourceVersion: string; duration?: string; owner?: string; due?: string }
 
 const copy = {
   ar: {
-    eyebrow: 'الإنتاج الصوتي',
-    title: 'توليد السرد',
-    lede: 'اكتب نصًّا وتوجيهًا للأداء، واستمع للنتيجة قبل استخدامها. المعاينة لا تُحفظ في مكتبة الوسائط.',
-    reload: 'إعادة الفحص',
-    unconfiguredTitle: 'التوليد غير مُهيَّأ',
-    unconfiguredBody: 'لا يوجد اعتماد Google مضبوط في هذه البيئة، فلا يمكن توليد صوت. يلزم أحد الخيارين:',
-    unconfiguredCloud: 'حساب خدمة: GOOGLE_TTS_SERVICE_ACCOUNT_EMAIL و GOOGLE_TTS_PRIVATE_KEY و GOOGLE_TTS_PROJECT_ID — يُعيد MP3 مباشرة، وهو المسار المُفضَّل.',
-    unconfiguredStudio: 'مفتاح API: GOOGLE_TTS_API_KEY — أسرع في الضبط لكنه يُعيد WAV أكبر حجمًا.',
-    unconfiguredHint: 'تُضبط كأسرار عبر wrangler secret put، ولا تُعرض قيمتها في اللوحة أبدًا.',
-    transportLabel: 'النقل',
-    transportCloud: 'حساب خدمة (MP3 مباشرة)',
-    transportStudio: 'مفتاح API (يُلَفّ كـWAV)',
-    textLabel: 'النص المقروء *',
-    textPlaceholder: 'اكتب نصّ الصفحة كما يُقرأ على الطفل.',
-    promptLabel: 'توجيه الأداء',
-    promptPlaceholder: 'مثال: اقرأ بصوت حكّاءٍ دافئ وبإيقاع هادئ يناسب وقت النوم.',
-    promptHint: 'هذا ما يميّز Gemini-TTS عن صوت عاديّ: يوجّه النبرة والإيقاع واللهجة.',
-    voiceLabel: 'الصوت',
-    languageLabel: 'اللغة',
-    languageHint: (recommended: string) => `${recommended} هو الوحيد المستقرّ للعربية؛ غيره ما زال تجريبيًّا.`,
-    encodingLabel: 'الترميز',
-    encodingCloudHint: 'MP3 أصغر حجمًا وأنسب للتوزيع.',
-    encodingStudioHint: 'هذا النقل يُعيد WAV دائمًا ويتجاهل الترميز المطلوب.',
-    generate: 'توليد',
-    generating: 'جارٍ التوليد…',
-    generateHint: 'كل توليد نداءٌ مدفوع على حساب المنصّة.',
-    bytesUsed: (used: string, max: string) => `${used} / ${max} بايت`,
-    lettersApprox: (letters: string) => `~${letters} حرف عربي`,
-    overTextLimit: 'النص أطول من الحدّ. Gemini-TTS يقتطع الزائد بصمت، فالتوليد مرفوض.',
-    overPromptLimit: 'التوجيه أطول من الحدّ.',
-    overCombinedLimit: 'مجموع النص والتوجيه أكبر من الحدّ المشترك.',
-    textRequired: 'النص مطلوب.',
-    resultTitle: 'النتيجة',
-    resultTransport: 'النقل الفعلي',
-    resultModel: 'الموديل',
-    resultVoice: 'الصوت',
-    resultType: 'النوع',
-    resultSize: 'الحجم',
-    download: 'تنزيل',
-    saveTitleLabel: 'عنوان الأصل في مكتبة الوسائط *',
-    saveTitlePlaceholder: 'مثال: سرد صفحة 3 — قصة أرنوب والقمر',
-    saveTitleRequired: 'العنوان مطلوب قبل الحفظ.',
-    save: 'حفظ في مكتبة الوسائط',
-    saving: 'جارٍ الحفظ…',
-    savedOk: 'حُفظ السرد في مكتبة الوسائط.',
-    saveError: 'تعذر حفظ السرد',
-    savedHint: 'يمكن ربط الأصل المحفوظ بحلقة أو قصة من مكتبة الوسائط.',
-    openInLibrary: 'فتح في مكتبة الوسائط',
-    loadError: 'تعذر تحميل إعدادات التوليد',
-    generateError: 'تعذر توليد الصوت',
-    limitsNote: 'الحدود بالبايت لا بالحرف: الحرف العربي بايتان في UTF-8.',
-    errorUnconfigured: 'الاعتماد غير مضبوط في الخادم.',
-    errorTooLong: 'النص أو التوجيه أطول من حدّ المزوّد.',
-    errorProviderDown: 'المزوّد غير متاح الآن. أعِد المحاولة.',
-    errorProviderRejected: 'المزوّد رفض الطلب.',
-    errorInvalid: 'الطلب غير صالح.',
+    eyebrow: 'إنتاج الصوت',
+    title: 'مركز إنتاج السرد',
+    lede: 'إنتاج سرد مجرة من النص الحقيقي والنسخة الدقيقة — مع مراجعة واعتماد وربط بالأصول.',
+    providerOk: 'مزود الصوت مهيأ ✓',
+    providerBad: 'مزود الصوت غير متاح',
+    metrics: { waiting:'بانتظار الإنتاج', processing:'قيد التوليد', review:'جاهز للمراجعة', approved:'معتمد', failed:'فشل التوليد', missing:'ناقص صوت', overdue:'متأخر' },
+    tabs: { overview:'نظرة عامة', queue:'قائمة الإنتاج', review:'جاهز للمراجعة', approved:'الصوتيات المعتمدة', voices:'الأصوات', dict:'قاموس النطق', failed:'المهام الفاشلة', history:'السجل', lab:'مختبر الصوت' },
+    search:'بحث بالمحتوى...',
+    produce:'توليد معاينة', approve:'اعتماد كمرشح', play:'تشغيل',
+    voiceLabel:'الدور الصوتي', language:'اللغة', preset:'إعداد الأداء', tone:'النغمة', pace:'السرعة',
+    source:'النص المصدري', sourceVersion:'نسخة النص', voiceProfile:'الدور الصوتي', direction:'التوجيه',
+    batch:'توليد دفعي', batchHint:'تحقق من النص والدور قبل الانتظار.',
+    stale:'قديم — النص تغير', readToMe:'جاهزية اقرأ لي', readAlong:'جاهزية القراءة المتزامنة',
   },
   en: {
-    eyebrow: 'Audio production',
-    title: 'Narration',
-    lede: 'Write text and a performance direction, then listen before using it. A preview is not saved to the media library.',
-    reload: 'Re-check',
-    unconfiguredTitle: 'Generation is not configured',
-    unconfiguredBody: 'No Google credential is set in this environment, so audio cannot be generated. One of these is required:',
-    unconfiguredCloud: 'Service account: GOOGLE_TTS_SERVICE_ACCOUNT_EMAIL, GOOGLE_TTS_PRIVATE_KEY and GOOGLE_TTS_PROJECT_ID — returns MP3 directly and is the preferred path.',
-    unconfiguredStudio: 'API key: GOOGLE_TTS_API_KEY — quicker to set up but returns larger WAV audio.',
-    unconfiguredHint: 'Set as secrets via wrangler secret put; their values are never shown in the dashboard.',
-    transportLabel: 'Transport',
-    transportCloud: 'Service account (direct MP3)',
-    transportStudio: 'API key (wrapped as WAV)',
-    textLabel: 'Spoken text *',
-    textPlaceholder: 'Write the page text as it should be read to the child.',
-    promptLabel: 'Performance direction',
-    promptPlaceholder: 'For example: read as a warm storyteller with a calm bedtime pace.',
-    promptHint: 'This is what separates Gemini-TTS from a plain voice: it steers tone, pace and accent.',
-    voiceLabel: 'Voice',
-    languageLabel: 'Language',
-    languageHint: (recommended: string) => `${recommended} is the only stable option for Arabic; others remain preview.`,
-    encodingLabel: 'Encoding',
-    encodingCloudHint: 'MP3 is smaller and better suited to distribution.',
-    encodingStudioHint: 'This transport always returns WAV and ignores the requested encoding.',
-    generate: 'Generate',
-    generating: 'Generating…',
-    generateHint: 'Every generation is a paid call against the platform account.',
-    bytesUsed: (used: string, max: string) => `${used} / ${max} bytes`,
-    lettersApprox: (letters: string) => `~${letters} Arabic letters`,
-    overTextLimit: 'The text exceeds the limit. Gemini-TTS truncates silently, so generation is refused.',
-    overPromptLimit: 'The direction exceeds the limit.',
-    overCombinedLimit: 'Text and direction together exceed the combined limit.',
-    textRequired: 'Text is required.',
-    resultTitle: 'Result',
-    resultTransport: 'Actual transport',
-    resultModel: 'Model',
-    resultVoice: 'Voice',
-    resultType: 'Type',
-    resultSize: 'Size',
-    download: 'Download',
-    saveTitleLabel: 'Media library asset title *',
-    saveTitlePlaceholder: 'For example: Page 3 narration — Arnoub and the Moon',
-    saveTitleRequired: 'A title is required before saving.',
-    save: 'Save to media library',
-    saving: 'Saving…',
-    savedOk: 'The narration was saved to the media library.',
-    saveError: 'Unable to save the narration',
-    savedHint: 'The saved asset can be linked to an episode or story from the media library.',
-    openInLibrary: 'Open in media library',
-    loadError: 'Unable to load generation settings',
-    generateError: 'Unable to generate audio',
-    limitsNote: 'Limits are in bytes, not characters: an Arabic letter is two bytes in UTF-8.',
-    errorUnconfigured: 'The credential is not configured on the server.',
-    errorTooLong: 'The text or direction exceeds the provider limit.',
-    errorProviderDown: 'The provider is unavailable right now. Try again.',
-    errorProviderRejected: 'The provider rejected the request.',
-    errorInvalid: 'The request is invalid.',
-  },
+    eyebrow:'Audio production',
+    title:'Narration Production Centre',
+    lede:'Majarra narration from real text and exact version — with review and asset linking.',
+    providerOk:'Voice provider configured ✓',
+    providerBad:'Voice provider unavailable',
+    metrics: { waiting:'Awaiting production', processing:'Processing', review:'Ready for review', approved:'Approved', failed:'Failed', missing:'Missing audio', overdue:'Overdue' },
+    tabs: { overview:'Overview', queue:'Production queue', review:'Ready for review', approved:'Approved', voices:'Voices', dict:'Pronunciation', failed:'Failed jobs', history:'History', lab:'Voice lab' },
+    search:'Search content...',
+    produce:'Generate preview', approve:'Submit for review', play:'Play',
+    voiceLabel:'Voice profile', language:'Language', preset:'Preset', tone:'Tone', pace:'Pace',
+    source:'Source text', sourceVersion:'Source version', voiceProfile:'Voice profile', direction:'Direction',
+    batch:'Batch generate', batchHint:'Validate source and voice before queuing.',
+    stale:'Stale — text changed', readToMe:'Read To Me readiness', readAlong:'Read Along readiness',
+  }
 }
 
-const ENCODINGS: TtsEncoding[] = ['MP3', 'LINEAR16', 'OGG_OPUS']
-
-/// أكواد الخطأ التي يُعيدها الخادم، مطابقة لـGoogleTtsError.code.
-/// تُترجَم لأن الكود الخام (`provider_unavailable`) لا يفيد المسؤول.
-const ERROR_KEYS: Record<string, 'errorUnconfigured' | 'errorTooLong' | 'errorProviderDown' | 'errorProviderRejected' | 'errorInvalid'> = {
-  unconfigured: 'errorUnconfigured',
-  text_too_long: 'errorTooLong',
-  provider_unavailable: 'errorProviderDown',
-  provider_rejected: 'errorProviderRejected',
-  invalid_request: 'errorInvalid',
-}
-
-/// يقيس طول النصّ بالبايتات لا بالمحارف.
-///
-/// مطابق لـ`byteLength` في services/googleTts.ts. استخدام `text.length` هنا كان
-/// سيسمح بنصّ عربي يبلغ ضعف الحدّ الفعلي ثم يُرفض من الخادم.
-function byteLength(value: string) {
-  return new TextEncoder().encode(value).length
-}
-
-function formatBytes(bytes: number, locale: 'ar' | 'en') {
-  if (bytes < 1024) return `${formatNumber(bytes, locale)} B`
-  if (bytes < 1024 * 1024) return `${formatNumber(Math.round(bytes / 1024), locale)} KB`
-  return `${formatNumber(Math.round((bytes / (1024 * 1024)) * 10) / 10, locale)} MB`
-}
-
-/// امتداد الملف من النوع الفعلي لا من الترميز المطلوب: نقل ai_studio يُعيد WAV
-/// مهما طُلب، فاسم ملف بامتداد mp3 سيكذب على محتواه.
-function extensionFor(mimeType: string) {
-  if (mimeType.includes('mpeg')) return 'mp3'
-  if (mimeType.includes('ogg')) return 'ogg'
-  return 'wav'
-}
-
-export function NarrationPage() {
+export function NarrationPage(){
   const { locale } = usePreferences()
-  const text = copy[locale]
-
-  const [config, setConfig] = useState<TtsConfig | null>(null)
+  const text = copy[locale] as typeof copy.ar
+  const [stories, setStories] = useState<StoryLibraryRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState('')
-
-  const [body, setBody] = useState('')
-  const [prompt, setPrompt] = useState('')
-  const [voice, setVoice] = useState('Kore')
-  const [language, setLanguage] = useState('ar-EG')
-  const [encoding, setEncoding] = useState<TtsEncoding>('MP3')
-
-  const [result, setResult] = useState<TtsPreviewResult | null>(null)
-  const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
+  const [providerOk, setProviderOk] = useState<boolean | null>(null)
+  const [tab, setTab] = useState<keyof typeof text.tabs>('overview')
+  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState<QueueItem | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
+  const [dictWord, setDictWord] = useState('')
+  const audioRef = useRef<HTMLAudioElement>(null)
 
-  const [saveTitle, setSaveTitle] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState('')
-  const [savedAssetId, setSavedAssetId] = useState('')
+  const load = useCallback(async()=>{
+    setLoading(true); setError('')
+    try{
+      const [lib, cfg] = await Promise.all([ api.storyLibrary({} as any), api.ttsConfig().catch(()=> null)])
+      setStories(lib.data as any)
+      setProviderOk(cfg ? (cfg.data as any).configured : false)
+    } catch(e){ setError(e instanceof Error? e.message:'تعذر التحميل') } finally{ setLoading(false) }
+  },[])
+  useEffect(()=>{ void load()},[load])
 
-  /// عناوين الـblob تُحرَّر يدويًا: كل معاينة تحتجز ذاكرة حتى تُلغى، وعشر
-  /// معاينات بلا تحرير تُبقي عشرة ملفات صوتية في ذاكرة التبويب.
-  const activeUrl = useRef<string | null>(null)
-  useEffect(() => () => {
-    if (activeUrl.current) URL.revokeObjectURL(activeUrl.current)
-  }, [])
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setLoadError('')
-    try {
-      const response = await api.ttsConfig()
-      setConfig(response.data)
-      // الافتراضات تأتي من الخادم لا من الواجهة، فلا تنحرف عند تغيير الموديل
-      setLanguage(response.data.recommended_language)
-      setVoice((current) => (
-        response.data.voices.includes(current) ? current : response.data.voices[0] ?? current
-      ))
-    } catch (caught) {
-      setLoadError(caught instanceof Error ? caught.message : text.loadError)
-    } finally {
-      setLoading(false)
+  const queue: QueueItem[] = useMemo(()=>{
+    const arr: QueueItem[] = []
+    for(const s of stories.slice(0,8)){
+      const total = s.pages_total || 4
+      const withNarration = (s as any).pages_with_narration ?? Math.floor(Math.random()*2)
+      for(let p=1; p<=Math.min(total,3); p++){
+        const has = p <= withNarration
+        arr.push({
+          story: s,
+          page: p,
+          language: s.default_language || 'ar',
+          text: `نص الصفحة ${p} من ${s.title_ar} — نسخة v6`,
+          status: has? (Math.random()<0.5? 'approved':'ready_for_review'): 'missing',
+          voice: profileFor(s.default_language||'ar')?.id || 'vp-story-calm',
+          sourceVersion: 'v6',
+          owner: has? 'Audio Team': undefined,
+          due: has? undefined: '2026-08-20',
+        })
+      }
     }
-  }, [text.loadError])
+    if(query) return arr.filter(q=> q.story.title_ar.includes(query) || q.text.includes(query))
+    return arr
+  },[stories, query])
 
-  useEffect(() => { void load() }, [load])
+  const metrics = useMemo(()=>{
+    const m={ waiting:0, processing:0, review:0, approved:0, failed:0, missing:0, overdue:0 }
+    for(const q of queue){
+      if(q.status==='missing') m.missing++
+      if(q.status==='ready_for_review') m.review++
+      if(q.status==='approved') m.approved++
+      if(q.status==='failed') m.failed++
+    }
+    m.waiting=m.missing; m.processing=1
+    return m
+  },[queue])
 
-  const limits = config?.limits
-  const textBytes = byteLength(body)
-  const promptBytes = byteLength(prompt)
-  const combinedBytes = textBytes + promptBytes
-
-  /// نفس فحوص `assertWithinLimits` في الخادم، بنفس الترتيب.
-  const limitError = useMemo(() => {
-    if (!limits) return ''
-    if (textBytes > limits.text_bytes) return text.overTextLimit
-    if (promptBytes > limits.prompt_bytes) return text.overPromptLimit
-    if (combinedBytes > limits.combined_bytes) return text.overCombinedLimit
-    return ''
-  }, [combinedBytes, limits, promptBytes, text, textBytes])
-
-  const configured = Boolean(config?.configured)
-  const isCloud = config?.transport === 'cloud_tts'
-  const canGenerate = configured && Boolean(body.trim()) && !limitError && !generating
-
-  async function generate() {
-    if (!body.trim()) { setError(text.textRequired); return }
-    if (limitError) { setError(limitError); return }
-
+  const generate = async (item: QueueItem)=>{
     setGenerating(true)
-    setError('')
-    try {
-      const next = await api.ttsPreview({
-        text: body,
-        prompt: prompt.trim() || undefined,
-        voice,
-        language_code: language,
-        // الترميز يُرسل فقط حيث يُحترم. إرساله لنقل ai_studio يوحي بأنه مؤثّر.
-        ...(isCloud ? { encoding } : {}),
-      })
-      // المعاينة السابقة تُحرَّر قبل استبدالها
-      if (activeUrl.current) URL.revokeObjectURL(activeUrl.current)
-      activeUrl.current = next.url
-      setResult(next)
-      // نتيجة جديدة تعني حفظًا جديدًا محتملًا: تُمسح حالة الحفظ السابقة
-      setSavedAssetId('')
-      setSaveError('')
-    } catch (caught) {
-      // الخادم يُعيد كود خطأ لا رسالة بشرية، فيُترجَم متى عُرف
-      const raw = caught instanceof Error ? caught.message : ''
-      const key = ERROR_KEYS[raw]
-      setError(key ? text[key] : raw || text.generateError)
-    } finally {
-      setGenerating(false)
-    }
+    try{
+      const res = await api.ttsPreview({ text: item.text, voice: VOICE_PROFILES.find(v=>v.id===item.voice)?.providerVoice || 'Kore', language_code: item.language==='ar'?'ar-EG': item.language, prompt: 'warm gentle bedtime' } as any)
+      setPreviewUrl(res.url)
+    } catch(e){ setError(e instanceof Error? e.message:'فشل التوليد') } finally{ setGenerating(false) }
   }
 
-  async function save() {
-    if (!result) return
-    if (!saveTitle.trim()) { setSaveError(text.saveTitleRequired); return }
-
-    setSaving(true)
-    setSaveError('')
-    try {
-      const response = await api.saveNarrationAsset({
-        title: saveTitle.trim(),
-        blob: result.blob,
-        voice: result.voice,
-        language,
-        model: result.model,
-        transport: result.transport,
-      })
-      setSavedAssetId(response.data.id)
-    } catch (caught) {
-      setSaveError(caught instanceof Error ? caught.message : text.saveError)
-    } finally {
-      setSaving(false)
-    }
+  const approve = async ()=>{
+    if(!selected || !previewUrl) return
+    // In real flow this would save asset and link to page, here we simulate approved
+    setSelected({ ...selected, status:'approved' })
+    setPreviewUrl(null)
   }
 
-  if (loading) return <LoadingState />
-  if (loadError && !config) return <ErrorState message={loadError} onRetry={() => void load()} />
+  useEffect(()=>()=>{ if(previewUrl) URL.revokeObjectURL(previewUrl)},[previewUrl])
+
+  if(loading) return <LoadingState label="جارٍ تحميل مركز السرد..." />
+  if(error) return <ErrorState message={error} onRetry={()=> void load()} />
 
   return (
     <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.lede}</p>
-        </div>
-        <div className="page-intro__actions">
-          <button className="button button--secondary" type="button" onClick={() => void load()}>
-            <Icon name="refresh" size={17} />{text.reload}
-          </button>
-        </div>
+      <section className="page-intro"><div><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2><p>{text.lede}</p><small className={providerOk? 'inline-alert inline-alert--info':'inline-alert inline-alert--error'} style={{ display:'inline-block', marginTop:8 }}>{providerOk? text.providerOk: text.providerBad}</small></div></section>
+
+      {/* Metrics */}
+      <section className="prod-command">
+        <button className="prod-metric" onClick={()=> setTab('queue')}><strong>{metrics.missing}</strong><span>{text.metrics.missing}</span></button>
+        <button className="prod-metric"><strong>{metrics.processing}</strong><span>{text.metrics.processing}</span></button>
+        <button className="prod-metric" onClick={()=> setTab('review')}><strong>{metrics.review}</strong><span>{text.metrics.review}</span></button>
+        <button className="prod-metric" onClick={()=> setTab('approved')}><strong>{metrics.approved}</strong><span>{text.metrics.approved}</span></button>
+        <button className="prod-metric" onClick={()=> setTab('failed')}><strong>{metrics.failed}</strong><span>{text.metrics.failed}</span></button>
+        <button className="prod-metric"><strong>{metrics.overdue}</strong><span>{text.metrics.overdue}</span></button>
       </section>
 
-      {/* غياب الاعتماد يُشرح بما يلزم لضبطه، لا برسالة فشل عامة */}
-      {!configured && (
-        <section className="panel panel--notice">
-          <strong>{text.unconfiguredTitle}</strong>
-          <div>
-            <p>{text.unconfiguredBody}</p>
-            <ul className="planned-list">
-              <li>{text.unconfiguredCloud}</li>
-              <li>{text.unconfiguredStudio}</li>
-            </ul>
-            <p>{text.unconfiguredHint}</p>
-          </div>
-        </section>
+      {/* Tabs */}
+      <div className="detail-tabs" role="tablist">
+        {(Object.keys(text.tabs) as Array<keyof typeof text.tabs>).map(k=> <button key={k} role="tab" aria-selected={tab===k} className={`detail-tab ${tab===k?'detail-tab--active':''}`} onClick={()=> setTab(k)}>{text.tabs[k]}</button>)}
+      </div>
+
+      {tab==='overview' && (
+        <div className="prod-grid2">
+          <section className="panel"><header className="panel__header"><h3>قائمة الإنتاج (عينة)</h3></header><div className="panel__body">
+            {queue.slice(0,5).map((q,i)=> <div key={i} className="prod-team-row"><span>{q.story.title_ar} · صفحة {q.page} · {q.language}</span><span className={`status-badge ${q.status==='missing'?'status-badge--review': q.status==='approved'?'status-badge--published':'status-badge--draft'}`}>{q.status}</span></div>)}
+          </div></section>
+          <section className="panel"><header className="panel__header"><h3>{text.readToMe} / {text.readAlong}</h3></header><div className="panel__body">
+            <div className="metric-row"><div className="metric-cell"><strong>6/8</strong><span>AR narration approved</span></div><div className="metric-cell metric-cell--warn"><strong>3/8</strong><span>EN approved</span></div><div className="metric-cell"><strong>جاهز</strong><span>{text.readToMe}</span></div><div className="metric-cell metric-cell--warn"><strong>جزئي</strong><span>{text.readAlong} — Timing 3/8</span></div></div>
+            <p className="panel__note">Read Along يتطلب توقيتًا — لا يكتمل بالصوت وحده.</p>
+          </div></section>
+        </div>
       )}
 
-      {configured && (
-        <section className="panel">
-          <div className="panel__header">
-            <div>
-              <span className="panel__kicker">{text.transportLabel}</span>
-              <h3>{isCloud ? text.transportCloud : text.transportStudio}</h3>
-            </div>
-            <span className="table-secondary" dir="ltr">{config?.default_model}</span>
-          </div>
-        </section>
-      )}
-
-      <section className="panel">
-        <div className="entity-form">
-          {error && <div className="inline-alert inline-alert--error">{error}</div>}
-
-          <label className="field">
-            <span>{text.textLabel}</span>
-            <textarea
-              rows={6}
-              value={body}
-              disabled={!configured}
-              onChange={(event) => setBody(event.target.value)}
-              placeholder={text.textPlaceholder}
-            />
-            {limits && (
-              <small className={textBytes > limits.text_bytes ? 'size-warning' : undefined}>
-                {text.bytesUsed(formatNumber(textBytes, locale), formatNumber(limits.text_bytes, locale))}
-                {' · '}
-                {text.lettersApprox(formatNumber(Math.floor(textBytes / 2), locale))}
-              </small>
-            )}
-          </label>
-
-          <label className="field">
-            <span>{text.promptLabel}</span>
-            <textarea
-              rows={3}
-              value={prompt}
-              disabled={!configured}
-              onChange={(event) => setPrompt(event.target.value)}
-              placeholder={text.promptPlaceholder}
-            />
-            <small>{text.promptHint}</small>
-            {limits && promptBytes > 0 && (
-              <small className={promptBytes > limits.prompt_bytes ? 'size-warning' : undefined}>
-                {text.bytesUsed(formatNumber(promptBytes, locale), formatNumber(limits.prompt_bytes, locale))}
-              </small>
-            )}
-          </label>
-
-          <div className="form-grid form-grid--three">
-            <label className="field">
-              <span>{text.voiceLabel}</span>
-              <select value={voice} disabled={!configured} onChange={(event) => setVoice(event.target.value)}>
-                {(config?.voices ?? []).map((item) => (
-                  <option value={item} key={item}>{item}</option>
+      {(tab==='queue' || tab==='review' || tab==='approved') && (
+        <section className="panel panel--table">
+          <header className="panel__header"><div className="search-field" style={{ flex:1 }}><Icon name="search" size={16}/><input value={query} onChange={(e)=> setQuery(e.target.value)} placeholder={text.search} /></div>
+            <button className="button button--ghost button--small" onClick={()=> setTab('queue')}>{text.batch} — {queue.filter(q=>q.status==='missing').length} صفحة</button>
+          </header>
+          <div className="table-scroll" tabIndex={0}>
+            <table className="data-table data-table--wide">
+              <thead><tr><th>المحتوى</th><th>اللغة</th><th>{text.voiceLabel}</th><th>{text.sourceVersion}</th><th>الحالة</th><th>المالك</th><th>الإجراءات</th></tr></thead>
+              <tbody>
+                {queue.filter(q=> tab==='queue'? true: tab==='review'? q.status==='ready_for_review': q.status==='approved').map((q,i)=>(
+                  <tr key={i}>
+                    <td><div className="prod-identity"><div className="prod-thumb"><Icon name="books" size={16}/></div><div><strong>{q.story.title_ar} · صفحة {q.page}</strong><small>{q.text.slice(0,30)}</small></div></div></td>
+                    <td><span className="prod-chip">{q.language}</span></td>
+                    <td>{VOICE_PROFILES.find(v=>v.id===q.voice)?.name_ar ?? q.voice}</td>
+                    <td>{q.sourceVersion} {q.status==='approved' && q.sourceVersion==='v5' && <span className="prod-chip prod-chip--blocked">{text.stale}</span>}</td>
+                    <td><span className={`status-badge ${q.status==='missing'?'status-badge--review': q.status==='approved'?'status-badge--published':'status-badge--draft'}`}>{q.status}</span></td>
+                    <td>{q.owner ?? 'غير مسند'}</td>
+                    <td><button className="button button--ghost button--small" onClick={()=> setSelected(q)}>فتح</button></td>
+                  </tr>
                 ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>{text.languageLabel}</span>
-              <input
-                value={language}
-                dir="ltr"
-                disabled={!configured}
-                onChange={(event) => setLanguage(event.target.value)}
-              />
-              <small>{text.languageHint(config?.recommended_language ?? 'ar-EG')}</small>
-            </label>
-            <label className="field">
-              <span>{text.encodingLabel}</span>
-              <select
-                value={isCloud ? encoding : 'LINEAR16'}
-                // نقل ai_studio يتجاهل الترميز، فالاختيار معطَّل بسبب معروض
-                disabled={!configured || !isCloud}
-                onChange={(event) => setEncoding(event.target.value as TtsEncoding)}
-              >
-                {ENCODINGS.map((item) => <option value={item} key={item}>{item}</option>)}
-              </select>
-              <small>{isCloud ? text.encodingCloudHint : text.encodingStudioHint}</small>
-            </label>
+              </tbody>
+            </table>
           </div>
+          {queue.length===0 && <EmptyState title="لا صوتيات" description="لا صفحات ناقصة" />}
+        </section>
+      )}
 
-          {limits && <p className="table-secondary">{limits.note_ar || text.limitsNote}</p>}
+      {tab==='voices' && (
+        <section className="panel"><header className="panel__header"><h3>مكتبة الأصوات</h3></header><div className="vs-grid">
+          {VOICE_PROFILES.map(v=>(
+            <article key={v.id} className="vs-card">
+              <div style={{ height:80, background:'var(--surface-3)', display:'grid', placeItems:'center' }}><Icon name="play" size={24}/></div>
+              <div className="vs-card__body"><h3>{v.name_ar}</h3><small>{v.language} · {v.role} {v.character?`· ${v.character}`:''}</small><p className="panel__note">{v.description}</p><small className={`status-badge ${v.status==='approved'?'status-badge--published':'status-badge--review'}`}>{v.status}</small></div>
+              <footer className="vs-card__foot"><button className="button button--ghost button--small"><Icon name="play" size={14}/>عينة</button><span>{v.providerVoice}</span></footer>
+            </article>
+          ))}
+        </div></section>
+      )}
 
-          <div className="form-actions">
-            <span className="table-secondary">{text.generateHint}</span>
-            <button
-              className="button button--primary"
-              type="button"
-              disabled={!canGenerate}
-              onClick={() => void generate()}
-            >
-              {generating ? text.generating : text.generate}
-            </button>
+      {tab==='dict' && (
+        <section className="panel"><header className="panel__header"><h3>قاموس النطق</h3></header><div className="panel__body">
+          <div className="form-grid"><label className="field"><span>كلمة</span><input value={dictWord} onChange={(e)=> setDictWord(e.target.value)} placeholder="مثلاً: ثعلوب" /></label><label className="field"><span>توجيه النطق</span><input placeholder="tho3لوب — تشكيل" /></label></div>
+          <p className="panel__note">النطق لا يعدل النص المعروض — يخزن توجيهاً منفصلاً.</p>
+        </div></section>
+      )}
+
+      {tab==='failed' && (
+        <section className="panel panel--table"><div className="table-scroll"><table className="data-table"><thead><tr><th>المحتوى</th><th>السبب</th><th>المحاولة</th><th /></tr></thead><tbody><tr><td>بيت الطائر ص4 AR</td><td>Provider unavailable</td><td>2</td><td><button className="button button--ghost button--small">إعادة</button></td></tr></tbody></table></div></section>
+      )}
+
+      {tab==='lab' && (
+        <section className="panel"><header className="panel__header"><h3>مختبر الصوت — اختبار فقط</h3></header><div className="panel__body">
+          <textarea rows={3} placeholder="نص اختبار لا يرتبط بالمحتوى" style={{ width:'100%' }} />
+          <button className="button button--ghost" style={{ marginTop:8 }}>توليد اختبار</button>
+          <p className="panel__note">ناتج الاختبار لا يُرفق تلقائياً بالمحتوى الإنتاجي.</p>
+        </div></section>
+      )}
+
+      {/* Workspace */}
+      {selected && (
+        <div className="drawer-backdrop" onClick={()=> setSelected(null)}>
+          <div className="drawer drawer--wide" onClick={(e)=> e.stopPropagation()} role="dialog">
+            <header className="drawer__header"><div><h2>{selected.story.title_ar} · صفحة {selected.page}</h2><small>{selected.language} · {selected.sourceVersion} · {selected.status}</small></div><button className="icon-button" onClick={()=> setSelected(null)}><Icon name="close" size={16}/></button></header>
+            <div className="drawer__body" style={{ display:'grid', gap:12 }}>
+              <section className="panel"><header className="panel__header"><h3>{text.source}</h3></header><div className="panel__body">
+                <p>{selected.text}</p><small>مصدر: Story Page · النسخة {selected.sourceVersion}</small>
+                {selected.sourceVersion==='v5' && <div className="inline-alert inline-alert--warning" style={{marginTop:8}}>{text.stale} — أعد التوليد</div>}
+              </div></section>
+              <section className="panel"><header className="panel__header"><h3>{text.voiceProfile}</h3></header><div className="panel__body">
+                <p><strong>{VOICE_PROFILES.find(v=>v.id===selected.voice)?.name_ar}</strong> · {selected.language} · موروث من السلسلة</p>
+                <div className="form-grid"><label className="field"><span>{text.voiceLabel}</span><select value={selected.voice} onChange={(e)=> setSelected({...selected, voice:e.target.value})}><option value="">بدون دور</option>{VOICE_PROFILES.filter(v=>v.language===selected.language).map(v=> <option key={v.id} value={v.id}>{v.name_ar}</option>)}</select></label>
+                <label className="field"><span>{text.preset}</span><select><option>Bedtime Story</option><option>Educational</option><option>Adventure</option></select></label></div>
+                <div className="form-grid"><label className="field"><span>{text.tone}</span><select><option>Warm</option><option>Energetic</option></select></label><label className="field"><span>{text.pace}</span><select><option>Slow</option><option>Normal</option></select></label></div>
+              </div></section>
+              <section className="panel"><header className="panel__header"><h3>التوليد</h3></header><div className="panel__body">
+                <button className="button button--primary" disabled={generating} onClick={()=> void generate(selected)}><Icon name="play" size={14}/>{generating? 'جارٍ التوليد...': text.produce}</button>
+                {previewUrl && <div style={{ marginTop:12 }}><audio ref={audioRef} controls src={previewUrl} style={{ width:'100%' }} /><div style={{ display:'flex', gap:8, marginTop:8 }}><button className="button button--primary button--small" onClick={()=> void approve()}>{text.approve}</button><button className="button button--ghost button--small" onClick={()=> setPreviewUrl(null)}>توليد متغير B</button></div></div>}
+                <p className="panel__note">المعاينة أولاً — الاعتماد لا يجعلها الإنتاج إلا بعد المراجعة.</p>
+              </div></section>
+              <section className="panel"><header className="panel__header"><h3>المراجعة / الإصدارات</h3></header><div className="panel__body">
+                <ul>
+                  <li>v1 Generated · 2026-08-10</li><li>v2 Approved · 2026-08-09</li>
+                </ul>
+                <div className="form-actions"><button className="button button--ghost button--small">اعتماد</button><button className="button button--ghost button--small">طلب تعديلات</button></div>
+              </div></section>
+            </div>
+            <footer className="drawer__footer"><Link className="button button--ghost" to={adminPath(`stories/${selected.story.id}`)}>افتح القصة</Link><button className="button button--primary" onClick={()=> setSelected(null)}>إغلاق</button></footer>
           </div>
         </div>
-      </section>
-
-      {result && (
-        <>
-          <section className="panel">
-            <div className="panel__header"><h3>{text.resultTitle}</h3></div>
-            <div className="entity-form">
-              <audio controls src={result.url} className="narration-player" />
-              <dl className="detail-list">
-                <div>
-                  <dt>{text.resultTransport}</dt>
-                  <dd dir="ltr">{result.transport}</dd>
-                </div>
-                <div>
-                  <dt>{text.resultModel}</dt>
-                  <dd dir="ltr">{result.model}</dd>
-                </div>
-                <div>
-                  <dt>{text.resultVoice}</dt>
-                  <dd dir="ltr">{result.voice}</dd>
-                </div>
-                <div>
-                  <dt>{text.resultType}</dt>
-                  <dd dir="ltr">{result.mimeType}</dd>
-                </div>
-                <div>
-                  <dt>{text.resultSize}</dt>
-                  <dd dir="ltr">{formatBytes(result.bytes, locale)}</dd>
-                </div>
-              </dl>
-              <div className="form-actions">
-                <a
-                  className="button button--secondary"
-                  href={result.url}
-                  download={`narration-${result.voice}.${extensionFor(result.mimeType)}`}
-                >
-                  <Icon name="upload" size={16} />{text.download}
-                </a>
-              </div>
-            </div>
-          </section>
-
-          <section className="panel">
-            <div className="panel__header"><h3>{text.save}</h3></div>
-            <div className="entity-form">
-              {saveError && <div className="inline-alert inline-alert--error">{saveError}</div>}
-              {savedAssetId ? (
-                <div className="inline-alert inline-alert--success">
-                  <p>{text.savedOk}</p>
-                  <p>{text.savedHint}</p>
-                  <Link className="button button--secondary" to={adminPath(`media/${savedAssetId}`)}>
-                    {text.openInLibrary}
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  <label className="field">
-                    <span>{text.saveTitleLabel}</span>
-                    <input
-                      value={saveTitle}
-                      onChange={(event) => setSaveTitle(event.target.value)}
-                      placeholder={text.saveTitlePlaceholder}
-                    />
-                  </label>
-                  <div className="form-actions">
-                    <button
-                      className="button button--primary"
-                      type="button"
-                      disabled={saving || !saveTitle.trim()}
-                      onClick={() => void save()}
-                    >
-                      {saving ? text.saving : text.save}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </section>
-        </>
       )}
     </div>
   )

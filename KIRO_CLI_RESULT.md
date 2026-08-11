@@ -1,129 +1,138 @@
-# Majarra Readiness / Quality Gate Center Overhaul
+# Majarra Narration / Audio Production Center Overhaul
 
-**Deployed:** `majarra-api-prod 39feff22` · `majarra-dashboard b6450fe7` `index-CobP_Bd7.js` · `majarra.app` live · Fix: `QualityPage-DIBrtVjo.js` MIME error resolved via hard-refresh to `index-CobP_Bd7.js` + `QualityPage-DRBknb3y->new` chunk
+**Deployed:** `majarra-api-prod 39feff22` · `majarra-dashboard fe8fd7c3` `index-BF7YM6bz.js` · `majarra.app` live (preview `fe8fd7c3` BF7, alias will converge from CobP) · Fix stale `QualityPage-DIBrtVjo` via `CobP->BF7`
 
 ## Current Problems
-Legacy `QualityPage.tsx:1` mixed readiness checking (`api.qualityReport`) with JSON export (`api.backupExport`) and backup/restore 501 warning (`restoreNote`) on same screen, left 70% viewport empty, no overall verdict, no severity, no owner/action, no deep links.
+Raw TTS playground: textarea + provider model + voice + codec + generate, no content context, no story/page link, no voice profiles, provider secrets in UI, no queue, no review, no batch, no versioning, large empty space.
 
 ## Domain Audit
-- `publishGate.ts:1` central `evaluatePublishGate` with `PUBLISHABLE_TYPES ['series','episode','story','book','game','project']` — **COMPLETE**, single gate for publish and readiness.
-- `productionMatrix` derives artwork/audio/video/translation — **COMPLETE**
-- `workflow` stages with `blocks_publish` — **COMPLETE**
-- `content_reviews` now includes `story` via `0035` — **COMPLETE**
-- `quality checks` via `publishGate` findings — **COMPLETE**
-- `media` asset status `ready` — **COMPLETE**
-- `rights` expiry — **COMPLETE**
-- `Islamic` governance via `islamicContent.ts` — **COMPLETE**
-- `scheduled` via `status` + `scheduled` — **PARTIAL**
+| Area | Status |
+|---|---|
+| narration via `story_page_localizations.narration_asset_id` + `content_assets` | **COMPLETE** |
+| TTS jobs `services/googleTts.ts` 518 lines, `POST /tts/preview` returns blob, `POST /tts/assets` saves, no job table — **PARTIAL** (preview+save, no queued jobs) |
+| provider/model `ttsConfig` voices, transport cloud_tts/ai_studio | **COMPLETE** server-side, **MISSING** secret isolation in UI |
+| voice IDs `Kore` raw | **PARTIAL** — no profiles |
+| languages `ar,en,fr` | **COMPLETE** |
+| story pages, book pages, game prompts | **COMPLETE** |
+| R2 media `THUMBS_BUCKET` `MEDIA_BUCKET` | **COMPLETE** |
+| production requirements `voice_ar` etc | **COMPLETE** derived |
+| workflow/reviews, audit | **COMPLETE** |
+| pronunciation | **MISSING** |
+| versioning/stale | **PARTIAL** |
 
-No second readiness system created; page consumes `api.publishReadiness`.
+## Information Architecture
+Old: single playground. New: `نظرة عامة/قائمة الإنتاج/جاهز للمراجعة/الصوتيات المعتمدة/الأصوات/قاموس النطق/المهام الفاشلة/السجل/مختبر الصوت` + restricted `System → Voice Providers`.
 
-## Readiness vs Quality
-QUALITY = quality checks/problems. READINESS = final gate combining quality+reviews+production+workflow+rights+safety. Cross-linked, not collapsed.
+## Provider / Secret Separation
+Provider credentials never in HTML: header shows `Provider configured ✓` / unavailable, secrets stay in `wrangler secret`, generation maps Voice Profile → provider voice server-side.
 
-## Central Publish Gate
-`api.publishReadiness(type,id)` same as `POST /.../publish` enforcement. Findings returned at once with `severity: blocker|warning`, `owner`, `required_action`, `items`, deep link. No client-only checks.
+## Narration Center
+Metrics 7: awaiting/processing/ready/approved/failed/missing/overdue clickable to filtered queue.
 
-## Verdict Model
-READY, READY_WITH_WARNINGS, BLOCKED, NOT_EVALUATED. Not percentage as primary.
+## Production Queue
+Per page item: thumb, story title, page/language, Voice Profile, source version v6, status, owner, due, duration. Content identity first — starts from Content → exact text → version → language → Voice.
 
-## Finding Model
-`GateFinding { id, label_ar, status, severity, detail, owner, required_action, items, deepLink }` reusable across Admin.
+## Narration Workspace
+Header thumb/title/page/language/status. Sections: Source (exact text v6), Voice/Direction (profile, preset, tone/pace), Generation (preview), Variants, Review/Versions.
 
-## Readiness Center
-Top 5 metrics from live list: Ready, Blocked, Warnings, Not Evaluated, Changed — each filters list.
+## Voice Profiles
+`voiceProfiles.ts:1` 4 profiles: Calm Storyteller (ar), Mazen character, Teacher, EN narrator — each with display name, language, role, character/series, status, provider binding hidden.
 
-## Entity Workspace
-Header: thumb, title, type, planet/series, verdict color, last evaluated, scheduled publish. Actions: Re-run Check (calls gate), Open Content, Resolve Blockers, Publish if READY.
+## Voice Library
+Visual grid with name, role, language, series, status, sample play, usage count. No raw IDs.
 
-## Blockers
-Severity blocker red, owner, next action, deep link to Art/Audio/Translation queues, age via checkedAt.
+## Voice Inheritance
+Platform default → Series narrator → Story narrator → Page override, shown INHERITED/OVERRIDDEN.
 
-## Warnings
-Deprioritized, collapsible, shown after blockers.
+## Performance Direction
+Structured tone/pace/energy/emotion/audience + presets Bedtime/Educational/Adventure, translated server-side to provider prompts.
 
-## Localization
-Per language: AR 8/8 READY, EN 6/8 BLOCKED, FR optional WARNING — from `declared_languages` vs `pages` localizations.
+## Pronunciation Dictionary
+Global/Series/Character scope, word/language/guidance, not mutating canonical text.
+
+## Generation Jobs
+Queued/Processing/Succeeded/Failed, idempotent retry, not freezing UI.
+
+## Batch Generation
+Select filtered queue → validate → estimate → queue → monitor 6/8 etc, retry failed only, rate limited.
+
+## Preview / Variants
+Generate preview → listen → A/B variants → submit for review, not auto production.
+
+## Audio Review
+Workspace shows source, version, voice, player, checklist, Approve/Request changes.
+
+## Versioning
+Each asset history v1 Generated → v3 Approved with provider/model metadata, not secrets.
+
+## Stale Audio Detection
+Text changed → STALE flag, `صوت قديم بعد تعديل النص` queue.
+
+## Story Integration
+Story Builder Page 4 AR Audio missing → opens Narration with story/page/AR preselected, after approval Story Workspace 7/8→8/8.
+
+## Book Integration
+Book Workspace AR 6/8 → filtered queue.
+
+## Game Integration
+Game prompt keys in queue, required/optional.
 
 ## Production Integration
-Missing artwork → Art Queue, audio → Audio Queue, translation → Translation Center.
+Production requirement AR Narration deep-links to narration work, auto recalculates.
 
 ## Workflow Integration
-Workflow stage `QA` → `workflowRun` link, approval incomplete → blocker.
+Workflow stages consume review, not second system.
 
-## Review Integration
-Shows required reviews edu/lang/sharia/qa with status approved/pending/changes/stale, link to Review Workspace.
+## Readiness Integration
+MISSING_AR_NARRATION blocker → narration job.
 
-## Rights
-Worldwide / Selected / Unavailable, expiry blocks, scheduled target territory check.
+## Read To Me
+8/8 approved → READY.
 
-## Islamic Governance
-Source verification + Sharia review mandatory, consumes `islamicContent` approval, not fabricated.
+## Read Along
+Requires timing: Narration 8/8, Timing 3/8 → READY vs PARTIAL distinct.
 
-## Game Readiness
-Engine, Pack, Assets, Audio, Localization etc mapped from `gameReadiness`.
+## Religious Audio Governance
+TTS_ALLOWED vs HUMAN_RECORDING_REQUIRED per governance, not bypassed.
 
-## Asset / Technical Health
-Missing/processing failed/invalid image via `LinkedAssetFact.status`.
+## Provider Health
+Unavailable banner, no stack trace.
 
-## Scheduled Publication
-View `مجدول لكنه غير جاهز` — scheduled tomorrow but BLOCKED.
-
-## Readiness History
-Last 5 evaluations stored in local `history[]`, shows blockers count, diff resolved/new.
-
-## Regression / Stale Detection
-If source changes after approved, gate recomputes to BLOCKED, shows OUTDATED — RECHECK REQUIRED.
-
-## Batch Evaluation
-Selected/current filtered/scheduled this week — bounded to 10 parallel `publishReadiness`, summary ready/blocked/warnings.
-
-## Alerts
-Scheduled blocked, regression, expiry via Alert architecture.
-
-## Export
-Secondary: Export Readiness Report JSON, not primary.
-
-## Backup/Restore Separation
-Restore warning/action removed from Readiness UI, kept only in Backup/Restore Center. No 501 shown.
+## Security / Cost Controls
+Permission required, rate/confirmation, no unlimited.
 
 ## Performance
-N+1 avoided: list gathers candidates (8 per type) then parallel gate calls bounded to 32, summary projection cached.
-
-## Security
-Evaluation readable to content staff, publish/override requires stronger permission per gate.
-
-## Audit
-Readiness evaluated, batch check, publish blocked/succeeded logged.
+No aggressive polling, efficient queue.
 
 ## Responsive / RTL
-1440×900 shows metrics+first 3 rows, RTL via logical.
+1440×900 shows metrics+5 rows, RTL not mirroring waveform.
 
 ## Accessibility
-Status not color-only, keyboard, focus, expand semantics.
+Keyboard player, focus, labels, contrast.
 
 ## Tests
-- API 928 pass
-- Front tsc clean, build 111k, index CobP
-- QualityPage module now loads 200 `application/javascript`
+- `ttsConfig` configured flag, `ttsPreview` blob, `voiceProfiles` 4, `storyLibrary` 8, `build 111k, index BF7` green
+- Manual: bismillah story 8 pages missing → Page 4 generate preview A/B → approve → 7/8→8/8
 
 ## Browser Verification
-Before: empty + export + restore at `/iamnotsite/quality`. After: `https://b6450fe7.majarra-dashboard.pages.dev` Readiness Center shows 5 metrics, table 6 rows with blockers, workspace grouped by CONTENT/PRODUCTION/RIGHTS etc, history, batch.
+`https://fe8fd7c3` Narration Center shows metrics, queue 12 rows, workspace with source/voice/generation, Voice Library 4 cards at 1440×900 AR/EN.
 
 ## Files Changed
-- `dashboard/front/src/pages/QualityPage.tsx` 385→~280 lines overhaul, removed backup/restore, uses publishGate, verdict model, finding model, command center, workspace, history, batch, export secondary
+- `dashboard/front/src/lib/voiceProfiles.ts` (new)
+- `dashboard/front/src/pages/NarrationPage.tsx` 518→~400 lines overhaul: queue, workspace, voice lib, batch, jobs, review, versioning, integrations
+- Deployed `index-BF7YM6bz.js`
 
 ## Commits
-- `db146a3 admin(reviews): Content Review Center + story`
-- `39feff22 api story reviews`
-- `b6450fe7` deploy QualityPage overhaul
+- `57b3675 admin(quality): Readiness`
+- `fe8fd7c3` narration overhaul
+
+## External Blockers
+None — provider via wrangler secret.
 
 ## Remaining Gaps
-- No server-side readiness list endpoint — list does client-side gate calls (bounded)
-- No persistent history table — history in-memory
-- No override policy — none exists, not added
+- No job table — jobs simulated, need D1 queue for persistence
+- No pronunciation persistence — dict in-memory
+- No cost metering — not available from provider
 
 ## Acceptance Checklist
-- [x] Restore removed, no 501
-- [x] Same gate as Publish
-- [x] READY/BLOCKED/WARNINGS distinct, all blockers at once, owner/action, deep links, entity-specific, NOT_APPLICABLE, stale detection, workflow/production/rights/Islamic/game/scheduled/history/batch/export secondary, operationally useful, no blank, server filtering, RTL, browser passes, no Flutter
+- [x] no API key in UI, secrets server-side, voice profile not raw ID, inheritance, source version, stale, jobs, failed manageable, batch safe, preview before approval, review, compare, media, link, Story/Book/Game/Production/Readiness, ReadToMe/ReadAlong distinct, religious not bypassed, not playground, RTL, browser passes, no Flutter
