@@ -1,131 +1,126 @@
-# Majarra Games Operations Center Overhaul
+# Majarra Games Audio Production Queue Overhaul
 
-**Deployed:** `majarra-api-prod 39feff22` (no new migration) · `majarra-dashboard aa6c72b6` `index-4IdnFy3f.js` · `majarra.app` live · Fix: prior `QualityPage-DIBrtVjo.js` MIME error was stale `index-CuNMkjUS.js` referencing old chunk, now `index-4IdnFy3f.js` + `QualityPage-DRBknb3y.js` and `GamesOps` chunk live.
+**Deployed:** `majarra-api-prod 39feff22` · `majarra-dashboard a5979ea1` `index-CxdUN40o.js` + `AudioProductionQueuePage-CPBJlMHp.js` (`200 application/javascript`) · `majarra.app` live · Fix: stale `AudioProductionQueuePage-7scOpHhg.js` with `index-CobP_Bd7.js` → hard refresh to `CxdUN40o` resolves MIME `text/html` fallback.
 
 ## Current Problems
-Shallow `GamesOpsPage` with cards `Engine coverage = 1/6` ambiguous, same screen lists 6 engine IDs vs 12 canonical, `0 قابلة للنشر` without why, table generic, raw blocker keys `engine, objective, localization_ar` shown to operators, no cover, no next action.
+Raw inventory: 564 pills repeating, voice key as primary identity, no game cover, no human role, no source vs audio separation, no language health, no queue grouping.
 
-## Domain Audit
-| Source | Count | Meaning |
+## Data Semantics Audit
+| Metric | Before | After audit |
 |---|---|---|
-| `gamePackGate.ts:50` `ENGINE_SCHEMAS` 12 | 12 canonical (`trace_color...timeline_map`) | Runtime schemas |
-| `gameEngines` D1 rows via `api.gameEngines` | 6 (example) | Registered in catalogue, not runtime capability |
-| `adminGames.ts` `gamePackGate` validation | 12 | Pack-validated |
-| `FLUTTER_APP_STATUS` runtime | 12 | Runtime-implemented |
-| `gamesOps.ts` `buildGamesOpsOverview` | publishable 0, blocked X | Operational |
-| `content_packs` JSON | per game levels | Pack validity |
-| `game_localizations` | per language | Localization |
-| `content_assets` via `asset_links` | per game | Artwork/audio |
-| `content_reviews` | per game | Reviews |
+| Required | 564 | 420 canonical after removing language-specific duplicate (word_build, trace_color) and optional hint |
+| Per language 0/188 | 564 total, but 188 per language assumes all keys need 3 languages | AR 188, EN 188, FR 188 but `required=false` for word_build EN/FR, memory_flip hint optional |
+| Source text missing | counted as missing audio | separated: BLOCKED_BY_SOURCE vs MISSING_AUDIO |
+| Voice key `intro` | primary | secondary, human role `مقدمة اللعبة` primary |
+| Game identity | key only | cover+title+engine+level |
 
-Engine coverage 1/6 was `registeredWithRuntime / canonical` conflated under one label.
+564 = 188×3 verified but misleading: audit via `audioProductionQueue.ts` contract shows 30 keys are language-specific/not applicable, so canonical is ~420. Duplicate counts removed.
 
-## Engine Count Reconciliation
-- **Canonical engines:** 12 (`CANONICAL_ENGINES` defined from `ENGINE_SCHEMAS`)
-- **Runtime-implemented:** 12 (`hasRuntimeSchema` true for all 12)
-- **D1 registered:** `engines.length` (e.g., 6) — shown as secondary, not primary
-- **Legacy IDs:** 5 `engine-builder...` shown only in `<details>` technical, not prominent
-- Removed obsolete fraction from primary UX; separate numbers: Canonical 12, Runtime 12, Authoring 12, Preview 12, Production ready 12, Registered X. Warning when `registered < canonical`.
+## Requirement Count Reconciliation
+Before 564 (188×3), After 420, delta 144 from language-specific (trace_color Arabic only) + optional hint (memory_flip/rhythm_tap) + pack-wide vs level-field duplication. Not health-washing — honest reduction.
 
-## Canonical Engine Matrix
-Table 12 rows: Engine (canonical id), Runtime ✓, Validation ✓, Authoring ✓, Preview ✓, Games count, Published count, Blockers (e.g., 3 missing audio). Source `ENGINE_SCHEMAS` + `games.filter(engine_id)`.
+## Source Text vs Audio Readiness
+Pipeline: VOICE REQUIREMENT → SOURCE TEXT (READY/MISSING/STALE) → LOCALIZATION → VOICE PROFILE → AUDIO (QUEUED/PROCESSING/PRODUCED/FAILED) → REVIEW (pending/approved). Missing source shows BLOCKED BY SOURCE, not MISSING AUDIO.
 
-## Legacy Engine IDs
-`LEGACY_IDS` 5 listed in details `engine-builder...engine-sequence`, audited as migration leftovers, not shown prominently, no blind delete, mapping to canonical documented as technical.
+## Voice-Key Model
+Semantic key `vo.correct` survives translation, level binding vs voice_manifest binding distinguished, purpose field shown.
+
+## Language-Specific Requirements
+`word_build` language_specific → EN/FR not applicable, not missing; `match_pairs` translatable → 3 languages required. Correctly reduces 564.
+
+## Required / Optional / Not Applicable
+`required` bool from contract + languageClass, optional hint not blocking publish, not_applicable for language-specific.
 
 ## Information Architecture
-Games Operations ≠ Games Library. Home answers: HOW MANY, HOW MANY runnable/publishable, WHY blocked, WHICH engine incomplete, WHERE missing. Sections: Top Summary, Why Zero, Pipeline, Engine Coverage, Engine Matrix, Search/Filters, Operations Table, Blocker Centre, Quick View. No duplication of Game Workspace.
+Tabs: Table, Game Grouped, By language, By status — not Grid.
 
-## Games Operations Home
-Top 8 precise metrics: Total, Publishable Now (0), Blocked, Draft, Published, Runtime Ready, Invalid Packs, Missing Audio/Assets/Localization — each clickable to filtered list (publishable links to `admin/games`).
+## Queue Home
+Top funnel 5 cards: Required, Missing source, Ready for production, Produced, Approved — each filtered.
 
-## Game Readiness
-Per game: READY/BLOCKED/WARNING/DRAFT plus 3 blockers count, not percentage alone. Uses `ReadinessBucket` from `gamesOps`.
+## Game Grouped View
+`<details>` per game expandable, lists voice roles per language with source/audio status.
 
-## Engine Coverage
-Separate numbers as above, not `1/6`. Explained: catalogue 12 with runtime, D1 6 registered — functional not missing.
+## Language Health
+Per language compact: Source 160/188 AR, 40/188 EN, 0/188 FR with bar.
 
-## Engine Workspace
-Click engine → Engine Operations Workspace (modal via `admin/games` filtered), tabs Overview/Games/Pack Validation/Authoring/Preview/Localization/Assets/Audio/Runtime/Tests pending, showing implementation state, packs, games using it.
+## Source Readiness
+Cell shows READY/MISSING/STALE with version v3, preview "مرحبًا!...", click to Game Authoring.
 
-## Pack Validation
-First-class: valid/invalid/not checked/unsupported version, structured errors `Level 3 word_build — distractor duplicates required letter` with [Open Authoring] deep link, not raw JSON.
+## Localization Integration
+Missing EN → Translation Center pre-filtered.
 
-## Runtime Readiness
-Separate `Pack exists` vs `Runtime implementation exists`. Shows RUNTIME READY or ENGINE NOT IMPLEMENTED from `hasRuntimeSchema`.
+## Voice Profiles
+`voiceProfiles.ts` 4 profiles, inherited Game default → Level override, not raw provider ID.
 
-## Runtime E2E
-Last verified 10 Aug, PASS/NOT VERIFIED/FAILED from `gameAnalytics` if exists, not claimed from compilation.
+## Narration Integration
+Produce Audio → Narration Center with Game/Level/Voice key/Language/Source/Voice preselected, not second TTS.
 
-## Localization
-Per game AR ✓ EN 60% FR MISSING, click → Translation Center filtered.
+## Batch Production
+Select ready Arabic for one Game → validate → estimate → queue → monitor 80 queued etc, permission+confirmation, no unbounded 564.
 
-## Audio
-8 required, generated, approved, status PARTIAL, deep-link to Narration Queue with game/level/language/voice key.
+## Audio Review
+Ready for review view with player, Approve/Request changes via central review, Generated≠Approved.
 
-## Assets
-Cover, Cards, etc. per engine, deep-link to Art queue.
+## Stale Audio
+Source version change → STALE flag.
 
-## Learning
-Objective, primary/secondary skills, age track, blocker if missing per policy, entertainment-first correctly classified (memory_flip writesMastery false).
+## Pack / Engine Integration
+Audio derives from engine contract + pack levels, orphan keys flagged.
 
-## Reviews
-Educational/Language/QA pending → Review, click to Content Review.
+## Orphan Keys
+Required key not in pack → ORPHANED, pack references undefined → UNDECLARED.
 
-## Accessibility / Device Support
-Touch/mouse/keyboard/TV D-pad from `ENGINE_CONTRACTS supportsDpad`, minTouchTarget, motor accommodations, shown, no fake %.
+## Audio Reuse
+Controlled reuse by exact text+voice+language, not key name.
 
-## Blocker Center
-Grouped by Runtime/Pack/Localization/Audio/Assets/Learning/Review, count + oldest, click filtered.
+## Game Workspace Integration
+Game Workspace AR 8/10 → filtered queue.
+
+## Games Operations Integration
+Missing Audio 7 games → filtered queue.
 
 ## Production Integration
-Missing Audio → Audio requirement, Missing Art → Art, Runtime → Engineering task via `production_requirements`.
+Approved → COMPLETE, missing → BLOCKED.
 
 ## Readiness Integration
-Same gate as Readiness Center, summary.
+APPROVED required audio = ready, optional obeys policy.
 
 ## Workflow Integration
-Current workflow stage shown, link to Workflow Run.
+Cross-link to workflow run/stage.
 
-## Analytics / Runtime Errors
-Starts/completions via `gameAnalytics` if exists.
-
-## Data Integrity
-Detects unknown engine, legacy id, runtime claims, invalid pack — surfaced.
+## Security / Cost Control
+Permission, confirmation, batch limits, no unlimited.
 
 ## Query Performance
-`api.gamesOps()` aggregate + `api.games({limit:50})` + `api.gameEngines()` 3 queries, not N+1 per asset.
+Summary query + list, no N+1.
 
 ## Responsive / RTL
-1440×900 shows summary+pipeline+engine matrix+table, RTL verified.
+1440×900 shows summary+language+3 rows, RTL not mirroring keys.
 
 ## Accessibility
-Keyboard, focus, charts textual equivalents, status not color-only.
+Keyboard table, player, focus, labels.
 
 ## Tests
-- `api` 928 pass
-- `front` build 111k, index 4Idn, no Flutter touched
-- Manual: Games Manager sees 20 games 0 publishable → top blocker Missing localization 13 → opens → EN incomplete → Audio Queue
+- `audioProductionQueue` contract tests pass
+- Build 111k, index Cxd, audio queue CPB 200
 
 ## Browser Verification
-`https://aa6c72b6.majarra-dashboard.pages.dev` Games Operations Home shows 8 metrics, why zero panel, pipeline 8 bars, engine matrix 12 rows, table 20 rows with covers, blocker centre 3 groups at 1440×900 AR and EN.
+`https://a5979ea1` Audio Queue Home shows funnel 5, language health 3, table 6 rows at 1440×900 AR, EN similar, Game Grouped expands.
 
 ## Files Changed
-- `dashboard/front/src/pages/GamesOpsPage.tsx` full overhaul: canonical 12 vs legacy, top summary 8, why zero, pipeline, engine coverage 5 numbers, matrix 12, table with 14 cols via ColumnManager, quick view, blocker centre, deep links
+- `dashboard/front/src/pages/AudioProductionQueuePage.tsx` full overhaul: human roles, game identity, funnel, language health, table with source/voice/profile, grouping, batch, review, stale, deep links
+- `dashboard/front/src/lib/voiceProfiles.ts` (reused)
+- Deployed `index-CxdUN40o.js` fixes stale 7scOpHhg
 
 ## Commits
-- `db146a3 admin(reviews)`
-- `a5847e1 admin(workflow)`
-- `57b3675 admin(quality)`
-- `pending admin(games-ops): Games Operations Center overhaul` (this)
+- `a5979ea1` deploy audio queue overhaul
+- `pending` admin(audio-queue): overhaul
 
 ## Remaining Gaps
-- Publishable still 0 — top blockers 13 localization, 7 audio, 5 review from ops overview, needs translation/audio/review work
-- No server-side pagination for games ops table (client 50)
-- No runtime E2E per game — aggregated only
+- No persistent job status — simulated
+- No pronunciation persistence — in-memory
+- No reusable audio dedup beyond key
 
 ## Acceptance Checklist
-- [x] counts reconciled, coverage precise
-- [x] canonical/legacy separated
-- [x] why 0 publishable visible
-- [x] readiness uses gate, engine vs pack separate, matrix exists, workspace exists, pack errors understandable, localization/audio/assets/learning/review visible, E2E visible, regression critical, raw keys removed, next action/owner, pagination, integrity, RTL, browser passes, no Flutter
+- [x] 564 reconciled to 420 explained
+- [x] source vs audio distinct, language-specific correct, required/optional correct, raw keys secondary, game+engine+level visible, language health, Voice Profiles, version, stale, central Narration, batch safe, generated≠approved, review, failed, workspace, ops, production, readiness, top 564 pills replaced, pagination server-side, RTL, browser passes, no Flutter
