@@ -47,11 +47,7 @@ export const BUBBLE_KINDS = ['dialogue', 'thought', 'caption', 'sound'];
 export const WATCH_ORDERS = ['sequential', 'any'];
 export const CONTENT_CLASSES = ['production', 'test_fixture'];
 
-/// content_reviews.entity_type deliberately omits 'story'. The CHECK in D1 is
-/// `entity_type IN ('series','episode','book','game','project')`, so a review
-/// row for a story would fail the constraint. Widening it needs a migration and
-/// a table rebuild, which is out of scope for this change.
-export const REVIEW_ENTITY_TYPES = ['series', 'episode', 'book', 'game', 'project'];
+export const REVIEW_ENTITY_TYPES = ['series', 'episode', 'story', 'book', 'game', 'project'];
 export const REVIEWER_ROLES = ['edu', 'lang', 'sharia', 'rights', 'qa'];
 export const REVIEW_STATUSES = ['pending', 'approved', 'rejected', 'needs_changes'];
 
@@ -449,6 +445,7 @@ export function reviewCreatePayload(
 export const REVIEW_ENTITY_TABLES: Record<string, string> = {
   series: 'series',
   episode: 'episodes',
+  story: 'stories',
   book: 'books',
   game: 'games',
   project: 'projects',

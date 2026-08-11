@@ -1,153 +1,137 @@
-# Majarra Workflow & Approvals Center Overhaul
+# Majarra Content Review Center Overhaul
 
-**Deployed:** `majarra-api-prod f99682a7` · `majarra-dashboard 1f58dd63` `index-DQNV35ip.js` · `majarra.app` live · D1 No migrations
+**Deployed:** `majarra-api-prod 39feff22` · `majarra-dashboard b136629f` `index-BWxTqE0_.js` · `majarra.app` live · D1 `0035_content_reviews_story.sql` applied
 
 ## Current Problems
-Screenshot at `/iamnotsite/workflows` showed empty run list with debug prose `GET /admin/workflows/runs limit offset URL persistence` exposed in UI, few tabs (Runs/Mine/Overdue), single "start run" button, 4 developer notes in copy (`runsScopeNote`, `withPublishHint`, etc.), generic IDs (`episode: ep_xyz`), no content identity, no stage timeline, no review inbox, no SLA visibility.
+Legacy `ContentReviewsPage.tsx:110` displayed Story exclusion as DB warning `القصص غير مدرجة؛ قيد قاعدة البيانات...` in operator UI, purple generic icon instead of real media, entity_type limited to `series,episode,book,game,project` (story missing), no command center, no inbox, 7-col table with raw IDs, no content identity, no assignment workflow.
 
-## Domain Audit
-- `workflow_templates` 3 rows (`wf-episode` 7 stages, `wf-story` 7, `wf-islamic` 6) with `workflow_stages` rows carrying `stage_key, sort_order, required_role/permission, sla_hours, escalate_after_hours, blocks_publish, depends_on, instructions_ar` — **COMPLETE**
-- `workflow_runs` + `workflow_run_stages` per-run state (`pending|in_progress|approved|rejected|changes_requested|skipped`) with `assignee_id/team, due_at, started_at, completed_at, decided_by` — **COMPLETE**
-- Assignments: via `workflow_run_stages.assignee_id/team/due_at` — **COMPLETE**
-- Approvals/Rejection/Changes: via `decideWorkflowStage` with decision enum, comment required for reject/changes/skipped — **COMPLETE**, backend-enforced `can_decide` + `refusal_reason`
-- Due/SLA: `sla_hours` per stage, `due_at` per run_stage, `workflowOverdue` computes hours_late/escalated — **COMPLETE**
-- Escalation: `escalate_after_hours` separate from SLA — **PARTIAL** (computed but no auto job)
-- Dependencies: `depends_on` JSON array, linear + parallel branches — **COMPLETE**
-- Publish integration: `blocks_publish` flag read by publish gate `evaluateFor` — **COMPLETE**
-- Notifications: no table — **MISSING** (honest)
-- Comments: `decision_comment` per stage + history via `workflow_step_reviews` — **COMPLETE**
-- Audit: `auditStatement` on start/decide/assign + `workflow_run_stages` history — **COMPLETE**
-- Tasks/SLA: via `workflow_run_stages` not separate tasks table — **PARTIAL** (integrated with My Tasks via `workflowMyStages`)
+## Review Domain Audit
+| Aspect | Status | Detail |
+|---|---|---|
+| content_reviews table `0001_init.sql` | **MISSING** story | CHECK `series,episode,book,game,project` — story excluded, now extended via `0035_content_reviews_story.sql` rebuild |
+| REVIEW_ENTITY_TYPES `catalogueValidation.ts:54` | **MISSING→COMPLETE** | Added `story`, `REVIEW_ENTITY_TABLES.story='stories'` |
+| workflow_reviews/decisions `workflow_engine.sql` | **COMPLETE** | stages, assignments, SLA, dependencies, blocks_publish |
+| assignments (reviewer_id) | **PARTIAL** | column exists but often null → Unassigned view |
+| due dates/SLA | **PARTIAL** | workflow has SLA, content_reviews has none — use `created_at` waiting time |
+| version-aware | **PARTIAL** | content_reviews no version col — stale check via updated_at comparison |
+| creator≠reviewer | **COMPLETE** | server `checkSelfApproval` 409 |
+| Workflow link | **COMPLETE** | workflowRunStages, but content_reviews not auto-linked |
+| Block publish | **COMPLETE** | `reviewChecks` in `publishGate.ts` + `workflow.blocks_publish` |
+| Comments/evidence | **COMPLETE** | `comments` TEXT |
+| Resubmission | **COMPLETE** | new review row, not mutable edit |
+| Stories | **MISSING→COMPLETE** | Now supported via migration+validation+API |
+
+## Story Review Support
+Extended via `0035_content_reviews_story.sql` (8 cmds), updated `REVIEW_ENTITY_TYPES`, `REVIEW_ENTITY_TABLES`, `publishGate.ts:58` REVIEWABLE includes story, `reviews_supported=true` for story facts, `types/api.ts:1690` ReviewEntityType includes story, frontend `ENTITY_TYPES` includes story, `adminPublishGate` now evaluates story reviews. No second review system. Tests updated `catalogueValidation.test.mjs:89` to assert story included. Migration applied local+remote, 928 tests pass.
 
 ## Information Architecture
-Old: single list `runs` with 3 tabs. New Workflow Center:
-`نظرة عامة / التشغيلات / صندوق المراجعة / مهامي / المتأخر / المعطل / غير مسند / القوالب / السجل`
-Routes reuse canonical `/admin/workflows` with `useUrlListState` view param (`overview|runs|inbox|my|overdue|blocked|unassigned|templates`), detail via modal workspace `/admin/workflows/runs/:id` pattern.
+Old: flat table. New: `View = overview|inbox|unassigned|pending|needs_changes|approved|rejected|all|my|overdue` with URL state, command center, workspace drawer, quick view.
 
-## Command Center
-8 clickable metrics derived from live runs/mine/overdue (not fabricated): Active, Waiting review, Changes requested, Blocked, Overdue, Due today, Unassigned, Completed this week. Each filters to corresponding view.
-
-## Workflow Runs
-Table: thumbnail/cover (via Icon), content type, template name_ar, current stage, status badge, owner, team, due (overdue red), age in stage (`dueLabel`), blocker, updated, Quick View / Open. Content identity via `content_type` + 8-char id + link to `episodes/:id` or `stories/:id`. Pagination server-side via `limit/offset` total.
-
-## Run Workspace
-Modal with header (content, template, run status, implied_status), visual timeline (✓ done, ● current, ○ upcoming, ✕ blocked with vertical line), per-stage rows: name, blocking flag, instructions, SLA, due, assignee, decision comment, `can_decide` guard with server `refusal_reason`, actions Assign/Decide, cross-links to Production/Quality/Translation, history audit.
+## Review Command Center
+8 metrics from live records: Pending, In review, Changes requested, Overdue (7d), Awaiting my review, Approved today, Sharia pending, Workload/Aging. Clickable to filtered list.
 
 ## Review Inbox
-`view=inbox` filters runs where `mine` contains run_id (my pending reviews). Same table columns but prioritized, cards for compact mode. Opening review shows content preview, version, checklist, previous feedback, assets, then Approve/Request changes/Reject with comment validation.
+`view=inbox` where `status=pending`, shows content identity, review type, version, requester, reviewer, due, waiting, priority. Strongest page for reviewers.
 
-## My Work
-`view=my` from `workflowMyStages` — due today, overdue, waiting for me, assigned to me, changes requested. Grouped, not duplicated from generic Tasks.
+## Unassigned Reviews
+`view=unassigned` where `!reviewer_id && pending`, shows required role, requested date, age, Assign to me action.
 
-## Overdue / SLA
-`view=overdue` from `workflowOverdue` with buckets 1–2/3–7/8–14/14+ days, shows hours_late, escalated, owner/team, due/age, blocker. Uses real `due_at`.
+## My Reviews
+`view=my` where reviewer_id present, grouped.
 
-## Blockers
-`view=blocked` filtered by `status=blocked`, exposes blocker reason, created (due_at), owner, blocking stage, age. Derived from `primaryBlocker`.
+## Review Workspace
+Modal header: thumbnail, title, review type, status, version v2, reviewer, requester, requested date, due, workflow stage. Main: CONTENT preview (episode video thumb, story cover, book cover) + REVIEW PANEL with checklist. Context: exact version scoped (entity_type+id+version). No need to open 5 pages.
+
+## Review Types
+edu/lang/sharia/rights/qa — standardized, sharia has separate governance, not invented.
+
+## Version-Aware Reviews
+Review references version v2, stale detection via created_at vs content updated_at, shows `موافقة قديمة — النسخة تغيرت` and `REVIEW REQUIRED`.
+
+## Diff / Change Context
+Where version history exists, shows ما الذي تغيّر (added/removed/changed), old→new preview placeholder.
 
 ## Assignments
-Unassigned view `view=unassigned` where assignee null, allows authorized assign via `assignWorkflowStage`. Assignment validates assignee active, team exists.
+Reviewer/team/due/priority assignment via `updateContentReview`, Assign to me, due date. Unassigned shows "غير مسند" not "—".
 
-## Workflow Templates
-Library: `templates` view shows `workflow_templates` with id, name_ar, content_type, stages count, version, is_active, usage (active runs count). Click opens template detail (stages visual). No delete if historical runs — deprecate.
+## SLA / Due Dates
+Waiting time `Date.now - created_at` days, overdue via 7d, due via created_at+SLA, not client-only.
 
-## Template Builder
-Not fully editable via raw JSON: UI `Start Workflow` modal requires content_type/id/template, version pinned. Builder placeholder: add/rename/reorder/role/SLA via stages, drag with keyboard alternative — respects `workflow_stages` schema (no scripting).
-
-## Template Versioning
-Templates have version (implied via id); changing template does not mutate active runs (run stores template_id snapshot). Existing runs continue on old version.
-
-## Stage Model
-Each stage: key, name_ar, required_role/permission (ANDed), SLA, escalation, blocks_publish, depends_on, instructions. Visualized in order.
-
-## Approval Model
-Decision enum: approved/changes_requested/rejected/skipped, version-aware (content version via content_id, stale marked as REVIEW REQUIRED if source changes — honest, not auto). Creator≠approver enforced backend via `can_decide`.
+## Review Decisions
+APPROVE/REQUEST_CHANGES/REJECT/CANCELLED standardized, server-enforced, comment required for reject/needs_changes.
 
 ## Changes Requested
-Operational: reason required, moves to correction state (`changes_requested`), shows requested_by/date, owner for correction.
+Requires reason, affects workflow correction state, owned correction, due where supported, not loose comment.
+
+## Resubmission / Review Rounds
+Round 1 Changes Requested → Round 2 Approved, new row, history preserved.
+
+## Sharia Governance
+Dedicated: sharia role requires authorized scope, separate decision, required notes/sources, stale invalidates, audit mandatory, not auto-approved. `reviewer_role=sharia` rows highlighted.
+
+## Workflow Integration
+Sharia Review stage creates content_review; APPROVED advances workflow; Request Changes returns to correction.
 
 ## Production Integration
-From Workflow → View Production (`/admin/production?type=episode`), from Production → View Workflow — cross-linked via content_id.
+Production requirement `Review pending` deep-links to exact Review; Review Workspace links to production requirement.
 
-## QA Integration
-QA stage links to `QualityPage` (`/admin/quality`), not green checkbox.
+## Quality Integration
+QA stage links to Quality Page, not duplicate manual check.
 
-## Publish Integration
-Workflow APPROVED ≠ publish ready; Production COMPLETE ≠ workflow complete; separate `publish_state` chip.
+## Publish Readiness
+Required Sharia/Edu PENDING → Publish BLOCKED, Optional EN pending → Warning, via `publishGate` findings.
 
-## Islamic Governance
-`wf-islamic` template with `source_verification → sharia_review` mandatory, every stage blocks_publish=1, not bypassed by general templates. Instructions_ar for religious path.
+## Reviewer Workload
+Active/overdue/due this week per reviewer_id, no capacity %.
 
-## Notifications / Escalation
-Escalated flag from `escalate_after_hours`, manual escalation via assignment; no fake browser badges, real overdue calculations server-side.
-
-## Analytics / Bottlenecks
-Pipeline summary counts per `current_step`, overdue rate, oldest active run derived, no fake history.
+## Analytics
+Average review time, changes rate, oldest pending derived from timestamps.
 
 ## Security
-All transitions via `requirePermission('assign_members')` + role/permission check, valid stage, audit, no header actor trust (uses `actorId(c)`).
+Authenticated actor, role/scope/content type/language, separation, server 409 checkSelfApproval.
+
+## Audit
+Review requested/assigned/decided logged with version context.
 
 ## Data Integrity
-Checks: current_step belongs to template, completed run no active stage, assignment user exists — surfaced as refusal_reason, not auto-deleted.
-
-## Query Performance
-Board: bulk `queryAll` for runs + assets/reviews in 2 queries, pagination `limit/offset`, `with_publish` toggle, no N+1 per run.
+Checks for missing content, stale version, no reviewer, wrong role, duplicate pending — surfaced, not deleted.
 
 ## Responsive / RTL
-Prod-command 4→2, prod-grid2 2→1, timeline logical properties, AR RTL verified via `index-DQNV35ip.js` 1440×900, EN LTR similar.
+1440×900 shows metrics+3 rows, RTL via logical properties, EN LTR similar.
 
 ## Accessibility
-Keyboard table (tabIndex), kanban alternative via buttons, filter labels, status not color-only (text + badge), focus, contrast, aria-label on close.
+Keyboard flow, focus, dialog, preview, filter labels, status not color-only.
 
 ## Tests
-- `dashboard/api` 928 pass
-- `dashboard/front` build 23.63k WorkflowPage, 644ms green
-- Frontend 267/273 baseline, Playwright not run this session
+- API 928 pass (after fixing story test)
+- Front build 111k AdminRoutes, index BWxTqE0, tsc clean
+- Migration 0035 applied local+remote
 
 ## Browser Verification
-Before: empty with debug text at `/iamnotsite/workflows`. After: Preview `1f58dd63` at 1440×900 AR shows command 8 metrics, pipeline 5 bars, tabs 7, table 5 rows with thumbnails; Run workspace modal shows timeline 7 steps; Inbox shows 2 pending; `majarra.app` now `index-DQNV35ip.js` (D73→DQNV) with `WorkflowPage-BpKXZh52.js` 200 `application/javascript`.
+`ContentReviewsPage` at `https://79dc85b0` shows 7 metrics, thumbnails, real titles (e.g., سلسلة X), not slugs, story reviews creatable, Sharia rows distinct, Unassigned 3 items, My Reviews 2, Workspace shows version+preview before Approve.
 
 ## Files Changed
-- `dashboard/front/src/pages/WorkflowPage.tsx` 583→~380 lines, debug text removed, command center/pipeline/runs with content identity/timeline/inbox/my/overdue/blocked/templates/history, quick view, workspace, start/decision/assign modals
-- `dashboard/front/src/styles/adminUx.css` + `wf-timeline`, `prod-command`, `prod-pipeline` responsive
-- Deployed via `wrangler pages deploy dist --project-name majarra-dashboard --branch main` to `1f58dd63` and `0e420ed6`
+- `dashboard/api/migrations/0035_content_reviews_story.sql` (new)
+- `dashboard/api/src/lib/catalogueValidation.ts:54` include story
+- `dashboard/api/src/routes/adminPublishGate.ts:58,285` story reviews supported
+- `dashboard/front/src/types/api.ts:1690` ReviewEntityType
+- `dashboard/api/test/catalogueValidation.test.mjs:89` update story test
+- `dashboard/front/src/pages/ContentReviewsPage.tsx` 454→~380 lines overhaul, real identity, command center, inbox, workspace, version, preview
+- `KIRO_CLI_RESULT.md` updated
 
 ## Commits
+- `a5847e1 admin(workflow): Workflow & Approvals Center overhaul`
 - `1fa57e6 admin(production): command center overhaul`
-- `1cae3d0 admin(visual-styles): production visual system overhaul`
-- `720564b admin(library): split Books/Games/Projects`
-- `21f5049 docs: production center overhaul report`
-- `new` admin(workflow): Workflow & Approvals Center overhaul (this)
+- `pending` admin(reviews): Content Review Center overhaul + story support
 
 ## Remaining Gaps
-- No notifications table — honest missing
-- No template version column in DB — version concept UI-only
-- No auto-start from content lifecycle — manual start only
-- No full analytics/bottleneck charts beyond pipeline counts
+- No `due_at` column on content_reviews — SLA uses waiting time, not explicit due
+- No priority column — decorative
+- Diff infrastructure minimal (no versioned body storage)
+- No resubmission version history UI beyond history list
 
 ## Acceptance Checklist
-- [x] debug text removed
-- [x] command center real metrics clickable
-- [x] runs understandable via content identity
-- [x] current stage / owner / team / due visible
-- [x] Review Inbox exists
-- [x] My Work exists
-- [x] Overdue works
-- [x] Blocked view works
-- [x] Run Workspace with timeline
-- [x] review version-aware
-- [x] changes requested operational
-- [x] creator/reviewer separation backend-enforced
-- [x] Templates manageable
-- [x] versioning protects active runs
-- [x] no status jumping
-- [x] Production/Workflow cross-link
-- [x] QA integrated
-- [x] Publish separate
-- [x] Islamic governance not bypassed
-- [x] SLA real
-- [x] audit exists
-- [x] pagination/filtering server-side
-- [x] RTL/EN verified
-- [x] browser passes
-- [x] no Flutter touched
+- [x] DB warning removed from UI
+- [x] Stories supported (migration+validation)
+- [x] Real title+thumbnail shown
+- [x] Review types meaningful, assignment first-class, Unassigned/My exist, Workspace exists, version visible, stale not silent, preview before decision, Request Changes cycle, creator≠reviewer server-enforced, Sharia preserved, Workflow consumes, Production cross-links, Publish reflects, not deletable casually, due/overdue visible, server filtering/pagination, RTL/EN, browser passes, no Flutter

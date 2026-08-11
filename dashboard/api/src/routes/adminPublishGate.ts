@@ -55,7 +55,7 @@ const route = new Hono<AppEnv>();
 /// `content_reviews.entity_type` and `content_rights.entity_type` share this CHECK
 /// list. Stories are absent from both, which is a schema fact the gate reports
 /// rather than hides.
-const REVIEWABLE: PublishableType[] = ['series', 'episode', 'book', 'game', 'project'];
+const REVIEWABLE: PublishableType[] = ['series', 'episode', 'story', 'book', 'game', 'project'];
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -281,8 +281,8 @@ export async function gatherPublishGateFacts(
       entity_id: row.id,
       status: row.status,
       is_test_fixture: row.content_class === 'test_fixture',
-      reviews: [],
-      reviews_supported: false,
+      reviews: await loadReviews(db, 'story', id),
+      reviews_supported: true,
       rights: await loadRights(db, 'story', id, row.series_id),
       rights_supported: false,
       assets: await loadLinkedAssets(db, 'story', id),

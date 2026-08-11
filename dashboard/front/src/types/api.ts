@@ -1687,7 +1687,7 @@ export interface LearningObjectivePayload {
  * `entity_type IN ('series','episode','book','game','project')`، فصفّ مراجعة
  * لقصة يفشل القيد. توسيعه يحتاج مهاجرة وإعادة بناء الجدول.
  */
-export type ReviewEntityType = 'series' | 'episode' | 'book' | 'game' | 'project'
+export type ReviewEntityType = 'series' | 'episode' | 'story' | 'book' | 'game' | 'project'
 export type ReviewerRole = 'edu' | 'lang' | 'sharia' | 'rights' | 'qa'
 export type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'needs_changes'
 

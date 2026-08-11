@@ -86,11 +86,10 @@ test('enum checks are case sensitive, matching SQLite CHECK semantics', () => {
   assert.equal(enumError('status', 'published', CONTENT_STATUSES), null);
 });
 
-test('content review entity types exclude story, matching the live CHECK', () => {
-  // content_reviews CHECK is entity_type IN ('series','episode','book','game','project').
-  // A review row for a story would fail the constraint, so it must be a 400.
-  assert.ok(enumError('entity_type', 'story', REVIEW_ENTITY_TYPES));
-  assert.deepEqual(REVIEW_ENTITY_TYPES, ['series', 'episode', 'book', 'game', 'project']);
+test('content review entity types include story, matching the live CHECK', () => {
+  // content_reviews CHECK is entity_type IN ('series','episode','story','book','game','project') after migration 0035.
+  assert.equal(enumError('entity_type', 'story', REVIEW_ENTITY_TYPES), null);
+  assert.deepEqual(REVIEW_ENTITY_TYPES, ['series', 'episode', 'story', 'book', 'game', 'project']);
   // Every reviewable type must map to a real table for the existence check.
   for (const type of REVIEW_ENTITY_TYPES) {
     assert.ok(REVIEW_ENTITY_TABLES[type], `${type} needs a table mapping`);
