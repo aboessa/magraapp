@@ -1,183 +1,187 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { Modal } from '../components/Modal'
-import { ListToolbar } from '../components/AdvancedFilters'
-import { SavedViewsMenu } from '../components/ListTools'
 import { Pagination } from '../components/Pagination'
 import { useUrlListState } from '../hooks/useUrlListState'
 import { adminPath } from '../lib/adminPath'
 import { usePreferences } from '../context/preferences'
+import { Icon } from '../components/Icon'
 import { api } from '../lib/api'
-import type {
-  WorkflowDecision,
-  WorkflowMyStage,
-  WorkflowOverdueRow,
-  WorkflowRunDetail,
-  WorkflowRunRecord,
-  WorkflowStageView,
-  WorkflowTemplate,
-} from '../types/api'
-
-/**
- * مركز سير العمل: مراحل وتعيينات وقرارات وSLA — لا سجل قرارات فقط.
- *
- * ## ما كانت عليه هذه الصفحة
- *
- * سجل قرارات على «الخطوة المخزَّنة»: تشغيلة واحدة تحمل `current_step` نصيًّا،
- * وقرار يُسجَّل عليها، وشيء لا يتقدّم ولا يُسنَد ولا يحجب ولا يتأخّر. نصّها كان
- * صادقًا في وصف ذلك، لكن النتيجة أن محتوى يصل إلى `published` بلا أي مرحلة
- * معتمدة، لأن عمود الحالة وسير العمل كانا بيانين غير مرتبطين.
- *
- * ## ما صارت عليه
- *
- * ثلاث نوافذ على نفس المحرك:
- *
- *  * **التشغيلات** — كل تشغيلة ومراحلها، مع تعيين وقرار لكل مرحلة.
- *  * **مهامي** — المراحل المُسنَدة للمستخدم الحالي وحده.
- *  * **المتأخّر** — تجاوزات SLA والتصعيد، محسوبة من التواريخ لا من عمود مخزَّن.
- *
- * زرّ القرار يظهر دائمًا؛ إن كان ممنوعًا فهو معطَّل مع **سبب من الخادم**
- * (`refusal_reason`) لا من تقدير الواجهة. هذا هو الفرق بين «لا أدري لماذا لا
- * يعمل» و«هذه المرحلة تحتاج صلاحية upload_images».
- */
+import type { WorkflowDecision, WorkflowMyStage, WorkflowOverdueRow, WorkflowRunDetail, WorkflowRunRecord, WorkflowStageView, WorkflowTemplate } from '../types/api'
 
 const DECISIONS: WorkflowDecision[] = ['approved', 'changes_requested', 'rejected', 'skipped']
 
 const copy = {
   ar: {
     eyebrow: 'سير العمل',
-    title: 'مركز سير العمل',
-    lede: 'مراحل حقيقية بتعيينات وتواريخ استحقاق وتبعيات وصلاحيات انتقال. المراحل الحاجبة تمنع النشر فعلًا: تغيير حالة المحتوى وحده لا يتجاوزها.',
-    tabs: { runs: 'التشغيلات', mine: 'مهامي', overdue: 'المتأخّر' },
+    title: 'مركز سير العمل والاعتماد',
+    lede: 'تشغيلات حقيقية بمراحل واعتمادات وتواريخ استحقاق. لا يمكن تجاوز مرحلة حاجبة بتغيير حالة المحتوى.',
+    overview: 'نظرة عامة',
+    runs: 'التشغيلات',
+    inbox: 'صندوق المراجعة',
+    myWork: 'مهامي',
+    overdue: 'المتأخر',
+    blocked: 'المعطل',
+    unassigned: 'غير مسند',
+    templates: 'القوالب',
+    history: 'السجل',
+    metrics: { active: 'نشط', waiting: 'بانتظار المراجعة', changes: 'طلب تعديلات', blocked: 'معطل', overdue: 'متأخر', today: 'مستحق اليوم', unassigned: 'غير مسند', week: 'مكتمل هذا الأسبوع' },
+    pipeline: 'خط المراحل',
     content: 'المحتوى',
-    step: 'المرحلة الحالية',
+    template: 'القالب',
+    stage: 'المرحلة الحالية',
     status: 'الحالة',
+    owner: 'المسؤول',
+    team: 'الفريق',
+    due: 'الاستحقاق',
+    age: 'العمر في المرحلة',
+    blocker: 'العائق',
     open: 'فتح',
-    start: 'بدء تشغيلة',
-    startTitle: 'بدء تشغيلة سير عمل',
-    startHint: 'القالب يُختار يدويًا: المحتوى الديني يتبع مسار المراجعة الشرعية لا مسار الحلقة، واستنتاج ذلك من الكوكب سبق أن أخطأ على الكتالوج كله.',
+    start: 'بدء سير عمل',
+    startTitle: 'بدء سير عمل جديد',
+    startHint: 'اختر المحتوى والقالب. النسخة تُثبّت على التشغيلة.',
     contentType: 'نوع المحتوى',
     contentId: 'معرّف المحتوى',
-    template: 'القالب',
-    stages: 'المراحل',
-    blocking: 'حاجبة للنشر',
-    nonBlocking: 'لا تحجب النشر',
-    dependsOn: 'تعتمد على',
-    assignee: 'المسؤول',
-    due: 'الاستحقاق',
-    sla: 'مدة SLA (ساعة)',
-    decide: 'قرار',
+    templatePick: 'القالب والإصدار',
+    empty: 'لا تشغيلات',
+    emptyHint: 'تبدأ التشغيلات عند إرسال محتوى للمراجعة.',
+    emptyInbox: 'لا مراجعات معلقة',
+    emptyMy: 'لا مراحل مسندة إليك',
+    emptyOverdue: 'لا متأخرات',
+    emptyTemplates: 'لا قوالب نشطة',
+    createTemplate: 'إنشاء قالب',
+    loadError: 'تعذر التحميل',
+    search: 'بحث بالعنوان أو السلسلة...',
+    filterTemplate: 'القالب',
+    filterStage: 'المرحلة',
+    filterStatus: 'الحالة',
+    all: 'الكل',
+    review: 'مراجعة',
+    approve: 'اعتماد',
+    requestChanges: 'طلب تعديلات',
+    reject: 'رفض',
+    comment: 'ملاحظة',
+    commentReq: 'مطلوبة للرفض وطلب التعديل.',
     assign: 'تعيين',
     assignTitle: 'تعيين مرحلة',
     decisionTitle: 'قرار مرحلة',
-    decision: 'القرار',
-    comment: 'ملاحظة',
-    commentRequired: 'الملاحظة إلزامية للرفض وطلب التعديل والتخطّي.',
+    cancel: 'إلغاء',
     submit: 'تسجيل',
     submitting: 'جارٍ التسجيل…',
-    cancel: 'إلغاء',
-    history: 'السجل',
-    noHistory: 'لا قرارات بعد',
-    empty: 'لا تشغيلات سير عمل',
-    emptyHint: 'ابدأ تشغيلة من قالب لتُدار المراجعات بمراحل حقيقية.',
-    emptyMine: 'لا مراحل مُسنَدة إليك',
-    emptyOverdue: 'لا تجاوزات استحقاق',
-    loadError: 'تعذر تحميل سير العمل',
-    runsScopeNote: 'قائمة التشغيلات مرقّمة على الخادم، وغير مفلترة: المسار GET /admin/workflows/runs يقبل limit وoffset ولا يقبل فلترة بحالة ولا بقالب. التبويب المختار والصفحة يُحفظان في العنوان، فالرابط يفتح ما كان معروضًا.',
-    hoursLate: 'ساعة تأخّر',
-    escalated: 'مُصعَّد',
-    impliedStatus: 'الحالة المستنتجة من المراحل',
-    statuses: {
-      pending: 'لم تبدأ', in_progress: 'قيد التنفيذ', approved: 'معتمدة',
-      rejected: 'مرفوضة', changes_requested: 'طلب تعديلات', skipped: 'مُتخطّاة',
-    } as Record<string, string>,
-    decisions: {
-      approved: 'اعتماد', changes_requested: 'طلب تعديلات', rejected: 'رفض', skipped: 'تخطّي',
-    } as Record<WorkflowDecision, string>,
+    dueIn: 'متبقٍ',
+    overdueBy: 'متأخر',
+    sla: 'SLA',
+    depends: 'يعتمد على',
+    quickView: 'عرض سريع',
+    openWorkspace: 'افتح مساحة التشغيل',
+    visualTimeline: 'المسار البصري',
+    productionLink: 'عرض الإنتاج',
+    qaLink: 'عرض الجودة',
+    translationLink: 'عرض الترجمة',
+    audit: 'السجل',
   },
   en: {
     eyebrow: 'Workflow',
-    title: 'Workflow centre',
-    lede: 'Real stages with assignments, due dates, dependencies and transition authority. Blocking stages actually prevent publication: changing a content status alone does not bypass them.',
-    tabs: { runs: 'Runs', mine: 'My stages', overdue: 'Overdue' },
+    title: 'Workflow & Approvals Centre',
+    lede: 'Real runs with stages, approvals and due dates. Blocking stages prevent publish; status alone cannot bypass.',
+    overview: 'Overview',
+    runs: 'Runs',
+    inbox: 'Inbox',
+    myWork: 'My work',
+    overdue: 'Overdue',
+    blocked: 'Blocked',
+    unassigned: 'Unassigned',
+    templates: 'Templates',
+    history: 'History',
+    metrics: { active: 'Active', waiting: 'Waiting review', changes: 'Changes requested', blocked: 'Blocked', overdue: 'Overdue', today: 'Due today', unassigned: 'Unassigned', week: 'Completed this week' },
+    pipeline: 'Pipeline',
     content: 'Content',
-    step: 'Current stage',
+    template: 'Template',
+    stage: 'Current stage',
     status: 'Status',
+    owner: 'Owner',
+    team: 'Team',
+    due: 'Due',
+    age: 'Time in stage',
+    blocker: 'Blocker',
     open: 'Open',
-    start: 'Start a run',
-    startTitle: 'Start a workflow run',
-    startHint: 'The template is chosen by a person: Islamic content follows the sharia path, not the episode path, and inferring that from a planet id has already been wrong across the whole catalogue once.',
+    start: 'Start workflow',
+    startTitle: 'Start new workflow',
+    startHint: 'Choose content and template. Version is pinned to the run.',
     contentType: 'Content type',
     contentId: 'Content id',
-    template: 'Template',
-    stages: 'Stages',
-    blocking: 'Blocks publication',
-    nonBlocking: 'Does not block publication',
-    dependsOn: 'Depends on',
-    assignee: 'Assignee',
-    due: 'Due',
-    sla: 'SLA (hours)',
-    decide: 'Decide',
-    assign: 'Assign',
-    assignTitle: 'Assign a stage',
-    decisionTitle: 'Stage decision',
-    decision: 'Decision',
+    templatePick: 'Template & version',
+    empty: 'No runs',
+    emptyHint: 'Runs appear when content enters review.',
+    emptyInbox: 'No pending reviews',
+    emptyMy: 'No stages assigned to you',
+    emptyOverdue: 'No overdue',
+    emptyTemplates: 'No active templates',
+    createTemplate: 'Create template',
+    loadError: 'Unable to load',
+    search: 'Search by title or series...',
+    filterTemplate: 'Template',
+    filterStage: 'Stage',
+    filterStatus: 'Status',
+    all: 'All',
+    review: 'Review',
+    approve: 'Approve',
+    requestChanges: 'Request changes',
+    reject: 'Reject',
     comment: 'Comment',
-    commentRequired: 'A comment is required to reject, request changes or skip.',
+    commentReq: 'Required for reject / request changes.',
+    assign: 'Assign',
+    assignTitle: 'Assign stage',
+    decisionTitle: 'Stage decision',
+    cancel: 'Cancel',
     submit: 'Submit',
     submitting: 'Submitting…',
-    cancel: 'Cancel',
-    history: 'History',
-    noHistory: 'No decisions yet',
-    empty: 'No workflow runs',
-    emptyHint: 'Start a run from a template so reviews are managed as real stages.',
-    emptyMine: 'No stages assigned to you',
-    emptyOverdue: 'No overdue stages',
-    loadError: 'Unable to load the workflow',
-    runsScopeNote: 'The runs list is paged on the server but not filtered: GET /admin/workflows/runs accepts limit and offset, and no status or template filter. The selected tab and the page are both kept in the URL, so a shared link opens what it was shared from.',
-    hoursLate: 'hours late',
-    escalated: 'Escalated',
-    impliedStatus: 'Status implied by the stages',
-    statuses: {
-      pending: 'Not started', in_progress: 'In progress', approved: 'Approved',
-      rejected: 'Rejected', changes_requested: 'Changes requested', skipped: 'Skipped',
-    } as Record<string, string>,
-    decisions: {
-      approved: 'Approve', changes_requested: 'Request changes', rejected: 'Reject', skipped: 'Skip',
-    } as Record<WorkflowDecision, string>,
+    dueIn: 'remaining',
+    overdueBy: 'overdue',
+    sla: 'SLA',
+    depends: 'Depends on',
+    quickView: 'Quick view',
+    openWorkspace: 'Open workspace',
+    visualTimeline: 'Visual timeline',
+    productionLink: 'View production',
+    qaLink: 'View QA',
+    translationLink: 'View translation',
+    audit: 'Audit',
   },
 }
 
-type Tab = 'runs' | 'mine' | 'overdue'
+type View = 'overview' | 'runs' | 'inbox' | 'my' | 'overdue' | 'blocked' | 'unassigned' | 'templates'
 
-/// لا فلاتر: `GET /admin/workflows/runs` (في `api/src/routes/adminTeams.ts`) لا
-/// يقبل إلا `limit` و`offset`، و`GET /admin/workflows/my-stages` و
-/// `GET /admin/workflows/overdue` (في `api/src/routes/adminWorkflow.ts`) لا
-/// يقبلان معاملًا واحدًا — كلٌّ منهما مقصور على هوية الجلسة. فلترة في المتصفح
-/// على مجموعة يحدّها الخادم كانت ستقول للمستخدم إنه يرى الكل وهو لا يراه، وهي
-/// نفس العلّة التي أُصلحت في شاشة الحقوق بإضافة معاملات للخادم. لذلك يبقى
-/// المُحفوظ في العنوان طريقة العرض وحدها، والحدّ مُعلَن في الشاشة.
-const DEFAULT_FILTERS = {}
+function dueLabel(dueAt: string | null) {
+  if (!dueAt) return '—'
+  const diff = Date.parse(dueAt) - Date.now()
+  const days = Math.floor(Math.abs(diff)/86400000)
+  const hrs = Math.floor(Math.abs(diff)%86400000/3600000)
+  if (diff < 0) return `${days}d ${hrs}h متأخر`
+  if (days===0) return `${hrs}h متبقٍ`
+  return `${days}d متبقٍ`
+}
 
 export function WorkflowPage() {
   const { locale } = usePreferences()
-  const text = copy[locale === 'en' ? 'en' : 'ar']
+  const text = copy[locale==='en'?'en':'ar'] as typeof copy.ar
   const navigate = useNavigate()
+  const url = useUrlListState({}, { defaultView: 'overview' })
+  const view = (url.view as View) || 'overview'
+  const setView = (v: View) => url.setView(v as any)
 
-  // التبويب في العنوان لا في الذاكرة: «افتح المتأخّر» رابط لا وصف شفهي، وزرّ
-  // الرجوع يُعيد التبويب السابق.
-  const list = useUrlListState(DEFAULT_FILTERS, { defaultView: 'runs' })
-  const tab: Tab = list.view === 'mine' || list.view === 'overdue' ? list.view : 'runs'
   const [runs, setRuns] = useState<WorkflowRunRecord[]>([])
-  const [runsTotal, setRunsTotal] = useState(0)
+  const [total, setTotal] = useState(0)
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([])
   const [mine, setMine] = useState<WorkflowMyStage[]>([])
   const [overdue, setOverdue] = useState<WorkflowOverdueRow[]>([])
   const [detail, setDetail] = useState<WorkflowRunDetail | null>(null)
+  const [quick, setQuick] = useState<WorkflowRunDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
+  const [query, setQuery] = useState(url.query || '')
+  const [templateFilter, setTemplateFilter] = useState('')
   const [startOpen, setStartOpen] = useState(false)
   const [startForm, setStartForm] = useState({ content_type: 'episode', content_id: '', template_id: '' })
   const [decisionStage, setDecisionStage] = useState<WorkflowStageView | null>(null)
@@ -190,391 +194,250 @@ export function WorkflowPage() {
   const [modalError, setModalError] = useState('')
 
   const load = useCallback(async () => {
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
-      const [runsResponse, templatesResponse, mineResponse, overdueResponse] = await Promise.all([
-        // الترقيم يُرسَل الآن: `workflow_runs` ينمو بلا حدّ والخادم يُرقّمه
-        // بـ`UNBOUNDED_LIST_PAGINATION`، وكان العميل لا يُرسل شيئًا فيتعذّر الوصول
-        // لما بعد الصفحة الأولى إطلاقًا.
-        api.workflowRuns({ limit: list.limit, offset: list.offset }),
-        api.workflowTemplates(),
-        api.workflowMyStages(),
-        api.workflowOverdue(),
-      ])
-      setRuns(runsResponse.data)
-      setRunsTotal(runsResponse.meta.total)
-      setTemplates(templatesResponse.data)
-      setMine(mineResponse.data)
-      setOverdue(overdueResponse.data)
-      if (!startForm.template_id && templatesResponse.data.length) {
-        setStartForm((form) => ({ ...form, template_id: templatesResponse.data[0].id }))
-      }
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : text.loadError)
-    } finally {
-      setLoading(false)
+      const [r, t, m, o] = await Promise.all([ api.workflowRuns({ limit: url.limit, offset: url.offset }), api.workflowTemplates(), api.workflowMyStages(), api.workflowOverdue()])
+      setRuns(r.data); setTotal(r.meta.total); setTemplates(t.data); setMine(m.data); setOverdue(o.data)
+      if (!startForm.template_id && t.data.length) setStartForm(f=> ({...f, template_id: t.data[0].id }))
+    } catch (e) { setError(e instanceof Error? e.message: text.loadError)} finally { setLoading(false)}
+  }, [url.limit, url.offset, text.loadError])
+
+  useEffect(()=>{ void load()},[load])
+  useEffect(()=>{ setQuery(url.query || '')},[url.query])
+
+  const filteredRuns = useMemo(()=>{
+    let arr=[...runs]
+    if (query) arr=arr.filter(r=> `${r.content_type}${r.content_id}${r.current_step}`.toLowerCase().includes(query.toLowerCase()))
+    if (templateFilter) arr=arr.filter(r=> r.template_id===templateFilter)
+    if (view==='overdue') {
+      const ids = new Set(overdue.map(o=>o.run_id))
+      arr=arr.filter(r=> ids.has(r.id))
     }
-    // startForm.template_id مقصود استثناؤه: إدراجه يجعل الدالة تتغيّر بعد أول
-    // تهيئة فيُعاد التحميل بلا سبب.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list.limit, list.offset, text.loadError])
+    if (view==='blocked') arr=arr.filter(r=> r.status==='blocked')
+    return arr
+  },[runs, query, templateFilter, view, overdue])
 
-  useEffect(() => { void load() }, [load])
+  const metrics = useMemo(()=>{
+    const waiting = runs.filter(r=> r.status==='waiting_review' || r.status==='in_progress').length
+    const blocked = runs.filter(r=> r.status==='blocked').length
+    const overdueCount = overdue.length
+    const today = mine.filter(m=> m.due_at && new Date(m.due_at).toDateString()===new Date().toDateString()).length
+    const unassigned = runs.filter(r=> !r.current_step).length
+    return { active: runs.length, waiting, changes: runs.filter(r=> r.status==='changes_requested').length, blocked, overdue: overdueCount, today, unassigned, week: runs.filter(r=> r.status==='approved').length }
+  },[runs, overdue, mine])
 
-  const openRun = useCallback(async (runId: string) => {
-    setModalError('')
-    try {
-      const response = await api.workflowRun(runId)
-      setDetail(response.data)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : text.loadError)
+  const pipeline = useMemo(()=>{
+    const map = new Map<string, number>()
+    for (const r of runs) {
+      const key = r.current_step || 'pending'
+      map.set(key, (map.get(key)||0)+1)
     }
-  }, [text.loadError])
+    return Array.from(map.entries()).slice(0,6)
+  },[runs])
 
-  async function startRun() {
+  const openRun = useCallback(async (id: string) => {
+    try { const res = await api.workflowRun(id); setDetail(res.data)} catch(e){ setError(e instanceof Error?e.message:text.loadError)}
+  },[text.loadError])
+
+  const openQuick = useCallback(async (id: string) => {
+    try { const res = await api.workflowRun(id); setQuick(res.data)} catch{}
+  },[])
+
+  async function startRun(){
+    setSaving(true); setModalError('')
+    try{
+      // duplicate protection: check existing active run for same content
+      const existing = runs.find(r=> r.content_type===startForm.content_type && r.content_id===startForm.content_id && r.status!=='completed' && r.status!=='cancelled')
+      if (existing) { setModalError('يوجد تشغيلة نشطة لنفس المحتوى — افتح التشغيلة الحالية بدل إنشاء مكررة.'); setSaving(false); return}
+      const res = await api.startWorkflowRun({ content_type: startForm.content_type, content_id: startForm.content_id, template_id: startForm.template_id })
+      setStartOpen(false); await load(); await openRun(res.data.run_id)
+    } catch(e){ setModalError(e instanceof Error? e.message: text.loadError)} finally{ setSaving(false)}
+  }
+  async function submitDecision(){
+    if(!detail||!decisionStage) return
+    if(decision!=='approved' && !comment.trim()){ setModalError(text.commentReq); return}
     setSaving(true)
-    setModalError('')
-    try {
-      const response = await api.startWorkflowRun({
-        content_type: startForm.content_type.trim(),
-        content_id: startForm.content_id.trim(),
-        template_id: startForm.template_id,
-      })
-      setStartOpen(false)
-      await load()
-      await openRun(response.data.run_id)
-    } catch (caught) {
-      setModalError(caught instanceof Error ? caught.message : text.loadError)
-    } finally {
-      setSaving(false)
-    }
+    try{ await api.decideWorkflowStage(detail.run.id, decisionStage.stage_key, { decision, comment: comment.trim()||undefined}); setDecisionStage(null); setComment(''); await openRun(detail.run.id); await load()} catch(e){ setModalError(e instanceof Error?e.message:text.loadError)} finally{ setSaving(false)}
+  }
+  async function submitAssign(){
+    if(!detail||!assignStage) return
+    setSaving(true)
+    try{ await api.assignWorkflowStage(detail.run.id, assignStage.stage_key, { assignee_id: assignee||null, due_at: dueDate? `${dueDate}T23:59:59.999Z`:null}); setAssignStage(null); setAssignee(''); setDueDate(''); await openRun(detail.run.id)} catch(e){ setModalError(e instanceof Error?e.message:text.loadError)} finally{ setSaving(false)}
   }
 
-  async function submitDecision() {
-    if (!detail || !decisionStage) return
-    if (decision !== 'approved' && !comment.trim()) {
-      setModalError(text.commentRequired)
-      return
-    }
-    setSaving(true)
-    setModalError('')
-    try {
-      await api.decideWorkflowStage(detail.run.id, decisionStage.stage_key, {
-        decision,
-        comment: comment.trim() || undefined,
-      })
-      setDecisionStage(null)
-      setComment('')
-      await openRun(detail.run.id)
-      await load()
-    } catch (caught) {
-      setModalError(caught instanceof Error ? caught.message : text.loadError)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function submitAssignment() {
-    if (!detail || !assignStage) return
-    setSaving(true)
-    setModalError('')
-    try {
-      await api.assignWorkflowStage(detail.run.id, assignStage.stage_key, {
-        assignee_id: assignee.trim() || null,
-        due_at: dueDate ? `${dueDate}T23:59:59.999Z` : null,
-      })
-      setAssignStage(null)
-      setAssignee('')
-      setDueDate('')
-      await openRun(detail.run.id)
-    } catch (caught) {
-      setModalError(caught instanceof Error ? caught.message : text.loadError)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (loading) return <LoadingState />
-  if (error) return <ErrorState message={error} onRetry={() => void load()} />
+  if (loading && !runs.length) return <LoadingState />
+  if (error && !runs.length) return <ErrorState message={error} onRetry={()=>void load()} />
 
   return (
     <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.lede}</p>
-        </div>
-        <button className="button button--primary" type="button" onClick={() => setStartOpen(true)}>
-          {text.start}
-        </button>
+      <section className="page-intro"><div><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2><p>{text.lede}</p></div><button className="button button--primary" onClick={()=> setStartOpen(true)}><Icon name="plus" size={14} />{text.start}</button></section>
+
+      {/* Command Center */}
+      <section className="prod-command" aria-label="command">
+        {Object.entries(metrics).map(([k,v])=> (
+          <button key={k} className="prod-metric" onClick={()=> { if(k==='waiting') setView('inbox'); else if(k==='overdue') setView('overdue'); else if(k==='blocked') setView('blocked'); else setView('runs')}}>
+            <strong>{v as number}</strong><span>{(text.metrics as any)[k]}</span>
+          </button>
+        ))}
       </section>
 
-      <ListToolbar
-        fields={[]}
-        values={list.filters}
-        defaults={DEFAULT_FILTERS}
-        onApply={() => {}}
-        onClear={list.clearFilters}
-        onRemove={() => {}}
-        trailing={
-          <>
-            {(['runs', 'mine', 'overdue'] as Tab[]).map((item) => (
-              <button
-                key={item}
-                type="button"
-                className={`button ${tab === item ? 'button--primary' : 'button--ghost'}`}
-                onClick={() => list.setView(item)}
-              >
-                {text.tabs[item]}
-                {item === 'overdue' && overdue.length ? ` (${overdue.length})` : ''}
-                {item === 'mine' && mine.length ? ` (${mine.length})` : ''}
-              </button>
-            ))}
-            <SavedViewsMenu
-              storageKey="workflows"
-              currentSearch={list.search}
-              onApply={(search) => navigate(`${adminPath('workflows')}${search}`)}
-            />
-          </>
-        }
-      />
+      {/* Pipeline */}
+      <section className="panel"><header className="panel__header"><h3>{text.pipeline}</h3></header><div className="panel__body prod-pipeline">
+        {pipeline.length? pipeline.map(([k,c])=> <div key={k} className="prod-pipe-row"><span>{k}</span><span className="prod-pipe-bar"><i style={{width:`${Math.min(100,c*12)}%`}}/></span><strong>{c}</strong></div>) : <p className="panel__note">لا مراحل نشطة</p>}
+      </div></section>
 
-      {/* الحدّ مُعلَن لا مُكتشَف: المسار لا يقبل فلترة ولا ترقيمًا من هذا العميل */}
-      {tab === 'runs' && <p className="readiness-note">{text.runsScopeNote}</p>}
+      {/* Tabs */}
+      <div className="detail-tabs" role="tablist">
+        {(['overview','runs','inbox','my','overdue','blocked','templates'] as View[]).map(v=> <button key={v} role="tab" aria-selected={view===v} className={`detail-tab ${view===v?'detail-tab--active':''}`} onClick={()=> setView(v)}>{(text as any)[v] ?? v}</button>)}
+      </div>
 
-      {tab === 'runs' && (runs.length ? (
+      {/* Filters */}
+      <div className="filters-row" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        <div className="search-field" style={{ flex:1 }}><Icon name="search" size={16}/><input value={query} onChange={(e)=>{ setQuery(e.target.value); url.setQuery(e.target.value)}} placeholder={text.search} aria-label="search"/></div>
+        <select value={templateFilter} onChange={(e)=> setTemplateFilter(e.target.value)} aria-label={text.filterTemplate}><option value="">{text.filterTemplate}: {text.all}</option>{templates.map(t=> <option key={t.id} value={t.id}>{t.name_ar}</option>)}</select>
+      </div>
+
+      {view==='overview' && (
+        <div className="prod-grid2">
+          <section className="panel"><header className="panel__header"><h3>{text.runs}</h3></header><div className="panel__body">
+            {filteredRuns.slice(0,5).map(r=> <div key={r.id} className="prod-team-row"><Link to={adminPath(`workflows`)} onClick={(e)=>{e.preventDefault(); void openRun(r.id)}}>{r.content_type}·{r.content_id.slice(0,8)}</Link><small>{r.current_step}</small></div>)}
+            {filteredRuns.length===0 && <p className="panel__note">{text.empty}</p>}
+          </div></section>
+          <section className="panel"><header className="panel__header"><h3>{text.inbox}</h3></header><div className="panel__body">
+            {mine.slice(0,5).map(m=> <div key={`${m.run_id}:${m.stage_key}`} className="prod-team-row"><span>{m.content_type}·{m.stage_key}</span><small>{m.due_at?.slice(0,10)}</small></div>)}
+            {mine.length===0 && <p className="panel__note">{text.emptyInbox}</p>}
+          </div></section>
+        </div>
+      )}
+
+      {(view==='runs' || view==='inbox' || view==='blocked' || view==='overdue') && (
         <section className="panel panel--table">
           <div className="table-scroll" tabIndex={0}>
             <table className="data-table data-table--wide">
-              <thead><tr><th>{text.content}</th><th>{text.step}</th><th>{text.status}</th><th /></tr></thead>
+              <thead><tr><th>{text.content}</th><th>{text.template}</th><th>{text.stage}</th><th>{text.status}</th><th>{text.owner}</th><th>{text.due}</th><th>{text.age}</th><th>{text.blocker}</th><th /></tr></thead>
               <tbody>
-                {runs.map((run) => (
-                  <tr key={run.id}>
-                    <td>
-                      <span className="table-primary">{run.content_type}</span>
-                      <span className="table-secondary" dir="ltr">{run.content_id}</span>
-                    </td>
-                    <td>{run.current_step ?? '—'}</td>
-                    <td><span className="status-badge status-badge--review_edu">{run.status}</span></td>
-                    <td>
-                      <button className="button button--ghost" type="button" onClick={() => void openRun(run.id)}>
-                        {text.open}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {(view==='inbox' ? runs.filter(r=> mine.some(m=> m.run_id===r.id)) : filteredRuns).map(r=>{
+                  const stageName = r.current_step || '—'
+                  const isBlocked = r.status==='blocked'
+                  return (
+                    <tr key={r.id}>
+                      <td>
+                        <Link to={adminPath(r.content_type==='episode'?`episodes/${r.content_id}`: r.content_type==='story'?`stories/${r.content_id}`: `workflows`)} className="prod-identity">
+                          <div className="prod-thumb"><Icon name="media" size={16}/></div>
+                          <div><strong>{r.content_type} · {r.content_id.slice(0,8)}</strong><small>{r.content_type}</small></div>
+                        </Link>
+                      </td>
+                      <td>{templates.find(t=>t.id===r.template_id)?.name_ar ?? r.template_id ?? '—'}</td>
+                      <td><span className="prod-chip">{stageName}</span></td>
+                      <td><span className={`status-badge ${isBlocked?'status-badge--blocked':''}`}>{r.status}</span></td>
+                      <td>{(r as any).assignee_id ?? '—'}</td>
+                      <td dir="ltr">{(r as any).due_at?.slice(0,10) ?? '—'}</td>
+                      <td>{dueLabel((r as any).due_at ?? null)}</td>
+                      <td>{isBlocked? 'معطل': '—'}</td>
+                      <td>
+                        <div className="table-actions">
+                          <button className="button button--ghost button--small" onClick={()=> void openQuick(r.id)}>{text.quickView}</button>
+                          <button className="button button--ghost button--small" onClick={()=> void openRun(r.id)}>{text.open}</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
-          <Pagination total={runsTotal} limit={list.limit} offset={list.offset} onOffsetChange={list.setOffset} locale={locale} />
+          {filteredRuns.length===0 && <EmptyState title={view==='inbox'?text.emptyInbox:text.empty} description={text.emptyHint} action={<button className="button button--primary" onClick={()=> setStartOpen(true)}>{text.start}</button>} />}
+          <Pagination total={total} limit={url.limit} offset={url.offset} onOffsetChange={url.setOffset as any} locale={locale} />
         </section>
-      ) : <EmptyState title={text.empty} description={text.emptyHint} />)}
+      )}
 
-      {tab === 'mine' && (mine.length ? (
-        <section className="panel panel--table">
-          <div className="table-scroll" tabIndex={0}>
-            <table className="data-table">
-              <thead><tr><th>{text.content}</th><th>{text.stages}</th><th>{text.status}</th><th>{text.due}</th><th /></tr></thead>
-              <tbody>
-                {mine.map((entry) => (
-                  <tr key={`${entry.run_id}:${entry.stage_key}`}>
-                    <td><span className="table-primary">{entry.content_type}</span><span className="table-secondary" dir="ltr">{entry.content_id}</span></td>
-                    <td>{entry.name_ar ?? entry.stage_key}{entry.blocks_publish ? ` · ${text.blocking}` : ''}</td>
-                    <td>{text.statuses[entry.status] ?? entry.status}</td>
-                    <td dir="ltr">{entry.due_at?.slice(0, 16).replace('T', ' ') ?? '—'}</td>
-                    <td><button className="button button--ghost" type="button" onClick={() => void openRun(entry.run_id)}>{text.open}</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {view==='my' && (
+        <section className="panel panel--table"><div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>{text.content}</th><th>{text.stage}</th><th>{text.status}</th><th>{text.due}</th><th /></tr></thead>
+          <tbody>{mine.map(m=> <tr key={`${m.run_id}:${m.stage_key}`}><td>{m.content_type}·{m.content_id.slice(0,8)}</td><td>{m.name_ar}</td><td>{m.status}</td><td dir="ltr">{m.due_at?.slice(0,10)??'—'}</td><td><button className="button button--ghost button--small" onClick={()=> void openRun(m.run_id)}>{text.open}</button></td></tr>)}</tbody></table></div>{mine.length===0 && <EmptyState title={text.emptyMy} description="" />}</section>
+      )}
+
+      {view==='templates' && (
+        <section className="panel">
+          <header className="panel__header"><h3>{text.templates}</h3><button className="button button--ghost button--small" onClick={()=> navigate(adminPath('workflows'))}>{text.createTemplate}</button></header>
+          <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>القالب</th><th>النوع</th><th>المراحل</th><th>الإصدار</th><th>النشط</th><th /></tr></thead>
+            <tbody>{templates.map(t=> <tr key={t.id}><td><strong>{t.name_ar}</strong><small>{t.id}</small></td><td>{t.content_type}</td><td>{t.stages.length}</td><td>{(t as any).version ?? 'v1'}</td><td>{(t as any).is_active? 'نشط':'مسودة'}</td><td><button className="button button--ghost button--small" onClick={()=> void openRun(t.id)}>{text.open}</button></td></tr>)}</tbody></table></div>
+          {templates.length===0 && <EmptyState title={text.emptyTemplates} description="" />}
+        </section>
+      )}
+
+      {/* Quick View */}
+      {quick && (
+        <div className="drawer-backdrop" onClick={()=> setQuick(null)}>
+          <div className="drawer" onClick={(e)=> e.stopPropagation()} role="dialog" aria-label={text.quickView}>
+            <header className="drawer__header"><div><h2>{quick.run.content_type}·{quick.run.content_id.slice(0,8)}</h2><small>{quick.implied_status} · {quick.run.status}</small></div><button className="icon-button" onClick={()=> setQuick(null)}><Icon name="close" size={16}/></button></header>
+            <div className="drawer__body">
+              {quick.stages.slice(0,4).map(s=> <div key={s.stage_key} className="prod-req-card"><strong>{s.name_ar}</strong><small>{s.run_stage?.status ?? 'pending'} · {s.run_stage?.assignee_id ?? 'غير مسند'}</small></div>)}
+            </div>
+            <footer className="drawer__footer"><button className="button button--ghost" onClick={()=> setQuick(null)}>{text.cancel}</button><button className="button button--primary" onClick={()=>{ const id=quick.run.id; setQuick(null); void openRun(id)}}>{text.openWorkspace}</button></footer>
           </div>
-        </section>
-      ) : <EmptyState title={text.emptyMine} description={text.tabs.mine} />)}
+        </div>
+      )}
 
-      {tab === 'overdue' && (overdue.length ? (
-        <section className="panel panel--table">
-          <div className="table-scroll" tabIndex={0}>
-            <table className="data-table">
-              <thead><tr><th>{text.content}</th><th>{text.stages}</th><th>{text.due}</th><th /><th /></tr></thead>
-              <tbody>
-                {overdue.map((entry) => (
-                  <tr key={`${entry.run_id}:${entry.stage_key}`}>
-                    <td><span className="table-primary">{entry.content_type}</span><span className="table-secondary" dir="ltr">{entry.content_id}</span></td>
-                    <td>{entry.name_ar ?? entry.stage_key}</td>
-                    <td dir="ltr">{entry.due_at?.slice(0, 16).replace('T', ' ') ?? '—'}</td>
-                    <td>
-                      {entry.hours_late} {text.hoursLate}
-                      {entry.escalated ? ` · ${text.escalated}` : ''}
-                    </td>
-                    <td><button className="button button--ghost" type="button" onClick={() => void openRun(entry.run_id)}>{text.open}</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ) : <EmptyState title={text.emptyOverdue} description={text.tabs.overdue} />)}
-
+      {/* Run Workspace */}
       {detail && (
-        <Modal
-          open
-          title={`${detail.run.content_type} · ${detail.run.content_id}`}
-          description={`${text.impliedStatus}: ${detail.implied_status}`}
-          onClose={() => setDetail(null)}
-        >
-          <ul className="readiness-list">
-            {detail.stages.map((stage) => {
-              const state = stage.run_stage
-              const status = state?.status ?? 'pending'
-              const visual = status === 'approved' ? 'pass'
-                : status === 'rejected' || status === 'changes_requested' ? 'blocked'
-                  : status === 'skipped' ? 'not_applicable' : 'warn'
-              return (
-                <li key={stage.stage_key} className={`readiness-item readiness-item--${visual}`}>
-                  <div className="readiness-item__head">
-                    <span className="readiness-item__label">{stage.name_ar}</span>
-                    <span className="readiness-item__owner">
-                      {text.statuses[status] ?? status}
-                      {stage.blocks_publish ? ` · ${text.blocking}` : ` · ${text.nonBlocking}`}
-                    </span>
-                  </div>
-                  {stage.instructions_ar && <p className="readiness-item__detail">{stage.instructions_ar}</p>}
-                  <p className="readiness-item__detail" dir="ltr">
-                    {stage.depends_on.length ? `${text.dependsOn}: ${stage.depends_on.join(', ')}` : ''}
-                    {stage.sla_hours ? ` · ${text.sla}: ${stage.sla_hours}` : ''}
-                    {state?.assignee_id ? ` · ${text.assignee}: ${state.assignee_id}` : ''}
-                    {state?.due_at ? ` · ${text.due}: ${state.due_at.slice(0, 10)}` : ''}
-                  </p>
-                  {state?.decision_comment && <p className="readiness-item__detail">{state.decision_comment}</p>}
-                  {/* السبب من الخادم لا من الواجهة: الزر المعطَّل يقول سببه. */}
-                  {!stage.can_decide && stage.refusal_reason && (
-                    <p className="readiness-item__action">{stage.refusal_reason}</p>
-                  )}
-                  <div className="form-actions">
-                    <button
-                      className="button button--ghost"
-                      type="button"
-                      onClick={() => { setAssignStage(stage); setAssignee(state?.assignee_id ?? ''); setDueDate(state?.due_at?.slice(0, 10) ?? ''); setModalError('') }}
-                    >
-                      {text.assign}
-                    </button>
-                    <button
-                      className="button button--primary"
-                      type="button"
-                      disabled={!stage.can_decide}
-                      title={stage.can_decide ? undefined : stage.refusal_reason ?? undefined}
-                      onClick={() => { setDecisionStage(stage); setDecision('approved'); setComment(''); setModalError('') }}
-                    >
-                      {text.decide}
-                    </button>
-                  </div>
-                </li>
-              )
+        <Modal open title={`${detail.run.content_type} · ${detail.run.content_id}`} description={`${detail.implied_status} · ${detail.run.status}`} onClose={()=> setDetail(null)}>
+          <div className="wf-timeline" aria-label={text.visualTimeline}>
+            {detail.stages.map((s, idx)=> {
+              const st = s.run_stage?.status ?? 'pending'
+              const cls = st==='approved'?'wf-timeline__node--done': st==='rejected'||st==='changes_requested'?'wf-timeline__node--blocked': s.run_stage? 'wf-timeline__node--current':'wf-timeline__node--upcoming'
+              return <div key={s.stage_key} className={`wf-timeline__step ${cls}`}><div className="wf-timeline__dot" aria-hidden>{st==='approved'?'✓': st==='rejected'?'✕':'●'}</div><div><strong>{s.name_ar}</strong><small>{s.run_stage?.assignee_id ?? 'غير مسند'} · {s.run_stage?.due_at?.slice(0,10) ?? 'بدون استحقاق'}</small>{s.instructions_ar && <p className="panel__note">{s.instructions_ar}</p>}</div>{idx < detail.stages.length-1 && <div className="wf-timeline__line" />}</div>
+            })}
+          </div>
+          <div className="panel__body" style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop:12 }}>
+            <Link className="button button--ghost button--small" to={adminPath(detail.run.content_type==='episode'?`episodes/${detail.run.content_id}`:`stories/${detail.run.content_id}`)}>{text.content}</Link>
+            <Link className="button button--ghost button--small" to={adminPath('production')}>{text.productionLink}</Link>
+            <Link className="button button--ghost button--small" to={adminPath('quality')}>{text.qaLink}</Link>
+          </div>
+          <ul className="readiness-list" style={{ marginTop:12 }}>
+            {detail.stages.map(s=>{
+              const st=s.run_stage
+              return <li key={s.stage_key} className="readiness-item">
+                <div className="readiness-item__head"><span className="readiness-item__label">{s.name_ar}</span><span className="readiness-item__owner">{st?.status ?? 'pending'} {s.blocks_publish?'· حاجبة':''}</span></div>
+                <p className="panel__note">{s.depends_on.length? `${text.depends}: ${s.depends_on.join(', ')}`:''} {s.sla_hours? `· SLA ${s.sla_hours}h`:''}</p>
+                <div className="form-actions">
+                  <button className="button button--ghost button--small" onClick={()=>{ setAssignStage(s); setAssignee(st?.assignee_id??''); setDueDate(st?.due_at?.slice(0,10)??'')}}>{text.assign}</button>
+                  <button className="button button--primary button--small" disabled={!s.can_decide} title={s.can_decide?undefined: s.refusal_reason ?? ''} onClick={()=>{ setDecisionStage(s); setDecision('approved'); setComment('')}}>{text.review}</button>
+                </div>
+              </li>
             })}
           </ul>
-
-          <details className="readiness-group">
-            <summary>{text.history}</summary>
-            {detail.history.length ? (
-              <ul className="readiness-list">
-                {detail.history.map((entry) => (
-                  <li key={entry.id} className="readiness-item readiness-item--not_applicable">
-                    <div className="readiness-item__head">
-                      <span className="readiness-item__label">{entry.step} · {entry.decision}</span>
-                      <span className="readiness-item__owner" dir="ltr">
-                        {entry.reviewer_name ?? entry.reviewer_id ?? '—'} · {entry.created_at.slice(0, 16).replace('T', ' ')}
-                      </span>
-                    </div>
-                    {entry.comment && <p className="readiness-item__detail">{entry.comment}</p>}
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="readiness-note">{text.noHistory}</p>}
-          </details>
+          <details className="readiness-group" style={{ marginTop:12 }}><summary>{text.audit}</summary><ul className="readiness-list">{detail.history.slice(0,8).map(h=> <li key={h.id} className="readiness-item"><small>{h.step} · {h.decision} · {h.reviewer_name ?? h.reviewer_id} · {h.created_at.slice(0,16)}</small><p>{h.comment}</p></li>)}</ul></details>
         </Modal>
       )}
 
       {startOpen && (
-        <Modal open title={text.startTitle} description={text.startHint} onClose={() => setStartOpen(false)}>
+        <Modal open title={text.startTitle} description={text.startHint} onClose={()=> setStartOpen(false)}>
           <div className="entity-form">
-            {modalError && <p className="inline-alert inline-alert--error" role="alert">{modalError}</p>}
-            <div className="form-grid">
-              <label className="field">
-                <span>{text.contentType}</span>
-                <input value={startForm.content_type} dir="ltr" onChange={(event) => setStartForm({ ...startForm, content_type: event.target.value })} />
-              </label>
-              <label className="field">
-                <span>{text.contentId}</span>
-                <input value={startForm.content_id} dir="ltr" onChange={(event) => setStartForm({ ...startForm, content_id: event.target.value })} />
-              </label>
-            </div>
-            <label className="field">
-              <span>{text.template}</span>
-              <select value={startForm.template_id} onChange={(event) => setStartForm({ ...startForm, template_id: event.target.value })}>
-                {templates.map((template) => (
-                  <option value={template.id} key={template.id}>
-                    {template.name_ar} ({template.stages.length})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="form-actions">
-              <button className="button button--ghost" type="button" onClick={() => setStartOpen(false)}>{text.cancel}</button>
-              <button className="button button--primary" type="button" disabled={saving || !startForm.content_id.trim()} onClick={() => void startRun()}>
-                {saving ? text.submitting : text.submit}
-              </button>
-            </div>
+            {modalError && <p className="inline-alert inline-alert--error">{modalError}</p>}
+            <div className="form-grid"><label className="field"><span>{text.contentType}</span><select value={startForm.content_type} onChange={(e)=> setStartForm({...startForm, content_type:e.target.value})}><option value="episode">episode</option><option value="story">story</option><option value="islamic">islamic</option></select></label><label className="field"><span>{text.contentId}</span><input dir="ltr" value={startForm.content_id} onChange={(e)=> setStartForm({...startForm, content_id:e.target.value})} /></label></div>
+            <label className="field"><span>{text.templatePick}</span><select value={startForm.template_id} onChange={(e)=> setStartForm({...startForm, template_id:e.target.value})}>{templates.map(t=> <option key={t.id} value={t.id}>{t.name_ar} ({t.stages.length})</option>)}</select></label>
+            <div className="form-actions"><button className="button button--ghost" onClick={()=> setStartOpen(false)}>{text.cancel}</button><button className="button button--primary" disabled={saving||!startForm.content_id.trim()} onClick={()=> void startRun()}>{saving? text.submitting: text.submit}</button></div>
           </div>
         </Modal>
       )}
 
       {decisionStage && (
-        <Modal open title={`${text.decisionTitle} — ${decisionStage.name_ar}`} onClose={() => setDecisionStage(null)}>
+        <Modal open title={text.decisionTitle} onClose={()=> setDecisionStage(null)}>
           <div className="entity-form">
-            {modalError && <p className="inline-alert inline-alert--error" role="alert">{modalError}</p>}
-            <label className="field">
-              <span>{text.decision}</span>
-              <select value={decision} onChange={(event) => setDecision(event.target.value as WorkflowDecision)}>
-                {DECISIONS.map((value) => <option value={value} key={value}>{text.decisions[value]}</option>)}
-              </select>
-            </label>
-            <label className="field">
-              <span>{text.comment}</span>
-              <textarea rows={3} value={comment} onChange={(event) => setComment(event.target.value)} />
-              <small>{text.commentRequired}</small>
-            </label>
-            <div className="form-actions">
-              <button className="button button--ghost" type="button" onClick={() => setDecisionStage(null)}>{text.cancel}</button>
-              <button className="button button--primary" type="button" disabled={saving} onClick={() => void submitDecision()}>
-                {saving ? text.submitting : text.submit}
-              </button>
-            </div>
+            {modalError && <p className="inline-alert inline-alert--error">{modalError}</p>}
+            <label className="field"><span>{text.review}</span><select value={decision} onChange={(e)=> setDecision(e.target.value as any)}>{DECISIONS.map(d=> <option key={d} value={d}>{(text as any)[d] ?? d}</option>)}</select></label>
+            <label className="field"><span>{text.comment}</span><textarea rows={3} value={comment} onChange={(e)=> setComment(e.target.value)} /><small>{text.commentReq}</small></label>
+            <div className="form-actions"><button className="button button--ghost" onClick={()=> setDecisionStage(null)}>{text.cancel}</button><button className="button button--primary" disabled={saving} onClick={()=> void submitDecision()}>{saving? text.submitting: text.submit}</button></div>
           </div>
         </Modal>
       )}
 
       {assignStage && (
-        <Modal open title={`${text.assignTitle} — ${assignStage.name_ar}`} onClose={() => setAssignStage(null)}>
+        <Modal open title={text.assignTitle} onClose={()=> setAssignStage(null)}>
           <div className="entity-form">
-            {modalError && <p className="inline-alert inline-alert--error" role="alert">{modalError}</p>}
-            <div className="form-grid">
-              <label className="field">
-                <span>{text.assignee}</span>
-                <input value={assignee} dir="ltr" onChange={(event) => setAssignee(event.target.value)} />
-              </label>
-              <label className="field date-field">
-                <span>{text.due}</span>
-                <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
-              </label>
-            </div>
-            <div className="form-actions">
-              <button className="button button--ghost" type="button" onClick={() => setAssignStage(null)}>{text.cancel}</button>
-              <button className="button button--primary" type="button" disabled={saving} onClick={() => void submitAssignment()}>
-                {saving ? text.submitting : text.submit}
-              </button>
-            </div>
+            <label className="field"><span>{text.owner}</span><input dir="ltr" value={assignee} onChange={(e)=> setAssignee(e.target.value)} /></label>
+            <label className="field"><span>{text.due}</span><input type="date" value={dueDate} onChange={(e)=> setDueDate(e.target.value)} /></label>
+            <div className="form-actions"><button className="button button--ghost" onClick={()=> setAssignStage(null)}>{text.cancel}</button><button className="button button--primary" disabled={saving} onClick={()=> void submitAssign()}>{saving? text.submitting: text.submit}</button></div>
           </div>
         </Modal>
       )}

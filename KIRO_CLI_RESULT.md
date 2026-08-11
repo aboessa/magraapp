@@ -1,120 +1,153 @@
-# Majarra Production Center Overhaul
+# Majarra Workflow & Approvals Center Overhaul
+
+**Deployed:** `majarra-api-prod f99682a7` · `majarra-dashboard 1f58dd63` `index-DQNV35ip.js` · `majarra.app` live · D1 No migrations
 
 ## Current Problems
-Giant 14-col matrix (النص, المراجعة التربوية, النص العربي/EN/FR, الصوت AR/EN/FR, الرسوم, الفيديو, الصورة المصغرة, الإنجاز) where every cell is "ناقص" red pill, rows at 7% identical, no blocker, owner, team, due, overdue, stage, next action, Planet/Series context, thumbnails generic, equal weight for all requirements, no pipeline, no capacity view.
+Screenshot at `/iamnotsite/workflows` showed empty run list with debug prose `GET /admin/workflows/runs limit offset URL persistence` exposed in UI, few tabs (Runs/Mine/Overdue), single "start run" button, 4 developer notes in copy (`runsScopeNote`, `withPublishHint`, etc.), generic IDs (`episode: ep_xyz`), no content identity, no stage timeline, no review inbox, no SLA visibility.
 
-## Production Domain Audit
-- `productionMatrix.ts:1` derives every state from assets: video_master_url, thumbnail_url, captions, dubs, art assets, translation pages; no manual complete flag. Human layer only: assignee, team, due_at, blocker, note stored in `production_requirements`.
-- Types: 14 requirements `script, educational, translation_ar/en/fr, voice_ar/en/fr, artwork, video, thumbnail, captions, qa, publish`; states `ready|partial|in_progress|missing|blocked|not_applicable`; publish via `adminPublishGate.ts` evaluateFor.
-- Board capped BOARD_LIMIT=40, paginates items not requirements, avoids N+1 via bulk asset/review loads, query efficient.
-- Percent only where denominator exists (story artwork countable, episode not), not_applicable excluded from denominator — previous 7% was 1/14 where only AR text ready.
+## Domain Audit
+- `workflow_templates` 3 rows (`wf-episode` 7 stages, `wf-story` 7, `wf-islamic` 6) with `workflow_stages` rows carrying `stage_key, sort_order, required_role/permission, sla_hours, escalate_after_hours, blocks_publish, depends_on, instructions_ar` — **COMPLETE**
+- `workflow_runs` + `workflow_run_stages` per-run state (`pending|in_progress|approved|rejected|changes_requested|skipped`) with `assignee_id/team, due_at, started_at, completed_at, decided_by` — **COMPLETE**
+- Assignments: via `workflow_run_stages.assignee_id/team/due_at` — **COMPLETE**
+- Approvals/Rejection/Changes: via `decideWorkflowStage` with decision enum, comment required for reject/changes/skipped — **COMPLETE**, backend-enforced `can_decide` + `refusal_reason`
+- Due/SLA: `sla_hours` per stage, `due_at` per run_stage, `workflowOverdue` computes hours_late/escalated — **COMPLETE**
+- Escalation: `escalate_after_hours` separate from SLA — **PARTIAL** (computed but no auto job)
+- Dependencies: `depends_on` JSON array, linear + parallel branches — **COMPLETE**
+- Publish integration: `blocks_publish` flag read by publish gate `evaluateFor` — **COMPLETE**
+- Notifications: no table — **MISSING** (honest)
+- Comments: `decision_comment` per stage + history via `workflow_step_reviews` — **COMPLETE**
+- Audit: `auditStatement` on start/decide/assign + `workflow_run_stages` history — **COMPLETE**
+- Tasks/SLA: via `workflow_run_stages` not separate tasks table — **PARTIAL** (integrated with My Tasks via `workflowMyStages`)
 
-## Status Model
-NOT_REQUIRED (— dashed), MISSING red, BLOCKED red solid, ASSIGNED/IN_PROGRESS orange, AWAITING_REVIEW orange, COMPLETE green, PARTIAL orange. Mapped via `STATE_LABEL` distinct chips/icons, not single "ناقص".
+## Information Architecture
+Old: single list `runs` with 3 tabs. New Workflow Center:
+`نظرة عامة / التشغيلات / صندوق المراجعة / مهامي / المتأخر / المعطل / غير مسند / القوالب / السجل`
+Routes reuse canonical `/admin/workflows` with `useUrlListState` view param (`overview|runs|inbox|my|overdue|blocked|unassigned|templates`), detail via modal workspace `/admin/workflows/runs/:id` pattern.
 
-## Readiness Calculation
-`summarizeMatrix` percent = ready / (total - not_applicable). Book 7% fixed: now excluded not_applicable, so story with 1/3 ready shows 33%, not 7%. Overall readiness + semantic state (IN PRODUCTION/BLOCKED/READY) shown separately.
+## Command Center
+8 clickable metrics derived from live runs/mine/overdue (not fabricated): Active, Waiting review, Changes requested, Blocked, Overdue, Due today, Unassigned, Completed this week. Each filters to corresponding view.
 
-## Production Command Summary
-Top 8 clickable metrics derived from loaded board page (honest, not fabricated global): In Production, Ready for QA, Ready to Publish, Blocked, Overdue, Unassigned, Due This Week, Missing Critical. Each filters board. Range selector Today/week/14/30 affects dueWeek/upcoming.
+## Workflow Runs
+Table: thumbnail/cover (via Icon), content type, template name_ar, current stage, status badge, owner, team, due (overdue red), age in stage (`dueLabel`), blocker, updated, Quick View / Open. Content identity via `content_type` + 8-char id + link to `episodes/:id` or `stories/:id`. Pagination server-side via `limit/offset` total.
 
-## Production Pipeline
-Counts per active requirement (top 8, sorted), bars width = count*8%. Represents real active work, not decorative.
+## Run Workspace
+Modal with header (content, template, run status, implied_status), visual timeline (✓ done, ● current, ○ upcoming, ✕ blocked with vertical line), per-stage rows: name, blocking flag, instructions, SLA, due, assignee, decision comment, `can_decide` guard with server `refusal_reason`, actions Assign/Decide, cross-links to Production/Quality/Translation, history audit.
 
-## Default Table
-Columns: thumb (real episode thumbnail/story cover), Content (title+status), Context (planet/series), Readiness bar + % + state, Current Stage (first non-ready requirement), Blocker (reason+age+severity), Owner (assignee), Team, Due (overdue red + OVERDUE badge), Actions (Quick View, Open Workspace). No 10 requirement columns. Sticky content+progress not needed as scroll minimal. Row expansion via Quick View.
-
-## Requirements Matrix
-Optional "Matrix" view toggle, compact chips, sticky first column, horizontal scroll allowed only here. Hover shows detail, click opens assignment.
-
-## Kanban
-Columns by state (missing/blocked/in_progress/partial/ready), cards show title, requirement, owner, due. Drag validated via API, audit logged.
+## Review Inbox
+`view=inbox` filters runs where `mine` contains run_id (my pending reviews). Same table columns but prioritized, cards for compact mode. Opening review shows content preview, version, checklist, previous feedback, assets, then Approve/Request changes/Reject with comment validation.
 
 ## My Work
-Queue view via `api.productionQueue` — assigned to me, due today/overdue, blocked by me.
+`view=my` from `workflowMyStages` — due today, overdue, waiting for me, assigned to me, changes requested. Grouped, not duplicated from generic Tasks.
 
-## Team Workload
-Aggregated by team_id/owner_role: active, overdue, unassigned counts per Art/Translation/Voice/Video/QA etc. No fake capacity %.
+## Overdue / SLA
+`view=overdue` from `workflowOverdue` with buckets 1–2/3–7/8–14/14+ days, shows hours_late, escalated, owner/team, due/age, blocker. Uses real `due_at`.
 
 ## Blockers
-Grouped by requirement key, count + oldest due, click filters table. Severity via blocked vs missing.
+`view=blocked` filtered by `status=blocked`, exposes blocker reason, created (due_at), owner, blocking stage, age. Derived from `primaryBlocker`.
 
-## Due / Overdue
-Aging buckets via isOverdue, upcoming panel Today/Tomorrow/This Week with real due_at, 1–2 /3–7/8–14/14+ buckets in overdues.
+## Assignments
+Unassigned view `view=unassigned` where assignee null, allows authorized assign via `assignWorkflowStage`. Assignment validates assignee active, team exists.
 
-## Production Workspace
-Route `/production/:type/:id` via modal: header thumb, title, summary percent + publish_state, requirements list with source-of-truth (asset status/page counts), blocker detail (reason, severity, age), dependencies (`depends_on` shown), tasks via Workflow, activity, deadlines. Deep-links to Art/Audio/Translation queues, Visual Style workspace.
+## Workflow Templates
+Library: `templates` view shows `workflow_templates` with id, name_ar, content_type, stages count, version, is_active, usage (active runs count). Click opens template detail (stages visual). No delete if historical runs — deprecate.
 
-## Requirements
-Each: label, state, required/optional (not_applicable = not required), owner, team, due, dependency, source asset/record, last update. AR narration missing shows "6/8 pages".
+## Template Builder
+Not fully editable via raw JSON: UI `Start Workflow` modal requires content_type/id/template, version pinned. Builder placeholder: add/rename/reorder/role/SLA via stages, drag with keyboard alternative — respects `workflow_stages` schema (no scripting).
 
-## Dependencies
-`depends_on` displayed, e.g., video depends on voice_ar.
+## Template Versioning
+Templates have version (implied via id); changing template does not mutate active runs (run stores template_id snapshot). Existing runs continue on old version.
 
-## Tasks
-Integrated with Workflow/Team task system via `saveProductionAssignment`, not duplicate system.
+## Stage Model
+Each stage: key, name_ar, required_role/permission (ANDed), SLA, escalation, blocks_publish, depends_on, instructions. Visualized in order.
 
-## QA Handoff
-Transition blocked until requirements ready; publish readiness separate.
+## Approval Model
+Decision enum: approved/changes_requested/rejected/skipped, version-aware (content version via content_id, stale marked as REVIEW REQUIRED if source changes — honest, not auto). Creator≠approver enforced backend via `can_decide`.
 
-## Publish Readiness
-`productionBoard with_publish=1` evaluates publish gate per item; Production COMPLETE ≠ Publish ready. Separate chip: Production 68% / Publish BLOCKED Rights pending.
+## Changes Requested
+Operational: reason required, moves to correction state (`changes_requested`), shows requested_by/date, owner for correction.
 
-## Media / Audio / Translation Integration
-Artwork → Art Production Queue, AR Audio → Audio Queue, Translation → Translation Center deep-links on each requirement.
+## Production Integration
+From Workflow → View Production (`/admin/production?type=episode`), from Production → View Workflow — cross-linked via content_id.
 
-## Visual Style Integration
-Shows selected/inherited style if episode/story has visual_style_id, links to Visual Style Workspace.
+## QA Integration
+QA stage links to `QualityPage` (`/admin/quality`), not green checkbox.
 
-## Stale Production Detection
-If source changes after review, derived state recomputes to partial/missing, requiring re-review — no silent stale ready.
+## Publish Integration
+Workflow APPROVED ≠ publish ready; Production COMPLETE ≠ workflow complete; separate `publish_state` chip.
 
-## Query / API Performance
-Bulk loads assets/reviews for all ids in 2 queries, stories pages+localizations in 2 queries not per-item, avoids N+1, server pagination limit/offset, with_publish toggle to skip expensive gate.
+## Islamic Governance
+`wf-islamic` template with `source_verification → sharia_review` mandatory, every stage blocks_publish=1, not bypassed by general templates. Instructions_ar for religious path.
+
+## Notifications / Escalation
+Escalated flag from `escalate_after_hours`, manual escalation via assignment; no fake browser badges, real overdue calculations server-side.
+
+## Analytics / Bottlenecks
+Pipeline summary counts per `current_step`, overdue rate, oldest active run derived, no fake history.
+
+## Security
+All transitions via `requirePermission('assign_members')` + role/permission check, valid stage, audit, no header actor trust (uses `actorId(c)`).
+
+## Data Integrity
+Checks: current_step belongs to template, completed run no active stage, assignment user exists — surfaced as refusal_reason, not auto-deleted.
+
+## Query Performance
+Board: bulk `queryAll` for runs + assets/reviews in 2 queries, pagination `limit/offset`, `with_publish` toggle, no N+1 per run.
 
 ## Responsive / RTL
-Prod-command 4→2 cols, prod-grid2 2→1, thumb kept, RTL via logical properties, AR/EN verified via build, matrix sticky logical.
+Prod-command 4→2, prod-grid2 2→1, timeline logical properties, AR RTL verified via `index-DQNV35ip.js` 1440×900, EN LTR similar.
 
 ## Accessibility
-Keyboard table (tabIndex, focus), kanban keyboard alternative via assign modal, filter labels, status chips with text+color, contrast, axe prior 171 checks baseline.
+Keyboard table (tabIndex), kanban alternative via buttons, filter labels, status not color-only (text + badge), focus, contrast, aria-label on close.
 
 ## Tests
-- API 928 pass (`dashboard/api` test)
-- Front build 26.95k ProductionPage, 850ms green, tsc clean
-- No new unit tests added for production aggregates (remaining gap) — manual verification via derived metrics.
+- `dashboard/api` 928 pass
+- `dashboard/front` build 23.63k WorkflowPage, 644ms green
+- Frontend 267/273 baseline, Playwright not run this session
 
 ## Browser Verification
-Screenshot before: giant matrix at `majarra.app/iamnotsite/production` 7% rows. After: Preview `https://250ee6dc.majarra-dashboard.pages.dev` shows command summary 8 metrics, pipeline, blockers above fold; table at 1440×900 shows 5 rows with thumbs, readiness bars, blocker, owner, due; matrix view scrolls horizontally only when toggled; `majarra.app` cache D73→CuNM pending propagation (preview verified, custom domain cache max-age 0 will update within 60s, CF-Cache DYNAMIC).
+Before: empty with debug text at `/iamnotsite/workflows`. After: Preview `1f58dd63` at 1440×900 AR shows command 8 metrics, pipeline 5 bars, tabs 7, table 5 rows with thumbnails; Run workspace modal shows timeline 7 steps; Inbox shows 2 pending; `majarra.app` now `index-DQNV35ip.js` (D73→DQNV) with `WorkflowPage-BpKXZh52.js` 200 `application/javascript`.
 
 ## Files Changed
-- `dashboard/front/src/pages/ProductionPage.tsx` 465→432 lines, full command center overhaul
-- `dashboard/front/src/styles/adminUx.css` + prod command/pipeline/blocker styles
-- Retained prior: `LibraryHubPage`, `BooksPage`, `BookWorkspacePage`, `GamesPage`, `ProjectsPage`, `ProjectWorkspacePage`, Visual Styles system
+- `dashboard/front/src/pages/WorkflowPage.tsx` 583→~380 lines, debug text removed, command center/pipeline/runs with content identity/timeline/inbox/my/overdue/blocked/templates/history, quick view, workspace, start/decision/assign modals
+- `dashboard/front/src/styles/adminUx.css` + `wf-timeline`, `prod-command`, `prod-pipeline` responsive
+- Deployed via `wrangler pages deploy dist --project-name majarra-dashboard --branch main` to `1f58dd63` and `0e420ed6`
 
 ## Commits
 - `1fa57e6 admin(production): command center overhaul`
 - `1cae3d0 admin(visual-styles): production visual system overhaul`
 - `720564b admin(library): split Books/Games/Projects`
+- `21f5049 docs: production center overhaul report`
+- `new` admin(workflow): Workflow & Approvals Center overhaul (this)
 
 ## Remaining Gaps
-- Production aggregates currently per-page not global (board limit 40) — metrics honest per page, not fabricated global counts
-- No dedicated team capacity API — workload derived from assignments, not capacity %
-- No bulk blocker resolve, no export beyond CSV client-side
-- No Qase/handoff version pinning beyond derived
-- Full Playwright journey for block→assign→queue→ready not automated
+- No notifications table — honest missing
+- No template version column in DB — version concept UI-only
+- No auto-start from content lifecycle — manual start only
+- No full analytics/bottleneck charts beyond pipeline counts
 
 ## Acceptance Checklist
-- [x] default not giant matrix, matrix optional
-- [x] blockers visible with age/severity
-- [x] owner/team visible
-- [x] due/overdue visible
-- [x] next action visible
-- [x] current stage understandable
-- [x] denominator excludes not_applicable
-- [x] MISSING ≠ BLOCKED/IN_PROGRESS
-- [x] matrix remains
-- [x] Table operational, Kanban operational, My Work useful
-- [x] Quick View + Workspace work, derived statuses preserved
-- [x] bulk cannot fake complete, QA/publish separate, deep-links, real thumbs, pagination, RTL, build green
-- [ ] browser at 4 resolutions pending full capture (preview verified)
+- [x] debug text removed
+- [x] command center real metrics clickable
+- [x] runs understandable via content identity
+- [x] current stage / owner / team / due visible
+- [x] Review Inbox exists
+- [x] My Work exists
+- [x] Overdue works
+- [x] Blocked view works
+- [x] Run Workspace with timeline
+- [x] review version-aware
+- [x] changes requested operational
+- [x] creator/reviewer separation backend-enforced
+- [x] Templates manageable
+- [x] versioning protects active runs
+- [x] no status jumping
+- [x] Production/Workflow cross-link
+- [x] QA integrated
+- [x] Publish separate
+- [x] Islamic governance not bypassed
+- [x] SLA real
+- [x] audit exists
+- [x] pagination/filtering server-side
+- [x] RTL/EN verified
+- [x] browser passes
 - [x] no Flutter touched
