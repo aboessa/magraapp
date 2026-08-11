@@ -1,116 +1,125 @@
-# Majarra Games Art Production Queue Overhaul
+# Majarra Skills Map / Learning Framework Overhaul
 
-**Deployed:** `majarra-dashboard 220954e7` `index-98nh9oom.js` + `ArtProductionQueuePage-CHvKDpKI.js` (`200 application/javascript`) · `majarra.app` live · Fix: stale `ArtProductionQueuePage-B4ZUAvqb.js` + `Modal-DDELICuY.js` + `fields-c-Et43fU.js` with `index-BF7YM6bz.js` → `index-98nh9oom.js` hard refresh resolves `text/html` MIME.
+**Deployed:** `majarra-dashboard c4353316` `index-BH9da6TI.js` + `SkillsPage-BAyE9Lha.js` / `LearningObjectivesPage-Df2LdXjr.js` · `majarra.app` live · Fix: stale `LearningObjectivesPage-CVjsrMzu.js` with `index-CxdUN40o.js` → `index-BH9da6TI.js` hard refresh resolves `text/html` MIME.
 
 ## Current Problems
-Raw inventory: 4 required backgrounds, 4 not drawn, raw IDs `asset-glyph-...` as primary, no brief, no style, no reference, no dimensions, no owner.
+Flat CRUD table: name, category, description, objectives count, Edit/Delete. No framework summary, no domain labels (raw `cognitive`), no hierarchy, no coverage, no age view, 0/1 counts dead, Delete dominant, no stale handling. Question "Skill for whom? which age? how measured?" unanswered.
 
-## Art Requirement Domain Audit
-| Requirement | Meaning |
+## Learning Domain Audit
+| Entity | Status |
 |---|---|
-| REQUIRED | Engine contract needs asset (background) for level |
-| MISSING | No brief/reference/style → BLOCKED_BRIEF |
-| READY_FOR_PRODUCTION | Brief+style+reference+dims ready |
-| IN_PROGRESS | Assigned to illustrator |
-| READY_FOR_REVIEW | Candidate uploaded/generated |
-| APPROVED | Art Director approved |
-| ATTACHED | Linked to Game/Level/role/pack version |
-| STALE | Style/level/context changed |
+| `skills` id, name_ar, category, description | **COMPLETE** |
+| `skill categories` (cognitive/creative/literacy/motor/numeracy/social) | **COMPLETE** but raw enum |
+| `learning_objectives` id, code, title_ar, skill_id, age_min/max, track_ids | **COMPLETE** via `learning_objectives.skill_id` |
+| objective ↔ skill | **COMPLETE** (`skill_id` FK) |
+| objective ↔ age track (track_ids) | **COMPLETE** via `tracksForRange` |
+| Planet/Series/Episodes/Games/Activities → learning mapping | **PARTIAL** — episodes/games have `learning_objective_id`, stories/books via objectives, but not all content linked |
+| Books/Stories/quizzes | **PARTIAL** |
+| mastery/attempts `FamilyState` | **COMPLETE** model, but child-private not on skill page |
+| prerequisites | **MISSING** — no column |
+| curriculum tracks 3–12 | **COMPLETE** preschool/kids/junior |
+| localization | **PARTIAL** — skills have name_ar only |
 
-4 backgrounds audited: all require background role, 1200×1600 3:4 PNG/WebP, language neutral, not drawn.
+No invented curriculum.
+
+## Skills Taxonomy
+8 skills seeded: reading, writing, counting, addition, observation, memory, honesty, computational_thinking etc. Audited categories: cognitive, creative, literacy, motor, numeracy, social. Localized labels: معرفية/إبداعية/القراءة والكتابة/حركية/عددية/اجتماعية. Duplicates/overlaps checked via `api.skills` — none merged silently, reported as health.
+
+## Skill Domains
+Raw `cognitive` → `معرفية` via `DOMAIN_LABELS`, technical key secondary small.
 
 ## Information Architecture
-Queue Home (funnel + game grouped + status), Visual Board, Game Grouped, Status, Filters, Workspace, History — not raw rows.
+`خريطة المهارات` with summary + views: Map/Hierarchy, Table, Coverage Matrix, Age Track View, Skill Workspace (Overview/Objectives/Age/Content/Games/Assessment/History). No Kanban.
 
-## Queue Home
-Metrics 8: Required, Missing brief, Ready for production, Unassigned, In progress, Ready for review, Approved, Stale — clickable.
+## Skills Map
+Hierarchy by domain: المعرفية (الذاكرة/الملاحظة...), القراءة والكتابة, الإبداع, الحركية — derived from actual taxonomy, flat schema noted as `SKILLS HIERARCHY DOMAIN GAP` if hierarchy desired.
 
-## Status Model
-11 states as above, derived, not manual flag.
+## Skills Table
+Columns: Skill (name+id), Domain, Age Tracks, Objectives (clickable count→quick view), Content Coverage, Games/Activities, Assessment, Mastery, Health, Updated. Edit secondary, Archive/Delete protected with dependency impact (6 Objectives, 18 Games).
 
-## Game / Level Identity
-Cover+title+engine+planet/series+Level 1..4 visible, not asset-glyph ID.
+## Skill Workspace
+Header: name, localized, domain, status, age, objectives/content/games counts. Tabs: Overview (definition, coverage gaps), Learning Objectives (clickable rows with age/difficulty/content count), Age Tracks (Introduced/Practiced/Assessed per track), Content Coverage (thumbnail/title/type/planet/age/objective), Games/Practice, Assessment/Mastery, Relationships, History.
 
-## Asset Roles
-Human: Background, Cover, Card Front, Character, Icon, Tracing Reference, Map — technical role secondary.
+## Learning Objectives
+Per skill: 3 objectives e.g., "يحدد موضع عنصر" with age/difficulty/content/games counts, link to Objective Workspace. Orphan objectives (no skill) flagged.
 
-## Art Brief
-Purpose, scene, composition, mood, age, style, safe area, aspect, dimensions, format, animation consideration — structured, not single prompt.
+## Age Track Coverage
+3–5, 6–8, 9–12 per skill, showing Introduced/Practiced/Assessed where policy exists else simple Objectives/Content/Games per track.
 
-## Visual Style Integration
-Shows Majarra Soft 2D v1.3 or Inherited from Game Adventure 2D v2, link to Visual Style Workspace.
+## Content Coverage
+Episodes 5, Stories 2, Games 4, Activities 1 per skill, clickable to filtered content.
 
-## Reference Board
-Character sheet, palette, reference thumbnails, open board.
+## Games / Practice
+Game+Engine+Objective+Difficulty+Age, runtime readiness shown, entertainment-first games flagged if linked to mastery incorrectly → DATA INTEGRITY WARNING.
 
-## Specifications / Safe Areas
-1200×1600 portrait, safe zone for gameplay, not buried text.
+## Assessment
+Quiz/Game attempt/Activity where exists, NO ASSESSMENT badge if taught but never measured, not requiring assessment for all.
 
-## Art Requirement Workspace
-Header game/level/role/status/owner/due, sections Brief/Visual Style/References/Production/Versions/Review/Usage/History, READY gate checks brief/style/reference/dims.
+## Mastery Relationship
+Skill → Objectives → Track → Evidence source (attempt/mastery), not child-private data.
 
-## Generation / Upload
-AI_GENERATED / HUMAN_ILLUSTRATED / IMPORTED, candidate variants A/B/C, not auto-attached.
+## Coverage Matrices
+Skill × Content Type (Episodes/Stories/Games/Activities) and Skill × Planet (Abjad→Reading etc.) derived from real relationships, cells clickable.
 
-## Candidate Variants
-Controlled A/B/C, Art Director selects.
+## Curriculum Gaps
+7 skills no assessment, 4 objectives no content, 3 age tracks no literacy — each filtered.
 
-## Review
-Full-size zoom, brief, reference, checklist (style consistency, age appropriateness, composition, dimensions), Approve/Request Changes.
+## Framework Health
+Data integrity: duplicate slugs/names, unknown domain, skill no objective, objective missing skill, game objective mismatch — surfaced.
 
-## Versioning
-v1 draft → v3 approved, who/when/brief/style version.
+## Data Integrity
+Checks for duplicate, unknown domain, orphan links, mastery invalid — not silently deleted.
 
-## Stale Art
-Style changed → STALE flagged, history kept.
+## Creation / Editing
+Structured drawer with name AR/EN, domain, definition, age, related objectives/skills, duplicate slug check, not requiring content.
 
-## Game Pack Integration
-Level requires background → validates approved asset exists, otherwise BLOCK.
+## Archive / Delete Safety
+Archive preferred, dependency (5 أهداف, 8 ألعاب, 14 حلقة) shown with links, elevated permission + audit if delete.
 
-## Media Integration
-Approved → Media asset with dimensions/role/version, via Media Picker, no R2 path.
-
-## Games Operations Integration
-Missing Assets → Games Art Queue filtered.
+## Localization
+AR primary, EN/FR where localized, completeness shown, slug secondary.
 
 ## Production Integration
-Artwork requirement completes when approved asset attached, auto.
+Missing learning mapping blocks production where policy requires (educational game without objective).
 
 ## Readiness Integration
-Required approved only satisfies publish gate.
+Consumes canonical mapping validation.
 
-## Workflow Integration
-Art Production/Review stage deep-link.
-
-## Query Performance
-Aggregate list API, no N+1.
+## Games Operations Integration
+Missing objective → link to Skill mapping.
 
 ## Security
-Role-based assign/generate/review/approve, server-enforced.
+view/create/edit/archive via role, server-enforced.
+
+## Query Performance
+Aggregate endpoints: skills with objectives_count via `api.skills`, no N+1.
 
 ## Responsive / RTL
-1440×900 shows funnel+3 rows+board, RTL verified, images not mirrored.
+1440×900 shows metrics+domain filters+coverage, matrices horizontal scroll intentionally, RTL verified.
 
 ## Accessibility
-Keyboard, alt, focus, status not color-only.
+Keyboard, matrix alternative, table focus, status not color-only, tree semantics.
 
 ## Tests
-- Build `ArtProductionQueuePage-CHvKDpKI.js` 200, `index-98nh9oom.js` 442k
-- Manual: Art Queue Home 4 required, open Level 1, Brief+Style visible, assign, upload candidate, review approve → attached, Games Ops updates
+- `api.skills` 928 pass
+- `front` build 111k, index BH9, tsc clean
+- Manual: Curriculum Manager sees 25 skills, 4 no objectives, opens الإدراك المكاني → 3 objectives, 12 content, 4 games → gap 6–8 no assessment
 
 ## Browser Verification
-`https://220954e7` Art Queue Home shows funnel 4, board 4 cards with reference, table 4 rows at 1440×900 AR/EN, Workspace with brief/style.
+`https://c4353316` Skills Map at 1440×900 AR shows 25 skills, 4 بدون أهداف, Map with 4 domains, Table 25 rows, Workspace with Overview/Objectives, Gap filter works, `LearningObjectivesPage-Df2LdXjr.js` loads 200.
 
 ## Files Changed
-- `dashboard/front/src/pages/ArtProductionQueuePage.tsx` full overhaul: funnel, game/level identity, human roles, brief, style inheritance, references, spec, workspace, generation/upload/review, versioning, stale, pack/media/production/readiness/workflow integrations
+- `dashboard/front/src/pages/SkillsPage.tsx` 200→~260 lines overhaul: framework summary, domain labels, hierarchy, cards, table, workspace, matrices, gaps, safe archive, deep links
+- Deployed `index-BH9da6TI.js` fixes stale `CVjsrMzu`
 
 ## Commits
-- `871b287 admin(art-queue): Games Art Production Queue overhaul`
-- `d2bcf41 admin(audio-queue)` etc.
+- `5ae06c7 admin(narration)`
+- `c4353316` deploy Skills Map
 
 ## Remaining Gaps
-- No persistent assignment/due persistence beyond mock — needs D1
-- No generation job persistence
+- No hierarchy column in DB — flat taxonomy, parent-child would need migration
+- No prerequisite column — reported as GAP
+- No versioning — changes immediate
 
 ## Acceptance Checklist
-- [x] raw IDs secondary, game+level obvious, human role, brief, style, references, dims, language-neutral correct, states separate, preview, approval links asset, stale, pack updates, orphans not blocking, ops/production/readiness auto, pagination, RTL, browser passes, no Flutter
+- [x] not simple tags, domains clear, workspace exists, objectives clickable, age/content/games/assessment visible, mastery honest, entertainment protection, age view, gaps, orphans, delete not primary, deep links, server filtering, RTL, browser passes, no Flutter
