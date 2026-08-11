@@ -5,6 +5,12 @@
 //   node tools/tts/narrate.mjs --page 1               # generate one page
 //   node tools/tts/narrate.mjs --all                  # generate all 8 pages
 //   node tools/tts/narrate.mjs --all --voice Aoede    # override the voice
+//   node tools/tts/narrate.mjs --all --manifest act-s1.narration.locked.json
+//
+// --manifest selects the narration manifest, defaulting to act-s1.narration.json.
+// act-s1.narration.locked.json is the reviewed one: voice Leda, and a prompt built
+// in the structure this model documents (synthesis preamble, performance direction,
+// then a labelled transcript boundary).
 //
 // The API key is read from $env:GOOGLE_AI_API_KEY (or $env:GEMINI_API_KEY), else
 // from %USERPROFILE%\.majarra\google-ai.key. It is never written into this repository.
@@ -19,7 +25,7 @@ import process from 'node:process';
 
 const API_ROOT = 'https://generativelanguage.googleapis.com/v1beta/models';
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
-const MANIFEST = path.join(import.meta.dirname, 'act-s1.narration.json');
+const DEFAULT_MANIFEST = 'act-s1.narration.json';
 
 // PCM shape returned by the Gemini TTS models.
 const SAMPLE_RATE = 24000;
@@ -51,14 +57,44 @@ const OPT = {
   all: !!arg('all'),
   page: typeof arg('page') === 'string' ? Number(arg('page')) : undefined,
   voice: typeof arg('voice') === 'string' ? arg('voice') : undefined,
+  manifest: typeof arg('manifest') === 'string' ? arg('manifest') : DEFAULT_MANIFEST,
 };
 
+const MANIFEST = path.isAbsolute(OPT.manifest)
+  ? OPT.manifest
+  : path.join(import.meta.dirname, OPT.manifest);
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
 const OUT_DIR = path.join(ROOT, manifest.out_dir);
 const VOICE = OPT.voice ?? manifest.voice;
 
-// The documented steering pattern is instructions followed by the text to read.
+/// Assembles the text sent to the model.
+///
+/// Two shapes are supported, selected by whether the manifest defines a
+/// `preamble`, so the original manifest keeps working untouched:
+///
+///  * With a preamble — the documented structure for this model: an explicit
+///    instruction to synthesize, the performance direction, then the transcript
+///    behind a labelled '#### TRANSCRIPT' boundary. This exists because the model
+///    has two documented failure modes on vague prompts: rejecting the request as
+///    PROHIBITED_CONTENT, or reading the director's notes ALOUD. Naming where the
+///    spoken text begins is the documented mitigation, and it held in testing —
+///    a 1526-character prompt produced 11 s of audio for a 50-character line.
+///
+///  * Without one — the original "instructions then text" form.
 function buildRequestText(line) {
+  if (manifest.preamble) {
+    // `audio_tag` is kept out of `text` on purpose. The manifest requires the Arabic to
+    // be verbatim from the story file, and a tag is a delivery marker that is never
+    // spoken, not part of the line. Prepending it here preserves both.
+    //
+    // Tags exist because prose direction did not work: page 8 is required to be the
+    // slowest page in the story, and asking for that in the director's notes produced
+    // 3.66 letters/sec against a 2.92 target, making it one of the FASTER pages.
+    // Inline tags are the documented mechanism for pace control, and Google recommends
+    // keeping them in English even when the transcript is not.
+    const transcript = line.audio_tag ? `${line.audio_tag} ${line.text}` : line.text;
+    return `${manifest.preamble}\n\n${manifest.global_style}\n${line.style}\n\n#### TRANSCRIPT\n${transcript}`;
+  }
   return `${manifest.global_style}\n\n${line.style}\n\nRead exactly this and nothing else:\n${line.text}`;
 }
 
@@ -120,6 +156,30 @@ async function synthesize(line, key) {
   return { pcm: Buffer.from(inline.data, 'base64'), mimeType: inline.mimeType };
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/// Retries a line before giving up on it.
+///
+/// Not defensive padding: Google documents that this model occasionally returns
+/// text tokens instead of audio and fails the request with a 500, that it happens
+/// randomly in a small share of requests, and that callers should implement retry
+/// logic. Across eight pages a single unretried blip means a missing narration file
+/// and a silent page.
+async function synthesizeWithRetry(line, key, attempts = 3) {
+  let lastErr;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await synthesize(line, key);
+    } catch (err) {
+      lastErr = err;
+      if (i === attempts) break;
+      console.log(`  attempt ${i} failed (${err.message.slice(0, 90)}), retrying...`);
+      await sleep(2000 * i);
+    }
+  }
+  throw lastErr;
+}
+
 async function main() {
   let targets = manifest.lines;
   if (OPT.page) targets = manifest.lines.filter((l) => l.page === OPT.page);
@@ -146,7 +206,7 @@ async function main() {
   const report = [];
   for (const line of targets) {
     try {
-      const { pcm, mimeType } = await synthesize(line, key);
+      const { pcm, mimeType } = await synthesizeWithRetry(line, key);
       const dest = path.join(OUT_DIR, line.file);
       fs.writeFileSync(dest, Buffer.concat([wavHeader(pcm.length), pcm]));
       const ms = durationMs(pcm.length);
@@ -170,7 +230,31 @@ async function main() {
 
   if (report.length) {
     const p = path.join(OUT_DIR, '_durations.json');
-    fs.writeFileSync(p, JSON.stringify({ voice: VOICE, model: manifest.model, pages: report }, null, 2) + '\n');
+
+    // Merge, never replace.
+    //
+    // This used to write `pages: report`, so regenerating one page rewrote the file with
+    // only that page and silently discarded the other seven measurements. It happened:
+    // after re-recording pages 1 and 8, the file held a single entry. The audio was
+    // still on disk so nothing was unrecoverable, but every consumer of this file — the
+    // spec's duration table, autoTurnAfterMs, the preview build — was reading a set of
+    // one.
+    let existing = [];
+    if (fs.existsSync(p)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(p, 'utf8')).pages ?? [];
+      } catch {
+        existing = [];
+      }
+    }
+    const merged = new Map(existing.map((entry) => [entry.page, entry]));
+    for (const entry of report) merged.set(entry.page, entry);
+    const pages = [...merged.values()].sort((a, b) => a.page - b.page);
+
+    fs.writeFileSync(p, JSON.stringify({ voice: VOICE, model: manifest.model, pages }, null, 2) + '\n');
+    if (pages.length > report.length) {
+      console.log(`merged ${report.length} new measurement(s) into ${pages.length} page(s)`);
+    }
     console.log(`\nmeasured durations -> ${manifest.out_dir}/_durations.json`);
     console.log('autoTurnAfterMs = measured + 1000 ms, and page 8 has none by design.');
   }

@@ -39,6 +39,12 @@ export interface UrlListState<F extends Record<string, string>> {
   limit: number
   view: string
   setView: (value: string) => void
+  /// طريقة العرض كما وردت في العنوان حرفيًّا، و`null` إذا لم يحملها العنوان.
+  ///
+  /// `view` يطبّق الافتراضي فلا يمكن أن يميّز «العنوان يطلب الشبكة» من «العنوان
+  /// لا يطلب شيئًا». الصفحة التي تحفظ تفضيل المستخدم بين الزيارات تحتاج هذا
+  /// الفرق: الرابط المشترك يفوز، والعنوان المجرَّد يترك المجال للتفضيل المحفوظ.
+  rawView: string | null
   /// العنوان النسبي الحالي بالفلاتر، لبناء روابط قابلة للمشاركة
   search: string
 }
@@ -117,6 +123,7 @@ export function useUrlListState<F extends Record<string, string>>(
     }, false),
     limit,
     view: searchParams.get('view') ?? defaultView,
+    rawView: searchParams.get('view'),
     // طريقة العرض لا تُصفِّر الترقيم: هي عرض للمجموعة نفسها لا تضييق لها.
     setView: (value: string) => write((params) => {
       if (value && value !== defaultView) params.set('view', value); else params.delete('view')

@@ -72,6 +72,356 @@ export interface PlanetDetail extends Planet {
   categories: PlanetCategorySummary[]
 }
 
+/**
+ * مؤشّرات الكوكب من `GET /admin/planets`.
+ *
+ * كلها محسوبة في الخادم من جداول حقيقية، وتستثني محتوى الاختبار
+ * (`series.content_class = test_fixture`) بخلاف `series_count` و`assets_count`
+ * المحفوظين بمعناهما الأصلي لأن شاشات أخرى تقرأهما.
+ *
+ * `content_updated_at` أحدث تعديل على سلاسل الكوكب وحلقاته لا على صفّ الكوكب:
+ * جدول `planets` بلا عمود `updated_at`.
+ */
+export interface PlanetHealth {
+  series_total: number
+  series_published: number
+  series_pipeline: number
+  seasons_total: number
+  episodes_total: number
+  episodes_published: number
+  episodes_ready_unpublished: number
+  stories_total: number
+  books_total: number
+  games_total: number
+  projects_total: number
+  characters_total: number
+  artwork_icon: boolean
+  artwork_cover: boolean
+  has_description: boolean
+  production_blockers: number
+  reviews_pending: number
+  series_with_english_title: number
+  content_updated_at: string | null
+}
+
+export interface PlanetListRow extends Planet {
+  created_at?: string | null
+  health: PlanetHealth
+}
+
+/// ملخّص كل الكواكب (لا المجموعة المفلترة)، فلا يتغيّر عند تطبيق فلتر.
+export interface PlanetsSummary {
+  total: number
+  active: number
+  inactive: number
+  with_published_content: number
+  without_published_content: number
+  empty: number
+  missing_artwork: number
+  missing_description: number
+  with_production_blockers: number
+}
+
+export interface PlanetsListEnvelope extends ApiEnvelope<PlanetListRow[]> {
+  meta: { total: number; summary: PlanetsSummary; notes: string[] }
+}
+
+/// وحدة في مساحة العمل: `unavailable` غير فارغ يعني «تعذّرت القراءة» لا «صفر».
+export interface WorkspaceModule {
+  unavailable: string | null
+}
+
+export interface PlanetWorkspaceContent extends WorkspaceModule {
+  series_total: number
+  series_published: number
+  series_pipeline: number
+  series_early: number
+  series_in_review: number
+  series_in_production: number
+  series_ready: number
+  seasons_total: number
+  episodes_total: number
+  episodes_published: number
+  episodes_ready_unpublished: number
+  episodes_without_video: number
+  stories_total: number
+  stories_published: number
+  games_total: number
+  games_published: number
+  books_total: number
+  projects_total: number
+  characters_total: number
+  fixture_series: number
+  unparented_stories: number
+  unparented_games: number
+  unparented_books: number
+  unparented_projects: number
+  content_updated_at: string | null
+}
+
+export interface PlanetAssetRow {
+  link_id: string
+  role: string
+  language: string
+  sort_order: number
+  asset_id: string
+  title_ar: string
+  kind: string
+  status: string
+  visibility: string
+  mime_type?: string | null
+  size_bytes?: number | null
+  expected_width?: number | null
+  expected_height?: number | null
+  aspect_ratio?: string | null
+  updated_at?: string | null
+}
+
+export interface PlanetWorkspaceMedia extends WorkspaceModule {
+  assets: PlanetAssetRow[]
+  series_total: number
+  series_without_poster: number
+  episodes_total: number
+  episodes_without_thumbnail: number
+  expected_roles: { icon: string[]; cover: string[] }
+  cdn_configured: boolean
+}
+
+/// إشارة لغة واحدة مع مقامها. `unavailable` يعني «لا عمود لهذا القياس».
+export interface LocalizationSignal {
+  key: string
+  label_ar: string
+  done: number
+  total: number
+  unavailable: string | null
+  note: string | null
+  /// مسار الشاشة التي تُغلق هذا النقص، أو `null` إذا لا عمل يُفتح: إشارة مكتملة
+  /// أو غير قابلة للقياس. المسار نسبي لجذر لوحة الإدارة.
+  drill?: string | null
+}
+
+export interface PlanetWorkspaceLocalization extends WorkspaceModule {
+  languages: Array<{ language: string; signals: LocalizationSignal[] }>
+  configured: string[]
+  notes: string[]
+}
+
+export interface PlanetProductionItem {
+  content_type: 'episode' | 'story'
+  content_id: string
+  requirement: string
+  blocker?: string | null
+  due_at?: string | null
+  assignee_id?: string | null
+  assignee_name?: string | null
+  team_id?: string | null
+  team_name?: string | null
+  note?: string | null
+  title?: string | null
+  series_id?: string | null
+  series_title?: string | null
+}
+
+export interface PlanetWorkspaceProduction extends WorkspaceModule {
+  blocked: number
+  past_due: number
+  unowned: number
+  tracked_items: number
+  items: PlanetProductionItem[]
+  notes: string[]
+}
+
+export interface PlanetObjectiveRow {
+  id: string
+  code: string
+  title_ar: string
+  age_min: number
+  age_max: number
+  skill_id?: string | null
+  skill_name?: string | null
+  skill_category?: string | null
+  episodes: number
+  games: number
+}
+
+export interface PlanetWorkspaceLearning extends WorkspaceModule {
+  episodes_total: number
+  episodes_with_objective: number
+  games_total: number
+  games_with_objective: number
+  distinct_objectives: number
+  objectives_catalogue: number
+  objectives: PlanetObjectiveRow[]
+  notes: string[]
+}
+
+export interface PlanetReviewItem {
+  id: string
+  entity_type: 'series' | 'episode'
+  entity_id: string
+  reviewer_role: 'edu' | 'lang' | 'sharia' | 'rights' | 'qa'
+  reviewer_id?: string | null
+  /// Joined from `admin_users.display_name`. Null when the reviewer row was removed,
+  /// in which case the screen falls back to the id rather than hiding the review.
+  reviewer_name?: string | null
+  status: 'pending' | 'needs_changes'
+  created_at: string
+  comments?: string | null
+  title?: string | null
+}
+
+export interface PlanetWorkspaceReviews extends WorkspaceModule {
+  pending: number
+  needs_changes: number
+  approved: number
+  rejected: number
+  runs_running: number
+  stages_overdue: number
+  religious_pending: number
+  religious_scoped: number
+  items: PlanetReviewItem[]
+  notes: string[]
+}
+
+export interface PlanetLicenceRow {
+  id: string
+  content_id: string
+  owner: string
+  license_type?: string | null
+  countries?: string | null
+  languages?: string | null
+  expiry_date?: string | null
+  title?: string | null
+}
+
+export interface PlanetWorkspaceRights extends WorkspaceModule {
+  own_policy: Record<string, unknown> | null
+  inherits_from: string | null
+  global_policy: Record<string, unknown> | null
+  chain: string[]
+  series_overrides: number
+  episode_overrides: number
+  withheld: number
+  restricted: number
+  licences: PlanetLicenceRow[]
+  expired_licences: number
+  notes: string[]
+}
+
+/// كل عنصر يحمل عددًا حقيقيًا ووجهة مفلترة تحلّه. لا عدّاد بلا وجهة.
+export interface PlanetAttentionItem {
+  key: string
+  label_ar: string
+  label_en: string
+  count: number
+  tone: 'warn' | 'danger'
+  drill: string
+  note: string | null
+}
+
+export interface PlanetActivityRow {
+  id: string
+  actor_id?: string | null
+  actor_name?: string | null
+  action: string
+  entity_type: string
+  entity_id?: string | null
+  created_at: string
+  title?: string | null
+}
+
+export interface PlanetWorkspace {
+  planet: Planet & { artwork_icon: boolean; artwork_cover: boolean; created_at?: string | null }
+  content: PlanetWorkspaceContent
+  media: PlanetWorkspaceMedia
+  localization: PlanetWorkspaceLocalization
+  production: PlanetWorkspaceProduction
+  learning: PlanetWorkspaceLearning
+  reviews: PlanetWorkspaceReviews
+  rights: PlanetWorkspaceRights
+  /// التحليلات غير متاحة على مستوى الكوكب: لا كاتب لجداول النشاط في D1.
+  analytics: { unavailable: string; source: string }
+  attention: PlanetAttentionItem[]
+  activity: PlanetActivityRow[]
+  generated_at: string
+}
+
+export interface PlanetTreeEpisode {
+  id: string
+  series_id: string
+  season_id?: string | null
+  episode_number?: number | null
+  title_ar: string
+  status: ContentStatus
+  is_published: boolean
+  updated_at: string
+  duration_seconds?: number | null
+  learning_objective_id?: string | null
+  dubs?: string | null
+  has_video: boolean
+  has_captions: boolean
+  has_thumbnail: boolean
+}
+
+export interface PlanetTreeSeason {
+  id: string
+  series_id: string
+  season_number: number
+  title_ar?: string | null
+  theme_ar?: string | null
+  status?: ContentStatus | null
+  release_date?: string | null
+  episodes_count: number
+  episodes: PlanetTreeEpisode[]
+}
+
+export interface PlanetTreeSeries {
+  id: string
+  title_ar: string
+  title_en?: string | null
+  slug: string
+  status: ContentStatus
+  type: SeriesRecord['type']
+  age_min: number
+  age_max: number
+  sort_order: number
+  updated_at: string
+  content_class: 'production' | 'test_fixture'
+  cover_url?: string | null
+  seasons_count: number
+  episodes_count: number
+  episodes_published: number
+  track_ids: AgeTrack[]
+  seasons: PlanetTreeSeason[]
+  unassigned_episodes: PlanetTreeEpisode[]
+  loaded_episodes: number
+}
+
+export interface PlanetTreeEnvelope extends ApiEnvelope<PlanetTreeSeries[]> {
+  meta: {
+    series_limit: number
+    episode_limit: number
+    series_returned: number
+    fixture_series: number
+    episodes_returned: number
+    episodes_total: number
+    truncated: boolean
+    notes: string[]
+  }
+}
+
+/// حِمل تعديل الكوكب. الحقول التي يقبلها الخادم فعلًا لا أكثر.
+export interface PlanetPayload {
+  name_ar: string
+  name_en?: string | null
+  description_ar?: string | null
+  color_hex: string
+  sort_order?: number
+  is_active?: boolean
+  /// عند الإنشاء فقط: المعرّف/الـslug
+  id?: string
+}
+
 export interface SeriesRecord {
   id: string
   title_ar: string
@@ -401,6 +751,178 @@ export interface StoryPageRecord {
 export interface StoryDetail extends StoryRecord {
   pages: StoryPageRecord[]
   assets: AssetRecord[]
+}
+
+/// تغطية لغة واحدة على صفحات القصة، ومعها مقامها دائمًا.
+///
+/// نسبة بلا مقام غير قابلة للاستخدام: «٦» قد تكون ستًّا من ست أو ستًّا من أربعين.
+/// والنصّ والسرد سؤالان مختلفان: صفحة قد تحمل نصًّا إنجليزيًّا بلا صوت إنجليزي،
+/// فدمجهما في رقم واحد يُخفي أيّهما ناقص.
+export interface StoryLanguageCoverage {
+  language: string
+  /// معلَنة في `stories.languages`. الإعلان نيّة لا إنجاز، فهو منفصل عن العدّ.
+  declared: boolean
+  text_done: number
+  narration_done: number
+  /// مؤشّرات التوقيت. لا شيء في المنصّة يكتبها، فهي صفر في كل مكان — والصدق في
+  /// إظهارها صفرًا معلَّلًا أفضل من حذفها.
+  timing_done: number
+  total: number
+}
+
+export type StoryReadinessState = 'ready' | 'partial' | 'empty'
+
+/// صفٌّ في مكتبة القصص: الغلاف الحقيقي والتغطية المعدودة لا التسمية.
+export interface StoryLibraryRow {
+  id: string
+  slug: string
+  title_ar: string
+  title_en?: string | null
+  description_ar?: string | null
+  type: StoryType
+  status: ContentStatus
+  age_min: number
+  age_max: number
+  reading_level: string
+  default_language: string
+  languages: string[]
+  is_free: boolean
+  sort_order: number
+  updated_at?: string | null
+  published_at?: string | null
+  series_id?: string | null
+  series_title?: string | null
+  planet_id?: string | null
+  planet_name?: string | null
+  planet_color?: string | null
+  /// غلاف حقيقي من `asset_links` بدور cover/poster، أو `null` فتظهر حالة صريحة.
+  cover_url?: string | null
+  pages_total: number
+  pages_with_image: number
+  coverage: StoryLanguageCoverage[]
+  readiness: StoryReadinessState
+}
+
+export interface StoryLibrarySummary {
+  total: number
+  ready: number
+  partial: number
+  empty: number
+  published: number
+  in_review: number
+  missing_pages: number
+  missing_artwork: number
+  missing_cover: number
+}
+
+/// لغة واحدة على صفحة واحدة.
+export interface StoryWorkspaceLocalization {
+  language: string
+  has_text: boolean
+  has_alt: boolean
+  body_text?: string | null
+  alt_text?: string | null
+  narration_asset_id?: string | null
+  narration_status?: string | null
+  /// `generated` تعني تصييرًا آليًّا لا تسجيلًا مُعتمدًا. الفرق مهم: مساواتهما
+  /// تسمح بنشر صوت لم يراجعه أحد.
+  narration_source?: string | null
+  narration_size?: number | null
+  /// جاهز فعلًا: بوّابة النشر لا تقبل إلا `status = 'ready'`.
+  narration_ready: boolean
+  has_timing: boolean
+  timing_count: number
+  updated_at?: string | null
+}
+
+export interface StoryWorkspacePage {
+  id: string
+  page_number: number
+  layout: 'full_bleed' | 'split' | 'panels' | 'text_focus'
+  transition: string
+  duration_ms?: number | null
+  image_asset_id?: string | null
+  image_status?: string | null
+  /// رابط عام مبنيّ عبر حَرس البادئة نفسه الذي يستخدمه بقيّة الكتالوج، فمفتاح
+  /// مخالف لعمود الظهور يُنتج `null` لا صورة مكسورة.
+  image_url?: string | null
+  image_width?: number | null
+  image_height?: number | null
+  image_aspect?: string | null
+  image_mime?: string | null
+  image_size?: number | null
+  background_asset_id?: string | null
+  bubbles_count: number
+  updated_at?: string | null
+  localizations: StoryWorkspaceLocalization[]
+}
+
+/// عائق واحد، مُسمًّى بموضعه.
+///
+/// «لا يمكن النشر» بلا موضع تجعل المحرِّر يفتح كل صفحة بالتناوب. لذلك كل عائق
+/// يحمل رقم الصفحة وتبويب المفتِّش الذي يُغلقه.
+export interface StoryBlocker {
+  key: string
+  severity: 'blocker' | 'warning'
+  label_ar: string
+  label_en: string
+  page_number: number | null
+  inspector: 'content' | 'image' | 'audio' | 'timing' | 'layout' | null
+  language: string | null
+}
+
+export interface StoryWorkspaceReadiness {
+  pages_total: number
+  pages_with_image: number
+  pages_ready: number
+  /// حُكمان منفصلان بقصد: سرد بلا مؤشّرات توقيت هو «اقرأ لي» مكتمل و«قراءة
+  /// متزامنة» فارغة، فرقم واحد لا يصلح للاثنين.
+  read_to_me_ready: boolean
+  read_along_ready: boolean
+  publishable: boolean
+}
+
+/// ما لا يدعمه المخطَّط، مُعلَنًا لا مُكتشَفًا من رفض 409.
+export interface StoryCapabilities {
+  reviews_supported: boolean
+  reviews_reason: string
+  rights_supported: boolean
+  rights_reason: string
+  timing_supported: boolean
+  timing_reason: string
+  panels_supported: boolean
+  panels_reason: string
+  bubbles_supported: boolean
+}
+
+export interface StoryWorkspaceActivity {
+  id: string
+  actor_id?: string | null
+  actor_name?: string | null
+  action: string
+  entity_type: string
+  entity_id: string
+  created_at: string
+}
+
+export interface StoryWorkspace {
+  story: StoryRecord & {
+    planet_id?: string | null
+    planet_name?: string | null
+    planet_color?: string | null
+    series_status?: string | null
+    content_class?: string | null
+    cover_url?: string | null
+    updated_at?: string | null
+    published_at?: string | null
+  }
+  pages: StoryWorkspacePage[]
+  coverage: StoryLanguageCoverage[]
+  blockers: StoryBlocker[]
+  readiness: StoryWorkspaceReadiness
+  capabilities: StoryCapabilities
+  activity: StoryWorkspaceActivity[]
+  generated_at: string
 }
 
 export type AssetKind = 'image' | 'audio' | 'video' | 'subtitle' | 'document' | 'manifest' | 'archive'

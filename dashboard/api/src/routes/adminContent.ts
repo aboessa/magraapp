@@ -4,10 +4,8 @@ import { pathParam } from '../lib/routeParams.ts'
 // Explicit .ts specifiers, as in lib/routeParams.ts and lib/gamePackGate.ts
 // below: the extensionless form only resolves through a bundler, so this router
 // could not be imported by `node --experimental-strip-types --test` and none of
-// its 40+ handlers had test coverage. test/planetDetail.test.mjs now reaches
-// GET /planets/:id directly.
+// its 40+ handlers had test coverage.
 import { queryAll, queryFirst } from '../lib/db.ts'
-import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, PLANET_ICON_ROLES, PLANET_COVER_ROLES } from '../lib/assetUrls.ts'
 import { isIslamicContent, validateIslamicFields } from '../lib/islamicContent.ts'
 import { actorId, auditStatement } from '../lib/auditLog.ts'
 import { requirePermission } from '../lib/adminAuth.ts'
@@ -18,7 +16,6 @@ import {
   gamePublishError,
   isReleaseStatus,
   parsePagination,
-  parseTrackIds,
   projectPublishError,
   storyPublishError,
   uniqueStringArray,
@@ -144,19 +141,13 @@ function validLanguage(value: string) {
   return /^[a-z]{2,3}(?:-[A-Za-z]{2,4})?$/.test(value)
 }
 
-function serializePlanet(row: Row) {
-  return { ...row, is_active: Boolean(row.is_active) }
-}
-
-/// The series summaries embedded in GET /admin/planets/:id.
-///
-/// They were returned straight from D1, so `track_ids` reached the browser as
-/// the GROUP_CONCAT string (or null) while PlanetSeriesSummary declares
-/// `AgeTrack[]`. PlanetDetailPage maps over it, so opening any planet threw
-/// `track_ids.map is not a function` and the whole drill-down went blank.
-function serializePlanetSeries(row: Row) {
-  return { ...row, track_ids: parseTrackIds(row.track_ids) }
-}
+// Planets live in routes/adminPlanets.ts.
+//
+// They were four handlers here returning name + colour + series_count. The planet
+// collection and workspace need aggregates over series, episodes, stories, games,
+// assets, production requirements, reviews, availability and audit — all reached
+// through series.planet_id — so they moved to their own router rather than growing
+// this one, which already owns stories, books, games, projects and characters.
 
 function serializeCategory(row: Row) {
   return { ...row, is_active: Boolean(row.is_active) }
@@ -170,149 +161,6 @@ function serializeStory(row: Row) {
   return { ...row, is_free: Boolean(row.is_free), languages: parseJson(row.languages, []) }
 }
 
-// Planets and taxonomy -------------------------------------------------------
-// icon_url/cover_url resolve through asset_links + content_assets, matching the
-// public /planets endpoint (lib/assetUrls.ts). The admin list used to select
-// the deprecated planets.icon_url column directly — always NULL, since
-// planet artwork is attached through asset_links — so the admin UI never had
-// a real image to show and fell back to a plain colour circle for every
-// planet regardless of whether artwork had actually been uploaded.
-route.get('/planets', async (c) => {
-  const includeInactive = c.req.query('include_inactive') === '1'
-  const baseUrl = publicAssetBaseUrl(c.env)
-  const rows = await queryAll<Row>(c.env.DB, `
-    SELECT p.*,
-      (SELECT COUNT(*) FROM series s WHERE s.planet_id = p.id AND s.status <> 'archived') AS series_count,
-      (SELECT COUNT(*) FROM asset_links al WHERE al.entity_type = 'planet' AND al.entity_id = p.id) AS assets_count,
-      ${artworkSelect('icon_asset', 'planet', 'p.id', PLANET_ICON_ROLES)},
-      ${artworkSelect('cover_asset', 'planet', 'p.id', PLANET_COVER_ROLES)}
-    FROM planets p
-    ${includeInactive ? '' : 'WHERE p.is_active = 1'}
-    ORDER BY p.sort_order, p.created_at
-  `)
-  for (const row of rows) {
-    applyArtworkUrl(row, 'icon_asset', 'icon_url', baseUrl)
-    row.cover_url = null
-    applyArtworkUrl(row, 'cover_asset', 'cover_url', baseUrl)
-  }
-  return c.json({ success: true, data: rows.map(serializePlanet) })
-})
-
-// Planet detail workspace: no GET /planets/:id existed before, so the admin
-// planet drill-down (DASHBOARD v3 UX-8) had nowhere to fetch a single planet's
-// full context. Series are included flat (no season/episode nesting) the same
-// way GET /admin/series/:id embeds seasons — deeper nesting stays a follow-up
-// endpoint rather than one oversized response.
-route.get('/planets/:id', async (c) => {
-  const id = pathParam(c, 'id')
-  const baseUrl = publicAssetBaseUrl(c.env)
-  const row = await queryFirst<Row>(c.env.DB, `
-    SELECT p.*,
-      (SELECT COUNT(*) FROM series s WHERE s.planet_id = p.id AND s.status <> 'archived') AS series_count,
-      (SELECT COUNT(*) FROM asset_links al WHERE al.entity_type = 'planet' AND al.entity_id = p.id) AS assets_count,
-      ${artworkSelect('icon_asset', 'planet', 'p.id', PLANET_ICON_ROLES)},
-      ${artworkSelect('cover_asset', 'planet', 'p.id', PLANET_COVER_ROLES)}
-    FROM planets p WHERE p.id = ?
-  `, [id])
-  if (!row) return c.json({ success: false, error: 'Planet not found' }, 404)
-  applyArtworkUrl(row, 'icon_asset', 'icon_url', baseUrl)
-  row.cover_url = null
-  applyArtworkUrl(row, 'cover_asset', 'cover_url', baseUrl)
-
-  const series = await queryAll<Row>(c.env.DB, `
-    SELECT s.id, s.title_ar, s.title_en, s.slug, s.type, s.age_min, s.age_max, s.status, s.cover_url, s.sort_order,
-      (SELECT GROUP_CONCAT(track_id) FROM series_tracks WHERE series_id = s.id) AS track_ids,
-      (SELECT COUNT(*) FROM episodes WHERE series_id = s.id AND status <> 'archived') AS episodes_count,
-      ${artworkSelect('cover_asset', 'series', 's.id', ['poster', 'cover'])}
-    FROM series s WHERE s.planet_id = ? AND s.status <> 'archived'
-    ORDER BY s.sort_order ASC, s.updated_at DESC
-  `, [id])
-  for (const item of series) applyArtworkUrl(item, 'cover_asset', 'cover_url', baseUrl)
-
-  const categories = await queryAll<Row>(c.env.DB, `
-    SELECT c.id, c.name_ar, c.name_en, c.color_hex,
-      (SELECT COUNT(*) FROM series_categories sc JOIN series s ON s.id = sc.series_id WHERE sc.category_id = c.id AND s.planet_id = ? AND s.status <> 'archived') AS series_count
-    FROM categories c WHERE c.is_active = 1 ORDER BY c.sort_order
-  `, [id])
-
-  return c.json({
-    success: true,
-    data: {
-      ...serializePlanet(row),
-      series: series.map(serializePlanetSeries),
-      categories: categories.filter((item) => Number(item.series_count) > 0),
-    },
-  })
-})
-
-route.post('/planets', requirePermission('create'), async (c) => {
-  const value = await body(c)
-  if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const nameAr = stringValue(value.name_ar)
-  if (!nameAr) return c.json({ success: false, error: 'name_ar is required' }, 400)
-  const color = stringValue(value.color_hex) ?? '#4ECDC4'
-  if (!/^#[0-9a-f]{6}$/i.test(color)) return c.json({ success: false, error: 'color_hex must be a six-digit hex color' }, 400)
-
-  const id = stringValue(value.id) ?? slugify(stringValue(value.name_en) ?? nameAr, 'planet')
-  try {
-    await c.env.DB.batch([
-      c.env.DB.prepare(`
-        INSERT INTO planets (id, name_ar, name_en, description_ar, color_hex, icon_url, sort_order, is_active)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(id, nameAr, nullableString(value.name_en) ?? null, nullableString(value.description_ar) ?? null, color, nullableString(value.icon_url) ?? null, integer(value.sort_order) ?? 0, value.is_active === undefined ? 1 : boolInt(value.is_active)),
-      audit(c.env.DB, c, 'create', 'planet', id, value),
-    ])
-  } catch (error) {
-    if (isConstraintError(error)) return c.json({ success: false, error: 'Planet id already exists' }, 409)
-    throw error
-  }
-  return c.json({ success: true, data: { id } }, 201)
-})
-
-route.patch('/planets/:id', requirePermission('edit_metadata'), async (c) => {
-  const value = await body(c)
-  if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400)
-  const id = pathParam(c, 'id')
-  if (!await queryFirst(c.env.DB, 'SELECT id FROM planets WHERE id = ?', [id])) return c.json({ success: false, error: 'Planet not found' }, 404)
-
-  const sets: string[] = []
-  const params: unknown[] = []
-  const add = (field: string, fieldValue: unknown) => { sets.push(`${field} = ?`); params.push(fieldValue) }
-  for (const field of ['name_ar', 'name_en', 'description_ar', 'icon_url']) {
-    if (value[field] === undefined) continue
-    const parsed = field === 'name_ar' ? stringValue(value[field]) : nullableString(value[field])
-    if (parsed === undefined || (field === 'name_ar' && !parsed)) return c.json({ success: false, error: `Invalid ${field}` }, 400)
-    add(field, parsed)
-  }
-  if (value.color_hex !== undefined) {
-    const color = stringValue(value.color_hex)
-    if (!color || !/^#[0-9a-f]{6}$/i.test(color)) return c.json({ success: false, error: 'Invalid color_hex' }, 400)
-    add('color_hex', color)
-  }
-  if (value.sort_order !== undefined) {
-    const order = integer(value.sort_order)
-    if (order === null) return c.json({ success: false, error: 'sort_order must be an integer' }, 400)
-    add('sort_order', order)
-  }
-  if (value.is_active !== undefined) add('is_active', boolInt(value.is_active))
-  if (!sets.length) return c.json({ success: false, error: 'No supported fields supplied' }, 400)
-
-  await c.env.DB.batch([
-    c.env.DB.prepare(`UPDATE planets SET ${sets.join(', ')} WHERE id = ?`).bind(...params, id),
-    audit(c.env.DB, c, 'update', 'planet', id, value),
-  ])
-  return c.json({ success: true, data: { id, updated: true } })
-})
-
-route.delete('/planets/:id', requirePermission('archive'), async (c) => {
-  const id = pathParam(c, 'id')
-  if (!await queryFirst(c.env.DB, 'SELECT id FROM planets WHERE id = ?', [id])) return c.json({ success: false, error: 'Planet not found' }, 404)
-  await c.env.DB.batch([
-    c.env.DB.prepare('UPDATE planets SET is_active = 0 WHERE id = ?').bind(id),
-    audit(c.env.DB, c, 'archive', 'planet', id, {}),
-  ])
-  return c.json({ success: true, data: { id, is_active: false } })
-})
 
 route.get('/categories', async (c) => {
   const includeInactive = c.req.query('include_inactive') === '1'
@@ -873,12 +721,17 @@ route.get('/books', async (c) => {
   const params: unknown[] = []
   const query = c.req.query('q')?.trim()
   const status = c.req.query('status')
+  const planet = c.req.query('planet')
   if (query) { clauses.push('(b.title_ar LIKE ? OR s.title_ar LIKE ?)'); params.push(`%${query}%`, `%${query}%`) }
   if (status && status !== 'all') {
     if (!CONTENT_STATUSES.includes(status)) return c.json({ success: false, error: 'Invalid status' }, 400)
     clauses.push('b.status = ?')
     params.push(status)
   }
+  // A book reaches its planet only through its series; `books` has no planet column.
+  // Without this filter the planet workspace could only link to the whole catalogue,
+  // so a counter reading "4 books" opened a list of every book in Majarra.
+  if (planet) { clauses.push('s.planet_id = ?'); params.push(planet) }
   if (!status) clauses.push(`b.status <> 'archived'`)
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
   const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'))
@@ -1082,11 +935,20 @@ route.get('/games', async (c) => {
   const params: unknown[] = []
   const query = c.req.query('q')?.trim()
   const status = c.req.query('status')
+  const planet = c.req.query('planet')
   if (query) { clauses.push('(g.title_ar LIKE ? OR s.title_ar LIKE ? OR ge.name_ar LIKE ?)'); params.push(`%${query}%`, `%${query}%`, `%${query}%`) }
   if (status && status !== 'all') {
     if (!CONTENT_STATUSES.includes(status)) return c.json({ success: false, error: 'Invalid status' }, 400)
     clauses.push('g.status = ?')
     params.push(status)
+  }
+  // A game may hang off a series directly or off an episode that belongs to one, and
+  // the planet counter on the workspace counts both. Filtering on `g.series_id` alone
+  // would silently drop every episode-attached game and contradict that counter.
+  if (planet) {
+    clauses.push(`COALESCE(g.series_id, (SELECT e2.series_id FROM episodes e2 WHERE e2.id = g.episode_id))
+      IN (SELECT s2.id FROM series s2 WHERE s2.planet_id = ?)`)
+    params.push(planet)
   }
   if (!status) clauses.push(`g.status <> 'archived'`)
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
@@ -1332,7 +1194,16 @@ route.get('/projects', async (c) => {
   const params: unknown[] = []
   const query = c.req.query('q')?.trim()
   const status = c.req.query('status')
+  const planet = c.req.query('planet')
   if (query) { clauses.push('(p.title_ar LIKE ? OR p.description_ar LIKE ?)'); params.push(`%${query}%`, `%${query}%`) }
+  // Same two parents as games: a project hangs off a series or off an episode. The
+  // planet workspace counts both, so both must filter or the counter and the list
+  // it opens would disagree.
+  if (planet) {
+    clauses.push(`COALESCE(p.series_id, (SELECT e2.series_id FROM episodes e2 WHERE e2.id = p.episode_id))
+      IN (SELECT s2.id FROM series s2 WHERE s2.planet_id = ?)`)
+    params.push(planet)
+  }
   if (status && status !== 'all') {
     if (!CONTENT_STATUSES.includes(status)) return c.json({ success: false, error: 'Invalid status' }, 400)
     clauses.push('p.status = ?')
@@ -1553,11 +1424,16 @@ route.get('/stories', async (c) => {
   const status = c.req.query('status')
   const type = c.req.query('type')
   const seriesId = c.req.query('series_id')
+  const planet = c.req.query('planet')
   if (query) { clauses.push('(st.title_ar LIKE ? OR st.title_en LIKE ? OR st.slug LIKE ?)'); params.push(`%${query}%`, `%${query}%`, `%${query}%`) }
   if (status && status !== 'all') { if (!CONTENT_STATUSES.includes(status)) return c.json({ success: false, error: 'Invalid status' }, 400); clauses.push('st.status = ?'); params.push(status) }
   if (!status) clauses.push(`st.status <> 'archived'`)
   if (type) { if (!STORY_TYPES.includes(type)) return c.json({ success: false, error: 'Invalid story type' }, 400); clauses.push('st.type = ?'); params.push(type) }
   if (seriesId) { clauses.push('st.series_id = ?'); params.push(seriesId) }
+  // A story reaches its planet through its series only; `stories` has no planet
+  // column. Without this the planet workspace's "12 stories" counter could only
+  // open every story in Majarra, which reads as a broken link rather than a filter.
+  if (planet) { clauses.push('st.series_id IN (SELECT s2.id FROM series s2 WHERE s2.planet_id = ?)'); params.push(planet) }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
   const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'))
   const totalRow = await queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM stories st ${where}`, params)

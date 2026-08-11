@@ -9,7 +9,7 @@
 | `title_ar` | صديق جديد |
 | `description_ar` | واحد يحبّ الجري، وواحد يحبّ الجلوس. فكيف يلعبان؟ |
 | `page_count` | **12** |
-| `duration_seconds` | 250 *(4:10)* |
+| `duration_seconds` | **122** *(2:02)*|
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `story_type` | `illustrated` |

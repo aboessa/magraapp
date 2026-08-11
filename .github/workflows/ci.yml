@@ -37,3 +37,20 @@ jobs:
           cache-dependency-path: dashboard/api/package-lock.json
       - run: npm ci
       - run: npm run check 2>/dev/null || npx tsc --noEmit
+
+  # Guards story specs against stating a narration pace that their own per-page
+  # durations contradict. All 15 existing specs failed this when it was first run:
+  # each stated a words-per-minute rule carried over from English guidance, and each
+  # planned durations averaging ~62% of it. The consistency across independently
+  # authored files is what identified the unit as the fault rather than the authors.
+  # Catching it here means a new story is corrected while it is being written, not
+  # discovered mid-production after narration has already been generated against the
+  # wrong target.
+  content-pacing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tools/content/audit-narration-pacing.mjs --check

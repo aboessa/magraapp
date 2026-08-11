@@ -70,8 +70,27 @@ CREATE INDEX IF NOT EXISTS idx_games_translated_from ON games(translated_from);
 --
 -- Letters are spoken by their sound, not their name — «بَ» before «باء» — which
 -- is why the prompts below name the sound explicitly.
+-- The seed rows below are conditional on the parent game existing.
+--
+-- ## Why `SELECT ... WHERE EXISTS` and not `VALUES`
+--
+-- `game_localizations.game_id` is a FOREIGN KEY, and `INSERT OR IGNORE` does NOT
+-- suppress a foreign-key violation — the OR IGNORE conflict clause covers UNIQUE,
+-- CHECK and NOT NULL only. So a `VALUES` insert naming a game that does not exist
+-- aborts the whole migration.
+--
+-- That is not hypothetical: production carries 14 games and `game-yt-pinch-place`
+-- is not among them, so this migration failed there with
+-- `FOREIGN KEY constraint failed` and rolled back, leaving the table uncreated
+-- while every later migration stayed blocked behind it.
+--
+-- A migration must not assume seed data from an earlier one is present. 0023 only
+-- UPDATEs `game-yt-pinch-place`, and an UPDATE matching no row succeeds silently,
+-- so nothing before this point guarantees the row. Making the insert conditional
+-- keeps the schema change — the part every other migration depends on — separate
+-- from seed data that may or may not be there.
 INSERT OR IGNORE INTO game_localizations (game_id, language, title, instructions, prompts, voice_manifest, status, translated_from, is_machine_translated)
-VALUES (
+SELECT
   'game-letter-tracing', 'ar', 'تتبع الحروف',
   'هيا نرسم معًا! ضع إصبعك على النقطة المتوهّجة، واتبع الطريق. ثم المس مكان النقطة. بعد ذلك لوّن كما تحب.',
   json_object(
@@ -81,32 +100,37 @@ VALUES (
     'game.letter_tracing.noon.prompt', 'هذا حرف النون، وصوته نَ. اتبع الطريق، ثم المس مكان النقطة فوق الحرف.'
   ),
   '{}', 'draft', NULL, 0
-);
+WHERE EXISTS (SELECT 1 FROM games WHERE id = 'game-letter-tracing');
 
 -- 2. MAHARAT pinch-and-place — the translatable case -------------------------
 --
 -- Same geometry, three languages, zero duplicated coordinates. This is the
 -- architecture working as intended.
+-- `game-yt-pinch-place` is the row that was actually absent in production. Nothing
+-- in migrations 0001-0023 inserts it; 0023 only UPDATEs it and logs an audit row
+-- `FROM games WHERE id = 'game-yt-pinch-place'`, both of which match zero rows and
+-- succeed quietly. So the pack exists in some environments and not others, and the
+-- localization rows must tolerate both.
 INSERT OR IGNORE INTO game_localizations (game_id, language, title, instructions, prompts, voice_manifest, status, translated_from, is_machine_translated)
-VALUES (
+SELECT
   'game-yt-pinch-place', 'ar', 'من المشبك إلى السلّة',
   'مرِّرْ إصبعك من المشبك إلى السلّة.',
   json_object('game.pinch_place.peg_to_basket.prompt', 'مرِّرْ إصبعك من المشبك إلى السلّة.'),
   '{}', 'draft', NULL, 0
-);
+WHERE EXISTS (SELECT 1 FROM games WHERE id = 'game-yt-pinch-place');
 
 INSERT OR IGNORE INTO game_localizations (game_id, language, title, instructions, prompts, voice_manifest, status, translated_from, is_machine_translated)
-VALUES (
+SELECT
   'game-yt-pinch-place', 'en', 'From the peg to the basket',
   'Slide your finger from the peg to the basket.',
   json_object('game.pinch_place.peg_to_basket.prompt', 'Slide your finger from the peg to the basket.'),
   '{}', 'draft', 'ar', 0
-);
+WHERE EXISTS (SELECT 1 FROM games WHERE id = 'game-yt-pinch-place');
 
 INSERT OR IGNORE INTO game_localizations (game_id, language, title, instructions, prompts, voice_manifest, status, translated_from, is_machine_translated)
-VALUES (
+SELECT
   'game-yt-pinch-place', 'fr', 'De la pince au panier',
   'Fais glisser ton doigt de la pince jusqu''au panier.',
   json_object('game.pinch_place.peg_to_basket.prompt', 'Fais glisser ton doigt de la pince jusqu''au panier.'),
   '{}', 'draft', 'ar', 0
-);
+WHERE EXISTS (SELECT 1 FROM games WHERE id = 'game-yt-pinch-place');

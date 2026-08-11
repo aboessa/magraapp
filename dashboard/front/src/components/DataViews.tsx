@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { Icon } from './Icon'
 import { usePreferences } from '../context/preferences'
 
@@ -172,32 +173,65 @@ export interface TreeNode {
   label: string
   badge?: string | number
   meta?: string
+  /// مسار الكيان. يُفضَّل على `onOpen` لأنه يُنتج `<a href>` حقيقيًّا، فيعمل
+  /// النقر الأوسط وفتح في تبويب جديد ونسخ الرابط — وهي أفعال يفعلها المشغّل
+  /// كثيرًا في شجرة محتوى ولا يتيحها زرّ يستدعي `navigate()`.
+  href?: string
   onOpen?: () => void
+  /// شرائح حالة قصيرة تُقرأ مع الصف: نقص، جاهزية، لغة.
+  ///
+  /// اللون وحده لا يكفي، فكل شريحة تحمل نصًّا. `tone` زيادة على النصّ لا بديل عنه.
+  tags?: Array<{ label: string; tone?: 'good' | 'warn' | 'danger' | 'muted' }>
+  /// صورة مصغّرة للكيان، إن كانت له صورة.
+  thumb?: string | null
   children?: TreeNode[]
+}
+
+/// نسخ الشجرة. زرّ الطيّ أيقونة وحدها، فبلا اسم مقروء لا يعرف قارئ الشاشة ما
+/// يفعله — وهو ما رصده axe كخطأ حاسم (`button-name`).
+const treeCopy = {
+  ar: { expand: 'توسيع', collapse: 'طَيّ' },
+  en: { expand: 'Expand', collapse: 'Collapse' },
 }
 
 function TreeBranch({ node, depth }: { node: TreeNode; depth: number }) {
   const [open, setOpen] = useState(depth < 1)
+  const { locale } = usePreferences()
   const hasChildren = !!node.children?.length
+  const label = <>
+    {node.thumb && <img className="tree__thumb" src={node.thumb} alt="" loading="lazy" />}
+    <span className="tree__title">{node.label}</span>
+  </>
   return (
-    <li className="tree__node">
+    // ‏`role="treeitem"` لا `<li>` عاريًا: `role="tree"` على الحاوية يُلغي دور
+    // القائمة الضمني عن أبنائها، فبلا دور صريح تصير الشجرة حاوية بلا عناصر —
+    // رصد axe ذلك خطأين: `aria-required-children` و`listitem`.
+    <li className="tree__node" role="treeitem" aria-expanded={hasChildren ? open : undefined}>
       <div className="tree__row" style={{ paddingInlineStart: `${depth * 18}px` }}>
         {hasChildren ? (
           <button
             type="button"
             className="tree__toggle"
             aria-expanded={open}
+            aria-label={`${open ? treeCopy[locale].collapse : treeCopy[locale].expand}: ${node.label}`}
             onClick={() => setOpen(!open)}
           ><Icon name="arrow" size={13} /></button>
         ) : <span className="tree__toggle tree__toggle--leaf" aria-hidden="true" />}
-        {node.onOpen ? (
-          <button type="button" className="tree__label" onClick={node.onOpen}>{node.label}</button>
-        ) : <span className="tree__label">{node.label}</span>}
+        {node.href
+          ? <Link className="tree__label" to={node.href}>{label}</Link>
+          : node.onOpen
+            ? <button type="button" className="tree__label" onClick={node.onOpen}>{label}</button>
+            : <span className="tree__label">{label}</span>}
         {node.badge !== undefined && <span className="tree__badge">{node.badge}</span>}
+        {node.tags?.map((tag) => (
+          <span className={`tree__tag tree__tag--${tag.tone ?? 'muted'}`} key={tag.label}>{tag.label}</span>
+        ))}
         {node.meta && <small className="tree__meta">{node.meta}</small>}
       </div>
       {hasChildren && open && (
-        <ul>
+        // ‏`role="group"` هو الابن الآخر الذي يقبله `tree`، وبه تُنسب الأبناء
+        // إلى أبيهم لا إلى الجذر.
+        <ul role="group">
           {node.children?.map((child) => <TreeBranch node={child} depth={depth + 1} key={child.id} />)}
         </ul>
       )}
@@ -205,7 +239,11 @@ function TreeBranch({ node, depth }: { node: TreeNode; depth: number }) {
   )
 }
 
-export function TreeView({ nodes, emptyLabel }: { nodes: TreeNode[]; emptyLabel: string }) {
+export function TreeView({ nodes, emptyLabel, label }: { nodes: TreeNode[]; emptyLabel: string; label?: string }) {
   if (!nodes.length) return <p className="data-unavailable">{emptyLabel}</p>
-  return <ul className="tree" role="tree">{nodes.map((node) => <TreeBranch node={node} depth={0} key={node.id} />)}</ul>
+  return (
+    <ul className="tree" role="tree" aria-label={label}>
+      {nodes.map((node) => <TreeBranch node={node} depth={0} key={node.id} />)}
+    </ul>
+  )
 }

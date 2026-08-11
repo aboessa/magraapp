@@ -28,7 +28,10 @@ const initial: StoryForm = { title_ar: '', slug: '', series_id: '', type: 'pictu
 /// `api/src/routes/adminContent.ts`). `status` و`series_id` يقبلهما المعالِج ولا
 /// تعرضهما الشاشة، فلا يُرسَلان: الفلاتر المنقولة إلى العنوان هي نفسها التي كانت
 /// الشاشة تُرسلها.
-const DEFAULT_FILTERS = { type: '' }
+/// ‏`planet` ليس فلترًا تعرضه الشاشة بل سياق وارد من مساحة عمل الكوكب: عدّاد
+/// «١٢ قصة» هناك يجب أن يفتح تلك الاثنتي عشرة لا كل قصص مَجرّة. يُرسل إلى الخادم
+/// ويُقصر عليه مُنتقي السلسلة في نموذج الإنشاء.
+const DEFAULT_FILTERS = { type: '', planet: '' }
 
 /// حقل الدرج بيانات لا JSX، فتسميته تأتي من التعريف نفسه الذي يرسم شريحته.
 const FILTER_FIELDS = (ar: boolean, locale: 'ar' | 'en'): FilterField[] => [
@@ -89,9 +92,9 @@ export function StoriesPage() {
   // يفتح تلك المجموعة، وزرّ الرجوع من المحرّر يجب أن يُعيد نفس التصفية.
   const list = useUrlListState(DEFAULT_FILTERS, {})
   const { query, filters } = list
-  const { type: typeFilter } = filters
+  const { type: typeFilter, planet: planetFilter } = filters
   const columns = useColumnPreferences('stories', COLUMNS)
-  const load = useCallback(async () => { setLoading(true); setError(''); try { const [stories, seriesResponse, styleResponse] = await Promise.all([api.stories({ q: query, type: typeFilter }), api.series({ status: 'all', limit: 100 }), api.visualStyles()]); setItems(stories.data); setSeries(seriesResponse.data.filter((item) => item.status !== 'archived')); setStyles(styleResponse.data) } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل القصص' : 'Unable to load stories') } finally { setLoading(false) } }, [ar, query, typeFilter])
+  const load = useCallback(async () => { setLoading(true); setError(''); try { const [stories, seriesResponse, styleResponse] = await Promise.all([api.stories({ q: query, type: typeFilter, planet: planetFilter || undefined }), api.series({ status: 'all', limit: 100, planet: planetFilter || undefined }), api.visualStyles()]); setItems(stories.data); setSeries(seriesResponse.data.filter((item) => item.status !== 'archived')); setStyles(styleResponse.data) } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل القصص' : 'Unable to load stories') } finally { setLoading(false) } }, [ar, query, typeFilter, planetFilter])
   useEffect(() => { const timer = setTimeout(() => void load(), 180); return () => clearTimeout(timer) }, [load])
   const loadDetail = useCallback(async (id = detail?.id) => { if (!id) return; setDetailLoading(true); try { const [storyResponse, images, audio] = await Promise.all([api.story(id), api.assets({ status: 'ready', kind: 'image', limit: 200 }), api.assets({ status: 'ready', kind: 'audio', limit: 200 })]); setDetail(storyResponse.data); setImageAssets(images.data); setAudioAssets(audio.data); if (!storyResponse.data.languages.includes(language)) setLanguage(storyResponse.data.default_language) } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل القصة' : 'Unable to load story') } finally { setDetailLoading(false) } }, [ar, detail?.id, language])
   useEffect(() => { if (routeStoryId && routeStoryId !== detail?.id) void loadDetail(routeStoryId) }, [detail?.id, loadDetail, routeStoryId])

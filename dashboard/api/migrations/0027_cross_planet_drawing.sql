@@ -211,12 +211,22 @@ INSERT OR IGNORE INTO learning_objective_skills (objective_id, skill_id, role) V
   ('objective-skill-pattern-copy_unit', 'fine_motor', 'secondary'),
   ('objective-skill-pattern-copy_unit', 'visual_motor_integration', 'secondary');
 
+-- The MAHARAT pack hangs off `series-ufakkir-khutwa-khutwa`, which is authored
+-- content that exists in some environments and not others — production carries
+-- five series and that is not one of them. `games.series_id` is a foreign key, and
+-- `INSERT OR IGNORE` does not suppress a foreign-key violation (the OR IGNORE
+-- conflict clause covers UNIQUE, CHECK and NOT NULL only), so a `VALUES` insert
+-- naming an absent series aborts the migration and blocks every later one.
+--
+-- `SELECT ... WHERE EXISTS` keeps the pack conditional on its parent. The three
+-- packs above are unconditional because their series (qisas, oloom, alam) are
+-- launch content present everywhere.
 INSERT OR IGNORE INTO games (
   id, engine_id, series_id, episode_id, title_ar, learning_objective_id,
   age_min, age_max, reading_level, interaction_mode, supervision_level,
   safety_notes, difficulty, content_pack, instructions_ar, max_attempts,
   help_system, is_free, status
-) VALUES (
+) SELECT
   'game-maharat-copy-pattern', 'trace_color', 'series-ufakkir-khutwa-khutwa', NULL,
   'انسخ النمط', 'objective-skill-pattern-copy_unit',
   6, 8, 'emerging', 'guided', 'none', NULL, 'medium',
@@ -277,7 +287,7 @@ INSERT OR IGNORE INTO games (
 }',
   'انسخ النمط كما هو، وحدة بعد وحدة.',
   NULL, '{}', 0, 'draft'
-);
+WHERE EXISTS (SELECT 1 FROM series WHERE id = 'series-ufakkir-khutwa-khutwa');
 
 -- 5. Localizations -----------------------------------------------------------
 INSERT OR IGNORE INTO game_localizations (game_id, language, title, instructions, prompts, status, translated_from, is_machine_translated) VALUES
@@ -300,20 +310,33 @@ INSERT OR IGNORE INTO game_localizations (game_id, language, title, instructions
   ('game-alam-room-map', 'en', 'Map your room', 'Draw your room as if seen from above.',
    json_object('game.alam_map.room.prompt', 'Draw your room from above. Put the door in first, then mark north with an arrow.'), 'draft', 'ar', 0),
   ('game-alam-room-map', 'fr', 'Dessine ta chambre vue d''en haut', 'Dessine ta chambre comme vue d''en haut.',
-   json_object('game.alam_map.room.prompt', 'Dessine ta chambre vue d''en haut. Place la porte, puis indique le nord par une flèche.'), 'draft', 'ar', 0),
+   json_object('game.alam_map.room.prompt', 'Dessine ta chambre vue d''en haut. Place la porte, puis indique le nord par une flèche.'), 'draft', 'ar', 0);
 
-  ('game-maharat-copy-pattern', 'ar', 'انسخ النمط', 'انسخ النمط كما هو.',
-   json_object(
-     'game.maharat_pattern.zigzag.prompt', 'هذا نمط متكرّر. اتبعه كما هو: أعلى، أسفل، أعلى.',
-     'game.maharat_pattern.arches.prompt', 'أقواس متشابهة. اتبعها واحدًا بعد الآخر.'
-   ), 'draft', NULL, 0),
-  ('game-maharat-copy-pattern', 'en', 'Copy the pattern', 'Copy the pattern exactly.',
-   json_object(
-     'game.maharat_pattern.zigzag.prompt', 'This pattern repeats. Follow it as it is: up, down, up.',
-     'game.maharat_pattern.arches.prompt', 'Matching arches. Follow them one after another.'
-   ), 'draft', 'ar', 0),
-  ('game-maharat-copy-pattern', 'fr', 'Copie le motif', 'Copie le motif tel quel.',
-   json_object(
-     'game.maharat_pattern.zigzag.prompt', 'Ce motif se répète. Suis-le tel quel : haut, bas, haut.',
-     'game.maharat_pattern.arches.prompt', 'Des arches identiques. Suis-les l''une après l''autre.'
-   ), 'draft', 'ar', 0);
+-- The MAHARAT localizations are a separate statement because their game is itself
+-- conditional above. Leaving them in the list with the three unconditional packs
+-- meant one absent parent invalidated the whole multi-row insert, so the qisas,
+-- oloom and alam translations were lost to a dependency none of them had.
+--
+-- `game_localizations.game_id` cascades from `games`, so the guard is the same
+-- question asked once per row set: does the parent pack exist here.
+INSERT OR IGNORE INTO game_localizations (game_id, language, title, instructions, prompts, status, translated_from, is_machine_translated)
+SELECT * FROM (
+  SELECT 'game-maharat-copy-pattern' AS game_id, 'ar' AS language, 'انسخ النمط' AS title, 'انسخ النمط كما هو.' AS instructions,
+    json_object(
+      'game.maharat_pattern.zigzag.prompt', 'هذا نمط متكرّر. اتبعه كما هو: أعلى، أسفل، أعلى.',
+      'game.maharat_pattern.arches.prompt', 'أقواس متشابهة. اتبعها واحدًا بعد الآخر.'
+    ) AS prompts, 'draft' AS status, NULL AS translated_from, 0 AS is_machine_translated
+  UNION ALL
+  SELECT 'game-maharat-copy-pattern', 'en', 'Copy the pattern', 'Copy the pattern exactly.',
+    json_object(
+      'game.maharat_pattern.zigzag.prompt', 'This pattern repeats. Follow it as it is: up, down, up.',
+      'game.maharat_pattern.arches.prompt', 'Matching arches. Follow them one after another.'
+    ), 'draft', 'ar', 0
+  UNION ALL
+  SELECT 'game-maharat-copy-pattern', 'fr', 'Copie le motif', 'Copie le motif tel quel.',
+    json_object(
+      'game.maharat_pattern.zigzag.prompt', 'Ce motif se répète. Suis-le tel quel : haut, bas, haut.',
+      'game.maharat_pattern.arches.prompt', 'Des arches identiques. Suis-les l''une après l''autre.'
+    ), 'draft', 'ar', 0
+)
+WHERE EXISTS (SELECT 1 FROM games WHERE id = 'game-maharat-copy-pattern');

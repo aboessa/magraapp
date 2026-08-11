@@ -37,7 +37,17 @@ export const PLANET_ICON_ROLES = ['icon'] as const;
 export const PLANET_COVER_ROLES = ['cover', 'banner'] as const;
 
 /// Entity types that can carry projected artwork.
-export type ArtworkEntityType = 'series' | 'episode' | 'planet';
+///
+/// The set is deliberately narrower than `asset_links.entity_type`, which allows
+/// twelve values. Only the types listed here have a screen that projects a cover
+/// through [artworkSelect]; widening it further without a caller would advertise
+/// support that does not exist.
+///
+/// `story` was added when the story library needed real covers: `asset_links`
+/// already accepts `entity_type = 'story'` with `role = 'cover'`, and the
+/// production matrix reads exactly those roles (`lib/productionMatrix.ts`), so the
+/// data path existed before this type did.
+export type ArtworkEntityType = 'series' | 'episode' | 'planet' | 'story';
 
 /// The minimum asset shape needed to decide on a public URL.
 export type AssetUrlCandidate = {

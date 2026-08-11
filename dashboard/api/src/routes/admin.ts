@@ -8,6 +8,7 @@ import { bumpPublicContentCacheVersion } from '../lib/publicCache'
 import adminAssetsRoute from './adminAssets'
 import adminCatalogueRoute from './adminCatalogue'
 import adminContentRoute from './adminContent'
+import adminPlanetsRoute from './adminPlanets.ts'
 import adminFamilyProjectionRoute from './adminFamilyProjection'
 import adminTeamsRoute from './adminTeams'
 import adminAppExperienceRoute from './adminAppExperience'
@@ -75,6 +76,10 @@ adminRoute.use('*', async (c, next) => {
 // legacy D1 family handlers below and therefore remain the authoritative admin
 // read path while mutations fail closed.
 adminRoute.route('/', adminContentRoute)
+// الكواكب: القائمة بمؤشّراتها الحقيقية، تجميعة مساحة العمل، شجرة المحتوى،
+// والكتابات الثلاث. مركّبة بعد adminContent الذي لم يبقَ فيه أي مسار كوكب، فلا
+// تظليل. مسار `/planets/:id/workspace` أخصّ من `/planets/:id` ولا يتقاطع معه.
+adminRoute.route('/', adminPlanetsRoute)
 // Catalogue rows that had no HTTP surface at all: learning objectives and their
 // track rows, skills, content reviews, story-page reads and the cascading story
 // purge. Mounted after adminContent so nothing here shadows an existing handler.
@@ -327,6 +332,7 @@ adminRoute.get('/series', async (c) => {
   const status = c.req.query('status')
   const planet = c.req.query('planet')
   const type = c.req.query('type')
+  const category = c.req.query('category')
 
   if (track && !TRACKS.includes(track as AgeTrack)) return c.json({ success: false, error: 'Invalid track' }, 400)
   if (status && status !== 'all' && !CONTENT_STATUSES.includes(status)) return c.json({ success: false, error: 'Invalid status' }, 400)
@@ -348,6 +354,13 @@ adminRoute.get('/series', async (c) => {
   }
   if (planet) { clauses.push('s.planet_id = ?'); params.push(planet) }
   if (type) { clauses.push('s.type = ?'); params.push(type) }
+  // A category reaches its series through `series_categories`; `series` carries no
+  // category column. Without this filter the taxonomy screen could only link a card
+  // reading "7 series" to every series in Majarra, which reads as a broken link.
+  if (category) {
+    clauses.push('EXISTS (SELECT 1 FROM series_categories sc WHERE sc.series_id = s.id AND sc.category_id = ?)')
+    params.push(category)
+  }
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
   const totalRow = await queryFirst<{ total: number }>(db, `SELECT COUNT(*) AS total FROM series s ${where}`, params)

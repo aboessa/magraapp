@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import type { IconName } from '../components/Icon'
 import { Modal } from '../components/Modal'
@@ -10,6 +10,7 @@ import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
 import { formatNumber, statusLabels } from '../lib/labels'
+import { useQuickCreate } from '../hooks/useQuickCreate'
 import type {
   BookPayload,
   BookRecord,
@@ -73,6 +74,7 @@ const copy = {
     cancel: 'إلغاء', save: 'حفظ التعديلات', create: 'إنشاء', saving: 'جارٍ الحفظ...', required: 'أكمل الحقول المطلوبة.', ageError: 'يجب أن يكون العمر بين 3 و12 وأن يكون الحد الأعلى أكبر من أو مساويًا للأدنى.', attemptsError: 'عدد المحاولات يجب أن يكون رقمًا صحيحًا موجبًا أو فارغًا.',
     saveError: 'تعذر حفظ المحتوى', archiveError: 'تعذر أرشفة المحتوى', editLoadError: 'تعذر تحميل تفاصيل العنصر', referencesError: 'تعذر تحميل بعض السلاسل أو محركات الألعاب؛ أعد المحاولة قبل إنشاء محتوى مرتبط.',
     archiveConfirm: (title: string) => `هل تريد أرشفة «${title}»؟ لن تُحذف البيانات.`, coverAlt: (title: string) => `غلاف ${title}`,
+    planetScope: (id: string) => `مقصور على كوكب ${id}`, clearPlanetScope: 'إزالة قصر الكوكب',
   },
   en: {
     tabs: { books: 'Books', games: 'Games', projects: 'Projects' },
@@ -88,6 +90,7 @@ const copy = {
     cancel: 'Cancel', save: 'Save changes', create: 'Create', saving: 'Saving...', required: 'Complete the required fields.', ageError: 'Ages must be between 3 and 12, and maximum age must be at least the minimum.', attemptsError: 'Maximum attempts must be a positive integer or blank.',
     saveError: 'Unable to save content', archiveError: 'Unable to archive content', editLoadError: 'Unable to load item details', referencesError: 'Some series or game engines could not be loaded. Retry before creating linked content.',
     archiveConfirm: (title: string) => `Archive “${title}”? The data will not be deleted.`, coverAlt: (title: string) => `${title} cover`,
+    planetScope: (id: string) => `Scoped to planet ${id}`, clearPlanetScope: 'Remove planet scope',
   },
 }
 
@@ -236,6 +239,11 @@ export function LibraryContentPage() {
   const [episodes, setEpisodes] = useState<EpisodeRecord[]>([])
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('')
+  /// ‏`?planet=` يأتي من مساحة عمل الكوكب: عدّاد «٤ كتب» هناك يجب أن يفتح تلك
+  /// الأربعة لا كل كتب مَجرّة. الفلتر يُقرأ من العنوان ولا يُكتب من هذه الشاشة،
+  /// فهو سياق وارد لا أداة تصفية محلية — ولذلك يظهر كشريحة قابلة للإزالة فقط.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const planetFilter = searchParams.get('planet') ?? ''
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [referenceIssue, setReferenceIssue] = useState(false)
@@ -258,7 +266,7 @@ export function LibraryContentPage() {
     setLoading(true)
     setError('')
     try {
-      const filters = { q: query, status }
+      const filters = { q: query, status, planet: planetFilter || undefined }
       const [bookResponse, gameResponse, projectResponse] = await Promise.all([
         api.books(filters),
         api.games(filters),
@@ -281,8 +289,11 @@ export function LibraryContentPage() {
 
   useEffect(() => {
     let activeRequest = true
+    // مُنتقي السلسلة يُقصر على الكوكب الوارد: الكتاب واللعبة والنشاط تُنسب إلى
+    // كوكب عبر سلسلتها لا بحقل كوكب، فقصر القائمة هو الطريقة الوحيدة الصادقة
+    // لجعل «الكوكب مُختارًا مسبقًا» صحيحًا بلا اختراع حقل لا وجود له.
     void Promise.allSettled([
-      api.series({ status: 'all', limit: 100 }),
+      api.series({ status: 'all', limit: 100, planet: planetFilter || undefined }),
       api.gameEngines(),
       api.episodes({ status: 'all', limit: 100 }),
     ]).then(([seriesResult, engineResult, episodeResult]) => {
@@ -293,7 +304,19 @@ export function LibraryContentPage() {
       setReferenceIssue(seriesResult.status === 'rejected' || engineResult.status === 'rejected')
     })
     return () => { activeRequest = false }
-  }, [])
+  }, [planetFilter])
+
+  /// ‏`?new=1&kind=games` يفتح نموذج النوع المطلوب. النوع يُقرأ من العنوان لأن
+  /// مساحة عمل الكوكب تعرض ثلاثة أزرار إنشاء مختلفة تقصد هذه الشاشة نفسها، ولو
+  /// اعتمدنا على التبويب النشِط لكان زرّ «إضافة لعبة» يفتح نموذج كتاب.
+  useQuickCreate(() => {
+    const requested = searchParams.get('kind')
+    const kind: LibraryContentKind = requested === 'games' || requested === 'projects' || requested === 'books'
+      ? requested
+      : active
+    setActive(kind)
+    openCreate(kind)
+  })
 
   const counts: Record<LibraryContentKind, number> = { books: books.length, games: games.length, projects: projects.length }
   const tabs: Array<{ kind: LibraryContentKind; icon: IconName }> = [
@@ -444,6 +467,25 @@ export function LibraryContentPage() {
             <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label={text.statusFilter}><option value="">{text.activeStatuses}</option><option value="all">{text.allStatuses}</option>{filterStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select>
           </div>
         </header>
+
+        {/* قصر الكوكب يظهر كشريحة: فلتر صامت يضيّق النتائج بلا أثر مرئي يجعل
+            المستخدم يقرأ عددًا ناقصًا ويظنّه كل المكتبة. */}
+        {planetFilter && (
+          <div className="filter-chips" aria-label={text.planetScope(planetFilter)}>
+            <span className="filter-chip">
+              <span>{text.planetScope(planetFilter)}</span>
+              <button
+                type="button"
+                aria-label={text.clearPlanetScope}
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams)
+                  next.delete('planet')
+                  setSearchParams(next, { replace: true })
+                }}
+              ><Icon name="close" size={12} /></button>
+            </span>
+          </div>
+        )}
 
         {loading && counts[active] === 0 ? <LoadingState label={text.loading} /> : error && counts[active] === 0 ? <ErrorState message={error} onRetry={() => void load()} /> : counts[active] === 0 ? <EmptyState title={text.empty} description={text.emptyDescription} action={emptyAction} /> : (
           <div className="library-grid">

@@ -93,6 +93,11 @@ const ROUTES = [
   { path: 'series', label: 'series', expect: /إدارة السلاسل|Series management/ },
   { path: 'episodes', label: 'episodes', expect: /الحلقات|Episodes/ },
   { path: 'planets', label: 'planets', expect: /الكواكب|Planets/ },
+  // مساحة عمل كوكب حقيقي. المعرّف يُحلّ وقت التشغيل من الفهرس لا يُثبَّت هنا:
+  // معرّف مكتوب بيدنا يجعل الفحص ينجح على 404 لو حُذف ذلك الكوكب.
+  { path: 'planets/__FIRST_PLANET__', label: 'planet workspace', expect: /نظرة عامة|Overview/ },
+  { path: 'planets/__FIRST_PLANET__?tab=content', label: 'planet workspace content', expect: /المحتوى|Content/ },
+  { path: 'planets/__FIRST_PLANET__?tab=languages', label: 'planet workspace languages', expect: /التغطية|Coverage/ },
   { path: 'library-content', label: 'content library', expect: /الكتب والألعاب|Books, games/ },
   { path: 'stories', label: 'stories', expect: /محرر القصص|Visual story editor/ },
   { path: 'workflows', label: 'workflow', expect: /سير العمل|Workflow/ },
@@ -171,6 +176,24 @@ async function ensureBlogFixture(token) {
 async function firstPageId(token) {
   const pages = await apiFetch('/admin/website/pages', token)
   return pages.body?.data?.[0]?.id ?? null
+}
+
+/// The id of a planet that actually exists, for the workspace routes.
+///
+/// Resolved at run time rather than hard-coded: a literal id would make the check pass
+/// against a 404 page if that planet were renamed or disabled, and the workspace's
+/// empty state renders without a console error — so nothing else would catch it.
+async function firstPlanetId(token) {
+  const planets = await apiFetch('/admin/planets?include_inactive=1', token)
+  return planets.body?.data?.[0]?.id ?? null
+}
+
+/// Drops the planet-workspace routes when no planet exists, instead of visiting
+/// `/planets/undefined` and reporting a 404 as a rendering failure.
+function resolveRoutes(planetId) {
+  return ROUTES
+    .filter((route) => planetId || !route.path.includes('__FIRST_PLANET__'))
+    .map((route) => ({ ...route, path: route.path.replace('__FIRST_PLANET__', planetId ?? '') }))
 }
 
 /// Collects console errors and page errors for the lifetime of a page.
@@ -287,8 +310,13 @@ async function main() {
   const token = await apiLogin()
   const postId = await ensureBlogFixture(token)
   const pageId = await firstPageId(token)
+  const planetId = await firstPlanetId(token)
   record('fixture: a website page exists', !!pageId, pageId ?? 'none')
   record('fixture: a blog post exists', !!postId, postId ?? 'none')
+  // بلا كوكب لا تُفحص مساحة العمل، ويُسجَّل ذلك صراحةً بدل أن يبدو الفحص ناجحًا.
+  if (planetId) record('fixture: a planet exists for the workspace routes', true, planetId)
+  else unverified.push({ name: 'planet workspace routes', reason: 'no planet row in the local database' })
+  const routes = resolveRoutes(planetId)
 
   const browser = await chromium.launch()
   const a11y = []
@@ -333,7 +361,7 @@ async function main() {
       const dir = await page.evaluate(() => document.documentElement.dir)
       record(`document dir is ${locale === 'ar' ? 'rtl' : 'ltr'} for ${locale}`, dir === (locale === 'ar' ? 'rtl' : 'ltr'), dir)
 
-      for (const route of ROUTES) {
+      for (const route of routes) {
         problems.length = 0
         await page.goto(`${FRONT}${ADMIN_BASE}/${route.path}`, { waitUntil: 'networkidle' })
         await page.waitForTimeout(250)

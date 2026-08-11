@@ -9,7 +9,7 @@
 | `title_ar` | سرّ الحدائق |
 | `description_ar` | نبتة نمت في شقّ جدار، وطفل أراد أن يعرف كيف |
 | `page_count` | **12** |
-| `duration_seconds` | 270 *(4:30)* |
+| `duration_seconds` | **125** *(2:05)*|
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `story_type` | `illustrated` |

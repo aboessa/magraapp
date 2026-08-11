@@ -9,7 +9,7 @@
 | `title_ar` | نجمة تائهة |
 | `description_ar` | ضوء في بَرْكة يبدو كنجمة ضائعة، ثم يكشف انعكاسه الحقيقة |
 | `page_count` | **12** |
-| `duration_seconds` | 260 *(4:20)* |
+| `duration_seconds` | **126** *(2:06)*|
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `story_type` | `illustrated` |

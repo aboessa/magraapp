@@ -57,7 +57,9 @@ import './styles/adminUx.css'
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
 const TaxonomyPage = lazy(() => import('./pages/TaxonomyPage').then((module) => ({ default: module.TaxonomyPage })))
 const PlanetsPage = lazy(() => import('./pages/PlanetsPage').then((module) => ({ default: module.PlanetsPage })))
-const PlanetDetailPage = lazy(() => import('./pages/PlanetDetailPage').then((module) => ({ default: module.PlanetDetailPage })))
+// مساحة عمل الكوكب بدل صفحة التفاصيل السابقة: عشرة تبويبات تقرأ تجميعة واحدة،
+// فصفحة التفاصيل القديمة (وصف + لون + ترتيب) لم يبقَ لها معنى.
+const PlanetWorkspacePage = lazy(() => import('./pages/PlanetWorkspacePage').then((module) => ({ default: module.PlanetWorkspacePage })))
 const SkillsPage = lazy(() => import('./pages/SkillsPage').then((module) => ({ default: module.SkillsPage })))
 const LearningObjectivesPage = lazy(() => import('./pages/LearningObjectivesPage').then((module) => ({ default: module.LearningObjectivesPage })))
 const ContentReviewsPage = lazy(() => import('./pages/ContentReviewsPage').then((module) => ({ default: module.ContentReviewsPage })))
@@ -70,8 +72,15 @@ const EpisodeDetailPage = lazy(() => import('./pages/EpisodeDetailPage').then((m
 const CharactersPage = lazy(() => import('./pages/CharactersPage').then((module) => ({ default: module.CharactersPage })))
 const CharacterDetailPage = lazy(() => import('./pages/CharacterDetailPage').then((module) => ({ default: module.CharacterDetailPage })))
 const StoriesPage = lazy(() => import('./pages/StoriesPage').then((module) => ({ default: module.StoriesPage })))
-const LibraryContentPage = lazy(() => import('./pages/LibraryContentPage').then((module) => ({ default: module.LibraryContentPage })))
+const StoryWorkspacePage = lazy(() => import('./pages/StoryWorkspacePage').then((module) => ({ default: module.StoryWorkspacePage })))
+const StoryBuilderPage = lazy(() => import('./pages/StoryBuilderPage').then((module) => ({ default: module.StoryBuilderPage })))
+const LibraryHubPage = lazy(() => import('./pages/LibraryHubPage').then((module) => ({ default: module.LibraryHubPage })))
 const LibraryContentDetailPage = lazy(() => import('./pages/LibraryContentDetailPage').then((module) => ({ default: module.LibraryContentDetailPage })))
+const BooksPage = lazy(() => import('./pages/BooksPage').then((module) => ({ default: module.BooksPage })))
+const BookWorkspacePage = lazy(() => import('./pages/BookWorkspacePage').then((module) => ({ default: module.BookWorkspacePage })))
+const GamesPage = lazy(() => import('./pages/GamesPage').then((module) => ({ default: module.GamesPage })))
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then((module) => ({ default: module.ProjectsPage })))
+const ProjectWorkspacePage = lazy(() => import('./pages/ProjectWorkspacePage').then((module) => ({ default: module.ProjectWorkspacePage })))
 const VisualStylesPage = lazy(() => import('./pages/VisualStylesPage').then((module) => ({ default: module.VisualStylesPage })))
 const NarrationPage = lazy(() => import('./pages/NarrationPage').then((module) => ({ default: module.NarrationPage })))
 const QualityPage = lazy(() => import('./pages/QualityPage').then((module) => ({ default: module.QualityPage })))
@@ -161,7 +170,7 @@ export default function AdminRoutes() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="taxonomy" element={<TaxonomyPage />} />
         <Route path="planets" element={<PlanetsPage />} />
-        <Route path="planets/:id" element={<PlanetDetailPage />} />
+        <Route path="planets/:id" element={<PlanetWorkspacePage />} />
         <Route path="skills" element={<SkillsPage />} />
         <Route path="objectives" element={<LearningObjectivesPage />} />
         <Route path="content-reviews" element={<ContentReviewsPage />} />
@@ -174,9 +183,20 @@ export default function AdminRoutes() {
         <Route path="characters" element={<CharactersPage />} />
         <Route path="characters/:id" element={<CharacterDetailPage />} />
         <Route path="stories" element={<StoriesPage />} />
-        <Route path="stories/:id" element={<StoriesPage />} />
-        <Route path="library-content" element={<LibraryContentPage />} />
+        {/* مساحة العمل والمحرّر سياقان مختلفان بمساران مختلفان.
+            كان `stories/:id` يفتح المحرّر مباشرةً، فمن أراد حالة القصة كان يهبط
+            في سطح تأليف صفحات. الآن: `:id` يُدير القصة ككيان، و`:id/builder`
+            يُؤلّف صفحاتها. */}
+        <Route path="stories/:id" element={<StoryWorkspacePage />} />
+        <Route path="stories/:id/builder" element={<StoryBuilderPage />} />
+        <Route path="library" element={<LibraryHubPage />} />
+        <Route path="library-content" element={<LibraryHubPage />} />
         <Route path="library-content/:kind/:id" element={<LibraryContentDetailPage />} />
+        <Route path="books" element={<BooksPage />} />
+        <Route path="books/:id" element={<BookWorkspacePage />} />
+        <Route path="games" element={<GamesPage />} />
+        <Route path="projects" element={<ProjectsPage />} />
+        <Route path="projects/:id" element={<ProjectWorkspacePage />} />
         {/* استوديو الرسم: صفحة تأليف لحزمة اللعبة وهندستها ومعاينتها وجاهزيتها.
             منفصلة عن صفحة المكتبة لأن تلك تعرض الحزمة كـJSON للقراءة فقط. */}
         <Route path="games/:id" element={<GameDetailPage />} />

@@ -9,7 +9,7 @@
 | `title_ar` | رحلة النملة |
 | `description_ar` | نملة تحمل حبّة أكبر منها، وتكتشف أن الطلب ليس ضعفًا |
 | `page_count` | **12** |
-| `duration_seconds` | 260 *(4:20)* |
+| `duration_seconds` | **123** *(2:03)*|
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `story_type` | `illustrated` |

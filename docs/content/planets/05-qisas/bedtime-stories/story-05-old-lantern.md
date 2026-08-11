@@ -9,7 +9,7 @@
 | `title_ar` | الفانوس القديم |
 | `description_ar` | فانوس لا يعمل، لكن حكاية العائلة تمنحه مكانًا جديدًا |
 | `page_count` | **12** |
-| `duration_seconds` | 280 *(4:40)* |
+| `duration_seconds` | **127** *(2:07)*|
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `story_type` | `illustrated` |

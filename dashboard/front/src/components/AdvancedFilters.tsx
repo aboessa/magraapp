@@ -29,6 +29,13 @@ export interface FilterField {
   hint?: string
   /// نصّ الشريحة عند التطبيق. الافتراضي `label: value`.
   chip?: (value: string) => string
+  /// حقل ثانوي يُطوى داخل «فلاتر أخرى». الحقول الأساسية تظهر مفتوحة دائمًا.
+  ///
+  /// الغرض ليس إخفاء الحقل بل ترتيب الأولوية: درج فيه عشرة حقول متساوية البروز
+  /// يجعل الفلتر المستخدَم يوميًّا بنفس ثقل الفلتر النادر. الحقل المطوي يظل
+  /// مطبَّقًا وتظل شريحته ظاهرة، والقسم يُفتح تلقائيًّا إذا كان أحد حقوله مطبَّقًا
+  /// حتى لا يُخفى فلتر نشِط عن عين المستخدم.
+  advanced?: boolean
 }
 
 const copy = {
@@ -44,6 +51,7 @@ const copy = {
     no: 'لا',
     remove: 'إزالة الفلتر',
     active: 'فلاتر مُطبَّقة',
+    more: 'فلاتر أخرى',
   },
   en: {
     filters: 'Filters',
@@ -57,6 +65,7 @@ const copy = {
     no: 'No',
     remove: 'Remove filter',
     active: 'Active filters',
+    more: 'More filters',
   },
 }
 
@@ -94,6 +103,44 @@ export function FilterDrawer({
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose, open])
 
+  const primary = fields.filter((field) => !field.advanced)
+  const advanced = fields.filter((field) => field.advanced)
+  /// القسم الثانوي يُفتح إذا كان أحد حقوله مطبَّقًا: فلتر نشِط مخفيٌّ خلف طَيّة
+  /// مغلقة يجعل النتيجة المعروضة تبدو غير مبرَّرة.
+  const advancedOpen = advanced.some((field) => (values[field.key] ?? '') !== '')
+
+  const renderField = (field: FilterField) => (
+    <label className="field" key={field.key}>
+      <span>{field.label}</span>
+      {field.type === 'select' ? (
+        <select
+          value={draft[field.key] ?? ''}
+          onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })}
+        >
+          {(field.options ?? []).map((option) => (
+            <option value={option.value} key={option.value || 'all'}>{option.label}</option>
+          ))}
+        </select>
+      ) : field.type === 'boolean' ? (
+        <select
+          value={draft[field.key] ?? ''}
+          onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })}
+        >
+          <option value="">{text.all}</option>
+          <option value="1">{text.yes}</option>
+          <option value="0">{text.no}</option>
+        </select>
+      ) : (
+        <input
+          type={field.type === 'date' ? 'date' : 'text'}
+          value={draft[field.key] ?? ''}
+          onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })}
+        />
+      )}
+      {field.hint && <small>{field.hint}</small>}
+    </label>
+  )
+
   if (!open) return null
 
   return (
@@ -108,38 +155,16 @@ export function FilterDrawer({
         </header>
         <div className="drawer__body">
           <div className="entity-form">
-            {fields.map((field) => (
-              <label className="field" key={field.key}>
-                <span>{field.label}</span>
-                {field.type === 'select' ? (
-                  <select
-                    value={draft[field.key] ?? ''}
-                    onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })}
-                  >
-                    {(field.options ?? []).map((option) => (
-                      <option value={option.value} key={option.value || 'all'}>{option.label}</option>
-                    ))}
-                  </select>
-                ) : field.type === 'boolean' ? (
-                  <select
-                    value={draft[field.key] ?? ''}
-                    onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })}
-                  >
-                    <option value="">{text.all}</option>
-                    <option value="1">{text.yes}</option>
-                    <option value="0">{text.no}</option>
-                  </select>
-                ) : (
-                  <input
-                    type={field.type === 'date' ? 'date' : 'text'}
-                    value={draft[field.key] ?? ''}
-                    onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })}
-                  />
-                )}
-                {field.hint && <small>{field.hint}</small>}
-              </label>
-            ))}
+            {primary.map(renderField)}
           </div>
+          {advanced.length > 0 && (
+            <details className="filter-more" open={advancedOpen}>
+              <summary>{text.more}<span className="filter-more__count">{advanced.length}</span></summary>
+              <div className="entity-form">
+                {advanced.map(renderField)}
+              </div>
+            </details>
+          )}
         </div>
         <footer className="drawer__footer">
           <button className="button button--primary" type="button" onClick={() => { onApply(draft); onClose() }}>

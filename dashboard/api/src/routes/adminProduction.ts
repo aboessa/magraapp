@@ -272,6 +272,11 @@ route.get('/production/board', requireAdmin, async (c) => {
   const type = c.req.query('type') === 'story' ? 'story' : 'episode';
   const status = c.req.query('status');
   const seriesId = c.req.query('series_id');
+  /// A planet is the level above a series, and the planet workspace needs the same
+  /// board scoped to one planet. Both `episodes` and `stories` carry `series_id`, so
+  /// one predicate serves both types; a story with no series is excluded, which is
+  /// correct — an unparented story belongs to no planet.
+  const planetId = c.req.query('planet_id');
   const withPublish = c.req.query('with_publish') !== '0';
   const limit = Math.min(Math.max(Number.parseInt(c.req.query('limit') ?? '20', 10) || 20, 1), BOARD_LIMIT);
   const offset = Math.max(Number.parseInt(c.req.query('offset') ?? '0', 10) || 0, 0);
@@ -285,6 +290,10 @@ route.get('/production/board', requireAdmin, async (c) => {
     clauses.push("status NOT IN ('published', 'archived')");
   }
   if (seriesId) { clauses.push('series_id = ?'); params.push(seriesId); }
+  if (planetId) {
+    clauses.push("series_id IN (SELECT id FROM series WHERE planet_id = ? AND content_class = 'production')");
+    params.push(planetId);
+  }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
   const table = type === 'episode' ? 'episodes' : 'stories';
 
@@ -320,6 +329,7 @@ route.get('/production/board', requireAdmin, async (c) => {
       publish_evaluated: withPublish,
       // Stated so a screen showing a capped board cannot present it as the whole slate.
       board_limit: BOARD_LIMIT,
+      planet_id: planetId ?? null,
     },
   });
 });

@@ -494,6 +494,23 @@ async function main() {
       'no ticket in this database has passed its resolution deadline, and the admin API has no '
       + 'way to backdate one (deadlines are derived server-side from created_at), so the positive '
       + 'case of the overdue filter is not exercised here');
+  } else {
+    // The positive direction, which is the one the defect hid.
+    //
+    // The earlier run could only prove that the filter did not *over*-report, because every
+    // deadline in the database was still in the future. A breached row seeded directly into
+    // local D1 — the admin API cannot backdate `created_at`, and deadlines are derived from
+    // it — makes the true-positive path assertable: the SQL filter, the badge and the
+    // per-row JavaScript judgement must all name the same tickets.
+    check('an overdue ticket is counted by the SQL filter',
+      (overdue.json?.meta?.total ?? 0) > 0,
+      `filter total ${overdue.json?.meta?.total}, recomputed ${recomputed.length}`);
+    check('the badge and the SQL filter agree on the count',
+      badge === (overdue.json?.meta?.total ?? -1),
+      `badge ${badge} vs filter ${overdue.json?.meta?.total}`);
+    check('every ticket the filter returned is one the arithmetic also calls overdue',
+      (overdue.json?.data ?? []).every((row) => new Date(row.resolution_due_at).getTime() < now),
+      (overdue.json?.data ?? []).map((row) => `${row.reference}:${row.resolution_due_at}`).join(' '));
   }
 
   // --- Saved views ---------------------------------------------------------

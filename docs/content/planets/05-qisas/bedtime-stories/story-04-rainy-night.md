@@ -9,7 +9,7 @@
 | `title_ar` | ليلة المطر |
 | `description_ar` | صوت يوقظها، ثم تتعلّم أن تعدّ فتهدأ |
 | `page_count` | **12** |
-| `duration_seconds` | 240 *(4:00)* |
+| `duration_seconds` | **123** *(2:03)*|
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `story_type` | `illustrated` |

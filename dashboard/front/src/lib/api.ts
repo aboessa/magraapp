@@ -234,12 +234,33 @@ export const api = {
 
   planets: () => request<ApiEnvelope<Planet[]>>('/planets'),
   cmsPlanets: (includeInactive = false) => request<ApiEnvelope<Planet[]>>(`/admin/planets${queryString({ include_inactive: includeInactive ? 1 : undefined })}`),
+  /// فهرس الكواكب بمؤشّراته: نفس المسار، لكن النوع يحمل `health` و`meta.summary`.
+  ///
+  /// الفلترة والترتيب في الخادم (`routes/adminPlanets.ts`) على صفوف جمّعتها SQL
+  /// مرة واحدة، فلا حساب مؤشّرات في المتصفح ولا نداء لكل كوكب.
+  planetsCollection: (filters: Record<string, string | number | undefined> = {}) =>
+    request<import('../types/api').PlanetsListEnvelope>(`/admin/planets${queryString(filters)}`),
   /// تفصيل كوكب واحد مع سلاسله وتصنيفاته. أُضيف لأن الصفحة كانت بلا أي مسار
   /// GET by :id، فيستحيل بناء مساحة عمل مخصّصة لكوكب واحد (DASHBOARD v3 UX-8).
   planetDetail: (id: string) => request<ApiEnvelope<import('../types/api').PlanetDetail>>(`/admin/planets/${encodeURIComponent(id)}`),
-  createPlanet: (payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string }>>('/admin/planets', { method: 'POST', body: JSON.stringify(payload) }),
-  updatePlanet: (id: string, payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string }>>(`/admin/planets/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
-  archivePlanet: (id: string) => request<ApiEnvelope<{ id: string }>>(`/admin/planets/${id}`, { method: 'DELETE' }),
+  /// تجميعة مساحة عمل الكوكب: المحتوى والوسائط واللغات والإنتاج والتعلّم
+  /// والمراجعات والحقوق والتدقيق في نداء واحد. اثنا عشر استعلامًا في الخادم بدل
+  /// اثني عشر نداءً من المتصفح، وكل وحدة تعلن `unavailable` وحدها.
+  planetWorkspace: (id: string) =>
+    request<ApiEnvelope<import('../types/api').PlanetWorkspace>>(`/admin/planets/${encodeURIComponent(id)}/workspace`),
+  /// شجرة المحتوى: كوكب ← سلسلة ← موسم ← حلقة. مستقلّة عن التجميعة لأن حجمها
+  /// يتبع الكوكب، ومعظم الجلسات لا تفتح تبويب المحتوى.
+  planetTree: (id: string) =>
+    request<import('../types/api').PlanetTreeEnvelope>(`/admin/planets/${encodeURIComponent(id)}/tree`),
+  createPlanet: (payload: import('../types/api').PlanetPayload) => request<ApiEnvelope<{ id: string }>>('/admin/planets', { method: 'POST', body: JSON.stringify(payload) }),
+  updatePlanet: (id: string, payload: Partial<import('../types/api').PlanetPayload>) => request<ApiEnvelope<{ id: string }>>(`/admin/planets/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  /// تعطيل الكوكب. الخادم يرفض بـ409 ويعيد أثر التعطيل إن كان الكوكب يحمل
+  /// محتوى، فالتأكيد يُطلب بـ`force` بعد عرض الأثر لا قبله.
+  archivePlanet: (id: string, force = false) =>
+    request<ApiEnvelope<{ id: string; is_active: boolean; impact: { series: number; published_series: number; episodes: number; published_episodes: number } }>>(
+      `/admin/planets/${encodeURIComponent(id)}${queryString({ force: force ? 1 : undefined })}`,
+      { method: 'DELETE' },
+    ),
 
   categories: (includeInactive = false) => request<ApiEnvelope<CategoryRecord[]>>(`/admin/categories${queryString({ include_inactive: includeInactive ? 1 : undefined })}`),
   createCategory: (payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string }>>('/admin/categories', { method: 'POST', body: JSON.stringify(payload) }),
@@ -323,6 +344,20 @@ export const api = {
   updateProject: (id: string, payload: Partial<import('../types/api').ProjectPayload>) => request<ApiEnvelope<{ id: string; updated: boolean }>>(`/admin/projects/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   archiveProject: (id: string) => request<ApiEnvelope<{ id: string; status: string }>>(`/admin/projects/${id}`, { method: 'DELETE' }),
 
+  /// مكتبة القصص: غلاف حقيقي وتغطية معدودة لكل لغة، بدل «ar · en» التي لا تقول شيئًا.
+  storyLibrary: (filters: Record<string, string | number | undefined> = {}) =>
+    request<PaginatedEnvelope<import('../types/api').StoryLibraryRow> & {
+      meta: { total: number; summary: import('../types/api').StoryLibrarySummary; notes: string[] }
+    }>(`/admin/stories/library${queryString(filters)}`),
+  /// تجميعة مساحة العمل والمحرّر: القصة وصفحاتها وكل ترجماتها وعوائقها في نداء واحد.
+  storyWorkspace: (id: string) =>
+    request<ApiEnvelope<import('../types/api').StoryWorkspace>>(`/admin/stories/${encodeURIComponent(id)}/workspace`),
+  /// إعادة ترتيب الصفحات في دفعة واحدة. الترتيب الجزئي مرفوض من الخادم، فلا حالة وسيطة.
+  reorderStoryPages: (id: string, order: string[]) =>
+    request<ApiEnvelope<{ id: string; pages: number; order: string[] }>>(
+      `/admin/stories/${encodeURIComponent(id)}/pages/reorder`,
+      { method: 'POST', body: JSON.stringify({ order }) },
+    ),
   stories: (filters: Record<string, string | number | undefined> = {}) => request<ApiEnvelope<StoryRecord[]>>(`/admin/stories${queryString(filters)}`),
   story: (id: string) => request<ApiEnvelope<StoryDetail>>(`/admin/stories/${id}`),
   createStory: (payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string }>>('/admin/stories', { method: 'POST', body: JSON.stringify(payload) }),
@@ -435,7 +470,9 @@ export const api = {
 
   /// مركز الإنتاج. `with_publish=0` يتجاوز تقييم بوابة النشر، وهو الجزء المكلف:
   /// لوحة بأربعين عنصرًا تقيّم البوابة لكل عنصر.
-  productionBoard: (filters: { type?: string; status?: string; series_id?: string; with_publish?: string; limit?: number; offset?: number } = {}) =>
+  /// لوحة الإنتاج. `planet_id` أُضيف لأن مساحة عمل الكوكب تحتاج نفس اللوحة
+  /// بنطاق كوكب واحد، وكلا الجدولين (episodes و stories) يحمل `series_id`.
+  productionBoard: (filters: { type?: string; status?: string; series_id?: string; planet_id?: string; with_publish?: string | number; limit?: number; offset?: number } = {}) =>
     request<PaginatedEnvelope<import('../types/api').ProductionItem>>(`/admin/production/board${queryString(filters)}`),
   productionItem: (type: 'episode' | 'story', id: string) =>
     request<ApiEnvelope<import('../types/api').ProductionItem>>(`/admin/production/${type}/${encodeURIComponent(id)}`),

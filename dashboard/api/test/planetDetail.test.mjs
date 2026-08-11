@@ -1,4 +1,5 @@
-/// Regression coverage for GET /admin/planets/:id.
+/// Regression coverage for GET /admin/planets/:id (routes/adminPlanets.ts, moved there
+/// from adminContent.ts when planets grew a workspace).
 ///
 /// ## The defect these tests pin
 ///
@@ -68,7 +69,7 @@ function db(series) {
 }
 
 async function call(series) {
-  const { default: route } = await import('../src/routes/adminContent.ts');
+  const { default: route } = await import('../src/routes/adminPlanets.ts');
   const env = { DB: db(series), ENVIRONMENT: 'development', PUBLIC_ASSET_BASE_URL: undefined };
   const response = await route.request('/planets/qisas', {}, env);
   return { status: response.status, body: await response.json().catch(() => null) };
@@ -104,7 +105,7 @@ test('the planet payload keeps its own shape and drops empty categories', async 
 });
 
 test('a missing planet is a 404, not an empty workspace', async () => {
-  const { default: route } = await import('../src/routes/adminContent.ts');
+  const { default: route } = await import('../src/routes/adminPlanets.ts');
   const env = { DB: fakeDb([]), ENVIRONMENT: 'development', PUBLIC_ASSET_BASE_URL: undefined };
   const response = await route.request('/planets/nope', {}, env);
   assert.equal(response.status, 404);

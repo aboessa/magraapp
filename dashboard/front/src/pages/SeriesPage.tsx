@@ -77,7 +77,10 @@ const emptyForm: SeriesForm = { title_ar: '', planet_id: '', type: 'continuous',
 
 /// أسماء الفلاتر هي أسماء معاملات الاستعلام التي يقبلها `GET /admin/series`
 /// بالحرف، فرابط من اللوحة التنفيذية يفتح المجموعة نفسها التي عدّها المقياس.
-const DEFAULT_FILTERS = { track: '', status: '' }
+/// ‏`planet` و`category` سياقان واردان لا حقلان في الدرج: شاشة الكواكب وشاشة
+/// التصنيفات تفتحان هذه القائمة مقصورةً على أحدهما. كلاهما معامل يقبله
+/// `GET /admin/series` بالحرف، فالرقم على البطاقة والقائمة التي تفتحها يتّفقان.
+const DEFAULT_FILTERS = { track: '', status: '', planet: '', category: '' }
 const LIMIT = 50
 
 /// حقول الدرج، مُعرَّفة كبيانات لا كـJSX: نفس التعريف يقود الدرج والشرائح
@@ -129,7 +132,7 @@ export function SeriesPage() {
   const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
   const navigate = useNavigate()
   const { query, filters, offset, limit } = list
-  const { track, status } = filters
+  const { track, status, category, planet: planetContext } = filters
   const [records, setRecords] = useState<SeriesRecord[]>([])
   const [planets, setPlanets] = useState<Planet[]>([])
   const [visualStyles, setVisualStyles] = useState<VisualStyleRecord[]>([])
@@ -151,7 +154,15 @@ export function SeriesPage() {
     setLoading(true)
     setError('')
     try {
-      const response = await api.series({ q: query, track, status, limit, offset })
+      const response = await api.series({
+        q: query,
+        track,
+        status,
+        planet: planetContext || undefined,
+        category: category || undefined,
+        limit,
+        offset,
+      })
       setRecords(response.data)
       setTotal(response.meta.total)
     } catch (caught) {
@@ -159,7 +170,7 @@ export function SeriesPage() {
     } finally {
       setLoading(false)
     }
-  }, [query, status, text.loadError, track, offset])
+  }, [query, status, text.loadError, track, planetContext, category, offset])
 
   // لا `setOffset(0)` هنا: `useUrlListState` يُصفّر الترقيم عند كل تغيير فلتر،
   // فأثرٌ إضافي يفعل الشيء نفسه كان سيكتب في العنوان مرتين لكل ضغطة.
@@ -181,7 +192,18 @@ export function SeriesPage() {
 
   function openCreate() {
     setEditing(null)
-    setForm({ ...emptyForm, planet_id: planets[0]?.id ?? '', visual_style_id: visualStyles[0]?.id ?? '' })
+    /// الكوكب المفلتر يفوز على أول كوكب في القائمة.
+    ///
+    /// مساحة عمل الكوكب تفتح هذه الشاشة بـ`?planet=X&new=1`، وكان النموذج يختار
+    /// `planets[0]` دائمًا — فمن أنشأ سلسلة من داخل «أبجد» كان يحصل على نموذج
+    /// يشير إلى كوكب آخر، ويصمت الخطأ إن لم يلاحظه. الفلتر النشِط هو السياق الذي
+    /// جاء منه المستخدم، فهو الافتراض الصحيح.
+    const contextPlanet = list.filters.planet
+    setForm({
+      ...emptyForm,
+      planet_id: contextPlanet || planets[0]?.id || '',
+      visual_style_id: visualStyles[0]?.id ?? '',
+    })
     setFormError('')
     setModalOpen(true)
   }

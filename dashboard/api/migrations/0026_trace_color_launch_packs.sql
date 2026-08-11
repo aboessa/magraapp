@@ -23,6 +23,32 @@
 -- primary skill from migration 0022, so tracing a shape is legible as
 -- shape_recognition plus fine motor rather than as writing.
 
+-- 0. The engine this migration's packs hang off --------------------------------
+--
+-- ## Why a migration that authors packs also registers the engine
+--
+-- `games.engine_id` is `REFERENCES game_engines(id) ON DELETE RESTRICT`, so every
+-- insert below is a foreign key into this table. Nothing in migrations 0001-0025
+-- ever inserts `trace_color`: 0003 seeds five placeholder engines
+-- (engine-match, engine-sequence, engine-memory, engine-maze, engine-builder) and
+-- the twelve documented contracts were loaded by hand through
+-- `scripts/_slate_load.sql`, which is not a migration and never ran on production.
+--
+-- The result was an environment split that only surfaced here. Local development
+-- carries 16 engines because the slate load was run there; production carries the
+-- original 5. So this migration passed locally for months and failed on production
+-- with `FOREIGN KEY constraint failed`, taking 0027, 0028 and every later
+-- migration down with it — including the ones that create
+-- `content_availability` and `production_requirements`.
+--
+-- A migration must declare its own dependencies rather than inherit them from a
+-- manual script. The row below is copied verbatim from `_slate_load.sql`, which is
+-- itself derived from `docs/games/engines/trace_color.md`; the values are not
+-- invented here. `OR IGNORE` keeps it a no-op where the slate load already ran.
+INSERT OR IGNORE INTO game_engines (id, name_ar, description, mechanics) VALUES
+  ('trace_color', 'تتبّع وتلوين', 'تتبّع مسار أو تلوين منطقة داخل حدود.',
+   '{"mechanics":["trace","fill"],"declared_tracks":["preschool"],"contract":"docs/games/engines/trace_color.md"}');
+
 -- 1. Objectives ------------------------------------------------------------
 INSERT OR IGNORE INTO learning_objectives
   (id, code, title_ar, description_ar, skill_id, age_min, age_max, measurable_criteria)

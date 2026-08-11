@@ -117,6 +117,35 @@
   padding: 16px 18px;
 }
 
+/* «فلاتر أخرى»: قسم مطوي داخل درج الفلاتر يفصل الفلتر اليومي عن النادر
+   دون إخفائه. الطَيّة تُفتح تلقائيًّا حين يكون أحد حقولها مطبَّقًا. */
+.filter-more { margin-block-start: 14px; border-block-start: 1px solid var(--line); padding-block-start: 12px; }
+
+.filter-more > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 2px;
+  border-radius: 8px;
+  min-height: 32px;
+}
+
+.filter-more > summary:focus-visible { outline: 2px solid var(--primary-strong); outline-offset: 2px; }
+
+.filter-more__count {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--line-strong);
+}
+
+.filter-more > .entity-form { margin-block-start: 10px; }
+
 /* --- النوافذ المنبثقة الصغيرة (عروض محفوظة، أعمدة) ------------------------ */
 
 .popover-wrap { position: relative; }
@@ -331,6 +360,9 @@
 .tree__toggle--leaf { cursor: default; opacity: 0.3; }
 
 .tree__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -338,16 +370,50 @@
   cursor: pointer;
   text-align: start;
   font-size: 14px;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.tree__label:focus-visible { outline: 2px solid var(--primary-strong); outline-offset: 2px; border-radius: 6px; }
+.tree__label:hover .tree__title { text-decoration: underline; }
+.tree__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* صورة الصف. 28px تكفي للتعرّف البصري بلا أن تُضخّم ارتفاع الصف، فتبقى
+   الشجرة كثيفة كما يليق بواجهة تشغيل. */
+.tree__thumb {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--surface-3);
 }
 
 .tree__badge {
   padding: 1px 7px;
   border-radius: 999px;
   background: var(--surface-3, #232c46);
-  font-size: 11px;
+  font-size: 11.5px;
+  white-space: nowrap;
 }
 
-.tree__meta { opacity: 0.6; font-size: 12px; }
+/* شريحة حالة في الصف. النصّ هو الحامل والنبرة زيادة عليه، فلا معلومة باللون
+   وحده — قارئ الشاشة وعمى الألوان يقرآن الشريحة نفسها. */
+.tree__tag {
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--text-soft);
+}
+
+.tree__tag--good { border-color: color-mix(in srgb, var(--success) 45%, transparent); color: var(--success); }
+.tree__tag--warn { border-color: color-mix(in srgb, var(--warning) 45%, transparent); color: var(--warning); }
+.tree__tag--danger { border-color: color-mix(in srgb, var(--danger) 45%, transparent); color: var(--danger); }
+.tree__tag--muted { color: var(--muted); }
+
+.tree__meta { color: var(--muted); font-size: 12px; margin-inline-start: auto; white-space: nowrap; }
 
 /* --- منتقي الوسائط ------------------------------------------------------- */
 
@@ -1165,3 +1231,701 @@ a.exec-metric:hover { border-color: var(--accent, #6c8cff); }
   color: var(--muted);
   font-style: italic;
 }
+
+
+/* ==========================================================================
+   الكواكب: الفهرس ومساحة العمل
+   ==========================================================================
+
+   ## لماذا مقياس نصّ خاص بهذه الشاشات
+
+   الطبقة القديمة في dashboard.css تثبّت النصّ بين ٩ و١١ بكسل مع ارتفاعات صفوف
+   ٥٨ بكسل وبطاقات بارتفاع ١٤٨ بكسل، فتنتج شاشة فيها فراغ كثير ونصّ لا يُقرأ من
+   مسافة عمل عادية — وهو بالضبط ما رُصد في هذه الشاشتين. الأنماط أدناه تعمل داخل
+   هذه الشاشات فقط (بادئات planet-* و health-* و workspace-* و attention-*)، فلا
+   تُعاد صياغة بقية اللوحة في مهمّة واحدة.
+
+   ## الكثافة
+
+   البطاقة تُظهر: صورة بنسبة ثابتة، اسمًا، معرّفًا، وصفًا بسطرين، مؤشّرات محتوى،
+   ثم مؤشّرات تشغيل. لا لوحة فارغة تُملأ بالهواء: كل منطقة فيها معلومة.
+
+   ## اللون
+
+   لون الكوكب accent فقط (حدّ علوي، خلفية أيقونة، توهّج خفيف) ولا يُستخدم كخلفية
+   كبيرة صلبة ولا كحالة، فلا يُقرأ كوكب أحمر كخطأ. ألوان الحالة تبقى للحالة.
+
+   كل التحديدات بخصائص منطقية (inline-start/end)، فالشاشتان تعملان rtl وltr على
+   نفس الشجرة.
+   ========================================================================== */
+
+/* --- ملخّص الفهرس -------------------------------------------------------- */
+
+.planet-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 10px;
+}
+
+.planet-summary__cell {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface-2);
+  text-align: start;
+  min-width: 0;
+}
+
+.planet-summary__cell strong {
+  font-size: 20px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.planet-summary__cell span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.planet-summary__cell--button { cursor: pointer; color: inherit; font: inherit; }
+.planet-summary__cell--button:hover { border-color: var(--primary); background: var(--surface-3); }
+.planet-summary__cell--button:focus-visible { outline: 2px solid var(--primary-strong); outline-offset: 2px; }
+.planet-summary__cell--warn { border-color: color-mix(in srgb, var(--warning) 45%, var(--line-strong)); }
+.planet-summary__cell--warn strong { color: var(--warning); }
+.planet-summary__cell--danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--line-strong)); }
+.planet-summary__cell--danger strong { color: var(--danger); }
+
+/* --- شبكة البطاقات ------------------------------------------------------- */
+
+.planet-collection__body { padding: 14px 16px 18px; }
+
+.planet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  gap: 14px;
+}
+
+/* بطاقة الكوكب. `position: relative` أساس منطقة النقر الكاملة أدناه. */
+.planet-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 0 12px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-block-start: 3px solid var(--planet-colour, var(--primary));
+  border-radius: 14px;
+  background: var(--surface-2);
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.planet-card:hover {
+  border-color: color-mix(in srgb, var(--planet-colour, var(--primary)) 55%, var(--line-strong));
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.28);
+}
+
+/* البطاقة كلها قابلة للنقر عبر ::after على الرابط: نقطة تركيز واحدة لقارئ الشاشة،
+   ولا زرّ ملفوف داخل رابط (وهو غير صالح ويسرق النقر). */
+.planet-card__link {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.planet-card__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.planet-card__link:focus-visible { outline: none; }
+.planet-card__link:focus-visible::after { outline: 2px solid var(--primary-strong); outline-offset: -3px; border-radius: 12px; }
+
+/* نسبة واحدة لكل صور الكواكب: 16/9 مع object-fit، فلا تشويه ولا ارتفاعات مختلفة
+   تُكسّر صفّ الشبكة. */
+.planet-card__media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--planet-colour, var(--primary)) 28%, transparent), transparent 70%),
+    var(--surface-3);
+}
+
+.planet-card__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.planet-card__media-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  gap: 6px;
+  place-content: center;
+  place-items: center;
+  color: color-mix(in srgb, var(--planet-colour, var(--primary)) 70%, #fff);
+}
+
+.planet-card__media-fallback span { color: var(--muted); font-size: 12px; }
+
+/* زرّ الإصلاح داخل حالة «لا صورة». يُرفع فوق منطقة نقر البطاقة (::after)
+   ليكون هدفًا مستقلًا: النقر عليه يفتح تبويب الوسائط لا مساحة العمل. */
+.planet-card__media-cta { position: relative; z-index: 2; min-height: 28px; }
+
+.planet-card__state { position: absolute; inset-block-start: 8px; inset-inline-end: 8px; z-index: 1; }
+
+.planet-card__body { display: grid; gap: 4px; padding: 0 14px; }
+
+.planet-card__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.planet-card__title-row h3 { margin: 0; font-size: 15px; line-height: 1.35; letter-spacing: -0.01em; }
+
+.planet-card__menu { position: relative; z-index: 2; }
+
+.planet-card__slug { color: var(--muted); font-size: 11px; }
+
+/* سطران بالضبط: أطول من ذلك يجعل ارتفاعات البطاقات مختلفة، وأقصر يترك فراغًا. */
+.planet-card__description {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.9em;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.planet-card__metrics,
+.planet-card__signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 14px;
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.planet-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block-start: auto;
+  padding: 10px 14px 0;
+  border-block-start: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.planet-card--inactive { opacity: 0.72; border-block-start-color: var(--muted); }
+.planet-card--preview { pointer-events: none; max-width: 260px; }
+.planet-row--inactive td { opacity: 0.7; }
+
+/* --- الشرائح والحالة ----------------------------------------------------- */
+
+.planet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 3px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.planet-chip b { color: var(--text); font-size: 12.5px; }
+.planet-chip--muted { color: var(--muted); }
+.planet-chip--good { color: var(--success); border-color: color-mix(in srgb, var(--success) 40%, var(--line-strong)); }
+.planet-chip--warn { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 40%, var(--line-strong)); }
+.planet-chip--danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--line-strong)); }
+
+/* حالة تشغيل لا حالة نشر، ولذلك شكلها مختلف عن .status-badge بقصد: تشابههما كان
+   سيقرأ «نشط» كأنه «منشور». */
+.planet-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.planet-state::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.planet-state--on { color: var(--success); background: color-mix(in srgb, var(--success) 16%, transparent); }
+.planet-state--off { color: var(--muted); background: var(--surface-3); }
+
+.planet-sort { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.planet-sort select { height: 36px; width: auto; min-width: 148px; border-radius: 10px; font-size: 12px; }
+
+.planet-loading { padding: 4px 2px 12px; color: var(--muted); font-size: 12px; }
+
+/* --- قائمة إجراءات البطاقة ---------------------------------------------- */
+
+.popover--menu { width: 234px; padding: 6px; }
+.popover__list--menu { display: grid; gap: 2px; margin: 0; }
+.popover__list--menu li { display: block; }
+
+.popover__list--menu .popover__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: start;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.popover__list--menu .popover__item:hover { background: var(--surface-3); }
+.popover__list--menu .popover__item:disabled { opacity: 0.45; cursor: not-allowed; }
+.popover__item--danger { color: var(--danger); }
+
+/* --- هياكل التحميل ------------------------------------------------------- */
+
+.planet-card--skeleton { pointer-events: none; border-block-start-color: var(--line-strong); }
+.planet-card--skeleton .planet-card__media { background: var(--surface-3); }
+
+.skeleton-line,
+.skeleton-chip {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--surface-3), var(--surface-2), var(--surface-3));
+  background-size: 200% 100%;
+  animation: skeleton-sweep 1.4s linear infinite;
+}
+
+.skeleton-line { height: 11px; }
+.skeleton-line--title { height: 15px; width: 62%; }
+.skeleton-line--short { width: 38%; }
+.skeleton-chip { height: 22px; width: 68px; border-radius: 999px; }
+
+@keyframes skeleton-sweep {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line, .skeleton-chip { animation: none; }
+  .planet-card:hover { transform: none; }
+}
+
+/* --- مساحة العمل: الرأس وشريط الحالة ------------------------------------ */
+
+.planet-workspace .entity-header__meta span { font-size: 12px; }
+
+.entity-header__colour { display: inline-flex; align-items: center; gap: 6px; }
+.entity-header__colour i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+
+.health-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.health-cell {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: inherit;
+  cursor: pointer;
+  text-align: start;
+  min-width: 0;
+}
+
+.health-cell:hover { background: var(--surface-3); border-color: var(--primary); }
+.health-cell:focus-visible { outline: 2px solid var(--primary-strong); outline-offset: 2px; }
+.health-cell[aria-current='true'] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+
+.health-cell__label { color: var(--muted); font-size: 11.5px; }
+.health-cell__value { font-size: 17px; line-height: 1.2; overflow-wrap: anywhere; }
+.health-cell__detail { color: var(--muted); font-size: 11px; }
+
+.health-cell--good .health-cell__value { color: var(--success); }
+.health-cell--warn .health-cell__value { color: var(--warning); }
+.health-cell--danger .health-cell__value { color: var(--danger); }
+.health-cell--muted .health-cell__value { color: var(--muted); font-size: 13px; }
+
+/* --- مساحة العمل: التخطيط ----------------------------------------------- */
+
+.workspace-stack { display: grid; gap: 14px; }
+
+/* ‏`min-width: 0` على كل حلقة في سلسلة الاحتواء، لا زينة.
+   عنصر الشبكة افتراضه `min-width: auto`، فجدول أوسع من مساره يوسّع المسار نفسه
+   بدلًا من أن يُمرّره `.table-scroll`. وسلسلة تبويب اللغات هي:
+   `.page-stack` → `.detail-tabs` → `.detail-tabs__panel` → `.panel`، فترك أي
+   حلقة منها على `auto` يكفي لتسريب العرض. بذلك كان التبويب يدفع الصفحة إلى
+   2182px عند عرض 1440px — رصده فحص المتصفح كتجاوز أفقي، وهو ما يُجبر المشغّل
+   على تمرير الصفحة كلها أفقيًّا بدل تمرير الجدول وحده. */
+.workspace-stack > *,
+.planet-workspace > *,
+.planet-workspace .detail-tabs,
+.planet-workspace .detail-tabs__panel,
+.planet-workspace .panel { min-width: 0; }
+
+.workspace-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.85fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.planet-workspace .panel__body { padding: 14px 18px 18px; }
+.workspace-prose { color: var(--text-soft); font-size: 13px; line-height: 1.75; }
+
+.workspace-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.workspace-facts > div { display: grid; gap: 3px; }
+.workspace-facts dt { color: var(--muted); font-size: 11.5px; }
+.workspace-facts dd { margin: 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+
+.workspace-generated { color: var(--muted); font-size: 11px; text-align: end; }
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 10px;
+}
+
+.metric-cell {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface-2);
+  min-width: 0;
+}
+
+.metric-cell strong { font-size: 19px; line-height: 1.2; overflow-wrap: anywhere; }
+.metric-cell span { color: var(--muted); font-size: 11.5px; line-height: 1.4; }
+.metric-cell--good strong { color: var(--success); }
+.metric-cell--warn strong { color: var(--warning); }
+.metric-cell--danger strong { color: var(--danger); }
+.metric-cell--muted strong { color: var(--muted); }
+
+.pipeline-row,
+.composition {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.pipeline-cell,
+.composition__cell {
+  display: grid;
+  gap: 2px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.composition__cell:hover { border-color: var(--primary); background: var(--surface-3); }
+.composition__cell:focus-visible { outline: 2px solid var(--primary-strong); outline-offset: 2px; }
+.pipeline-cell strong, .composition__cell strong { font-size: 18px; }
+.pipeline-cell span, .composition__cell span { color: var(--muted); font-size: 12px; }
+
+/* عدّاد يفتح مقصدًا غير مقصور بالكوكب. الوسم يمنع قراءة الرقم كأنّ الشاشة
+   التالية ستُظهره وحده، وهو أصدق من إخفاء الفرق. */
+.composition__unscoped {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--warning);
+  letter-spacing: 0.01em;
+}
+
+/* --- ما يحتاج إلى انتباه ------------------------------------------------- */
+
+.attention__list { display: grid; gap: 8px; margin: 0; padding: 14px 18px 18px; list-style: none; }
+
+.attention__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-inline-start: 3px solid var(--muted);
+  border-radius: 11px;
+  background: var(--surface);
+}
+
+.attention__item--warn { border-inline-start-color: var(--warning); }
+.attention__item--danger { border-inline-start-color: var(--danger); }
+
+.attention__count {
+  flex: none;
+  min-width: 40px;
+  padding: 5px 8px;
+  border-radius: 9px;
+  background: var(--surface-3);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.attention__item--warn .attention__count { color: var(--warning); }
+.attention__item--danger .attention__count { color: var(--danger); }
+
+.attention__body { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.attention__body strong { font-size: 13px; }
+.attention__body small { color: var(--muted); font-size: 11.5px; line-height: 1.5; }
+
+.attention__clear {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--success);
+  font-size: 13px;
+}
+
+/* --- التغطية والملاحظات -------------------------------------------------- */
+
+.coverage { display: flex; align-items: center; gap: 8px; min-width: 116px; }
+
+.coverage__track {
+  flex: 1;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.coverage__track span { display: block; height: 100%; border-radius: 999px; background: var(--muted); }
+.coverage--good .coverage__track span { background: var(--success); }
+.coverage--warn .coverage__track span { background: var(--warning); }
+.coverage--danger .coverage__track span { background: var(--danger); }
+.coverage b { color: var(--text-soft); font-size: 11.5px; }
+.coverage__note { display: block; margin-block-start: 4px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+/* خلية تغطية ناقصة قابلة للنقر: الشريط نفسه هو الهدف، والسهم يُعلن أنه رابط.
+   الهدف لا يقلّ عن 28px ارتفاعًا ليبقى قابلًا للنقر باللمس. */
+.coverage-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.coverage-link:hover { background: var(--surface-3); }
+.coverage-link:focus-visible { outline: 2px solid var(--primary-strong); outline-offset: 1px; }
+.coverage-link svg { color: var(--muted); flex: none; }
+.coverage-link:hover svg { color: var(--text); }
+
+/* ملاحظات الوحدة: قيود المخطوطة تُقرأ مع الرقم لا في مكان آخر. */
+.module-notes {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 12px 18px 16px;
+  list-style: none;
+  border-block-start: 1px dashed var(--line-strong);
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.module-notes li { padding-inline-start: 12px; position: relative; }
+.module-notes li::before { content: '·'; position: absolute; inset-inline-start: 2px; }
+
+/* --- الهوية البصرية والمعاينة ------------------------------------------- */
+
+.identity-grid { display: flex; align-items: flex-start; gap: 14px; }
+
+.identity-swatch {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.identity-facts { display: grid; gap: 4px; min-width: 0; }
+.identity-facts > span { color: var(--muted); font-size: 11.5px; }
+.identity-facts code { font-size: 13px; }
+.identity-facts ul { display: grid; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
+.identity-facts li { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+.identity-facts li span { color: var(--muted); }
+
+.app-preview { margin-block-start: 16px; display: grid; gap: 6px; }
+.app-preview__label,
+.planet-editor__preview-label { color: var(--muted); font-size: 11.5px; }
+
+.app-preview__card {
+  display: grid;
+  gap: 8px;
+  place-items: center;
+  width: 152px;
+  padding: 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--planet-colour, var(--primary)) 42%, transparent), transparent 72%),
+    var(--surface-3);
+  color: var(--text);
+  text-align: center;
+}
+
+.app-preview__card img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
+.app-preview__card strong { font-size: 12.5px; }
+
+/* --- مصفوفة الإنتاج ------------------------------------------------------ */
+
+.matrix-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+
+.matrix-item { padding: 11px 13px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); }
+.matrix-item__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.matrix-item__head a { color: var(--text); text-decoration: none; font-size: 13px; }
+.matrix-item__head a:hover { color: var(--primary-strong); }
+.matrix-item__percent { color: var(--text-soft); font-size: 12px; font-weight: 700; }
+.matrix-item__requirements { display: flex; flex-wrap: wrap; gap: 5px; margin-block-start: 9px; }
+
+.requirement-chip {
+  padding: 3px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.requirement-chip--ready { color: var(--success); border-color: color-mix(in srgb, var(--success) 40%, var(--line-strong)); }
+.requirement-chip--partial,
+.requirement-chip--in_progress { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 40%, var(--line-strong)); }
+.requirement-chip--missing { color: var(--text-soft); }
+.requirement-chip--blocked { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--line-strong)); }
+
+/* «لا ينطبق»: كان `opacity: 0.55` وهو يضرب لون النصّ في الخلفية فيهبط التباين
+   إلى ما دون 4.5:1 — رصده axe على مصفوفة الإنتاج. الشفافية تُخفَّض على الحدّ
+   وحده، ويبقى النصّ بلون كامل: «لا ينطبق» معلومة تُقرأ لا زينة. الشرطة المتقطّعة
+   تحمل التمييز البصري بدلًا من الشفافية، فلا يعتمد الفرق على اللون وحده. */
+.requirement-chip--not_applicable {
+  color: var(--muted);
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--line-strong) 60%, transparent);
+}
+
+/* --- درج محرِّر الكوكب --------------------------------------------------- */
+
+.planet-editor { display: grid; gap: 16px; }
+.planet-editor__header-tools { display: flex; align-items: center; gap: 8px; }
+
+.planet-editor__section {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.planet-editor__section legend {
+  padding: 0 6px;
+  color: var(--primary-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.planet-editor .field > span { font-size: 12.5px; }
+.planet-editor .field input,
+.planet-editor .field textarea { font-size: 13px; }
+.planet-editor .field small { color: var(--muted); font-size: 11.5px; line-height: 1.5; }
+
+.planet-editor__note { color: var(--muted); font-size: 11.5px; line-height: 1.6; margin: 0; }
+
+.planet-editor__colour { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+.planet-editor__colour-row { display: flex; gap: 8px; align-items: center; }
+.planet-editor__colour-row input[type='color'] { width: 46px; height: 40px; padding: 2px; border-radius: 10px; }
+.planet-editor__preview { display: grid; gap: 6px; }
+
+.planet-editor__artwork { display: grid; gap: 6px; }
+.planet-editor__artwork > span { color: var(--muted); font-size: 11.5px; }
+.planet-editor__artwork ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.planet-editor__artwork li { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; }
+.planet-editor__artwork li span { color: var(--muted); }
+
+/* --- استجابة ------------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .workspace-columns { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 860px) {
+  .planet-grid { grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); }
+  .planet-editor__colour { grid-template-columns: 1fr; }
+  .attention__item { flex-wrap: wrap; }
+}
+
+/* --- مكتبة المحتوى — Hub only --- */
+.library-hub { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.library-hub__block { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--surface-2); color: inherit; text-decoration: none; }
+.library-hub__block:hover { border-color: var(--primary); background: var(--surface-3); }
+.library-hub__block header { display: flex; align-items: center; gap: 10px; }
+.library-hub__icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; background: var(--surface-3); color: var(--primary-strong); }
+.library-hub__block dl { display: grid; gap: 6px; margin: 0; }
+.library-hub__block dl > div { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.library-hub__block dl dt { opacity: .7; }
+.library-hub__block dl dd { margin: 0; font-weight: 700; }
+@media (max-width: 900px){ .library-hub{ grid-template-columns: 1fr; } }
+.workspace-stack { display: grid; gap: 14px; }
+.metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.metric-cell { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface-2); text-align: center; }
+.metric-cell strong { font-size: 16px; }
+.metric-cell span { font-size: 11px; opacity: .7; }
+.metric-cell--good { border-color: rgba(34,184,120,.4); }
+.metric-cell--warn { border-color: rgba(245,165,36,.45); }
+.metric-cell--danger { border-color: rgba(240,93,119,.45); }
+.detail-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.detail-fields > div { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.detail-fields span { font-size: 10px; opacity: .7; }
+.story-readiness { display: grid; gap: 8px; }
+.story-readiness__item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: inherit; text-decoration: none; }
+.story-readiness__item--blocker { border-color: rgba(240,93,119,.4); }
+.workspace-prose { color: var(--text-soft); font-size: 13px; line-height: 1.6; }
+.entity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; padding: 12px; }
+.panel__body { padding: 14px 18px; }
+.panel__note { color: var(--muted); font-size: 11px; }
