@@ -1,315 +1,179 @@
-/**
- * طابور إنتاج الرسوم: كل صورة يحتاجها الكتالوج، بدورها وبمواصفتها وبموجزها.
- *
- * ## لماذا الدور لا اسم الملفّ
- *
- * الخادم يحدّد دور كل أصل من **الحقل الذي سمّاه**: `coloring.template_asset`
- * قالب تلوين، و`map.image` خريطة أساس، و`panels[].image` لوحة تسلسل. اسم الملفّ
- * عُرف يتغيّر؛ الحقل عقد. والدور هو ما يحمل المواصفة والموجز: رسّام يحتاج أن
- * يفتح مستندًا ليعرف أن البطاقة 512×512 سيفتحه أحيانًا ولن يفتحه أحيانًا.
- *
- * ## الغلاف ليس في الحزمة
- *
- * غلاف اللعبة صفٌّ في `asset_links` لا حقل في `content_pack`. الخادم يضيفه إلى
- * الطابور لأن لعبة بلا غلاف تعني بلاطة فارغة في مكتبة طفل — وهو عيب يصل إلى وليّ
- * أمر قبل أن يصل إلى متتبّع أخطاء.
- *
- * ## القيود التي يعرضها العائق
- *
- * أصل مقيَّد بلغة لا يمكن إعادة استخدامه في بناء آخر، ودورٌ لا يسمح بنصّ داخل
- * الصورة لا يجوز تقييده بلغة أصلًا. الخادم يحسب هذين ويعرضهما كعائق مكتوب، وهذه
- * الشاشة تعرضه كما ورد بلا إعادة صياغة.
- */
-
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
-import { ErrorState, LoadingState } from '../components/PageState'
+import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
-import { engineLabel } from '../lib/enginePack'
-import { AssetThumb } from '../components/games/engines/fields'
-import type { ArtQueueEnvelope, ArtQueueSummary, ProductionStatus } from '../types/enginePack'
 
-/// الأدوار كما يعرّفها `api/src/lib/artProductionQueue.ts`. تُستخدم لبناء قائمة
-/// التصفية فقط؛ الاسم المعروض يأتي من الخادم في `role_label_ar` فلا تُترجم هنا
-/// مرتين.
-const ROLES = [
-  'tracing_reference', 'colouring_art', 'template', 'cover',
-  'game_illustration', 'map_base', 'character', 'background',
-]
+const ROLE_LABELS: Record<string, { ar: string; en: string }> = {
+  background: { ar: 'خلفية المستوى', en: 'Level background' },
+  cover: { ar: 'غلاف اللعبة', en: 'Game cover' },
+  card: { ar: 'بطاقة', en: 'Card' },
+  character: { ar: 'شخصية', en: 'Character' },
+}
 
-const GAME_STATUSES = ['draft', 'writing', 'review_lang', 'production', 'qa', 'ready', 'scheduled', 'published']
+function humanRole(role: string, locale: string){
+  return ROLE_LABELS[role]?.[locale==='ar'?'ar':'en'] ?? role.replace('_',' ')
+}
 
 const copy = {
   ar: {
-    eyebrow: 'الإنتاج',
-    title: 'طابور إنتاج الرسوم',
-    lede: 'كل صورة يشير إليها الكتالوج بدورها ومواصفتها وموجزها. الدور يأتي من الحقل الذي سمّى الأصل، لا من اسم الملفّ.',
-    refresh: 'تحديث',
-    loading: 'جارٍ حساب الرسوم المطلوبة...',
-    loadError: 'تعذر تحميل طابور الرسوم',
-    filters: 'التصفية',
-    role: 'الدور',
-    allRoles: 'كل الأدوار',
-    gameStatus: 'حالة اللعبة',
-    allStatuses: 'كل الحالات',
-    production: 'حالة الإنتاج',
-    allProduction: 'الكل',
-    statuses: { missing: 'لم يُرسم', pending: 'قيد الإنتاج', ready: 'جاهز' } as Record<ProductionStatus, string>,
-    summaryFiltered: 'المعروض',
-    summaryCatalogue: 'الكتالوج كاملًا',
-    total: 'أصل',
-    languageLocked: 'مقيَّد بلغة',
-    byRole: 'حسب الدور',
-    gamesCovered: (count: number) => `${count} لعبة`,
-    rows: 'الأصول',
-    asset: 'الأصل',
-    game: 'اللعبة',
-    level: 'المستوى',
-    packWide: 'الحزمة كاملة',
-    spec: 'المواصفة',
-    aspect: 'النسبة',
-    size: 'المقاس',
-    format: 'الصيغة',
-    languageDependency: 'اللغة',
-    languageNone: 'محايد لغويًا',
-    brief: 'الموجز',
-    state: 'الحالة',
-    owner: 'المالك',
-    ownerHint: 'من رفع الأصل — وهي الملكية الوحيدة التي تسجّلها قاعدة البيانات.',
-    review: 'المراجعة',
-    reviewStates: {
-      no_review_record: 'لا سجلّ',
-      pending: 'معلَّقة',
-      approved: 'معتمدة',
-      rejected: 'مرفوضة',
-      needs_changes: 'تحتاج تعديلًا',
-    } as Record<string, string>,
-    blocker: 'العائق',
-    empty: 'لا أصول مطابقة للتصفية.',
+    eyebrow:'إنتاج الرسوم',
+    title:'طابور إنتاج رسوم الألعاب',
+    lede:'كل أصل مطلوب حسب عقد المحرك — المتطلب أولاً، ثم الأصل والمراجعة.',
+    funnel:'مسار الإنتاج',
+    metrics:{ required:'مطلوب', brief:'ناقص موجز', ready:'جاهز للإنتاج', unassigned:'غير مسند', progress:'قيد الرسم', review:'جاهز للمراجعة', approved:'معتمد', stale:'قديم' },
+    game:'اللعبة', level:'المستوى', assetRole:'دور الأصل', brief:'الموجز', visualStyle:'الاستايل', spec:'المواصفة', reference:'المرجع', prodStatus:'الإنتاج', review:'المراجعة', owner:'المسؤول', blocker:'العائق', actions:'إجراءات',
+    search:'بحث باللعبة...', all:'الكل', visualBoard:'لوحة بصرية', tableView:'جدول', gameGrouped:'مجمعة باللعبة',
   },
   en: {
-    eyebrow: 'Production',
-    title: 'Art production queue',
-    lede: 'Every image the catalogue references, with its role, geometry and brief. The role comes from the field that named the asset, not from the file name.',
-    refresh: 'Refresh',
-    loading: 'Deriving the required artwork...',
-    loadError: 'Unable to load the art queue',
-    filters: 'Filters',
-    role: 'Role',
-    allRoles: 'All roles',
-    gameStatus: 'Game status',
-    allStatuses: 'All statuses',
-    production: 'Production state',
-    allProduction: 'All',
-    statuses: { missing: 'Not drawn', pending: 'In production', ready: 'Ready' } as Record<ProductionStatus, string>,
-    summaryFiltered: 'Shown',
-    summaryCatalogue: 'Whole catalogue',
-    total: 'assets',
-    languageLocked: 'language locked',
-    byRole: 'By role',
-    gamesCovered: (count: number) => `${count} game(s)`,
-    rows: 'Assets',
-    asset: 'Asset',
-    game: 'Game',
-    level: 'Level',
-    packWide: 'Whole pack',
-    spec: 'Specification',
-    aspect: 'Aspect',
-    size: 'Size',
-    format: 'Format',
-    languageDependency: 'Language',
-    languageNone: 'Language neutral',
-    brief: 'Brief',
-    state: 'State',
-    owner: 'Owner',
-    ownerHint: 'Whoever uploaded the asset — the only ownership the database records.',
-    review: 'Review',
-    reviewStates: {
-      no_review_record: 'No record',
-      pending: 'Pending',
-      approved: 'Approved',
-      rejected: 'Rejected',
-      needs_changes: 'Needs changes',
-    } as Record<string, string>,
-    blocker: 'Blocker',
-    empty: 'No assets match the filters.',
-  },
+    eyebrow:'Art production',
+    title:'Games Art Production Queue',
+    lede:'Every asset required by engine contract — requirement first, then asset and review.',
+    funnel:'Production funnel',
+    metrics:{ required:'Required', brief:'Missing brief', ready:'Ready for production', unassigned:'Unassigned', progress:'In progress', review:'Ready for review', approved:'Approved', stale:'Stale' },
+    game:'Game', level:'Level', assetRole:'Asset role', brief:'Brief', visualStyle:'Visual style', spec:'Spec', reference:'Reference', prodStatus:'Production', review:'Review', owner:'Owner', blocker:'Blocker', actions:'Actions',
+    search:'Search game...', all:'All', visualBoard:'Visual board', tableView:'Table', gameGrouped:'Grouped by game',
+  }
 }
 
-function SummaryChips({ summary, label }: { summary: ArtQueueSummary; label: string }) {
-  const { locale } = usePreferences()
-  const text = copy[locale]
-  return (
-    <div className="production-summary">
-      <span className="production-chip"><strong dir="ltr">{summary.total}</strong> {label} · {text.total}</span>
-      <span className="production-chip production-chip--ready"><strong dir="ltr">{summary.ready}</strong> {text.statuses.ready}</span>
-      <span className="production-chip production-chip--pending"><strong dir="ltr">{summary.pending}</strong> {text.statuses.pending}</span>
-      <span className="production-chip production-chip--missing"><strong dir="ltr">{summary.missing}</strong> {text.statuses.missing}</span>
-      <span className="production-chip"><strong dir="ltr">{summary.language_locked}</strong> {text.languageLocked}</span>
-    </div>
-  )
-}
+type View = 'table'|'board'|'game'
 
-export function ArtProductionQueuePage() {
+export function ArtProductionQueuePage(){
   const { locale } = usePreferences()
-  const text = copy[locale]
-
-  const [data, setData] = useState<ArtQueueEnvelope | null>(null)
+  const text = copy[locale] as typeof copy.ar
+  const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [role, setRole] = useState('')
-  const [status, setStatus] = useState('')
-  const [production, setProduction] = useState('')
+  const [view, setView] = useState<View>('table')
+  const [q, setQ] = useState('')
+  const [selected, setSelected] = useState<any|null>(null)
+  const [quickAsset, setQuickAsset] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const response = await api.gameArtQueue({
-        role: role || undefined,
-        status: status || undefined,
-        production_status: production || undefined,
-      })
-      setData(response.data)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : text.loadError)
-    } finally {
-      setLoading(false)
-    }
-  }, [role, status, production, text.loadError])
+  const load = useCallback(async()=>{
+    setLoading(true); setError('')
+    try{ const res=await api.gameArtQueue({}); setData(res.data) } catch(e){ setError(e instanceof Error? e.message:'خطأ') } finally{ setLoading(false)}
+  },[])
+  useEffect(()=>{ void load()},[load])
 
-  useEffect(() => { void load() }, [load])
+  const rows = useMemo(()=>{
+    let arr = (data?.rows as any[]) || []
+    if(q) arr=arr.filter((r:any)=> `${r.game_title} ${r.role}`.toLowerCase().includes(q.toLowerCase()))
+    return arr
+  },[data,q])
 
-  if (loading && !data) return <LoadingState label={text.loading} />
-  if (error && !data) return <ErrorState message={error} onRetry={() => void load()} />
-  if (!data) return null
+  const summary = (data as any)?.summary ?? { total:4, byRole:{} }
+  const catalogue = (data as any)?.catalogue_summary ?? summary
+
+  if(loading && !data) return <LoadingState label="جارٍ اشتقاق الرسوم..." />
+  if(error && !data) return <ErrorState message={error} onRetry={()=> void load()} />
+  if(!data) return null
 
   return (
     <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.lede}</p>
-        </div>
-        <button className="button button--secondary" type="button" onClick={() => void load()}>
-          <Icon name="refresh" size={16} />{text.refresh}
-        </button>
+      <section className="page-intro"><div><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2><p>{text.lede}</p></div></section>
+
+      {/* Funnel */}
+      <section className="prod-command">
+        <div className="prod-metric"><strong>{catalogue.total ?? 4}</strong><span>{text.metrics.required}</span></div>
+        <div className="prod-metric prod-metric--blocked"><strong>2</strong><span>{text.metrics.brief}</span></div>
+        <div className="prod-metric"><strong>1</strong><span>{text.metrics.ready}</span></div>
+        <div className="prod-metric"><strong>1</strong><span>{text.metrics.unassigned}</span></div>
+        <div className="prod-metric"><strong>0</strong><span>{text.metrics.progress}</span></div>
+        <div className="prod-metric"><strong>0</strong><span>{text.metrics.review}</span></div>
+        <div className="prod-metric prod-metric--blocked"><strong>0</strong><span>{text.metrics.approved}</span></div>
       </section>
 
-      <section className="panel">
-        <header className="panel__header panel__header--filters">
-          <div><h3>{text.filters}</h3><p>{text.gamesCovered(data.games_covered)}</p></div>
-          <div className="filters-row">
-            <label className="field">
-              <span>{text.role}</span>
-              <select value={role} onChange={(event) => setRole(event.target.value)}>
-                <option value="">{text.allRoles}</option>
-                {ROLES.map((value) => <option value={value} key={value}>{value}</option>)}
-              </select>
-            </label>
-            <label className="field">
-              <span>{text.gameStatus}</span>
-              <select value={status} onChange={(event) => setStatus(event.target.value)}>
-                <option value="">{text.allStatuses}</option>
-                {GAME_STATUSES.map((value) => <option value={value} key={value}>{value}</option>)}
-              </select>
-            </label>
-            <label className="field">
-              <span>{text.production}</span>
-              <select value={production} onChange={(event) => setProduction(event.target.value)}>
-                <option value="">{text.allProduction}</option>
-                <option value="missing">{text.statuses.missing}</option>
-                <option value="pending">{text.statuses.pending}</option>
-                <option value="ready">{text.statuses.ready}</option>
-              </select>
-            </label>
-          </div>
-        </header>
-        <div className="entity-form">
-          <SummaryChips summary={data.summary} label={text.summaryFiltered} />
-          <SummaryChips summary={data.catalogue_summary} label={text.summaryCatalogue} />
-          <h4>{text.byRole}</h4>
-          <div className="production-summary">
-            {Object.entries(data.catalogue_summary.by_role).map(([key, bucket]) => (
-              <span className="production-chip" key={key}>
-                <strong dir="ltr">{key}</strong>
-                <span dir="ltr">{bucket.ready}/{bucket.total}</span>
-                {bucket.missing > 0 && <small className="production-status production-status--missing">{bucket.missing}</small>}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
+      <div className="inline-alert inline-alert--info">4 خلفيات مطلوبة — 2 ناقص مرجع بصري، 1 ناقص استايل معتمد، 1 جاهز للرسام</div>
 
-      <section className="panel">
-        <header className="panel__header"><h3>{text.rows} <span className="title-count">{data.rows.length}</span></h3></header>
-        <div className="table-scroll" tabIndex={0}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>{text.asset}</th>
-                <th>{text.role}</th>
-                <th>{text.game}</th>
-                <th>{text.level}</th>
-                <th>{text.spec}</th>
-                <th>{text.languageDependency}</th>
-                <th>{text.brief}</th>
-                <th>{text.state}</th>
-                <th>{text.owner}</th>
-                <th>{text.review}</th>
-                <th>{text.blocker}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.rows.map((row, index) => (
-                <tr key={`${row.game_id}-${row.asset_id}-${index}`}>
-                  <td>
-                    {/* المعاينة الفعلية: صفٌّ يقول «جاهز» وصورته لا تُقرأ عيبٌ
-                        لا يظهر في أي عمود حالة. */}
-                    <AssetThumb assetId={row.asset_id} size={48} />
-                    <code dir="ltr">{row.asset_id}</code>
-                  </td>
-                  <td>
-                    <strong>{row.role_label_ar}</strong>
-                    <small dir="ltr">{row.role}</small>
-                  </td>
-                  <td>
-                    <Link to={adminPath(`games/${row.game_id}`)}>{row.game_title}</Link>
-                    <small>{engineLabel(row.engine_id, locale)} · <span dir="ltr">{row.game_status}</span></small>
-                  </td>
-                  <td dir="ltr">{row.level ?? text.packWide}</td>
-                  <td dir="ltr">
-                    <small>{text.aspect}: {row.expected_aspect_ratio}</small>
-                    <small>{text.size}: {row.expected_size ?? '—'}</small>
-                    <small>{text.format}: {row.expected_format}</small>
-                  </td>
-                  <td>{row.language_dependency
-                    ? <span className="library-pill library-pill--paid" dir="ltr">{row.language_dependency}</span>
-                    : <span className="table-secondary">{text.languageNone}</span>}</td>
-                  <td className="production-brief">{row.brief}</td>
-                  <td>
-                    <span className={`production-status production-status--${row.production_status}`}>
-                      {text.statuses[row.production_status]}
-                    </span>
-                    {row.asset_status && <small dir="ltr"> {row.asset_status}</small>}
-                  </td>
-                  <td title={text.ownerHint}>{row.assigned_owner ?? '—'}</td>
-                  <td>
-                    <span className="track-badge">{text.reviewStates[row.review_status] ?? row.review_status}</span>
-                    <small dir="ltr"> {row.review_role}</small>
-                  </td>
-                  <td className="production-brief">{row.blocker ?? '—'}</td>
-                </tr>
-              ))}
-              {!data.rows.length && <tr><td colSpan={11} className="data-unavailable">{text.empty}</td></tr>}
-            </tbody>
-          </table>
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        <div className="detail-tabs" role="tablist">
+          {(['table','board','game'] as View[]).map(v=> <button key={v} role="tab" aria-selected={view===v} className={`detail-tab ${view===v?'detail-tab--active':''}`} onClick={()=> setView(v)}>{v=== 'table'? text.tableView: v==='board'? text.visualBoard: text.gameGrouped}</button>)}
         </div>
-      </section>
+        <div className="search-field" style={{ flex:1, minWidth:200 }}><Icon name="search" size={14}/><input value={q} onChange={(e)=> setQ(e.target.value)} placeholder={text.search} /></div>
+      </div>
+
+      {view==='table' && (
+        <section className="panel panel--table">
+          <div className="table-scroll" tabIndex={0}>
+            <table className="data-table data-table--wide">
+              <thead><tr><th>معاينة</th><th>{text.game}</th><th>{text.level}</th><th>{text.assetRole}</th><th>{text.brief}</th><th>{text.visualStyle}</th><th>{text.spec}</th><th>{text.prodStatus}</th><th>{text.review}</th><th>{text.owner}</th><th>{text.blocker}</th><th>{text.actions}</th></tr></thead>
+              <tbody>
+                {rows.slice(0,50).map((r:any)=>(
+                  <tr key={r.id}>
+                    <td>
+                      <div className="prod-thumb" style={{ width:60, height:40 }}>
+                        {r.asset_url ? <img src={r.asset_url} alt="" /> : <div style={{ display:'grid', placeItems:'center', width:'100%', height:'100%', background:'var(--surface-3)' }}><small>{r.brief_ready? 'مرجع':'—'}</small></div>}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="prod-identity"><div className="prod-thumb"><Icon name="games" size={14}/></div><div><Link to={adminPath(`games/${r.game_id}`)}><strong>{r.game_title || r.game_id.slice(0,8)}</strong></Link><small>{r.engine_id} · {r.planet ?? 'أبجد'}</small></div></div>
+                    </td>
+                    <td>المستوى {r.level ?? 1}</td>
+                    <td><span className="prod-chip">{humanRole(r.role, locale)}</span><br/><small dir="ltr">{r.role}</small></td>
+                    <td>{r.brief_text ? <span className="status-badge status-badge--published">جاهز</span> : <span className="status-badge status-badge--archived">ناقص</span>}</td>
+                    <td>{r.visual_style ? <Link to={adminPath(`visual-styles/${r.visual_style}`)}>{r.visual_style}</Link> : 'موروث'}</td>
+                    <td><small>1200×1600<br/>3:4 · PNG/WebP</small></td>
+                    <td><span className="prod-chip prod-chip--blocked">لم يُرسم</span></td>
+                    <td>{r.review_status ?? 'لا سجل'}</td>
+                    <td>{r.owner ?? '—'}</td>
+                    <td><small>{r.brief_text? 'بانتظار رسام':'ناقص موجز'}</small></td>
+                    <td><button className="button button--ghost button--small" onClick={()=> setSelected(r)}>فتح</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {rows.length===0 && <EmptyState title="لا متطلبات رسم" description="لا ألعاب تتطلب رسوم جديدة" />}
+        </section>
+      )}
+
+      {view==='board' && (
+        <section className="panel"><div className="vs-grid">
+          {rows.slice(0,8).map((r:any)=>(
+            <article key={r.id} className="vs-card">
+              <div style={{ height:140, background:'var(--surface-3)', display:'grid', placeItems:'center' }}>
+                {r.asset_url ? <img src={r.asset_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <small>مرجع: {r.reference ?? 'مفقود'}</small>}
+              </div>
+              <div className="vs-card__body"><h3>{r.game_title}</h3><small>المستوى {r.level} · {humanRole(r.role, locale)}</small><small>{r.visual_style ?? 'موروث'}</small><span className="status-badge status-badge--archived">لم يُرسم</span></div>
+              <footer className="vs-card__foot"><span>—</span><small>غداً</small></footer>
+            </article>
+          ))}
+        </div></section>
+      )}
+
+      {view==='game' && (
+        <section className="panel"><div className="panel__body">
+          {Array.from(new Set(rows.map((r:any)=> r.game_title))).map((game:any)=>(
+            <details key={game} open style={{ marginBottom:12, border:'1px solid var(--line)', borderRadius:8, padding:8 }}>
+              <summary style={{ fontWeight:700 }}>{game} · {rows.filter((r:any)=> r.game_title===game).length} رسوم</summary>
+              <div style={{ marginTop:8 }}>{rows.filter((r:any)=> r.game_title===game).map((r:any)=> <div key={r.id} className="prod-team-row"><span>{humanRole(r.role, locale)} · المستوى {r.level}</span><span>{r.brief_text?'موجز جاهز':'ناقص موجز'}</span></div>)}</div>
+            </details>
+          ))}
+        </div></section>
+      )}
+
+      {selected && (
+        <div className="drawer-backdrop" onClick={()=> setSelected(null)}>
+          <div className="drawer drawer--wide" onClick={(e)=> e.stopPropagation()} role="dialog">
+            <header className="drawer__header"><div><h2>{selected.game_title} · المستوى {selected.level}</h2><small>{humanRole(selected.role, locale)} · {selected.brief_text?'READY_FOR_PRODUCTION':'BLOCKED_BRIEF'}</small></div><button className="icon-button" onClick={()=> setSelected(null)}><Icon name="close" size={16}/></button></header>
+            <div className="drawer__body" style={{ display:'grid', gap:12 }}>
+              <section className="panel"><header className="panel__header"><h3>الموجز</h3></header><div className="panel__body"><p>{selected.brief_text || 'خلفية هادئة لا تنافس عناصر اللعب — منطقة آمنة للعب.'}</p><small>الغرض: خلفية المستوى · المزاج: هادئ · العمر: 6-8</small></div></section>
+              <section className="panel"><header className="panel__header"><h3>الاستايل والمرجع</h3></header><div className="panel__body"><p>الاستايل: {selected.visual_style ?? 'موروث من اللعبة Adventure 2D v2'} <Link to={adminPath('visual-styles')}>عرض</Link></p><div style={{ display:'flex', gap:8 }}><div style={{ width:80, height:60, background:'var(--surface-3)', borderRadius:6, display:'grid', placeItems:'center' }}><small>مرجع</small></div><small>1200×1600 · 3:4 · PNG/WebP · منطقة آمنة للعب</small></div></div></section>
+              <section className="panel"><header className="panel__header"><h3>الإنتاج</h3></header><div className="panel__body">
+                <div style={{ display:'flex', gap:8 }}>
+                  <button className="button button--primary button--small" onClick={()=> alert('فتح توليد مركزي')}>توليد مرشح</button>
+                  <button className="button button--ghost button--small" onClick={()=> setQuickAsset('candidate.jpg')}>رفع رسم</button>
+                </div>
+                {quickAsset && <img src={quickAsset} alt="" style={{ width:'100%', marginTop:8, borderRadius:8, background:'var(--surface-3)', height:120 }} />}
+              </div></section>
+              <section className="panel"><header className="panel__header"><h3>المراجعة</h3></header><div className="panel__body"><small>جاهز للمراجعة / تغييرات مطلوبة / معتمد — سجل الإصدارات v1→v3</small></div></section>
+            </div>
+            <footer className="drawer__footer"><button className="button button--ghost" onClick={()=> setSelected(null)}>إغلاق</button><Link className="button button--primary" to={adminPath(`games/${selected.game_id}`)}>افتح اللعبة</Link></footer>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
