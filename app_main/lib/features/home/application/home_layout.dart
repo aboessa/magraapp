@@ -22,6 +22,7 @@ class ResolvedHomeBlockConfig {
     this.subtitle,
     this.cardStyle,
     this.maxItems,
+    this.artworkAsset,
     this.isSystem = false,
   });
 
@@ -31,6 +32,7 @@ class ResolvedHomeBlockConfig {
   final String? subtitle;
   final String? cardStyle;
   final int? maxItems;
+  final String? artworkAsset;
   final bool isSystem;
 }
 
@@ -144,15 +146,22 @@ HomeFeedContract? contractFromResolvedBlocks(
       HomeBlock(
         id: block.id,
         type: mapping.type,
-        title: (block.title?.trim().isEmpty ?? true) ? null : block.title!.trim(),
-        subtitle:
-            (block.subtitle?.trim().isEmpty ?? true) ? null : block.subtitle!.trim(),
+        title: (block.title?.trim().isEmpty ?? true)
+            ? null
+            : block.title!.trim(),
+        subtitle: (block.subtitle?.trim().isEmpty ?? true)
+            ? null
+            : block.subtitle!.trim(),
         // An explicit card style from config wins; otherwise the block type's own
         // style applies; otherwise portrait, matching the previous default.
-        cardStyle: _cardStyleFromName(block.cardStyle) ??
+        cardStyle:
+            _cardStyleFromName(block.cardStyle) ??
             mapping.cardStyle ??
             CardStyle.portrait,
         maxItems: block.maxItems,
+        artworkAsset: (block.artworkAsset?.trim().isEmpty ?? true)
+            ? null
+            : block.artworkAsset!.trim(),
         // Server-configured rows hide when they have no content rather than
         // rendering an empty rail. The hero is the exception: it is the screen's
         // anchor and its own visibility rule already covers the empty case.
@@ -161,8 +170,5 @@ HomeFeedContract? contractFromResolvedBlocks(
     );
   }
   if (mapped.isEmpty) return null;
-  return HomeFeedContract(
-    version: 'home-resolved-v1',
-    blocks: mapped,
-  );
+  return HomeFeedContract(version: 'home-resolved-v1', blocks: mapped);
 }

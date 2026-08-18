@@ -1,0 +1,34 @@
+{
+  "story": "home-promotional-artwork",
+  "out_dir": "tools/playveo/output/home-promos",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "imagen-4",
+  "reference_seed": "manifest-seed-do-not-generate",
+  "reference_instruction": "",
+  "character_lock": "",
+  "style_tail": "Premium original key art for Majarra, an Arabic educational entertainment platform for children aged 3–12. Polished cinematic stylized 3D illustration with soft hand-painted 2D texture, clear single visual concept readable as a small app thumbnail, refined depth and lighting, joyful child-safe culturally inclusive design, deep navy and royal blue foundation with restrained cyan, purple, coral and star-yellow accents. Full-bleed native composition matching the requested aspect ratio, important subjects inside the central safe area. No text, no title, no letters, no numbers, no logo, no watermark, no interface, no border, no frame, no mockup, no empty title panel, no plaque, no famous or copyrighted characters, no frightening imagery, no weapons, no clutter, no malformed anatomy, no blurred side fill, no letterboxing.",
+  "assets": [
+    {
+      "id": "manifest-seed-do-not-generate",
+      "file": "unused.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "Unused manifest seed.",
+      "light": ""
+    },
+    {
+      "id": "creative-studio-promo",
+      "file": "creative-studio-promo.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A magical all-in-one children's creative studio arranged as one inviting visual world: a rounded paint palette, chunky brushes, colored pencils, crayons, a partly colored butterfly sheet and a blank drawing page orbit around a warm glowing art table. The scene must communicate drawing, coloring and inventing together, with no people, hands, writing or interface elements. Keep the key art centered and readable through a rounded-square crop.",
+      "light": "Joyful star-yellow table glow with cyan, coral and violet creative sparkles against deep navy."
+    },
+    {
+      "id": "seasonal-winter-banner",
+      "file": "seasonal-winter-banner.jpg",
+      "aspect_ratio": "16:9",
+      "scene": "A wide enchanting winter discovery scene for children: a cozy lantern-lit observatory cabin beside soft snow-covered pine trees, friendly small woodland animals making star shapes in fresh snow, and a clear sparkling night sky. Leave calm darker negative space on the left for separate Arabic interface copy, while keeping the illustrated focal scene on the right. No holiday symbols, gifts, religious symbols, text or people.",
+      "light": "Warm lantern gold against moonlit royal-blue snow, cyan rim light and gentle violet sky depth."
+    }
+  ]
+}

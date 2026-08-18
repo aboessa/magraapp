@@ -49,6 +49,7 @@ class HomeBlock {
     this.subtitle,
     this.cardStyle = CardStyle.portrait,
     this.maxItems,
+    this.artworkAsset,
     this.hideWhenEmpty = false,
     this.filters,
   });
@@ -58,6 +59,7 @@ class HomeBlock {
   final String? subtitle;
   final CardStyle cardStyle;
   final int? maxItems;
+  final String? artworkAsset;
   final bool hideWhenEmpty;
   final Map<String, dynamic>? filters;
 }
@@ -79,15 +81,71 @@ class HomeFeedContract {
     track: 'kids',
     blocks: [
       HomeBlock(id: 'hero-main', type: BlockType.heroSlider, maxItems: 5),
-      HomeBlock(id: 'welcome', type: BlockType.welcomeJourney, title: 'مرحبًا بك في مجرة — ابدأ من هنا', hideWhenEmpty: true),
-      HomeBlock(id: 'worlds', type: BlockType.worldOrbit, title: 'الكواكب', subtitle: 'اختر عالمًا وابدأ الرحلة', hideWhenEmpty: true),
-      HomeBlock(id: 'watch-free', type: BlockType.watchFree, title: 'شاهد مجاناً', subtitle: 'عناوين متاحة بدون اشتراك', cardStyle: CardStyle.portrait, hideWhenEmpty: true),
-      HomeBlock(id: 'stories-short', type: BlockType.contentRail, title: 'قصص قصيرة', cardStyle: CardStyle.story, hideWhenEmpty: true),
-      HomeBlock(id: 'play-learn', type: BlockType.contentRail, title: 'العب وتعلّم', subtitle: 'ألعاب منشورة ومناسبة للملف الحالي', cardStyle: CardStyle.square, hideWhenEmpty: true),
-      HomeBlock(id: 'arabic-dub', type: BlockType.languageRail, title: 'مدبلج بالعربية', cardStyle: CardStyle.landscape, hideWhenEmpty: true, filters: {'audioLanguage': 'ar'}),
-      HomeBlock(id: 'faith', type: BlockType.contentRail, title: 'الإيمان والآداب', cardStyle: CardStyle.portrait, hideWhenEmpty: true),
-      HomeBlock(id: 'listen', type: BlockType.audioRail, title: 'استمع قبل النوم', cardStyle: CardStyle.audio, hideWhenEmpty: true),
-      HomeBlock(id: 'explore-more', type: BlockType.contentRail, title: 'اكتشف المزيد', cardStyle: CardStyle.portrait, hideWhenEmpty: true),
+      HomeBlock(
+        id: 'welcome',
+        type: BlockType.welcomeJourney,
+        title: 'مرحبًا بك في مجرة — ابدأ من هنا',
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'worlds',
+        type: BlockType.worldOrbit,
+        title: 'الكواكب',
+        subtitle: 'اختر عالمًا وابدأ الرحلة',
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'watch-free',
+        type: BlockType.watchFree,
+        title: 'شاهد مجاناً',
+        subtitle: 'عناوين متاحة بدون اشتراك',
+        cardStyle: CardStyle.portrait,
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'stories-short',
+        type: BlockType.contentRail,
+        title: 'قصص قصيرة',
+        cardStyle: CardStyle.story,
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'play-learn',
+        type: BlockType.contentRail,
+        title: 'العب وتعلّم',
+        subtitle: 'ألعاب منشورة ومناسبة للملف الحالي',
+        cardStyle: CardStyle.square,
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'arabic-dub',
+        type: BlockType.languageRail,
+        title: 'مدبلج بالعربية',
+        cardStyle: CardStyle.landscape,
+        hideWhenEmpty: true,
+        filters: {'audioLanguage': 'ar'},
+      ),
+      HomeBlock(
+        id: 'faith',
+        type: BlockType.contentRail,
+        title: 'الإيمان والآداب',
+        cardStyle: CardStyle.portrait,
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'listen',
+        type: BlockType.audioRail,
+        title: 'استمع قبل النوم',
+        cardStyle: CardStyle.audio,
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'explore-more',
+        type: BlockType.contentRail,
+        title: 'اكتشف المزيد',
+        cardStyle: CardStyle.portrait,
+        hideWhenEmpty: true,
+      ),
     ],
   );
 
@@ -96,17 +154,75 @@ class HomeFeedContract {
     track: 'kids',
     blocks: [
       HomeBlock(id: 'hero-main', type: BlockType.heroSlider, maxItems: 5),
-      HomeBlock(id: 'continue', type: BlockType.continueJourney, title: 'استمر من حيث توقفت', hideWhenEmpty: true),
-      HomeBlock(id: 'picked-for-you', type: BlockType.contentRail, title: 'مختار لك', cardStyle: CardStyle.portrait, hideWhenEmpty: true),
-      HomeBlock(id: 'new-from-followed', type: BlockType.newReleases, title: 'إصدار جديد من سلسلة تتابعها', hideWhenEmpty: true),
-      HomeBlock(id: 'because-you-watched', type: BlockType.becauseYouWatched, title: 'لأنك شاهدت', hideWhenEmpty: true),
-      HomeBlock(id: 'learning', type: BlockType.learningJourney, title: 'رحلة التعلّم الحالية', hideWhenEmpty: true),
-      HomeBlock(id: 'stories-new', type: BlockType.contentRail, title: 'قصص وكوميكس جديدة', cardStyle: CardStyle.story, hideWhenEmpty: true),
-      HomeBlock(id: 'games-fit', type: BlockType.contentRail, title: 'ألعاب مناسبة', cardStyle: CardStyle.square, hideWhenEmpty: true),
-      HomeBlock(id: 'lang', type: BlockType.languageRail, title: 'محتوى باللغة المناسبة', cardStyle: CardStyle.landscape, hideWhenEmpty: true),
-      HomeBlock(id: 'most-watched', type: BlockType.mostWatched, title: 'الأكثر مشاهدة', hideWhenEmpty: true),
-      HomeBlock(id: 'seasonal', type: BlockType.seasonalBanner, hideWhenEmpty: true),
-      HomeBlock(id: 'listen-now', type: BlockType.audioRail, title: 'استمع الآن', hideWhenEmpty: true),
+      HomeBlock(
+        id: 'continue',
+        type: BlockType.continueJourney,
+        title: 'استمر من حيث توقفت',
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'picked-for-you',
+        type: BlockType.contentRail,
+        title: 'مختار لك',
+        cardStyle: CardStyle.portrait,
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'new-from-followed',
+        type: BlockType.newReleases,
+        title: 'إصدار جديد من سلسلة تتابعها',
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'because-you-watched',
+        type: BlockType.becauseYouWatched,
+        title: 'لأنك شاهدت',
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'learning',
+        type: BlockType.learningJourney,
+        title: 'رحلة التعلّم الحالية',
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'stories-new',
+        type: BlockType.contentRail,
+        title: 'قصص وكوميكس جديدة',
+        cardStyle: CardStyle.story,
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'games-fit',
+        type: BlockType.contentRail,
+        title: 'ألعاب مناسبة',
+        cardStyle: CardStyle.square,
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'lang',
+        type: BlockType.languageRail,
+        title: 'محتوى باللغة المناسبة',
+        cardStyle: CardStyle.landscape,
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'most-watched',
+        type: BlockType.mostWatched,
+        title: 'الأكثر مشاهدة',
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'seasonal',
+        type: BlockType.seasonalBanner,
+        hideWhenEmpty: true,
+      ),
+      HomeBlock(
+        id: 'listen-now',
+        type: BlockType.audioRail,
+        title: 'استمع الآن',
+        hideWhenEmpty: true,
+      ),
     ],
   );
 
@@ -147,19 +263,24 @@ class BlockRenderer {
       BlockType.becauseYouWatched => false,
       BlockType.featureBanner => catalog.series.isNotEmpty,
       BlockType.learningJourney => false,
-      BlockType.audioRail => catalog.books.isNotEmpty || catalog.stories.isNotEmpty,
+      BlockType.audioRail => catalog.books.any(
+        (book) => book.type == 'audio_story' || book.isPlayable,
+      ),
       BlockType.characterOrbit => catalog.series.isNotEmpty,
-      // Rendered only from a configured title: the card's Ramadan copy was
-      // hardcoded, so without a title from the Home Builder there is nothing
-      // truthful to show.
-      BlockType.seasonalBanner => (block.title ?? '').isNotEmpty,
-      BlockType.languageRail => catalog.episodes.isNotEmpty || catalog.series.isNotEmpty,
+      // A seasonal banner is truthful only when Home Builder supplies both its
+      // label and the bundled artwork it describes.
+      BlockType.seasonalBanner =>
+        (block.title?.trim().isNotEmpty ?? false) &&
+            (block.artworkAsset?.trim().isNotEmpty ?? false),
+      BlockType.languageRail =>
+        catalog.episodes.isNotEmpty || catalog.series.isNotEmpty,
       BlockType.tvGamesRail => catalog.experiences.any((e) => e.isServerBacked),
       // Always available: the studio needs no catalogue content to enter.
       BlockType.creativeStudio => true,
       // Decided inside the sliver from the child's own saved drawings.
       BlockType.continueDrawing => true,
-      BlockType.exploreMajarra => catalog.planets.isNotEmpty || catalog.series.isNotEmpty,
+      BlockType.exploreMajarra =>
+        catalog.planets.isNotEmpty || catalog.series.isNotEmpty,
       // Two episodes was the previous threshold for the "new episodes" rail; kept
       // so a single episode does not become a rail of one.
       BlockType.newEpisodes => catalog.episodes.length >= 2,
@@ -168,8 +289,11 @@ class BlockRenderer {
       BlockType.recommended => true,
       BlockType.contentRail => switch (block.cardStyle) {
         CardStyle.landscape => catalog.episodes.isNotEmpty,
-        CardStyle.story => catalog.stories.isNotEmpty || catalog.books.isNotEmpty,
-        CardStyle.square => catalog.experiences.any((item) => item.isServerBacked),
+        CardStyle.story =>
+          catalog.stories.isNotEmpty || catalog.books.isNotEmpty,
+        CardStyle.square => catalog.experiences.any(
+          (item) => item.isServerBacked,
+        ),
         _ => catalog.series.isNotEmpty,
       },
     };

@@ -136,6 +136,9 @@ app_main/assets/data/**
 app_main/assets/images/**
 !app_main/assets/images/explore/
 !app_main/assets/images/explore/*.webp
+!app_main/assets/images/seasonal/
+app_main/assets/images/seasonal/**
+!app_main/assets/images/seasonal/winter.webp
 !app_main/assets/images/books/
 !app_main/assets/images/books/*.webp
 !app_main/assets/images/games/

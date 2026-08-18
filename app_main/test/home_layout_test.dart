@@ -46,15 +46,12 @@ void main() {
 
     // Not reordered, not reprioritised: the hero is second because the dashboard
     // put it second.
-    expect(
-      contract!.blocks.map((item) => item.type).toList(),
-      [
-        BlockType.contentRail,
-        BlockType.heroSlider,
-        BlockType.continueJourney,
-        BlockType.worldOrbit,
-      ],
-    );
+    expect(contract!.blocks.map((item) => item.type).toList(), [
+      BlockType.contentRail,
+      BlockType.heroSlider,
+      BlockType.continueJourney,
+      BlockType.worldOrbit,
+    ]);
     expect(unsupported, isEmpty);
   });
 
@@ -69,7 +66,11 @@ void main() {
       block('recommended'),
     ], unsupported: unsupported);
 
-    expect(unsupported, isEmpty, reason: 'every one must map to a real block type');
+    expect(
+      unsupported,
+      isEmpty,
+      reason: 'every one must map to a real block type',
+    );
     expect(contract!.blocks.map((item) => item.type).toList(), [
       BlockType.creativeStudio,
       BlockType.continueDrawing,
@@ -81,10 +82,9 @@ void main() {
   });
 
   test('titles and subtitles come from the configuration', () {
-    final contract = contractFromResolvedBlocks(
-      [block('games', title: 'العب الآن', subtitle: 'ألعاب مختارة', maxItems: 4)],
-      unsupported: [],
-    );
+    final contract = contractFromResolvedBlocks([
+      block('games', title: 'العب الآن', subtitle: 'ألعاب مختارة', maxItems: 4),
+    ], unsupported: []);
     final row = contract!.blocks.single;
     expect(row.title, 'العب الآن');
     expect(row.subtitle, 'ألعاب مختارة');
@@ -92,10 +92,9 @@ void main() {
   });
 
   test('a blank title is treated as absent so the widget default applies', () {
-    final contract = contractFromResolvedBlocks(
-      [block('games', title: '   ', subtitle: '')],
-      unsupported: [],
-    );
+    final contract = contractFromResolvedBlocks([
+      block('games', title: '   ', subtitle: ''),
+    ], unsupported: []);
     expect(contract!.blocks.single.title, isNull);
     expect(contract.blocks.single.subtitle, isNull);
   });
@@ -110,10 +109,12 @@ void main() {
       block('content_rail', id: 'd'),
     ], unsupported: []);
 
-    expect(
-      contract!.blocks.map((item) => item.cardStyle).toList(),
-      [CardStyle.landscape, CardStyle.square, CardStyle.story, CardStyle.portrait],
-    );
+    expect(contract!.blocks.map((item) => item.cardStyle).toList(), [
+      CardStyle.landscape,
+      CardStyle.square,
+      CardStyle.story,
+      CardStyle.portrait,
+    ]);
   });
 
   test('a block type this build cannot render is skipped and reported', () {
@@ -129,24 +130,33 @@ void main() {
     expect(unsupported, ['a_type_from_a_newer_server']);
   });
 
-  test('a configuration with nothing renderable yields null, not an empty Home', () {
-    final unsupported = <String>[];
-    // The caller must be able to tell "no usable configuration" from "a
-    // configuration with zero rows", because only the first should fall back.
-    expect(contractFromResolvedBlocks([], unsupported: unsupported), isNull);
-    expect(
-      contractFromResolvedBlocks([block('unknown_type')], unsupported: unsupported),
-      isNull,
-    );
-    expect(unsupported, ['unknown_type']);
-  });
+  test(
+    'a configuration with nothing renderable yields null, not an empty Home',
+    () {
+      final unsupported = <String>[];
+      // The caller must be able to tell "no usable configuration" from "a
+      // configuration with zero rows", because only the first should fall back.
+      expect(contractFromResolvedBlocks([], unsupported: unsupported), isNull);
+      expect(
+        contractFromResolvedBlocks([
+          block('unknown_type'),
+        ], unsupported: unsupported),
+        isNull,
+      );
+      expect(unsupported, ['unknown_type']);
+    },
+  );
 
   test('configured rows hide when empty, except the hero', () {
     final contract = contractFromResolvedBlocks([
       block('hero_slider'),
       block('games'),
     ], unsupported: []);
-    expect(contract!.blocks.first.hideWhenEmpty, isFalse, reason: 'hero anchors the screen');
+    expect(
+      contract!.blocks.first.hideWhenEmpty,
+      isFalse,
+      reason: 'hero anchors the screen',
+    );
     expect(contract.blocks.last.hideWhenEmpty, isTrue);
   });
 
@@ -169,35 +179,49 @@ void main() {
     );
     expect(layout.usesFallback, isTrue);
     expect(
-      HomeLayout(contract: newcomer, source: HomeLayoutSource.server).usesFallback,
+      HomeLayout(
+        contract: newcomer,
+        source: HomeLayoutSource.server,
+      ).usesFallback,
       isFalse,
     );
     // The server's own fallback is also a fallback, and distinguishable from it.
     expect(
-      HomeLayout(contract: newcomer, source: HomeLayoutSource.serverFallback).usesFallback,
+      HomeLayout(
+        contract: newcomer,
+        source: HomeLayoutSource.serverFallback,
+      ).usesFallback,
       isTrue,
     );
   });
 
   test('the resolved contract is labelled so its origin is visible', () {
-    final contract = contractFromResolvedBlocks([block('hero_slider')], unsupported: []);
+    final contract = contractFromResolvedBlocks([
+      block('hero_slider'),
+    ], unsupported: []);
     expect(contract!.version, 'home-resolved-v1');
     expect(HomeFeedContract.fallback().version, isNot('home-resolved-v1'));
   });
 
-  test('a seasonal block with no configured title renders nothing', () {
-    // The seasonal card hardcoded «رمضان - حكايات تضيء القلب» while the seeded
-    // block is a *winter* season, so it announced the wrong one. Its visibility now
-    // depends on configured copy.
+  test('a seasonal block needs configured copy and artwork', () {
+    // Seasonal copy and artwork must describe the same configured campaign. A
+    // title-only block would fall back to a generic visual and misrepresent it.
     const catalogueless = HomeBlock(id: 's', type: BlockType.seasonalBanner);
     const titled = HomeBlock(
       id: 's2',
       type: BlockType.seasonalBanner,
       title: 'موسم الشتاء',
     );
+    const complete = HomeBlock(
+      id: 's3',
+      type: BlockType.seasonalBanner,
+      title: 'موسم الشتاء',
+      artworkAsset: 'assets/images/seasonal/winter.webp',
+    );
     final empty = _emptyCatalog();
     expect(BlockRenderer.shouldShowBlock(catalogueless, empty), isFalse);
-    expect(BlockRenderer.shouldShowBlock(titled, empty), isTrue);
+    expect(BlockRenderer.shouldShowBlock(titled, empty), isFalse);
+    expect(BlockRenderer.shouldShowBlock(complete, empty), isTrue);
   });
 
   test('rows with no truthful data source stay hidden', () {

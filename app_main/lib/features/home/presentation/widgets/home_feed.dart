@@ -916,15 +916,15 @@ class _CreativeStudioEntry extends StatelessWidget {
           Container(
             width: isTelevision ? 96 : 84,
             height: isTelevision ? 96 : 84,
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.08),
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
-            child: const Icon(
-              Icons.palette_rounded,
-              color: AppColors.starGold,
-              size: 42,
+            child: Image.asset(
+              'assets/images/explore/creative-studio-promo.webp',
+              fit: BoxFit.cover,
+              excludeFromSemantics: true,
             ),
           ),
         ],
@@ -1439,19 +1439,29 @@ class _BlockSliver extends StatelessWidget {
         return const SliverToBoxAdapter(child: SizedBox.shrink());
 
       case BlockType.audioRail:
+        final audioBooks = catalog.books
+            .where((book) => book.type == 'audio_story' || book.isPlayable)
+            .take(block.maxItems ?? 4)
+            .toList(growable: false);
+        if (audioBooks.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
         return SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(top: 30),
-            child: ContentRail<ExperienceItem>(
+            child: ContentRail<BookItem>(
               title: block.title ?? 'استمع الآن',
-              subtitle: 'قصص صوتية وأناشيد',
-              items: catalog.experiences.take(4).toList(),
+              subtitle: block.subtitle,
+              items: audioBooks,
               height: isTelevision ? 260 : 220,
               horizontalPadding: padding,
               isTelevision: isTelevision,
               itemBuilder: (context, item, index) => InkWell(
                 onTap: () => context.push(
-                  '/audio?title=${Uri.encodeComponent(item.title)}&subtitle=${Uri.encodeComponent(item.subtitle)}',
+                  Uri(
+                    path: '/audio',
+                    queryParameters: {'bookId': item.id},
+                  ).toString(),
                 ),
                 borderRadius: BorderRadius.circular(16),
                 child: _AudioCard(item: item, isTelevision: isTelevision),
@@ -1597,8 +1607,9 @@ class _BlockSliver extends StatelessWidget {
           child: Padding(
             padding: EdgeInsetsDirectional.fromSTEB(padding, 30, padding, 0),
             child: _SeasonalBannerCard(
-              title: block.title ?? '',
+              title: block.title!,
               subtitle: block.subtitle,
+              artworkAsset: block.artworkAsset!,
             ),
           ),
         );
@@ -1985,90 +1996,142 @@ class _LearningJourneyCard extends StatelessWidget {
 
 class _AudioCard extends StatelessWidget {
   const _AudioCard({required this.item, required this.isTelevision});
-  final ExperienceItem item;
+  final BookItem item;
   final bool isTelevision;
 
   @override
   Widget build(BuildContext context) {
+    final durationSeconds = item.durationSeconds;
+    final durationLabel = durationSeconds != null && durationSeconds > 0
+        ? '${(durationSeconds / 60).ceil()} دقائق'
+        : null;
+
     return SizedBox(
       width: isTelevision ? 220 : 180,
       height: isTelevision ? 220 : 180,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: const Color(0xFF121A38),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.cosmicPurple,
-              ),
-              child: const Icon(Icons.headphones_rounded, color: Colors.white),
+            CinematicImage(
+              assetPath: item.posterAsset,
+              networkUrl: item.coverUrl,
+              semanticLabel: item.title,
+              fit: BoxFit.cover,
+              decodeWidth: isTelevision ? 440 : 360,
             ),
-            const Spacer(),
-            Text(
-              item.title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              item.subtitle,
-              style: TextStyle(
-                color: AppColors.mutedText.withValues(alpha: 0.7),
-                fontSize: 11,
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    AppColors.deepSpace.withValues(alpha: 0.32),
+                    AppColors.deepSpace.withValues(alpha: 0.96),
+                  ],
+                  stops: const [0.28, 0.58, 1],
+                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+            PositionedDirectional(
+              top: 10,
+              end: 10,
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.deepSpace.withValues(alpha: 0.72),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(99),
+                ),
+                child: const Icon(
+                  Icons.headphones_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+            ),
+            PositionedDirectional(
+              start: 14,
+              end: 14,
+              bottom: 13,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.play_arrow_rounded,
-                        size: 16,
-                        color: AppColors.deepSpace,
+                  if (item.description.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      item.description,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.72),
+                        fontSize: 11,
                       ),
-                      const SizedBox(width: 2),
-                      Text(
-                        'شغل',
-                        style: const TextStyle(
-                          color: AppColors.deepSpace,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                    ),
+                  ],
+                  const SizedBox(height: 9),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.play_arrow_rounded,
+                              size: 16,
+                              color: AppColors.deepSpace,
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              'شغل',
+                              style: TextStyle(
+                                color: AppColors.deepSpace,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      if (durationLabel != null) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          durationLabel,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.72),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '4 دقائق',
-                  style: TextStyle(
-                    color: AppColors.mutedText.withValues(alpha: 0.6),
-                    fontSize: 10,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -2429,78 +2492,88 @@ class _MostWatchedRail extends StatelessWidget {
   }
 }
 
-/// A seasonal banner, entirely from Home Builder configuration.
-///
-/// The card used to hardcode «رمضان - حكايات تضيء القلب» and «موسم جديد», which
-/// were shown for whatever season an editor had actually scheduled — the seeded
-/// block is a *winter* season. Its visibility rule now requires a configured
-/// title, so an unconfigured seasonal block renders nothing rather than
-/// announcing the wrong season.
+/// A seasonal banner rendered only from complete Home Builder configuration.
 class _SeasonalBannerCard extends StatelessWidget {
-  const _SeasonalBannerCard({required this.title, this.subtitle});
+  const _SeasonalBannerCard({
+    required this.title,
+    required this.artworkAsset,
+    this.subtitle,
+  });
   final String title;
+  final String artworkAsset;
   final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 140,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF2A1B5A),
-            const Color(0xFF1B2550),
-            const Color(0xFF0A102A),
-          ],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2A1B5A), Color(0xFF1B2550), Color(0xFF0A102A)],
         ),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
-      padding: const EdgeInsets.all(20),
-      child: Row(
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                if (subtitle != null && subtitle!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: AppColors.mutedText.withValues(alpha: 0.75),
-                      fontSize: 11,
-                    ),
-                  ),
+          Image.asset(
+            artworkAsset,
+            fit: BoxFit.cover,
+            excludeFromSemantics: true,
+            errorBuilder: (context, error, stackTrace) =>
+                const SizedBox.expand(),
+          ),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Color(0xE60A102A),
+                  Color(0xA60A102A),
+                  Color(0x330A102A),
                 ],
-              ],
+                stops: [0, 0.58, 1],
+              ),
             ),
           ),
-          Container(
-            width: 84,
-            height: 84,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.08),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-            ),
-            child: const Icon(
-              Icons.nights_stay_rounded,
-              color: AppColors.starGold,
-              size: 36,
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: FractionallySizedBox(
+                widthFactor: 0.48,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (subtitle != null && subtitle!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.78),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
         ],

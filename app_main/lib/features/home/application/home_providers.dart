@@ -177,6 +177,7 @@ class ResolvedHomeBlock {
     this.source,
     this.cardStyle,
     this.maxItems,
+    this.bannerAsset,
     this.isSystem = false,
     this.position = 0,
   });
@@ -187,6 +188,7 @@ class ResolvedHomeBlock {
   final String? source;
   final String? cardStyle;
   final int? maxItems;
+  final String? bannerAsset;
   final bool isSystem;
   final int position;
 
@@ -205,6 +207,9 @@ class ResolvedHomeBlock {
       source: j['source'] as String?,
       cardStyle: j['card_style'] as String?,
       maxItems: (configMap['maxItems'] as num?)?.toInt(),
+      bannerAsset: configMap['bannerAsset'] is String
+          ? configMap['bannerAsset'] as String
+          : null,
       isSystem: j['is_system'] as bool? ?? j['source'] == 'system',
       position:
           (j['position'] as num?)?.toInt() ??
@@ -284,6 +289,7 @@ final homeLayoutProvider = FutureProvider<HomeLayout>((ref) async {
           subtitle: block.subtitle,
           cardStyle: block.cardStyle,
           maxItems: block.maxItems,
+          artworkAsset: block.bannerAsset,
           isSystem: block.isSystem,
         ),
     ], unsupported: unsupported);
