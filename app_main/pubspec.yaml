@@ -83,6 +83,7 @@ flutter:
     - assets/images/games/
     - assets/images/episodes/
     - assets/images/explore/
+    - assets/images/books/
     - assets/images/stories/
     # Flutter directory entries are not recursive. These checked-in story
     # previews must be listed explicitly so their web paths exist under

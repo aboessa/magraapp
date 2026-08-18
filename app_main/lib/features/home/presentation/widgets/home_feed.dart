@@ -911,7 +911,7 @@ class _BlockSliver extends StatelessWidget {
                 type: story.type,
                 ageMin: story.ageMin,
                 ageMax: story.ageMax,
-                posterAsset: story.coverUrl ?? 'assets/brand/majarra-logo.png',
+                posterAsset: 'assets/brand/majarra-logo.png',
                 coverUrl: story.coverUrl,
               ),
             for (final book in catalog.books)

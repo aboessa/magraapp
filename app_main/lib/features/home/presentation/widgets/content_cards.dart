@@ -198,7 +198,12 @@ class BookCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CinematicImage(assetPath: item.posterAsset, semanticLabel: item.title, decodeWidth: width),
+              CinematicImage(
+                assetPath: item.posterAsset,
+                networkUrl: item.coverUrl,
+                semanticLabel: item.title,
+                decodeWidth: width,
+              ),
               const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Color(0x3306091A), Color(0xE606091A)], stops: [0, 0.32, 0.62]))),
               PositionedDirectional(top: 8, start: 8, child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: const Color(0xFF9D68FF).withValues(alpha: 0.88), borderRadius: BorderRadius.circular(6)), child: Text(item.type == 'comic' ? 'كوميكس' : item.type == 'audio_story' ? 'صوتي' : 'قصة', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)))),
               PositionedDirectional(start: 10, end: 10, bottom: 10, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white, fontSize: isTelevision ? 15 : 13.5, fontWeight: FontWeight.w700, shadows: [Shadow(color: Colors.black.withValues(alpha: 0.85), blurRadius: 8)])), const SizedBox(height: 2), Text(item.ageLabel, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.88), fontSize: 10.5))]))],

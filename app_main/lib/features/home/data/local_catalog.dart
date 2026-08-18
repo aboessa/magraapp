@@ -303,7 +303,7 @@ abstract final class LocalCatalog {
       type: 'picture_book',
       ageMin: 3,
       ageMax: 5,
-      posterAsset: 'assets/images/series/posters/bedtime-stories-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-p1.webp',
     ),
     BookItem(
       id: 'book-qisas-p2',
@@ -312,7 +312,7 @@ abstract final class LocalCatalog {
       type: 'picture_book',
       ageMin: 3,
       ageMax: 5,
-      posterAsset: 'assets/images/series/posters/bedtime-stories-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-p2.webp',
     ),
     BookItem(
       id: 'book-qisas-p3',
@@ -321,7 +321,7 @@ abstract final class LocalCatalog {
       type: 'audio_story',
       ageMin: 4,
       ageMax: 5,
-      posterAsset: 'assets/images/series/posters/bedtime-stories-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-p3.webp',
     ),
     BookItem(
       id: 'book-qisas-p4',
@@ -330,7 +330,7 @@ abstract final class LocalCatalog {
       type: 'picture_book',
       ageMin: 3,
       ageMax: 5,
-      posterAsset: 'assets/images/series/posters/bedtime-stories-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-p4.webp',
     ),
     BookItem(
       id: 'book-qisas-k1',
@@ -339,7 +339,7 @@ abstract final class LocalCatalog {
       type: 'picture_book',
       ageMin: 6,
       ageMax: 8,
-      posterAsset: 'assets/images/series/posters/hekaya-wa-hikma-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-k1.webp',
     ),
     BookItem(
       id: 'book-qisas-k2',
@@ -348,7 +348,7 @@ abstract final class LocalCatalog {
       type: 'interactive',
       ageMin: 6,
       ageMax: 8,
-      posterAsset: 'assets/images/series/posters/hekaya-wa-hikma-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-k2.webp',
     ),
     BookItem(
       id: 'book-qisas-k3',
@@ -357,7 +357,7 @@ abstract final class LocalCatalog {
       type: 'comic',
       ageMin: 7,
       ageMax: 8,
-      posterAsset: 'assets/images/series/posters/hekaya-wa-hikma-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-k3.webp',
     ),
     BookItem(
       id: 'book-qisas-k4',
@@ -366,7 +366,7 @@ abstract final class LocalCatalog {
       type: 'audio_story',
       ageMin: 6,
       ageMax: 7,
-      posterAsset: 'assets/images/series/posters/hekaya-wa-hikma-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-k4.webp',
     ),
     BookItem(
       id: 'book-qisas-k5',
@@ -375,7 +375,7 @@ abstract final class LocalCatalog {
       type: 'picture_book',
       ageMin: 6,
       ageMax: 8,
-      posterAsset: 'assets/images/series/posters/hekaya-wa-hikma-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-k5.webp',
     ),
     BookItem(
       id: 'book-qisas-k6',
@@ -384,7 +384,7 @@ abstract final class LocalCatalog {
       type: 'audio_story',
       ageMin: 6,
       ageMax: 8,
-      posterAsset: 'assets/images/series/posters/bedtime-stories-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-k6.webp',
     ),
     BookItem(
       id: 'book-qisas-k7',
@@ -393,7 +393,7 @@ abstract final class LocalCatalog {
       type: 'interactive',
       ageMin: 6,
       ageMax: 8,
-      posterAsset: 'assets/images/series/posters/hekaya-wa-hikma-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-k7.webp',
     ),
     BookItem(
       id: 'book-qisas-j1',
@@ -402,8 +402,7 @@ abstract final class LocalCatalog {
       type: 'comic',
       ageMin: 9,
       ageMax: 12,
-      posterAsset:
-          'assets/images/series/posters/discover-your-body-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-j1.webp',
     ),
     BookItem(
       id: 'book-qisas-j2',
@@ -412,8 +411,7 @@ abstract final class LocalCatalog {
       type: 'interactive',
       ageMin: 9,
       ageMax: 11,
-      posterAsset:
-          'assets/images/series/posters/discover-your-body-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-j2.webp',
     ),
     BookItem(
       id: 'book-qisas-j3',
@@ -422,8 +420,7 @@ abstract final class LocalCatalog {
       type: 'picture_book',
       ageMin: 9,
       ageMax: 12,
-      posterAsset:
-          'assets/images/series/posters/discover-your-body-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-j3.webp',
     ),
     BookItem(
       id: 'book-qisas-j4',
@@ -432,8 +429,7 @@ abstract final class LocalCatalog {
       type: 'comic',
       ageMin: 10,
       ageMax: 12,
-      posterAsset:
-          'assets/images/series/posters/discover-your-body-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-j4.webp',
     ),
     BookItem(
       id: 'book-qisas-j5',
@@ -442,8 +438,7 @@ abstract final class LocalCatalog {
       type: 'audio_story',
       ageMin: 9,
       ageMax: 10,
-      posterAsset:
-          'assets/images/series/posters/discover-your-body-poster.webp',
+      posterAsset: 'assets/images/books/book-qisas-j5.webp',
     ),
   ];
 

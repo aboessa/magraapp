@@ -1,0 +1,132 @@
+{
+  "story": "local-book-covers",
+  "out_dir": "tools/playveo/output/books",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "imagen-4",
+  "reference_seed": "manifest-seed-do-not-generate",
+  "reference_instruction": "",
+  "character_lock": "",
+  "style_tail": "Premium original children's book cover artwork for Majarra, an Arabic educational entertainment platform for ages 3–12. Rich cinematic storybook illustration with polished stylized 3D forms and soft hand-painted 2D texture, expressive original characters, clear storytelling silhouette readable as a small thumbnail, refined depth and lighting, full-bleed native vertical 3:4 composition. Keep important faces and story action inside the central safe area, with visual breathing room near the bottom for app overlays. Joyful, emotionally warm, culturally inclusive and child-safe. No text, no title, no letters, no numbers, no logo, no watermark, no interface, no border, no frame, no mockup, no famous or copyrighted characters, no frightening imagery, no weapons, no clutter, no duplicate characters, no malformed anatomy, no blurred side fill, no letterboxing.",
+  "assets": [
+    {
+      "id": "manifest-seed-do-not-generate",
+      "file": "unused.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Unused manifest seed.",
+      "light": ""
+    },
+    {
+      "id": "book-qisas-p1",
+      "file": "book-qisas-p1.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A small gentle cream-colored rabbit discovers one luminous golden carrot in a sunny vegetable garden, then happily offers part of it to two tiny woodland friends. The shared carrot is the clear focal point; simple rounded shapes for preschool children.",
+      "light": "Warm morning sunlight, fresh leaf green, golden focal glow and soft sky blue."
+    },
+    {
+      "id": "book-qisas-p2",
+      "file": "book-qisas-p2.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A sweet little five-point star character with closed sleepy eyes nestles into a crescent-shaped cloud bed above a quiet toy-like town, while smaller stars dim their glow. Calm bedtime composition for preschool children.",
+      "light": "Dreamy indigo night, lavender clouds and a gentle warm gold glow, never dark or scary."
+    },
+    {
+      "id": "book-qisas-p3",
+      "file": "book-qisas-p3.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A friendly young owl pauses beneath a large tree in a bright enchanted forest, listening with wonder to one small colorful songbird as gentle glowing sound ripples travel between them. Large simple characters, open composition and a clear listening gesture for preschool children.",
+      "light": "Emerald forest light, turquoise sound ribbons and warm sunbeams through leaves."
+    },
+    {
+      "id": "book-qisas-p4",
+      "file": "book-qisas-p4.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Two cheerful cloud characters paint a wide sky using magical ribbons of sunrise peach, daytime cyan, sunset coral and twilight purple, while a tiny childlike bird watches in wonder. Color exploration is the central story.",
+      "light": "Bright airy gradient from warm sunrise to cool twilight, luminous and playful."
+    },
+    {
+      "id": "book-qisas-k1",
+      "file": "book-qisas-k1.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "An original young fox returns a small lost crystal marble to its relieved rabbit friend in a welcoming forest school courtyard. Their honest exchange and trusting expressions are the clear emotional focus; no adult characters.",
+      "light": "Honest clear daylight with sapphire and warm amber accents, soft hopeful rim light."
+    },
+    {
+      "id": "book-qisas-k2",
+      "file": "book-qisas-k2.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Three diverse original animal friends cooperate to build a safe bridge of colorful wooden shapes across a tiny stream: a clever fox aligns a plank, a rabbit holds it steady and a young turtle brings the final piece. Dynamic teamwork triangle.",
+      "light": "Sunny adventure light, teal water, warm wood and vivid cooperative color accents."
+    },
+    {
+      "id": "book-qisas-k3",
+      "file": "book-qisas-k3.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Original child space explorers in rounded colorful suits float beside a friendly compact research robot above a spectacular ringed planet, discovering crystalline moon rocks. Energetic comic-book camera angle with picture-only geometric action bursts, no written symbols.",
+      "light": "Deep navy space, royal blue planet glow, cyan visors and restrained star-yellow highlights."
+    },
+    {
+      "id": "book-qisas-k4",
+      "file": "book-qisas-k4.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A joyful chorus of original friendly birds and woodland animals sings together on a simple moonlit forest stage around one glowing sound orb. Abstract colorful sound waves and circles rise overhead. No books, no pages, no signs, no papers, no written marks and no musical notation anywhere.",
+      "light": "Bright coral, turquoise and golden musical glow against a soft purple stage-like forest."
+    },
+    {
+      "id": "book-qisas-k5",
+      "file": "book-qisas-k5.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Two young animal detectives, an alert owl and a curious squirrel, follow a trail of glowing acorns through a lush friendly forest toward a mysterious but inviting hollow tree. Include a magnifying glass with no symbols; exciting, never scary.",
+      "light": "Dappled emerald light, cyan clue glow and warm amber destination light."
+    },
+    {
+      "id": "book-qisas-k6",
+      "file": "book-qisas-k6.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A playful young dolphin, a gentle sea turtle and a tiny orange fish swim together through a vibrant coral garden, guiding one another toward a glowing pearl. Clear friendship circle and large readable underwater silhouettes.",
+      "light": "Luminous aqua water, coral pink, sea green and a pearly warm focal glow."
+    },
+    {
+      "id": "book-qisas-k7",
+      "file": "book-qisas-k7.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A small determined hedgehog crosses a gently swaying rope bridge to rescue a stranded butterfly, while supportive woodland friends encourage from the safe bank. Courage shown through posture and kindness, with no danger or fear.",
+      "light": "Golden late-afternoon courage light, forest green depth and uplifting sky blue."
+    },
+    {
+      "id": "book-qisas-j1",
+      "file": "book-qisas-j1.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A team of original young science heroes in practical colorful adventure suits uses shields of light, engineering tools and a compact helper drone to protect a futuristic garden city from a swirling dust storm. Bold comic composition, teamwork rather than combat.",
+      "light": "Electric royal blue and solar yellow hero lighting, clean cyan technology glow."
+    },
+    {
+      "id": "book-qisas-j2",
+      "file": "book-qisas-j2.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Two young archaeology explorers solve a visual mechanism of rotating picture-only stone tiles inside a magnificent ancient desert observatory, revealing a beam that maps stars on the domed ceiling. Respectful fictional architecture, no readable carvings or glyphs.",
+      "light": "Warm sandstone gold, midnight blue dome and turquoise discovery beam."
+    },
+    {
+      "id": "book-qisas-j3",
+      "file": "book-qisas-j3.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Full-bleed action scene: an inventive young girl with protective goggles flies beside her whimsical eco-friendly flying machine built from smooth recycled parts, leaf-like wings and a glowing clean-energy core, inside a bright minimal creative workshop. The machine and child fill the full vertical composition down to the bottom edge. No empty title area, no banner, no panel, no plaque, no card, no papers, no sticky notes, no labels, no screens and no writing anywhere.",
+      "light": "Warm workshop sunlight, copper and teal machinery, brilliant green-blue invention glow."
+    },
+    {
+      "id": "book-qisas-j4",
+      "file": "book-qisas-j4.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Original young future explorers race through a clean vertical garden city on safe transparent transit pods, accompanied by a friendly spherical robot and floating renewable-energy kites. Dynamic comic perspective, optimistic technology and abundant nature.",
+      "light": "Cyan and violet future glow, bright natural daylight and lush green accents."
+    },
+    {
+      "id": "book-qisas-j5",
+      "file": "book-qisas-j5.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A curious older child stands at the entrance of a vast colorful canyon, gently calling toward the cliffs as concentric ribbons of light bounce back in clear repeating arcs. A small friendly mountain goat observes; the science of sound and echo is visually obvious.",
+      "light": "Sunset terracotta canyon, violet shadows and luminous cyan-to-gold echo ribbons."
+    }
+  ]
+}
