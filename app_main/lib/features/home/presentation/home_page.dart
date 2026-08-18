@@ -9,7 +9,8 @@ import '../application/home_providers.dart';
 import '../domain/content_models.dart';
 import '../../child/application/child_provider.dart';
 import '../../games/application/game_providers.dart';
-import 'v2/home_v2_page.dart';
+import 'shells/adaptive_home_shell.dart';
+import 'shells/tv_home_shell.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -64,7 +65,9 @@ class HomePage extends ConsumerWidget {
       loading: () => const Scaffold(body: BrandLoadingView()),
       error: (_, __) =>
           _HomeErrorView(onRetry: () => ref.invalidate(homeCatalogProvider)),
-      data: (value) => HomeV2Page(catalog: value, isTelevision: isTelevision),
+      data: (value) => isTelevision
+          ? TvHomeShell(catalog: value)
+          : AdaptiveHomeShell(catalog: value),
     );
   }
 }

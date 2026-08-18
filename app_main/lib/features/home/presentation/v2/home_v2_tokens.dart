@@ -49,11 +49,13 @@ class HomeV2Metrics {
     required this.railTitleSize,
     required this.pagePadding,
     required this.billboardHeightFactor,
+    required this.textScaleFactor,
   });
 
   factory HomeV2Metrics.of(BuildContext context, {required bool isTelevision}) {
     final layoutClass = context.layoutClass;
     final padding = context.horizontalPagePadding;
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
 
     if (isTelevision) {
       return HomeV2Metrics(
@@ -68,6 +70,7 @@ class HomeV2Metrics {
         pagePadding: 48,
         // TV billboard occupies most of the first screen, like Google TV.
         billboardHeightFactor: 0.72,
+        textScaleFactor: textScaleFactor,
       );
     }
 
@@ -84,6 +87,7 @@ class HomeV2Metrics {
         pagePadding: padding,
         // Tall poster hero on phones so the artwork carries the screen.
         billboardHeightFactor: 0.78,
+        textScaleFactor: textScaleFactor,
       ),
       AppLayoutClass.medium => HomeV2Metrics(
         isTelevision: false,
@@ -96,6 +100,7 @@ class HomeV2Metrics {
         railTitleSize: HomeV2Tokens.railTitleTablet,
         pagePadding: padding,
         billboardHeightFactor: 0.62,
+        textScaleFactor: textScaleFactor,
       ),
       AppLayoutClass.expanded => HomeV2Metrics(
         isTelevision: false,
@@ -108,6 +113,7 @@ class HomeV2Metrics {
         railTitleSize: HomeV2Tokens.railTitleTablet,
         pagePadding: padding,
         billboardHeightFactor: 0.58,
+        textScaleFactor: textScaleFactor,
       ),
     };
   }
@@ -122,14 +128,35 @@ class HomeV2Metrics {
   final double railTitleSize;
   final double pagePadding;
   final double billboardHeightFactor;
+  final double textScaleFactor;
 
   double get posterHeight => posterWidth * 1.46;
   double get wideHeight => wideWidth * 0.5625;
 
-  /// Rail viewport height: card plus room for the caption block beneath it.
-  double get posterRailHeight => posterHeight + (isTelevision ? 62 : 46);
-  double get wideRailHeight => wideHeight + (isTelevision ? 64 : 48);
-  double get circleRailHeight => circleSize + (isTelevision ? 52 : 40);
+  double get _captionScale => textScaleFactor.clamp(1.0, 2.0);
+
+  /// Rail viewport heights include explicit, text-scale-aware caption space.
+  /// Arabic titles commonly wrap to two lines, so a fixed 46px allowance
+  /// overflowed by 3px even at the default scale.
+  double get posterRailHeight {
+    final title = 2 * (isTelevision ? 14 : 12) * 1.28 * _captionScale;
+    final meta = (isTelevision ? 12 : 10.5) * 1.25 * _captionScale;
+    final gap = isTelevision ? 10.0 : 7.0;
+    return posterHeight + title + meta + gap + 5;
+  }
+
+  double get wideRailHeight {
+    final title = 2 * (isTelevision ? 15 : 12.5) * 1.25 * _captionScale;
+    final meta = (isTelevision ? 12 : 10.5) * 1.25 * _captionScale;
+    final gap = isTelevision ? 10.0 : 7.0;
+    return wideHeight + title + meta + gap + 5;
+  }
+
+  double get circleRailHeight {
+    final label = (isTelevision ? 13 : 11) * 1.3 * _captionScale;
+    final gap = isTelevision ? 10.0 : 7.0;
+    return circleSize + label + gap + 5;
+  }
 
   bool get isTablet => !isTelevision && layoutClass != AppLayoutClass.compact;
 }

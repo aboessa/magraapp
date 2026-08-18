@@ -80,8 +80,10 @@ final storyPagesProvider =
         ref,
         request: request,
         kind: ReaderPageCacheKind.book,
-        fetch: (api) =>
-            api.fetchBookPagesEnvelope(request.bookId, language: request.language),
+        fetch: (api) => api.fetchBookPagesEnvelope(
+          request.bookId,
+          language: request.language,
+        ),
       );
     });
 
@@ -194,8 +196,12 @@ class ResolvedHomeBlock {
     return ResolvedHomeBlock(
       id: j['id'] as String,
       type: (j['type'] as String?) ?? (j['block_type'] as String? ?? ''),
-      title: j['title'] as String?,
-      subtitle: j['subtitle'] as String?,
+      title: j['title'] is String
+          ? decodeArabicMojibake((j['title'] as String).trim())
+          : null,
+      subtitle: j['subtitle'] is String
+          ? decodeArabicMojibake((j['subtitle'] as String).trim())
+          : null,
       source: j['source'] as String?,
       cardStyle: j['card_style'] as String?,
       maxItems: (configMap['maxItems'] as num?)?.toInt(),
@@ -210,7 +216,10 @@ class ResolvedHomeBlock {
 
 /// The Home configuration response, including whether the server itself fell back.
 class ResolvedHomeResponse {
-  const ResolvedHomeResponse({required this.blocks, required this.serverFallback});
+  const ResolvedHomeResponse({
+    required this.blocks,
+    required this.serverFallback,
+  });
   final List<ResolvedHomeBlock> blocks;
 
   /// The server reported that it could not read a configuration and served its
@@ -238,8 +247,7 @@ final resolvedHomeProvider = FutureProvider<ResolvedHomeResponse>((ref) async {
   final map = data is Map<String, dynamic> ? data : const <String, dynamic>{};
   final rawBlocks = map['blocks'] ?? (data is List ? data : null);
   final meta = map['meta'];
-  final serverFallback =
-      meta is Map && meta['fallback'] == true;
+  final serverFallback = meta is Map && meta['fallback'] == true;
   if (rawBlocks is! List) {
     return const ResolvedHomeResponse(blocks: [], serverFallback: true);
   }
@@ -267,21 +275,18 @@ final homeLayoutProvider = FutureProvider<HomeLayout>((ref) async {
   final unsupported = <String>[];
   try {
     final resolved = await ref.watch(resolvedHomeProvider.future);
-    final contract = contractFromResolvedBlocks(
-      [
-        for (final block in resolved.blocks)
-          ResolvedHomeBlockConfig(
-            id: block.id,
-            type: block.type,
-            title: block.title,
-            subtitle: block.subtitle,
-            cardStyle: block.cardStyle,
-            maxItems: block.maxItems,
-            isSystem: block.isSystem,
-          ),
-      ],
-      unsupported: unsupported,
-    );
+    final contract = contractFromResolvedBlocks([
+      for (final block in resolved.blocks)
+        ResolvedHomeBlockConfig(
+          id: block.id,
+          type: block.type,
+          title: block.title,
+          subtitle: block.subtitle,
+          cardStyle: block.cardStyle,
+          maxItems: block.maxItems,
+          isSystem: block.isSystem,
+        ),
+    ], unsupported: unsupported);
     if (contract == null) {
       return HomeLayout(
         contract: HomeFeedContract.fallback(),

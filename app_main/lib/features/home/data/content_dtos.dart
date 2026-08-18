@@ -4,7 +4,7 @@ import '../domain/content_models.dart';
 
 String _text(Object? value, {String fallback = ''}) {
   if (value is String && value.trim().isNotEmpty) {
-    return _decodeArabicMojibake(value.trim());
+    return decodeArabicMojibake(value.trim());
   }
   return fallback;
 }
@@ -12,7 +12,7 @@ String _text(Object? value, {String fallback = ''}) {
 /// Repairs Arabic text that an upstream source encoded as UTF-8 and then read
 /// as Latin-1 (for example, `Ø£Ø¨Ø¬Ø¯` instead of `أبجد`). The guard keeps
 /// IDs, URLs, and correctly encoded content untouched.
-String _decodeArabicMojibake(String value) {
+String decodeArabicMojibake(String value) {
   if (!value.contains('Ø') && !value.contains('Ù')) return value;
 
   final percentEncodedBytes = StringBuffer();

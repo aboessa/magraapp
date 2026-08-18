@@ -1293,19 +1293,22 @@ class MajarraApiClient {
   }
 
   Map<String, dynamic> _decodeEnvelope(http.Response res) {
+    // Decode bytes explicitly as UTF-8. Relying on Response.body can interpret
+    // Arabic JSON as Latin-1 when an upstream Content-Type omits its charset.
+    final body = utf8.decode(res.bodyBytes);
     if (res.statusCode < 200 || res.statusCode >= 300) {
       Object? decoded;
       try {
-        decoded = jsonDecode(res.body);
+        decoded = jsonDecode(body);
       } catch (_) {}
       final code = decoded is Map ? decoded['code']?.toString() : null;
       throw MajarraApiException(
-        'HTTP ${res.statusCode}: ${res.body}',
+        'HTTP ${res.statusCode}: $body',
         statusCode: res.statusCode,
         code: code,
       );
     }
-    final decoded = jsonDecode(res.body);
+    final decoded = jsonDecode(body);
     if (decoded is! Map<String, dynamic>) {
       throw const MajarraApiException('Invalid envelope');
     }
