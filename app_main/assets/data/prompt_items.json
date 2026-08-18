@@ -1,0 +1,80 @@
+[
+  {
+    "id": "home",
+    "label": "بيتي المفضل",
+    "assetId": null,
+    "thumbnailAssetId": "asset-prompt-home",
+    "bg": "831843",
+    "mode": null,
+    "palette": [],
+    "strokePaths": [],
+    "dots": [],
+    "regions": [],
+    "icon": "prompt"
+  },
+  {
+    "id": "planet",
+    "label": "كوكب جديد",
+    "assetId": null,
+    "thumbnailAssetId": "asset-prompt-planet",
+    "bg": "312E81",
+    "mode": null,
+    "palette": [],
+    "strokePaths": [],
+    "dots": [],
+    "regions": [],
+    "icon": "prompt"
+  },
+  {
+    "id": "sky",
+    "label": "في السماء",
+    "assetId": null,
+    "thumbnailAssetId": "asset-prompt-sky",
+    "bg": "0C4A6E",
+    "mode": null,
+    "palette": [],
+    "strokePaths": [],
+    "dots": [],
+    "regions": [],
+    "icon": "prompt"
+  },
+  {
+    "id": "qisas",
+    "label": "نهاية القصة",
+    "assetId": null,
+    "thumbnailAssetId": "asset-prompt-qisas",
+    "bg": "422006",
+    "mode": null,
+    "palette": [],
+    "strokePaths": [],
+    "dots": [],
+    "regions": [],
+    "icon": "prompt"
+  },
+  {
+    "id": "oloom",
+    "label": "ما لاحظت",
+    "assetId": null,
+    "thumbnailAssetId": "asset-prompt-oloom",
+    "bg": "14532D",
+    "mode": null,
+    "palette": [],
+    "strokePaths": [],
+    "dots": [],
+    "regions": [],
+    "icon": "prompt"
+  },
+  {
+    "id": "alam",
+    "label": "خريطة غرفتي",
+    "assetId": null,
+    "thumbnailAssetId": "asset-prompt-alam",
+    "bg": "1E1B4B",
+    "mode": null,
+    "palette": [],
+    "strokePaths": [],
+    "dots": [],
+    "regions": [],
+    "icon": "prompt"
+  }
+]

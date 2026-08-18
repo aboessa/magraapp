@@ -474,9 +474,9 @@ class _CreativeStudioPageState extends State<CreativeStudioPage> {
                         color: it.bg,
                         child: Padding(
                           padding: const EdgeInsets.all(10),
-                          child: it.assetId != null
+                          child: it.previewAssetId != null
                               ? DrawingAsset(
-                                  assetIdOrPath: it.assetId!,
+                                  assetIdOrPath: it.previewAssetId!,
                                   fit: BoxFit.contain,
                                 )
                               : Icon(it.icon, size: 36, color: Colors.white),
@@ -1132,9 +1132,9 @@ class _CatalogColoringSection extends ConsumerWidget {
                         color: it.bg,
                         child: Padding(
                           padding: const EdgeInsets.all(10),
-                          child: it.assetId != null
+                          child: it.previewAssetId != null
                               ? DrawingAsset(
-                                  assetIdOrPath: it.assetId!,
+                                  assetIdOrPath: it.previewAssetId!,
                                   fit: BoxFit.contain,
                                 )
                               : Icon(it.icon, size: 36, color: Colors.white),
@@ -1214,6 +1214,7 @@ class _CatalogGenericSection extends ConsumerWidget {
           id: item.id,
           label: item.label,
           assetId: item.assetId,
+          thumbnailAssetId: item.thumbnailAssetId,
           bg: item.bgColor,
           icon: item.icon == 'prompt'
               ? _iconForPrompt(item.id)
@@ -1558,9 +1559,9 @@ class _CatalogGenericSection extends ConsumerWidget {
                             color: it.bgColor,
                             child: Padding(
                               padding: const EdgeInsets.all(10),
-                              child: it.assetId != null
+                              child: it.previewAssetId != null
                                   ? DrawingAsset(
-                                      assetIdOrPath: it.assetId!,
+                                      assetIdOrPath: it.previewAssetId!,
                                       fit: BoxFit.contain,
                                     )
                                   : Icon(
@@ -1634,9 +1635,9 @@ class _CatalogGenericSection extends ConsumerWidget {
                         color: it.bg,
                         child: Padding(
                           padding: const EdgeInsets.all(10),
-                          child: it.assetId != null
+                          child: it.previewAssetId != null
                               ? DrawingAsset(
-                                  assetIdOrPath: it.assetId!,
+                                  assetIdOrPath: it.previewAssetId!,
                                   fit: BoxFit.contain,
                                 )
                               : Icon(it.icon, size: 36, color: Colors.white),
@@ -1673,6 +1674,7 @@ class _StudioItem {
     required this.id,
     required this.label,
     this.assetId,
+    this.thumbnailAssetId,
     this.bg = const Color(0xFF0F172A),
     this.icon = Icons.brush_outlined,
     this.mode,
@@ -1685,6 +1687,7 @@ class _StudioItem {
   final String id;
   final String label;
   final String? assetId;
+  final String? thumbnailAssetId;
   final Color bg;
   final IconData icon;
   final String? mode;
@@ -1693,6 +1696,8 @@ class _StudioItem {
   final List<Map<String, dynamic>>? dots;
   final List<String>? palette;
   final String? promptKey;
+
+  String? get previewAssetId => thumbnailAssetId ?? assetId;
 }
 
 final _coloringItems = [
@@ -3667,6 +3672,7 @@ final _promptItems = [
   _StudioItem(
     id: 'home',
     label: 'بيتي المفضل',
+    thumbnailAssetId: 'asset-prompt-home',
     bg: Color(0xFF831843),
     icon: Icons.home_outlined,
     promptKey: 'game.prompt.home.prompt',
@@ -3674,6 +3680,7 @@ final _promptItems = [
   _StudioItem(
     id: 'planet',
     label: 'كوكب جديد',
+    thumbnailAssetId: 'asset-prompt-planet',
     bg: Color(0xFF312E81),
     icon: Icons.public,
     promptKey: 'game.prompt.planet.prompt',
@@ -3681,6 +3688,7 @@ final _promptItems = [
   _StudioItem(
     id: 'sky',
     label: 'في السماء',
+    thumbnailAssetId: 'asset-prompt-sky',
     bg: Color(0xFF0C4A6E),
     icon: Icons.cloud_outlined,
     promptKey: 'game.prompt.sky.prompt',
@@ -3688,6 +3696,7 @@ final _promptItems = [
   _StudioItem(
     id: 'qisas',
     label: 'نهاية القصة',
+    thumbnailAssetId: 'asset-prompt-qisas',
     bg: Color(0xFF422006),
     icon: Icons.menu_book_outlined,
     promptKey: 'game.qisas.draw_ending.prompt',
@@ -3695,6 +3704,7 @@ final _promptItems = [
   _StudioItem(
     id: 'oloom',
     label: 'ما لاحظت',
+    thumbnailAssetId: 'asset-prompt-oloom',
     bg: Color(0xFF14532D),
     icon: Icons.biotech_outlined,
     promptKey: 'game.oloom.observe.prompt',
@@ -3702,6 +3712,7 @@ final _promptItems = [
   _StudioItem(
     id: 'alam',
     label: 'خريطة غرفتي',
+    thumbnailAssetId: 'asset-prompt-alam',
     bg: Color(0xFF1E1B4B),
     icon: Icons.map_outlined,
     promptKey: 'game.alam.map.prompt',

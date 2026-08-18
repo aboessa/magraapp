@@ -7,14 +7,20 @@ library;
 
 const kDrawingAssetMap = <String, String>{
   // shapes
-  'asset-shape-template-circle': 'assets/images/drawing/templates/shape-circle.svg',
-  'asset-shape-template-square': 'assets/images/drawing/templates/shape-square.svg',
-  'asset-shape-template-triangle': 'assets/images/drawing/templates/shape-triangle.svg',
-  'asset-shape-template-rectangle': 'assets/images/drawing/templates/shape-rectangle.svg',
+  'asset-shape-template-circle':
+      'assets/images/drawing/templates/shape-circle.svg',
+  'asset-shape-template-square':
+      'assets/images/drawing/templates/shape-square.svg',
+  'asset-shape-template-triangle':
+      'assets/images/drawing/templates/shape-triangle.svg',
+  'asset-shape-template-rectangle':
+      'assets/images/drawing/templates/shape-rectangle.svg',
   'asset-shape-template-star': 'assets/images/drawing/templates/shape-star.svg',
   'asset-shape-template-oval': 'assets/images/drawing/templates/shape-oval.svg',
-  'asset-shape-template-heart': 'assets/images/drawing/templates/shape-heart.svg',
-  'asset-shape-template-diamond': 'assets/images/drawing/templates/shape-diamond.svg',
+  'asset-shape-template-heart':
+      'assets/images/drawing/templates/shape-heart.svg',
+  'asset-shape-template-diamond':
+      'assets/images/drawing/templates/shape-diamond.svg',
   'asset-shape-cover': 'assets/images/drawing/covers/cover-shapes.svg',
   // numbers 1-10
   'asset-numbers-cover': 'assets/images/drawing/covers/cover-numbers.svg',
@@ -55,14 +61,18 @@ const kDrawingAssetMap = <String, String>{
   'asset-color-flower': 'assets/images/drawing/coloring/color-flower.svg',
   'asset-color-fish': 'assets/images/drawing/coloring/color-fish.svg',
   'asset-color-tree': 'assets/images/drawing/coloring/color-tree.svg',
-  'asset-shape-template-house': 'assets/images/drawing/coloring/color-house.svg',
+  'asset-shape-template-house':
+      'assets/images/drawing/coloring/color-house.svg',
   'asset-coloring-cover': 'assets/images/drawing/covers/cover-coloring.svg',
   // complete / pattern
-  'asset-complete-half-sun': 'assets/images/drawing/templates/complete-half-sun.svg',
+  'asset-complete-half-sun':
+      'assets/images/drawing/templates/complete-half-sun.svg',
   'asset-complete-house': 'assets/images/drawing/templates/complete-house.svg',
-  'asset-complete-rocket': 'assets/images/drawing/templates/complete-rocket.svg',
+  'asset-complete-rocket':
+      'assets/images/drawing/templates/complete-rocket.svg',
   'asset-complete-cover': 'assets/images/drawing/covers/cover-complete.svg',
-  'asset-copy-pattern': 'assets/images/drawing/templates/copy-pattern-sequence.svg',
+  'asset-copy-pattern':
+      'assets/images/drawing/templates/copy-pattern-sequence.svg',
   // observation / alam
   'asset-oloom-leaf-bg': 'assets/images/drawing/templates/oloom-leaf.svg',
   'asset-oloom-cover': 'assets/images/drawing/covers/cover-oloom.svg',
@@ -100,16 +110,21 @@ const kDrawingAssetMap = <String, String>{
   'asset-color-lantern': 'assets/images/drawing/coloring/color-lantern.svg',
   'asset-color-crescent': 'assets/images/drawing/coloring/color-crescent.svg',
   'asset-color-arabesque': 'assets/images/drawing/coloring/color-arabesque.svg',
-  'asset-color-shapes-comp': 'assets/images/drawing/coloring/color-shapes-comp.svg',
-  'asset-color-stars-planets': 'assets/images/drawing/coloring/color-stars-planets.svg',
+  'asset-color-shapes-comp':
+      'assets/images/drawing/coloring/color-shapes-comp.svg',
+  'asset-color-stars-planets':
+      'assets/images/drawing/coloring/color-stars-planets.svg',
   // complete 9
-  'asset-complete-butterfly': 'assets/images/drawing/templates/complete-butterfly.svg',
+  'asset-complete-butterfly':
+      'assets/images/drawing/templates/complete-butterfly.svg',
   'asset-complete-fish2': 'assets/images/drawing/templates/complete-fish2.svg',
   'asset-complete-tree2': 'assets/images/drawing/templates/complete-tree2.svg',
   'asset-complete-car': 'assets/images/drawing/templates/complete-car.svg',
-  'asset-complete-flower2': 'assets/images/drawing/templates/complete-flower2.svg',
+  'asset-complete-flower2':
+      'assets/images/drawing/templates/complete-flower2.svg',
   'asset-complete-face': 'assets/images/drawing/templates/complete-face.svg',
-  'asset-complete-castle': 'assets/images/drawing/templates/complete-castle.svg',
+  'asset-complete-castle':
+      'assets/images/drawing/templates/complete-castle.svg',
   'asset-complete-boat2': 'assets/images/drawing/templates/complete-boat2.svg',
   'asset-complete-robot': 'assets/images/drawing/templates/complete-robot.svg',
   // copy 7
@@ -122,7 +137,8 @@ const kDrawingAssetMap = <String, String>{
   'asset-copy-mixed': 'assets/images/drawing/templates/copy-mixed.svg',
   // dots 7
   'asset-dots-cat2': 'assets/images/drawing/templates/dots-cat2.svg',
-  'asset-dots-butterfly2': 'assets/images/drawing/templates/dots-butterfly2.svg',
+  'asset-dots-butterfly2':
+      'assets/images/drawing/templates/dots-butterfly2.svg',
   'asset-dots-tree2': 'assets/images/drawing/templates/dots-tree2.svg',
   'asset-dots-car2': 'assets/images/drawing/templates/dots-car2.svg',
   'asset-dots-moon2': 'assets/images/drawing/templates/dots-moon2.svg',
@@ -135,13 +151,23 @@ const kDrawingAssetMap = <String, String>{
   'asset-trace-s-curve': 'assets/images/drawing/templates/trace-s-curve.svg',
   'asset-trace-road': 'assets/images/drawing/templates/trace-road.svg',
   'asset-trace-maze': 'assets/images/drawing/templates/trace-maze.svg',
-  'asset-trace-mountain-path': 'assets/images/drawing/templates/trace-mountain-path.svg',
-  'asset-trace-rocket-trail': 'assets/images/drawing/templates/trace-rocket-trail.svg',
+  'asset-trace-mountain-path':
+      'assets/images/drawing/templates/trace-mountain-path.svg',
+  'asset-trace-rocket-trail':
+      'assets/images/drawing/templates/trace-rocket-trail.svg',
   'asset-trace-bee': 'assets/images/drawing/templates/trace-bee.svg',
-  'asset-trace-fish-path': 'assets/images/drawing/templates/trace-fish-path.svg',
+  'asset-trace-fish-path':
+      'assets/images/drawing/templates/trace-fish-path.svg',
   // qisas
   'asset-qisas-story-bg': 'assets/images/drawing/covers/cover-qisas.svg',
   'asset-qisas-cover': 'assets/images/drawing/covers/cover-qisas.svg',
+  // prompt-card thumbnails (kept separate from the child's canvas asset)
+  'asset-prompt-home': 'assets/images/drawing/covers/prompt-home.webp',
+  'asset-prompt-planet': 'assets/images/drawing/covers/prompt-planet.webp',
+  'asset-prompt-sky': 'assets/images/drawing/covers/prompt-sky.webp',
+  'asset-prompt-qisas': 'assets/images/drawing/covers/prompt-qisas.webp',
+  'asset-prompt-oloom': 'assets/images/drawing/covers/prompt-oloom.webp',
+  'asset-prompt-alam': 'assets/images/drawing/covers/prompt-alam.webp',
   // prompts
   'asset-prompt-cover': 'assets/images/drawing/covers/cover-prompt.svg',
   'asset-free-cover': 'assets/images/drawing/covers/cover-free.svg',

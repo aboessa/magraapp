@@ -147,7 +147,7 @@ abstract final class LocalCatalog {
       planetName: 'كوكب المهارات',
       planetId: 'maharat',
       posterAsset: 'assets/images/series/posters/try-it-at-home-poster.webp',
-      bannerAsset: 'assets/images/landing/landing-family-learning-scene.webp',
+      bannerAsset: 'assets/images/series/banners/try-it-at-home-banner.webp',
       ageMin: 6,
       ageMax: 12,
       episodesCount: 1,

@@ -129,12 +129,28 @@ assets/
 # raw-master exclusion above while allowing reviewed production files only.
 !app_main/assets/
 app_main/assets/**
+!app_main/assets/data/
+app_main/assets/data/**
+!app_main/assets/data/prompt_items.json
 !app_main/assets/images/
 app_main/assets/images/**
 !app_main/assets/images/explore/
 !app_main/assets/images/explore/*.webp
 !app_main/assets/images/books/
 !app_main/assets/images/books/*.webp
+!app_main/assets/images/games/
+app_main/assets/images/games/**
+!app_main/assets/images/games/game-engine-*.webp
+!app_main/assets/images/series/
+app_main/assets/images/series/**
+!app_main/assets/images/series/banners/
+app_main/assets/images/series/banners/**
+!app_main/assets/images/series/banners/try-it-at-home-banner.webp
+!app_main/assets/images/drawing/
+app_main/assets/images/drawing/**
+!app_main/assets/images/drawing/covers/
+app_main/assets/images/drawing/covers/**
+!app_main/assets/images/drawing/covers/prompt-*.webp
 audio/
 _backups/
 

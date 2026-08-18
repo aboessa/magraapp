@@ -281,7 +281,7 @@ class GameSummaryDto {
       id: id,
       title: title,
       subtitle: '$difficultyLabel • $ageMin–$ageMax سنوات',
-      imageAsset: 'assets/brand/majarra-logo.png',
+      imageAsset: _gameArtworkAsset(id, engine),
       planetId: planetId,
       seriesId: seriesId,
       episodeId: episodeId,
@@ -294,6 +294,40 @@ class GameSummaryDto {
       capabilities: ExperienceCapabilities(supportsDpad: supportsDpad),
     );
   }
+}
+
+String _gameArtworkAsset(String id, String engine) {
+  const artworkByGame = <String, String>{
+    'game-letter-tracing': 'assets/images/games/game-letter-tracing-cover.webp',
+    'game-number-maze': 'assets/images/games/game-number-maze-cover.webp',
+    'game-shape-matching': 'assets/images/games/game-shape-matching-cover.webp',
+    'game-animal-memory': 'assets/images/games/game-animal-memory-cover.webp',
+    'game-butterfly-sequence':
+        'assets/images/games/game-butterfly-sequence-cover.webp',
+  };
+  final specific = artworkByGame[id];
+  if (specific != null) return specific;
+
+  return switch (engine) {
+    'match_pairs' ||
+    'engine-match' => 'assets/images/games/game-engine-match-pairs.webp',
+    'trace_color' => 'assets/images/games/game-engine-trace-color.webp',
+    'sort_bins' => 'assets/images/games/game-engine-sort-bins.webp',
+    'memory_flip' ||
+    'engine-memory' => 'assets/images/games/game-engine-memory-flip.webp',
+    'count_quantity' => 'assets/images/games/game-engine-count-quantity.webp',
+    'sequence_order' ||
+    'engine-sequence' => 'assets/images/games/game-engine-sequence-order.webp',
+    'word_build' => 'assets/images/games/game-engine-word-build.webp',
+    'rhythm_tap' => 'assets/images/games/game-engine-rhythm-tap.webp',
+    'logic_pattern' ||
+    'engine-maze' => 'assets/images/games/game-engine-logic-pattern.webp',
+    'block_code' ||
+    'engine-builder' => 'assets/images/games/game-engine-block-code.webp',
+    'sim_lab' => 'assets/images/games/game-engine-sim-lab.webp',
+    'timeline_map' => 'assets/images/games/game-engine-timeline-map.webp',
+    _ => 'assets/images/explore/explore-play.webp',
+  };
 }
 
 double _decimal(Object? value, {double fallback = 0}) {

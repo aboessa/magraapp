@@ -122,7 +122,7 @@ List<SearchResult> searchCatalog(
         path: '/reader/${story.id}',
         queryParameters: const {'contentType': 'story'},
       ).toString(),
-      imageAsset: 'assets/brand/majarra-logo.png',
+      imageAsset: 'assets/images/explore/explore-read.webp',
       imageUrl: story.coverUrl,
     );
   }

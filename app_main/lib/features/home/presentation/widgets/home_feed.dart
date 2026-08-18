@@ -100,7 +100,9 @@ class HomeFeed extends ConsumerWidget {
         Positioned.fill(
           child: IgnorePointer(
             child: DecoratedBox(
-              decoration: const BoxDecoration(gradient: AppColors.cinematicBackground),
+              decoration: const BoxDecoration(
+                gradient: AppColors.cinematicBackground,
+              ),
               child: Stack(
                 children: [
                   AnimatedContainer(
@@ -111,7 +113,10 @@ class HomeFeed extends ConsumerWidget {
                       gradient: RadialGradient(
                         center: const Alignment(0.62, -0.86),
                         radius: 1.32,
-                        colors: [heroAccent.withValues(alpha: 0.18), Colors.transparent],
+                        colors: [
+                          heroAccent.withValues(alpha: 0.18),
+                          Colors.transparent,
+                        ],
                         stops: const [0, 1],
                       ),
                     ),
@@ -138,7 +143,9 @@ class HomeFeed extends ConsumerWidget {
               SliverAppBar(
                 pinned: true,
                 toolbarHeight: isTelevision ? 82 : 72,
-                backgroundColor: const Color(0xFF0B1026).withValues(alpha: 0.88),
+                backgroundColor: const Color(
+                  0xFF0B1026,
+                ).withValues(alpha: 0.88),
                 surfaceTintColor: Colors.transparent,
                 scrolledUnderElevation: 0,
                 elevation: 0,
@@ -173,7 +180,10 @@ class HomeFeed extends ConsumerWidget {
                     ),
                   ),
                 ),
-                title: _HomeHeader(catalog: catalog, onOpenPlanets: onOpenPlanets),
+                title: _HomeHeader(
+                  catalog: catalog,
+                  onOpenPlanets: onOpenPlanets,
+                ),
               ),
 
               // A configuration problem is surfaced at the top, where a notice is
@@ -181,7 +191,12 @@ class HomeFeed extends ConsumerWidget {
               if (resolved != null && resolved.usesFallback)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(padding, 14, padding, 0),
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      padding,
+                      14,
+                      padding,
+                      0,
+                    ),
                     child: _LayoutFallbackNotice(
                       onRefresh: () => ref.invalidate(resolvedHomeProvider),
                     ),
@@ -191,7 +206,12 @@ class HomeFeed extends ConsumerWidget {
               if (catalog.usesLocalFallback)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(padding, 14, padding, 0),
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      padding,
+                      14,
+                      padding,
+                      0,
+                    ),
                     child: _FallbackNotice(
                       onRefresh: () => ref.invalidate(homeCatalogProvider),
                     ),
@@ -210,7 +230,9 @@ class HomeFeed extends ConsumerWidget {
                   onOpenPlanet: onOpenPlanet,
                 ),
 
-              SliverToBoxAdapter(child: SizedBox(height: isTelevision ? 72 : 98)),
+              SliverToBoxAdapter(
+                child: SizedBox(height: isTelevision ? 72 : 98),
+              ),
             ],
           ),
         ),
@@ -220,7 +242,9 @@ class HomeFeed extends ConsumerWidget {
 
   Color _accentForHero(HomeCatalog cat) {
     final id = cat.spotlights.isNotEmpty ? cat.spotlights.first.seriesId : null;
-    final s = id == null ? null : cat.series.where((e) => e.id == id).firstOrNull;
+    final s = id == null
+        ? null
+        : cat.series.where((e) => e.id == id).firstOrNull;
     final pid = s?.planetId ?? cat.planets.firstOrNull?.id ?? 'abjad';
     return switch (pid) {
       'abjad' => const Color(0xFF2580FF),
@@ -239,7 +263,14 @@ class HomeFeed extends ConsumerWidget {
 
 /// Real continue watching — uses [progressProvider] fractions, no fake 0.42.
 class _RealContinueSliver extends ConsumerWidget {
-  const _RealContinueSliver({required this.catalog, required this.isTelevision, required this.padding, required this.isFirstBlock, this.title, this.subtitle});
+  const _RealContinueSliver({
+    required this.catalog,
+    required this.isTelevision,
+    required this.padding,
+    required this.isFirstBlock,
+    this.title,
+    this.subtitle,
+  });
   final HomeCatalog catalog;
   final bool isTelevision;
   final double padding;
@@ -249,10 +280,20 @@ class _RealContinueSliver extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progress = ref.watch(progressProvider).valueOrNull ?? const {};
-    final fractions = <String, double>{for (final e in progress.entries) if (e.value.isResumable && e.value.fraction != null) e.key: e.value.fraction!};
-    if (fractions.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-    final resumable = catalog.episodes.where((ep) => fractions.containsKey(ep.id)).toList();
-    if (resumable.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    final fractions = <String, double>{
+      for (final e in progress.entries)
+        if (e.value.isResumable && e.value.fraction != null)
+          e.key: e.value.fraction!,
+    };
+    if (fractions.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+    final resumable = catalog.episodes
+        .where((ep) => fractions.containsKey(ep.id))
+        .toList();
+    if (resumable.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
     // newest first via updatedAt
     resumable.sort((a, b) {
       final pa = progress[a.id]?.updatedAt;
@@ -272,15 +313,26 @@ class _RealContinueSliver extends ConsumerWidget {
           isTelevision: isTelevision,
           itemBuilder: (context, item, index) => Stack(
             children: [
-              EpisodeCard(item: item, isTelevision: isTelevision, autofocus: isFirstBlock && index == 0, onPressed: () => context.push('/playback/${item.id}')),
+              EpisodeCard(
+                item: item,
+                isTelevision: isTelevision,
+                autofocus: isFirstBlock && index == 0,
+                onPressed: () => context.push('/playback/${item.id}'),
+              ),
               Positioned(
-                bottom: 0, left: 0, right: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(14),
+                  ),
                   child: LinearProgressIndicator(
                     value: fractions[item.id] ?? 0,
                     backgroundColor: Colors.white.withValues(alpha: 0.12),
-                    valueColor: const AlwaysStoppedAnimation(AppColors.starGold),
+                    valueColor: const AlwaysStoppedAnimation(
+                      AppColors.starGold,
+                    ),
                     minHeight: 4,
                   ),
                 ),
@@ -297,12 +349,12 @@ class _RealContinueSliver extends ConsumerWidget {
 // Reserved for Phase 2 discovery layout — kept behind hideWhenEmpty until wired
 // ignore: unused_element
 class _ExploreMajarraSection extends StatelessWidget {
-  // ignore: unused_element_parameter
-  const _ExploreMajarraSection({required this.catalog, required this.isTelevision, this.onOpenPlanets, this.onOpenPlanet});
+  const _ExploreMajarraSection({
+    required this.catalog,
+    required this.isTelevision,
+  });
   final HomeCatalog catalog;
   final bool isTelevision;
-  final VoidCallback? onOpenPlanets;
-  final ValueChanged<String>? onOpenPlanet;
   @override
   Widget build(BuildContext context) {
     final destinations = _buildDestinations(context);
@@ -313,18 +365,40 @@ class _ExploreMajarraSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Text('استكشف مجرة', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+            const Text(
+              'استكشف مجرة',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             const SizedBox(width: 6),
-            Icon(Icons.chevron_left_rounded, color: Colors.white.withValues(alpha: 0.62), size: 20),
+            Icon(
+              Icons.chevron_left_rounded,
+              color: Colors.white.withValues(alpha: 0.62),
+              size: 20,
+            ),
           ],
         ),
         const SizedBox(height: 4),
-        Text('شاهد • العب • اقرأ • استمع • ارسم • اكتشف', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.62), fontSize: 11.5)),
+        Text(
+          'شاهد • العب • اقرأ • استمع • ارسم • اكتشف',
+          style: TextStyle(
+            color: AppColors.mutedText.withValues(alpha: 0.62),
+            fontSize: 11.5,
+          ),
+        ),
         const SizedBox(height: 14),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cross, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: isTelevision ? 1.4 : 1.35),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cross,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: isTelevision ? 1.4 : 1.35,
+          ),
           itemCount: destinations.length,
           itemBuilder: (context, i) => _ExploreCard(dest: destinations[i]),
         ),
@@ -333,21 +407,80 @@ class _ExploreMajarraSection extends StatelessWidget {
   }
 
   List<_ExploreDest> _buildDestinations(BuildContext context) {
-    final hasAudio = catalog.books.any((b) => b.type == 'audio_story' || b.isPlayable);
+    final hasAudio = catalog.books.any(
+      (b) => b.type == 'audio_story' || b.isPlayable,
+    );
     return [
-      _ExploreDest(id: 'watch', label: 'شاهد', desc: catalog.series.isEmpty ? 'سلاسل وحلقات' : '${catalog.series.length} سلسلة', icon: Icons.play_circle_fill_rounded, color: const Color(0xFF2580FF), onTap: () => context.push('/watch')),
-      _ExploreDest(id: 'play', label: 'العب', desc: 'ألعاب تناسب عمرك', icon: Icons.sports_esports_rounded, color: const Color(0xFF5BE7A9), onTap: () => context.push('/play')),
-      _ExploreDest(id: 'read', label: 'اقرأ', desc: 'قصص وكتب', icon: Icons.menu_book_rounded, color: const Color(0xFF9D68FF), onTap: () => context.push('/read')),
-      if (hasAudio) _ExploreDest(id: 'listen', label: 'استمع', desc: 'حكايات مسموعة', icon: Icons.headphones_rounded, color: const Color(0xFFFF6FAE), onTap: () => context.push('/listen')),
-      _ExploreDest(id: 'draw', label: 'ارسم', desc: 'استوديو الإبداع', icon: Icons.brush_rounded, color: const Color(0xFFFFB52E), onTap: () => context.push('/studio')),
-      _ExploreDest(id: 'planets', label: 'الكواكب', desc: '${catalog.planets.length} عوالم', icon: Icons.public_rounded, color: AppColors.royalBlue, onTap: () => context.push('/planets')),
+      _ExploreDest(
+        id: 'watch',
+        label: 'شاهد',
+        desc: catalog.series.isEmpty
+            ? 'سلاسل وحلقات'
+            : '${catalog.series.length} سلسلة',
+        icon: Icons.play_circle_fill_rounded,
+        color: const Color(0xFF2580FF),
+        onTap: () => context.push('/watch'),
+      ),
+      _ExploreDest(
+        id: 'play',
+        label: 'العب',
+        desc: 'ألعاب تناسب عمرك',
+        icon: Icons.sports_esports_rounded,
+        color: const Color(0xFF5BE7A9),
+        onTap: () => context.push('/play'),
+      ),
+      _ExploreDest(
+        id: 'read',
+        label: 'اقرأ',
+        desc: 'قصص وكتب',
+        icon: Icons.menu_book_rounded,
+        color: const Color(0xFF9D68FF),
+        onTap: () => context.push('/read'),
+      ),
+      if (hasAudio)
+        _ExploreDest(
+          id: 'listen',
+          label: 'استمع',
+          desc: 'حكايات مسموعة',
+          icon: Icons.headphones_rounded,
+          color: const Color(0xFFFF6FAE),
+          onTap: () => context.push('/listen'),
+        ),
+      _ExploreDest(
+        id: 'draw',
+        label: 'ارسم',
+        desc: 'استوديو الإبداع',
+        icon: Icons.brush_rounded,
+        color: const Color(0xFFFFB52E),
+        onTap: () => context.push('/studio'),
+      ),
+      _ExploreDest(
+        id: 'planets',
+        label: 'الكواكب',
+        desc: '${catalog.planets.length} عوالم',
+        icon: Icons.public_rounded,
+        color: AppColors.royalBlue,
+        onTap: () => context.push('/planets'),
+      ),
     ];
   }
 }
 
 class _ExploreDest {
-  const _ExploreDest({required this.id, required this.label, required this.desc, required this.icon, required this.color, required this.onTap});
-  final String id; final String label; final String desc; final IconData icon; final Color color; final VoidCallback onTap;
+  const _ExploreDest({
+    required this.id,
+    required this.label,
+    required this.desc,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+  final String id;
+  final String label;
+  final String desc;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
 }
 
 class _ExploreCard extends StatelessWidget {
@@ -367,16 +500,43 @@ class _ExploreCard extends StatelessWidget {
             color: const Color(0xFF121A38).withValues(alpha: 0.96),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
-            gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [dest.color.withValues(alpha: 0.18), Colors.transparent]),
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [dest.color.withValues(alpha: 0.18), Colors.transparent],
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(width: 44, height: 44, decoration: BoxDecoration(shape: BoxShape.circle, color: dest.color.withValues(alpha: 0.18)), child: Icon(dest.icon, color: dest.color, size: 24)),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: dest.color.withValues(alpha: 0.18),
+                ),
+                child: Icon(dest.icon, color: dest.color, size: 24),
+              ),
               const Spacer(),
-              Text(dest.label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+              Text(
+                dest.label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 2),
-              Text(dest.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.72), fontSize: 11)),
+              Text(
+                dest.desc,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: AppColors.mutedText.withValues(alpha: 0.72),
+                  fontSize: 11,
+                ),
+              ),
             ],
           ),
         ),
@@ -387,7 +547,13 @@ class _ExploreCard extends StatelessWidget {
 
 /// Horizontal slider — استكشف مجرة (after planets, compact rail)
 class _ExploreMajarraRail extends StatelessWidget {
-  const _ExploreMajarraRail({required this.catalog, required this.isTelevision, required this.horizontalPadding, this.title, this.subtitle});
+  const _ExploreMajarraRail({
+    required this.catalog,
+    required this.isTelevision,
+    required this.horizontalPadding,
+    this.title,
+    this.subtitle,
+  });
   final HomeCatalog catalog;
   final bool isTelevision;
   final double horizontalPadding;
@@ -395,7 +561,9 @@ class _ExploreMajarraRail extends StatelessWidget {
   final String? subtitle;
   @override
   Widget build(BuildContext context) {
-    final hasAudio = catalog.books.any((b) => b.type == 'audio_story' || b.isPlayable);
+    final hasAudio = catalog.books.any(
+      (b) => b.type == 'audio_story' || b.isPlayable,
+    );
     final items = <_RailDest>[
       _RailDest(
         id: 'watch',
@@ -460,39 +628,71 @@ class _ExploreMajarraRail extends StatelessWidget {
       ),
     ];
 
-    final cardWidth = isTelevision ? 220.0 : (context.layoutClass == AppLayoutClass.compact ? 148.0 : 172.0);
+    final cardWidth = isTelevision
+        ? 220.0
+        : (context.layoutClass == AppLayoutClass.compact ? 148.0 : 172.0);
     final cardHeight = cardWidth * 1.22;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsetsDirectional.symmetric(horizontal: horizontalPadding),
+          padding: EdgeInsetsDirectional.symmetric(
+            horizontal: horizontalPadding,
+          ),
           child: Row(
             children: [
-              Text(title ?? 'استكشف مجرة', style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+              Text(
+                title ?? 'استكشف مجرة',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(width: 6),
-              Icon(Icons.chevron_left_rounded, color: Colors.white.withValues(alpha: 0.62), size: 20),
+              Icon(
+                Icons.chevron_left_rounded,
+                color: Colors.white.withValues(alpha: 0.62),
+                size: 20,
+              ),
             ],
           ),
         ),
         const SizedBox(height: 4),
         Padding(
-          padding: EdgeInsetsDirectional.symmetric(horizontal: horizontalPadding),
-          child: Text(subtitle ?? 'كل مغامراتك في مكان واحد', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.62), fontSize: 11.5)),
+          padding: EdgeInsetsDirectional.symmetric(
+            horizontal: horizontalPadding,
+          ),
+          child: Text(
+            subtitle ?? 'كل مغامراتك في مكان واحد',
+            style: TextStyle(
+              color: AppColors.mutedText.withValues(alpha: 0.62),
+              fontSize: 11.5,
+            ),
+          ),
         ),
         const SizedBox(height: 14),
         SizedBox(
           height: cardHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: EdgeInsetsDirectional.symmetric(horizontal: horizontalPadding),
-            physics: isTelevision ? const ClampingScrollPhysics() : const BouncingScrollPhysics(),
+            padding: EdgeInsetsDirectional.symmetric(
+              horizontal: horizontalPadding,
+            ),
+            physics: isTelevision
+                ? const ClampingScrollPhysics()
+                : const BouncingScrollPhysics(),
             itemCount: items.length,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final d = items[index];
-              return _ExploreRailCard(dest: d, width: cardWidth, height: cardHeight, isTelevision: isTelevision);
+              return _ExploreRailCard(
+                dest: d,
+                width: cardWidth,
+                height: cardHeight,
+                isTelevision: isTelevision,
+              );
             },
           ),
         ),
@@ -502,13 +702,37 @@ class _ExploreMajarraRail extends StatelessWidget {
 }
 
 class _RailDest {
-  const _RailDest({required this.id, required this.label, required this.subtitle, required this.icon, required this.color, required this.artworkAsset, this.artworkUrl, required this.onTap});
-  final String id; final String label; final String subtitle; final IconData icon; final Color color; final String artworkAsset; final String? artworkUrl; final VoidCallback onTap;
+  const _RailDest({
+    required this.id,
+    required this.label,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.artworkAsset,
+    this.artworkUrl,
+    required this.onTap,
+  });
+  final String id;
+  final String label;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final String artworkAsset;
+  final String? artworkUrl;
+  final VoidCallback onTap;
 }
 
 class _ExploreRailCard extends StatelessWidget {
-  const _ExploreRailCard({required this.dest, required this.width, required this.height, required this.isTelevision});
-  final _RailDest dest; final double width; final double height; final bool isTelevision;
+  const _ExploreRailCard({
+    required this.dest,
+    required this.width,
+    required this.height,
+    required this.isTelevision,
+  });
+  final _RailDest dest;
+  final double width;
+  final double height;
+  final bool isTelevision;
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -522,31 +746,92 @@ class _ExploreRailCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            boxShadow: [BoxShadow(color: dest.color.withValues(alpha: 0.18), blurRadius: 16, offset: const Offset(0, 6)), BoxShadow(color: Colors.black.withValues(alpha: 0.28), blurRadius: 20, offset: const Offset(0, 8))],
+            boxShadow: [
+              BoxShadow(
+                color: dest.color.withValues(alpha: 0.18),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.28),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           clipBehavior: Clip.antiAlias,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CinematicImage(assetPath: dest.artworkAsset, networkUrl: dest.artworkUrl, semanticLabel: dest.label, fit: BoxFit.cover, decodeWidth: width),
-              DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withValues(alpha: 0.12), const Color(0xFF06091A).withValues(alpha: 0.88), const Color(0xFF06091A)], stops: const [0, 0.35, 0.72, 1]))),
+              CinematicImage(
+                assetPath: dest.artworkAsset,
+                networkUrl: dest.artworkUrl,
+                semanticLabel: dest.label,
+                fit: BoxFit.cover,
+                decodeWidth: width,
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.12),
+                      const Color(0xFF06091A).withValues(alpha: 0.88),
+                      const Color(0xFF06091A),
+                    ],
+                    stops: const [0, 0.35, 0.72, 1],
+                  ),
+                ),
+              ),
               PositionedDirectional(
-                top: 10, start: 10,
+                top: 10,
+                start: 10,
                 child: Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.92), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 8)]),
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.92),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.18),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
                   child: Icon(dest.icon, color: dest.color, size: 18),
                 ),
               ),
               PositionedDirectional(
-                start: 12, end: 12, bottom: 12,
+                start: 12,
+                end: 12,
+                bottom: 12,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(dest.label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800, shadows: [Shadow(color: Colors.black87, blurRadius: 8)])),
+                    Text(
+                      dest.label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(dest.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: 0.82), fontSize: 10.5, fontWeight: FontWeight.w500)),
+                    Text(
+                      dest.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -568,7 +853,9 @@ class _CreativeStudioEntry extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(colors: [Color(0xFF2A1B5A), Color(0xFF1B2550), Color(0xFF0A102A)]),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2A1B5A), Color(0xFF1B2550), Color(0xFF0A102A)],
+        ),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
@@ -577,18 +864,69 @@ class _CreativeStudioEntry extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AppColors.starGold, borderRadius: BorderRadius.circular(6)), child: const Text('استوديو الإبداع', style: TextStyle(color: AppColors.deepSpace, fontSize: 10, fontWeight: FontWeight.w800))),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.starGold,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'استوديو الإبداع',
+                    style: TextStyle(
+                      color: AppColors.deepSpace,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 10),
-                const Text('ارسم • لوّن • ابتكر', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                const Text(
+                  'ارسم • لوّن • ابتكر',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('لوحاتك وألوانك في مكان واحد', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.75), fontSize: 11)),
+                Text(
+                  'لوحاتك وألوانك في مكان واحد',
+                  style: TextStyle(
+                    color: AppColors.mutedText.withValues(alpha: 0.75),
+                    fontSize: 11,
+                  ),
+                ),
                 const SizedBox(height: 14),
-                FilledButton.icon(onPressed: () => context.push('/studio'), style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.deepSpace), icon: const Icon(Icons.brush_rounded, size: 18), label: const Text('ابدأ الرسم')),
+                FilledButton.icon(
+                  onPressed: () => context.push('/studio'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.deepSpace,
+                  ),
+                  icon: const Icon(Icons.brush_rounded, size: 18),
+                  label: const Text('ابدأ الرسم'),
+                ),
               ],
             ),
           ),
           const SizedBox(width: 12),
-          Container(width: isTelevision ? 96 : 84, height: isTelevision ? 96 : 84, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.08), border: Border.all(color: Colors.white.withValues(alpha: 0.12))), child: const Icon(Icons.palette_rounded, color: AppColors.starGold, size: 42)),
+          Container(
+            width: isTelevision ? 96 : 84,
+            height: isTelevision ? 96 : 84,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.08),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            ),
+            child: const Icon(
+              Icons.palette_rounded,
+              color: AppColors.starGold,
+              size: 42,
+            ),
+          ),
         ],
       ),
     );
@@ -597,7 +935,12 @@ class _CreativeStudioEntry extends StatelessWidget {
 
 /// Continue drawing — shows editable drawings only, hidden if none.
 class _ContinueDrawingSliver extends ConsumerWidget {
-  const _ContinueDrawingSliver({required this.isTelevision, required this.padding, this.title, this.subtitle});
+  const _ContinueDrawingSliver({
+    required this.isTelevision,
+    required this.padding,
+    this.title,
+    this.subtitle,
+  });
   final bool isTelevision;
   final double padding;
   final String? title;
@@ -605,14 +948,18 @@ class _ContinueDrawingSliver extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final childId = ref.watch(childProvider).activeChildId;
-    if (childId == null || childId.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (childId == null || childId.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
     final store = LocalCreationStore();
     return FutureBuilder<List<LocalCreation>>(
       future: store.list(childId),
       builder: (context, snap) {
         final all = snap.data ?? const [];
         final editable = all.where((c) => c.isEditable).take(6).toList();
-        if (editable.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+        if (editable.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
         return SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(top: 30),
@@ -623,7 +970,11 @@ class _ContinueDrawingSliver extends ConsumerWidget {
               height: isTelevision ? 240 : 200,
               horizontalPadding: padding,
               isTelevision: isTelevision,
-              itemBuilder: (context, item, index) => _DrawingCard(item: item, isTelevision: isTelevision, onPressed: () => context.push('/studio', extra: item)),
+              itemBuilder: (context, item, index) => _DrawingCard(
+                item: item,
+                isTelevision: isTelevision,
+                onPressed: () => context.push('/studio', extra: item),
+              ),
             ),
           ),
         );
@@ -633,14 +984,20 @@ class _ContinueDrawingSliver extends ConsumerWidget {
 }
 
 class _DrawingCard extends StatelessWidget {
-  const _DrawingCard({required this.item, required this.isTelevision, required this.onPressed});
+  const _DrawingCard({
+    required this.item,
+    required this.isTelevision,
+    required this.onPressed,
+  });
   final LocalCreation item;
   final bool isTelevision;
   final VoidCallback onPressed;
   @override
   Widget build(BuildContext context) {
     Uint8List? bytes;
-    try { bytes = base64Decode(item.pngBase64); } catch (_) {}
+    try {
+      bytes = base64Decode(item.pngBase64);
+    } catch (_) {}
     final width = isTelevision ? 180.0 : 148.0;
     return SizedBox(
       width: width,
@@ -651,14 +1008,24 @@ class _DrawingCard extends StatelessWidget {
           onTap: onPressed,
           borderRadius: BorderRadius.circular(14),
           child: Container(
-            decoration: BoxDecoration(color: const Color(0xFF121A38), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
+            decoration: BoxDecoration(
+              color: const Color(0xFF121A38),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
             clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: bytes == null
-                      ? Container(color: AppColors.indigoSurface, child: const Icon(Icons.brush_rounded, color: Colors.white54))
+                      ? Container(
+                          color: AppColors.indigoSurface,
+                          child: const Icon(
+                            Icons.brush_rounded,
+                            color: Colors.white54,
+                          ),
+                        )
                       : Image.memory(bytes, fit: BoxFit.cover),
                 ),
                 Padding(
@@ -666,8 +1033,23 @@ class _DrawingCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(item.displayTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                      Text('${item.createdAt.day}/${item.createdAt.month}', style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.6), fontSize: 10)),
+                      Text(
+                        item.displayTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        '${item.createdAt.day}/${item.createdAt.month}',
+                        style: TextStyle(
+                          color: AppColors.mutedText.withValues(alpha: 0.6),
+                          fontSize: 10,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -681,22 +1063,58 @@ class _DrawingCard extends StatelessWidget {
 }
 
 class _RecommendedSliver extends ConsumerWidget {
-  const _RecommendedSliver({required this.catalog, required this.padding, required this.isTelevision, this.title, this.subtitle});
-  final HomeCatalog catalog; final double padding; final bool isTelevision;
-  final String? title; final String? subtitle;
-  @override Widget build(BuildContext context, WidgetRef ref) {
+  const _RecommendedSliver({
+    required this.catalog,
+    required this.padding,
+    required this.isTelevision,
+    this.title,
+    this.subtitle,
+  });
+  final HomeCatalog catalog;
+  final double padding;
+  final bool isTelevision;
+  final String? title;
+  final String? subtitle;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final childId = ref.watch(childProvider).activeChildId;
-    if (childId==null) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (childId == null) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
     final rec = ref.watch(recommendationsProvider(childId));
     return rec.when(
       data: (ids) {
-        if (ids.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-        final items = [for (final id in ids) catalog.series.where((s)=>s.id==id).firstOrNull].whereType<SeriesItem>().toList();
-        if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-        return SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.only(top:30), child: ContentRail<SeriesItem>(title: title ?? 'اخترنا لك', subtitle: subtitle ?? 'قد يعجبك', items: items.take(6).toList(), height: isTelevision?354:282, horizontalPadding: padding, isTelevision: isTelevision, itemBuilder: (c, item, i)=> SeriesCard(item:item, isTelevision:isTelevision, onPressed: ()=> context.push('/series/${item.id}')))));
+        if (ids.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        final items = [
+          for (final id in ids)
+            catalog.series.where((s) => s.id == id).firstOrNull,
+        ].whereType<SeriesItem>().toList();
+        if (items.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        return SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 30),
+            child: ContentRail<SeriesItem>(
+              title: title ?? 'اخترنا لك',
+              subtitle: subtitle ?? 'قد يعجبك',
+              items: items.take(6).toList(),
+              height: isTelevision ? 354 : 282,
+              horizontalPadding: padding,
+              isTelevision: isTelevision,
+              itemBuilder: (c, item, i) => SeriesCard(
+                item: item,
+                isTelevision: isTelevision,
+                onPressed: () => context.push('/series/${item.id}'),
+              ),
+            ),
+          ),
+        );
       },
-      loading: ()=> const SliverToBoxAdapter(child: SizedBox.shrink()),
-      error: (_,__)=> const SliverToBoxAdapter(child: SizedBox.shrink()),
+      loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
     );
   }
 }
@@ -805,7 +1223,9 @@ class _BlockSliver extends StatelessWidget {
             child: ContentRail<EpisodeItem>(
               title: block.title ?? 'حلقات جديدة',
               subtitle: block.subtitle ?? 'أضيفت حديثًا',
-              items: catalog.episodes.reversed.take(block.maxItems ?? 5).toList(),
+              items: catalog.episodes.reversed
+                  .take(block.maxItems ?? 5)
+                  .toList(),
               height: isTelevision ? 247 : 208,
               horizontalPadding: padding,
               isTelevision: isTelevision,
@@ -911,7 +1331,7 @@ class _BlockSliver extends StatelessWidget {
                 type: story.type,
                 ageMin: story.ageMin,
                 ageMax: story.ageMax,
-                posterAsset: 'assets/brand/majarra-logo.png',
+                posterAsset: 'assets/images/explore/explore-read.webp',
                 coverUrl: story.coverUrl,
               ),
             for (final book in catalog.books)
@@ -1184,7 +1604,9 @@ class _BlockSliver extends StatelessWidget {
         );
       case BlockType.languageRail:
         // Language-specific rail — hide if no episodes/series, otherwise show landscape.
-        if (catalog.episodes.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+        if (catalog.episodes.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
         return SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(top: 30),
@@ -1195,13 +1617,21 @@ class _BlockSliver extends StatelessWidget {
               height: isTelevision ? 247 : 208,
               horizontalPadding: padding,
               isTelevision: isTelevision,
-              itemBuilder: (context, item, index) => EpisodeCard(item: item, isTelevision: isTelevision, onPressed: () => context.push('/playback/${item.id}')),
+              itemBuilder: (context, item, index) => EpisodeCard(
+                item: item,
+                isTelevision: isTelevision,
+                onPressed: () => context.push('/playback/${item.id}'),
+              ),
             ),
           ),
         );
       case BlockType.tvGamesRail:
-        final tvGames = catalog.experiences.where((e) => e.isServerBacked && e.supportsTelevision).toList();
-        if (tvGames.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+        final tvGames = catalog.experiences
+            .where((e) => e.isServerBacked && e.supportsTelevision)
+            .toList();
+        if (tvGames.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
         return SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(top: 30),
@@ -1212,7 +1642,11 @@ class _BlockSliver extends StatelessWidget {
               height: isTelevision ? 322 : 266,
               horizontalPadding: padding,
               isTelevision: isTelevision,
-              itemBuilder: (context, item, index) => ExperienceCard(item: item, isTelevision: isTelevision, onPressed: () => context.push('/game/${item.id}')),
+              itemBuilder: (context, item, index) => ExperienceCard(
+                item: item,
+                isTelevision: isTelevision,
+                onPressed: () => context.push('/game/${item.id}'),
+              ),
             ),
           ),
         );
@@ -2098,15 +2532,18 @@ class _LayoutFallbackNotice extends StatelessWidget {
           padding: const EdgeInsetsDirectional.fromSTEB(14, 7, 8, 7),
           child: Row(
             children: [
-              const Icon(Icons.tune_rounded, color: AppColors.starGold, size: 20),
+              const Icon(
+                Icons.tune_rounded,
+                color: AppColors.starGold,
+                size: 20,
+              ),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
                   'نعرض ترتيب الصفحة الافتراضي حتى يصل إعداد الصفحة الرئيسية.',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: AppColors.starlight),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: AppColors.starlight),
                 ),
               ),
               IconButton(

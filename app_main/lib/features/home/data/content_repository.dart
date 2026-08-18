@@ -140,7 +140,7 @@ class ContentRepository {
               .map(
                 (dto) => dto.toDomain(
                   imageAsset:
-                      _localPlanet(dto.id)?.imageAsset ?? _neutralArtwork,
+                      _localPlanet(dto.id)?.imageAsset ?? _planetArtwork,
                 ),
               )
               .toList(growable: false);
@@ -214,7 +214,9 @@ class ContentRepository {
     );
   }
 
-  static const _neutralArtwork = 'assets/brand/majarra-logo.png';
+  static const _planetArtwork = 'assets/images/explore/explore-planets.webp';
+  static const _watchArtwork = 'assets/images/explore/explore-watch.webp';
+  static const _readArtwork = 'assets/images/explore/explore-read.webp';
 
   static Planet? _localPlanet(String id) =>
       LocalCatalog.planets.where((item) => item.id == id).firstOrNull;
@@ -230,8 +232,8 @@ class ContentRepository {
       description: '',
       planetName: dto.planetName,
       planetId: dto.planetId,
-      posterAsset: _neutralArtwork,
-      bannerAsset: _neutralArtwork,
+      posterAsset: _watchArtwork,
+      bannerAsset: _watchArtwork,
       ageMin: dto.ageMin,
       ageMax: dto.ageMax,
       episodesCount: dto.episodesCount,
@@ -251,7 +253,7 @@ class ContentRepository {
       title: dto.title,
       description: '',
       seriesTitle: dto.seriesTitle,
-      thumbnailAsset: _neutralArtwork,
+      thumbnailAsset: _watchArtwork,
       durationSeconds: 0,
     );
   }
@@ -268,7 +270,7 @@ class ContentRepository {
       type: dto.type,
       ageMin: dto.ageMin,
       ageMax: dto.ageMax,
-      posterAsset: _neutralArtwork,
+      posterAsset: _readArtwork,
     );
   }
 

@@ -284,7 +284,8 @@ class _DownloadRow extends StatelessWidget {
                       height: 58,
                       child: item.posterUrl != null
                           ? CinematicImage(
-                              assetPath: 'assets/brand/majarra-logo.png',
+                              assetPath:
+                                  'assets/images/explore/explore-watch.webp',
                               networkUrl: item.posterUrl,
                               semanticLabel: 'غلاف ${item.title}',
                               fit: BoxFit.cover,

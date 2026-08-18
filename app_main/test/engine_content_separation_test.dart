@@ -81,6 +81,11 @@ const _allowedConstantLists = <String, String>{
   'free_draw_surface.dart:_fallbackPalette':
       'default brush colours; any level palette wins',
 
+  // Names for the four brush tools defined by DrawBrush. Packs provide drawing
+  // prompts and assets, but do not define or rename the editor's tool vocabulary.
+  'free_draw_surface.dart:labels':
+      'brush-tool labels for engine-defined DrawBrush controls, not authored content',
+
   // The predict / try / explain stage names. These are the engine's own state
   // machine made visible — the same three stages exist in every sim_lab pack.
   'sim_lab_engine.dart:labels':

@@ -538,7 +538,9 @@ class _Artwork extends StatelessWidget {
               child: SizedBox.expand(
                 child: CinematicImage(
                   networkUrl: artworkUrl,
-                  assetPath: artworkAsset ?? 'assets/brand/majarra-logo.png',
+                  assetPath:
+                      artworkAsset ??
+                      'assets/images/explore/explore-listen.webp',
                   semanticLabel: 'غلاف $title',
                   fit: BoxFit.cover,
                 ),

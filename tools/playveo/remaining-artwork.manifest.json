@@ -1,0 +1,153 @@
+{
+  "story": "remaining-runtime-artwork",
+  "out_dir": "tools/playveo/output/remaining-artwork",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "imagen-4",
+  "reference_seed": "manifest-seed-do-not-generate",
+  "reference_instruction": "",
+  "character_lock": "",
+  "style_tail": "Premium original key art for Majarra, an Arabic educational entertainment platform for children aged 3–12. Polished cinematic stylized 3D illustration with soft hand-painted 2D texture, clear single visual concept readable as a small app thumbnail, refined depth and lighting, joyful child-safe culturally inclusive design, deep navy and royal blue foundation with restrained cyan, purple, coral and star-yellow accents. Full-bleed native composition matching the requested aspect ratio, important subjects inside the central safe area. No text, no title, no letters, no numbers, no logo, no watermark, no interface, no border, no frame, no mockup, no empty title panel, no plaque, no famous or copyrighted characters, no frightening imagery, no weapons, no clutter, no malformed anatomy, no blurred side fill, no letterboxing.",
+  "assets": [
+    {
+      "id": "manifest-seed-do-not-generate",
+      "file": "unused.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "Unused manifest seed.",
+      "light": ""
+    },
+    {
+      "id": "prompt-home",
+      "file": "prompt-home.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A delightful imaginative dream home assembled from rounded colorful rooms, a tiny garden, a star-shaped window and a winding path, inviting a child to invent their favorite house. No people and no architectural labels.",
+      "light": "Warm sunset home glow with teal and coral accents."
+    },
+    {
+      "id": "prompt-planet",
+      "file": "prompt-planet.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A brand-new whimsical miniature planet waiting to be imagined, with floating islands, crystal trees, a tiny ring and several blank colorful terrain zones. Original world-building scene with no symbols.",
+      "light": "Royal blue space depth, cyan rim light and playful multicolor terrain glow."
+    },
+    {
+      "id": "prompt-sky",
+      "file": "prompt-sky.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "An expansive magical sky where soft clouds, a crescent moon, a warm sun, a rainbow ribbon, stars and one tiny friendly hot-air balloon coexist as imaginative drawing inspiration. No markings on the balloon.",
+      "light": "Airy cyan daylight blending into violet twilight with warm gold highlights."
+    },
+    {
+      "id": "prompt-qisas",
+      "file": "prompt-qisas.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "An unfinished picture-story moment inviting the child to imagine the ending: two original young animal friends reach a glowing fork in a forest path, one route leading to a friendly castle silhouette and the other to a sparkling boat. No book, pages or text.",
+      "light": "Warm mystery glow, emerald forest and gentle purple distance."
+    },
+    {
+      "id": "prompt-oloom",
+      "file": "prompt-oloom.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A child-safe observation still life with a large leaf under a magnifying glass, water droplets, a smooth stone, a feather and a tiny curious ladybird, encouraging careful scientific noticing. No labels or measurement marks.",
+      "light": "Fresh natural morning light with emerald and cyan detail glow."
+    },
+    {
+      "id": "prompt-alam",
+      "file": "prompt-alam.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A charming top-down miniature bedroom arranged like a visual map, with a bed, desk, rug, toy shelf, window and clear walking path, inviting a child to map their own room. No grid, labels, writing or people.",
+      "light": "Cozy warm room light with royal blue and lavender accents."
+    },
+    {
+      "id": "try-it-at-home-banner",
+      "file": "try-it-at-home-banner.jpg",
+      "aspect_ratio": "16:9",
+      "scene": "A cinematic wide family learning scene: an attentive parent safely supervises two children creating a rainbow density experiment in clear cups at a bright kitchen activity table, with simple household materials neatly arranged. The glowing layered rainbow cup is the focal point; no labels on containers.",
+      "light": "Bright natural window light, warm family atmosphere, cyan and rainbow experiment glow."
+    },
+    {
+      "id": "game-engine-match-pairs",
+      "file": "game-engine-match-pairs.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A playful matching challenge made from two clearly corresponding pairs of chunky picture tiles: a friendly fish paired with a wave shape and a butterfly paired with a flower, connected by soft light trails. No card symbols or writing.",
+      "light": "Bright royal blue and coral game-show glow with clean cyan connections."
+    },
+    {
+      "id": "game-engine-trace-color",
+      "file": "game-engine-trace-color.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A chunky child-safe paintbrush follows a luminous curved path around a joyful outlined star and fills a simple butterfly wing with color, showing tracing and coloring as one magical creative activity. No hands and no written marks.",
+      "light": "Warm star-yellow brush glow, vivid cyan path and purple depth."
+    },
+    {
+      "id": "game-engine-sort-bins",
+      "file": "game-engine-sort-bins.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Colorful toy objects float toward three friendly rounded sorting baskets according to shape and color, with a clear visual grouping motion. Baskets are unmarked and contain no glyphs.",
+      "light": "Emerald, coral and royal-blue sorting glow against deep navy."
+    },
+    {
+      "id": "game-engine-memory-flip",
+      "file": "game-engine-memory-flip.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A tidy grid of six thick rounded memory cards mid-flip, revealing two matching pairs of original animal pictures while the remaining backs show only abstract starbursts. Clear playful memory challenge without symbols.",
+      "light": "Violet game-table depth with cyan flip trails and warm gold rewards."
+    },
+    {
+      "id": "game-engine-count-quantity",
+      "file": "game-engine-count-quantity.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A cheerful counting scene with a small group of bright toy stars moving one by one into matching glowing spaces on a rounded tray, emphasizing quantity without showing numerals, letters or written marks.",
+      "light": "Solar yellow focal stars, royal blue tray and cyan counting trail."
+    },
+    {
+      "id": "game-engine-sequence-order",
+      "file": "game-engine-sequence-order.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Four large picture cards form a clear visual sequence from seed to sprout to bud to flower, carried along a gentle glowing path by friendly tiny garden helpers. No arrows, numerals or writing.",
+      "light": "Fresh green growth light, warm sunshine and purple cinematic depth."
+    },
+    {
+      "id": "game-engine-word-build",
+      "file": "game-engine-word-build.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A magical word-building workshop where colorful blank wooden sound blocks snap together into a glowing picture of a moon, with abstract sound-wave shapes linking the blocks. Absolutely no letters, glyphs or written symbols.",
+      "light": "Warm wood glow, cyan sound ribbons and deep purple background."
+    },
+    {
+      "id": "game-engine-rhythm-tap",
+      "file": "game-engine-rhythm-tap.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Four large child-safe glowing rhythm pads pulse in a lively pattern while abstract colored sound waves and bouncing light orbs move above them. No musical notation, hands, letters or numbers.",
+      "light": "Neon coral, cyan and star-yellow pulse light against midnight navy."
+    },
+    {
+      "id": "game-engine-logic-pattern",
+      "file": "game-engine-logic-pattern.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A satisfying visual logic pattern built from alternating rounded shapes and colors, with one glowing empty position being completed by the correct floating piece. No question mark, arrows, numerals or written symbols.",
+      "light": "Precise cyan and violet puzzle glow with one warm yellow solution highlight."
+    },
+    {
+      "id": "game-engine-block-code",
+      "file": "game-engine-block-code.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A friendly compact robot travels through a miniature garden maze guided by a short chain of colorful interlocking command blocks that contain only picture icons made from simple paths, with no letters or numbers.",
+      "light": "Clean teal technology glow, royal blue depth and warm reward spark."
+    },
+    {
+      "id": "game-engine-sim-lab",
+      "file": "game-engine-sim-lab.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A safe futuristic science lab simulation with two transparent vessels, one adjustable glowing control orb and a plant visibly responding to changes, watched by a friendly small helper robot. No scales, labels or written values.",
+      "light": "Emerald experiment glow, cyan glass highlights and deep navy laboratory depth."
+    },
+    {
+      "id": "game-engine-timeline-map",
+      "file": "game-engine-timeline-map.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A beautiful exploratory map and timeline combined: a winding illuminated route crosses mountains, a river, an ancient observatory and a future garden city, with picture-only milestone medallions placed in order. No dates, text, arrows or numerals.",
+      "light": "Sandstone gold to futuristic cyan journey lighting with purple depth."
+    }
+  ]
+}
