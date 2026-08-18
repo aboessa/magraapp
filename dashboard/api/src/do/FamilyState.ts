@@ -1,10 +1,17 @@
-import type { Env } from '../lib/db';
+import type { Env } from '../lib/db.ts';
+import {
+  callDurable,
+  identityForParent,
+  setIdentityDirectoryStatus,
+  tombstoneIdentityDirectory,
+} from '../lib/doClient.ts';
 // امتدادات `.ts` صريحة: مجموعة الاختبارات تعمل بـ`node --experimental-strip-types`
 // الذي يطالب بالامتداد في الاستيراد النسبي ولا يستنتجه كما يفعل مُجمِّع wrangler.
 // بلا الامتداد لا يمكن استيراد هذا الكائن في اختبار إطلاقًا — وهو أكبر ملف منطق
 // في المشروع وكان بلا أي تغطية.
 import { boundedInteger, deriveAgeTrack, isPlan, normalizeTracks, PLAN_LIMITS, planAllows, type AgeTrack, type Plan } from '../lib/familyPolicy.ts';
 import { hashPassword, verifyPassword } from '../lib/security.ts';
+import { addColumn, applySchemaSteps, readSchemaState, type SchemaState } from '../lib/doSchema.ts';
 import {
   deriveMastery,
   isMasteryLevel,
@@ -18,7 +25,34 @@ type FamilyRow = {
   status: 'active' | 'suspended';
   base_plan: Plan;
   auth_epoch: number;
+  deleted_at: number | null;
+  profile_intent_version: number;
+  profile_applied_version: number;
 };
+
+type LifecycleJob = {
+  request_id: string;
+  scope: 'child' | 'account';
+  child_id: string | null;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  attempts: number;
+  requested_at: number;
+  next_attempt_at: number;
+  processing_started_at: number | null;
+  receipt_hash: string | null;
+};
+
+type ProfileSyncJob = {
+  operation_id: string;
+  display_name: string | null;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  attempts: number;
+  next_attempt_at: number;
+  processing_started_at: number | null;
+  intent_version: number;
+};
+
+const JOB_PROCESSING_LEASE_MS = 5 * 60 * 1000;
 
 type SessionRow = {
   id: string;
@@ -40,10 +74,45 @@ function json(data: unknown, status = 200) {
   return Response.json(data, { status });
 }
 
+/**
+ * Column additions for `FamilyState`, applied by version.
+ *
+ * **Append only, and never renumber.** An existing object records the version it
+ * reached, so changing a number would re-run or skip a step on every object that
+ * already passed it. These twelve replace twelve `try { ALTER } catch {}` lines
+ * whose failures were indistinguishable from success.
+ */
+export const FAMILY_SCHEMA_STEPS = [
+  addColumn('family', 'parent_pin_hash', 'TEXT', 1),
+  addColumn('family', 'parent_pin_failed_count', 'INTEGER NOT NULL DEFAULT 0', 2),
+  addColumn('family', 'parent_pin_locked_until', 'INTEGER', 3),
+  addColumn('family', 'parent_pin_version', 'INTEGER NOT NULL DEFAULT 0', 4),
+  addColumn('family', 'deleted_at', 'INTEGER', 5),
+  addColumn('family', 'profile_intent_version', 'INTEGER NOT NULL DEFAULT 0', 6),
+  addColumn('family', 'profile_applied_version', 'INTEGER NOT NULL DEFAULT 0', 7),
+  addColumn('lifecycle_jobs', 'processing_started_at', 'INTEGER', 8),
+  addColumn('lifecycle_jobs', 'receipt_hash', 'TEXT', 9),
+  addColumn('profile_sync_jobs', 'intent_version', 'INTEGER NOT NULL DEFAULT 0', 10),
+  addColumn('attempts', 'game_id', 'TEXT', 11),
+  addColumn('attempts', 'content_type', 'TEXT', 12),
+];
+
+/// The version a fully migrated `FamilyState` reaches.
+export const FAMILY_SCHEMA_VERSION = FAMILY_SCHEMA_STEPS
+  .reduce((highest, step) => Math.max(highest, step.version), 0);
+
 export class FamilyState {
   private readonly state: DurableObjectState;
   private readonly env: Env;
   private readonly sql: SqlStorage;
+  /**
+   * Result of the schema run for this instantiation.
+   *
+   * Kept so `GET /schema` can report the version and any failure. Without it a
+   * partially migrated object was undetectable — the old `try { ALTER } catch {}`
+   * discarded the only evidence.
+   */
+  private readonly schema: SchemaState;
 
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
@@ -57,6 +126,9 @@ export class FamilyState {
         status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended')),
         base_plan TEXT NOT NULL DEFAULT 'free' CHECK (base_plan IN ('free', 'family', 'family_plus')),
         auth_epoch INTEGER NOT NULL DEFAULT 1 CHECK (auth_epoch >= 1),
+        deleted_at INTEGER,
+        profile_intent_version INTEGER NOT NULL DEFAULT 0,
+        profile_applied_version INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       );
@@ -197,11 +269,60 @@ export class FamilyState {
       CREATE INDEX IF NOT EXISTS idx_leases_active ON playback_leases(status, expires_at);
       CREATE INDEX IF NOT EXISTS idx_outbox_pending ON outbox(status, available_at, created_at);
     `);
-    // C2 — parent PIN gate (server-side). Added after Phase 0 without a D1
-    // migration: existing DO instances need the column added in place.
-    try { this.sql.exec(`ALTER TABLE family ADD COLUMN parent_pin_hash TEXT`); } catch {}
-    try { this.sql.exec(`ALTER TABLE family ADD COLUMN parent_pin_failed_count INTEGER NOT NULL DEFAULT 0`); } catch {}
-    try { this.sql.exec(`ALTER TABLE family ADD COLUMN parent_pin_locked_until INTEGER`); } catch {}
+    // Parent PIN state and one-time proof replay protection live with the
+    // authoritative family/session ledger. Existing Durable Objects receive the
+    // columns in place; new objects run the same idempotent upgrade path.
+    //
+    // These were `try { ALTER } catch {}`. They are now numbered steps applied by
+    // `lib/doSchema.ts`, which inspects before mutating and records the version
+    // reached — so a genuine failure is reported instead of being indistinguishable
+    // from "already applied". The step list is assembled below and run in one pass
+    // after every table exists.
+    this.sql.exec(`
+      CREATE TABLE IF NOT EXISTS used_parent_proofs (
+        jti TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        purpose TEXT NOT NULL,
+        expires_at INTEGER NOT NULL,
+        used_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_used_parent_proofs_expiry
+        ON used_parent_proofs(expires_at);
+
+      CREATE TABLE IF NOT EXISTS lifecycle_jobs (
+        request_id TEXT PRIMARY KEY,
+        scope TEXT NOT NULL CHECK (scope IN ('child', 'account')),
+        child_id TEXT,
+        status TEXT NOT NULL DEFAULT 'pending'
+          CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+        attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+        requested_at INTEGER NOT NULL,
+        next_attempt_at INTEGER NOT NULL,
+        processing_started_at INTEGER,
+        receipt_hash TEXT,
+        completed_at INTEGER,
+        last_error_code TEXT,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_lifecycle_jobs_due
+        ON lifecycle_jobs(status, next_attempt_at, requested_at);
+
+      CREATE TABLE IF NOT EXISTS profile_sync_jobs (
+        operation_id TEXT PRIMARY KEY,
+        display_name TEXT,
+        intent_version INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'pending'
+          CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+        attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+        next_attempt_at INTEGER NOT NULL,
+        processing_started_at INTEGER,
+        completed_at INTEGER,
+        last_error_code TEXT,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_profile_sync_jobs_due
+        ON profile_sync_jobs(status, next_attempt_at);
+    `);
 
     // Game attempts: `attempts` was created with `episode_id` only, and
     // `recordAttempt` was called with the game id in that column. D1's own
@@ -212,8 +333,6 @@ export class FamilyState {
     // Added in place rather than by recreating the table: existing rows keep the
     // id they were written with, and `backfillGameAttempts` below moves the ones
     // that were games. Same pattern as the PIN columns above.
-    try { this.sql.exec(`ALTER TABLE attempts ADD COLUMN game_id TEXT`); } catch {}
-    try { this.sql.exec(`ALTER TABLE attempts ADD COLUMN content_type TEXT`); } catch {}
 
     this.sql.exec(`
       CREATE INDEX IF NOT EXISTS idx_attempts_child_objective
@@ -298,6 +417,12 @@ export class FamilyState {
         ON consents(consent_type, child_id, revoked_at);
     `);
 
+    // Column additions, applied by version after every table exists.
+    //
+    // Numbers are permanent: an existing object has recorded the version it
+    // reached, so renumbering would re-run or skip steps. Append only.
+    this.schema = applySchemaSteps(this.sql, FAMILY_SCHEMA_STEPS, 'FamilyState');
+
     this.backfillGameAttempts();
   }
 
@@ -356,11 +481,37 @@ export class FamilyState {
     // The union is what lets both sit in one table; `await` below normalises them,
     // which is also what keeps the catch reachable.
     const routes: Record<string, (request: Request) => Response | Promise<Response>> = {
+      /**
+       * `GET /schema` — the schema version this object reached.
+       *
+       * Exists so a partially migrated object can be found. With one object per
+       * family, a step that fails on a single instance leaves that family's data
+       * shaped differently from everyone else's, and the previous
+       * `try { ALTER } catch {}` left no trace of it at all.
+       */
+      'GET /schema': () => Response.json({
+        success: true,
+        data: {
+          object: 'FamilyState',
+          ...readSchemaState(this.sql),
+          /// What the running code intends to reach, so "behind" is detectable
+          /// without consulting the source.
+          expected_version: FAMILY_SCHEMA_VERSION,
+          last_run: this.schema,
+        },
+      }),
       'POST /initialize': (r) => this.initialize(r),
       'POST /sessions/create': (r) => this.createSession(r),
       'POST /sessions/resolve': (r) => this.resolveSession(r),
       'POST /sessions/refresh': (r) => this.refreshSession(r),
       'POST /sessions/logout': (r) => this.logout(r),
+      'POST /sessions/revoke-all': (r) => this.revokeAllSessions(r),
+      'POST /sessions/revoke-others': (r) => this.revokeOtherSessions(r),
+      'POST /profile/update': (r) => this.updateProfile(r),
+      'POST /export': (r) => this.exportData(r),
+      'POST /lifecycle/request': (r) => this.requestLifecycle(r),
+      'POST /lifecycle/status': (r) => this.lifecycleStatus(r),
+      'POST /lifecycle/status-capability': (r) => this.lifecycleStatusCapability(r),
       'GET /children': () => this.getChildren(),
       'POST /children': (r) => this.addChild(r),
       'POST /progress': (r) => this.updateProgress(r),
@@ -375,6 +526,7 @@ export class FamilyState {
       'GET /state': () => this.getState(),
       'POST /parent-pin': (r) => this.setParentPin(r),
       'POST /parent-pin/verify': (r) => this.verifyParentPin(r),
+      'POST /parent-proof/validate': (r) => this.validateParentProof(r),
       'POST /rewards': (r) => this.grantReward(r),
       'GET /rewards': () => this.listRewards(),
       'GET /mastery': () => this.listMastery(),
@@ -411,45 +563,442 @@ export class FamilyState {
   }
 
   async alarm() {
-    const queue = this.env.FAMILY_EVENTS;
-    if (!queue) return;
-    const rows = this.sql.exec<{ event_id: string; event_type: string; payload_json: string; created_at: number }>(`
-      SELECT event_id, event_type, payload_json, created_at
-      FROM outbox
-      WHERE status = 'pending' AND available_at <= ?
-      ORDER BY created_at ASC
-      LIMIT 100
-    `, Date.now()).toArray();
-    if (!rows.length) return;
+    await this.processNextLifecycleJob();
+    await this.processNextProfileSyncJob();
 
-    try {
-      await queue.sendBatch(rows.map((row) => ({ body: JSON.parse(row.payload_json) as FamilyEvent })));
-      const now = Date.now();
-      this.state.storage.transactionSync(() => {
-        for (const row of rows) {
-          this.sql.exec(`UPDATE outbox SET status = 'sent', sent_at = ? WHERE event_id = ? AND status = 'pending'`, now, row.event_id);
-        }
-        this.sql.exec(`DELETE FROM outbox WHERE status = 'sent' AND sent_at < ?`, now - 7 * 24 * 60 * 60 * 1000);
-        this.sql.exec(`DELETE FROM idempotency_keys WHERE expires_at < ?`, now);
-        this.sql.exec(`DELETE FROM used_refresh_tokens WHERE expires_at < ?`, now);
-      });
-    } catch (error) {
-      const retryAt = Date.now() + 30_000;
-      this.state.storage.transactionSync(() => {
-        for (const row of rows) {
-          this.sql.exec(`UPDATE outbox SET attempts = attempts + 1, available_at = ? WHERE event_id = ?`, retryAt, row.event_id);
-        }
-      });
-      await this.state.storage.setAlarm(retryAt);
-      throw error;
+    const queue = this.env.FAMILY_EVENTS;
+    const rows = queue
+      ? this.sql.exec<{ event_id: string; event_type: string; payload_json: string; created_at: number }>(`
+          SELECT event_id, event_type, payload_json, created_at
+          FROM outbox
+          WHERE status = 'pending' AND available_at <= ?
+          ORDER BY created_at ASC
+          LIMIT 100
+        `, Date.now()).toArray()
+      : [];
+
+    if (queue && rows.length) {
+      try {
+        await queue.sendBatch(rows.map((row) => ({ body: JSON.parse(row.payload_json) as FamilyEvent })));
+        const sentAt = Date.now();
+        this.state.storage.transactionSync(() => {
+          for (const row of rows) {
+            this.sql.exec(
+              `UPDATE outbox SET status = 'sent', sent_at = ? WHERE event_id = ? AND status = 'pending'`,
+              sentAt,
+              row.event_id,
+            );
+          }
+        });
+      } catch (error) {
+        const retryAt = Date.now() + 30_000;
+        this.state.storage.transactionSync(() => {
+          for (const row of rows) {
+            this.sql.exec(
+              `UPDATE outbox SET attempts = attempts + 1, available_at = ? WHERE event_id = ?`,
+              retryAt,
+              row.event_id,
+            );
+          }
+        });
+        await this.state.storage.setAlarm(retryAt);
+        console.error('family_outbox_delivery_failed');
+        throw error;
+      }
     }
 
-    const remaining = this.sql.exec<{ count: number }>(`SELECT COUNT(*) AS count FROM outbox WHERE status = 'pending'`).toArray()[0]?.count ?? 0;
-    if (remaining > 0) await this.state.storage.setAlarm(Date.now() + 1000);
+    const now = Date.now();
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(`DELETE FROM outbox WHERE status = 'sent' AND sent_at < ?`, now - 7 * 24 * 60 * 60 * 1000);
+      this.sql.exec(`DELETE FROM idempotency_keys WHERE expires_at < ?`, now);
+      this.sql.exec(`DELETE FROM used_refresh_tokens WHERE expires_at < ?`, now);
+      this.sql.exec(`DELETE FROM used_parent_proofs WHERE expires_at < ?`, now);
+    });
+
+    const nextLifecycle = this.sql.exec<{ next_attempt_at: number | null }>(`
+      SELECT MIN(CASE
+        WHEN status = 'processing' THEN COALESCE(processing_started_at, updated_at) + ${JOB_PROCESSING_LEASE_MS}
+        ELSE next_attempt_at
+      END) AS next_attempt_at
+      FROM lifecycle_jobs
+      WHERE status IN ('pending', 'failed', 'processing')
+    `).toArray()[0]?.next_attempt_at;
+    const nextProfileSync = this.sql.exec<{ next_attempt_at: number | null }>(`
+      SELECT MIN(CASE
+        WHEN status = 'processing' THEN COALESCE(processing_started_at, updated_at) + ${JOB_PROCESSING_LEASE_MS}
+        ELSE next_attempt_at
+      END) AS next_attempt_at
+      FROM profile_sync_jobs
+      WHERE status IN ('pending', 'failed', 'processing')
+    `).toArray()[0]?.next_attempt_at;
+    const nextOutbox = queue
+      ? this.sql.exec<{ available_at: number }>(`
+          SELECT MIN(available_at) AS available_at FROM outbox WHERE status = 'pending'
+        `).toArray()[0]?.available_at
+      : undefined;
+    const candidates = [nextLifecycle, nextProfileSync, nextOutbox]
+      .filter((value): value is number => Number.isInteger(value));
+    if (candidates.length) {
+      await this.state.storage.setAlarm(Math.max(now + 1000, Math.min(...candidates)));
+    }
+  }
+
+  private lifecycleErrorCode(error: unknown) {
+    const value = error instanceof Error ? error.message : '';
+    const allowed = new Set([
+      'creation_storage_unconfigured',
+      'identity_directory_unavailable',
+      'identity_pending_failed',
+      'identity_delete_failed',
+      'identity_directory_update_failed',
+    ]);
+    return allowed.has(value) ? value : 'lifecycle_step_failed';
+  }
+
+  private async deleteCreationPrefix(prefix: string) {
+    const bucket = this.env.CREATIONS_BUCKET;
+    if (!bucket) throw new Error('creation_storage_unconfigured');
+    let cursor: string | undefined;
+    do {
+      const listing = await bucket.list({ prefix, cursor, limit: 500 });
+      const keys = listing.objects
+        .map((object) => object.key)
+        .filter((key) => key.startsWith(prefix));
+      if (keys.length) await bucket.delete(keys);
+      cursor = listing.truncated ? listing.cursor : undefined;
+    } while (cursor);
+  }
+
+  private async processNextLifecycleJob() {
+    const now = Date.now();
+    const staleBefore = now - JOB_PROCESSING_LEASE_MS;
+    const job = this.sql.exec<LifecycleJob>(`
+      SELECT request_id, scope, child_id, status, attempts, requested_at,
+             next_attempt_at, processing_started_at, receipt_hash
+      FROM lifecycle_jobs
+      WHERE (status IN ('pending', 'failed') AND next_attempt_at <= ?)
+         OR (status = 'processing' AND COALESCE(processing_started_at, 0) <= ?)
+      ORDER BY requested_at ASC
+      LIMIT 1
+    `, now, staleBefore).toArray()[0];
+    if (!job) return;
+
+    // Schedule lease recovery before changing the row to processing. If the DO
+    // is evicted during an IdentityState or R2 await, this alarm will reclaim
+    // the stale lease without relying on unrelated traffic.
+    await this.scheduleWork(JOB_PROCESSING_LEASE_MS);
+
+    const claimed = this.sql.exec(`
+      UPDATE lifecycle_jobs
+      SET status = 'processing', attempts = attempts + 1,
+          processing_started_at = ?, last_error_code = NULL, updated_at = ?
+      WHERE request_id = ?
+        AND ((status IN ('pending', 'failed') AND next_attempt_at <= ?)
+          OR (status = 'processing' AND COALESCE(processing_started_at, 0) <= ?))
+      RETURNING request_id
+    `, now, now, job.request_id, now, staleBefore).toArray();
+    if (!claimed.length) return;
+
+    const claimedJob: LifecycleJob = {
+      ...job,
+      status: 'processing',
+      attempts: job.attempts + 1,
+      processing_started_at: now,
+    };
+    try {
+      if (claimedJob.scope === 'child') await this.processChildDeletion(claimedJob);
+      else await this.processAccountDeletion(claimedJob);
+    } catch (error) {
+      const retryAt = Date.now() + Math.min(
+        60 * 60 * 1000,
+        30_000 * (2 ** Math.min(claimedJob.attempts, 7)),
+      );
+      this.sql.exec(`
+        UPDATE lifecycle_jobs
+        SET status = 'failed', processing_started_at = NULL,
+            last_error_code = ?, next_attempt_at = ?, updated_at = ?
+        WHERE request_id = ? AND status = 'processing' AND processing_started_at = ?
+      `, this.lifecycleErrorCode(error), retryAt, Date.now(), claimedJob.request_id, now);
+      console.error('family_lifecycle_step_failed', this.lifecycleErrorCode(error));
+    }
+  }
+
+  private async processNextProfileSyncJob(operationId?: string) {
+    const now = Date.now();
+    const staleBefore = now - JOB_PROCESSING_LEASE_MS;
+    const job = operationId
+      ? this.sql.exec<ProfileSyncJob>(`
+          SELECT operation_id, display_name, status, attempts, next_attempt_at,
+                 processing_started_at, intent_version
+          FROM profile_sync_jobs WHERE operation_id = ? AND status <> 'completed'
+        `, operationId).toArray()[0]
+      : this.sql.exec<ProfileSyncJob>(`
+          SELECT operation_id, display_name, status, attempts, next_attempt_at,
+                 processing_started_at, intent_version
+          FROM profile_sync_jobs
+          WHERE (status IN ('pending', 'failed') AND next_attempt_at <= ?)
+             OR (status = 'processing' AND COALESCE(processing_started_at, 0) <= ?)
+          ORDER BY intent_version ASC LIMIT 1
+        `, now, staleBefore).toArray()[0];
+    if (!job) return true;
+    if (job.status === 'processing' && (job.processing_started_at ?? 0) > staleBefore) return false;
+    if (job.status !== 'processing' && job.next_attempt_at > now && !operationId) return false;
+
+    // Arm lease recovery before the durable claim. If alarm storage fails, the
+    // row remains pending/failed rather than becoming an orphaned processing job.
+    await this.scheduleWork(JOB_PROCESSING_LEASE_MS);
+
+    const claimed = this.sql.exec(`
+      UPDATE profile_sync_jobs
+      SET status = 'processing', attempts = attempts + 1,
+          processing_started_at = ?, last_error_code = NULL, updated_at = ?
+      WHERE operation_id = ?
+        AND (status IN ('pending', 'failed')
+          OR (status = 'processing' AND COALESCE(processing_started_at, 0) <= ?))
+      RETURNING operation_id
+    `, now, now, job.operation_id, staleBefore).toArray();
+    if (!claimed.length) return false;
+
+    try {
+      const family = this.family();
+      if (!family || family.status !== 'active' || family.deleted_at !== null) {
+        return false;
+      }
+      const locator = await identityForParent(this.env, family.parent_id);
+      if (!locator || locator.status !== 'active') throw new Error('identity_directory_unavailable');
+      const updated = await callDurable<{
+        success: boolean;
+        data?: { display_name: string | null; profile_version: number; applied: boolean };
+      }>(locator.stub, '/profile/update', {
+        body: {
+          parent_id: family.parent_id,
+          display_name: job.display_name,
+          profile_version: job.intent_version,
+        },
+      });
+      if (!updated.ok || updated.data?.success !== true) throw new Error('profile_identity_update_failed');
+
+      const completedAt = Date.now();
+      let finished = false;
+      let projected = false;
+      this.state.storage.transactionSync(() => {
+        const currentFamily = this.family();
+        const currentJob = this.sql.exec<{
+          status: string;
+          intent_version: number;
+          processing_started_at: number | null;
+        }>(`
+          SELECT status, intent_version, processing_started_at
+          FROM profile_sync_jobs WHERE operation_id = ?
+        `, job.operation_id).toArray()[0];
+        if (!currentFamily || currentFamily.status !== 'active' || currentFamily.deleted_at !== null
+          || currentJob?.status !== 'processing' || currentJob.intent_version !== job.intent_version
+          || currentJob.processing_started_at !== now) {
+          return;
+        }
+
+        const completed = this.sql.exec<{ operation_id: string }>(`
+          UPDATE profile_sync_jobs
+          SET status = 'completed', completed_at = ?, processing_started_at = NULL,
+              next_attempt_at = ?, updated_at = ?
+          WHERE operation_id = ? AND status = 'processing' AND intent_version = ?
+            AND processing_started_at = ?
+          RETURNING operation_id
+        `, completedAt, completedAt, completedAt,
+        job.operation_id, job.intent_version, now).toArray();
+        if (!completed.length) return;
+        finished = true;
+
+        // Only the latest accepted intent may project a display name. Identity
+        // applies the same monotonic version, so an older retry cannot reverse a
+        // newer value in either authority or projection.
+        if (job.intent_version === currentFamily.profile_intent_version) {
+          const familyUpdated = this.sql.exec(`
+            UPDATE family
+            SET display_name = ?, profile_applied_version = ?, updated_at = ?
+            WHERE singleton = 1 AND status = 'active' AND deleted_at IS NULL
+              AND profile_intent_version = ? AND profile_applied_version <= ?
+            RETURNING parent_id
+          `, job.display_name, job.intent_version, completedAt,
+          job.intent_version, job.intent_version).toArray();
+          if (familyUpdated.length) {
+            this.addOutbox('family.updated', {
+              displayName: job.display_name,
+              profileVersion: job.intent_version,
+            });
+            projected = true;
+          }
+        }
+      });
+      if (!finished) return false;
+      if (projected) await this.scheduleOutbox();
+      return true;
+    } catch (error) {
+      const retryAt = Date.now() + Math.min(60 * 60 * 1000, 30_000 * (2 ** Math.min(job.attempts, 7)));
+      this.sql.exec(`
+        UPDATE profile_sync_jobs
+        SET status = 'failed', processing_started_at = NULL,
+            last_error_code = ?, next_attempt_at = ?, updated_at = ?
+        WHERE operation_id = ? AND status = 'processing' AND processing_started_at = ?
+      `, error instanceof Error && error.message === 'identity_directory_unavailable'
+        ? 'identity_directory_unavailable'
+        : 'profile_sync_failed', retryAt, Date.now(), job.operation_id, now);
+      await this.scheduleWork(Math.max(1000, retryAt - Date.now()));
+      return false;
+    }
+  }
+
+  private ownsLifecycleLease(job: LifecycleJob) {
+    const startedAt = job.processing_started_at;
+    if (startedAt === null) return false;
+    return Boolean(this.sql.exec<{ request_id: string }>(`
+      SELECT request_id FROM lifecycle_jobs
+      WHERE request_id = ? AND status = 'processing' AND processing_started_at = ?
+    `, job.request_id, startedAt).toArray()[0]);
+  }
+
+  private async processChildDeletion(job: LifecycleJob) {
+    const family = this.family();
+    const leaseStartedAt = job.processing_started_at;
+    if (!family || !job.child_id || leaseStartedAt === null) {
+      throw new Error('lifecycle_step_failed');
+    }
+    await this.deleteCreationPrefix(`family/${family.parent_id}/child/${job.child_id}/`);
+
+    const now = Date.now();
+    this.state.storage.transactionSync(() => {
+      const owned = this.sql.exec<{ request_id: string }>(`
+        SELECT request_id FROM lifecycle_jobs
+        WHERE request_id = ? AND status = 'processing' AND processing_started_at = ?
+      `, job.request_id, leaseStartedAt).toArray()[0];
+      if (!owned) return;
+      this.sql.exec(`DELETE FROM parental_settings WHERE child_id = ?`, job.child_id);
+      this.sql.exec(`DELETE FROM content_progress WHERE child_id = ?`, job.child_id);
+      this.sql.exec(`DELETE FROM attempts WHERE child_id = ?`, job.child_id);
+      this.sql.exec(`DELETE FROM mastery WHERE child_id = ?`, job.child_id);
+      this.sql.exec(`DELETE FROM favorites WHERE child_id = ?`, job.child_id);
+      this.sql.exec(`DELETE FROM playback_leases WHERE child_id = ?`, job.child_id);
+      this.sql.exec(`DELETE FROM rewards WHERE child_id = ?`, job.child_id);
+      this.sql.exec(`DELETE FROM consents WHERE child_id = ?`, job.child_id);
+      this.sql.exec(`DELETE FROM child_creations WHERE child_id = ?`, job.child_id);
+      this.sql.exec(
+        `DELETE FROM creation_object_deletions WHERE storage_key LIKE ?`,
+        `family/${family.parent_id}/child/${job.child_id}/%`,
+      );
+      this.sql.exec(`DELETE FROM children WHERE id = ?`, job.child_id);
+      this.addOutbox('child.deleted', { childId: job.child_id, requestId: job.request_id, scope: 'child' });
+      this.sql.exec(`
+        UPDATE lifecycle_jobs
+        SET status = 'completed', completed_at = ?, processing_started_at = NULL,
+            next_attempt_at = ?, updated_at = ?
+        WHERE request_id = ? AND status = 'processing' AND processing_started_at = ?
+      `, now, now, now, job.request_id, leaseStartedAt);
+    });
+  }
+
+  private purgeAccountRows(parentId: string) {
+    this.state.storage.transactionSync(() => {
+      // Outbox payloads may contain historical display names or child metadata.
+      // Remove every pre-deletion event before emitting the final tombstone.
+      this.sql.exec(`DELETE FROM outbox`);
+      for (const table of [
+        'parental_settings',
+        'content_progress',
+        'attempts',
+        'mastery',
+        'favorites',
+        'playback_leases',
+        'rewards',
+        'consents',
+        'child_creations',
+        'creation_object_deletions',
+        'children',
+        'entitlements',
+        'used_refresh_tokens',
+        'used_parent_proofs',
+        'auth_sessions',
+        'devices',
+        'idempotency_keys',
+        'profile_sync_jobs',
+      ]) {
+        this.sql.exec(`DELETE FROM ${table}`);
+      }
+      this.sql.exec(`
+        UPDATE family
+        SET display_name = NULL, parent_pin_hash = NULL,
+            parent_pin_failed_count = 0, parent_pin_locked_until = NULL,
+            status = 'suspended', updated_at = ?
+        WHERE singleton = 1 AND parent_id = ?
+      `, Date.now(), parentId);
+    });
+  }
+
+  private async processAccountDeletion(job: LifecycleJob) {
+    const family = this.family();
+    const leaseStartedAt = job.processing_started_at;
+    if (!family || leaseStartedAt === null) throw new Error('lifecycle_step_failed');
+    if (!this.ownsLifecycleLease(job)) return;
+
+    const identity = await identityForParent(this.env, family.parent_id);
+    if (!this.ownsLifecycleLease(job)) return;
+    if (!identity) throw new Error('identity_directory_unavailable');
+
+    // A retry may resume after the identity and directory were already
+    // tombstoned but before this job was marked complete. In that state the
+    // randomized locator intentionally no longer points at the old Identity DO;
+    // skip identity calls and finish the remaining idempotent cleanup.
+    if (identity.status !== 'deleted') {
+      const pending = await callDurable<{ success: boolean }>(identity.stub, '/account/deletion-pending', {
+        body: { parent_id: family.parent_id, request_id: job.request_id },
+      });
+      if (!this.ownsLifecycleLease(job)) return;
+      if (!pending.ok || pending.data?.success !== true) throw new Error('identity_pending_failed');
+      if (!await setIdentityDirectoryStatus(this.env, family.parent_id, 'deletion_pending')) {
+        throw new Error('identity_directory_update_failed');
+      }
+      if (!this.ownsLifecycleLease(job)) return;
+    }
+
+    await this.deleteCreationPrefix(`family/${family.parent_id}/`);
+    if (!this.ownsLifecycleLease(job)) return;
+    this.purgeAccountRows(family.parent_id);
+
+    if (identity.status !== 'deleted') {
+      const deleted = await callDurable<{ success: boolean }>(identity.stub, '/account/delete', {
+        body: { parent_id: family.parent_id, request_id: job.request_id },
+      });
+      if (!this.ownsLifecycleLease(job)) return;
+      if (!deleted.ok || deleted.data?.success !== true) throw new Error('identity_delete_failed');
+      if (!await tombstoneIdentityDirectory(this.env, family.parent_id)) {
+        throw new Error('identity_directory_update_failed');
+      }
+      if (!this.ownsLifecycleLease(job)) return;
+    }
+
+    const now = Date.now();
+    this.state.storage.transactionSync(() => {
+      if (!this.ownsLifecycleLease(job)) return;
+      this.sql.exec(`
+        UPDATE family
+        SET display_name = NULL, status = 'suspended', deleted_at = ?, updated_at = ?
+        WHERE singleton = 1
+      `, now, now);
+      this.addOutbox('family.deleted', { requestId: job.request_id, scope: 'account' });
+      this.sql.exec(`
+        UPDATE lifecycle_jobs
+        SET status = 'completed', completed_at = ?, processing_started_at = NULL,
+            next_attempt_at = ?, updated_at = ?
+        WHERE request_id = ? AND status = 'processing' AND processing_started_at = ?
+      `, now, now, now, job.request_id, leaseStartedAt);
+    });
   }
 
   private family(): FamilyRow | null {
-    return this.sql.exec<FamilyRow>('SELECT parent_id, display_name, status, base_plan, auth_epoch FROM family WHERE singleton = 1').toArray()[0] ?? null;
+    return this.sql.exec<FamilyRow>(`
+      SELECT parent_id, display_name, status, base_plan, auth_epoch, deleted_at,
+             profile_intent_version, profile_applied_version
+      FROM family WHERE singleton = 1
+    `).toArray()[0] ?? null;
   }
 
   private currentPlan(now = Date.now()): Plan {
@@ -495,10 +1044,21 @@ export class FamilyState {
     return eventId;
   }
 
+  private async scheduleWork(delayMs = 1000) {
+    const now = Date.now();
+    const target = now + Math.max(0, delayMs);
+    const existing = await this.state.storage.getAlarm();
+    // Some runtimes can still expose the timestamp of the alarm currently
+    // executing. Treat a due timestamp as consumed so lease watchdogs are
+    // always armed for the next wake-up.
+    if (existing === null || existing <= now || existing > target) {
+      await this.state.storage.setAlarm(target);
+    }
+  }
+
   private async scheduleOutbox() {
     if (!this.env.FAMILY_EVENTS) return;
-    const existing = await this.state.storage.getAlarm();
-    if (existing === null) await this.state.storage.setAlarm(Date.now() + 1000);
+    await this.scheduleWork();
   }
 
   // --- Operator commands ---------------------------------------------------
@@ -736,6 +1296,9 @@ export class FamilyState {
     if (!parentId || identityEpoch === null) return json({ success: false, error: 'parent_id and identity_epoch are required' }, 400);
     const existing = this.family();
     if (existing && existing.parent_id !== parentId) return json({ success: false, error: 'Family identity conflict' }, 409);
+    if (existing && (existing.status !== 'active' || existing.deleted_at !== null)) {
+      return json({ success: false, error: 'Account is not active' }, 410);
+    }
     if (!existing) {
       const now = Date.now();
       this.state.storage.transactionSync(() => {
@@ -760,7 +1323,8 @@ export class FamilyState {
     const displayName = typeof body.device_name === 'string' ? body.device_name.slice(0, 80) : null;
     const expiresAt = boundedInteger(body.expires_at, Date.now() + 60_000, Date.now() + 90 * 24 * 60 * 60 * 1000);
     const family = this.family();
-    if (!family || !sessionId || !refreshHash || !installationHash || !platform || expiresAt === null) {
+    if (!family || family.status !== 'active' || family.deleted_at !== null
+      || !sessionId || !refreshHash || !installationHash || !platform || expiresAt === null) {
       return json({ success: false, error: 'Invalid session request' }, 400);
     }
 
@@ -862,6 +1426,458 @@ export class FamilyState {
     this.revokeSession(sessionId);
     await this.scheduleOutbox();
     return json({ success: true, data: { logged_out: true } });
+  }
+
+  private async revokeAllSessions(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const parentId = typeof body.parent_id === 'string' ? body.parent_id : '';
+    const reason = body.reason === 'password_reset' ? 'password_reset' : null;
+    const operationId = typeof body.operation_id === 'string'
+      && body.operation_id.length >= 8 && body.operation_id.length <= 200
+      ? body.operation_id
+      : null;
+    const family = this.family();
+    if (!parentId || !reason) {
+      return json({ success: false, error: 'Invalid session revocation request' }, 400);
+    }
+    // An email can be verified and reset before the account's first login. In
+    // that state no FamilyState row or session exists yet, so there is nothing
+    // to revoke and the reset must not become permanently unusable.
+    if (!family) {
+      return json({
+        success: true,
+        data: { revoked: 0, auth_epoch: 1, family_initialized: false },
+      });
+    }
+    if (family.parent_id !== parentId) {
+      return json({ success: false, error: 'Invalid session revocation request' }, 400);
+    }
+
+    const idempotencyKey = operationId === null ? null : `password-reset:${operationId}`;
+    if (idempotencyKey !== null) {
+      const cached = this.sql.exec<{ response_json: string }>(`
+        SELECT response_json FROM idempotency_keys
+        WHERE key = ? AND operation = 'sessions_revoke_all' AND expires_at > ?
+      `, idempotencyKey, Date.now()).toArray()[0];
+      if (cached) return json(JSON.parse(cached.response_json));
+    }
+
+    const now = Date.now();
+    const active = this.sql.exec<{ total: number }>(`
+      SELECT COUNT(*) AS total FROM auth_sessions WHERE status = 'active'
+    `).toArray()[0]?.total ?? 0;
+    const response = {
+      success: true,
+      data: { revoked: active, auth_epoch: family.auth_epoch + 1 },
+    };
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(`
+        UPDATE auth_sessions SET status = 'revoked', revoked_at = ? WHERE status = 'active'
+      `, now);
+      this.sql.exec(`
+        UPDATE playback_leases SET status = 'revoked', ended_at = ? WHERE status = 'active'
+      `, now);
+      this.sql.exec(`UPDATE family SET auth_epoch = auth_epoch + 1, updated_at = ? WHERE singleton = 1`, now);
+      this.addOutbox('session.revoked', { scope: 'all', reason, count: active });
+      if (idempotencyKey !== null) {
+        this.sql.exec(`
+          INSERT INTO idempotency_keys (key, operation, response_json, expires_at)
+          VALUES (?, 'sessions_revoke_all', ?, ?)
+          ON CONFLICT(key) DO UPDATE SET response_json = excluded.response_json,
+            expires_at = excluded.expires_at
+        `, idempotencyKey, JSON.stringify(response), now + 30 * 60 * 1000);
+      }
+    });
+    await this.scheduleOutbox();
+    return json(response);
+  }
+
+  private async revokeOtherSessions(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const session = this.activeSession(sessionId);
+    const family = this.family();
+    if (!session || !family) return json({ success: false, error: 'Unauthorized' }, 401);
+
+    const now = Date.now();
+    const nextEpoch = family.auth_epoch + 1;
+    const revoked = this.sql.exec<{ total: number }>(`
+      SELECT COUNT(*) AS total FROM auth_sessions WHERE id <> ? AND status = 'active'
+    `, sessionId).toArray()[0]?.total ?? 0;
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(`
+        UPDATE auth_sessions SET status = 'revoked', revoked_at = ?
+        WHERE id <> ? AND status = 'active'
+      `, now, sessionId);
+      this.sql.exec(`
+        UPDATE playback_leases SET status = 'revoked', ended_at = ?
+        WHERE session_id <> ? AND status = 'active'
+      `, now, sessionId);
+      this.sql.exec(`UPDATE family SET auth_epoch = ?, updated_at = ? WHERE singleton = 1`, nextEpoch, now);
+      this.sql.exec(`UPDATE auth_sessions SET auth_epoch = ?, last_seen_at = ? WHERE id = ?`, nextEpoch, now, sessionId);
+      this.addOutbox('session.revoked', { scope: 'others', sessionId, count: revoked });
+    });
+    await this.scheduleOutbox();
+    return json({
+      success: true,
+      data: {
+        revoked,
+        parent_id: family.parent_id,
+        session_id: sessionId,
+        device_id: session.device_id,
+        plan: this.currentPlan(now),
+        auth_epoch: nextEpoch,
+      },
+    });
+  }
+
+  private async updateProfile(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const operationId = typeof body.operation_id === 'string'
+      && body.operation_id.length >= 8 && body.operation_id.length <= 200
+      ? body.operation_id
+      : '';
+    const displayName = body.display_name === null
+      ? null
+      : typeof body.display_name === 'string' && body.display_name.trim().length > 0
+        ? body.display_name.trim().slice(0, 80)
+        : undefined;
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    if (!operationId || displayName === undefined) {
+      return json({ success: false, error: 'A valid display_name and operation_id are required' }, 400);
+    }
+
+    // Guarantee a wake-up before persisting a new intent. Recheck the session
+    // after the alarm I/O because another request may revoke it during await.
+    await this.scheduleWork();
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+
+    const existing = this.sql.exec<{
+      display_name: string | null;
+      status: string;
+      intent_version: number;
+    }>(`
+      SELECT display_name, status, intent_version
+      FROM profile_sync_jobs WHERE operation_id = ?
+    `, operationId).toArray()[0];
+    if (existing && existing.display_name !== displayName) {
+      return json({ success: false, error: 'Idempotency key is bound to another profile update' }, 409);
+    }
+    if (existing?.status === 'completed') {
+      return json({ success: true, data: { display_name: displayName, synchronized: true } });
+    }
+
+    const now = Date.now();
+    if (!existing) {
+      let intentVersion: number | null = null;
+      this.state.storage.transactionSync(() => {
+        const version = this.sql.exec<{ profile_intent_version: number }>(`
+          UPDATE family
+          SET profile_intent_version = profile_intent_version + 1, updated_at = ?
+          WHERE singleton = 1 AND status = 'active' AND deleted_at IS NULL
+          RETURNING profile_intent_version
+        `, now).toArray()[0]?.profile_intent_version;
+        if (!Number.isInteger(version)) return;
+        intentVersion = version;
+        this.sql.exec(`
+          INSERT INTO profile_sync_jobs (
+            operation_id, display_name, intent_version, status, attempts,
+            next_attempt_at, updated_at
+          ) VALUES (?, ?, ?, 'pending', 0, ?, ?)
+        `, operationId, displayName, version, now, now);
+      });
+      if (intentVersion === null) {
+        return json({ success: false, error: 'Account is not active' }, 410);
+      }
+    }
+    const synchronized = await this.processNextProfileSyncJob(operationId);
+    if (!synchronized) {
+      return json({
+        success: false,
+        error: 'Profile synchronization is pending and will be retried',
+        data: { operation_id: operationId, synchronized: false },
+      }, 503);
+    }
+    return json({ success: true, data: { display_name: displayName, synchronized: true } });
+  }
+
+  private async exportData(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    const family = this.family();
+    if (!family || family.deleted_at !== null) return json({ success: false, error: 'Family not found' }, 404);
+
+    const parseJson = (value: string, fallback: unknown) => {
+      try { return JSON.parse(value); } catch { return fallback; }
+    };
+    const children = this.sql.exec<{
+      id: string;
+      nickname: string;
+      birth_month: number;
+      birth_year: number;
+      age_track: string;
+      avatar_id: string;
+      language: string;
+      interests_json: string;
+      status: string;
+      created_at: number;
+      updated_at: number;
+    }>(`
+      SELECT id, nickname, birth_month, birth_year, age_track, avatar_id, language,
+             interests_json, status, created_at, updated_at
+      FROM children ORDER BY created_at
+    `).toArray().map((row) => ({
+      ...row,
+      interests: parseJson(row.interests_json, []),
+      interests_json: undefined,
+    }));
+    const settings = this.sql.exec<{ child_id: string; settings_json: string; updated_at: number }>(`
+      SELECT child_id, settings_json, updated_at FROM parental_settings ORDER BY child_id
+    `).toArray().map((row) => ({
+      child_id: row.child_id,
+      settings: parseJson(row.settings_json, {}),
+      updated_at: row.updated_at,
+    }));
+    const attempts = this.sql.exec<{
+      id: string;
+      child_id: string;
+      episode_id: string | null;
+      game_id: string | null;
+      content_type: string | null;
+      objective_id: string | null;
+      score: number | null;
+      max_score: number | null;
+      answers_json: string;
+      time_spent_seconds: number;
+      help_used: number;
+      created_at: number;
+    }>(`
+      SELECT id, child_id, episode_id, game_id, content_type, objective_id, score,
+             max_score, answers_json, time_spent_seconds, help_used, created_at
+      FROM attempts ORDER BY created_at
+    `).toArray().map((row) => ({
+      ...row,
+      answers: parseJson(row.answers_json, []),
+      answers_json: undefined,
+    }));
+
+    return json({
+      success: true,
+      data: {
+        family: {
+          parent_id: family.parent_id,
+          display_name: family.display_name,
+          status: family.status,
+          base_plan: family.base_plan,
+          effective_plan: this.currentPlan(),
+        },
+        children,
+        parental_settings: settings,
+        devices: this.sql.exec(`
+          SELECT id, display_name, platform, status, registered_at, last_seen_at, revoked_at
+          FROM devices ORDER BY registered_at
+        `).toArray(),
+        sessions: this.sql.exec(`
+          SELECT id, device_id, status, expires_at, created_at, last_seen_at, revoked_at
+          FROM auth_sessions ORDER BY created_at
+        `).toArray(),
+        entitlements: this.sql.exec(`
+          SELECT id, source, plan, status, starts_at, expires_at, updated_at
+          FROM entitlements ORDER BY updated_at
+        `).toArray(),
+        progress: this.sql.exec(`
+          SELECT child_id, content_type, content_id, position_ms, duration_ms,
+                 completed, sequence, updated_at
+          FROM content_progress ORDER BY updated_at
+        `).toArray(),
+        attempts,
+        mastery: this.sql.exec(`
+          SELECT child_id, objective_id, level, attempts, correct_attempts, last_attempt_at
+          FROM mastery ORDER BY child_id, objective_id
+        `).toArray(),
+        favorites: this.sql.exec(`
+          SELECT child_id, entity_type, entity_id, created_at FROM favorites ORDER BY created_at
+        `).toArray(),
+        rewards: this.sql.exec(`
+          SELECT id, child_id, reward_key, source_type, source_id, earned_at
+          FROM rewards ORDER BY earned_at
+        `).toArray(),
+        creations: this.sql.exec(`
+          SELECT id, child_id, game_id, drawing_mode, mime_type, width, height,
+                 byte_size, created_at, updated_at, deleted_at
+          FROM child_creations ORDER BY created_at
+        `).toArray(),
+        consents: this.sql.exec(`
+          SELECT consent_type, child_id, version, granted_at, revoked_at
+          FROM consents ORDER BY granted_at
+        `).toArray(),
+        playback: this.sql.exec(`
+          SELECT id, child_id, device_id, asset_id, entity_type, entity_id, status,
+                 expires_at, created_at, last_heartbeat_at, ended_at
+          FROM playback_leases ORDER BY created_at
+        `).toArray(),
+      },
+    });
+  }
+
+  private async lifecycleStatus(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const requestId = typeof body.request_id === 'string' ? body.request_id : '';
+    const expectedScope = body.scope === 'child' || body.scope === 'account' ? body.scope : null;
+    const expectedChildId = typeof body.child_id === 'string' ? body.child_id : null;
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    const row = this.sql.exec<{
+      request_id: string;
+      scope: 'child' | 'account';
+      child_id: string | null;
+      status: string;
+      attempts: number;
+      requested_at: number;
+      completed_at: number | null;
+      last_error_code: string | null;
+      updated_at: number;
+    }>(`
+      SELECT request_id, scope, child_id, status, attempts, requested_at,
+             completed_at, last_error_code, updated_at
+      FROM lifecycle_jobs WHERE request_id = ?
+    `, requestId).toArray()[0];
+    if (!row) return json({ success: false, error: 'Deletion request not found' }, 404);
+    if ((expectedScope !== null && row.scope !== expectedScope)
+      || (expectedScope === 'child' && row.child_id !== expectedChildId)) {
+      return json({ success: false, error: 'Idempotency key is bound to another deletion request' }, 409);
+    }
+    return json({ success: true, data: row });
+  }
+
+  private async lifecycleStatusCapability(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const requestId = typeof body.request_id === 'string' ? body.request_id : '';
+    const receiptHash = typeof body.receipt_hash === 'string' ? body.receipt_hash : '';
+    if (!requestId || !/^[A-Za-z0-9_-]{43}$/.test(receiptHash)) {
+      return json({ success: false, error: 'Deletion receipt is invalid' }, 400);
+    }
+    const row = this.sql.exec<{
+      request_id: string;
+      scope: string;
+      child_id: string | null;
+      status: string;
+      attempts: number;
+      requested_at: number;
+      completed_at: number | null;
+      last_error_code: string | null;
+      updated_at: number;
+      receipt_hash: string | null;
+    }>(`
+      SELECT request_id, scope, child_id, status, attempts, requested_at,
+             completed_at, last_error_code, updated_at, receipt_hash
+      FROM lifecycle_jobs WHERE request_id = ? AND scope = 'account'
+    `, requestId).toArray()[0];
+    if (!row || row.receipt_hash !== receiptHash) {
+      return json({ success: false, error: 'Deletion receipt is invalid' }, 404);
+    }
+    const { receipt_hash: _, ...safe } = row;
+    return json({ success: true, data: safe });
+  }
+
+  private async requestLifecycle(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const requestId = typeof body.request_id === 'string' && body.request_id.length >= 8 && body.request_id.length <= 200
+      ? body.request_id
+      : '';
+    const scope = body.scope === 'child' || body.scope === 'account' ? body.scope : null;
+    const childId = scope === 'child' && typeof body.child_id === 'string' ? body.child_id : null;
+    const receiptHash = scope === 'account' && typeof body.receipt_hash === 'string'
+      && /^[A-Za-z0-9_-]{43}$/.test(body.receipt_hash)
+      ? body.receipt_hash
+      : null;
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    if (!requestId || !scope || (scope === 'child' && !childId) || (scope === 'account' && !receiptHash)) {
+      return json({ success: false, error: 'Invalid deletion request' }, 400);
+    }
+
+    // Arm the worker before the irreversible acceptance transaction. A storage
+    // alarm failure can still return 5xx here, but can never do so after the
+    // account has been suspended or the child archived.
+    await this.scheduleWork();
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+
+    const existing = this.sql.exec<{
+      request_id: string;
+      scope: 'child' | 'account';
+      child_id: string | null;
+      status: string;
+      attempts: number;
+      requested_at: number;
+      completed_at: number | null;
+      last_error_code: string | null;
+      updated_at: number;
+      receipt_hash: string | null;
+    }>(`
+      SELECT request_id, scope, child_id, status, attempts, requested_at,
+             completed_at, last_error_code, updated_at, receipt_hash
+      FROM lifecycle_jobs WHERE request_id = ?
+    `, requestId).toArray()[0];
+    if (existing) {
+      if (existing.scope !== scope || existing.child_id !== childId
+        || (scope === 'account' && existing.receipt_hash !== receiptHash)) {
+        return json({ success: false, error: 'Idempotency key is bound to another deletion request' }, 409);
+      }
+      const { receipt_hash: _, ...safe } = existing;
+      return json({ success: true, data: safe }, 202);
+    }
+    if (scope === 'child' && !this.child(childId!)) {
+      return json({ success: false, error: 'Active child profile not found' }, 404);
+    }
+    if (scope === 'account') {
+      const pending = this.sql.exec<{ request_id: string }>(`
+        SELECT request_id FROM lifecycle_jobs
+        WHERE scope = 'account' AND status <> 'completed' LIMIT 1
+      `).toArray()[0];
+      if (pending) return json({ success: false, error: 'Account deletion is already pending' }, 409);
+    }
+
+    const now = Date.now();
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(`
+        INSERT INTO lifecycle_jobs (
+          request_id, scope, child_id, receipt_hash, status, attempts,
+          requested_at, next_attempt_at, updated_at
+        ) VALUES (?, ?, ?, ?, 'pending', 0, ?, ?, ?)
+      `, requestId, scope, childId, receiptHash, now, now, now);
+      if (scope === 'account') {
+        this.sql.exec(`UPDATE family SET status = 'suspended', auth_epoch = auth_epoch + 1, updated_at = ? WHERE singleton = 1`, now);
+        this.sql.exec(`UPDATE auth_sessions SET status = 'revoked', revoked_at = ? WHERE status = 'active'`, now);
+        this.sql.exec(`UPDATE playback_leases SET status = 'revoked', ended_at = ? WHERE status = 'active'`, now);
+      } else {
+        // Archive immediately, before the asynchronous R2 sweep. Every
+        // child-scoped write resolves through child(), which only returns active
+        // rows, so no new progress/favorite/creation can race the deletion.
+        this.sql.exec(`UPDATE children SET status = 'archived', updated_at = ? WHERE id = ? AND status = 'active'`, now, childId);
+        this.sql.exec(`
+          UPDATE playback_leases SET status = 'revoked', ended_at = ?
+          WHERE child_id = ? AND status = 'active'
+        `, now, childId);
+      }
+      this.addOutbox('family.deletion_requested', {
+        requestId,
+        scope,
+        childId,
+      });
+    });
+    return json({
+      success: true,
+      data: {
+        request_id: requestId,
+        scope,
+        child_id: childId,
+        status: 'pending',
+        requested_at: now,
+      },
+    }, 202);
   }
 
   private async getChildren() {
@@ -1644,7 +2660,7 @@ export class FamilyState {
     return json({ success: true, data: { family: { parent_id: family.parent_id, display_name: family.display_name, plan: this.currentPlan() }, children, progress, favorites } });
   }
 
-  // ---- C2: parent PIN (server-side gate) ----
+  // ---- Parent PIN and signed parent-proof state ----
 
   private static validatePin(pin: string): string | null {
     if (pin.length < 4 || pin.length > 6) return 'الرمز من 4 إلى 6 أرقام';
@@ -1668,17 +2684,49 @@ export class FamilyState {
     if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
     const problem = FamilyState.validatePin(pin);
     if (problem) return json({ success: false, error: problem }, 400);
-    const family = this.family();
-    if (!family) return json({ success: false, error: 'Family not found' }, 404);
+    const row = this.sql.exec<{
+      parent_id: string;
+      parent_pin_hash: string | null;
+      parent_pin_version: number;
+    }>(`
+      SELECT parent_id, parent_pin_hash, parent_pin_version
+      FROM family WHERE singleton = 1
+    `).toArray()[0];
+    if (!row) return json({ success: false, error: 'Family not found' }, 404);
+
+    const expectedPinVersion = boundedInteger(body.expected_pin_version, 1, Number.MAX_SAFE_INTEGER);
+    if (row.parent_pin_hash && expectedPinVersion !== row.parent_pin_version) {
+      return json({ success: false, error: 'A current parent proof is required to change the PIN' }, 403);
+    }
+
     const hash = await hashPassword(pin);
     const now = Date.now();
-    this.sql.exec(
-      `UPDATE family SET parent_pin_hash = ?, parent_pin_failed_count = 0, parent_pin_locked_until = NULL, updated_at = ? WHERE singleton = 1`,
-      hash, now,
-    );
-    this.addOutbox('parent_pin.enrolled', { parentId: family.parent_id });
+    const nextPinVersion = Math.max(0, row.parent_pin_version) + 1;
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(
+        `UPDATE family
+         SET parent_pin_hash = ?, parent_pin_failed_count = 0,
+             parent_pin_locked_until = NULL, parent_pin_version = ?, updated_at = ?
+         WHERE singleton = 1`,
+        hash, nextPinVersion, now,
+      );
+      // Versioning invalidates proofs cryptographically; deleting consumed JTIs
+      // also keeps this small state bounded after a credential change.
+      this.sql.exec(`DELETE FROM used_parent_proofs`);
+      this.addOutbox(row.parent_pin_hash ? 'parent_pin.changed' : 'parent_pin.enrolled', {
+        parentId: row.parent_id,
+        pinVersion: nextPinVersion,
+      });
+    });
     await this.scheduleOutbox();
-    return json({ success: true, data: { enrolled: true } });
+    return json({
+      success: true,
+      data: {
+        enrolled: true,
+        changed: row.parent_pin_hash !== null,
+        pin_version: nextPinVersion,
+      },
+    });
   }
 
   private async verifyParentPin(request: Request) {
@@ -1686,15 +2734,24 @@ export class FamilyState {
     const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
     const pin = typeof body.pin === 'string' ? body.pin : '';
     if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
-    const row = this.sql.exec<{ parent_pin_hash: string | null; parent_pin_failed_count: number; parent_pin_locked_until: number | null }>(
-      `SELECT parent_pin_hash, parent_pin_failed_count, parent_pin_locked_until FROM family WHERE singleton = 1`,
-    ).toArray()[0];
-    if (!row?.parent_pin_hash) return json({ success: false, error: 'No PIN has been set' }, 404);
+    const row = this.sql.exec<{
+      parent_pin_hash: string | null;
+      parent_pin_failed_count: number;
+      parent_pin_locked_until: number | null;
+      parent_pin_version: number;
+    }>(`
+      SELECT parent_pin_hash, parent_pin_failed_count,
+             parent_pin_locked_until, parent_pin_version
+      FROM family WHERE singleton = 1
+    `).toArray()[0];
+    if (!row?.parent_pin_hash || row.parent_pin_version < 1) {
+      return json({ success: false, error: 'No PIN has been set' }, 404);
+    }
     const now = Date.now();
     if (row.parent_pin_locked_until !== null && row.parent_pin_locked_until > now) {
       return json({ success: false, error: 'Too many attempts', locked_until: row.parent_pin_locked_until }, 423);
     }
-    // Clear stale lockout
+    // Clear stale lockout.
     if (row.parent_pin_locked_until !== null && row.parent_pin_locked_until <= now) {
       this.sql.exec(`UPDATE family SET parent_pin_failed_count = 0, parent_pin_locked_until = NULL WHERE singleton = 1`);
       row.parent_pin_failed_count = 0;
@@ -1703,7 +2760,10 @@ export class FamilyState {
     const ok = await verifyPassword(pin, row.parent_pin_hash);
     if (ok) {
       this.sql.exec(`UPDATE family SET parent_pin_failed_count = 0, parent_pin_locked_until = NULL WHERE singleton = 1`);
-      return json({ success: true, data: { verified: true } });
+      return json({
+        success: true,
+        data: { verified: true, pin_version: row.parent_pin_version },
+      });
     }
     const failures = (row.parent_pin_failed_count ?? 0) + 1;
     const MAX_FAILURES = 5;
@@ -1715,5 +2775,51 @@ export class FamilyState {
     }
     this.sql.exec(`UPDATE family SET parent_pin_failed_count = ? WHERE singleton = 1`, failures);
     return json({ success: false, error: 'Incorrect PIN', attempts_remaining: MAX_FAILURES - failures }, 403);
+  }
+
+  private async validateParentProof(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const expectedEpoch = boundedInteger(body.auth_epoch, 1, Number.MAX_SAFE_INTEGER);
+    const pinVersion = boundedInteger(body.pin_version, 1, Number.MAX_SAFE_INTEGER);
+    const expiresAt = boundedInteger(body.expires_at, Date.now() + 1, Date.now() + 10 * 60 * 1000);
+    const purpose = typeof body.purpose === 'string' && /^[a-z_]{3,40}$/.test(body.purpose)
+      ? body.purpose
+      : '';
+    const jti = typeof body.jti === 'string' && body.jti.length >= 16 && body.jti.length <= 128
+      ? body.jti
+      : '';
+    const consume = body.consume === true;
+    const family = this.family();
+    const session = this.activeSession(sessionId);
+    const pin = this.sql.exec<{ parent_pin_hash: string | null; parent_pin_version: number }>(`
+      SELECT parent_pin_hash, parent_pin_version FROM family WHERE singleton = 1
+    `).toArray()[0];
+    if (!family || !session || expectedEpoch === null || pinVersion === null
+      || expiresAt === null || !purpose || !jti || family.auth_epoch !== expectedEpoch
+      || session.auth_epoch !== expectedEpoch || !pin?.parent_pin_hash
+      || pin.parent_pin_version !== pinVersion) {
+      return json({ success: false, error: 'Parent proof is invalid or expired' }, 403);
+    }
+
+    const now = Date.now();
+    this.sql.exec(`DELETE FROM used_parent_proofs WHERE expires_at <= ?`, now);
+    // A consumed destructive capability is invalid for both validation and
+    // consumption. This blocks replay before callers perform password hashing
+    // or mutate lockout counters.
+    const alreadyUsed = this.sql.exec<{ jti: string }>(`
+      SELECT jti FROM used_parent_proofs WHERE jti = ?
+    `, jti).toArray()[0];
+    if (alreadyUsed) {
+      return json({ success: false, error: 'Parent proof has already been used' }, 403);
+    }
+    if (consume) {
+      this.sql.exec(`
+        INSERT INTO used_parent_proofs (jti, session_id, purpose, expires_at, used_at)
+        VALUES (?, ?, ?, ?, ?)
+      `, jti, sessionId, purpose, expiresAt, now);
+    }
+
+    return json({ success: true, data: { pin_version: pin.parent_pin_version } });
   }
 }

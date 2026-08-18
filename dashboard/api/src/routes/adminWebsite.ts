@@ -21,10 +21,10 @@
 /// instead of the thing they wanted back.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { requireAdmin, requirePermission } from '../lib/adminAuth';
-import { actorId, auditStatement } from '../lib/auditLog';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { requireAdmin, requirePermission } from '../lib/adminAuth.ts';
+import { actorId, auditStatement } from '../lib/auditLog.ts';
 import {
   isCmsLanguage,
   isValidSlug,

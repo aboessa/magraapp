@@ -1,0 +1,291 @@
+{
+  "schema_version": "luna-series.preproduction/v1",
+  "production_id": "luna-e06-i-name-what-i-see-v2-3d-model-audio",
+  "episode": {
+    "entity_type": "episode",
+    "episode_id": "ep-06",
+    "episode_number": 6,
+    "series_id": "luna-discovers-words",
+    "series_slug": "luna-discovers-words",
+    "planet_slug": "01-abjad",
+    "locale": "ar",
+    "title_ar": "أسمّي ما أرى",
+    "description_ar": "تسمية عناصر في مشهد بسيط",
+    "duration_seconds": 180,
+    "age_min": 4,
+    "age_max": 5,
+    "reading_level": "pre_reader",
+    "interaction_mode": "tap",
+    "supervision_level": "recommended",
+    "difficulty": "easy",
+    "is_free": false,
+    "learning_objective_id": "lang.vocab.name_objects",
+    "linked_game_id": "mp-luna-ep6",
+    "prerequisites": ["ep-01", "ep-02", "ep-03", "ep-04", "ep-05"],
+    "content_status": "draft",
+    "localization_policy": "partially_language_specific_reauthor_phonics_scene"
+  },
+  "source": {
+    "path": "docs/content/planets/01-abjad/luna-discovers-words/ep-06-i-name-what-i-see.md",
+    "sha256": "998bdfe6dde01adee363ed00f672417196ba1bf567f273b1df6f898b48198df3",
+    "content_status": "draft",
+    "dialogue_section": "نص التعليق الصوتي للتسجيل",
+    "dialogue_count": 31,
+    "normalizations": [
+      {"field": "series_id", "production_value": "luna-discovers-words", "reason": "The episode card omits the shared series identifier; the series path and surrounding series establish it."},
+      {"field": "supervision_level", "production_value": "recommended", "reason": "Normalized to the Luna preschool series supervision policy because the episode card omits it."}
+    ],
+    "overrides": [
+      {
+        "field": "age_min",
+        "source_value": 3,
+        "production_value": 4,
+        "reason": "The episode requires E03 and E04, both age_min 4, so production eligibility cannot be younger than its prerequisites. The source file is intentionally unchanged."
+      }
+    ],
+    "production_notes": [
+      "The source remains draft and is not modified by this preproduction plan.",
+      "Resolved vocabulary contradiction: شَجرة and طائِر are exactly the two new words; شَمس, زَهرة, بَيت, and قِطّة are review words from prior episodes.",
+      "Scene 5 phonics pairing is Arabic-specific and must be reauthored rather than machine-translated.",
+      "Open naming remains self-check only; no automated child speech recognition is introduced."
+    ]
+  },
+  "visual_identity": {
+    "identity_id": "luna-discovers-words/luna-v2",
+    "version": "luna-v2",
+    "series_slug": "luna-discovers-words",
+    "status": "approved",
+    "reference_pack_sha256": "0132d294f45a6fe644d5b2034e86f15e4627ff146f5f8130247d41c9202905a7",
+    "references": [
+      {"kind": "character_sheet", "path": "majarra_images/assets/images/characters/luna-preschool-character-sheet.png", "sha256": "0edcd9e6280dbece120a3f6a6247dac55e0fac20a09489b54e37f04a08b20deb"},
+      {"kind": "visual_guide", "path": "tools/content-factory/reference-packs/luna-v2-visual-guide.json", "sha256": "ba579c39b4b462d7709e53fdb984601d8c926a3525c63dcbf0b05f02007ff1c6"}
+    ],
+    "approved_by": "majarra-creative-direction",
+    "approved_at": "2026-08-12T00:00:00.000Z"
+  },
+  "pipeline": {
+    "profile": "model_video_audio",
+    "factory_profile": "cartoon_video_model_audio",
+    "factory_provider": "flux",
+    "operation": "text-to-video-model-audio",
+    "model_audio_required": true,
+    "external_tts_forbidden": true,
+    "external_dubbing_forbidden": true,
+    "retain_model_audio_in_master": true,
+    "provider_result_urls_persisted": false,
+    "generated_text_forbidden": true,
+    "burned_in_text_forbidden": true,
+    "dispatch_blocked": true,
+    "dispatch_blockers": ["SOURCE_EDITORIAL_REVIEW_PENDING", "SOURCE_LINGUISTIC_REVIEW_PENDING"]
+  },
+  "format": {"aspect_ratio": "16:9", "resolution": "hd", "expected_total_seconds": 180, "clip_duration_min_seconds": 5, "clip_duration_max_seconds": 20},
+  "output_root": "assets/episodes/luna-e06-i-name-what-i-see-v2-3d-audio",
+  "runtime_state_policy": {"state_file": "_production-state.json", "create_placeholder": false, "provider_result_urls_persisted": false, "clip_review_fingerprint_required": true},
+  "shared_locks": {
+    "visual_guide_path": "tools/content-factory/reference-packs/luna-v2-visual-guide.json",
+    "visual_guide_sha256": "ba579c39b4b462d7709e53fdb984601d8c926a3525c63dcbf0b05f02007ff1c6",
+    "style": "Original high-end contemporary stylized 3D preschool feature animation. Polished studio-quality rendering, rounded appealing character design, expressive facial animation, soft physically based materials, subtle subsurface skin shading, detailed cloth with clean folds, cinematic global illumination, warm volumetric rim light, gentle depth of field, rich dimensional environments, smooth natural body mechanics, and premium color grading. The result must look current and cinematic, not like flat educational clip art.",
+    "luna": "Luna is the same consistent five-year-old Arab girl in every clip: warm tan skin, round cheeks, large expressive brown eyes, soft eyebrows, small friendly nose, golden-yellow hijab fully covering her hair and neck, a small silver crescent pin at her left shoulder, knee-length golden-yellow long-sleeve tunic, dark teal trousers, and dark teal shoes. Child proportions, four fingers plus thumb per hand, same face, same outfit, same materials, and same scale in all shots.",
+    "najmi": "Najmi is the same palm-sized living five-point golden star in every clip, with rounded points, two small dark-brown eyes, one tiny friendly mouth, no arms, no legs, no accessories. Najmi floats slowly and gives a restrained cyan volumetric glow when guiding attention. Najmi never speaks words.",
+    "base_world": "Planet Abjad is a magical safe 3D learning garden under a deep navy cosmic sky: softly rolling indigo hills, warm cream paths, rounded coral and cyan plants, tiny golden stars, soft atmospheric depth, and no readable letters. It feels bright, warm, premium, spacious, and safe for ages three to five.",
+    "camera": "Cinematic child-eye-level 16:9 camera, gentle dolly or slow arc only, stable horizon, readable staging, no handheld shake, no rapid zoom, no fast cuts, no extreme lens distortion.",
+    "negative": "No 2D illustration, no flat vector art, no cutout animation, no old television-cartoon look, no model sheet, no storyboard, no checkerboard, no on-screen text, no captions, no letters, no numbers, no logos, no watermark, no extra people, no duplicate Luna, no duplicate Najmi, no extra limbs, no visible hair, no wardrobe change, no frightening darkness, no storm, no flashing, no violence, and no object morphing.",
+    "voice": "One consistent youthful warm Arabic female character voice performs Luna in every clip. The voice is light, friendly, clear, curious, and natural, never an announcer, never robotic, never babyish, and never shouted. Use clear simplified Modern Standard Arabic with natural educated Egyptian articulation.",
+    "dialogue_rule": "Speak every exact Arabic line exactly as supplied, without translation, paraphrase, added words, repeated words, labels, narrator commentary, or gibberish. Luna is the only speaking character. Match Luna's mouth accurately whenever she is visible; when absent, use the same voice gently off-camera.",
+    "mix": "Dialogue is always foreground and intelligible. Use soft magical orchestral-marimba underscore at low volume, gentle ambience, one short crystalline chime for Najmi, and restrained success sparkles. No other voices, no singing, no loud percussion, no sudden sound, and no music covering speech.",
+    "silence_rule": "Thinking pauses are real silence in dialogue; retain only very low ambience during them."
+  },
+  "episode_direction": {
+    "world": "A simple Planet Abjad garden assembled progressively across the episode. Named objects remain visible but become subdued when inactive so no more than four elements compete for attention.",
+    "props": "Stable leafy tree, small friendly bird, warm sun, flower, recurring cream house, recurring friendly ginger cat, and one empty rounded viewing frame. Bird motion and cat behavior remain gentle and safe.",
+    "pronunciation": "Pronounce شَجرة with a clear sh sound and fatha; طائِر with an audible hamza and kasra; شَ as a phoneme sound, never the letter name; and pause about 600 milliseconds between شَمس and شَجرة in their paired answer. Deliver تذكّرتها with warm delight and the closing thanks sincerely. Target delivery is about 100 words per minute."
+  },
+  "ui_overlays": {
+    "delivery": "player_or_application_layer",
+    "burned_in": false,
+    "requirements": [
+      "WebVTT captions remain a player overlay.",
+      "The open-naming self-check controls remain application UI and never use automatic speech recognition.",
+      "The multi-answer interaction and written fallback remain application UI."
+    ]
+  },
+  "reviews": {
+    "source_status": "draft",
+    "preproduction_ready": true,
+    "dispatch_blocked": true,
+    "required": [
+      {"review_type": "editorial", "required": true, "status": "pending", "source_sha256": "998bdfe6dde01adee363ed00f672417196ba1bf567f273b1df6f898b48198df3"},
+      {"review_type": "linguistic", "required": true, "status": "pending", "source_sha256": "998bdfe6dde01adee363ed00f672417196ba1bf567f273b1df6f898b48198df3"},
+      {"review_type": "educational", "required": true, "status": "pending", "source_sha256": "998bdfe6dde01adee363ed00f672417196ba1bf567f273b1df6f898b48198df3"}
+    ]
+  },
+  "blockers": [
+    {"code": "SOURCE_EDITORIAL_REVIEW_PENDING", "severity": "hard_block", "message": "Explicit editorial approval fingerprinting the current draft source is required before dispatch."},
+    {"code": "SOURCE_LINGUISTIC_REVIEW_PENDING", "severity": "hard_block", "message": "Explicit Arabic linguistic approval, including the Arabic-specific phonics pair, is required before dispatch."}
+  ],
+  "budget": {"unit": "credits", "pricing_version": "playveo-observed-2026-08-12-v1", "baseline_credits": 9, "contingency_pct": 15, "contingency_credits": 1.35, "ceiling_credits": 10.35},
+  "packaging": {
+    "generated_now": false,
+    "requirements": [
+      {"kind": "thumbnail", "required": true, "status": "not_generated", "file": "thumbnail.jpg", "aspect_ratio": "16:9"},
+      {"kind": "captions", "required": true, "status": "not_generated", "file": "captions.ar.vtt", "format": "webvtt", "locale": "ar", "delivery": "player_overlay", "burned_in": false}
+    ]
+  },
+  "clips": [
+    {
+      "id": "E06-C01", "file": "clips/E06-C01.mp4", "duration_seconds": 15, "source_range": "0:00-0:15", "editorial_scene": 1,
+      "visual": "Opening in the Planet Abjad garden. Luna enters holding an empty rounded picture frame like a viewing window while Najmi floats beside her.",
+      "timeline": [
+        {"at_seconds": 0, "action": "Soft six-second opening motif and ambience."},
+        {"at_seconds": 6, "spoken": "مرحبًا! أنا لونا."},
+        {"at_seconds": 9, "action": "Najmi gives one short chime and glow."},
+        {"at_seconds": 11, "spoken": "اليوم نسمّي كل شيء."}
+      ],
+      "exact_spoken_dialogue": ["مرحبًا! أنا لونا.", "اليوم نسمّي كل شيء."]
+    },
+    {
+      "id": "E06-C02", "file": "clips/E06-C02.mp4", "duration_seconds": 15, "source_range": "0:15-0:30", "editorial_scene": 2,
+      "visual": "Luna raises the empty rounded frame. A simple garden view gradually appears inside it, leaving generous space and no writing.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "انظر عبر النافذة."},
+        {"at_seconds": 3, "action": "The garden view appears gradually over two seconds."},
+        {"at_seconds": 6, "spoken": "هذه حديقة جميلة."},
+        {"at_seconds": 9, "action": "Short calm pause."},
+        {"at_seconds": 10, "spoken": "فيها أشياء كثيرة."},
+        {"at_seconds": 13, "spoken": "هل تعرف أسماءها؟"}
+      ],
+      "exact_spoken_dialogue": ["انظر عبر النافذة.", "هذه حديقة جميلة.", "فيها أشياء كثيرة.", "هل تعرف أسماءها؟"]
+    },
+    {
+      "id": "E06-C03", "file": "clips/E06-C03.mp4", "duration_seconds": 10, "source_range": "0:30-0:40", "editorial_scene": 2,
+      "visual": "Hold the garden inside the frame for a brief response, then Luna opens one hand and Najmi gives a small encouraging glow.",
+      "timeline": [
+        {"at_seconds": 0, "action": "Two seconds with no dialogue."},
+        {"at_seconds": 3, "spoken": "هيا نسمّيها معًا."},
+        {"at_seconds": 6, "action": "Najmi gives one encouraging glow."}
+      ],
+      "exact_spoken_dialogue": ["هيا نسمّيها معًا."]
+    },
+    {
+      "id": "E06-C04", "file": "clips/E06-C04.mp4", "duration_seconds": 14, "source_range": "0:40-0:54", "editorial_scene": 3,
+      "visual": "Wide garden view with one large friendly leafy tree. Najmi highlights the tree, whose leaves move gently once.",
+      "timeline": [
+        {"at_seconds": 0, "action": "Najmi focuses the tree."},
+        {"at_seconds": 2, "spoken": "هذه شَجرة."},
+        {"at_seconds": 4, "action": "One full second of dialogue silence."},
+        {"at_seconds": 5, "spoken": "شَجرة."},
+        {"at_seconds": 7, "spoken": "الشَّجرة لها أوراق."},
+        {"at_seconds": 11, "action": "Leaves move gently once."}
+      ],
+      "exact_spoken_dialogue": ["هذه شَجرة.", "شَجرة.", "الشَّجرة لها أوراق."]
+    },
+    {
+      "id": "E06-C05", "file": "clips/E06-C05.mp4", "duration_seconds": 18, "source_range": "0:54-1:12", "editorial_scene": 3,
+      "visual": "A small friendly bird enters and flies in one slow safe arc near the tree. Najmi highlights it without startling movement.",
+      "timeline": [
+        {"at_seconds": 0, "action": "Najmi shifts focus to the bird."},
+        {"at_seconds": 2, "spoken": "وهذا طائِر."},
+        {"at_seconds": 4, "action": "One full second of dialogue silence."},
+        {"at_seconds": 5, "spoken": "طائِر."},
+        {"at_seconds": 7, "action": "Very soft bird chirp under 300 milliseconds."},
+        {"at_seconds": 9, "spoken": "الطائِر يطير عاليًا."},
+        {"at_seconds": 13, "action": "One restrained success cue."}
+      ],
+      "exact_spoken_dialogue": ["وهذا طائِر.", "طائِر.", "الطائِر يطير عاليًا."]
+    },
+    {
+      "id": "E06-C06", "file": "clips/E06-C06.mp4", "duration_seconds": 16, "source_range": "1:12-1:28", "editorial_scene": 4,
+      "visual": "The garden widens to reveal the warm sun, one flower, and the recurring cream house. Najmi highlights only the sun while other objects remain subdued.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "الآن دورك."},
+        {"at_seconds": 2, "action": "Najmi focuses the sun."},
+        {"at_seconds": 4, "spoken": "ما هذه؟"},
+        {"at_seconds": 6, "action": "Four full seconds with no dialogue and no choices overlay."},
+        {"at_seconds": 10, "spoken": "شَمس! أحسنت."},
+        {"at_seconds": 13, "action": "One restrained success cue."}
+      ],
+      "exact_spoken_dialogue": ["الآن دورك.", "ما هذه؟", "شَمس! أحسنت."]
+    },
+    {
+      "id": "E06-C07", "file": "clips/E06-C07.mp4", "duration_seconds": 13, "source_range": "1:28-1:41", "editorial_scene": 4,
+      "visual": "Najmi shifts focus from the subdued sun to the flower. The scene holds a four-second open naming window before confirmation.",
+      "timeline": [
+        {"at_seconds": 0, "action": "Najmi focuses the flower."},
+        {"at_seconds": 2, "spoken": "وما هذه؟"},
+        {"at_seconds": 4, "action": "Four full seconds with no dialogue."},
+        {"at_seconds": 8, "spoken": "زَهرة! ممتاز."},
+        {"at_seconds": 11, "action": "One restrained success cue."}
+      ],
+      "exact_spoken_dialogue": ["وما هذه؟", "زَهرة! ممتاز."]
+    },
+    {
+      "id": "E06-C08", "file": "clips/E06-C08.mp4", "duration_seconds": 9, "source_range": "1:41-1:50", "editorial_scene": 4,
+      "visual": "Najmi focuses the recurring cream house while the sun and flower remain subdued in the progressively built garden.",
+      "timeline": [
+        {"at_seconds": 0, "action": "Najmi focuses the house."},
+        {"at_seconds": 2, "spoken": "وهذا؟"},
+        {"at_seconds": 4, "action": "Four full seconds with no dialogue."},
+        {"at_seconds": 8, "spoken": "بَيت! رائع."}
+      ],
+      "exact_spoken_dialogue": ["وهذا؟", "بَيت! رائع."]
+    },
+    {
+      "id": "E06-C09", "file": "clips/E06-C09.mp4", "duration_seconds": 12, "source_range": "1:50-2:02", "editorial_scene": 5,
+      "visual": "A harder challenge shows exactly three objects: the sun, the leafy tree, and the friendly ginger cat. All remain equally emphasized during the full response window.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "سؤال أصعب قليلًا."},
+        {"at_seconds": 3, "action": "Short calm pause."},
+        {"at_seconds": 4, "spoken": "أي كلمة تبدأ بـ شَ؟"},
+        {"at_seconds": 7, "action": "Five full seconds with no dialogue or hint."}
+      ],
+      "exact_spoken_dialogue": ["سؤال أصعب قليلًا.", "أي كلمة تبدأ بـ شَ؟"]
+    },
+    {
+      "id": "E06-C10", "file": "clips/E06-C10.mp4", "duration_seconds": 18, "source_range": "2:02-2:20", "editorial_scene": 5,
+      "visual": "Najmi confirms both the sun and tree in sequence while the cat remains calm and subdued. The two correct objects receive equal restrained glows.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "شَمس... وشَجرة!"},
+        {"at_seconds": 4, "action": "One restrained success cue."},
+        {"at_seconds": 6, "spoken": "كلمتان بنفس الصوت."},
+        {"at_seconds": 10, "action": "Najmi highlights both correct objects in sequence."},
+        {"at_seconds": 13, "spoken": "أذناك ممتازتان!"},
+        {"at_seconds": 16, "action": "Short calm pause."}
+      ],
+      "exact_spoken_dialogue": ["شَمس... وشَجرة!", "كلمتان بنفس الصوت.", "أذناك ممتازتان!"]
+    },
+    {
+      "id": "E06-C11", "file": "clips/E06-C11.mp4", "duration_seconds": 12, "source_range": "2:20-2:32", "editorial_scene": 6,
+      "visual": "The friendly ginger cat appears gently under the tree. Najmi waits neutrally during a five-second open naming window.",
+      "timeline": [
+        {"at_seconds": 0, "action": "The cat appears gently under the tree."},
+        {"at_seconds": 2, "spoken": "من جاء إلى الحديقة؟"},
+        {"at_seconds": 5, "action": "Five full seconds with no dialogue."},
+        {"at_seconds": 10, "spoken": "قِطّة! تذكّرتها."}
+      ],
+      "exact_spoken_dialogue": ["من جاء إلى الحديقة؟", "قِطّة! تذكّرتها."]
+    },
+    {
+      "id": "E06-C12", "file": "clips/E06-C12.mp4", "duration_seconds": 13, "source_range": "2:32-2:45", "editorial_scene": 6,
+      "visual": "The cat gives one tiny friendly movement under the tree as Luna recalls the start of the journey. Najmi gives a warm celebratory glow.",
+      "timeline": [
+        {"at_seconds": 1, "action": "One restrained success cue and very soft cat sound."},
+        {"at_seconds": 4, "spoken": "رأيناها في أول حلقة."},
+        {"at_seconds": 8, "action": "Najmi gives one warm celebratory glow."}
+      ],
+      "exact_spoken_dialogue": ["رأيناها في أول حلقة."]
+    },
+    {
+      "id": "E06-C13", "file": "clips/E06-C13.mp4", "duration_seconds": 15, "source_range": "2:45-3:00", "editorial_scene": 7,
+      "visual": "Closing wide garden shot with Luna and Najmi in front. The tree, bird, sun, flower, house, and cat remain visible as the completed scene, with inactive elements gently subdued.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "سمّيت كل شيء!"},
+        {"at_seconds": 3, "action": "Short calm pause."},
+        {"at_seconds": 4, "spoken": "صرت تعرف كلمات كثيرة."},
+        {"at_seconds": 8, "action": "Najmi gives one longer but gentle celebratory glow and chime."},
+        {"at_seconds": 10, "spoken": "شكرًا لك يا صديقي."},
+        {"at_seconds": 13, "action": "Gentle completion cue."}
+      ],
+      "exact_spoken_dialogue": ["سمّيت كل شيء!", "صرت تعرف كلمات كثيرة.", "شكرًا لك يا صديقي."]
+    }
+  ]
+}

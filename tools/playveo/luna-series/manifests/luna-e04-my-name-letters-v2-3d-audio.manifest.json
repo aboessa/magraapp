@@ -1,0 +1,495 @@
+{
+  "schema_version": "luna-series.preproduction/v1",
+  "production_id": "luna-e04-my-name-letters-v2-3d-model-audio-glyph-overlay",
+  "episode": {
+    "entity_type": "episode",
+    "episode_id": "ep-04",
+    "episode_number": 4,
+    "series_id": "luna-discovers-words",
+    "series_slug": "luna-discovers-words",
+    "planet_slug": "01-abjad",
+    "locale": "ar",
+    "title_ar": "حروف اسمي",
+    "description_ar": "تتبّع حروف يعرفها الطفل",
+    "duration_seconds": 180,
+    "age_min": 4,
+    "age_max": 5,
+    "reading_level": "pre_reader",
+    "interaction_mode": "tap",
+    "supervision_level": "recommended",
+    "difficulty": "easy",
+    "is_free": false,
+    "learning_objective_id": "lang.letters.trace_form",
+    "linked_game_id": "tc-luna-ep4",
+    "prerequisites": ["ep-03"],
+    "content_status": "draft",
+    "localization_policy": "language_specific_reauthor_per_locale"
+  },
+  "source": {
+    "path": "docs/content/planets/01-abjad/luna-discovers-words/ep-04-my-name-letters.md",
+    "sha256": "e70af68c5aec4734256e5412f19a6ba46bf2e22e45febc2cf6f653e93f2be896",
+    "content_status": "draft",
+    "dialogue_section": "نص التعليق الصوتي للتسجيل",
+    "dialogue_count": 35,
+    "normalizations": [
+      {"field": "series_id", "production_value": "luna-discovers-words", "reason": "The episode card omits the shared series identifier; the series path and surrounding series establish it."},
+      {"field": "supervision_level", "production_value": "recommended", "reason": "Normalized to the Luna preschool series supervision policy because the episode card omits it."}
+    ],
+    "overrides": [],
+    "production_notes": [
+      "The source remains draft and is not modified by this preproduction plan.",
+      "All isolated glyphs and trace paths are deterministic post-model overlays; the video model must not draw letters or words.",
+      "No linguistic or calligraphy approval is claimed."
+    ]
+  },
+  "visual_identity": {
+    "identity_id": "luna-discovers-words/luna-v2",
+    "version": "luna-v2",
+    "series_slug": "luna-discovers-words",
+    "status": "approved",
+    "reference_pack_sha256": "0132d294f45a6fe644d5b2034e86f15e4627ff146f5f8130247d41c9202905a7",
+    "references": [
+      {"kind": "character_sheet", "path": "majarra_images/assets/images/characters/luna-preschool-character-sheet.png", "sha256": "0edcd9e6280dbece120a3f6a6247dac55e0fac20a09489b54e37f04a08b20deb"},
+      {"kind": "visual_guide", "path": "tools/content-factory/reference-packs/luna-v2-visual-guide.json", "sha256": "ba579c39b4b462d7709e53fdb984601d8c926a3525c63dcbf0b05f02007ff1c6"}
+    ],
+    "approved_by": "majarra-creative-direction",
+    "approved_at": "2026-08-12T00:00:00.000Z"
+  },
+  "pipeline": {
+    "profile": "model_video_audio_plus_deterministic_glyph_overlay",
+    "factory_profile": "cartoon_video_model_audio",
+    "factory_provider": "flux",
+    "operation": "text-to-video-model-audio",
+    "model_audio_required": true,
+    "external_tts_forbidden": true,
+    "external_dubbing_forbidden": true,
+    "retain_model_audio_in_master": true,
+    "provider_result_urls_persisted": false,
+    "model_generated_text_forbidden": true,
+    "model_generated_glyphs_forbidden": true,
+    "burned_in_captions_forbidden": true,
+    "dispatch_blocked": true,
+    "dispatch_blockers": ["SOURCE_EDITORIAL_REVIEW_PENDING", "SOURCE_LINGUISTIC_REVIEW_PENDING", "LINGUISTIC_CALLIGRAPHY_REVIEW_PENDING"]
+  },
+  "format": {
+    "aspect_ratio": "16:9",
+    "resolution": "hd",
+    "expected_total_seconds": 180,
+    "clip_duration_min_seconds": 5,
+    "clip_duration_max_seconds": 20
+  },
+  "output_root": "assets/episodes/luna-e04-my-name-letters-v2-3d-audio",
+  "runtime_state_policy": {
+    "state_file": "_production-state.json",
+    "create_placeholder": false,
+    "provider_result_urls_persisted": false,
+    "clip_review_fingerprint_required": true,
+    "overlay_evidence_required": true
+  },
+  "shared_locks": {
+    "visual_guide_path": "tools/content-factory/reference-packs/luna-v2-visual-guide.json",
+    "visual_guide_sha256": "ba579c39b4b462d7709e53fdb984601d8c926a3525c63dcbf0b05f02007ff1c6",
+    "style": "Original high-end contemporary stylized 3D preschool feature animation. Polished studio-quality rendering, rounded appealing character design, expressive facial animation, soft physically based materials, subtle subsurface skin shading, detailed cloth with clean folds, cinematic global illumination, warm volumetric rim light, gentle depth of field, rich dimensional environments, smooth natural body mechanics, and premium color grading. The result must look current and cinematic, not like flat educational clip art.",
+    "luna": "Luna is the same consistent five-year-old Arab girl in every clip: warm tan skin, round cheeks, large expressive brown eyes, soft eyebrows, small friendly nose, golden-yellow hijab fully covering her hair and neck, a small silver crescent pin at her left shoulder, knee-length golden-yellow long-sleeve tunic, dark teal trousers, and dark teal shoes. Child proportions, four fingers plus thumb per hand, same face, same outfit, same materials, and same scale in all shots.",
+    "najmi": "Najmi is the same palm-sized living five-point golden star in every clip, with rounded points, two small dark-brown eyes, one tiny friendly mouth, no arms, no legs, no accessories. Najmi floats slowly and gives a restrained cyan volumetric glow when guiding attention. Najmi never speaks words.",
+    "base_world": "Planet Abjad is a magical safe 3D learning garden under a deep navy cosmic sky: softly rolling indigo hills, warm cream paths, rounded coral and cyan plants, tiny golden stars, soft atmospheric depth, and no readable letters. It feels bright, warm, premium, spacious, and safe for ages three to five.",
+    "camera": "Cinematic child-eye-level 16:9 camera, gentle dolly or slow arc only, stable horizon, readable staging, no handheld shake, no rapid zoom, no fast cuts, no extreme lens distortion.",
+    "negative": "No 2D illustration, no flat vector art, no cutout animation, no old television-cartoon look, no model sheet, no storyboard, no checkerboard, no on-screen text, no captions, no letters, no numbers, no logos, no watermark, no extra people, no duplicate Luna, no duplicate Najmi, no extra limbs, no visible hair, no wardrobe change, no frightening darkness, no storm, no flashing, no violence, and no object morphing.",
+    "voice": "One consistent youthful warm Arabic female character voice performs Luna in every clip. The voice is light, friendly, clear, curious, and natural, never an announcer, never robotic, never babyish, and never shouted. Use clear simplified Modern Standard Arabic with natural educated Egyptian articulation.",
+    "dialogue_rule": "Speak every exact Arabic line exactly as supplied, without translation, paraphrase, added words, repeated words, labels, narrator commentary, or gibberish. Luna is the only speaking character. Match Luna's mouth accurately whenever she is visible; when absent, use the same voice gently off-camera.",
+    "mix": "Dialogue is always foreground and intelligible. Use soft magical orchestral-marimba underscore at low volume, gentle ambience, one short crystalline chime for Najmi, and restrained success sparkles. No other voices, no singing, no loud percussion, no sudden sound, and no music covering speech.",
+    "silence_rule": "Thinking pauses are real silence in dialogue; retain only very low ambience during them."
+  },
+  "episode_direction": {
+    "world": "A tracing-focused Planet Abjad studio garden with premium blank, texture-stable tracing surfaces designed for deterministic planar tracking. Every pedagogical marker, path, glyph, and moving guide is added only by the post-model overlay.",
+    "props": "Stable physical cyan light wand parked outside every tracing panel, completely blank rounded tracing panels with trackable non-glyph borders, a friendly rose, a tiny star icon, and a friendly non-frightening lion. No model-rendered writing, pseudo-writing, symbols, captions, start markers, paths, guide cursors, or glyph-like marks.",
+    "pronunciation": "Pronounce target letters by sound, not letter name: short clear لَ, وَ, نَ, and ا. Keep about 500 milliseconds between sounds in the name sequence and about 400 milliseconds at spoken ellipses. Emphasize the rule that the body comes first and then the dot, at a slower pace. Target delivery is about 85 words per minute."
+  },
+  "ui_overlays": {
+    "delivery": "player_or_application_layer",
+    "burned_in": false,
+    "requirements": [
+      "WebVTT captions remain a player overlay.",
+      "Interaction labels and color controls remain application UI.",
+      "Pedagogical isolated glyphs and trace paths are governed only by overlay_plan."
+    ]
+  },
+  "overlay_plan": {
+    "required": true,
+    "renderer_implemented": false,
+    "execution_stage": "deterministic_post_model_pre_master",
+    "model_visual_policy": "No letters, words, captions, pseudo-writing, dotted glyph paths, or glyph-like marks may be generated by the video model.",
+    "font_family": "Readex Pro",
+    "selected_font": {"path": "app_main/assets/fonts/ReadexPro-SemiBold.ttf", "sha256": "2b8fb0b6936c31994fb485124f9394b3cf32995c3258d3d724af32bf60fce189", "weight": 600},
+    "font_assets": [
+      {"path": "app_main/assets/fonts/ReadexPro-Regular.ttf", "sha256": "2a311de08d0a786b277527545b3a3d797cc4ca3a4f620cac5e1b0b0ca9140683", "weight": 400},
+      {"path": "app_main/assets/fonts/ReadexPro-Medium.ttf", "sha256": "7605421efc9d8aec49ecb321f62dcc7b8bdb00b3d8fbdfc905aca2e2974c3b2a", "weight": 500},
+      {"path": "app_main/assets/fonts/ReadexPro-SemiBold.ttf", "sha256": "2b8fb0b6936c31994fb485124f9394b3cf32995c3258d3d724af32bf60fce189", "weight": 600},
+      {"path": "app_main/assets/fonts/ReadexPro-Bold.ttf", "sha256": "e1a492385e6813495b1e6856e52a67acc1468727dbe27779f2a9f526615263e6", "weight": 700}
+    ],
+    "license": {"path": "app_main/assets/fonts/OFL.txt", "sha256": "b41267a3903a45955f77b44596e080480c577fb7221df59672d0bc8cd8cd4b6f", "identifier": "OFL-1.1"},
+    "rendering": {
+      "direction": "rtl",
+      "shaping_required": true,
+      "bidi_required": true,
+      "glyph_form": "isolated",
+      "glyph_color": "#00D6F5",
+      "path_width_dp": 40,
+      "deviation_margin_dp": 24,
+      "expanded_margin_after_two_attempts_dp": 36,
+      "guide_seconds_per_stroke": 2,
+      "start_color": "#FFD34D",
+      "dot_color": "#FF6FAE",
+      "safe_area_pct": 8,
+      "anti_aliasing": true
+    },
+    "coordinate_system": {
+      "frame": {"units": "normalized_0_to_1", "origin": "top_left", "x_axis": "right", "y_axis": "down", "bounds": {"x_min": 0, "y_min": 0, "x_max": 1, "y_max": 1}},
+      "panel_local": {"units": "normalized_0_to_1", "origin": "top_left", "x_axis": "right", "y_axis": "down", "trace_path_coordinates": "panel_local"}
+    },
+    "surface_tracking": {
+      "method": "planar_four_corner_track",
+      "stable_surface_track_required": true,
+      "full_panel_visible_required": true,
+      "camera_rule": "Use a locked camera or one slow move that keeps the complete panel visible and undistorted; apply the overlay from the tracked panel transform on every frame.",
+      "occlusion_rule": "Luna, Najmi, and the physical wand remain outside panel_rect; no model element may cross the tracked panel."
+    },
+    "raw_model_staging": {
+      "panel_content": "The model renders a completely blank, texture-stable tracing panel with no marker, path, glyph, pseudo-writing, or guide cursor.",
+      "physical_wand_outside_panel_required": true,
+      "raw_wand_path_following_forbidden": true,
+      "physical_wand_rule": "Luna holds the physical cyan wand parked outside panel_rect for the entire raw clip and never traces or follows unseen geometry.",
+      "deterministic_guide_rule": "The start marker, dotted path, moving guide cursor, luminous wand-tip effect, completed stroke, and child-trace hold are deterministic overlays only."
+    },
+    "guide_overlay": {
+      "actor_id": "deterministic_wand_tip_cursor",
+      "rendered_by_overlay": true,
+      "source": "trace_paths",
+      "anchor": "current_stroke_progress_point",
+      "raw_model_motion_forbidden": true
+    },
+    "glyphs": [
+      {"glyph_id": "lam", "glyph": "ل", "form": "isolated", "clips": ["E04-C02", "E04-C04", "E04-C05", "E04-C11", "E04-C12"]},
+      {"glyph_id": "waw", "glyph": "و", "form": "isolated", "clips": ["E04-C02", "E04-C06", "E04-C07", "E04-C11", "E04-C12"]},
+      {"glyph_id": "noon", "glyph": "ن", "form": "isolated", "clips": ["E04-C02", "E04-C08", "E04-C09", "E04-C11", "E04-C12"]},
+      {"glyph_id": "alif", "glyph": "ا", "form": "isolated", "clips": ["E04-C02", "E04-C10", "E04-C11", "E04-C12"]}
+    ],
+    "trace_paths": {
+      "lam": {
+        "glyph": "ل",
+        "letter_form": "isolated",
+        "writing_direction": "rtl",
+        "stroke_paths": [
+          {"id": "s1", "order": 1, "points": [[0.55, 0.20], [0.55, 0.62], [0.40, 0.75], [0.30, 0.68]], "direction": "forward"}
+        ]
+      },
+      "waw": {
+        "glyph": "و",
+        "letter_form": "isolated",
+        "writing_direction": "rtl",
+        "stroke_paths": [
+          {"id": "s1", "order": 1, "points": [[0.58, 0.38], [0.48, 0.32], [0.40, 0.40], [0.48, 0.50], [0.58, 0.46]], "direction": "forward"},
+          {"id": "s2", "order": 2, "points": [[0.58, 0.46], [0.58, 0.72]], "direction": "forward"}
+        ]
+      },
+      "noon": {
+        "glyph": "ن",
+        "letter_form": "isolated",
+        "writing_direction": "rtl",
+        "stroke_paths": [
+          {"id": "s1", "order": 1, "points": [[0.68, 0.42], [0.62, 0.62], [0.50, 0.70], [0.38, 0.62], [0.32, 0.42]], "direction": "forward"},
+          {"id": "s2", "order": 2, "points": [[0.50, 0.28]], "type": "dot"}
+        ]
+      },
+      "alif": {
+        "glyph": "ا",
+        "letter_form": "isolated",
+        "writing_direction": "rtl",
+        "stroke_paths": [
+          {"id": "s1", "order": 1, "points": [[0.50, 0.22], [0.50, 0.74]], "direction": "forward"}
+        ]
+      }
+    },
+    "timing": [
+      {"clip_id": "E04-C02", "start_seconds": 5, "sequence": ["lam", "waw", "noon", "alif"], "interval_seconds": 1.5, "anchor": "four_name_cells"},
+      {"clip_id": "E04-C12", "start_seconds": 0, "sequence": ["lam", "waw", "noon", "alif"], "interval_seconds": 0, "anchor": "four_separate_review_cells"}
+    ],
+    "clip_overlays": [
+      {
+        "clip_id": "E04-C04", "surface_track_id": "E04-C04-panel-A", "panel_anchor": "right_stage_tracing_panel",
+        "panel_rect": {"x": 0.52, "y": 0.12, "width": 0.40, "height": 0.76},
+        "targets": [{"target_id": "lam-main", "glyph_id": "lam", "panel_local_rect": {"x": 0, "y": 0, "width": 1, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}}],
+        "phases": [
+          {"phase": "dotted_path", "start_seconds": 0, "end_seconds": 5.5, "target_ids": ["lam-main"]},
+          {"phase": "start_pulse", "start_seconds": 5.5, "end_seconds": 8, "target_ids": ["lam-main"], "pulse_count": 2},
+          {"phase": "dotted_path", "start_seconds": 8, "end_seconds": 12, "target_ids": ["lam-main"]},
+          {"phase": "guide_draw", "start_seconds": 12, "end_seconds": 14, "target_ids": ["lam-main"], "stroke_ids": ["s1"], "progress_start": 0, "progress_end": 1, "guide_actor": "deterministic_wand_tip_cursor"},
+          {"phase": "completed_hold", "start_seconds": 14, "end_seconds": 15, "target_ids": ["lam-main"]}
+        ]
+      },
+      {
+        "clip_id": "E04-C05", "surface_track_id": "E04-C05-panel-A", "panel_anchor": "right_stage_tracing_panel",
+        "panel_rect": {"x": 0.52, "y": 0.12, "width": 0.40, "height": 0.76},
+        "targets": [{"target_id": "lam-main", "glyph_id": "lam", "panel_local_rect": {"x": 0, "y": 0, "width": 1, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}}],
+        "phases": [
+          {"phase": "completed_hold", "start_seconds": 0, "end_seconds": 9, "target_ids": ["lam-main"]},
+          {"phase": "dotted_path", "start_seconds": 9, "end_seconds": 11, "target_ids": ["lam-main"]},
+          {"phase": "start_pulse", "start_seconds": 11, "end_seconds": 12, "target_ids": ["lam-main"], "pulse_count": 2},
+          {"phase": "child_trace_hold", "start_seconds": 12, "end_seconds": 15, "target_ids": ["lam-main"], "interaction": "child_trace_no_guide_motion"}
+        ]
+      },
+      {
+        "clip_id": "E04-C06", "surface_track_id": "E04-C06-panel-A", "panel_anchor": "right_stage_tracing_panel",
+        "panel_rect": {"x": 0.52, "y": 0.12, "width": 0.40, "height": 0.76},
+        "targets": [{"target_id": "waw-main", "glyph_id": "waw", "panel_local_rect": {"x": 0, "y": 0, "width": 1, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}}],
+        "phases": [
+          {"phase": "dotted_path", "start_seconds": 0, "end_seconds": 4, "target_ids": ["waw-main"]},
+          {"phase": "start_pulse", "start_seconds": 4, "end_seconds": 6, "target_ids": ["waw-main"], "pulse_count": 2},
+          {"phase": "guide_draw", "start_seconds": 6, "end_seconds": 8, "target_ids": ["waw-main"], "stroke_ids": ["s1"], "progress_start": 0, "progress_end": 1, "guide_actor": "deterministic_wand_tip_cursor"},
+          {"phase": "dotted_path", "start_seconds": 8, "end_seconds": 12, "target_ids": ["waw-main"], "completed_stroke_ids": ["s1"]},
+          {"phase": "guide_draw", "start_seconds": 12, "end_seconds": 14, "target_ids": ["waw-main"], "stroke_ids": ["s2"], "progress_start": 0, "progress_end": 1, "guide_actor": "deterministic_wand_tip_cursor"}
+        ]
+      },
+      {
+        "clip_id": "E04-C07", "surface_track_id": "E04-C07-panel-A", "panel_anchor": "right_stage_tracing_panel",
+        "panel_rect": {"x": 0.52, "y": 0.12, "width": 0.40, "height": 0.76},
+        "targets": [{"target_id": "waw-main", "glyph_id": "waw", "panel_local_rect": {"x": 0, "y": 0, "width": 1, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}}],
+        "phases": [
+          {"phase": "completed_hold", "start_seconds": 0, "end_seconds": 11, "target_ids": ["waw-main"]}
+        ]
+      },
+      {
+        "clip_id": "E04-C08", "surface_track_id": "E04-C08-panel-A", "panel_anchor": "right_stage_tracing_panel",
+        "panel_rect": {"x": 0.52, "y": 0.12, "width": 0.40, "height": 0.76},
+        "targets": [{"target_id": "noon-main", "glyph_id": "noon", "panel_local_rect": {"x": 0, "y": 0, "width": 1, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}}],
+        "phases": [
+          {"phase": "dotted_path", "start_seconds": 0, "end_seconds": 4, "target_ids": ["noon-main"]},
+          {"phase": "start_pulse", "start_seconds": 4, "end_seconds": 6, "target_ids": ["noon-main"], "pulse_count": 2},
+          {"phase": "guide_draw", "start_seconds": 6, "end_seconds": 8, "target_ids": ["noon-main"], "stroke_ids": ["s1"], "progress_start": 0, "progress_end": 1, "guide_actor": "deterministic_wand_tip_cursor"},
+          {"phase": "completed_hold", "start_seconds": 8, "end_seconds": 17, "target_ids": ["noon-main"], "completed_stroke_ids": ["s1"]},
+          {"phase": "child_trace_hold", "start_seconds": 17, "end_seconds": 20, "target_ids": ["noon-main"], "stroke_ids": ["s2"], "interaction": "touch_not_drag"}
+        ]
+      },
+      {
+        "clip_id": "E04-C09", "surface_track_id": "E04-C09-panel-A", "panel_anchor": "right_stage_tracing_panel",
+        "panel_rect": {"x": 0.52, "y": 0.12, "width": 0.40, "height": 0.76},
+        "targets": [{"target_id": "noon-main", "glyph_id": "noon", "panel_local_rect": {"x": 0, "y": 0, "width": 1, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}}],
+        "phases": [
+          {"phase": "completed_hold", "start_seconds": 0, "end_seconds": 15, "target_ids": ["noon-main"], "completed_stroke_ids": ["s1", "s2"]}
+        ]
+      },
+      {
+        "clip_id": "E04-C10", "surface_track_id": "E04-C10-panel-A", "panel_anchor": "right_stage_upright_panel",
+        "panel_rect": {"x": 0.56, "y": 0.12, "width": 0.32, "height": 0.76},
+        "targets": [{"target_id": "alif-main", "glyph_id": "alif", "panel_local_rect": {"x": 0, "y": 0, "width": 1, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}}],
+        "phases": [
+          {"phase": "dotted_path", "start_seconds": 0, "end_seconds": 4, "target_ids": ["alif-main"]},
+          {"phase": "start_pulse", "start_seconds": 4, "end_seconds": 6, "target_ids": ["alif-main"], "pulse_count": 2},
+          {"phase": "guide_draw", "start_seconds": 6, "end_seconds": 8, "target_ids": ["alif-main"], "stroke_ids": ["s1"], "progress_start": 0, "progress_end": 1, "guide_actor": "deterministic_wand_tip_cursor"},
+          {"phase": "completed_hold", "start_seconds": 8, "end_seconds": 15, "target_ids": ["alif-main"]}
+        ]
+      },
+      {
+        "clip_id": "E04-C11", "surface_track_id": "E04-C11-panel-A", "panel_anchor": "center_stage_four_cell_panel",
+        "panel_rect": {"x": 0.12, "y": 0.16, "width": 0.76, "height": 0.66},
+        "targets": [
+          {"target_id": "lam-cell", "glyph_id": "lam", "panel_local_rect": {"x": 0.76, "y": 0, "width": 0.20, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}},
+          {"target_id": "waw-cell", "glyph_id": "waw", "panel_local_rect": {"x": 0.52, "y": 0, "width": 0.20, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}},
+          {"target_id": "noon-cell", "glyph_id": "noon", "panel_local_rect": {"x": 0.28, "y": 0, "width": 0.20, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}},
+          {"target_id": "alif-cell", "glyph_id": "alif", "panel_local_rect": {"x": 0.04, "y": 0, "width": 0.20, "height": 1}, "path_transform": {"scale_x": 1, "scale_y": 1, "translate_x": 0, "translate_y": 0}}
+        ],
+        "phases": [
+          {"phase": "dotted_path", "start_seconds": 0, "end_seconds": 3, "target_ids": ["lam-cell", "waw-cell", "noon-cell", "alif-cell"]},
+          {"phase": "start_pulse", "start_seconds": 3, "end_seconds": 4, "target_ids": ["lam-cell", "waw-cell", "noon-cell", "alif-cell"], "pulse_count": 2},
+          {"phase": "child_trace_hold", "start_seconds": 4, "end_seconds": 9, "target_ids": ["lam-cell", "waw-cell", "noon-cell", "alif-cell"], "interaction": "child_trace_no_guide_motion"},
+          {"phase": "completed_hold", "start_seconds": 9, "end_seconds": 15, "target_ids": ["lam-cell", "waw-cell", "noon-cell", "alif-cell"]}
+        ]
+      }
+    ],
+    "overlay_plan_sha256": "72bd80998613f47592bf224c17030476965b302c41d7b9ba25961b87a39ce59a",
+    "linguistic_and_calligraphy_review_required": true,
+    "dispatch_blocked": true
+  },
+  "reviews": {
+    "source_status": "draft",
+    "preproduction_ready": false,
+    "dispatch_blocked": true,
+    "required": [
+      {"review_type": "editorial", "required": true, "status": "pending", "source_sha256": "e70af68c5aec4734256e5412f19a6ba46bf2e22e45febc2cf6f653e93f2be896"},
+      {"review_type": "linguistic", "required": true, "status": "pending", "source_sha256": "e70af68c5aec4734256e5412f19a6ba46bf2e22e45febc2cf6f653e93f2be896"},
+      {"review_type": "educational", "required": true, "status": "pending", "source_sha256": "e70af68c5aec4734256e5412f19a6ba46bf2e22e45febc2cf6f653e93f2be896"},
+      {"review_type": "calligraphy_and_glyph", "required": true, "status": "pending", "source_sha256": "e70af68c5aec4734256e5412f19a6ba46bf2e22e45febc2cf6f653e93f2be896"}
+    ]
+  },
+  "blockers": [
+    {"code": "SOURCE_EDITORIAL_REVIEW_PENDING", "severity": "hard_block", "message": "Explicit editorial approval fingerprinting the current draft source is required before dispatch."},
+    {"code": "SOURCE_LINGUISTIC_REVIEW_PENDING", "severity": "hard_block", "message": "Explicit Arabic linguistic approval of letter sounds and instruction wording is required before dispatch."},
+    {"code": "LINGUISTIC_CALLIGRAPHY_REVIEW_PENDING", "severity": "hard_block", "message": "A qualified Arabic linguist or calligrapher must approve isolated glyph forms, stroke order, point placement, and the current overlay plan before dispatch."}
+  ],
+  "finalization_blockers": ["DETERMINISTIC_OVERLAY_RENDERER_NOT_IMPLEMENTED", "OVERLAY_EVIDENCE_NOT_AVAILABLE", "LINGUISTIC_CALLIGRAPHY_APPROVAL_NOT_AVAILABLE"],
+  "budget": {
+    "unit": "credits",
+    "pricing_version": "playveo-observed-2026-08-12-v1",
+    "baseline_credits": 9,
+    "contingency_pct": 15,
+    "contingency_credits": 1.35,
+    "ceiling_credits": 10.35
+  },
+  "packaging": {
+    "generated_now": false,
+    "requirements": [
+      {"kind": "thumbnail", "required": true, "status": "not_generated", "file": "thumbnail.jpg", "aspect_ratio": "16:9"},
+      {"kind": "captions", "required": true, "status": "not_generated", "file": "captions.ar.vtt", "format": "webvtt", "locale": "ar", "delivery": "player_overlay", "burned_in": false}
+    ]
+  },
+  "clips": [
+    {
+      "id": "E04-C01", "file": "clips/E04-C01.mp4", "duration_seconds": 15, "source_range": "0:00-0:15", "editorial_scene": 1,
+      "visual": "Opening in the Planet Abjad garden. Luna enters holding a small cyan light wand while Najmi floats beside her. No writing or symbols appear.",
+      "timeline": [
+        {"at_seconds": 0, "action": "Soft six-second opening motif and ambience."},
+        {"at_seconds": 6, "spoken": "مرحبًا! أنا لونا."},
+        {"at_seconds": 9, "action": "Najmi gives one short chime and glow."},
+        {"at_seconds": 11, "spoken": "اليوم نرسم حروفًا."}
+      ],
+      "exact_spoken_dialogue": ["مرحبًا! أنا لونا.", "اليوم نرسم حروفًا."]
+    },
+    {
+      "id": "E04-C02", "file": "clips/E04-C02.mp4", "duration_seconds": 15, "source_range": "0:15-0:30", "editorial_scene": 2,
+      "visual": "Luna stands beside four completely blank rounded cells. The model leaves all cells free of marks while Najmi highlights each empty cell in sequence.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "اسمي فيه أربعة حروف."},
+        {"at_seconds": 4, "action": "One-second dialogue pause."},
+        {"at_seconds": 5, "spoken": "لـ... و... نـ... ا."},
+        {"at_seconds": 10, "action": "Each blank cell receives a separate restrained glow."},
+        {"at_seconds": 12, "spoken": "لونا!"},
+        {"at_seconds": 14, "action": "Najmi gives a happy glow."}
+      ],
+      "exact_spoken_dialogue": ["اسمي فيه أربعة حروف.", "لـ... و... نـ... ا.", "لونا!"]
+    },
+    {
+      "id": "E04-C03", "file": "clips/E04-C03.mp4", "duration_seconds": 15, "source_range": "0:30-0:45", "editorial_scene": 2,
+      "visual": "Luna invites the child toward a large completely blank, texture-stable tracing surface. She parks the physical cyan wand outside the panel; the model renders no start marker, path, cursor, or glyph.",
+      "timeline": [
+        {"at_seconds": 1, "spoken": "هيا نرسمها معًا."},
+        {"at_seconds": 4, "action": "Short calm pause."},
+        {"at_seconds": 5, "spoken": "إصبعك يتبع الطريق."},
+        {"at_seconds": 9, "action": "The blank tracked surface settles into place while the physical wand remains parked outside it."}
+      ],
+      "exact_spoken_dialogue": ["هيا نرسمها معًا.", "إصبعك يتبع الطريق."]
+    },
+    {
+      "id": "E04-C04", "file": "clips/E04-C04.mp4", "duration_seconds": 15, "source_range": "0:45-1:00", "editorial_scene": 3,
+      "visual": "Close view of a completely blank, texture-stable tracing panel with Luna, Najmi, and the physical cyan wand staged outside its tracked bounds. The raw model draws no marker, path, cursor, or symbol.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "هذا حرف لَ."},
+        {"at_seconds": 3, "action": "Short calm pause."},
+        {"at_seconds": 4, "spoken": "يبدأ من هنا."},
+        {"at_seconds": 6, "action": "The separately composited deterministic start marker pulses twice; the raw characters and physical wand remain outside the panel."},
+        {"at_seconds": 8, "spoken": "انزل... ثم انعطف."},
+        {"at_seconds": 12, "action": "The deterministic overlay guide cursor draws the approved path for two seconds; the raw physical wand does not move."}
+      ],
+      "exact_spoken_dialogue": ["هذا حرف لَ.", "يبدأ من هنا.", "انزل... ثم انعطف."]
+    },
+    {
+      "id": "E04-C05", "file": "clips/E04-C05.mp4", "duration_seconds": 15, "source_range": "1:00-1:15", "editorial_scene": 3,
+      "visual": "The raw tracing panel remains completely blank and trackable while Luna smiles with the physical wand parked outside it. Deterministic overlays show completion and then the quiet child-trace hold.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "أحسنت!"},
+        {"at_seconds": 2, "action": "One restrained success cue."},
+        {"at_seconds": 4, "spoken": "لَ... لونا."},
+        {"at_seconds": 7, "action": "Short calm pause."},
+        {"at_seconds": 9, "spoken": "دورك أنت الآن."},
+        {"at_seconds": 12, "action": "Silent child tracing window; only the deterministic overlay changes inside the tracked panel."}
+      ],
+      "exact_spoken_dialogue": ["أحسنت!", "لَ... لونا.", "دورك أنت الآن."]
+    },
+    {
+      "id": "E04-C06", "file": "clips/E04-C06.mp4", "duration_seconds": 14, "source_range": "1:15-1:29", "editorial_scene": 4,
+      "visual": "A new completely blank, texture-stable tracing panel appears. Luna keeps the physical cyan wand parked outside the panel and does not trace or follow any unseen geometry.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "وهذا حرف وَ."},
+        {"at_seconds": 3, "spoken": "ارسم حلقة صغيرة."},
+        {"at_seconds": 6, "action": "The deterministic overlay guide cursor draws the approved loop while the raw physical wand remains still."},
+        {"at_seconds": 9, "spoken": "ثم انزل بذيل."},
+        {"at_seconds": 12, "action": "The deterministic overlay guide cursor draws and completes the approved tail before the clip boundary; the raw model follows no path."}
+      ],
+      "exact_spoken_dialogue": ["وهذا حرف وَ.", "ارسم حلقة صغيرة.", "ثم انزل بذيل."]
+    },
+    {
+      "id": "E04-C07", "file": "clips/E04-C07.mp4", "duration_seconds": 11, "source_range": "1:29-1:40", "editorial_scene": 4,
+      "visual": "Luna celebrates beside the completely blank tracked panel with the physical wand parked outside it. A friendly rose appears briefly in a separate clean picture cell; deterministic overlays hold the already completed trace.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "جميل جدًا!"},
+        {"at_seconds": 2, "action": "One restrained success cue."},
+        {"at_seconds": 4, "spoken": "وَ... وَرد."},
+        {"at_seconds": 7, "action": "A friendly rose appears briefly."}
+      ],
+      "exact_spoken_dialogue": ["جميل جدًا!", "وَ... وَرد."]
+    },
+    {
+      "id": "E04-C08", "file": "clips/E04-C08.mp4", "duration_seconds": 20, "source_range": "1:40-2:00", "editorial_scene": 5,
+      "visual": "A completely blank, texture-stable tracing panel fills the tracked area. Luna, Najmi, and the physical cyan wand remain outside it; the raw model renders no point, path, cursor, or glyph.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "وهذا حرف نَ."},
+        {"at_seconds": 3, "spoken": "ارسم قوسًا أولًا."},
+        {"at_seconds": 6, "action": "The deterministic overlay guide cursor draws the approved body for two seconds while the raw physical wand remains still."},
+        {"at_seconds": 9, "spoken": "أحسنت!"},
+        {"at_seconds": 11, "action": "Short calm pause."},
+        {"at_seconds": 12, "spoken": "الآن نقطة واحدة."},
+        {"at_seconds": 15, "spoken": "المسها فقط."},
+        {"at_seconds": 17, "action": "Three-second child touch hold; the separate deterministic dot target remains touch-only, never draggable."}
+      ],
+      "exact_spoken_dialogue": ["وهذا حرف نَ.", "ارسم قوسًا أولًا.", "أحسنت!", "الآن نقطة واحدة.", "المسها فقط."]
+    },
+    {
+      "id": "E04-C09", "file": "clips/E04-C09.mp4", "duration_seconds": 15, "source_range": "2:00-2:15", "editorial_scene": 5,
+      "visual": "The raw tracked panel remains completely blank while Luna keeps the physical wand outside it. A tiny friendly star icon appears separately as the deterministic overlay shows the completed body-then-dot result.",
+      "timeline": [
+        {"at_seconds": 0, "action": "The deterministic overlay completes the dot with one soft tap; no raw-model mark or wand motion is used."},
+        {"at_seconds": 2, "spoken": "هكذا تمامًا!"},
+        {"at_seconds": 4, "action": "One restrained success cue."},
+        {"at_seconds": 6, "spoken": "القوس أولًا، ثم النقطة."},
+        {"at_seconds": 11, "spoken": "نَ... نَجم."}
+      ],
+      "exact_spoken_dialogue": ["هكذا تمامًا!", "القوس أولًا، ثم النقطة.", "نَ... نَجم."]
+    },
+    {
+      "id": "E04-C10", "file": "clips/E04-C10.mp4", "duration_seconds": 15, "source_range": "2:15-2:30", "editorial_scene": 6,
+      "visual": "A completely blank, texture-stable upright tracing panel fills the tracked area. Luna keeps the physical cyan wand outside it; the raw model renders no marker, stroke, cursor, or glyph.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "آخر حرف: ا."},
+        {"at_seconds": 3, "spoken": "خط واحد من أعلى."},
+        {"at_seconds": 6, "action": "The deterministic overlay guide cursor draws one approved vertical stroke; the raw physical wand remains still."},
+        {"at_seconds": 8, "spoken": "أسهل حرف!"},
+        {"at_seconds": 10, "action": "One restrained success cue."},
+        {"at_seconds": 12, "spoken": "ا... أَسَد."}
+      ],
+      "exact_spoken_dialogue": ["آخر حرف: ا.", "خط واحد من أعلى.", "أسهل حرف!", "ا... أَسَد."]
+    },
+    {
+      "id": "E04-C11", "file": "clips/E04-C11.mp4", "duration_seconds": 15, "source_range": "2:30-2:45", "editorial_scene": 6,
+      "visual": "Four completely blank, texture-stable cells form one tracked panel for the child response. Luna and the physical cyan wand remain outside all cells; only deterministic overlays may show paths or completion.",
+      "timeline": [
+        {"at_seconds": 1, "spoken": "دورك: ارسم اسمي."},
+        {"at_seconds": 4, "action": "Five full seconds with no dialogue; deterministic dotted paths hold without guide motion."},
+        {"at_seconds": 9, "spoken": "لونا! أحسنت."},
+        {"at_seconds": 12, "action": "Najmi gives one happy glow."}
+      ],
+      "exact_spoken_dialogue": ["دورك: ارسم اسمي.", "لونا! أحسنت."]
+    },
+    {
+      "id": "E04-C12", "file": "clips/E04-C12.mp4", "duration_seconds": 15, "source_range": "2:45-3:00", "editorial_scene": 7,
+      "visual": "Closing shot with Luna, Najmi, four completely blank review cells, and a playful color palette control that remains separate application UI.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "رسمنا: ل، و، ن، ا."},
+        {"at_seconds": 5, "action": "Short calm pause."},
+        {"at_seconds": 6, "spoken": "الآن لوّن كما تحب."},
+        {"at_seconds": 9, "action": "Color palette UI appears without a success condition."},
+        {"at_seconds": 11, "spoken": "هيا نلعب!"},
+        {"at_seconds": 13, "action": "Gentle completion cue."}
+      ],
+      "exact_spoken_dialogue": ["رسمنا: ل، و، ن، ا.", "الآن لوّن كما تحب.", "هيا نلعب!"]
+    }
+  ]
+}

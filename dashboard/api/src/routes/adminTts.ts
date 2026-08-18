@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
-import { requirePermission } from '../lib/adminAuth'
-import { actorId, auditStatement } from '../lib/auditLog'
-import { bucketForAsset } from '../lib/assetBuckets'
-import type { Env } from '../lib/db'
+import { requirePermission } from '../lib/adminAuth.ts'
+import { actorId, auditStatement } from '../lib/auditLog.ts'
+import { bucketForAsset } from '../lib/assetBuckets.ts'
+import type { Env } from '../lib/db.ts'
 import {
   DEFAULT_TTS_MODEL,
   GoogleTtsError,
@@ -14,7 +14,7 @@ import {
   synthesizeSpeech,
   ttsTransport,
   type TtsEncoding,
-} from '../services/googleTts'
+} from '../services/googleTts.ts'
 
 type AppEnv = { Bindings: Env }
 const route = new Hono<AppEnv>()

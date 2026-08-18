@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
+import type { Env } from '../lib/db.ts'
 import { pathParam } from '../lib/routeParams.ts'
 // Explicit .ts specifiers, as in lib/routeParams.ts and lib/gamePackGate.ts
 // below: the extensionless form only resolves through a bundler, so this router
@@ -7,6 +7,7 @@ import { pathParam } from '../lib/routeParams.ts'
 // its 40+ handlers had test coverage.
 import { queryAll, queryFirst } from '../lib/db.ts'
 import { isIslamicContent, validateIslamicFields } from '../lib/islamicContent.ts'
+import { seasonEpisodeCountSelect, withSeasonEpisodeCounts } from '../lib/episodeCounts.ts'
 import { actorId, auditStatement } from '../lib/auditLog.ts'
 import { requirePermission } from '../lib/adminAuth.ts'
 import {
@@ -389,7 +390,7 @@ route.get('/seasons', async (c) => {
   const totalRow = await queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM seasons se ${clauses}`, params)
   const rows = await queryAll<Row>(c.env.DB, `
     SELECT se.*, s.title_ar AS series_title,
-      (SELECT COUNT(*) FROM episodes e WHERE e.season_id = se.id AND e.status <> 'archived') AS episodes_count
+      ${seasonEpisodeCountSelect('se')}
     FROM seasons se
     JOIN series s ON s.id = se.series_id
     ${clauses}
@@ -398,10 +399,40 @@ route.get('/seasons', async (c) => {
   `, [...params, limit, offset])
   return c.json({
     success: true,
-    data: rows.map((row) => ({ ...row, learning_goals: parseJson(row.learning_goals, []) })),
+    // `withSeasonEpisodeCounts` removes the raw `episode_count` that `se.*`
+    // brings in and replaces it with the planning figure under its honest name
+    // plus the three derived counts. The old key is dropped rather than kept as
+    // an alias so no screen can go on rendering a plan as a content count.
+    data: rows.map((row) => withSeasonEpisodeCounts({
+      ...row,
+      learning_goals: parseJson(row.learning_goals, []),
+    })),
     meta: { total: Number(totalRow?.total ?? 0), limit, offset },
   })
 })
+
+/**
+ * Reads the editorial planning figure for a season.
+ *
+ * The request field is `planned_episode_count` because that is what the value
+ * is. The legacy `episode_count` is refused rather than accepted as an alias:
+ * every caller that sent it believed it was setting a number of episodes, and
+ * silently mapping it to the plan would keep that misunderstanding alive on the
+ * write side after the read side stopped reporting it.
+ *
+ * Returns `undefined` when absent, `null` when invalid, so callers can tell the
+ * two apart.
+ */
+function plannedEpisodeCount(value: Record<string, unknown>): number | undefined | null {
+  if (value.episode_count !== undefined) return null
+  if (value.planned_episode_count === undefined) return undefined
+  const count = integer(value.planned_episode_count)
+  if (count === null || count < 0) return null
+  return count
+}
+
+const PLANNED_COUNT_ERROR = 'planned_episode_count must be zero or positive; '
+  + 'episode_count is no longer accepted because episode totals are derived from canonical episode rows'
 
 route.post('/seasons', requirePermission('create'), async (c) => {
   const value = await body(c)
@@ -412,6 +443,8 @@ route.post('/seasons', requirePermission('create'), async (c) => {
   if (!seriesId || number === null || number < 1) return c.json({ success: false, error: 'series_id and a positive season_number are required' }, 400)
   if (!CONTENT_STATUSES.includes(status)) return c.json({ success: false, error: 'Invalid status' }, 400)
   if (!await queryFirst(c.env.DB, `SELECT id FROM series WHERE id = ? AND status <> 'archived'`, [seriesId])) return c.json({ success: false, error: 'Series not found' }, 400)
+  const planned = plannedEpisodeCount(value)
+  if (planned === null) return c.json({ success: false, error: PLANNED_COUNT_ERROR }, 400)
   const goals = value.learning_goals === undefined ? '[]' : jsonArray(value.learning_goals)
   if (!goals) return c.json({ success: false, error: 'learning_goals must be an array' }, 400)
   const id = crypto.randomUUID()
@@ -420,7 +453,7 @@ route.post('/seasons', requirePermission('create'), async (c) => {
       c.env.DB.prepare(`
         INSERT INTO seasons (id, series_id, season_number, title_ar, theme_ar, description_ar, episode_count, watch_order, learning_goals, release_date, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(id, seriesId, number, nullableString(value.title_ar) ?? null, nullableString(value.theme_ar) ?? null, nullableString(value.description_ar) ?? null, integer(value.episode_count) ?? 0, stringValue(value.watch_order) ?? 'any', goals, nullableString(value.release_date) ?? null, status),
+      `).bind(id, seriesId, number, nullableString(value.title_ar) ?? null, nullableString(value.theme_ar) ?? null, nullableString(value.description_ar) ?? null, planned ?? 0, stringValue(value.watch_order) ?? 'any', goals, nullableString(value.release_date) ?? null, status),
       audit(c.env.DB, c, 'create', 'season', id, { series_id: seriesId, season_number: number }),
     ])
   } catch (error) {
@@ -454,10 +487,10 @@ route.patch('/seasons/:id', requirePermission('edit_metadata'), async (c) => {
     if (parsed === undefined) return c.json({ success: false, error: `Invalid ${field}` }, 400)
     add(field, parsed)
   }
-  if (value.episode_count !== undefined) {
-    const count = integer(value.episode_count)
-    if (count === null || count < 0) return c.json({ success: false, error: 'episode_count must be zero or positive' }, 400)
-    add('episode_count', count)
+  const planned = plannedEpisodeCount(value)
+  if (planned === null) return c.json({ success: false, error: PLANNED_COUNT_ERROR }, 400)
+  if (planned !== undefined) {
+    add('episode_count', planned)
   }
   if (value.watch_order !== undefined) {
     const order = stringValue(value.watch_order)
@@ -1652,9 +1685,9 @@ route.post('/stories/:id/pages', requirePermission('create'), async (c) => {
   try {
     await c.env.DB.batch([
       c.env.DB.prepare(`
-        INSERT INTO story_pages (id, story_id, page_number, layout, image_asset_id, background_asset_id, duration_ms, transition, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(id, storyId, pageNumber, layout, nullableString(value.image_asset_id) ?? null, nullableString(value.background_asset_id) ?? null, integer(value.duration_ms), stringValue(value.transition) ?? 'fade', integer(value.sort_order) ?? pageNumber),
+        INSERT INTO story_pages (id, story_id, page_number, layout, image_asset_id, background_asset_id, duration_ms, dwell_ms, transition, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(id, storyId, pageNumber, layout, nullableString(value.image_asset_id) ?? null, nullableString(value.background_asset_id) ?? null, integer(value.duration_ms), integer(value.dwell_ms), stringValue(value.transition) ?? 'fade', integer(value.sort_order) ?? pageNumber),
       audit(c.env.DB, c, 'create', 'story_page', id, { story_id: storyId, page_number: pageNumber }),
     ])
   } catch (error) {
@@ -1694,6 +1727,14 @@ route.patch('/story-pages/:id', requirePermission('edit_metadata'), async (c) =>
       const duration = integer(value.duration_ms)
       if (duration === null || duration < 1) return c.json({ success: false, error: 'duration_ms must be positive' }, 400)
       add('duration_ms', duration)
+    }
+  }
+  if (value.dwell_ms !== undefined) {
+    if (value.dwell_ms === null || value.dwell_ms === '') add('dwell_ms', null)
+    else {
+      const dwell = integer(value.dwell_ms)
+      if (dwell === null || dwell < 0 || dwell > 60000) return c.json({ success: false, error: 'dwell_ms must be between 0 and 60000' }, 400)
+      add('dwell_ms', dwell)
     }
   }
   if (value.transition !== undefined) {

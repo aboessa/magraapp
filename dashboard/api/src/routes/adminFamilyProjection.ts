@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { requireAdmin, requirePermission } from '../lib/adminAuth';
-import { actorId } from '../lib/auditLog';
-import type { AdminSessionUser } from '../lib/adminUsers';
-import { processFamilyEvent } from '../queue/familyEvents';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { requireAdmin, requirePermission } from '../lib/adminAuth.ts';
+import { actorId } from '../lib/auditLog.ts';
+import type { AdminSessionUser } from '../lib/adminUsers.ts';
+import { processFamilyEvent } from '../queue/familyEvents.ts';
 
 type AppEnv = { Bindings: Env; Variables: { adminUser?: AdminSessionUser; adminIsLegacyKey?: boolean } };
 const route = new Hono<AppEnv>();

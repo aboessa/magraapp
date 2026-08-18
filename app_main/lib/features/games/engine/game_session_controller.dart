@@ -9,6 +9,8 @@
 /// engine, so a second engine cannot invent its own rules for them.
 library;
 
+import 'dart:convert' show jsonDecode, jsonEncode;
+
 import 'package:flutter/foundation.dart';
 
 import 'game_pack.dart';
@@ -43,13 +45,41 @@ class GameSessionController extends ChangeNotifier {
     this.feedback = const FeedbackService(),
     GameAccessibilitySettings settings = const GameAccessibilitySettings(),
     DateTime Function()? clock,
-  })  : _audio = audio,
-        _reporter = reporter,
-        _eventIdFactory = eventIdFactory,
-        _settings = settings,
-        _clock = clock ?? DateTime.now {
+    this.initialCreationJson,
+  }) : _audio = audio,
+       _reporter = reporter,
+       _eventIdFactory = eventIdFactory,
+       _settings = settings,
+       _clock = clock ?? DateTime.now {
     _levelStartedAt = _clock();
     _openLevel(0);
+    // If continuing editing, restore fills from document.
+    if (initialCreationJson != null) {
+      try {
+        final d = _decodeCreation(initialCreationJson!);
+        if (d != null && d['fills'] is List) {
+          for (final f in (d['fills'] as List)) {
+            if (f is Map && f['region_id'] is String && f['hex'] is String) {
+              _regionColors[f['region_id'] as String] = f['hex'] as String;
+            }
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  /// Optional editable document JSON for متابعة الرسم (continue editing).
+  final String? initialCreationJson;
+
+  static Map<String, dynamic>? _decodeCreation(String raw) {
+    try {
+      final v = jsonDecode(raw);
+      if (v is Map<String, dynamic>) return v;
+      if (v is Map) return Map<String, dynamic>.from(v);
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   final GamePack pack;
@@ -72,6 +102,7 @@ class GameSessionController extends ChangeNotifier {
   int _levelIndex = 0;
   LevelPhase _phase = LevelPhase.drawing;
   TraceSession? _traceSession;
+
   /// Set in the constructor body and again on every level open, so it is `late`
   /// rather than nullable: there is no meaningful "no start time" state.
   late DateTime _levelStartedAt;
@@ -82,6 +113,9 @@ class GameSessionController extends ChangeNotifier {
   /// Region -> colour, for colouring. Held on the device; nothing is uploaded
   /// unless the child explicitly saves.
   final Map<String, String> _regionColors = {};
+  final List<Map<String, String>> _fillUndo = [];
+  final List<Map<String, String>> _fillRedo = [];
+  static const int _maxFillHistory = 50;
 
   /// Stable per-level attempt id, so a retried network call cannot double-count.
   String _eventId = '';
@@ -95,9 +129,12 @@ class GameSessionController extends ChangeNotifier {
   TraceSession? get traceSession => _traceSession;
   Map<String, String> get regionColors => Map.unmodifiable(_regionColors);
   List<String> get connectedDots => List.unmodifiable(_connectedDots);
+  bool get canUndoFill => _fillUndo.isNotEmpty;
+  bool get canRedoFill => _fillRedo.isNotEmpty;
 
   /// True once every level required to finish has been completed.
-  bool get gameComplete => _levelIndex >= pack.progression.levelsToFinish - 1 &&
+  bool get gameComplete =>
+      _levelIndex >= pack.progression.levelsToFinish - 1 &&
       _phase == LevelPhase.finished;
 
   TraceHelpLevel get helpLevel =>
@@ -112,6 +149,8 @@ class GameSessionController extends ChangeNotifier {
     _phase = LevelPhase.drawing;
     _connectedDots.clear();
     _regionColors.clear();
+    _fillUndo.clear();
+    _fillRedo.clear();
     _reportedForLevel = false;
     _eventId = _eventIdFactory();
     _levelStartedAt = _clock();
@@ -131,7 +170,9 @@ class GameSessionController extends ChangeNotifier {
     // when there is a template, otherwise straight to free drawing which the
     // child ends themselves.
     if (current.strokes.isEmpty && current.dots.isEmpty) {
-      _phase = current.hasColoringStage ? LevelPhase.coloring : LevelPhase.drawing;
+      _phase = current.hasColoringStage
+          ? LevelPhase.coloring
+          : LevelPhase.drawing;
     }
   }
 
@@ -224,9 +265,10 @@ class GameSessionController extends ChangeNotifier {
   /// makes the measurement a sequence rather than a set.
   Future<void> connectDot(String dotId) async {
     if (level.mode != DrawingMode.connectDots) return;
-    final expected = level.dots
-        .firstWhere((dot) => !_connectedDots.contains(dot.id),
-            orElse: () => level.dots.last);
+    final expected = level.dots.firstWhere(
+      (dot) => !_connectedDots.contains(dot.id),
+      orElse: () => level.dots.last,
+    );
     if (expected.id != dotId || _connectedDots.contains(dotId)) {
       // Out-of-order taps are ignored, not punished.
       return;
@@ -243,8 +285,73 @@ class GameSessionController extends ChangeNotifier {
   /// Paints a region. Never scored, and never validated against a "correct"
   /// colour: the engine contract gives colouring no success condition at all.
   void paintRegion(String regionId, String color) {
+    if (regionId.isEmpty || _regionColors[regionId] == color) return;
+    _pushFillHistory(_fillUndo);
+    _fillRedo.clear();
     _regionColors[regionId] = color;
+    // Keep editable document in sync so GameScreen can save PNG+document.
+    _syncCreationDocument();
     notifyListeners();
+  }
+
+  void _pushFillHistory(List<Map<String, String>> target) {
+    if (target.length >= _maxFillHistory) target.removeAt(0);
+    target.add(Map<String, String>.of(_regionColors));
+  }
+
+  void undoFill() {
+    if (_fillUndo.isEmpty) return;
+    _pushFillHistory(_fillRedo);
+    final previous = _fillUndo.removeLast();
+    _regionColors
+      ..clear()
+      ..addAll(previous);
+    _syncCreationDocument();
+    notifyListeners();
+  }
+
+  void redoFill() {
+    if (_fillRedo.isEmpty) return;
+    _pushFillHistory(_fillUndo);
+    final next = _fillRedo.removeLast();
+    _regionColors
+      ..clear()
+      ..addAll(next);
+    _syncCreationDocument();
+    notifyListeners();
+  }
+
+  void clearFills() {
+    if (_regionColors.isEmpty) return;
+    _pushFillHistory(_fillUndo);
+    _fillRedo.clear();
+    _regionColors.clear();
+    _syncCreationDocument();
+    notifyListeners();
+  }
+
+  void _syncCreationDocument() {
+    if (!level.mode.isCreation && !level.hasColoringStage) return;
+    final doc = {
+      'version': 1,
+      'mode': level.mode.name,
+      'canvas_width': 1024,
+      'canvas_height': 1024,
+      'background_asset': level.backgroundAsset,
+      'template_asset': level.coloring?.templateAsset,
+      'palette': level.coloring?.palette ?? const [],
+      'strokes': const [],
+      'fills': _regionColors.entries
+          .map((e) => {'region_id': e.key, 'hex': e.value})
+          .toList(growable: false),
+      'prompt': level.prompt,
+      'pack_id': pack.packId,
+      'level_index': _levelIndex,
+    };
+    try {
+      _pendingDocumentJson = jsonEncode(doc);
+      _pendingDocumentVersion = 1;
+    } catch (_) {}
   }
 
   Future<void> _finishDrawingPhase() async {
@@ -291,13 +398,26 @@ class GameSessionController extends ChangeNotifier {
   }
 
   void undo() {
+    if (_phase == LevelPhase.coloring && _fillUndo.isNotEmpty) {
+      undoFill();
+      return;
+    }
     _traceSession?.undo();
     notifyListeners();
   }
 
+  void redo() {
+    if (_phase == LevelPhase.coloring) redoFill();
+  }
+
   void clear() {
     _traceSession?.clear();
-    _regionColors.clear();
+    if (_regionColors.isNotEmpty) {
+      _pushFillHistory(_fillUndo);
+      _fillRedo.clear();
+      _regionColors.clear();
+      _syncCreationDocument();
+    }
     _connectedDots.clear();
     notifyListeners();
   }
@@ -306,8 +426,27 @@ class GameSessionController extends ChangeNotifier {
 
   /// The raw level JSON for the current level, for engines whose level shape
   /// [GameLevel] does not model.
-  Map<String, dynamic> get rawLevel =>
-      _levelIndex < pack.rawLevels.length ? pack.rawLevels[_levelIndex] : const {};
+  Map<String, dynamic> get rawLevel => _levelIndex < pack.rawLevels.length
+      ? pack.rawLevels[_levelIndex]
+      : const {};
+
+  /// Pending editable document JSON for the current level (free draw strokes +
+  /// coloring fills). Set by the canvas widget so the save button can persist both
+  /// PNG and document atomically. Null when the level has no editable surface
+  /// (e.g. connect_dots) or when no stroke has been made yet.
+  String? _pendingDocumentJson;
+  int? _pendingDocumentVersion;
+  String? get pendingDocumentJson => _pendingDocumentJson;
+  int? get pendingDocumentVersion => _pendingDocumentVersion;
+  void setPendingDocument(String json, int version) {
+    _pendingDocumentJson = json;
+    _pendingDocumentVersion = version;
+  }
+
+  void clearPendingDocument() {
+    _pendingDocumentJson = null;
+    _pendingDocumentVersion = null;
+  }
 
   /// Reports an attempt on behalf of an engine that computes its own score.
   ///
@@ -328,19 +467,21 @@ class GameSessionController extends ChangeNotifier {
     if (_reportedForLevel) return;
     _reportedForLevel = true;
     final seconds = _clock().difference(_levelStartedAt).inSeconds;
-    await _reporter.report(GameAttempt(
-      eventId: _eventId,
-      childId: childId,
-      gameId: gameId,
-      episodeId: episodeId,
-      objectiveId: objectiveId,
-      score: score,
-      maxScore: maxScore,
-      timeSpentSeconds: seconds < 0 ? 0 : seconds,
-      helpUsed: helpUsed,
-      answers: answers,
-      completed: completed,
-    ));
+    await _reporter.report(
+      GameAttempt(
+        eventId: _eventId,
+        childId: childId,
+        gameId: gameId,
+        episodeId: episodeId,
+        objectiveId: objectiveId,
+        score: score,
+        maxScore: maxScore,
+        timeSpentSeconds: seconds < 0 ? 0 : seconds,
+        helpUsed: helpUsed,
+        answers: answers,
+        completed: completed,
+      ),
+    );
   }
 
   /// Ends the level from an engine, after it has reported.
@@ -363,20 +504,22 @@ class GameSessionController extends ChangeNotifier {
         },
     ];
 
-    await _reporter.report(GameAttempt(
-      eventId: _eventId,
-      childId: childId,
-      gameId: gameId,
-      episodeId: episodeId,
-      objectiveId: objectiveId,
-      // An unscored level reports 0/0: it happened, and it is not a mark.
-      score: session?.score ?? 0,
-      maxScore: level.maxScore,
-      timeSpentSeconds: seconds < 0 ? 0 : seconds,
-      helpUsed: session?.usedAssistance ?? false,
-      answers: answers,
-      completed: completed,
-    ));
+    await _reporter.report(
+      GameAttempt(
+        eventId: _eventId,
+        childId: childId,
+        gameId: gameId,
+        episodeId: episodeId,
+        objectiveId: objectiveId,
+        // An unscored level reports 0/0: it happened, and it is not a mark.
+        score: session?.score ?? 0,
+        maxScore: level.maxScore,
+        timeSpentSeconds: seconds < 0 ? 0 : seconds,
+        helpUsed: session?.usedAssistance ?? false,
+        answers: answers,
+        completed: completed,
+      ),
+    );
   }
 
   @override

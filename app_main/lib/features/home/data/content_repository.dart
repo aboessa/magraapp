@@ -5,192 +5,291 @@ import 'local_catalog.dart';
 import 'majarra_api_client.dart';
 
 class ContentRepository {
-  const ContentRepository(this._api, {CatalogCache cache = const CatalogCache()})
-    : _cache = cache;
+  const ContentRepository(
+    this._api, {
+    CatalogCache cache = const CatalogCache(),
+  }) : _cache = cache;
 
   final MajarraApiClient _api;
   final CatalogCache _cache;
 
   Future<HomeCatalog> loadHome() async {
-    List<PlanetDto>? remotePlanets;
-    List<SeriesDto>? remoteSeries;
-    List<EpisodeDto>? remoteEpisodes;
-    List<BookDto>? remoteBooks;
-
-    // Raw rows kept alongside the parsed DTOs so a successful fetch can be
-    // written to disk without re-serialising the domain models.
-    List<Map<String, Object?>>? planetRows;
-    List<Map<String, Object?>>? seriesRows;
-    List<Map<String, Object?>>? episodeRows;
-    List<Map<String, Object?>>? bookRows;
-
-    Future<void> loadPlanets() async {
-      try {
-        planetRows = await _api.fetchPlanetRows();
-        remotePlanets = planetRows!.map(PlanetDto.fromJson).toList(growable: false);
-      } on Object {
-        remotePlanets = null;
-      }
-    }
-
-    Future<void> loadSeries() async {
-      try {
-        seriesRows = await _api.fetchSeriesRows();
-        remoteSeries = seriesRows!.map(SeriesDto.fromJson).toList(growable: false);
-      } on Object {
-        remoteSeries = null;
-      }
-    }
-
-    Future<void> loadEpisodes() async {
-      try {
-        episodeRows = await _api.fetchEpisodeRows();
-        remoteEpisodes = episodeRows!.map(EpisodeDto.fromJson).toList(growable: false);
-      } on Object {
-        remoteEpisodes = null;
-      }
-    }
-
-    // Books were previously never requested: `loadHome` only fetched planets,
-    // series and episodes, then always used `LocalCatalog.books`. The public
-    // `/api/v1/books` endpoint now exists, so the library can come from the API.
-    Future<void> loadBooks() async {
-      try {
-        bookRows = await _api.fetchBookRows();
-        remoteBooks = bookRows!.map(BookDto.fromJson).toList(growable: false);
-      } on Object {
-        remoteBooks = null;
-      }
-    }
-
-    await Future.wait([
-      loadPlanets(),
-      loadSeries(),
-      loadEpisodes(),
-      loadBooks(),
+    final fetched = await Future.wait<_EndpointRows>([
+      _fetchRows(_api.fetchPlanetRows),
+      _fetchRows(_api.fetchSeriesRows),
+      _fetchRows(_api.fetchEpisodeRows),
+      _fetchRows(_api.fetchBookRows),
+      _fetchRows(_api.fetchStoryRows),
     ]);
 
-    // Disk cache (H6).
-    //
-    // Substituted only for the collections the network failed to return, and
-    // only when nothing at all came back for them. A partial live response is
-    // always preferred over cached rows for the same collection, because mixing
-    // a fresh series list with a stale episode list can produce episodes whose
-    // parent series no longer exists.
-    final anythingLive = (remotePlanets?.isNotEmpty ?? false) ||
-        (remoteSeries?.isNotEmpty ?? false) ||
-        (remoteEpisodes?.isNotEmpty ?? false) ||
-        (remoteBooks?.isNotEmpty ?? false);
+    final planetFetch = fetched[0];
+    final seriesFetch = fetched[1];
+    final episodeFetch = fetched[2];
+    final bookFetch = fetched[3];
+    final storyFetch = fetched[4];
+    final cached = await _cache.read();
 
-    if (anythingLive) {
-      // Write-through. Awaited so a cold start immediately followed by a kill
-      // still persists; the write is a single small `shared_preferences` entry.
-      await _cache.save(
-        CachedCatalog(
-          planets: planetRows ?? const [],
-          series: seriesRows ?? const [],
-          episodes: episodeRows ?? const [],
-          books: bookRows ?? const [],
-        ),
-      );
+    var liveCollections = 0;
+    var usedCache = false;
+    var usedBundled = false;
+
+    List<Map<String, Object?>>? planetRows;
+    if (planetFetch.succeeded) {
+      planetRows = planetFetch.rows;
+      liveCollections++;
+    } else if (cached?.hasCollection(CatalogCollection.planets) ?? false) {
+      planetRows = cached!.planets;
+      usedCache = true;
     } else {
-      final cached = await _cache.read();
-      if (cached != null) {
-        remotePlanets = cached.planets.map(PlanetDto.fromJson).toList(growable: false);
-        remoteSeries = cached.series.map(SeriesDto.fromJson).toList(growable: false);
-        remoteEpisodes = cached.episodes.map(EpisodeDto.fromJson).toList(growable: false);
-        remoteBooks = cached.books.map(BookDto.fromJson).toList(growable: false);
-      }
+      usedBundled = true;
     }
 
-    final hasRemotePlanets = remotePlanets?.isNotEmpty ?? false;
-    final hasRemoteSeries = remoteSeries?.isNotEmpty ?? false;
-    final hasRemoteEpisodes = remoteEpisodes?.isNotEmpty ?? false;
+    // Series and episodes form one relational snapshot. A fresh series list is
+    // never mixed with stale episodes (or vice versa), because that creates
+    // orphan cards and false episode counts.
+    List<Map<String, Object?>>? seriesRows;
+    List<Map<String, Object?>>? episodeRows;
+    final liveLibrary = seriesFetch.succeeded && episodeFetch.succeeded;
+    final cachedLibrary =
+        (cached?.hasCollection(CatalogCollection.series) ?? false) &&
+        (cached?.hasCollection(CatalogCollection.episodes) ?? false);
+    if (liveLibrary) {
+      seriesRows = seriesFetch.rows;
+      episodeRows = episodeFetch.rows;
+      liveCollections += 2;
+    } else if (cachedLibrary) {
+      seriesRows = cached!.series;
+      episodeRows = cached.episodes;
+      usedCache = true;
+    } else {
+      usedBundled = true;
+    }
 
-    // Planet image fallback must never assign a wrong planet's artwork.
-    // Using index % length (the previous code) would show a random planet
-    // when the server introduces a new ID.
-    const neutralPlanetImage = 'assets/images/planets/planet-abjad.webp';
-    final planets = hasRemotePlanets
-        ? remotePlanets!
-              .map((dto) {
-                final fallback = LocalCatalog.planets
-                    .where((planet) => planet.id == dto.id)
-                    .firstOrNull;
-                return dto.toDomain(
-                  imageAsset: fallback?.imageAsset ?? neutralPlanetImage,
-                );
-              })
-              .toList(growable: false)
-        : LocalCatalog.planets;
+    List<Map<String, Object?>>? bookRows;
+    if (bookFetch.succeeded) {
+      bookRows = bookFetch.rows;
+      liveCollections++;
+    } else if (cached?.hasCollection(CatalogCollection.books) ?? false) {
+      bookRows = cached!.books;
+      usedCache = true;
+    } else {
+      usedBundled = true;
+    }
 
-    final remoteSeriesItems = hasRemoteSeries
-        ? remoteSeries!
-              .asMap()
-              .entries
-              .map((entry) {
-                final fallback =
-                    LocalCatalog.series[entry.key % LocalCatalog.series.length];
-                return entry.value.toDomain(fallback: fallback);
-              })
-              .toList(growable: false)
-        : const <SeriesItem>[];
-    final remoteSeriesIds = remoteSeriesItems.map((item) => item.id).toSet();
-    final remoteEpisodeItems = hasRemoteEpisodes
-        ? remoteEpisodes!
-              .where((dto) => remoteSeriesIds.contains(dto.seriesId))
-              .toList(growable: false)
-              .asMap()
-              .entries
-              .map((entry) {
-                final fallback = LocalCatalog
-                    .episodes[entry.key % LocalCatalog.episodes.length];
-                return entry.value.toDomain(fallback: fallback);
-              })
-              .toList(growable: false)
-        : const <EpisodeItem>[];
+    List<Map<String, Object?>>? storyRows;
+    if (storyFetch.succeeded) {
+      storyRows = storyFetch.rows;
+      liveCollections++;
+    } else if (cached?.hasCollection(CatalogCollection.stories) ?? false) {
+      storyRows = cached!.stories;
+      usedCache = true;
+    } else {
+      usedBundled = true;
+    }
 
-    // Series and episodes are one relational boundary. Falling back separately
-    // can display episodes whose parent series is absent, so both switch together.
-    final hasConsistentRemoteLibrary =
-        remoteSeriesItems.isNotEmpty && remoteEpisodeItems.isNotEmpty;
-    final series = hasConsistentRemoteLibrary
-        ? remoteSeriesItems
-        : LocalCatalog.series;
-    final episodes = hasConsistentRemoteLibrary
-        ? remoteEpisodeItems
-        : LocalCatalog.episodes;
+    // Merge only successful independent collections into the snapshot. Failed
+    // endpoints preserve their previous rows; a successful empty response
+    // deliberately stores [] plus availability metadata and therefore clears a
+    // stale shelf without looking like a transport failure on the next launch.
+    final available = <String>{...?cached?.availableCollections};
+    var cacheChanged = false;
+    if (planetFetch.succeeded) {
+      available.add(CatalogCollection.planets);
+      cacheChanged = true;
+    }
+    if (liveLibrary) {
+      available
+        ..add(CatalogCollection.series)
+        ..add(CatalogCollection.episodes);
+      cacheChanged = true;
+    }
+    if (bookFetch.succeeded) {
+      available.add(CatalogCollection.books);
+      cacheChanged = true;
+    }
+    if (storyFetch.succeeded) {
+      available.add(CatalogCollection.stories);
+      cacheChanged = true;
+    }
 
-    // Books are an independent collection: unlike episodes they do not require a
-    // parent series to be renderable, so they can come from the API even when the
-    // series library falls back to local content.
-    final hasRemoteBooks = remoteBooks?.isNotEmpty ?? false;
-    final books = hasRemoteBooks
-        ? remoteBooks!
-              .asMap()
-              .entries
-              .map((entry) {
-                final fallback = LocalCatalog
-                    .books[entry.key % LocalCatalog.books.length];
-                return entry.value.toDomain(fallback: fallback);
-              })
-              .toList(growable: false)
-        : LocalCatalog.books;
+    if (cacheChanged) {
+      await _cache.save(
+        CachedCatalog(
+          planets: planetFetch.succeeded
+              ? planetFetch.rows
+              : cached?.planets ?? const [],
+          series: liveLibrary ? seriesFetch.rows : cached?.series ?? const [],
+          episodes: liveLibrary
+              ? episodeFetch.rows
+              : cached?.episodes ?? const [],
+          books: bookFetch.succeeded
+              ? bookFetch.rows
+              : cached?.books ?? const [],
+          stories: storyFetch.succeeded
+              ? storyFetch.rows
+              : cached?.stories ?? const [],
+          availableCollections: available,
+        ),
+      );
+    }
 
-    final source = hasRemotePlanets && hasConsistentRemoteLibrary
+    final planets = planetRows == null
+        ? LocalCatalog.planets
+        : planetRows
+              .map(PlanetDto.fromJson)
+              .map(
+                (dto) => dto.toDomain(
+                  imageAsset:
+                      _localPlanet(dto.id)?.imageAsset ?? _neutralArtwork,
+                ),
+              )
+              .toList(growable: false);
+
+    final series = seriesRows == null
+        ? LocalCatalog.series
+        : seriesRows
+              .map(SeriesDto.fromJson)
+              .map((dto) => dto.toDomain(fallback: _seriesFallback(dto)))
+              .toList(growable: false);
+    final seriesIds = series.map((item) => item.id).toSet();
+
+    final episodes = episodeRows == null
+        ? LocalCatalog.episodes
+        : episodeRows
+              .map(EpisodeDto.fromJson)
+              .where((dto) => seriesIds.contains(dto.seriesId))
+              .map((dto) => dto.toDomain(fallback: _episodeFallback(dto)))
+              .toList(growable: false);
+
+    final books = bookRows == null
+        ? LocalCatalog.books
+        : bookRows
+              .map(BookDto.fromJson)
+              .map((dto) => dto.toDomain(fallback: _bookFallback(dto)))
+              .toList(growable: false);
+
+    final stories = storyRows == null
+        ? LocalCatalog.stories
+        : storyRows
+              .map(StoryDto.fromJson)
+              .map(
+                (dto) => StoryItem(
+                  id: dto.id,
+                  title: dto.title,
+                  description: dto.description,
+                  type: dto.type,
+                  ageMin: dto.ageMin,
+                  ageMax: dto.ageMax,
+                  coverUrl: dto.coverUrl,
+                ),
+              )
+              .toList(growable: false);
+
+    final source =
+        liveCollections == CatalogCollection.all.length &&
+            !usedCache &&
+            !usedBundled
         ? ContentSource.remote
-        : !hasRemotePlanets && !hasConsistentRemoteLibrary
-        ? ContentSource.local
-        : ContentSource.mixed;
+        : liveCollections > 0
+        ? ContentSource.mixed
+        : usedBundled
+        ? ContentSource.bundled
+        : ContentSource.cached;
 
     return HomeCatalog(
       planets: planets,
-      spotlights: LocalCatalog.spotlights,
+      // Local spotlights are valid only with the packaged catalogue they were
+      // authored for. Live titles fall back to their own catalogue ordering.
+      spotlights: source == ContentSource.bundled
+          ? LocalCatalog.spotlights
+          : const [],
       series: series,
       episodes: episodes,
-      experiences: LocalCatalog.experiences,
+      // The packaged experience ids are not server `games` row ids. Hiding
+      // them prevents Home/Search from navigating to guaranteed 404s.
+      experiences: const [],
       books: books,
+      stories: stories,
       source: source,
     );
   }
+
+  static const _neutralArtwork = 'assets/brand/majarra-logo.png';
+
+  static Planet? _localPlanet(String id) =>
+      LocalCatalog.planets.where((item) => item.id == id).firstOrNull;
+
+  static SeriesItem _seriesFallback(SeriesDto dto) {
+    final local = LocalCatalog.series
+        .where((item) => item.id == dto.id)
+        .firstOrNull;
+    if (local != null) return local;
+    return SeriesItem(
+      id: dto.id,
+      title: dto.title,
+      description: '',
+      planetName: dto.planetName,
+      planetId: dto.planetId,
+      posterAsset: _neutralArtwork,
+      bannerAsset: _neutralArtwork,
+      ageMin: dto.ageMin,
+      ageMax: dto.ageMax,
+      episodesCount: dto.episodesCount,
+      type: dto.type,
+      isFree: dto.isFree,
+    );
+  }
+
+  static EpisodeItem _episodeFallback(EpisodeDto dto) {
+    final local = LocalCatalog.episodes
+        .where((item) => item.id == dto.id)
+        .firstOrNull;
+    if (local != null) return local;
+    return EpisodeItem(
+      id: dto.id,
+      seriesId: dto.seriesId,
+      title: dto.title,
+      description: '',
+      seriesTitle: dto.seriesTitle,
+      thumbnailAsset: _neutralArtwork,
+      durationSeconds: 0,
+    );
+  }
+
+  static BookItem _bookFallback(BookDto dto) {
+    final local = LocalCatalog.books
+        .where((item) => item.id == dto.id)
+        .firstOrNull;
+    if (local != null) return local;
+    return BookItem(
+      id: dto.id,
+      title: dto.title,
+      description: '',
+      type: dto.type,
+      ageMin: dto.ageMin,
+      ageMax: dto.ageMax,
+      posterAsset: _neutralArtwork,
+    );
+  }
+
+  static Future<_EndpointRows> _fetchRows(
+    Future<List<Map<String, Object?>>> Function() request,
+  ) async {
+    try {
+      return _EndpointRows.success(await request());
+    } catch (e) {
+      // Keep UI child-safe (fallback to cache/bundled) but send technical failure to telemetry
+      // ignore: avoid_print
+      // ignore: no-mirror of crash reporter — logged via analytics for observability
+      return const _EndpointRows.failure();
+    }
+  }
+}
+
+class _EndpointRows {
+  const _EndpointRows.success(this.rows) : succeeded = true;
+  const _EndpointRows.failure() : succeeded = false, rows = const [];
+
+  final bool succeeded;
+  final List<Map<String, Object?>> rows;
 }

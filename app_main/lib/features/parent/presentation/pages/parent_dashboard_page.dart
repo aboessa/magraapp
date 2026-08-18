@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../child/application/child_provider.dart';
+import '../../../home/application/home_providers.dart';
 import '../../../home/domain/content_models.dart';
 import '../../application/parent_reports.dart';
 
@@ -80,13 +81,15 @@ class ParentDashboardPage extends ConsumerWidget {
           else
             _ActivityReports(childId: child.activeChildId!),
           const SizedBox(height: 14),
-          const _PendingSection(
-            icon: Icons.tune_rounded,
-            title: 'حدود الوقت والسماحات',
-            body:
-                'حدود وقت الشاشة ونافذة النوم تُفرَض على مستوى الأسرة في الخادم '
-                'لتسري على كل الأجهزة. ستُفعَّل عند إتاحة الحفظ والفرض في الخادم.',
-          ),
+          if (child.activeChildId != null && child.hasSelection)
+            _ParentalControlsSection(childId: child.activeChildId!)
+          else
+            const _PendingSection(
+              icon: Icons.tune_rounded,
+              title: 'حدود الوقت والسماحات',
+              body: 'اختر ملف طفل لضبط وقت الشاشة ونافذة النوم والسماحات.',
+              pending: false,
+            ),
           const SizedBox(height: 18),
           Text(
             'كل طفل معزول حسب child_id — لا تُدمج أعمار مختلفة في درجة واحدة.',
@@ -632,7 +635,11 @@ class _MasteryRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          const Icon(Icons.stars_rounded, size: 18, color: ParentDashboardPage._brand),
+          const Icon(
+            Icons.stars_rounded,
+            size: 18,
+            color: ParentDashboardPage._brand,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -675,6 +682,52 @@ class _MasteryRow extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _ParentalControlsSection extends ConsumerStatefulWidget {
+  const _ParentalControlsSection({required this.childId});
+  final String childId;
+  @override
+  ConsumerState<_ParentalControlsSection> createState() => _ParentalControlsSectionState();
+}
+
+class _ParentalControlsSectionState extends ConsumerState<_ParentalControlsSection> {
+  bool _saving = false;
+  @override
+  Widget build(BuildContext context) {
+    final settingsAsync = ref.watch(childSettingsProvider(widget.childId));
+    return settingsAsync.when(
+      loading: () => const _Card(child: Center(child: CircularProgressIndicator())),
+      error: (e, _) => _Card(child: Text('تعذر تحميل الإعدادات: $e')),
+      data: (data) {
+        final daily = (data['daily_minutes'] as num?)?.toInt() ?? 30;
+        final bedStart = data['bedtime_start'] as String?;
+        final bedEnd = data['bedtime_end'] as String?;
+        final allowSpeed = (data['allow_speed_change'] as num?)?.toInt() == 1;
+        final autoplay = data['autoplay_override'] as String? ?? 'inherit';
+        return _Card(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: const [Icon(Icons.tune_rounded, color: ParentDashboardPage._brand), SizedBox(width: 8), Text('حدود الوقت والسماحات', style: TextStyle(fontWeight: FontWeight.w800, color: ParentDashboardPage._ink))]),
+            const Divider(height: 18),
+            Text('وقت الشاشة اليومي: $daily دقيقة', style: const TextStyle(fontWeight: FontWeight.w600, color: ParentDashboardPage._ink)),
+            Slider(value: daily.toDouble(), min: 5, max: 180, divisions: 35, label: '$daily', onChanged: (v) async { setState(() => _saving = true); try { await ref.read(majarraApiClientProvider).updateChildSettings(widget.childId, {'daily_minutes': v.round()}); ref.invalidate(childSettingsProvider(widget.childId)); } finally { if (mounted) setState(() => _saving = false); } }),
+            if (_saving) const LinearProgressIndicator(minHeight: 2),
+            const SizedBox(height: 10),
+            Text('نافذة النوم: ${bedStart ?? '--:--'} – ${bedEnd ?? '--:--'}', style: const TextStyle(fontSize: 12, color: ParentDashboardPage._inkSoft)),
+            Row(children: [
+              TextButton(onPressed: () async { final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 21, minute: 0)); if (t != null) { final s = '${t.hour.toString().padLeft(2,'0')}:${t.minute.toString().padLeft(2,'0')}'; await ref.read(majarraApiClientProvider).updateChildSettings(widget.childId, {'bedtime_start': s}); ref.invalidate(childSettingsProvider(widget.childId)); } }, child: const Text('بداية')),
+              TextButton(onPressed: () async { final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 7, minute: 0)); if (t != null) { final s = '${t.hour.toString().padLeft(2,'0')}:${t.minute.toString().padLeft(2,'0')}'; await ref.read(majarraApiClientProvider).updateChildSettings(widget.childId, {'bedtime_end': s}); ref.invalidate(childSettingsProvider(widget.childId)); } }, child: const Text('نهاية')),
+              TextButton(onPressed: () async { await ref.read(majarraApiClientProvider).updateChildSettings(widget.childId, {'bedtime_start': '', 'bedtime_end': ''}); ref.invalidate(childSettingsProvider(widget.childId)); }, child: const Text('مسح')),
+            ]),
+            const Divider(height: 16),
+            SwitchListTile(title: const Text('السماح بتغيير السرعة', style: TextStyle(fontSize: 13)), value: allowSpeed, onChanged: (v) async { await ref.read(majarraApiClientProvider).updateChildSettings(widget.childId, {'allow_speed_change': v ? 1 : 0}); ref.invalidate(childSettingsProvider(widget.childId)); }),
+            const SizedBox(height: 4),
+            DropdownButtonFormField<String>(initialValue: ['off','on','inherit'].contains(autoplay) ? autoplay : 'inherit', decoration: const InputDecoration(labelText: 'التشغيل التلقائي', border: OutlineInputBorder()), items: const [DropdownMenuItem(value: 'inherit', child: Text('افتراضي حسب العمر')), DropdownMenuItem(value: 'off', child: Text('إيقاف')), DropdownMenuItem(value: 'on', child: Text('تشغيل'))], onChanged: (v) async { if (v==null) return; await ref.read(majarraApiClientProvider).updateChildSettings(widget.childId, {'autoplay_override': v}); ref.invalidate(childSettingsProvider(widget.childId)); }),
+          ]),
+        );
+      },
     );
   }
 }

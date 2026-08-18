@@ -4,10 +4,22 @@ export interface Env {
   DB: D1Database;
   IDENTITY_STATE: DurableObjectNamespace;
   FAMILY_STATE: DurableObjectNamespace;
+  /**
+   * Rate-limit counters, one Durable Object per bucket.
+   *
+   * Optional so a local run or a test without the binding still serves: the
+   * limiter falls back to a per-isolate counter and logs that it did. It must
+   * never be optional in a deployed environment — `wrangler.jsonc` declares it for
+   * both the top level and production.
+   */
+  RATE_LIMITER?: DurableObjectNamespace;
   FAMILY_EVENTS?: Queue;
+  /// Dedicated paid-production queue. Never share its consumer with family events.
+  CONTENT_FACTORY_JOBS?: Queue;
   CACHE: KVNamespace;
   MEDIA_BUCKET: R2Bucket;
   THUMBS_BUCKET: R2Bucket;
+  CREATIONS_BUCKET?: R2Bucket;
   ENVIRONMENT: string;
   API_VERSION: string;
   /// Base URL of the CDN fronting the public asset bucket, e.g.
@@ -23,6 +35,7 @@ export interface Env {
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
   EMAIL_VERIFICATION_URL?: string;
+  PASSWORD_RESET_URL?: string;
   GOOGLE_PLAY_PACKAGE_NAME?: string;
   GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL?: string;
   GOOGLE_PLAY_PRIVATE_KEY?: string;
@@ -55,6 +68,16 @@ export interface Env {
   /// Google Cloud project id, required only by the service-account path: the
   /// synthesize call sends it as `x-goog-user-project` for quota attribution.
   GOOGLE_TTS_PROJECT_ID?: string;
+
+  // --- Content factory / PlayVeo ---
+  // Credentials are Worker secrets and are read only by the paid queue consumer
+  // after immutable-plan, approval, idempotency and budget checks pass.
+  PLAYVEO_API_KEY?: string;
+  PLAYVEO_BASE_URL?: string;
+  /// Comma-separated HTTPS hostnames accepted for provider result downloads.
+  PLAYVEO_DOWNLOAD_HOSTS?: string;
+  /// Comma-separated origins allowed via CORS (e.g. "https://custom.majarra.app,https://preview.example.com").
+  ALLOWED_ORIGINS?: string;
 }
 
 export async function queryAll<T>(db: D1Database, sql: string, params: unknown[] = []): Promise<T[]> {

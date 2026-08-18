@@ -30,7 +30,11 @@ void main() {
     });
 
     test('tolerates boolean completed', () {
-      final e = ProgressEntry.fromJson({'completed': true, 'duration_ms': 10, 'position_ms': 10});
+      final e = ProgressEntry.fromJson({
+        'completed': true,
+        'duration_ms': 10,
+        'position_ms': 10,
+      });
       expect(e.completed, isTrue);
     });
   });
@@ -47,7 +51,11 @@ void main() {
     });
 
     test('zero attempts is zero accuracy, not NaN', () {
-      final m = MasteryEntry.fromJson({'objective_id': 'x', 'attempts': 0, 'correct_attempts': 0});
+      final m = MasteryEntry.fromJson({
+        'objective_id': 'x',
+        'attempts': 0,
+        'correct_attempts': 0,
+      });
       expect(m.accuracy, 0);
     });
   });
@@ -58,34 +66,55 @@ void main() {
       spotlights: const [],
       series: const [
         SeriesItem(
-          id: 's1', title: 'مغامرات', description: '', planetName: 'p',
-          posterAsset: 'a', bannerAsset: 'b', ageMin: 6, ageMax: 8,
-          episodesCount: 1, type: 'series', isFree: true,
+          id: 's1',
+          title: 'مغامرات',
+          description: '',
+          planetName: 'p',
+          posterAsset: 'a',
+          bannerAsset: 'b',
+          ageMin: 6,
+          ageMax: 8,
+          episodesCount: 1,
+          type: 'series',
+          isFree: true,
         ),
       ],
       episodes: const [
         EpisodeItem(
-          id: 'e1', seriesId: 's1', title: 'الحلقة الأولى', description: '',
-          seriesTitle: 'مغامرات', thumbnailAsset: 'a', durationSeconds: 60,
+          id: 'e1',
+          seriesId: 's1',
+          title: 'الحلقة الأولى',
+          description: '',
+          seriesTitle: 'مغامرات',
+          thumbnailAsset: 'a',
+          durationSeconds: 60,
         ),
       ],
       experiences: const [],
       books: const [],
-      source: ContentSource.local,
+      source: ContentSource.bundled,
     );
 
     test('resolves an episode title from the catalogue', () {
       const entry = ProgressEntry(
-        contentType: 'episode', contentId: 'e1',
-        positionMs: 1, durationMs: 2, completed: false, updatedAt: 0,
+        contentType: 'episode',
+        contentId: 'e1',
+        positionMs: 1,
+        durationMs: 2,
+        completed: false,
+        updatedAt: 0,
       );
       expect(resolveContentTitle(catalog, entry), 'الحلقة الأولى');
     });
 
     test('falls back to the id rather than inventing a title', () {
       const entry = ProgressEntry(
-        contentType: 'episode', contentId: 'unknown-id',
-        positionMs: 1, durationMs: 2, completed: false, updatedAt: 0,
+        contentType: 'episode',
+        contentId: 'unknown-id',
+        positionMs: 1,
+        durationMs: 2,
+        completed: false,
+        updatedAt: 0,
       );
       expect(resolveContentTitle(catalog, entry), 'unknown-id');
     });

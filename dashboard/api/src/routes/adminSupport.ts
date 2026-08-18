@@ -24,11 +24,11 @@
 /// entities, and losing either makes one of those two jobs impossible.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { requireAdmin, requirePermission } from '../lib/adminAuth';
-import { actorId, auditStatement } from '../lib/auditLog';
-import { parsePagination } from '../lib/catalogueValidation';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { requireAdmin, requirePermission } from '../lib/adminAuth.ts';
+import { actorId, auditStatement } from '../lib/auditLog.ts';
+import { parsePagination } from '../lib/catalogueValidation.ts';
 import {
   allowedTransitions,
   isTicketAction,

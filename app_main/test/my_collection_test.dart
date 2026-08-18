@@ -14,7 +14,11 @@ final Uint8List tinyPng = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8AAAwAB/AF/AAAAAElFTkSuQmCC',
 );
 
-LocalCreation creation({required String id, String childId = 'child-1', String? uploadedId}) {
+LocalCreation creation({
+  required String id,
+  String childId = 'child-1',
+  String? uploadedId,
+}) {
   return LocalCreation(
     id: id,
     childId: childId,
@@ -52,15 +56,16 @@ void main() {
       expect((await store.list('child-2')).single.id, 'c2');
     });
 
-    test('newest first, and the retention cap is enforced', () async {
+    test('newest first without deleting at the soft limit', () async {
       final store = LocalCreationStore();
-      for (var i = 0; i < LocalCreationStore.retainPerChild + 5; i++) {
+      final count = LocalCreationStore.retainPerChild + 5;
+      for (var i = 0; i < count; i++) {
         await store.persist(creation(id: 'c$i'));
       }
       final listed = await store.list('child-1');
-      // Bounded because this is a cache, not an archive.
-      expect(listed.length, LocalCreationStore.retainPerChild);
-      expect(listed.first.id, 'c${LocalCreationStore.retainPerChild + 4}');
+      // retainPerChild is a warning threshold; only hardCap may discard data.
+      expect(listed.length, count);
+      expect(listed.first.id, 'c${count - 1}');
     });
 
     test('delete removes only the named creation', () async {
@@ -92,24 +97,44 @@ void main() {
       expect(updated.uploadedCreationId, 'remote-1');
     });
 
-    test('a corrupt cache yields an empty gallery rather than a crash', () async {
-      SharedPreferences.setMockInitialValues({
-        'majarra.creations.child-1': 'not json at all',
-      });
+    test(
+      'a corrupt cache yields an empty gallery rather than a crash',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'majarra.creations.child-1': 'not json at all',
+        });
+        final store = LocalCreationStore();
+        expect(await store.list('child-1'), isEmpty);
+      },
+    );
+
+    test('rename accepts short titles and clamps long titles', () async {
       final store = LocalCreationStore();
-      expect(await store.list('child-1'), isEmpty);
+      await store.persist(creation(id: 'c1'));
+
+      await store.rename('child-1', 'c1', 'لوحتي');
+      expect((await store.list('child-1')).single.title, 'لوحتي');
+
+      final longTitle = List.filled(80, 'a').join();
+      await store.rename('child-1', 'c1', longTitle);
+      expect(
+        (await store.list('child-1')).single.title,
+        longTitle.substring(0, 60),
+      );
     });
   });
 
   group('«مجموعتي»', () {
     testWidgets('shows both shelves with honest empty states', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: MyCollectionPage(
-          childId: 'child-1',
-          creationStore: LocalCreationStore(),
-          loadStickers: () async => const [],
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MyCollectionPage(
+            childId: 'child-1',
+            creationStore: LocalCreationStore(),
+            loadStickers: () async => const [],
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('مجموعتي'), findsOneWidget);
@@ -122,13 +147,15 @@ void main() {
       final store = LocalCreationStore();
       await store.persist(creation(id: 'c1'));
 
-      await tester.pumpWidget(MaterialApp(
-        home: MyCollectionPage(
-          childId: 'child-1',
-          creationStore: store,
-          loadStickers: () async => const [],
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MyCollectionPage(
+            childId: 'child-1',
+            creationStore: store,
+            loadStickers: () async => const [],
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(Image), findsOneWidget);
@@ -140,19 +167,21 @@ void main() {
     });
 
     testWidgets('the sticker shelf lists earned rewards', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: MyCollectionPage(
-          childId: 'child-1',
-          creationStore: LocalCreationStore(),
-          loadStickers: () async => [
-            EarnedSticker(
-              rewardKey: 'sticker-shapes-complete',
-              sourceId: 'game-tc-shapes-basic',
-              earnedAt: DateTime(2026, 8, 9),
-            ),
-          ],
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MyCollectionPage(
+            childId: 'child-1',
+            creationStore: LocalCreationStore(),
+            loadStickers: () async => [
+              EarnedSticker(
+                rewardKey: 'sticker-shapes-complete',
+                sourceId: 'game-tc-shapes-basic',
+                earnedAt: DateTime(2026, 8, 9),
+              ),
+            ],
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('ملصقاتي'));
@@ -160,20 +189,25 @@ void main() {
       expect(find.text('sticker-shapes-complete'), findsOneWidget);
     });
 
-    testWidgets('a failing sticker fetch does not break the child\'s own space', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: MyCollectionPage(
-          childId: 'child-1',
-          creationStore: LocalCreationStore(),
-          loadStickers: () async => throw Exception('offline'),
-        ),
-      ));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'a failing sticker fetch does not break the child\'s own space',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MyCollectionPage(
+              childId: 'child-1',
+              creationStore: LocalCreationStore(),
+              loadStickers: () async => throw Exception('offline'),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(tester.takeException(), isNull);
-      await tester.tap(find.text('ملصقاتي'));
-      await tester.pumpAndSettle();
-      expect(find.text('لا ملصقات بعد'), findsOneWidget);
-    });
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.text('ملصقاتي'));
+        await tester.pumpAndSettle();
+        expect(find.text('لا ملصقات بعد'), findsOneWidget);
+      },
+    );
   });
 }

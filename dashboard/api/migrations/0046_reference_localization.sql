@@ -1,0 +1,32 @@
+-- 0046 add EN/FR titles for reference activities (AR already exists)
+-- For Arabic letter content, EN/FR remain RE-AUTHOR REQUIRED (do not copy Arabic)
+UPDATE reference_activities SET title_en = 'Cat', title_fr = 'Chat' WHERE id='ref-cat';
+UPDATE reference_activities SET title_en = 'Lion', title_fr = 'Lion' WHERE id='ref-lion';
+UPDATE reference_activities SET title_en = 'Turtle', title_fr = 'Tortue' WHERE id='ref-turtle';
+UPDATE reference_activities SET title_en = 'Butterfly', title_fr = 'Papillon' WHERE id='ref-butterfly';
+UPDATE reference_activities SET title_en = 'Rabbit', title_fr = 'Lapin' WHERE id='ref-rabbit';
+UPDATE reference_activities SET title_en = 'Elephant', title_fr = 'Éléphant' WHERE id='ref-elephant';
+UPDATE reference_activities SET title_en = 'Owl', title_fr = 'Hibou' WHERE id='ref-owl';
+UPDATE reference_activities SET title_en = 'Horse', title_fr = 'Cheval' WHERE id='ref-horse';
+UPDATE reference_activities SET title_en = 'Rocket', title_fr = 'Fusée' WHERE id='ref-rocket';
+UPDATE reference_activities SET title_en = 'Planet', title_fr = 'Planète' WHERE id='ref-planet';
+UPDATE reference_activities SET title_en = 'Moon', title_fr = 'Lune' WHERE id='ref-moon';
+UPDATE reference_activities SET title_en = 'Astronaut', title_fr = 'Astronaute' WHERE id='ref-astronaut';
+UPDATE reference_activities SET title_en = 'Telescope', title_fr = 'Télescope' WHERE id='ref-telescope';
+UPDATE reference_activities SET title_en = 'Tree', title_fr = 'Arbre' WHERE id='ref-tree';
+UPDATE reference_activities SET title_en = 'Flower', title_fr = 'Fleur' WHERE id='ref-flower';
+UPDATE reference_activities SET title_en = 'Sea', title_fr = 'Mer' WHERE id='ref-sea';
+UPDATE reference_activities SET title_en = 'Mountain', title_fr = 'Montagne' WHERE id='ref-mountain';
+UPDATE reference_activities SET title_en = 'Rainbow', title_fr = 'Arc-en-ciel' WHERE id='ref-rainbow';
+UPDATE reference_activities SET title_en = 'Car', title_fr = 'Voiture' WHERE id='ref-car';
+UPDATE reference_activities SET title_en = 'Train', title_fr = 'Train' WHERE id='ref-train';
+UPDATE reference_activities SET title_en = 'Airplane', title_fr = 'Avion' WHERE id='ref-airplane';
+UPDATE reference_activities SET title_en = 'Boat', title_fr = 'Bateau' WHERE id='ref-boat';
+UPDATE reference_activities SET title_en = 'Apple', title_fr = 'Pomme' WHERE id='ref-apple';
+UPDATE reference_activities SET title_en = 'Book', title_fr = 'Livre' WHERE id='ref-book';
+UPDATE reference_activities SET title_en = 'House', title_fr = 'Maison' WHERE id='ref-house2';
+UPDATE reference_activities SET title_en = 'Lamp', title_fr = 'Lampe' WHERE id='ref-lamp';
+UPDATE reference_activities SET title_en = 'Mosque', title_fr = 'Mosquée' WHERE id='ref-mosque';
+UPDATE reference_activities SET title_en = 'Lantern', title_fr = 'Lanterne' WHERE id='ref-lantern';
+UPDATE reference_activities SET title_en = 'Crescent and Star', title_fr = 'Croissant et étoile' WHERE id='ref-crescent';
+UPDATE reference_activities SET title_en = 'Arabesque', title_fr = 'Arabesque' WHERE id='ref-arabesque';

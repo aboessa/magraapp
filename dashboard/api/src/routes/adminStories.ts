@@ -105,9 +105,10 @@ interface PageLocalization {
   /// asset is still `processing` is present-but-not-ready and must not count.
   narration_ready: boolean;
   /// True only when `timing_cues` holds a non-empty array. Nothing in the codebase
-  /// writes cues with content, so this is expected to be false everywhere — and
-  /// saying that honestly is the point.
+  /// currently authors cues, but the builder must preserve data imported by another
+  /// production path instead of replacing it with an empty array.
   has_timing: boolean;
+  timing_cues: Array<Record<string, unknown>>;
 }
 
 interface PageSummary {
@@ -116,6 +117,7 @@ interface PageSummary {
   layout: string;
   transition: string;
   duration_ms: number | null;
+  dwell_ms: number | null;
   image_asset_id: string | null;
   image_status: string | null;
   image_url: string | null;
@@ -405,8 +407,8 @@ route.get('/stories/:id/workspace', async (c) => {
   applyArtworkUrl(story, 'cover_asset', 'cover_url', baseUrl);
 
   const pageRows = await readRows<Row>(db, `
-    SELECT sp.id, sp.page_number, sp.layout, sp.transition, sp.duration_ms,
-           sp.image_asset_id, sp.background_asset_id, sp.updated_at,
+    SELECT sp.id, sp.page_number, sp.layout, sp.transition, sp.duration_ms, sp.dwell_ms,
+            sp.image_asset_id, sp.background_asset_id, sp.updated_at,
            ca.status AS image_status, ca.r2_key AS image_r2_key,
            ca.visibility AS image_visibility, ca.kind AS image_kind,
            ca.expected_width AS image_width, ca.expected_height AS image_height,
@@ -454,6 +456,7 @@ route.get('/stories/:id/workspace', async (c) => {
       layout: String(row.layout ?? 'full_bleed'),
       transition: String(row.transition ?? 'fade'),
       duration_ms: row.duration_ms === null || row.duration_ms === undefined ? null : num(row, 'duration_ms'),
+      dwell_ms: row.dwell_ms === null || row.dwell_ms === undefined ? null : num(row, 'dwell_ms'),
       image_asset_id: (row.image_asset_id as string | null) ?? null,
       image_status: (row.image_status as string | null) ?? null,
       image_url: (imageRow.image_url as string | null) ?? null,
@@ -486,6 +489,7 @@ route.get('/stories/:id/workspace', async (c) => {
           narration_ready: entry.narration_status === 'ready',
           has_timing: cues.length > 0,
           timing_count: cues.length,
+          timing_cues: cues,
           updated_at: (entry.updated_at as string | null) ?? null,
         };
       }),

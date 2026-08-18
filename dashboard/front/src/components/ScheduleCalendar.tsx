@@ -77,6 +77,15 @@ const MONTHS: Record<Locale, string[]> = {
   en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
 }
 
+const TYPE_COLOR: Record<string,string> = {
+  episode:'#8b5cf6', series:'#6366f1', story:'#ec4899', website_page:'#0ea5e9',
+  blog_post:'#f59e0b', home_module:'#06b6d4', production_requirement:'#10b981',
+  task:'#f97316', rights_expiry:'#ef4444',
+}
+const TYPE_DOT: Record<string,string> = {
+  episode:'●', story:'◆', website_page:'▣', blog_post:'✎', task:'✓',
+}
+
 function EventCard({
   event, locale, onOpen, onMove, busy,
 }: {
@@ -89,10 +98,12 @@ function EventCard({
   const text = copy[locale]
   const movable = event.reschedule.supported
   const conflictLabels = event.conflicts.map((key) => text.conflicts[key] ?? key)
+  const accent = TYPE_COLOR[event.type] ?? '#8b5cf6'
 
   return (
     <li
       className={`sched__event sched__event--${event.date_kind} ${event.conflicts.length ? 'sched__event--conflict' : ''}`}
+      style={{ borderInlineStartColor: accent } as any}
       draggable={movable && !busy}
       onDragStart={(dragEvent) => {
         if (!movable) return
@@ -102,11 +113,20 @@ function EventCard({
       title={movable ? undefined : `${text.noMove}: ${event.reschedule.reason ?? ''}`}
     >
       <button type="button" className="sched__event-open" onClick={() => onOpen(event)}>
-        {movable && <span className="sched__grip" aria-hidden="true"><Icon name="grip" size={13} /></span>}
-        <span className="sched__event-title">{event.title}</span>
+        <span style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:6 }}>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:6, minWidth:0 }}>
+            {movable && <span className="sched__grip" aria-hidden="true"><Icon name="grip" size={11} /></span>}
+            <span className="sched__event-title" style={{ flex:1 }}>{event.title}</span>
+          </span>
+          <span style={{ opacity:.45, flex:'0 0 auto', display:'inline-flex' }}><Icon name="arrow" size={12} /></span>
+        </span>
         <span className="sched__event-meta">
-          <span className="sched__event-type">{event.type}</span>
+          <span className="sched__event-type" style={{ borderColor: `color-mix(in srgb, ${accent} 22%, var(--line))`, background:`color-mix(in srgb, ${accent} 10%, var(--surface-3))`, color: accent }}>
+            <span style={{ width:7, height:7, borderRadius:'50%', background: accent, display:'inline-block' }} />
+            {TYPE_DOT[event.type] ?? ''} {event.type.replace(/_/g,' ')}
+          </span>
           <span className="sched__event-kind">{text.kinds[event.date_kind] ?? event.date_kind}</span>
+          {busy && <span style={{ fontSize:10, color:'var(--primary)', fontWeight:700 }}>{text.moving}</span>}
         </span>
         {event.context && <small className="sched__event-context">{event.context}</small>}
       </button>
@@ -121,7 +141,8 @@ function EventCard({
 
       {movable ? (
         <label className="sched__move">
-          <span>{text.move}</span>
+          <Icon name="calendar" size={12} />
+          <span style={{ whiteSpace:'nowrap' }}>{text.move}</span>
           <input
             type="date"
             defaultValue={event.date.slice(0, 10)}
@@ -133,7 +154,7 @@ function EventCard({
           />
         </label>
       ) : (
-        <p className="sched__locked">{event.reschedule.reason}</p>
+        <p className="sched__locked"><Icon name="clock" size={11} /> {event.reschedule.reason ?? text.noMove}</p>
       )}
     </li>
   )
@@ -208,9 +229,10 @@ export function ScheduleCalendar({
                 if (event && event.reschedule.supported && event.date.slice(0, 10) !== key) onMove(event, key)
               }}
             >
-              <span className="sched__day">
-                {view === 'day' ? `${WEEKDAYS[locale][day.getDay()]} ${day.getDate()} ${MONTHS[locale][day.getMonth()]}` : day.getDate()}
-              </span>
+              <div className="sched__day">
+                <span>{view === 'day' ? `${WEEKDAYS[locale][day.getDay()]} ${day.getDate()} ${MONTHS[locale][day.getMonth()]}` : day.getDate()}</span>
+                {dayEvents.length > 0 && <span className="sched__count">{dayEvents.length}</span>}
+              </div>
               {dayEvents.length > 0 && (
                 <ul className="sched__events">
                   {dayEvents.map((event) => (
@@ -230,8 +252,16 @@ export function ScheduleCalendar({
         })}
       </div>
 
-      {placed === 0 && <p className="data-unavailable">{emptyLabel ?? text.empty}</p>}
-      <p className="sched__hint">{text.moveHint}</p>
+      {placed === 0 && (
+        <div style={{ margin:'6px 12px', padding:'18px 16px', border:'1px dashed var(--line)', borderRadius:12, background:'var(--surface)', textAlign:'center', color:'var(--muted)', fontSize:13 }}>
+          <span style={{ display:'block', margin:'0 auto 8px', opacity:.6 }}><Icon name="calendar" size={20} /></span>
+          {emptyLabel ?? text.empty}
+        </div>
+      )}
+      <div className="sched__hint" style={{ margin:'0 12px 12px' }}>
+        <span style={{ flex:'0 0 auto', marginTop:2 }}><Icon name="clock" size={14} /></span>
+        <span>{text.moveHint}</span>
+      </div>
     </div>
   )
 }

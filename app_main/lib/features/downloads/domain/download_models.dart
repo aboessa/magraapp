@@ -45,6 +45,7 @@ class DownloadItem {
     this.expiresAt,
     this.posterUrl,
     this.quality,
+    this.etag,
   });
 
   final String id;
@@ -73,6 +74,7 @@ class DownloadItem {
   final int? expiresAt;
   final String? posterUrl;
   final String? quality;
+  final String? etag;
 
   double get progress {
     if (totalBytes <= 0) return status == DownloadStatus.ready ? 1 : 0;
@@ -90,6 +92,7 @@ class DownloadItem {
     int? receivedBytes,
     int? totalBytes,
     int? expiresAt,
+    String? etag,
   }) {
     return DownloadItem(
       id: id,
@@ -106,6 +109,7 @@ class DownloadItem {
       expiresAt: expiresAt ?? this.expiresAt,
       posterUrl: posterUrl,
       quality: quality,
+      etag: etag ?? this.etag,
     );
   }
 
@@ -124,6 +128,7 @@ class DownloadItem {
         'expires_at': expiresAt,
         'poster_url': posterUrl,
         'quality': quality,
+        'etag': etag,
       };
 
   factory DownloadItem.fromJson(Map<String, Object?> json) {
@@ -150,6 +155,7 @@ class DownloadItem {
       expiresAt: json['expires_at'] == null ? null : intOf('expires_at'),
       posterUrl: json['poster_url'] as String?,
       quality: json['quality'] as String?,
+      etag: json['etag'] as String?,
     );
   }
 

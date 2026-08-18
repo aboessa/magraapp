@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { PreferencesProvider } from './context/PreferencesContext'
 import { LandingPage } from './pages/LandingPage'
 import { ConstructionPage, MaintenancePage, NotFoundPage } from './pages/StatusPages'
@@ -126,9 +126,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<SiteGate />} />
-          {/* خارج البوابة عن قصد: انظر القاعدة ١ في SiteGate.
-              المسار غير متوقّع لتقليل ضوضاء الفحص الآلي لا كإجراء أمني:
-              انظر lib/adminPath.ts. */}
+          {/* خارج البوابة عن قصد: انظر القاعدة ١ في SiteGate. */}
           <Route
             path={`${ADMIN_BASE}/*`}
             element={
@@ -137,8 +135,6 @@ function App() {
               </Suspense>
             }
           />
-          {/* المسار القديم يُحوّل، فلا تنكسر روابط محفوظة في متصفح الفريق */}
-          <Route path="/admin/*" element={<Navigate to={ADMIN_BASE} replace />} />
           <Route path="*" element={<NotFoundRoute />} />
         </Routes>
       </BrowserRouter>

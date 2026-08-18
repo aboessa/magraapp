@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/auth_guard.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../home/application/home_providers.dart';
@@ -102,6 +103,12 @@ class ChildProfile {
 /// now real; an unauthenticated visit surfaces a sign-in prompt rather than fake
 /// profiles.
 final familyChildrenProvider = FutureProvider<List<ChildProfile>>((ref) async {
+  // Reviewer mode is explicit and memory-only. Real empty/error responses must
+  // never be replaced with a fabricated child profile.
+  if (ref.read(authGuardProvider).isDemo) {
+    return _demoChildren;
+  }
+
   final api = ref.watch(majarraApiClientProvider);
   final rows = await api.fetchChildren();
   return rows
@@ -109,6 +116,17 @@ final familyChildrenProvider = FutureProvider<List<ChildProfile>>((ref) async {
       .where((child) => child.id.isNotEmpty)
       .toList(growable: false);
 });
+
+const _demoChildren = <ChildProfile>[
+  ChildProfile(
+    id: 'demo-child',
+    nickname: 'الضيف',
+    ageTrack: 'preschool',
+    birthMonth: 6,
+    birthYear: 2021,
+    avatarId: 'bear',
+  ),
+];
 
 class ChildSwitcherPage extends ConsumerWidget {
   const ChildSwitcherPage({super.key});
@@ -175,11 +193,13 @@ class ChildSwitcherPage extends ConsumerWidget {
                       return _ChildGrid(
                         children: items,
                         onSelect: (child) {
-                          ref.read(childProvider.notifier).selectChild(
-                            childId: child.id,
-                            ageTrack: child.ageTrack,
-                            displayName: child.displayName,
-                          );
+                          ref
+                              .read(childProvider.notifier)
+                              .selectChild(
+                                childId: child.id,
+                                ageTrack: child.ageTrack,
+                                displayName: child.displayName,
+                              );
                           context.go('/');
                         },
                         onAdd: () => _openCreateSheet(context, ref),
@@ -188,20 +208,21 @@ class ChildSwitcherPage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/parent-pin'),
-                  icon: const Icon(Icons.lock_outline_rounded, size: 18),
-                  label: const Text('منطقة ولي الأمر'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.12),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                if (!ref.read(authGuardProvider).isDemo)
+                  OutlinedButton.icon(
+                    onPressed: () => context.push('/parent-pin'),
+                    icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                    label: const Text('منطقة ولي الأمر'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.12),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -308,12 +329,14 @@ class _CreateChildSheetState extends ConsumerState<_CreateChildSheet> {
     });
 
     try {
-      await ref.read(majarraApiClientProvider).createChild(
-        nickname: nickname,
-        birthMonth: _birthMonth,
-        birthYear: _birthYear,
-        avatarId: _avatarId,
-      );
+      await ref
+          .read(majarraApiClientProvider)
+          .createChild(
+            nickname: nickname,
+            birthMonth: _birthMonth,
+            birthYear: _birthYear,
+            avatarId: _avatarId,
+          );
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (_) {
@@ -491,10 +514,7 @@ class _Dropdown<T> extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 10,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     ),
     child: DropdownButtonHideUnderline(
       child: DropdownButton<T>(
@@ -546,10 +566,7 @@ class _ChildCard extends StatelessWidget {
             borderRadius: radius,
             border: Border.all(color: color.withValues(alpha: 0.22)),
             boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.12),
-                blurRadius: 16,
-              ),
+              BoxShadow(color: color.withValues(alpha: 0.12), blurRadius: 16),
             ],
           ),
           padding: const EdgeInsets.all(16),
@@ -580,10 +597,7 @@ class _ChildCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(6),
@@ -629,9 +643,7 @@ class _AddChildCard extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.14),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
               ),
               child: const Icon(
                 Icons.add_rounded,

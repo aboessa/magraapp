@@ -12,7 +12,7 @@
 /// operator something it does not know.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
+import type { Env } from '../lib/db.ts';
 import { queryAll, queryFirst } from '../lib/db.ts';
 import { requireAdmin, requirePermission } from '../lib/adminAuth.ts';
 import { actorId, auditStatement } from '../lib/auditLog.ts';

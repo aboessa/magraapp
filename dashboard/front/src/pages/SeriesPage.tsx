@@ -71,9 +71,24 @@ type SeriesForm = {
   visual_style: string
   visual_style_id: string
   description_ar: string
+  source_type: string
+  source_reference: string
+  verse_surah: string
+  verse_ayah: string
+  hadith_collection: string
+  hadith_number: string
+  hadith_grade: string
+  religious_reviewer_id: string
+  religious_reviewer_version: string
+  religious_approved_at: string
+  visual_restrictions: string
 }
 
-const emptyForm: SeriesForm = { title_ar: '', planet_id: '', type: 'continuous', track: 'kids', production_level: 'limited_2d', visual_style: '', visual_style_id: '', description_ar: '' }
+const emptyForm: SeriesForm = {
+  title_ar: '', planet_id: '', type: 'continuous', track: 'kids', production_level: 'limited_2d', visual_style: '', visual_style_id: '', description_ar: '',
+  source_type: '', source_reference: '', verse_surah: '', verse_ayah: '', hadith_collection: '', hadith_number: '', hadith_grade: '',
+  religious_reviewer_id: '', religious_reviewer_version: '', religious_approved_at: '', visual_restrictions: '',
+}
 
 /// أسماء الفلاتر هي أسماء معاملات الاستعلام التي يقبلها `GET /admin/series`
 /// بالحرف، فرابط من اللوحة التنفيذية يفتح المجموعة نفسها التي عدّها المقياس.
@@ -219,6 +234,17 @@ export function SeriesPage() {
       visual_style: series.visual_style ?? '',
       visual_style_id: series.visual_style_id ?? '',
       description_ar: series.description_ar ?? '',
+      source_type: (series as unknown as { source_type?: string | null }).source_type ?? '',
+      source_reference: (series as unknown as { source_reference?: string | null }).source_reference ?? '',
+      verse_surah: String((series as unknown as { verse_surah?: number | null }).verse_surah ?? ''),
+      verse_ayah: String((series as unknown as { verse_ayah?: number | null }).verse_ayah ?? ''),
+      hadith_collection: (series as unknown as { hadith_collection?: string | null }).hadith_collection ?? '',
+      hadith_number: (series as unknown as { hadith_number?: string | null }).hadith_number ?? '',
+      hadith_grade: (series as unknown as { hadith_grade?: string | null }).hadith_grade ?? '',
+      religious_reviewer_id: (series as unknown as { religious_reviewer_id?: string | null }).religious_reviewer_id ?? '',
+      religious_reviewer_version: String((series as unknown as { religious_reviewer_version?: number | null }).religious_reviewer_version ?? ''),
+      religious_approved_at: (series as unknown as { religious_approved_at?: string | null }).religious_approved_at ?? '',
+      visual_restrictions: (series as unknown as { visual_restrictions?: string | null }).visual_restrictions ?? '',
     })
     setFormError('')
     setModalOpen(true)
@@ -233,13 +259,52 @@ export function SeriesPage() {
     setSaving(true)
     setFormError('')
     const [ageMin, ageMax] = trackAges[form.track]
-    const payload: SeriesPayload = {
+    const base: SeriesPayload = {
       title_ar: form.title_ar.trim(), planet_id: form.planet_id, type: form.type,
       age_min: ageMin, age_max: ageMax, track_ids: [form.track],
       production_level: form.production_level, visual_style: form.visual_style.trim(),
       visual_style_id: form.visual_style_id || null,
       description_ar: form.description_ar.trim(),
     }
+    // Islamic governance — only include fields that were actually edited or belong to islamic planet
+    const isIslamic = form.planet_id === 'islamic' || form.planet_id === 'iman' || (editing?.planet_id === 'islamic' || editing?.planet_id === 'iman')
+    const islamicPayload: Partial<SeriesPayload> = {}
+    if (isIslamic || form.source_type || editing) {
+      const st = form.source_type.trim()
+      if (st) islamicPayload.source_type = st as SeriesPayload['source_type']
+      else if (editing && form.source_type === '') islamicPayload.source_type = null as unknown as SeriesPayload['source_type']
+      const ref = form.source_reference.trim()
+      if (ref) islamicPayload.source_reference = ref
+      else if (editing && form.source_reference === '') islamicPayload.source_reference = null
+      const vs = form.verse_surah.trim()
+      if (vs) islamicPayload.verse_surah = Number(vs)
+      else if (editing && form.verse_surah === '') islamicPayload.verse_surah = null
+      const va = form.verse_ayah.trim()
+      if (va) islamicPayload.verse_ayah = Number(va)
+      else if (editing && form.verse_ayah === '') islamicPayload.verse_ayah = null
+      const hc = form.hadith_collection.trim()
+      if (hc) islamicPayload.hadith_collection = hc
+      else if (editing && form.hadith_collection === '') islamicPayload.hadith_collection = null
+      const hn = form.hadith_number.trim()
+      if (hn) islamicPayload.hadith_number = hn
+      else if (editing && form.hadith_number === '') islamicPayload.hadith_number = null
+      const hg = form.hadith_grade.trim()
+      if (hg) islamicPayload.hadith_grade = hg
+      else if (editing && form.hadith_grade === '') islamicPayload.hadith_grade = null
+      const rr = form.religious_reviewer_id.trim()
+      if (rr) islamicPayload.religious_reviewer_id = rr
+      else if (editing && form.religious_reviewer_id === '') islamicPayload.religious_reviewer_id = null
+      const rv = form.religious_reviewer_version.trim()
+      if (rv) islamicPayload.religious_reviewer_version = Number(rv)
+      else if (editing && form.religious_reviewer_version === '') islamicPayload.religious_reviewer_version = null
+      const ra = form.religious_approved_at.trim()
+      if (ra) islamicPayload.religious_approved_at = ra
+      else if (editing && form.religious_approved_at === '') islamicPayload.religious_approved_at = null
+      const vr = form.visual_restrictions.trim()
+      if (vr) islamicPayload.visual_restrictions = vr
+      else if (editing && form.visual_restrictions === '') islamicPayload.visual_restrictions = null
+    }
+    const payload: SeriesPayload = { ...base, ...(Object.keys(islamicPayload).length ? islamicPayload as Partial<SeriesPayload> : {}) }
     try {
       if (editing) await api.updateSeries(editing.id, payload)
       else await api.createSeries(payload)
@@ -318,6 +383,23 @@ export function SeriesPage() {
           <div className="form-grid"><label className="field"><span>{text.seriesType}</span><select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as SeriesRecord['type'] })}>{Object.entries(typeLabels[locale]).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label><label className="field"><span>{text.ageTrack}</span><select value={form.track} onChange={(event) => setForm({ ...form, track: event.target.value as AgeTrack })}>{Object.entries(trackLabels[locale]).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label></div>
           <div className="form-grid"><label className="field"><span>{text.productionLevel}</span><select value={form.production_level} onChange={(event) => setForm({ ...form, production_level: event.target.value as SeriesRecord['production_level'] })}>{Object.entries(productionLabels[locale]).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label><label className="field"><span>{text.visualStyle}</span><select value={form.visual_style_id} onChange={(event) => { const selected = visualStyles.find((item) => item.id === event.target.value); setForm({ ...form, visual_style_id: event.target.value, visual_style: selected?.name_en ?? form.visual_style }) }}><option value="">{locale === 'ar' ? 'بدون قالب محدد' : 'No preset'}</option>{visualStyles.map((item) => <option value={item.id} key={item.id}>{locale === 'ar' ? item.name_ar : item.name_en}</option>)}</select></label></div>
           <label className="field"><span>{text.description}</span><textarea rows={4} value={form.description_ar} onChange={(event) => setForm({ ...form, description_ar: event.target.value })} placeholder={text.descriptionPlaceholder} /></label>
+          {(form.planet_id === 'islamic' || form.planet_id === 'iman') && (
+            <fieldset className="field" style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 12, marginTop: 8 }}>
+              <legend style={{ fontSize: 11, fontWeight: 700, padding: '0 6px' }}>الحوكمة الشرعية (للأرشيف الإسلامي فقط — تمنع النشر إن نقصت)</legend>
+              <div className="form-grid" style={{ marginTop: 8 }}>
+                <label className="field"><span>source_type</span><select value={form.source_type} onChange={(e) => setForm({ ...form, source_type: e.target.value })}><option value="">— بلا مصدر (يتم المنع عند النشر) —</option><option value="quran">quran — قرآن</option><option value="hadith">hadith — حديث</option><option value="sira">sira — سيرة</option><option value="adab">adab — آداب</option><option value="general">general — عام</option></select></label>
+                <label className="field"><span>source_reference</span><input value={form.source_reference} onChange={(e) => setForm({ ...form, source_reference: e.target.value })} placeholder="مثال: البخاري — كتاب الإيمان" /></label>
+              </div>
+              {form.source_type === 'quran' && (
+                <div className="form-grid"><label className="field"><span>verse_surah (سورة)</span><input type="number" min={1} max={114} value={form.verse_surah} onChange={(e) => setForm({ ...form, verse_surah: e.target.value })} /></label><label className="field"><span>verse_ayah (آية)</span><input type="number" min={1} value={form.verse_ayah} onChange={(e) => setForm({ ...form, verse_ayah: e.target.value })} /></label></div>
+              )}
+              {form.source_type === 'hadith' && (
+                <div className="form-grid"><label className="field"><span>hadith_collection</span><input value={form.hadith_collection} onChange={(e) => setForm({ ...form, hadith_collection: e.target.value })} placeholder="مثال: bukhari" /></label><label className="field"><span>hadith_number</span><input value={form.hadith_number} onChange={(e) => setForm({ ...form, hadith_number: e.target.value })} /></label><label className="field"><span>hadith_grade</span><input value={form.hadith_grade} onChange={(e) => setForm({ ...form, hadith_grade: e.target.value })} placeholder="صحيح/حسن" /></label></div>
+              )}
+              <div className="form-grid"><label className="field"><span>religious_reviewer_id (المراجع الشرعي)</span><input value={form.religious_reviewer_id} onChange={(e) => setForm({ ...form, religious_reviewer_id: e.target.value })} placeholder="معرّف المراجع" /></label><label className="field"><span>religious_reviewer_version</span><input type="number" min={1} value={form.religious_reviewer_version} onChange={(e) => setForm({ ...form, religious_reviewer_version: e.target.value })} /></label><label className="field"><span>religious_approved_at (ISO)</span><input type="datetime-local" value={form.religious_approved_at} onChange={(e) => setForm({ ...form, religious_approved_at: e.target.value })} /></label></div>
+              <label className="field"><span>visual_restrictions (JSON array)</span><input value={form.visual_restrictions} onChange={(e) => setForm({ ...form, visual_restrictions: e.target.value })} placeholder='مثال: ["no_prophet_depiction"]' /></label>
+            </fieldset>
+          )}
           <div className="form-actions"><button className="button button--ghost" type="button" onClick={() => setModalOpen(false)} disabled={saving}>{text.cancel}</button><button className="button button--primary" type="submit" disabled={saving}>{saving ? text.saving : editing ? text.save : text.createDraft}</button></div>
         </form>
       </Modal>

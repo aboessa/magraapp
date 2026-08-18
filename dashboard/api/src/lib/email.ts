@@ -1,4 +1,4 @@
-import type { Env } from './db'
+import type { Env } from './db.ts'
 
 /**
  * إرسال البريد من الـWorker.

@@ -1,19 +1,15 @@
 /// The screen that hosts whichever engine a pack asks for.
 ///
-/// Deliberately thin: it resolves the engine, handles the states where a game
-/// cannot be played, and offers the cross-engine controls (accessibility, save).
-/// Everything about *how* a game plays belongs to the engine.
-///
-/// Kept free of Riverpod so it can be pumped in a widget test with a pack built
-/// in the test itself. The provider that fetches a pack from the API lives in
-/// `game_providers.dart`.
+/// Deliberately thin: it resolves the engine, handles unavailable states and
+/// offers controls shared by all engines. Everything about how a game plays
+/// belongs to the selected engine.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// RenderRepaintBoundary lives in the rendering layer; material re-exports widgets
-// but not render objects.
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 
+import '../../data/creation_document.dart';
 import '../../data/local_creation_store.dart';
 import '../../engine/block_code_engine.dart';
 import '../../engine/game_engine_registry.dart';
@@ -26,30 +22,20 @@ import '../../engine/trace_color_engine.dart';
 import '../../engine/wave_one_engines.dart';
 import '../../engine/wave_two_engines.dart';
 
-/// Engines this build can run.
-///
-/// One place to register an implementation. Everything listed here has a real
-/// pack-driven implementation; an engine with no implementation must not appear,
-/// because the registry is what the catalogue and the game screen trust.
-///
-/// All twelve canonical engines in `docs/games/engines/` are now present. The list
-/// is asserted against that directory by `test/engine_matrix_test.dart`, so an
-/// engine cannot be documented without being runnable, or registered without being
-/// documented.
 GameEngineRegistry buildDefaultRegistry() => GameEngineRegistry(const [
-      TraceColorEngine(),
-      MemoryFlipEngine(),
-      MatchPairsEngine(),
-      SortBinsEngine(),
-      SequenceOrderEngine(),
-      CountQuantityEngine(),
-      LogicPatternEngine(),
-      WordBuildEngine(),
-      RhythmTapEngine(),
-      BlockCodeEngine(),
-      SimLabEngine(),
-      TimelineMapEngine(),
-    ]);
+  TraceColorEngine(),
+  MemoryFlipEngine(),
+  MatchPairsEngine(),
+  SortBinsEngine(),
+  SequenceOrderEngine(),
+  CountQuantityEngine(),
+  LogicPatternEngine(),
+  WordBuildEngine(),
+  RhythmTapEngine(),
+  BlockCodeEngine(),
+  SimLabEngine(),
+  TimelineMapEngine(),
+]);
 
 class GameScreen extends StatefulWidget {
   const GameScreen({
@@ -57,8 +43,11 @@ class GameScreen extends StatefulWidget {
     required this.controller,
     required this.registry,
     this.isTelevision = false,
-    this.engineVersionSupported = 1,
+    this.requiredEngineVersion = 1,
+    this.supportedEngineVersion = 1,
+    this.supportedPackVersion = 1,
     this.creationStore,
+    this.initialCreation,
     super.key,
   });
 
@@ -66,18 +55,27 @@ class GameScreen extends StatefulWidget {
   final GameSessionController controller;
   final GameEngineRegistry registry;
   final bool isTelevision;
-  final int engineVersionSupported;
+
+  /// Version of the engine implementation this content was authored against.
+  final int requiredEngineVersion;
+
+  /// Highest engine implementation version bundled with this app build.
+  final int supportedEngineVersion;
+
+  /// Highest pack JSON contract version understood by this app build.
+  final int supportedPackVersion;
 
   /// When provided, a save button appears for levels that produce a creation.
   final LocalCreationStore? creationStore;
+
+  /// Editable document restored when continuing a previous creation.
+  final CreationDocument? initialCreation;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
 class _GameScreenState extends State<GameScreen> {
-  /// Wraps the engine so a drawing can be captured without the engine knowing
-  /// anything about saving.
   final GlobalKey _captureKey = GlobalKey();
 
   String? _saveMessage;
@@ -87,7 +85,6 @@ class _GameScreenState extends State<GameScreen> {
   void initState() {
     super.initState();
     widget.controller.addListener(_onChanged);
-    // Fire-and-forget: the intro voice-over should not delay first paint.
     widget.controller.start();
   }
 
@@ -107,24 +104,34 @@ class _GameScreenState extends State<GameScreen> {
       registry: widget.registry,
       engineId: widget.pack.engineId,
       pack: widget.pack,
-      engineVersionSupported: widget.engineVersionSupported,
+      requiredEngineVersion: widget.requiredEngineVersion,
+      supportedEngineVersion: widget.supportedEngineVersion,
+      supportedPackVersion: widget.supportedPackVersion,
       isTelevision: widget.isTelevision,
     );
 
     if (!availability.isAvailable) {
-      return _UnavailableView(reason: availability.reason!, detail: availability.detail);
+      return _UnavailableView(
+        reason: availability.reason!,
+        detail: kDebugMode ? availability.detail : null,
+      );
     }
 
     final engine = widget.registry.resolve(widget.pack.engineId)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('المستوى ${widget.controller.levelIndex + 1} من ${widget.controller.levelCount}'),
+        title: Text(
+          'المستوى ${widget.controller.levelIndex + 1} من '
+          '${widget.controller.levelCount}',
+        ),
         actions: [
           IconButton(
-            icon: Icon(widget.controller.settings.simplifiedMotor
-                ? Icons.accessibility_new
-                : Icons.accessibility),
+            icon: Icon(
+              widget.controller.settings.simplifiedMotor
+                  ? Icons.accessibility_new
+                  : Icons.accessibility,
+            ),
             tooltip: 'وضع حركي مبسّط',
             onPressed: _toggleSimplifiedMotor,
           ),
@@ -144,8 +151,6 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
           Expanded(
-            // RepaintBoundary is what makes the drawing capturable. It wraps only
-            // the engine, so controls and chrome are never part of a saved image.
             child: RepaintBoundary(
               key: _captureKey,
               child: engine.build(context, widget.controller),
@@ -154,7 +159,10 @@ class _GameScreenState extends State<GameScreen> {
           if (_saveMessage != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(_saveMessage!, style: Theme.of(context).textTheme.bodySmall),
+              child: Text(
+                _saveMessage!,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
           _buildFooter(context),
         ],
@@ -171,10 +179,13 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildFooter(BuildContext context) {
     final controller = widget.controller;
-    final showSave = widget.creationStore != null &&
-        (controller.level.mode.isCreation || controller.level.hasColoringStage) &&
+    final showSave =
+        widget.creationStore != null &&
+        (controller.level.mode.isCreation ||
+            controller.level.hasColoringStage) &&
         controller.phase != LevelPhase.drawing;
-    final showNext = controller.phase == LevelPhase.finished &&
+    final showNext =
+        controller.phase == LevelPhase.finished &&
         controller.levelIndex + 1 < controller.levelCount;
 
     if (!showSave && !showNext) return const SizedBox(height: 8);
@@ -188,8 +199,6 @@ class _GameScreenState extends State<GameScreen> {
             OutlinedButton.icon(
               onPressed: _saving ? null : _saveDrawing,
               icon: const Icon(Icons.save_alt),
-              // Explicit and optional. Nothing is saved automatically and nothing
-              // leaves the device here.
               label: const Text('احفظ رسمتي'),
             ),
           if (showSave && showNext) const SizedBox(width: 12),
@@ -213,27 +222,66 @@ class _GameScreenState extends State<GameScreen> {
     if (store == null || boundary is! RenderRepaintBoundary) return;
 
     setState(() => _saving = true);
-    final result = await store.saveFromBoundary(
-      boundary: boundary,
-      childId: widget.controller.childId,
-      gameId: widget.controller.gameId,
-      drawingMode: widget.controller.level.mode.name,
-    );
+    final pendingJson = widget.controller.pendingDocumentJson;
+    final pendingVersion = widget.controller.pendingDocumentVersion;
+    CreationSaveResult result;
+
+    if (pendingJson != null && pendingVersion != null) {
+      result = await store.saveFromBoundaryWithDocument(
+        boundary: boundary,
+        childId: widget.controller.childId,
+        gameId: widget.controller.gameId,
+        drawingMode: widget.controller.level.mode.name,
+        documentJson: pendingJson,
+        documentVersion: pendingVersion,
+      );
+    } else {
+      final regionColors = widget.controller.regionColors;
+      if (regionColors.isNotEmpty) {
+        final document = CreationDocument(
+          version: kCreationDocVersion,
+          mode: widget.controller.level.mode.name,
+          palette: widget.controller.level.coloring?.palette ?? const [],
+          fills: regionColors.entries
+              .map(
+                (entry) => CreationFill(regionId: entry.key, hex: entry.value),
+              )
+              .toList(),
+          backgroundAsset: widget.controller.level.backgroundAsset,
+          templateAsset: widget.controller.level.coloring?.templateAsset,
+          prompt: widget.controller.level.prompt,
+          packId: widget.controller.pack.packId,
+          levelIndex: widget.controller.levelIndex,
+        );
+        result = await store.saveFromBoundaryWithDocument(
+          boundary: boundary,
+          childId: widget.controller.childId,
+          gameId: widget.controller.gameId,
+          drawingMode: widget.controller.level.mode.name,
+          documentJson: document.toJsonString(),
+          documentVersion: document.version,
+        );
+      } else {
+        result = await store.saveFromBoundary(
+          boundary: boundary,
+          childId: widget.controller.childId,
+          gameId: widget.controller.gameId,
+          drawingMode: widget.controller.level.mode.name,
+        );
+      }
+    }
+
     if (!mounted) return;
     setState(() {
       _saving = false;
       _saveMessage = result.isSuccess
           ? 'حُفظت رسمتك على هذا الجهاز.'
-          : 'لم نتمكّن من حفظ الرسمة. (${result.detail ?? result.outcome.name})';
+          : 'لم نتمكّن من حفظ الرسمة. '
+                '(${result.detail ?? result.outcome.name})';
     });
   }
 }
 
-/// Shown when a game cannot be played, with a reason that is true.
-///
-/// Never an error dialog: an unsupported engine is not the child's fault and not
-/// a crash. `docs/games/08-implementation-plan.md` requires the registry to
-/// "يتعامل بأمان مع محرك غير معروف".
 class _UnavailableView extends StatelessWidget {
   const _UnavailableView({required this.reason, this.detail});
 
@@ -244,47 +292,62 @@ class _UnavailableView extends StatelessWidget {
   Widget build(BuildContext context) {
     final (title, body, icon) = switch (reason) {
       GameUnavailableReason.requiresTouch => (
-          'هذه اللعبة تحتاج شاشة لمس',
-          'التتبّع والتلوين يحتاجان إصبعًا أو قلمًا. جرّبها على الجوال أو اللوح.',
-          Icons.touch_app_outlined,
-        ),
-      GameUnavailableReason.unsupportedEngine => (
-          'هذه اللعبة تحتاج تحديث التطبيق',
-          'أضفنا نوعًا جديدًا من الألعاب. حدّث التطبيق لتلعبها.',
-          Icons.system_update_outlined,
-        ),
+        'هذه اللعبة تحتاج شاشة لمس',
+        'التتبّع والتلوين يحتاجان إصبعًا أو قلمًا. '
+            'جرّبها على الجوال أو اللوح.',
+        Icons.touch_app_outlined,
+      ),
+      GameUnavailableReason.unsupportedEngine ||
+      GameUnavailableReason.unsupportedEngineVersion => (
+        'هذه اللعبة تحتاج تحديث التطبيق',
+        'أضفنا نوعًا أو نسخة أحدث من الألعاب. حدّث التطبيق لتلعبها.',
+        Icons.system_update_outlined,
+      ),
       GameUnavailableReason.unsupportedPackVersion => (
-          'هذه اللعبة تحتاج تحديث التطبيق',
-          'نسخة اللعبة أحدث من نسخة التطبيق.',
-          Icons.system_update_outlined,
-        ),
+        'هذه اللعبة تحتاج تحديث التطبيق',
+        'نسخة بيانات اللعبة أحدث من نسخة التطبيق.',
+        Icons.system_update_outlined,
+      ),
       GameUnavailableReason.malformedPack => (
-          'لم نتمكّن من فتح هذه اللعبة',
-          'سنصلحها قريبًا. جرّب لعبة أخرى.',
-          Icons.extension_off_outlined,
-        ),
+        'لم نتمكّن من فتح هذه اللعبة',
+        'سنصلحها قريبًا. جرّب لعبة أخرى.',
+        Icons.extension_off_outlined,
+      ),
     };
 
     return Scaffold(
       appBar: AppBar(),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 64),
-              const SizedBox(height: 16),
-              Text(title, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              Text(body, style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
-              if (detail != null) ...[
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 64),
                 const SizedBox(height: 16),
-                // Useful in development, harmless to a child, and never the
-                // headline.
-                Text(detail!, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  body,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                if (detail != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    detail!,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

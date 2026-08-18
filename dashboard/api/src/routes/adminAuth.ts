@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
-import { consumeRateLimit } from '../lib/rateLimit'
+import type { Env } from '../lib/db.ts'
+import { queryAll, queryFirst } from '../lib/db.ts'
+import { sha256Base64Url } from '../lib/security.ts'
+import { consumeRateLimit } from '../lib/rateLimit.ts'
 import {
   changePassword,
   hasAnyAdminUser,
@@ -11,7 +13,7 @@ import {
   revokeSession,
   validatePassword,
   type AdminSessionUser,
-} from '../lib/adminUsers'
+} from '../lib/adminUsers.ts'
 
 type AppEnv = { Bindings: Env }
 
@@ -142,6 +144,99 @@ adminAuthRoute.post('/logout', async (c) => {
   // الخروج فكرة لا تفشل: رمز غير صالح يعني أن الجلسة زالت أصلًا
   if (token) await revokeSession(c.env.DB, token)
   return c.json({ success: true, data: { signed_out: true } })
+})
+
+/// جلسات المتصل نفسه.
+///
+/// ## الثغرة التي يسدّها هذا
+///
+/// شاشة «جلساتي» كانت تعرض مصفوفة وهمية مكتوبة في الملف، وزرّ السحب فيها بلا
+/// معالج، ونداء «سحب الجلسات الأخرى» يستدعي مسارًا بمعرّف غير صالح (`'me'`)
+/// ويُهمل الخطأ. أي أن جلسة مسروقة لم يكن ممكنًا رؤيتها ولا إبطالها من اللوحة.
+///
+/// المسار الموجود `GET /users/:id/sessions` يطلب صلاحية `manage_permissions`،
+/// وهي صلاحية إدارة الآخرين — فلا تصلح لأن يرى الإداريّ العاديّ جلساته هو.
+/// لذلك هذه النقاط **مقصورة على المتصل**: لا معرّف مستخدم في المسار، فلا مجال
+/// لقراءة جلسات غيره أو إبطالها.
+adminAuthRoute.get('/sessions', async (c) => {
+  const token = bearer(c)
+  if (!token) return c.json({ success: false, error: 'Unauthorized' }, 401)
+  const user = await resolveSession(c.env.DB, token)
+  if (!user) return c.json({ success: false, error: 'Unauthorized' }, 401)
+
+  // الجلسة الحالية تُعرَف بمطابقة بصمة الرمز، فلا يُعاد الرمز الخام أبدًا.
+  const currentHash = await sha256Base64Url(token)
+  const rows = await queryAll<{
+    id: string
+    token_hash: string
+    user_agent: string | null
+    source_ip: string | null
+    created_at: string
+    last_seen_at: string | null
+    expires_at: string
+  }>(c.env.DB, `
+    SELECT id, token_hash, user_agent, source_ip, created_at, last_seen_at, expires_at
+      FROM admin_sessions
+     WHERE user_id = ? AND revoked_at IS NULL AND expires_at > datetime('now')
+     ORDER BY last_seen_at DESC
+  `, [user.id])
+
+  return c.json({
+    success: true,
+    data: rows.map((row) => ({
+      id: row.id,
+      user_agent: row.user_agent,
+      source_ip: row.source_ip,
+      created_at: row.created_at,
+      last_seen_at: row.last_seen_at,
+      expires_at: row.expires_at,
+      current: row.token_hash === currentHash,
+    })),
+  })
+})
+
+/// يسحب جلسة واحدة للمتصل. المعرّف يُقيَّد بـ`user_id` فلا يمكن سحب جلسة غيره.
+adminAuthRoute.delete('/sessions/:id', async (c) => {
+  const token = bearer(c)
+  if (!token) return c.json({ success: false, error: 'Unauthorized' }, 401)
+  const user = await resolveSession(c.env.DB, token)
+  if (!user) return c.json({ success: false, error: 'Unauthorized' }, 401)
+
+  const sessionId = c.req.param('id')
+  const currentHash = await sha256Base64Url(token)
+  const target = await queryFirst<{ id: string; token_hash: string }>(
+    c.env.DB,
+    `SELECT id, token_hash FROM admin_sessions
+      WHERE id = ? AND user_id = ? AND revoked_at IS NULL`,
+    [sessionId, user.id],
+  )
+  if (!target) return c.json({ success: false, error: 'الجلسة غير موجودة' }, 404)
+
+  // سحب الجلسة الحالية من هذه الشاشة يُربك: زرّ الخروج هو مكانه.
+  if (target.token_hash === currentHash) {
+    return c.json({ success: false, error: 'استخدم تسجيل الخروج لإنهاء الجلسة الحالية' }, 400)
+  }
+
+  await c.env.DB.prepare(
+    `UPDATE admin_sessions SET revoked_at = datetime('now') WHERE id = ? AND user_id = ?`,
+  ).bind(sessionId, user.id).run()
+  return c.json({ success: true, data: { id: sessionId, revoked: true } })
+})
+
+/// يسحب كل جلسات المتصل **عدا الحالية**، فلا يُخرج نفسه بالضغط على زرّ مراجعة.
+adminAuthRoute.post('/sessions/revoke-others', async (c) => {
+  const token = bearer(c)
+  if (!token) return c.json({ success: false, error: 'Unauthorized' }, 401)
+  const user = await resolveSession(c.env.DB, token)
+  if (!user) return c.json({ success: false, error: 'Unauthorized' }, 401)
+
+  const currentHash = await sha256Base64Url(token)
+  const result = await c.env.DB.prepare(
+    `UPDATE admin_sessions SET revoked_at = datetime('now')
+      WHERE user_id = ? AND revoked_at IS NULL AND token_hash <> ?`,
+  ).bind(user.id, currentHash).run()
+
+  return c.json({ success: true, data: { revoked: result.meta.changes ?? 0 } })
 })
 
 /// تسجيل الخروج من كل الأجهزة. يحتاج جلسة صالحة.

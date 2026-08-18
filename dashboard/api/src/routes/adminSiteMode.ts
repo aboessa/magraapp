@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
-import { requireAdmin, requirePermission } from '../lib/adminAuth'
-import { actorId, auditStatement } from '../lib/auditLog'
-import type { Env } from '../lib/db'
-import type { AdminSessionUser } from '../lib/adminUsers'
-import { writeSetting } from '../lib/partnerships'
+import { requireAdmin, requirePermission } from '../lib/adminAuth.ts'
+import { actorId, auditStatement } from '../lib/auditLog.ts'
+import type { Env } from '../lib/db.ts'
+import type { AdminSessionUser } from '../lib/adminUsers.ts'
+import { writeSetting } from '../lib/partnerships.ts'
 import {
   DEFAULT_SITE_MODE,
   isSiteMode,
@@ -14,7 +14,7 @@ import {
   readSiteModeSettings,
   SITE_MODES,
   toPublicStatus,
-} from '../lib/siteMode'
+} from '../lib/siteMode.ts'
 
 type AppEnv = { Bindings: Env; Variables: { adminUser?: AdminSessionUser; adminIsLegacyKey?: boolean } }
 

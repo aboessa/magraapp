@@ -18,7 +18,7 @@
 
 ## السلسلة 1 — لونا تكتشف الكلمات
 
-`luna-discovers-words` · `continuous` · 3–5 · `preschool` · `limited_2d` · `family`
+`luna-discovers-words` · `continuous` · 3–5 · `preschool` · `stylized_3d_cinematic` · `family` · visual canon `luna-v2`
 
 | # | الحلقة | الهدف | المدة | مجاني | السكربت |
 |---:|---|---|---:|---|---|

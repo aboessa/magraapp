@@ -8,6 +8,7 @@ import '../../../home/application/home_providers.dart';
 import '../../../home/domain/content_models.dart';
 import '../../../home/presentation/widgets/content_cards.dart';
 import '../../data/watchlist_store.dart';
+import '../widgets/profile_page_content.dart';
 
 /// Saved titles.
 ///
@@ -64,7 +65,7 @@ class _WatchlistPageState extends ConsumerState<WatchlistPage> {
                 onPressed: () => context.pop(),
               ),
               title: const Text(
-                'قائمتي',
+                'المسلسلات المحفوظة',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -74,8 +75,8 @@ class _WatchlistPageState extends ConsumerState<WatchlistPage> {
             ),
             if (savedIds.isNotEmpty)
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+                child: ProfilePageContent(
+                  padding: const EdgeInsetsDirectional.fromSTEB(18, 18, 18, 8),
                   child: Row(
                     children: [
                       Container(
@@ -152,42 +153,52 @@ class _WatchlistPageState extends ConsumerState<WatchlistPage> {
                 ),
               ),
             if (items.isEmpty)
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: _EmptyWatchlist(),
+              const SliverToBoxAdapter(
+                child: ProfilePageContent(
+                  padding: EdgeInsetsDirectional.fromSTEB(32, 64, 32, 64),
+                  child: _EmptyWatchlist(),
+                ),
               )
             else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
-                sliver: SliverGrid(
-                  // Extent-based so tablets fill the row instead of showing the
-                  // phone's two columns stretched wide.
-                  gridDelegate:
-                      const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 200,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.68,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final item = items[index];
-                      return SeriesCard(
-                        item: item,
-                        isTelevision: false,
-                        onPressed: () => context.push('/series/${item.id}'),
+              SliverToBoxAdapter(
+                child: ProfilePageContent(
+                  padding: const EdgeInsetsDirectional.fromSTEB(18, 12, 18, 24),
+                  child: Builder(
+                    builder: (context) {
+                      final textScale = MediaQuery.textScalerOf(
+                        context,
+                      ).scale(1);
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        primary: false,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 200,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: textScale > 1.3 ? 0.58 : 0.68,
+                        ),
+                        itemCount: items.length,
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          return SeriesCard(
+                            item: item,
+                            isTelevision: false,
+                            onPressed: () => context.push('/series/${item.id}'),
+                          );
+                        },
                       );
                     },
-                    childCount: items.length,
                   ),
                 ),
               ),
             if (unresolved > 0)
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                child: ProfilePageContent(
+                  padding: const EdgeInsetsDirectional.fromSTEB(18, 0, 18, 24),
                   child: Text(
-                    'عنصر محفوظ لم يُعد متاحًا في المكتبة: $unresolved',
+                    'مسلسل محفوظ لم يُعد متاحًا في المكتبة: $unresolved',
                     style: TextStyle(
                       color: AppColors.mutedText.withValues(alpha: 0.6),
                       fontSize: 11,
@@ -236,9 +247,7 @@ class _EmptyWatchlist extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: const Color(0xFF111A3A),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
             child: const Icon(
               Icons.bookmark_add_rounded,
@@ -248,7 +257,7 @@ class _EmptyWatchlist extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            'قائمتك فارغة',
+            'لا توجد مسلسلات محفوظة',
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -257,7 +266,7 @@ class _EmptyWatchlist extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'أضف سلاسل بالضغط على «قائمتي» في صفحة التفاصيل',
+            'احفظ مسلسلًا من صفحة تفاصيله ليظهر هنا للطفل الحالي',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.mutedText.withValues(alpha: 0.72),

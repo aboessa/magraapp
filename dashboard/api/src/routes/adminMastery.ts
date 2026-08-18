@@ -1,12 +1,12 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
+import type { Env } from '../lib/db.ts'
 // امتداد `.ts` صريح: مجموعة الاختبارات تعمل بـ`node --experimental-strip-types`
 // الذي يطالب بالامتداد في الاستيراد النسبي ولا يستنتجه كما يفعل مُجمِّع wrangler.
 // بلا الامتداد لا يمكن استيراد هذا المُوجِّه في اختبار إطلاقًا.
 import { queryAll, queryFirst } from '../lib/db.ts'
 import { requireAdmin } from '../lib/adminAuth.ts'
 import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation.ts'
-import type { AdminSessionUser } from '../lib/adminUsers'
+import type { AdminSessionUser } from '../lib/adminUsers.ts'
 
 type AppEnv = { Bindings: Env; Variables: { adminUser?: AdminSessionUser; adminIsLegacyKey?: boolean } }
 const route = new Hono<AppEnv>()

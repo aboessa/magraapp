@@ -55,15 +55,33 @@ class _PlanetsPageState extends State<PlanetsPage> {
     return requestedIndex < 0 ? 0 : requestedIndex;
   }
 
+  void _selectPlanet(int index) {
+    if (index < 0 || index >= widget.catalog.planets.length) return;
+    if (index != _selectedIndex) setState(() => _selectedIndex = index);
+    final planetId = widget.catalog.planets[index].id;
+    context.go(
+      Uri(path: '/planets', queryParameters: {'planetId': planetId}).toString(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (widget.catalog.planets.isEmpty) return const SizedBox.shrink();
+    if (widget.catalog.planets.isEmpty) {
+      return const _NoPlanetsView();
+    }
 
     final padding = context.horizontalPagePadding;
     final selectedPlanet = widget.catalog.planets[_selectedIndex];
     final series = widget.catalog.seriesForPlanet(selectedPlanet);
     final episodes = widget.catalog.episodesForPlanet(selectedPlanet);
-    final experiences = widget.catalog.experiencesForPlanet(selectedPlanet);
+    final experiences = widget.catalog
+        .experiencesForPlanet(selectedPlanet)
+        .where(
+          (item) =>
+              item.isServerBacked &&
+              (!widget.isTelevision || item.supportsTelevision),
+        )
+        .toList(growable: false);
 
     return CinematicBackground(
       child: CustomScrollView(
@@ -84,7 +102,7 @@ class _PlanetsPageState extends State<PlanetsPage> {
               planets: widget.catalog.planets,
               selectedIndex: _selectedIndex,
               isTelevision: widget.isTelevision,
-              onSelected: (index) => setState(() => _selectedIndex = index),
+              onSelected: _selectPlanet,
             ),
           ),
           SliverToBoxAdapter(
@@ -127,9 +145,8 @@ class _PlanetsPageState extends State<PlanetsPage> {
                   padding,
                   0,
                 ),
-                child: _EmptyPlanetSection(
-                  planet: selectedPlanet,
-                  label: 'السلاسل الجديدة تصل قريبًا إلى هذا الكوكب.',
+                child: const _EmptyPlanetSection(
+                  label: 'لا توجد سلاسل منشورة لهذا الكوكب الآن.',
                 ),
               ),
             ),
@@ -146,12 +163,28 @@ class _PlanetsPageState extends State<PlanetsPage> {
                     items: episodes,
                     height: widget.isTelevision ? 247 : 208,
                     horizontalPadding: padding,
-                    itemBuilder: (context, item, index) => EpisodeCard(
+                    itemBuilder: (context, item, index) => _PlanetEpisodeCard(
                       item: item,
                       isTelevision: widget.isTelevision,
-                      onPressed: () => _showUnavailableEpisode(context),
+                      onPressed: item.isPlayable
+                          ? () => context.push('/playback/${item.id}')
+                          : null,
                     ),
                   ),
+                ),
+              ),
+            )
+          else
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  padding,
+                  18,
+                  padding,
+                  0,
+                ),
+                child: const _EmptyPlanetSection(
+                  label: 'لا توجد حلقات منشورة لهذا الكوكب الآن.',
                 ),
               ),
             ),
@@ -163,17 +196,31 @@ class _PlanetsPageState extends State<PlanetsPage> {
                 child: Padding(
                   padding: const EdgeInsets.only(top: 28),
                   child: ContentRail<ExperienceItem>(
-                    title: 'أنشطة ${selectedPlanet.name}',
-                    subtitle: 'ألعاب قصيرة ومناسبة للعمر',
+                    title: 'ألعاب ${selectedPlanet.name}',
+                    subtitle: 'ألعاب منشورة ومناسبة للملف الحالي',
                     items: experiences,
                     height: widget.isTelevision ? 322 : 266,
                     horizontalPadding: padding,
                     itemBuilder: (context, item, index) => ExperienceCard(
                       item: item,
                       isTelevision: widget.isTelevision,
-                      onPressed: () => _showComingSoon(context, item.title),
+                      onPressed: () => context.push('/game/${item.id}'),
                     ),
                   ),
+                ),
+              ),
+            )
+          else
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  padding,
+                  18,
+                  padding,
+                  0,
+                ),
+                child: const _EmptyPlanetSection(
+                  label: 'لا توجد ألعاب منشورة لهذا الكوكب الآن.',
                 ),
               ),
             ),
@@ -184,16 +231,109 @@ class _PlanetsPageState extends State<PlanetsPage> {
       ),
     );
   }
+}
 
-  static void _showUnavailableEpisode(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ستبدأ المشاهدة عند نشر ملف الحلقة.')),
+class _PlanetEpisodeCard extends StatelessWidget {
+  const _PlanetEpisodeCard({
+    required this.item,
+    required this.isTelevision,
+    required this.onPressed,
+  });
+
+  final EpisodeItem item;
+  final bool isTelevision;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (onPressed != null) {
+      return EpisodeCard(
+        item: item,
+        isTelevision: isTelevision,
+        onPressed: onPressed!,
+      );
+    }
+
+    return Semantics(
+      enabled: false,
+      label: '${item.title}، غير متاحة للمشاهدة الآن',
+      child: ExcludeSemantics(
+        child: IgnorePointer(
+          child: Opacity(
+            opacity: 0.55,
+            child: Stack(
+              children: [
+                EpisodeCard(
+                  item: item,
+                  isTelevision: isTelevision,
+                  onPressed: () {},
+                ),
+                PositionedDirectional(
+                  top: 8,
+                  end: 8,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.deepSpace.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Text(
+                        'غير متاحة',
+                        style: TextStyle(color: Colors.white, fontSize: 10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
+}
 
-  static void _showComingSoon(BuildContext context, String title) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$title قيد التجهيز للنسخة القادمة.')),
+class _NoPlanetsView extends StatelessWidget {
+  const _NoPlanetsView();
+
+  @override
+  Widget build(BuildContext context) {
+    return CinematicBackground(
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.public_off_outlined,
+                  color: AppColors.starGold,
+                  size: 58,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'لا توجد كواكب منشورة الآن',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'يمكنك العودة إلى الرئيسية واستكشاف القصص والحلقات المتاحة.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () => context.go('/'),
+                  icon: const Icon(Icons.home_outlined),
+                  label: const Text('العودة للرئيسية'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -282,10 +422,7 @@ class _PlanetChoice extends StatelessWidget {
               offset: const Offset(0, 8),
             ),
             if (selected)
-              BoxShadow(
-                color: accent.withValues(alpha: 0.28),
-                blurRadius: 22,
-              ),
+              BoxShadow(color: accent.withValues(alpha: 0.28), blurRadius: 22),
           ],
         ),
         child: Material(
@@ -448,9 +585,8 @@ class _PlanetIntroduction extends StatelessWidget {
 }
 
 class _EmptyPlanetSection extends StatelessWidget {
-  const _EmptyPlanetSection({required this.planet, required this.label});
+  const _EmptyPlanetSection({required this.label});
 
-  final Planet planet;
   final String label;
 
   @override

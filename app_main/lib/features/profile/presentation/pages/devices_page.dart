@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/auth_guard.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/failures/app_failure.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../home/application/home_providers.dart';
+import '../../../profile/data/billing_status.dart';
+import '../widgets/profile_page_content.dart';
 
 /// A device session on the family account.
 class FamilyDevice {
@@ -110,26 +114,36 @@ class DevicesPage extends ConsumerWidget {
                 const SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.starGold,
+                    child: CircularProgressIndicator(color: AppColors.starGold),
+                  ),
+                ),
+              ],
+              error: (error, _) {
+                final failure = AppFailure.fromException(error);
+                final needsLogin = failure.kind == FailureKind.unauthorized;
+                return [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _DevicesNotice(
+                      icon: needsLogin
+                          ? Icons.lock_outline_rounded
+                          : Icons.cloud_off_outlined,
+                      title: needsLogin
+                          ? 'يتطلب تسجيل الدخول'
+                          : 'تعذّر تحميل الأجهزة',
+                      body: needsLogin
+                          ? 'إدارة الأجهزة مرتبطة بحساب الأسرة. سجّل الدخول لعرض الأجهزة المسجّلة.'
+                          : failure.message,
+                      actionLabel: needsLogin
+                          ? 'تسجيل الدخول'
+                          : 'إعادة المحاولة',
+                      onAction: needsLogin
+                          ? () => context.push('/login')
+                          : () => ref.invalidate(familyDevicesProvider),
                     ),
                   ),
-                ),
-              ],
-              error: (_, __) => [
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _DevicesNotice(
-                    icon: Icons.lock_outline_rounded,
-                    title: 'يتطلب تسجيل الدخول',
-                    body:
-                        'إدارة الأجهزة مرتبطة بحساب الأسرة. سجّل الدخول لعرض '
-                        'الأجهزة المسجّلة وإلغاء وصول أي منها.',
-                    actionLabel: 'تسجيل الدخول',
-                    onAction: () => context.push('/login'),
-                  ),
-                ),
-              ],
+                ];
+              },
               data: (items) {
                 if (items.isEmpty) {
                   return [
@@ -147,23 +161,25 @@ class DevicesPage extends ConsumerWidget {
                 }
 
                 final activeCount = items.where((d) => d.isActive).length;
+                final billing = ref.watch(billingStatusProvider).valueOrNull;
+                final maxDevices = billing?.limits.devices;
                 return [
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
+                    child: ProfilePageContent(
                       child: _DevicesSummary(
                         activeCount: activeCount,
                         total: items.length,
+                        maxDevices: maxDevices,
                       ),
                     ),
                   ),
                   SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final device = items[index];
-                      return Padding(
-                        padding: EdgeInsets.fromLTRB(
+                      return ProfilePageContent(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
                           18,
-                          index == 0 ? 0 : 0,
+                          0,
                           18,
                           10,
                         ),
@@ -224,12 +240,21 @@ class DevicesPage extends ConsumerWidget {
     );
 
     if (confirmed != true || !context.mounted) return;
+    if (!ref.read(authGuardProvider).hasParentAccess) {
+      context.go(
+        Uri(
+          path: '/parent-pin',
+          queryParameters: {'from': '/devices'},
+        ).toString(),
+      );
+      return;
+    }
 
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(majarraApiClientProvider).revokeDevice(
-        deviceId: device.id,
-      );
+      await ref
+          .read(majarraApiClientProvider)
+          .revokeDevice(deviceId: device.id);
       ref.invalidate(familyDevicesProvider);
       messenger.showSnackBar(
         const SnackBar(content: Text('تم إلغاء وصول الجهاز')),
@@ -243,62 +268,88 @@ class DevicesPage extends ConsumerWidget {
 }
 
 class _DevicesSummary extends StatelessWidget {
-  const _DevicesSummary({required this.activeCount, required this.total});
+  const _DevicesSummary({
+    required this.activeCount,
+    required this.total,
+    this.maxDevices,
+  });
 
   final int activeCount;
   final int total;
+  final int? maxDevices;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: const Color(0xFF111A3A).withValues(alpha: 0.72),
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(
-        color: AppColors.electricCyan.withValues(alpha: 0.18),
+  Widget build(BuildContext context) {
+    final isNearLimit = maxDevices != null && activeCount >= maxDevices! - 1;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111A3A).withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: (isNearLimit ? AppColors.starGold : AppColors.electricCyan)
+              .withValues(alpha: 0.18),
+        ),
       ),
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.electricCyan.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(10),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.electricCyan.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.devices_rounded,
+              color: AppColors.electricCyan,
+            ),
           ),
-          child: const Icon(
-            Icons.devices_rounded,
-            color: AppColors.electricCyan,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                activeCount == 1 ? 'جهاز نشط واحد' : '$activeCount أجهزة نشطة',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activeCount == 1
+                      ? 'جهاز نشط واحد'
+                      : '$activeCount أجهزة نشطة',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-              Text(
-                // The per-plan device limit comes from billing, which is not
-                // wired, so the cap is not asserted here.
-                'من إجمالي $total جهاز مسجّل',
-                style: TextStyle(
-                  color: AppColors.mutedText.withValues(alpha: 0.7),
-                  fontSize: 11,
+                Text(
+                  maxDevices != null
+                      ? '$activeCount من $maxDevices أجهزة'
+                      : 'من إجمالي $total جهاز مسجّل',
+                  style: TextStyle(
+                    color: AppColors.mutedText.withValues(alpha: 0.7),
+                    fontSize: 11,
+                  ),
                 ),
-              ),
-            ],
+                if (isNearLimit)
+                  Text(
+                    'اقتربت من الحد الأقصى',
+                    style: TextStyle(
+                      color: AppColors.starGold.withValues(alpha: 0.9),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+          if (isNearLimit)
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: AppColors.starGold,
+              size: 20,
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _DeviceTile extends StatelessWidget {
@@ -314,6 +365,10 @@ class _DeviceTile extends StatelessWidget {
       return Icons.tablet_rounded;
     }
     if (platform.contains('web')) return Icons.language_rounded;
+    if (platform.contains('windows')) return Icons.desktop_windows_rounded;
+    if (platform.contains('mac')) return Icons.laptop_mac_rounded;
+    if (platform.contains('linux')) return Icons.computer_rounded;
+    if (platform.contains('ios')) return Icons.phone_iphone_rounded;
     return Icons.phone_android_rounded;
   }
 
@@ -376,10 +431,7 @@ class _DeviceTile extends StatelessWidget {
           ),
           if (active)
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: AppColors.success.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(6),
@@ -427,43 +479,37 @@ class _DevicesNotice extends StatelessWidget {
   final VoidCallback? onAction;
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Padding
-      (padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: AppColors.mutedText.withValues(alpha: 0.5),
-            size: 46,
+  Widget build(BuildContext context) => ProfilePageContent(
+    padding: const EdgeInsets.all(32),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: AppColors.mutedText.withValues(alpha: 0.5), size: 46),
+        const SizedBox(height: 14),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
           ),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-            ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          body,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppColors.mutedText.withValues(alpha: 0.72),
+            fontSize: 12,
+            height: 1.7,
           ),
-          const SizedBox(height: 8),
-          Text(
-            body,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.mutedText.withValues(alpha: 0.72),
-              fontSize: 12,
-              height: 1.7,
-            ),
-          ),
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 18),
-            FilledButton(onPressed: onAction, child: Text(actionLabel!)),
-          ],
+        ),
+        if (actionLabel != null && onAction != null) ...[
+          const SizedBox(height: 18),
+          FilledButton(onPressed: onAction, child: Text(actionLabel!)),
         ],
-      ),
+      ],
     ),
   );
 }

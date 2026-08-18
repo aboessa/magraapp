@@ -1,16 +1,17 @@
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { callDurable, familyStub } from '../lib/doClient';
-import { cachedPublicJson } from '../lib/publicCache';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { callDurable, familyStub } from '../lib/doClient.ts';
+import { cachedPublicJson } from '../lib/publicCache.ts';
 import {
   isPubliclyServableAsset,
   publicAssetBaseUrl,
   publicAssetUrl,
-} from '../lib/assetUrls';
-import { authenticateParent, createMediaToken, mediaIsConfigured } from '../lib/parentAuth';
+} from '../lib/assetUrls.ts';
+import { authenticateParent, createMediaToken, mediaIsConfigured } from '../lib/parentAuth.ts';
 import { availabilityContext, availabilityFor, availabilityRefusal } from '../lib/requestGeo.ts';
-import type { Plan } from '../lib/familyPolicy';
+import { optionalContentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass.ts';
+import type { Plan } from '../lib/familyPolicy.ts';
 
 type AppEnv = { Bindings: Env };
 type Envelope<T> = { success: boolean; data?: T; error?: string };
@@ -34,6 +35,40 @@ const PAGE_IMAGE_ROLES = ['page', 'illustration', 'cover'] as const;
 /// only ever carries a free sample stored under `sfx/` or `audio-samples/`;
 /// narration itself is reached through `POST /books/:id/audio-sessions`.
 const BOOK_AUDIO_ROLES = ['narration', 'audio'] as const;
+const LANGUAGE_TAG = /^[a-z]{2}(-[a-z]{2})?$/;
+
+function parseObjectArray(value: unknown): Array<Record<string, unknown>> {
+  let parsed: unknown = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(
+    (item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item),
+  );
+}
+
+function parseLanguages(value: unknown, fallback: string): string[] {
+  let parsed: unknown = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      parsed = [];
+    }
+  }
+  const languages = Array.isArray(parsed)
+    ? parsed
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim().toLowerCase())
+      .filter((item) => LANGUAGE_TAG.test(item))
+    : [];
+  return [...new Set([fallback, ...languages])];
+}
 
 /// A private narration asset, resolved for capability-token issuance.
 type NarrationMedia = {
@@ -67,10 +102,17 @@ function unauthorized(reason: 'unconfigured' | 'unauthorized') {
 /// Mirrors `catalogMedia` in routes/episodes.ts, with `kind = 'audio'` and
 /// `visibility = 'private'` required: a public asset must never be handed a
 /// capability token, because that would imply protection the CDN does not apply.
-async function narrationMedia(env: Env, bookId: string, pageId: string | null) {
+async function narrationMedia(
+  env: Env,
+  bookId: string,
+  pageId: string | null,
+  language: string,
+) {
   const roleList = BOOK_AUDIO_ROLES.map((role) => `'${role}'`).join(', ');
   // A page-level narration is linked to `story_page`; a whole-book track to
-  // `book`. Both are queried the same way, only the entity differs.
+  // `book`. Untagged legacy tracks are accepted only for the book's declared
+  // default language, so switching languages never plays a different language
+  // silently.
   const entityType = pageId ? 'story_page' : 'book';
   const entityId = pageId ?? bookId;
 
@@ -86,9 +128,11 @@ async function narrationMedia(env: Env, bookId: string, pageId: string | null) {
       AND ca.visibility = 'private'
       AND ca.r2_key IS NOT NULL AND ca.bucket IS NOT NULL
       AND al.role IN (${roleList})
-    ORDER BY CASE al.role WHEN 'narration' THEN 0 ELSE 1 END, al.sort_order ASC
+      AND (al.language = ? OR (al.language = '' AND b.default_language = ?))
+    ORDER BY CASE WHEN al.language = ? THEN 0 ELSE 1 END,
+      CASE al.role WHEN 'narration' THEN 0 ELSE 1 END, al.sort_order ASC
     LIMIT 1
-  `, [entityId, bookId]);
+  `, [entityId, bookId, language, language, language]);
 }
 
 function pagination(value: string | undefined, fallback: number) {
@@ -192,7 +236,7 @@ booksRoute.get('/', async (c) => {
         ${assetSelect('audio_asset', 'book', 'b.id', BOOK_AUDIO_ROLES, ['audio'])}
       FROM books b
       LEFT JOIN series s ON s.id = b.series_id
-      WHERE b.status = 'published'`;
+      WHERE b.status = 'published'${optionalContentClassPredicate('s', shouldServeTestFixtures(c.env))}`;
     const params: unknown[] = [];
 
     if (type) {
@@ -227,7 +271,9 @@ booksRoute.get('/:id', async (c) => {
   const id = c.req.param('id');
   const exists = await queryFirst<{ id: string }>(
     c.env.DB,
-    `SELECT id FROM books WHERE id = ? AND status = 'published'`,
+    `SELECT b.id FROM books b
+       LEFT JOIN series s ON s.id = b.series_id
+      WHERE b.id = ? AND b.status = 'published'${optionalContentClassPredicate('s', shouldServeTestFixtures(c.env))}`,
     [id],
   );
   if (!exists) return c.json({ success: false, error: 'Book not found' }, 404);
@@ -277,47 +323,145 @@ booksRoute.get('/:id/pages', async (c) => {
 
   // Guard the language input: it is bound as a parameter, but keeping it to a
   // short token also keeps the cache key bounded.
-  if (!/^[a-z]{2}(-[a-z]{2})?$/.test(language)) {
+  if (!LANGUAGE_TAG.test(language)) {
     return c.json({ success: false, error: 'Invalid language tag' }, 400);
   }
 
   const exists = await queryFirst<{ id: string }>(
     c.env.DB,
-    `SELECT id FROM books WHERE id = ? AND status = 'published'`,
+    `SELECT b.id FROM books b
+       LEFT JOIN series s ON s.id = b.series_id
+      WHERE b.id = ? AND b.status = 'published'${optionalContentClassPredicate('s', shouldServeTestFixtures(c.env))}`,
     [id],
   );
   if (!exists) return c.json({ success: false, error: 'Book not found' }, 404);
 
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
+    const book = await queryFirst<Record<string, unknown>>(
+      c.env.DB,
+      `SELECT default_language, languages FROM books WHERE id = ? AND status = 'published'`,
+      [id],
+    );
+    const defaultLanguage = typeof book?.default_language === 'string'
+      ? book.default_language.toLowerCase()
+      : 'ar';
+    const declaredLanguages = parseLanguages(book?.languages, defaultLanguage);
+    const roleList = BOOK_AUDIO_ROLES.map((role) => `'${role}'`).join(', ');
+
     const pages = await queryAll<Record<string, unknown>>(
       c.env.DB,
-      `SELECT sp.id, sp.page_number, sp.layout, sp.transition, sp.duration_ms,
-          spl.body_text, spl.alt_text,
+      `SELECT sp.id, sp.page_number, sp.layout, sp.transition, sp.duration_ms, sp.dwell_ms,
+          spl.body_text, spl.alt_text, spl.timing_cues,
+          EXISTS(
+            SELECT 1
+              FROM asset_links al
+              JOIN content_assets aa ON aa.id = al.asset_id
+             WHERE al.entity_type = 'story_page' AND al.entity_id = sp.id
+               AND al.role IN (${roleList})
+               AND (al.language = ? OR (al.language = '' AND ? = ?))
+               AND aa.status = 'ready' AND aa.kind = 'audio'
+               AND aa.visibility = 'private' AND aa.r2_key IS NOT NULL
+               AND aa.bucket IS NOT NULL
+          ) AS protected_audio_available,
           ${assetSelect('page_asset', 'story_page', 'sp.id', PAGE_IMAGE_ROLES, ['image'])}
         FROM story_pages sp
         LEFT JOIN story_page_localizations spl
           ON spl.page_id = sp.id AND spl.language = ?
         WHERE sp.story_id = ?
         ORDER BY sp.page_number ASC`,
-      [language, id],
+      [language, language, defaultLanguage, language, id],
+    );
+
+    const languageRows = await queryAll<Record<string, unknown>>(
+      c.env.DB,
+      `SELECT spl.page_id, spl.language, spl.body_text,
+          EXISTS(
+            SELECT 1
+              FROM asset_links al
+              JOIN content_assets aa ON aa.id = al.asset_id
+             WHERE al.entity_type = 'story_page' AND al.entity_id = spl.page_id
+               AND al.role IN (${roleList})
+               AND (al.language = spl.language OR (al.language = '' AND spl.language = ?))
+               AND aa.status = 'ready' AND aa.kind = 'audio'
+               AND aa.visibility = 'private' AND aa.r2_key IS NOT NULL
+               AND aa.bucket IS NOT NULL
+          ) AS narration_ready
+         FROM story_page_localizations spl
+         JOIN story_pages sp ON sp.id = spl.page_id
+        WHERE sp.story_id = ?`,
+      [defaultLanguage, id],
     );
 
     const base = publicAssetBaseUrl(c.env);
-    for (const row of pages) applyAssetUrl(row, 'page_asset', 'image_url', base);
+    for (const row of pages) {
+      applyAssetUrl(row, 'page_asset', 'image_url', base);
+      const audioAvailable = Number(row.protected_audio_available) === 1;
+      row.timing_cues = parseObjectArray(row.timing_cues);
+      row.bubbles = [];
+      row.translation_available = typeof row.body_text === 'string' && row.body_text.trim().length > 0;
+      row.audio_available = audioAvailable;
+      row.audio_access = audioAvailable ? 'protected' : 'unavailable';
+      row.audio_url = null;
+      row.tracks = audioAvailable
+        ? [{ language, kind: 'narration', access: 'protected', url: null }]
+        : [];
+      delete row.protected_audio_available;
+    }
 
+    const textPages = new Map<string, Set<string>>();
+    const narrationPages = new Map<string, Set<string>>();
+    for (const row of languageRows) {
+      const code = typeof row.language === 'string' ? row.language.toLowerCase() : '';
+      if (!LANGUAGE_TAG.test(code)) continue;
+      const pageId = String(row.page_id);
+      if (typeof row.body_text === 'string' && row.body_text.trim()) {
+        if (!textPages.has(code)) textPages.set(code, new Set());
+        textPages.get(code)!.add(pageId);
+      }
+      if (Number(row.narration_ready) === 1) {
+        if (!narrationPages.has(code)) narrationPages.set(code, new Set());
+        narrationPages.get(code)!.add(pageId);
+      }
+    }
+
+    const languageCodes = new Set<string>([
+      ...declaredLanguages,
+      ...textPages.keys(),
+      ...narrationPages.keys(),
+      language,
+    ]);
+    const languages = [...languageCodes].map((code) => {
+      const translatedPages = textPages.get(code)?.size ?? 0;
+      const narratedPages = narrationPages.get(code)?.size ?? 0;
+      return {
+        code,
+        declared: declaredLanguages.includes(code),
+        translated_pages: translatedPages,
+        narrated_pages: narratedPages,
+        total_pages: pages.length,
+        translation_available: translatedPages > 0,
+        translation_complete: pages.length > 0 && translatedPages >= pages.length,
+      };
+    });
+    const requestedLanguage = languages.find((item) => item.code === language);
     const withContent = pages.filter(
       (row) => row.body_text !== null || row.image_url !== null,
     ).length;
+    const withAudio = pages.filter((row) => row.audio_available === true).length;
 
     return {
       success: true,
       data: pages,
       meta: {
         language,
+        default_language: defaultLanguage,
+        languages,
+        translation_available: requestedLanguage?.translation_available ?? false,
+        translation_complete: requestedLanguage?.translation_complete ?? false,
         total: pages.length,
-        // Surfaced so the client and the CMS can both see how much of the story
-        // is actually publishable, rather than inferring it from a page count.
         renderable: withContent,
+        with_audio: withAudio,
+        with_protected_audio: withAudio,
       },
     };
   });
@@ -349,8 +493,12 @@ booksRoute.post('/:id/audio-sessions', async (c) => {
   if (!childId) return c.json({ success: false, error: 'child_id required' }, 400);
   // Optional: a per-page narration rather than a whole-book track.
   const pageId = typeof body?.page_id === 'string' && body.page_id ? body.page_id : null;
+  const language = typeof body?.language === 'string' ? body.language.trim().toLowerCase() : 'ar';
+  if (!LANGUAGE_TAG.test(language)) {
+    return c.json({ success: false, error: 'Invalid language tag' }, 400);
+  }
 
-  const media = await narrationMedia(c.env, c.req.param('id'), pageId);
+  const media = await narrationMedia(c.env, c.req.param('id'), pageId, language);
   if (!media) {
     return c.json({ success: false, error: 'Protected narration is unavailable' }, 404);
   }

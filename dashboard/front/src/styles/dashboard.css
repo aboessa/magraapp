@@ -1,14 +1,14 @@
 :root {
-  --page: #090d1f;
-  --sidebar: #0b1025;
-  --surface: #10162f;
-  --surface-2: #151d3a;
-  --surface-3: #1b2548;
-  --line: rgba(141, 160, 215, 0.14);
-  --line-strong: rgba(141, 160, 215, 0.24);
-  --text: #f5f7ff;
-  --text-soft: #a9b2d0;
-  --muted: #707c9f;
+  --page: #0A0A0A;
+  --sidebar: #0A0A0A;
+  --surface: #171717;
+  --surface-2: #1E1E1E;
+  --surface-3: #262626;
+  --line: #262626;
+  --line-strong: #404040;
+  --text: #FAFAFA;
+  --text-soft: #D4D4D4;
+  --muted: #A1A1A1;
   --primary: #5679f2;
   --primary-strong: #7592ff;
   /* خلفية العناصر الصلبة التي تحمل نصًّا أبيض.
@@ -27,7 +27,7 @@
   --success: #22b878;
   --warning: #f5a524;
   --danger: #f05d77;
-  --shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+  --shadow: none;
   --sidebar-width: 280px;
   --topbar-height: 64px;
 }
@@ -112,7 +112,7 @@ textarea {
 .button--primary {
   color: #fff;
   background: linear-gradient(135deg, var(--primary), #6a3df2);
-  box-shadow: 0 10px 28px rgba(86, 121, 242, 0.25);
+  box-shadow: none;
 }
 
 .button--secondary {
@@ -125,6 +125,17 @@ textarea {
   color: var(--text-soft);
   border-color: var(--line);
   background: transparent;
+}
+
+/* الإجراء الهادم. كان `button--danger` مستعملًا في SeoOperationsPage.tsx بلا
+   تعريف، فيظهر زرّ الحذف بهيئة زرّ محايد — أخطر حالة في التصميم: الإجراء الذي
+   لا رجعة فيه يبدو كالإجراء الآمن. اللون صريح لا `--danger` لأن التوكن يخدم
+   النصّ على سطح فاتح، وهنا النصّ أبيض على مِلء اللون. */
+.button--danger {
+  color: #fff;
+  border-color: #b91c1c;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  box-shadow: 0 10px 28px rgba(185, 28, 28, 0.24);
 }
 
 .icon-button {
@@ -1177,7 +1188,7 @@ body.modal-open {
   border: 1px solid var(--line-strong);
   border-radius: 17px;
   background: var(--surface);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+  box-shadow: none;
   overflow: auto;
   animation: modal-in 0.22s ease both;
 }
@@ -1503,7 +1514,7 @@ body.modal-open {
     width: min(var(--sidebar-width), 88vw);
     transform: translateX(110%);
     transition: transform 0.24s ease;
-    box-shadow: -25px 0 60px rgba(0, 0, 0, 0.28);
+    box-shadow: none;
   }
   [dir='ltr'] .sidebar { transform: translateX(-110%); }
   .sidebar--open { transform: none !important; }
@@ -1572,21 +1583,21 @@ body.modal-open {
   }
 }
 
-/* Admin dashboard reference alignment */
+/* Admin dashboard reference alignment — neutral Resend-style (R=G=B) */
 :root {
-  --page: #020617;
-  --sidebar: #050b20;
-  --surface: #091431;
-  --surface-2: #0b1738;
-  --surface-3: #0f1d42;
-  --line: #1d2e5e;
-  --line-strong: #243b75;
-  --text: #f7f9ff;
-  --text-soft: #e2e8f0;
-  --muted: #93a4c8;
+  --page: #0A0A0A;
+  --sidebar: #0A0A0A;
+  --surface: #171717;
+  --surface-2: #1E1E1E;
+  --surface-3: #262626;
+  --line: #262626;
+  --line-strong: #404040;
+  --text: #FAFAFA;
+  --text-soft: #D4D4D4;
+  --muted: #A1A1A1;
   --primary: #5679f2;
   --primary-strong: #78a5ff;
-  --cyan: #78a5ff;
+  --cyan: #00D6F5;
   --yellow: #ffd34d;
   --purple: #6a3df2;
   /* Text-only variant stays light in this block.
@@ -1601,7 +1612,7 @@ body.modal-open {
   --pink-text: #f472b6;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  --shadow: none;
   --sidebar-width: 280px;
   --topbar-height: 64px;
 }
@@ -1641,13 +1652,13 @@ body.modal-open {
 }
 
 .admin-shell .button--primary {
-  color: #10162f;
-  border-color: rgba(255, 211, 77, 0.4);
-  background: linear-gradient(90deg, #ffd34d, #ff9f1c);
-  box-shadow: 0 8px 20px rgba(255, 211, 77, 0.18);
+  color: #0A0A0A;
+  border-color: #FAFAFA;
+  background: #FAFAFA;
+  box-shadow: none;
 }
 
-.admin-shell .button--primary:hover:not(:disabled) { box-shadow: 0 12px 28px rgba(255, 211, 77, 0.28); }
+.admin-shell .button--primary:hover:not(:disabled) { background: #E4E4E7; border-color: #E4E4E7; box-shadow: none; }
 .admin-shell .button--secondary,
 .admin-shell .button--ghost { color: var(--muted); border-color: var(--line-strong); background: var(--surface-3); }
 .admin-shell .button--secondary:hover,
@@ -1665,9 +1676,9 @@ body.modal-open {
 .sidebar {
   width: var(--sidebar-width);
   padding: 0;
-  color: #f7f9ff;
-  border-inline-end: 1px solid #243b75;
-  background: #050b20;
+  color: #FAFAFA;
+  border-inline-end: 1px solid var(--line);
+  background: var(--sidebar);
   overflow: hidden;
 }
 
@@ -1676,7 +1687,7 @@ body.modal-open {
   height: var(--topbar-height);
   padding: 0 20px;
   gap: 12px;
-  border-color: #243b75;
+  border-color: var(--line);
 }
 
 .sidebar__logo {
@@ -1685,9 +1696,9 @@ body.modal-open {
   height: 34px;
   flex: 0 0 auto;
   overflow: hidden;
-  border: 1px solid #243b75;
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: #070d20;
+  background: #171717;
 }
 
 .sidebar__logo img {
@@ -1699,9 +1710,9 @@ body.modal-open {
   transform: translate(-50%, -50%);
 }
 
-.sidebar__brand strong { color: #f7f9ff; font-size: 16px; font-weight: 700; letter-spacing: 0; }
-.sidebar__brand small { margin-top: -4px; color: #78a5ff; font-size: 9px; font-weight: 500; letter-spacing: 0.12em; }
-.sidebar__close { margin-inline-start: auto; color: #93a4c8 !important; border-color: #243b75 !important; background: #0b1738 !important; }
+.sidebar__brand strong { color: #FAFAFA; font-size: 16px; font-weight: 700; letter-spacing: 0; }
+.sidebar__brand small { margin-top: -4px; color: var(--muted); font-size: 9px; font-weight: 500; letter-spacing: 0.12em; }
+.sidebar__close { margin-inline-start: auto; color: var(--muted) !important; border-color: var(--line) !important; background: var(--surface) !important; }
 .sidebar__nav { padding: 16px 12px; overflow-y: auto; }
 .nav-group + .nav-group { margin-top: 22px; }
 .nav-group__label { padding: 0 12px 8px; color: #6b7fa8; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -1709,28 +1720,28 @@ body.modal-open {
   min-height: 40px;
   margin-bottom: 2px;
   padding: 8px 12px;
-  color: #93a4c8;
+  color: var(--muted);
   border-radius: 10px;
   font-size: 11px;
   font-weight: 500;
 }
-.nav-link:hover { color: #f7f9ff; background: #0b1738; }
+.nav-link:hover { color: #FAFAFA; background: var(--surface); }
 .nav-link--active,
 :root[data-theme='light'] .nav-link--active {
-  color: #78a5ff;
-  border-color: rgba(120, 165, 255, 0.18);
-  background: linear-gradient(90deg, rgba(86, 121, 242, 0.18), rgba(86, 121, 242, 0.08));
+  color: #FAFAFA;
+  border-color: var(--line-strong);
+  background: var(--surface-3);
   box-shadow: none;
 }
 .nav-link--soon { cursor: default; }
-.nav-link--soon:hover { color: #93a4c8; background: transparent; }
-.nav-link--soon small { margin-inline-start: auto; padding: 2px 6px; color: #8da5d6; border: 1px solid rgba(120, 165, 255, 0.13); border-radius: 999px; font-size: 7px; white-space: nowrap; }
-.sidebar__footer { padding: 14px 12px 16px; border-color: #243b75; }
+.nav-link--soon:hover { color: var(--muted); background: transparent; }
+.nav-link--soon small { margin-inline-start: auto; padding: 2px 6px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; font-size: 7px; white-space: nowrap; }
+.sidebar__footer { padding: 14px 12px 16px; border-color: var(--line); }
 .sidebar-note { border-color: rgba(255, 211, 77, 0.14); background: rgba(255, 211, 77, 0.055); }
-.sidebar-note strong { color: #f7f9ff; }
+.sidebar-note strong { color: #FAFAFA; }
 .sidebar-note small,
-.back-link { color: #93a4c8; }
-.back-link:hover { color: #f7f9ff; }
+.back-link { color: var(--muted); }
+.back-link:hover { color: #FAFAFA; }
 
 .admin-workspace { margin-inline-start: var(--sidebar-width); }
 .topbar {
@@ -1752,7 +1763,7 @@ body.modal-open {
   border-radius: 999px;
   background: var(--surface-2);
 }
-:root:not([data-theme='light']) .global-search { background: #0b1738; }
+:root:not([data-theme='light']) .global-search { background: var(--surface); }
 .global-search input { font-size: 12px; }
 .language-toggle { display: flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface-2); }
 .language-toggle button { height: 32px; padding: 0 13px; color: var(--muted); border: 0; border-radius: 999px; background: transparent; font-size: 10px; font-weight: 600; }
@@ -1767,12 +1778,20 @@ body.modal-open {
 .page-intro h2 { font-size: 22px; }
 .page-intro p { font-size: 11px; }
 .eyebrow,
-.panel__kicker { color: var(--primary-strong); font-size: 10px; }
+.panel__kicker { color: var(--primary-strong); font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .stats-grid { gap: 14px; }
-.stat-card { min-height: 142px; padding: 18px; border-color: var(--line-strong); border-radius: 16px; background: var(--surface-2); box-shadow: none; }
-.stat-card__top { font-size: 11px; }
-.stat-card__value { margin-top: 12px; font-size: 22px; }
-.stat-card p { font-size: 10px; }
+.stat-card {
+  min-height: 138px; padding: 18px 18px 16px;
+  border-color: var(--line); border-radius: 16px;
+  background: var(--surface);
+  box-shadow: none;
+  transition: transform .16s ease, border-color .16s ease;
+}
+.stat-card:hover { transform: translateY(-1px); border-color: var(--line-strong); box-shadow: none; }
+.stat-card__top { font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+.stat-card__icon { width: 38px; height: 38px; border-radius: 11px; }
+.stat-card__value { margin-top: 14px; font-size: 26px; font-weight: 800; letter-spacing: -.04em; }
+.stat-card p { font-size: 11px; line-height: 1.5; }
 .panel { border-color: var(--line-strong); border-radius: 16px; background: var(--surface-2); box-shadow: none; }
 .panel__header { min-height: 62px; padding: 14px 18px; border-color: var(--line-strong); }
 .panel__header h3 { font-size: 13px; }
@@ -2169,7 +2188,7 @@ body.modal-open {
   border: 1px solid var(--line-strong);
   border-radius: 14px;
   background: var(--surface-3);
-  box-shadow: 0 18px 44px rgb(0 0 0 / 0.28);
+  box-shadow: none; /* was shadow on black — border separates */;
 }
 
 .story-canvas__page img { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -2662,7 +2681,7 @@ body.modal-open {
   overflow: hidden;
   border: 1px solid var(--line);
   background: var(--surface);
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.32);
+  box-shadow: none;
 }
 
 /* ---------- لوح الهوية ---------- */
@@ -2857,7 +2876,7 @@ body.modal-open {
   cursor: pointer;
   color: #fff;
   background: linear-gradient(135deg, var(--primary), #6a3df2);
-  box-shadow: 0 14px 32px rgba(86, 121, 242, 0.26);
+  box-shadow: none;
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 700;
@@ -2865,7 +2884,7 @@ body.modal-open {
 }
 .login__submit:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 18px 40px rgba(86, 121, 242, 0.34);
+  box-shadow: none;
 }
 .login__submit:disabled { opacity: 0.62; cursor: default; }
 
@@ -2944,56 +2963,430 @@ body.modal-open {
   .login__spinner { animation-duration: 2s; }
 }
 
-/* ---------- إعدادات وضع الموقع ---------- */
-.mode-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+/* =========================================================================
+   وضع الموقع العام — /admin/website/mode
+   -------------------------------------------------------------------------
+   هذه الشاشة قرارٌ واحد لا قائمة بيانات: ماذا يرى زائر majarra.app الآن. لذا
+   بُنيت على ثلاث طبقات بصرية بترتيب القراءة:
+
+     ١. لوحة الحالة (mode-hero): الحقيقة المنشورة كما يحسبها الخادم — لا مسوّدة
+        النموذج. كان البانر السابق يقرأ من حالة الراديو، فبمجرّد لمس بطاقة تتغيّر
+        عبارة «الوضع الحالي» قبل الحفظ: الشاشة تكذب على مسؤولها.
+     ٢. الاختيار (mode-grid): ثلاث بطاقات، لكلٍّ لونها وأثرها المكتوب.
+     ٣. الحقول ثم شريط الإجراء اللاصق: لا حفظ إلا عند وجود فرق فعلي.
+
+   سلَّم اللون دلاليّ لا تزييني: أخضر = مباشر، كهرماني = تحت الإنشاء (حالة
+   انتقالية معلنة)، أحمر = تحت الصيانة (انقطاع متعمَّد بـ503). فيُقرأ الخطر قبل
+   قراءة النص. تُمرَّر الألوان عبر data-mode فتشترك فيها اللوحة والبطاقة والشارة
+   بدل تكرار ثلاثة أزواج من القواعد لكل عنصر.
+
+   `--mode-ink` منفصل عن `--mode-accent` لأن الأول للنصّ الصغير والثاني للسطح
+   الصلب والحدود. الكهرماني #f59e0b على أبيض يعطي 2.15:1 — تحت العتبة حتى للنصّ
+   الكبير — فلا يُستخدم للنصّ أبدًا، وله بديل داكن في السمة الفاتحة.
+   ========================================================================= */
+
+.mode-page { width: min(940px, 100%); margin-inline: auto; }
+
+/* ألوان الوضع: مصدر واحد يورَث */
+.mode-page [data-mode] {
+  --mode-accent: var(--muted);
+  --mode-ink: var(--text-soft);
+  --mode-wash: rgba(147, 164, 200, 0.1);
+  --mode-edge: var(--line-strong);
+}
+.mode-page [data-mode='live'] {
+  --mode-accent: #22b878; --mode-ink: #34d399;
+  --mode-wash: rgba(34, 184, 120, 0.12); --mode-edge: rgba(34, 184, 120, 0.55);
+}
+.mode-page [data-mode='construction'] {
+  --mode-accent: #f59e0b; --mode-ink: #fbbf24;
+  --mode-wash: rgba(245, 158, 11, 0.12); --mode-edge: rgba(245, 158, 11, 0.5);
+}
+.mode-page [data-mode='maintenance'] {
+  --mode-accent: #ef4444; --mode-ink: #f87171;
+  --mode-wash: rgba(239, 68, 68, 0.12); --mode-edge: rgba(239, 68, 68, 0.5);
+}
+/* قياس على سطح أبيض: 4.9:1 و7.6:1 و6.4:1 بالترتيب */
+:root[data-theme='light'] .mode-page [data-mode='live'] { --mode-ink: #0f7a4f; }
+:root[data-theme='light'] .mode-page [data-mode='construction'] { --mode-ink: #92400e; }
+:root[data-theme='light'] .mode-page [data-mode='maintenance'] { --mode-ink: #b91c1c; }
+
+/* ---------- لوحة الحالة ---------- */
+.mode-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border-color: var(--mode-edge);
+}
+/* هالة بلون الوضع: تعريف الحالة من طرف العين قبل قراءة أي حرف */
+.mode-hero::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: -60px;
+  top: -70px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: var(--mode-accent);
+  opacity: 0.14;
+  filter: blur(38px);
+  pointer-events: none;
+}
+.mode-hero__row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+}
+.mode-hero__state { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.mode-hero__icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  color: #fff;
+  border-radius: 16px;
+  background: var(--mode-accent);
+  box-shadow: 0 10px 26px var(--mode-wash);
+}
+.mode-hero__text { display: grid; gap: 4px; min-width: 0; }
+.mode-hero__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+/* اسم الوضع بلون النصّ لا بلون الوضع: العنوان الكبير بالكهرماني يسقط تحت عتبة
+   التبايُن في السمة الفاتحة، واللون محمولٌ أصلًا في النقطة وفي أيقونة اللوحة. */
+.mode-hero__title { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+.mode-hero__desc { color: var(--text-soft); font-size: 11px; line-height: 1.7; }
+
+.mode-hero__facts {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line-strong);
+}
+.mode-fact {
+  display: grid;
+  gap: 2px;
+  min-width: 108px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface-3);
+}
+.mode-fact > span { color: var(--muted); font-size: 9px; font-weight: 600; }
+.mode-fact > strong { color: var(--text); font-size: 11.5px; }
+.mode-fact > small { color: var(--muted); font-size: 9px; }
+.mode-fact--accent { border-color: var(--mode-edge); background: var(--mode-wash); }
+.mode-fact--accent > strong { color: var(--mode-ink); }
+
+/* مسوّدة غير محفوظة: أوضح إشارة في الشاشة، لأن الفرق بين ما يُرى وما سيُنشَر
+   هو المعلومة التي يخسرها المسؤول حين يغلق التبويب. */
+.mode-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.12);
+  font-size: 10px;
+  font-weight: 700;
+}
+:root[data-theme='light'] .mode-pending { color: #92400e; }
+
+/* ---------- بطاقات الاختيار ---------- */
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px;
+}
 .mode-card {
-  position: relative; display: grid; gap: 7px; padding: 15px 14px; cursor: pointer;
-  border-radius: 14px; border: 1px solid var(--line); background: var(--surface-2);
+  position: relative;
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  padding: 15px 14px;
+  cursor: pointer;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-3);
   transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
 }
-.mode-card:hover { transform: translateY(-2px); border-color: var(--line-strong); }
+.mode-card:hover { transform: translateY(-2px); border-color: var(--mode-edge); }
 /* الإدخال مخفي بصريًا فقط: الاختيار يبقى بلوحة المفاتيح وقارئ الشاشة */
 .mode-card input {
-  position: absolute; width: 1px; height: 1px; opacity: 0;
-  clip-path: inset(50%); pointer-events: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  clip-path: inset(50%);
+  pointer-events: none;
 }
-.mode-card input:focus-visible + .mode-card__icon {
-  outline: 3px solid rgba(86, 121, 242, 0.45); outline-offset: 2px;
+/* حلقة التركيز على البطاقة كلها لا على الأيقونة: البطاقة هي هدف النقر */
+.mode-card:focus-within {
+  outline: 3px solid rgba(86, 121, 242, 0.45);
+  outline-offset: 2px;
+}
+.mode-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
 }
 .mode-card__icon {
-  display: grid; place-items: center; width: 36px; height: 36px;
-  border-radius: 11px; color: var(--text-soft);
-  border: 1px solid var(--line); background: var(--surface-3);
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: var(--text-soft);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  transition: color 0.18s ease, background 0.18s ease;
+}
+/* علامة الاختيار: الحالة المختارة لا تُحمل باللون وحده */
+.mode-card__check {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: transparent;
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 .mode-card strong { font-size: 12.5px; color: var(--text); }
 .mode-card small { font-size: 10px; line-height: 1.7; color: var(--muted); }
-.mode-card--active { border-color: rgba(86, 121, 242, 0.7); background: rgba(86, 121, 242, 0.09); }
-.mode-card--active .mode-card__icon {
-  color: #fff; border-color: transparent;
-  background: linear-gradient(135deg, var(--primary), #6a3df2);
+/* شارة «المنشور الآن» — تفصل ما هو محفوظ عمّا هو مختار */
+.mode-card__live {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  color: var(--mode-ink);
+  border: 1px solid var(--mode-edge);
+  border-radius: 999px;
+  /* سطح صلب لا الغلالة: داخل البطاقة المختارة تُطبَّق الغلالة مرتين فتغمق،
+     وقياس axe على السمة الفاتحة أعطى 4.3:1 لنصّ الشارة. */
+  background: var(--surface-2);
+  font-size: 9px;
+  font-weight: 700;
 }
-/* لون لكل وضع، فيتعرّف المسؤول على الحالة قبل أن يقرأ النص */
-.mode-card--live.mode-card--active { border-color: rgba(34, 184, 120, 0.6); background: rgba(34, 184, 120, 0.09); }
-.mode-card--live.mode-card--active .mode-card__icon { background: linear-gradient(135deg, var(--success), #12a05f); }
-.mode-card--maintenance.mode-card--active { border-color: rgba(0, 214, 245, 0.55); background: rgba(0, 214, 245, 0.09); }
-.mode-card--maintenance.mode-card--active .mode-card__icon { background: linear-gradient(135deg, var(--cyan), #2856d8); }
-.mode-card--construction.mode-card--active { border-color: rgba(245, 165, 36, 0.55); background: rgba(245, 165, 36, 0.1); }
-.mode-card--construction.mode-card--active .mode-card__icon { background: linear-gradient(135deg, var(--yellow), #ff9f1c); }
+.mode-card--active { border-color: var(--mode-edge); background: var(--mode-wash); }
+/* قياس axe على السمة الفاتحة: `--muted` فوق الغلالة الملوّنة يعطي 4.3:1، أي تحت
+   العتبة بقليل. النصّ الثانوي في البطاقة المختارة يرتفع درجةً — وهو الصحيح
+   دلاليًّا كذلك: هذه البطاقة هي التي تُقرأ. */
+.mode-card--active small { color: var(--text-soft); }
+.mode-card--active .mode-card__icon { color: #fff; border-color: transparent; background: var(--mode-accent); }
+.mode-card--active .mode-card__check { color: #fff; border-color: transparent; background: var(--mode-accent); }
+/* بلا صلاحية النشر: البطاقة تبقى مقروءة ولا تبقى مُغرية. الراديو معطَّل أصلًا،
+   والمؤشّر يقول ذلك قبل النقر بدل أن يبدو الاختيار متاحًا ثم لا يحدث شيء. */
+.mode-card--locked { cursor: not-allowed; opacity: 0.72; }
+.mode-card--locked:hover { transform: none; border-color: var(--line); }
 
-.mode-current {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-  padding: 12px 14px; border-radius: 12px;
-  border: 1px solid var(--line); background: var(--surface-2);
-  font-size: 11.5px; color: var(--text-soft);
+/* ---------- الحقول ---------- */
+.mode-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+  padding: 18px;
+  border-top: 1px solid var(--line);
 }
-.mode-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
-.mode-dot--live { background: var(--success); box-shadow: 0 0 0 4px rgba(34, 184, 120, 0.16); }
-.mode-dot--construction { background: var(--yellow); box-shadow: 0 0 0 4px rgba(255, 211, 77, 0.16); }
-.mode-dot--maintenance { background: var(--cyan); box-shadow: 0 0 0 4px rgba(0, 214, 245, 0.16); }
+.mode-fields > .field--wide { grid-column: 1 / -1; }
+.mode-counter {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.mode-counter b { color: var(--text-soft); font-variant-numeric: tabular-nums; }
+/* تنبيه على مستوى الحقل: موعد إطلاق في الماضي يُنتج صفحة بلا عدّاد بلا أن
+   يرفضه الخادم، فالمكان الوحيد الذي يمكن قوله فيه هو أسفل الحقل نفسه. */
+.mode-warn { color: #fbbf24; font-weight: 600; }
+:root[data-theme='light'] .mode-warn { color: #92400e; }
+
+/* أثر الوضع مكتوب لا مُستنتَج: HTTP والفهرسة واللوحة والتطبيق أربع نتائج
+   يخطئ فيها الحدس، وخطؤها يظهر على موقع منشور. */
+.mode-impact {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 16px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-3);
+}
+.mode-impact > div { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.mode-impact dt {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 104px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.mode-impact dd { margin: 0; min-width: 0; color: var(--text-soft); font-size: 10.5px; line-height: 1.7; }
+.mode-impact__icon { flex: 0 0 auto; display: inline-flex; color: var(--mode-ink); }
+
+/* ---------- شريط الإجراء ---------- */
+.mode-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line-strong);
+  /* توكن لا #fff: الشريط كان يُرسم أبيض ثابتًا فيصير كتلة بيضاء وسط لوحة داكنة */
+  background: color-mix(in srgb, var(--surface-2) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-end-start-radius: 16px;
+  border-end-end-radius: 16px;
+}
+.mode-actions__hint { flex: 1 1 240px; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.mode-actions__buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- النقطة والإعلانات ---------- */
+.mode-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--mode-accent, var(--muted)); }
+.mode-dot--pulse { box-shadow: 0 0 0 0 var(--mode-accent); animation: mode-pulse 2.4s ease-out infinite; }
+@keyframes mode-pulse {
+  0% { box-shadow: 0 0 0 0 var(--mode-wash); }
+  70% { box-shadow: 0 0 0 9px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+/* التوافق مع القواعد القائمة التي تلوّن النقطة بالوضع مباشرة */
+.mode-dot--live { background: #22b878; }
+.mode-dot--construction { background: #f59e0b; }
+.mode-dot--maintenance { background: #ef4444; }
+
+/* `panel--notice` أصفر افتراضًا. النجاح والفشل لهما لونهما، فلا يُقرأ الخطأ
+   كتحذير ولا الحفظ الناجح كمشكلة. */
+.panel--notice--ok {
+  border-color: rgba(34, 184, 120, 0.35);
+  background: rgba(34, 184, 120, 0.08);
+}
+.panel--notice--ok strong { color: #34d399; }
+.panel--notice--bad {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+}
+.panel--notice--bad strong { color: #f87171; }
+:root[data-theme='light'] .panel--notice--ok strong { color: #0f7a4f; }
+:root[data-theme='light'] .panel--notice--bad strong { color: #b91c1c; }
+/* `panel--notice` مبني على space-between لصفحة الشراكات حيث يحمل زرًّا في طرفه.
+   هنا الشريط أيقونة وعنوان ونصّ في تتابع القراءة، فالمباعدة تُبعثرها. */
+.mode-page .panel--notice { align-items: center; justify-content: flex-start; }
+.mode-page .panel--notice strong { flex: 0 0 auto; }
+.mode-notice__icon { flex: 0 0 auto; display: inline-flex; }
+.panel--notice--ok .mode-notice__icon { color: #34d399; }
+.panel--notice--bad .mode-notice__icon { color: #f87171; }
+:root[data-theme='light'] .panel--notice--ok .mode-notice__icon { color: #0f7a4f; }
+:root[data-theme='light'] .panel--notice--bad .mode-notice__icon { color: #b91c1c; }
+
+/* ---------- معاينة الصفحات ---------- */
+.mode-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px;
+}
+.mode-preview-card {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 14px;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-3);
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+.mode-preview-card:hover { transform: translateY(-2px); border-color: var(--line-strong); }
+.mode-preview-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-soft);
+}
+.mode-preview-card strong { font-size: 12px; color: var(--text); }
+.mode-preview-card small { font-size: 9.5px; line-height: 1.7; color: var(--muted); }
+.mode-preview-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+}
+.mode-preview-card__meta span {
+  padding: 2px 7px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 8.5px;
+  font-weight: 600;
+}
+.mode-preview-note {
+  margin: 0;
+  padding: 0 18px 18px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.7;
+}
 .mode-preview-links { display: flex; flex-wrap: wrap; gap: 8px; }
 
+/* نصّ التأكيد داخل النافذة: قائمة نتائج لا سؤال واحد مبهم */
+.mode-confirm { display: grid; gap: 14px; }
+.mode-confirm__lead { color: var(--text-soft); font-size: 11.5px; line-height: 1.8; }
+.mode-confirm__from {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-3);
+  font-size: 11.5px;
+}
+.mode-confirm__arrow { color: var(--muted); }
+
+@media (max-width: 860px) {
+  .mode-fields { grid-template-columns: 1fr; }
+  .mode-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 720px) {
-  .mode-grid { grid-template-columns: 1fr; }
+  .mode-grid, .mode-preview-grid { grid-template-columns: 1fr; }
+  .mode-hero__row { align-items: flex-start; }
+  .mode-actions { flex-direction: column; align-items: stretch; }
+  .mode-actions__buttons > .button { flex: 1 1 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode-card:hover, .mode-preview-card:hover { transform: none; }
+  .mode-dot--pulse { animation: none; }
 }
 
 /* =========================================================================
@@ -3332,7 +3725,7 @@ body.modal-open {
 .detail-json { max-height: 360px; margin: 0; padding: 16px 18px; overflow: auto; direction: ltr; text-align: left; color: var(--text-soft); background: var(--surface-2); font-size: 11px; line-height: 1.65; white-space: pre-wrap; }
 .detail-list { display: grid; gap: 9px; margin: 0; padding: 0 34px 18px; color: var(--text-soft); font-size: 11px; line-height: 1.6; }
 .asset-viewer { display: grid; min-height: 260px; place-items: center; overflow: hidden; }
-.asset-viewer__image, .asset-viewer__video { display: block; width: 100%; max-height: 560px; object-fit: contain; background: #05070f; }
+.asset-viewer__image, .asset-viewer__video { display: block; width: 100%; max-height: 560px; object-fit: contain; background: #0A0A0A; }
 .asset-viewer__audio { width: min(520px, 90%); }
 .asset-viewer__empty { display: grid; gap: 10px; place-items: center; color: var(--muted); font-size: 11px; }
 .asset-card__actions a.button { min-height: 30px; padding: 0 9px; font-size: 7.5px; }

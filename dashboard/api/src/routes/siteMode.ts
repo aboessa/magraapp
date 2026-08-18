@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
-import { generalLimit } from '../lib/rateLimit'
-import { readSiteModeSettings, toPublicStatus } from '../lib/siteMode'
+import type { Env } from '../lib/db.ts'
+import { generalLimit } from '../lib/rateLimit.ts'
+import { readSiteModeSettings, toPublicStatus } from '../lib/siteMode.ts'
 
 type AppEnv = { Bindings: Env }
 

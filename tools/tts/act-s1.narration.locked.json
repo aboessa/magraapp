@@ -1,0 +1,95 @@
+{
+  "story": "act-s1",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-01-bird-home.md",
+  "language": "ar",
+  "out_dir": "assets/audio/stories/act-s1/ar",
+  "model": "gemini-3.1-flash-tts-preview",
+  "voice": "Leda",
+  "voice_locked_because": "Leda is the only voice among the 30 published options that Google describes as 'Youthful', which is the closest published match to the brief's request for a young female voice for children. It also came back loudest of the six auditioned (-15.2 dBFS RMS versus -23.7 for Achernar), so it needs the least gain correction later. Auditioned alternatives, in order of preference if Leda is rejected on listening: Vindemiatrix (Gentle), Sulafat (Warm), Aoede (Breezy), Achernar (Soft). Kore was the previous default and is Firm, which reads as an adult narrator rather than a young woman.",
+  "voice_alternatives": ["Vindemiatrix", "Sulafat", "Aoede", "Achernar", "Kore"],
+  "language_code": "ar-EG",
+  "notes": [
+    "Arabic text is copied verbatim from the story file. Do not re-word it here; the story file is the source of truth.",
+    "Style directions are transcribed from the story file's pronunciation table (### ملاحظات النطق).",
+    "Narrator target is ~90 words/min, page 8 ~75 words/min, and loudness must stay constant across all 8 files with no escalation on page 4.",
+    "The API returns 24 kHz 16-bit mono PCM. This runner writes .wav masters. Delivery format in the story file is .m4a, which needs a separate ffmpeg pass (ffmpeg is not installed on this machine).",
+    "durationMs values in the story file are planning estimates. Measure them from these files and write the measured values back.",
+    "PROMPT STRUCTURE IS LOAD-BEARING, DO NOT SIMPLIFY IT. The model is documented to fail two ways on vague prompts: it rejects the request as PROHIBITED_CONTENT, or it reads the director's notes ALOUD instead of the transcript. The mitigation is the explicit synthesis preamble plus a labelled '#### TRANSCRIPT' boundary. This was verified: a 1526-character prompt produced 11 seconds of audio for a 50-character transcript, so nothing above the label was spoken.",
+    "The persona is written as a young woman on purpose. The model is documented to drift when the written tone disagrees with the selected voice, so the prompt names the age and warmth explicitly instead of leaving 'a narrator' to be interpreted.",
+    "Byte limits are on the API, not this file: text <= 4000 bytes, prompt <= 4000 bytes, combined <= 8000. Arabic is 2 bytes per letter in UTF-8, so the shared preamble plus per-line style must stay well under half the prompt budget."
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma\n## \"The Kind Older Sister\"\nSalma is a young Arab woman in her early twenties with a light, bright, distinctly feminine voice. She is not a professional announcer and does not sound like one. She sounds like a kind older sister who reads to a small child every night.\n\n## THE SCENE\nA child's bedroom, late evening, one warm lamp on. A three year old is lying down, already sleepy, holding the edge of the blanket. Salma is sitting on the floor beside the bed with the picture book open on her knees. The room is quiet enough that she never needs to raise her voice.\n\n### DIRECTOR'S NOTES\nStyle: Bright, soft and affectionate, with a gentle vocal smile the listener can hear. Light and youthful in timbre, never breathy, never babyish, and never a performed cartoon voice. Warm and reassuring throughout.\nPacing: Slow and unhurried, about ninety words per minute. Leave a small natural pause at every full stop so a small child can follow.\nAccent: Clear Modern Standard Arabic, articulated the way an educated Egyptian speaker reads a children's book aloud.\nLoudness: Constant from the first word to the last. No build-up, no escalation, no dramatic emphasis, no gasps or exclamations.",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-act-s1-vo-ar-001",
+      "file": "page-001-ar.wav",
+      "text": "هذا زُغب. بيته عشّ صغير.",
+      "audio_tag": "[warm, steady, unhurried]",
+      "style": "Steady and welcoming, at the story's normal pace. Pronounce the name زُغب clearly with a short u vowel on the first letter; this is the first time the child hears it. Give عشّ its shadda clearly. Articulate carefully WITHOUT stretching the line out: this page must not be slower than the rest of the story.",
+      "pace_note": "First attempt came back at 2.53 letters/sec against a 3.51 target, the slowest page in the story, because asking for careful first-mention articulation was read as an instruction to slow down. The direction now separates clarity from tempo.",
+      "planned_duration_ms": 4600
+    },
+    {
+      "page": 2,
+      "id": "asset-act-s1-vo-ar-002",
+      "file": "page-002-ar.wav",
+      "text": "اليوم يريد أن يطير قليلًا.",
+      "style": "Gentle and matter-of-fact. No anticipation, no excitement.",
+      "planned_duration_ms": 5000
+    },
+    {
+      "page": 3,
+      "id": "asset-act-s1-vo-ar-003",
+      "file": "page-003-ar.wav",
+      "text": "طار إلى الشجرة. ثم أبعد قليلًا.",
+      "style": "Even pace with a small natural pause between the two sentences. Do not let the pitch rise on أبعد.",
+      "planned_duration_ms": 5600
+    },
+    {
+      "page": 4,
+      "id": "asset-act-s1-vo-ar-004",
+      "file": "page-004-ar.wav",
+      "text": "هبّت ريح خفيفة. فتحرّكت الأوراق.",
+      "style": "This is the story's peak and it must stay completely calm. Give خفيفة its shadda clearly but with zero tension. Absolutely no volume increase, no urgency, no drama, no worry in the voice.",
+      "planned_duration_ms": 5800
+    },
+    {
+      "page": 5,
+      "id": "asset-act-s1-vo-ar-005",
+      "file": "page-005-ar.wav",
+      "text": "نظر زُغب إلى بيته. وعرف طريقه.",
+      "style": "Quiet confidence on وعرف طريقه. He is sure, not relieved and not searching.",
+      "planned_duration_ms": 5400
+    },
+    {
+      "page": 6,
+      "id": "asset-act-s1-vo-ar-006",
+      "file": "page-006-ar.wav",
+      "text": "فطار إلى العشّ. وأمّه تنتظره.",
+      "style": "Warmth on تنتظره, soft and affectionate, still at the same loudness.",
+      "planned_duration_ms": 5500
+    },
+    {
+      "page": 7,
+      "id": "asset-act-s1-vo-ar-007",
+      "file": "page-007-ar.wav",
+      "text": "جلس قريبًا منها. والريح هدأت.",
+      "style": "Slow down on والريح هدأت and let it settle. Softer and sleepier, but not quieter in level.",
+      "planned_duration_ms": 5300
+    },
+    {
+      "page": 8,
+      "id": "asset-act-s1-vo-ar-008",
+      "file": "page-008-ar.wav",
+      "text": "والآن ينام زُغب في بيته.",
+      "audio_tag": "[very slow, drowsy, one gentle word at a time]",
+      "pre_roll_ms": 800,
+      "pre_roll_note": "The story file specifies 'وقفة 800ms قبلها' for this page. It belongs to the player, not the audio file: baking silence into the WAV would make the file's own duration wrong for every consumer that measures it. Counting it is also what satisfies the requirement that this be the slowest page — 18 letters over 6.48s is 2.78 letters/sec, below page 1's 2.92. Without it the audio alone reads at 3.17 and page 1 is slower.",
+      "style": "This must be the SLOWEST line in the whole story, noticeably slower than every page before it. Begin after a short silent beat. Put a clear unhurried pause between each word and let the final word settle into silence. Read it as a closing statement of stillness, not a goodbye and not a question.",
+      "pace_note": "First attempt came back at 3.66 letters/sec against a 2.92 target, making it one of the FASTER pages instead of the slowest. Prose direction alone did not carry the tempo, so an explicit audio tag is used.",
+      "planned_duration_ms": 6200
+    }
+  ]
+}

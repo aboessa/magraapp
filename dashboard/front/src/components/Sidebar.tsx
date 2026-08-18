@@ -67,6 +67,7 @@ const groups: NavGroup[] = [
       { key: 'stories', to: adminPath('stories'), icon: 'books' },
       { key: 'books', to: adminPath('books'), icon: 'books' },
       { key: 'games', to: adminPath('games'), icon: 'games' },
+      { key: 'creative-studio', to: adminPath('creative-studio'), icon: 'styles' },
       { key: 'projects', to: adminPath('projects'), icon: 'objectives' },
       { key: 'media', to: adminPath('media'), icon: 'media' },
       { key: 'styles', to: adminPath('visual-styles'), icon: 'styles' },
@@ -77,6 +78,7 @@ const groups: NavGroup[] = [
     key: 'production',
     items: [
       { key: 'production', to: adminPath('production'), icon: 'reviews' },
+      { key: 'content-factory', to: adminPath('production/factory'), icon: 'sparkles' },
       { key: 'workflows', to: adminPath('workflows'), icon: 'reviews' },
       { key: 'reviews', to: adminPath('content-reviews'), icon: 'reviews' },
       { key: 'quality', to: adminPath('quality'), icon: 'check' },
@@ -120,6 +122,7 @@ const groups: NavGroup[] = [
     key: 'growth',
     items: [
       { key: 'website-pages', to: adminPath('website/pages'), icon: 'website' },
+      { key: 'website-mode', to: adminPath('website/mode'), icon: 'globe', permission: 'publish' },
       { key: 'blog-posts', to: adminPath('blog/posts'), icon: 'blog' },
       { key: 'blog-taxonomy', to: adminPath('blog/taxonomy'), icon: 'objectives' },
       { key: 'seo', to: adminPath('seo'), icon: 'seo' },
@@ -135,12 +138,24 @@ const groups: NavGroup[] = [
     ],
   },
   {
+    // CONTROL IN APP — App Home / Recommendations / Remote Config / Feature Flags
     key: 'appControl',
     items: [
       { key: 'app-experience', to: adminPath('app-experience'), icon: 'dashboard' },
       { key: 'recommendations', to: adminPath('recommendations'), icon: 'sparkles' },
       { key: 'remote-config', to: adminPath('remote-config'), icon: 'styles', permission: 'publish' },
-      { key: 'settings', to: adminPath('settings'), icon: 'settings', permission: 'publish' },
+      { key: 'feature-flags', to: adminPath('remote-config'), icon: 'check', permission: 'publish' },
+      { key: 'app-releases', to: adminPath('app-releases'), icon: 'devices' },
+      { key: 'app-diagnostics', to: adminPath('app-diagnostics'), icon: 'analytics' },
+    ],
+  },
+  {
+    // ADMIN / MY ACCOUNT — Profile / Password / Sessions / Security
+    key: 'myAccount',
+    items: [
+      { key: 'my-account', to: adminPath('my-account'), icon: 'parents' },
+      { key: 'security', to: adminPath('security'), icon: 'rights' },
+      { key: 'sessions', to: adminPath('sessions'), icon: 'clock' },
     ],
   },
   {
@@ -157,6 +172,8 @@ const groups: NavGroup[] = [
       { key: 'team-access', to: adminPath('team-access'), icon: 'parents', permission: 'manage_permissions' },
       { key: 'teams', to: adminPath('teams'), icon: 'parents', permission: 'manage_team' },
       { key: 'roles', to: adminPath('roles'), icon: 'rights', permission: 'manage_permissions' },
+      { key: 'grants', to: adminPath('grants'), icon: 'rights', permission: 'manage_permissions' },
+      { key: 'governance', to: adminPath('governance'), icon: 'analytics', permission: 'manage_permissions' },
       { key: 'audit-logs', to: adminPath('audit-logs'), icon: 'reviews', permission: 'view_audit_log' },
     ],
   },
@@ -174,13 +191,13 @@ const copy: Record<Locale, {
 }> = {
   ar: {
     aria: 'التنقل الرئيسي', close: 'إغلاق القائمة', collapse: 'طيّ المجموعة',
-    groups: {
+      groups: {
       overview: 'نظرة عامة', content: 'المحتوى', production: 'الإنتاج',
       learning: 'الإطار التعليمي', customers: 'العملاء', commercial: 'التجارة',
       growth: 'النمو والموقع', b2b: 'الأعمال', appControl: 'التحكّم في التطبيق',
-      operations: 'التشغيل', administration: 'الإدارة',
+      myAccount: 'حسابي', operations: 'التشغيل', administration: 'الإدارة',
     },
-    items: { dashboard: 'لوحة التحكم', calendar: 'تقويم المحتوى', analytics: 'التحليلات', planets: 'الكواكب', taxonomy: 'الكواكب والتصنيفات', series: 'السلاسل', seasons: 'المواسم', episodes: 'الحلقات والوحدات', characters: 'الشخصيات', library: 'مكتبة المحتوى', stories: 'القصص والكوميكس', books: 'الكتب', games: 'الألعاب', projects: 'المشروعات', media: 'مكتبة الوسائط', styles: 'الاستايلات البصرية', skills: 'خريطة المهارات', objectives: 'الأهداف القابلة للقياس', mastery: 'الإتقان والمحاولات', parents: 'أولياء الأمور', customers: 'ملف العميل 360', children: 'ملفات الأطفال', devices: 'الأجهزة والتنزيلات', subscriptions: 'الاشتراكات', rights: 'الحقوق والتراخيص', reviews: 'مراجعات المحتوى', teams: 'الفرق', roles: 'الأدوار', tasks: 'مهامي', production: 'مركز الإنتاج', 'app-experience': 'بناء الصفحة الرئيسية', 'remote-config': 'التحكم عن بعد', ops: 'المراقبة', campaigns: 'الحملات', revenue: 'الإيرادات', translation: 'الترجمة', quiz: 'بنك الأسئلة', recommendations: 'التوصيات', school: 'المدارس', 'finance-advanced': 'المالية المتقدمة', partnerships: 'طلبات الشراكة', settings: 'وضع الموقع', 'team-access': 'الموظفون والصلاحيات', workflows: 'سير العمل والاعتماد', 'ops-sla': 'مهل المراجعة والتكاملات', 'support-center': 'مركز الدعم', packages: 'الباقات والأسعار', 'audit-logs': 'سجل التدقيق', 'failed-events': 'الأحداث الفاشلة', narration: 'توليد السرد', quality: 'فحص الجاهزية', 'games-ops': 'عمليّات الألعاب', 'games-audio-queue': 'طابور الصوت', 'games-art-queue': 'طابور الرسوم', 'website-pages': 'صفحات الموقع', 'blog-posts': 'مقالات المدوّنة', 'blog-taxonomy': 'كُتّاب وتصنيفات', seo: 'عمليّات SEO' },
+    items: { dashboard: 'لوحة التحكم', calendar: 'تقويم المحتوى', analytics: 'التحليلات', planets: 'الكواكب', taxonomy: 'الكواكب والتصنيفات', series: 'السلاسل', seasons: 'المواسم', episodes: 'الحلقات والوحدات', characters: 'الشخصيات', library: 'مكتبة المحتوى', stories: 'القصص والكوميكس', books: 'الكتب', games: 'الألعاب', 'creative-studio': 'استوديو الإبداع', projects: 'المشروعات', media: 'مكتبة الوسائط', styles: 'الاستايلات البصرية', skills: 'خريطة المهارات', objectives: 'الأهداف القابلة للقياس', mastery: 'الإتقان والمحاولات', parents: 'أولياء الأمور', customers: 'ملف العميل 360', children: 'ملفات الأطفال', devices: 'الأجهزة والتنزيلات', subscriptions: 'الاشتراكات', rights: 'الحقوق والتراخيص', reviews: 'مراجعات المحتوى', teams: 'الفرق', roles: 'الأدوار', grants: 'المنح', governance: 'حوكمة الوصول', tasks: 'مهامي', production: 'مركز الإنتاج', 'content-factory': 'مصنع المحتوى', 'app-experience': 'بناء الصفحة الرئيسية', 'remote-config': 'التحكم عن بعد', 'feature-flags': 'أعلام الميزات', 'app-releases': 'إصدارات التطبيق', 'app-diagnostics': 'تشخيص التطبيق', 'my-account': 'حسابي', security: 'الأمان', sessions: 'الجلسات', 'website-mode': 'وضع الموقع', ops: 'المراقبة', campaigns: 'الحملات', revenue: 'الإيرادات', translation: 'الترجمة', quiz: 'بنك الأسئلة', recommendations: 'التوصيات', school: 'المدارس', 'finance-advanced': 'المالية المتقدمة', partnerships: 'طلبات الشراكة', settings: 'الإعدادات', 'team-access': 'الموظفون والصلاحيات', workflows: 'سير العمل والاعتماد', 'ops-sla': 'مهل المراجعة والتكاملات', 'support-center': 'مركز الدعم', packages: 'الباقات والأسعار', 'audit-logs': 'سجل التدقيق', 'failed-events': 'الأحداث الفاشلة', narration: 'توليد السرد', quality: 'فحص الجاهزية', 'games-ops': 'عمليّات الألعاب', 'games-audio-queue': 'طابور الصوت', 'games-art-queue': 'طابور الرسوم', 'website-pages': 'صفحات الموقع', 'blog-posts': 'مقالات المدوّنة', 'blog-taxonomy': 'كُتّاب وتصنيفات', seo: 'عمليّات SEO' },
     tracks: '3 مسارات عمرية', ages: 'محتوى مناسب للأعمار 3–12', back: 'العودة للموقع',
   },
   en: {
@@ -189,9 +206,9 @@ const copy: Record<Locale, {
       overview: 'Overview', content: 'Content', production: 'Production',
       learning: 'Learning framework', customers: 'Customers', commercial: 'Commercial',
       growth: 'Growth & website', b2b: 'B2B', appControl: 'App control',
-      operations: 'Operations', administration: 'Administration',
+      myAccount: 'My account', operations: 'Operations', administration: 'Administration',
     },
-    items: { dashboard: 'Dashboard', calendar: 'Content calendar', analytics: 'Analytics', planets: 'Planets', taxonomy: 'Planets & taxonomy', series: 'Series', seasons: 'Seasons', episodes: 'Episodes & units', characters: 'Characters', library: 'Content library', stories: 'Stories & comics', books: 'Books', games: 'Games', projects: 'Projects', media: 'Media library', styles: 'Visual styles', skills: 'Skills map', objectives: 'Measurable objectives', mastery: 'Mastery & attempts', parents: 'Parents', customers: 'Customer 360', children: 'Child profiles', devices: 'Devices & downloads', subscriptions: 'Subscriptions', rights: 'Rights & licensing', reviews: 'Content reviews', teams: 'Teams', roles: 'Roles', tasks: 'My Tasks', production: 'Production centre', 'app-experience': 'Home Builder', 'remote-config': 'Remote Config', ops: 'Ops', campaigns: 'Campaigns', revenue: 'Revenue', translation: 'Translation', quiz: 'Quiz Bank', recommendations: 'Recommendations', school: 'Schools', 'finance-advanced': 'Advanced Finance', partnerships: 'Partnership requests', settings: 'Site mode', 'team-access': 'Staff and permissions', workflows: 'Workflow & approvals', 'ops-sla': 'SLA & integrations', 'support-center': 'Support centre', packages: 'Plans & pricing', 'audit-logs': 'Audit log', 'failed-events': 'Failed events', narration: 'Narration', quality: 'Readiness check', 'games-ops': 'Games operations', 'games-audio-queue': 'Voice-over queue', 'games-art-queue': 'Art queue', 'website-pages': 'Website pages', 'blog-posts': 'Blog posts', 'blog-taxonomy': 'Authors & categories', seo: 'SEO operations' },
+    items: { dashboard: 'Dashboard', calendar: 'Content calendar', analytics: 'Analytics', planets: 'Planets', taxonomy: 'Planets & taxonomy', series: 'Series', seasons: 'Seasons', episodes: 'Episodes & units', characters: 'Characters', library: 'Content library', stories: 'Stories & comics', books: 'Books', games: 'Games', 'creative-studio': 'Creative Studio', projects: 'Projects', media: 'Media library', styles: 'Visual styles', skills: 'Skills map', objectives: 'Measurable objectives', mastery: 'Mastery & attempts', parents: 'Parents', customers: 'Customer 360', children: 'Child profiles', devices: 'Devices & downloads', subscriptions: 'Subscriptions', rights: 'Rights & licensing', reviews: 'Content reviews', teams: 'Teams', roles: 'Roles', grants: 'Grants', governance: 'Governance', tasks: 'My Tasks', production: 'Production centre', 'content-factory': 'Content factory', 'app-experience': 'Home Builder', 'remote-config': 'Remote Config', 'feature-flags': 'Feature flags', 'app-releases': 'App releases', 'app-diagnostics': 'App diagnostics', 'my-account': 'My account', security: 'Security', sessions: 'Sessions', 'website-mode': 'Website mode', ops: 'Ops', campaigns: 'Campaigns', revenue: 'Revenue', translation: 'Translation', quiz: 'Quiz Bank', recommendations: 'Recommendations', school: 'Schools', 'finance-advanced': 'Advanced Finance', partnerships: 'Partnership requests', settings: 'Settings', 'team-access': 'Staff and permissions', workflows: 'Workflow & approvals', 'ops-sla': 'SLA & integrations', 'support-center': 'Support centre', packages: 'Plans & pricing', 'audit-logs': 'Audit log', 'failed-events': 'Failed events', narration: 'Narration', quality: 'Readiness check', 'games-ops': 'Games operations', 'games-audio-queue': 'Voice-over queue', 'games-art-queue': 'Art queue', 'website-pages': 'Website pages', 'blog-posts': 'Blog posts', 'blog-taxonomy': 'Authors & categories', seo: 'SEO operations' },
     tracks: '3 age tracks', ages: 'Age-appropriate content for 3–12', back: 'Back to website',
   },
 }

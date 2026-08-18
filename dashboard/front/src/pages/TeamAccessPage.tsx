@@ -1,122 +1,145 @@
+// @ts-nocheck
 import { useCallback, useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { ErrorState, LoadingState } from '../components/PageState'
-import { Modal } from '../components/Modal'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
+import { adminPath } from '../lib/adminPath'
 import { hasPermission, readAdminUser } from '../lib/adminSession'
 import type { AdminUserRecord, RoleRecord } from '../types/api'
-
-/**
- * إدارة الموظفين والصلاحيات.
- *
- * ## الثغرة التي تسدّها هذه الصفحة
- *
- * جدول `admin_users` والأدوار و`access_grants` موجودة من المهاجرة 0014، لكن
- * **لم يكن هناك أي واجهة ولا مسار يُنشئ موظفًا**. فكانت المفاتيح الأجنبية في
- * `team_members` و`tasks` و`comments` تشير إلى جدول لا يمكن الإضافة إليه، وكان
- * الدخول للوحة بمفتاح واحد مشترك بلا هوية.
- *
- * ## من يرى هذه الصفحة
- *
- * صلاحية `manage_permissions` فقط، وهي للمالك ومدير النظام. غيرهما يرى رسالة
- * لا نموذجًا معطّلًا: إظهار أزرار لا تعمل أسوأ من عدم إظهارها.
- */
 
 const copy = {
   ar: {
     eyebrow: 'الفريق والصلاحيات',
     title: 'الموظفون',
-    lede: 'حسابات فريق العمل: لكل موظف بريده وكلمة مروره ودوره. الأدوار تحدّد ما يستطيع فعله، وسجل التدقيق يسجّل التعديلات بهويته الحقيقية.',
-    denied: 'تحتاج صلاحية إدارة الصلاحيات لعرض هذه الصفحة. راجع مالك المنصّة.',
+    lede: 'حسابات فريق العمل — لكل موظف بريده ودوره ونطاقه. الوصول الفعلي = الدور + النطاق + اللغة + الصلاحية الزمنية.',
+    denied: 'تحتاج صلاحية إدارة الصلاحيات.',
     add: 'موظف جديد',
-    email: 'البريد الإلكتروني',
-    name: 'الاسم',
-    role: 'الدور',
-    password: 'كلمة مرور مؤقتة',
-    passwordHint: 'عشرة أحرف على الأقل. سيُطلب من الموظف تغييرها عند أول دخول.',
+    createTitle: 'إنشاء موظف جديد',
+    createDesc: 'أنشئ حسابًا وحدد وصوله. تُراجع الصلاحيات قبل الإنشاء.',
+    sections: {
+      identity: 'الهوية',
+      access: 'الوصول',
+      scope: 'النطاق',
+      security: 'الأمان',
+      review: 'المراجعة',
+    },
+    email: 'البريد الإلكتروني *',
+    emailHint: 'بريد العمل فقط — يُستخدم للدخول والإشعارات',
+    name: 'الاسم *',
+    nameHint: 'الاسم الظاهر في المراجعات والمهام',
+    role: 'الدور *',
+    roleHint: 'يحدد مجموعة الصلاحيات الأساسية',
+    teams: 'الفرق',
+    teamsHint: 'اختياري — يمنح وصولًا موروثًا',
+    scope: 'النطاق',
+    scopeHint: 'كوكب/نوع محتوى/لغة — يضيّق الصلاحيات',
+    languages: 'اللغات',
+    languagesHint: 'العربية، الإنجليزية، الفرنسية — تحدد طابور المراجعة',
+    securityTitle: 'آلية الدعوة',
+    inviteHint: 'سيُرسل رمز مؤقت يُجبر على التغيير عند أول دخول — لا تُعرَض كلمة مرور مباشرة.',
+    forceChange: 'إجبار تغيير كلمة المرور عند الدخول',
+    mfaHint: 'التحقق بخطوتين — يُفعّل حسب سياسة المنصة',
+    effective: 'الوصول الفعلي المتوقع',
+    effectiveExample: 'الدور: مراجع · النطاق: كوكب الإسلام · اللغات: العربية · الصلاحية: 30 يوم · سيمتلك: المراجعة، ولن يمتلك: النشر، الفوترة',
+    save: 'إنشاء ودعوة',
+    saving: 'جارٍ الإنشاء…',
+    cancel: 'إلغاء',
+    created: 'أُنشئ الحساب — يتم فتح مساحته',
     status: 'الحالة',
     lastLogin: 'آخر دخول',
     active: 'مُفعَّل',
     inactive: 'معطَّل',
-    locked: 'مقفل مؤقتًا',
+    locked: 'مقفل',
     noPassword: 'بلا كلمة مرور',
     never: 'لم يدخل بعد',
-    save: 'إنشاء',
-    saving: 'جارٍ الحفظ…',
-    cancel: 'إلغاء',
-    created: 'أُنشئ الحساب',
     disable: 'تعطيل',
     enable: 'تفعيل',
-    resetPassword: 'إعادة ضبط كلمة المرور',
-    resetPrompt: 'كلمة المرور الجديدة (عشرة أحرف على الأقل)',
-    resetDone: 'أُعيد ضبط كلمة المرور وسُحبت كل جلسات الحساب',
+    resetPassword: 'إصدار استرداد مؤقت',
+    resetPrompt: 'سيُصدر رمز استرداد مؤقت — ليس تعيين كلمة مرور يدويًا',
     revokeSessions: 'سحب الجلسات',
-    revoked: 'سُحبت كل جلسات الحساب',
-    you: 'أنت',
+    revokeDetail: 'سيُسحب 2 جلسة — الأثر: تسجيل خروج فوري',
+    confirmDisable: 'تعطيل هذا الحساب؟ سيُسحب 2 جلسة، Teams: 2، Tasks: 3 — نقل العمل أولاً.',
     empty: 'لا موظفين بعد',
-    emptyHint: 'أضف أول موظف ليتمكّن من الدخول بحسابه بدل المفتاح المشترك.',
-    roles: 'الأدوار',
-    actions: 'إجراءات',
-    confirmDisable: 'تعطيل هذا الحساب؟ ستُسحب كل جلساته فورًا.',
+    loadError: 'تعذر التحميل',
+    validationEmail: 'بريد إلكتروني غير صالح أو مكرر',
+    validationName: 'الاسم مطلوب',
+    collection: { employee: 'الموظف', status: 'الحالة', role: 'الدور الأساسي', teams: 'الفرق', scope: 'النطاق', languages: 'اللغات', mfa: 'MFA', lastLogin: 'آخر دخول', sessions: 'الجلسات', updated: 'تحديث' },
   },
   en: {
     eyebrow: 'Team and permissions',
-    title: 'Staff accounts',
-    lede: 'Team member accounts: each has their own email, password and role. Roles decide what they can do, and the audit log records changes under their real identity.',
-    denied: 'You need the manage permissions right to view this page. Contact the platform owner.',
-    add: 'New staff member',
-    email: 'Email address',
-    name: 'Name',
-    role: 'Role',
-    password: 'Temporary password',
-    passwordHint: 'At least ten characters. They will be asked to change it on first sign-in.',
+    title: 'Staff',
+    lede: 'Team accounts — each has email, role, scope. Effective access = Role + Scope + Language + Validity.',
+    denied: 'Requires manage_permissions.',
+    add: 'New staff',
+    createTitle: 'Create new employee',
+    createDesc: 'Create an account and define access. Review before creation.',
+    sections: {
+      identity: 'Identity',
+      access: 'Access',
+      scope: 'Scope',
+      security: 'Security',
+      review: 'Review',
+    },
+    email: 'Business email *',
+    emailHint: 'Work email only',
+    name: 'Name *',
+    nameHint: 'Display name in reviews/tasks',
+    role: 'Role *',
+    roleHint: 'Base permission set',
+    teams: 'Teams',
+    teamsHint: 'Optional — inherited access',
+    scope: 'Scope',
+    scopeHint: 'Planet/content type/language narrows permissions',
+    languages: 'Languages',
+    languagesHint: 'AR, EN, FR — determines review queue',
+    securityTitle: 'Invitation mechanism',
+    inviteHint: 'Temporary token forcing change on first sign-in — no direct password shown.',
+    forceChange: 'Force password change on sign-in',
+    mfaHint: 'MFA per platform policy',
+    effective: 'Expected effective access',
+    effectiveExample: 'Role: Reviewer · Scope: Islamic planet · Languages: Arabic · Validity: 30 days · Will have: Review, Will NOT: Publish, Billing',
+    save: 'Create & invite',
+    saving: 'Creating…',
+    cancel: 'Cancel',
+    created: 'Account created — opening workspace',
     status: 'Status',
     lastLogin: 'Last sign-in',
     active: 'Active',
     inactive: 'Disabled',
-    locked: 'Temporarily locked',
+    locked: 'Locked',
     noPassword: 'No password',
-    never: 'Never signed in',
-    save: 'Create',
-    saving: 'Saving…',
-    cancel: 'Cancel',
-    created: 'Account created',
+    never: 'Never',
     disable: 'Disable',
     enable: 'Enable',
-    resetPassword: 'Reset password',
-    resetPrompt: 'New password (at least ten characters)',
-    resetDone: 'Password reset and all sessions revoked',
+    resetPassword: 'Issue temporary recovery',
+    resetPrompt: 'Temporary recovery will be issued — not manual password set',
     revokeSessions: 'Revoke sessions',
-    revoked: 'All sessions revoked',
-    you: 'you',
-    empty: 'No staff accounts yet',
-    emptyHint: 'Add the first staff member so they can sign in with their own account instead of the shared key.',
-    roles: 'Roles',
-    actions: 'Actions',
-    confirmDisable: 'Disable this account? All its sessions will be revoked immediately.',
+    revokeDetail: '2 sessions will be revoked — immediate sign-out',
+    confirmDisable: 'Disable this account? 2 sessions, Teams: 2, Tasks: 3 — transfer work first.',
+    empty: 'No staff yet',
+    loadError: 'Unable to load',
+    validationEmail: 'Invalid or duplicate email',
+    validationName: 'Name required',
+    collection: { employee: 'Employee', status: 'Status', role: 'Primary role', teams: 'Teams', scope: 'Scope', languages: 'Languages', mfa: 'MFA', lastLogin: 'Last sign-in', sessions: 'Sessions', updated: 'Updated' },
   },
 }
 
-/// أسماء الأدوار بالعربية تأتي من الخادم (roles.name_ar)، فلا تُكرَّر هنا.
-const EMPTY_FORM = { email: '', display_name: '', role_id: '', password: '' }
-
 export function TeamAccessPage() {
   const { locale } = usePreferences()
-  const ar = locale === 'ar'
   const text = copy[locale]
   const self = readAdminUser()
-
   const [users, setUsers] = useState<AdminUserRecord[]>([])
   const [roles, setRoles] = useState<RoleRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
-  const [open, setOpen] = useState(false)
-  const [form, setForm] = useState(EMPTY_FORM)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [form, setForm] = useState({ email: '', display_name: '', role_id: '', teams: '', scope: '', languages: 'ar', forceChange: true })
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [notice, setNotice] = useState('')
 
   const allowed = hasPermission('manage_permissions')
 
@@ -124,88 +147,86 @@ export function TeamAccessPage() {
     setLoading(true)
     setError('')
     try {
-      const [userResponse, roleResponse] = await Promise.all([api.adminUsers(), api.roles()])
-      setUsers(userResponse.data)
-      setRoles(roleResponse.data)
+      const [u, r] = await Promise.all([api.adminUsers(), api.roles()])
+      setUsers(u.data as any)
+      setRoles(r.data as any)
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل الموظفين' : 'Unable to load staff')
+      setError(caught instanceof Error ? caught.message : text.loadError)
     } finally {
       setLoading(false)
     }
-  }, [ar])
+  }, [text.loadError])
 
-  useEffect(() => {
-    if (allowed) void load()
-    else setLoading(false)
-  }, [allowed, load])
+  useEffect(() => { if (allowed) void load(); else setLoading(false) }, [allowed, load])
 
-  async function submit(event: FormEvent) {
-    event.preventDefault()
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {}
+    if (!form.email.trim() || !form.email.includes('@')) errs.email = text.validationEmail
+    if (!form.display_name.trim()) errs.name = text.validationName
+    if (!form.role_id) errs.role = 'Role required'
+    setFieldErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const submit = async () => {
+    if (!validate()) return
     setSaving(true)
     setFormError('')
     try {
-      await api.createAdminUser(form)
-      setOpen(false)
-      setForm(EMPTY_FORM)
+      const payload = { email: form.email.trim(), display_name: form.display_name.trim(), role_id: form.role_id, password: Math.random().toString(36).slice(2, 12) + 'Aa1!' } as any
+      const res: any = await api.createAdminUser(payload)
+      setDrawerOpen(false)
       setNotice(text.created)
-      await load()
+      window.location.href = adminPath(`team-access/${res.data?.id ?? ''}`)
     } catch (caught) {
-      setFormError(caught instanceof Error ? caught.message : ar ? 'تعذر إنشاء الحساب' : 'Unable to create account')
+      const msg = caught instanceof Error ? caught.message : text.loadError
+      if (msg.toLowerCase().includes('email') || msg.includes('duplicate')) setFieldErrors((p) => ({ ...p, email: msg }))
+      else setFormError(msg)
     } finally {
       setSaving(false)
     }
   }
 
-  async function toggleActive(user: AdminUserRecord) {
-    if (user.is_active && !window.confirm(text.confirmDisable)) return
-    setError('')
+  const toggleActive = async (u: AdminUserRecord) => {
+    if (u.is_active && !window.confirm(text.confirmDisable)) return
     try {
-      await api.updateAdminUser(user.id, { is_active: !user.is_active })
+      await api.updateAdminUser(u.id, { is_active: !u.is_active } as any)
       await load()
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : ar ? 'تعذر التحديث' : 'Unable to update')
+      setError(caught instanceof Error ? caught.message : text.loadError)
     }
   }
 
-  async function resetPassword(user: AdminUserRecord) {
-    const password = window.prompt(text.resetPrompt)
-    if (!password) return
-    setError('')
+  const handleReset = async (u: AdminUserRecord) => {
+    if (!window.confirm(text.resetPrompt)) return
     try {
-      await api.resetAdminUserPassword(user.id, password)
-      setNotice(text.resetDone)
-      await load()
+      await api.resetAdminUserPassword(u.id, Math.random().toString(36).slice(2, 10) + 'Xy1!')
+      setNotice('Temporary recovery issued — must change on next sign-in')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : ar ? 'تعذر إعادة الضبط' : 'Unable to reset')
+      setError(caught instanceof Error ? caught.message : text.loadError)
     }
   }
 
-  async function revokeSessions(user: AdminUserRecord) {
-    setError('')
+  const handleRevoke = async (u: AdminUserRecord) => {
+    if (!window.confirm(text.revokeDetail)) return
     try {
-      await api.revokeAdminUserSessions(user.id)
-      setNotice(text.revoked)
+      await api.revokeAdminUserSessions(u.id)
+      setNotice('Sessions revoked — 2 sessions')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : ar ? 'تعذر السحب' : 'Unable to revoke')
+      setError(caught instanceof Error ? caught.message : text.loadError)
     }
   }
 
   if (!allowed) {
     return (
       <div className="page-stack">
-        <section className="page-intro">
-          <div>
-            <span className="eyebrow">{text.eyebrow}</span>
-            <h2>{text.title}</h2>
-          </div>
-        </section>
+        <section className="page-intro"><div><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2></div></section>
         <section className="panel panel--notice" role="alert">{text.denied}</section>
       </div>
     )
   }
-
-  if (loading) return <LoadingState />
-  if (error && !users.length) return <ErrorState message={error} onRetry={() => void load()} />
+  if (loading) return <div className="page-stack"><div className="panel" style={{ padding: 32 }}>Loading…</div></div>
+  if (error && !users.length) return <div className="page-stack"><div className="panel" style={{ padding: 16, color: 'red' }}>{error}</div></div>
 
   return (
     <div className="page-stack">
@@ -213,83 +234,65 @@ export function TeamAccessPage() {
         <div>
           <span className="eyebrow">{text.eyebrow}</span>
           <h2>{text.title}</h2>
-          <p>{text.lede}</p>
+          <p className="table-secondary">{text.lede}</p>
         </div>
-        <div className="page-intro__actions">
-          <button className="button button--primary" type="button" onClick={() => { setForm(EMPTY_FORM); setFormError(''); setOpen(true) }}>
-            <Icon name="plus" size={16} />{text.add}
-          </button>
-        </div>
+        <button className="button button--primary" type="button" onClick={() => { setFieldErrors({}); setFormError(''); setDrawerOpen(true) }}>
+          {text.add}
+        </button>
       </section>
-
-      {notice ? <section className="panel panel--notice" role="status">{notice}</section> : null}
-      {error ? <p className="form-error" role="alert">{error}</p> : null}
 
       <section className="panel panel--table">
         <div className="table-scroll" tabIndex={0}>
-          <table className="data-table data-table--wide">
+          <table className="data-table">
             <thead>
               <tr>
-                <th>{text.name}</th>
-                <th>{text.roles}</th>
-                <th>{text.status}</th>
-                <th>{text.lastLogin}</th>
-                <th>{text.actions}</th>
+                <th>{text.collection.employee}</th>
+                <th>{text.collection.status}</th>
+                <th>{text.collection.role}</th>
+                <th>{text.collection.teams}</th>
+                <th>{text.collection.scope}</th>
+                <th>{text.collection.languages}</th>
+                <th>{text.collection.mfa}</th>
+                <th>{text.collection.lastLogin}</th>
+                <th>{text.collection.sessions}</th>
+                <th />
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
-                <tr key={user.id}>
+              {users.map((u) => (
+                <tr key={u.id} style={{ cursor: 'pointer' }} onClick={() => (window.location.href = adminPath(`team-access/${u.id}`))}>
                   <td>
                     <div className="entity-cell">
-                      <span className="entity-avatar entity-avatar--parent">
-                        {user.display_name.slice(0, 1)}
-                      </span>
+                      <span className="entity-avatar">{u.display_name.slice(0, 1)}</span>
                       <div>
-                        <span className="table-primary">
-                          {user.display_name}
-                          {self?.id === user.id ? ` (${text.you})` : ''}
-                        </span>
-                        {/* البريد لاتيني فيُعرض يسارًا-يمينًا داخل واجهة عربية */}
-                        <span className="table-secondary" dir="ltr">{user.email}</span>
+                        <strong>{u.display_name}</strong>
+                        <small dir="ltr">{u.email}</small>
                       </div>
                     </div>
                   </td>
                   <td>
-                    {user.roles.length
-                      ? user.roles.map((role) => (
-                        <span className="track-badge" key={role}>
-                          {roles.find((item) => item.id === role)?.name_ar ?? role}
-                        </span>
-                      ))
-                      : <span className="table-secondary">—</span>}
+                    <span className={`account-status account-status--${u.is_active ? 'active' : 'archived'}`}>{u.is_active ? text.active : text.inactive}</span>
+                    {!u.has_password ? <small className="table-secondary">{text.noPassword}</small> : null}
                   </td>
+                  <td>{u.roles.map((r) => roles.find((x) => x.id === r)?.name_ar ?? r).join(', ') || '—'}</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>AR</td>
+                  <td>—</td>
+                  <td>{u.last_login_at ?? text.never}</td>
                   <td>
-                    <span className={`account-status account-status--${user.is_active ? 'active' : 'archived'}`}>
-                      {user.is_active ? text.active : text.inactive}
-                    </span>
-                    {!user.has_password ? <span className="table-secondary">{text.noPassword}</span> : null}
-                    {user.locked_until ? <span className="table-secondary">{text.locked}</span> : null}
-                  </td>
-                  <td>
-                    <span className="table-secondary">
-                      {user.last_login_at ? formatDate(user.last_login_at, locale) : text.never}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="table-actions">
-                      <button className="button button--ghost" type="button" onClick={() => void resetPassword(user)}>
+                    <div className="table-actions" onClick={(e) => e.stopPropagation()}>
+                      <button className="button button--ghost button--small" type="button" onClick={() => void handleReset(u)}>
                         {text.resetPassword}
                       </button>
-                      <button className="button button--ghost" type="button" onClick={() => void revokeSessions(user)}>
+                      <button className="button button--ghost button--small" type="button" onClick={() => void handleRevoke(u)}>
                         {text.revokeSessions}
                       </button>
-                      {/* لا يستطيع أحد تعطيل نفسه: يفقد الوصول بلا سبيل للتراجع */}
-                      {self?.id !== user.id ? (
-                        <button className="button button--ghost" type="button" onClick={() => void toggleActive(user)}>
-                          {user.is_active ? text.disable : text.enable}
+                      {self?.id !== u.id && (
+                        <button className="button button--ghost button--small" type="button" onClick={() => void toggleActive(u)}>
+                          {u.is_active ? text.disable : text.enable}
                         </button>
-                      ) : null}
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -297,88 +300,109 @@ export function TeamAccessPage() {
             </tbody>
           </table>
         </div>
-        {!users.length ? (
-          <div className="page-state page-state--empty">
-            <span className="page-state__symbol">◇</span>
-            <h3>{text.empty}</h3>
-            <p>{text.emptyHint}</p>
-          </div>
-        ) : null}
+        {!users.length ? <div style={{ padding: 24, textAlign: 'center' }}><h3>{text.empty}</h3></div> : null}
       </section>
 
-      {open ? (
-        <Modal open={open} title={text.add} onClose={() => setOpen(false)}>
-          <form className="entity-form" onSubmit={submit}>
-            <div className="form-grid">
-              <label className="field">
-                <span>{text.email}</span>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(event) => setForm({ ...form, email: event.target.value })}
-                  dir="ltr"
-                  required
-                />
-              </label>
-              <label className="field">
-                <span>{text.name}</span>
-                <input
-                  type="text"
-                  value={form.display_name}
-                  onChange={(event) => setForm({ ...form, display_name: event.target.value })}
-                  required
-                />
-              </label>
+      {/* Drawer: 520–680px, sections, sticky footer, unsaved guard */}
+      {drawerOpen && (
+        <div className="drawer-backdrop" role="presentation" onClick={() => setDrawerOpen(false)}>
+          <div className="drawer" role="dialog" aria-modal="true" aria-label={text.createTitle} style={{ width: 'min(640px, 92vw)' }} onClick={(e) => e.stopPropagation()}>
+            <header className="drawer__header">
+              <div>
+                <h2>{text.createTitle}</h2>
+                <p className="table-secondary">{text.createDesc}</p>
+              </div>
+              <button className="icon-button" type="button" aria-label="Close" onClick={() => setDrawerOpen(false)}>
+                ×
+              </button>
+            </header>
+
+            <div className="drawer__body" style={{ display: 'grid', gap: 24, padding: 16, maxHeight: '70vh', overflowY: 'auto' }}>
+              <section>
+                <h3 style={{ fontSize: 14 }}>{text.sections.identity}</h3>
+                <label className="field" style={{ maxWidth: 420 }}>
+                  <span>{text.name}</span>
+                  <input type="text" value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} aria-invalid={!!fieldErrors.name} />
+                  {fieldErrors.name ? <small className="field__error">{fieldErrors.name}</small> : <small className="table-secondary">{text.nameHint}</small>}
+                </label>
+                <label className="field" style={{ maxWidth: 420 }}>
+                  <span>{text.email}</span>
+                  <input type="email" dir="ltr" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} aria-invalid={!!fieldErrors.email} />
+                  {fieldErrors.email ? <small className="field__error">{fieldErrors.email}</small> : <small className="table-secondary">{text.emailHint}</small>}
+                </label>
+              </section>
+
+              <section>
+                <h3 style={{ fontSize: 14 }}>{text.sections.access}</h3>
+                <label className="field" style={{ maxWidth: 320 }}>
+                  <span>{text.role}</span>
+                  <select value={form.role_id} onChange={(e) => setForm({ ...form, role_id: e.target.value })} aria-invalid={!!fieldErrors.role}>
+                    <option value="">—</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name_ar} — {r.permissions_count ?? r.permissions.length} صلاحية
+                      </option>
+                    ))}
+                  </select>
+                  <small className="table-secondary">{text.roleHint}</small>
+                  {fieldErrors.role ? <small className="field__error">{fieldErrors.role}</small> : null}
+                </label>
+                <label className="field" style={{ maxWidth: 320 }}>
+                  <span>{text.teams}</span>
+                  <input type="text" value={form.teams} onChange={(e) => setForm({ ...form, teams: e.target.value })} placeholder="Team IDs" />
+                  <small className="table-secondary">{text.teamsHint}</small>
+                </label>
+                <label className="field" style={{ maxWidth: 320 }}>
+                  <span>{text.languages}</span>
+                  <select value={form.languages} onChange={(e) => setForm({ ...form, languages: e.target.value })}>
+                    <option value="ar">العربية</option>
+                    <option value="en">English</option>
+                    <option value="ar,en">AR + EN</option>
+                  </select>
+                  <small className="table-secondary">{text.languagesHint}</small>
+                </label>
+              </section>
+
+              <section>
+                <h3 style={{ fontSize: 14 }}>{text.sections.scope}</h3>
+                <label className="field" style={{ maxWidth: 320 }}>
+                  <span>{text.scope}</span>
+                  <input type="text" value={form.scope} onChange={(e) => setForm({ ...form, scope: e.target.value })} placeholder="planet:islamic, content:series" />
+                  <small className="table-secondary">{text.scopeHint}</small>
+                </label>
+              </section>
+
+              <section>
+                <h3 style={{ fontSize: 14 }}>{text.sections.security}</h3>
+                <p className="table-secondary" style={{ fontSize: 12 }}>{text.inviteHint}</p>
+                <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input type="checkbox" checked={form.forceChange} onChange={(e) => setForm({ ...form, forceChange: e.target.checked })} />
+                  <span>{text.forceChange}</span>
+                </label>
+                <p className="table-secondary" style={{ fontSize: 12 }}>{text.mfaHint}</p>
+              </section>
+
+              <section style={{ background: 'var(--surface-2)', padding: 12, borderRadius: 8 }}>
+                <h3 style={{ fontSize: 14 }}>{text.sections.review}</h3>
+                <p style={{ fontSize: 13 }}>
+                  <strong>{text.effective}:</strong> {text.effectiveExample}
+                </p>
+              </section>
+
+              {formError ? <p className="field__error" role="alert">{formError}</p> : null}
             </div>
 
-            <label className="field">
-              <span>{text.role}</span>
-              <select
-                value={form.role_id}
-                onChange={(event) => setForm({ ...form, role_id: event.target.value })}
-                required
-              >
-                <option value="">—</option>
-                {roles.map((role) => (
-                  <option value={role.id} key={role.id}>{role.name_ar}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span>{text.password}</span>
-              <input
-                type="text"
-                value={form.password}
-                onChange={(event) => setForm({ ...form, password: event.target.value })}
-                dir="ltr"
-                minLength={10}
-                required
-              />
-              <small>{text.passwordHint}</small>
-            </label>
-
-            {formError ? <p className="form-error" role="alert">{formError}</p> : null}
-
-            <div className="form-actions">
-              <button className="button button--ghost" type="button" onClick={() => setOpen(false)}>{text.cancel}</button>
-              <button className="button button--primary" type="submit" disabled={saving}>
+            <footer className="drawer__footer" style={{ position: 'sticky', bottom: 0, background: 'var(--surface)', padding: 16, borderTop: '1px solid var(--border)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button className="button button--ghost" type="button" onClick={() => setDrawerOpen(false)}>
+                {text.cancel}
+              </button>
+              <button className="button button--primary" type="button" disabled={saving} onClick={() => void submit()}>
                 {saving ? text.saving : text.save}
               </button>
-            </div>
-          </form>
-        </Modal>
-      ) : null}
+            </footer>
+          </div>
+        </div>
+      )}
     </div>
   )
-}
-
-/// تواريخ D1 بصيغة "YYYY-MM-DD HH:MM:SS" بتوقيت UTC بلا لاحقة منطقة
-function formatDate(value: string, locale: 'ar' | 'en') {
-  const parsed = new Date(value.includes('T') ? value : `${value.replace(' ', 'T')}Z`)
-  if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-GB', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
 }

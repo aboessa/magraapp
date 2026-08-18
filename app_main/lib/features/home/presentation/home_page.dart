@@ -8,17 +8,11 @@ import '../../../core/widgets/animated_brand_logo.dart';
 import '../application/home_providers.dart';
 import '../domain/content_models.dart';
 import '../../child/application/child_provider.dart';
-import 'shells/adaptive_home_shell.dart';
-import 'shells/tv_home_shell.dart';
+import '../../games/application/game_providers.dart';
+import 'v2/home_v2_page.dart';
 
 class HomePage extends ConsumerWidget {
-  const HomePage({this.useV2Home = false, super.key});
-
-  /// Selects which home surface the shells render.
-  ///
-  /// `/` serves the original feed. `/home-v2` passes `true` so the new
-  /// cinematic home stays reachable for side-by-side comparison on a device.
-  final bool useV2Home;
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,21 +24,23 @@ class HomePage extends ConsumerWidget {
       loading: () => baseCatalog,
       error: (e, s) => baseCatalog,
     );
+    final games = ref.watch(gameCatalogProvider);
 
     // Chrome must never wait for or inherit a TV device profile.
     if (kIsWeb) {
-      return _catalogView(context, ref, catalog, isTelevision: false);
+      return _catalogView(context, ref, catalog, games, isTelevision: false);
     }
 
     final device = ref.watch(deviceProfileProvider);
     return device.when(
       loading: () => const Scaffold(body: BrandLoadingView()),
       error: (_, __) =>
-          _catalogView(context, ref, catalog, isTelevision: false),
+          _catalogView(context, ref, catalog, games, isTelevision: false),
       data: (profile) => _catalogView(
         context,
         ref,
         catalog,
+        games,
         isTelevision: profile.isTelevision,
       ),
     );
@@ -53,16 +49,22 @@ class HomePage extends ConsumerWidget {
   Widget _catalogView(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue<HomeCatalog> catalog, {
+    AsyncValue<HomeCatalog> catalog,
+    AsyncValue<List<ExperienceItem>> gameCatalog, {
     required bool isTelevision,
   }) {
-    return catalog.when(
+    final games = gameCatalog is AsyncData<List<ExperienceItem>>
+        ? gameCatalog.value
+        : const <ExperienceItem>[];
+    final effectiveCatalog = catalog.whenData(
+      (value) => value.withServerGames(games, requireDpad: isTelevision),
+    );
+
+    return effectiveCatalog.when(
       loading: () => const Scaffold(body: BrandLoadingView()),
       error: (_, __) =>
           _HomeErrorView(onRetry: () => ref.invalidate(homeCatalogProvider)),
-      data: (value) => isTelevision
-          ? TvHomeShell(catalog: value, useV2Home: useV2Home)
-          : AdaptiveHomeShell(catalog: value, useV2Home: useV2Home),
+      data: (value) => HomeV2Page(catalog: value, isTelevision: isTelevision),
     );
   }
 }

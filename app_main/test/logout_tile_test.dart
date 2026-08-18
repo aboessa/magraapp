@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,15 +7,24 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:majarra/app/router/auth_guard.dart';
 import 'package:majarra/core/cache/catalog_cache.dart';
+import 'package:majarra/core/crypto/file_crypto.dart';
 import 'package:majarra/features/auth/data/auth_storage.dart';
 import 'package:majarra/features/auth/data/parent_pin_store.dart';
+import 'package:majarra/features/downloads/application/download_providers.dart';
+import 'package:majarra/features/downloads/data/download_repository.dart';
+import 'package:majarra/features/games/application/creation_cloud_service.dart';
+import 'package:majarra/features/games/data/local_creation_store.dart';
 import 'package:majarra/features/home/application/home_providers.dart';
 import 'package:majarra/features/home/data/majarra_api_client.dart';
 import 'package:majarra/features/profile/presentation/pages/settings_page.dart';
+import 'package:majarra/features/search/data/recent_searches_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeAuthStorage extends AuthStorage {
   bool cleared = false;
+
+  @override
+  Future<String?> getParentId() async => null;
 
   @override
   Future<void> clear() async => cleared = true;
@@ -33,10 +44,28 @@ class _FakeCatalogCache extends CatalogCache {
   Future<void> clear() async => cleared = true;
 }
 
+class _FakeDownloadRepository extends DownloadRepository {
+  _FakeDownloadRepository(SharedPreferences preferences)
+    : super(
+        prefs: preferences,
+        crypto: FileCrypto(),
+        directory: () async => Directory.systemTemp,
+      );
+
+  @override
+  Future<void> cleanupPlayFiles() async {}
+
+  @override
+  Future<void> wipeAll() async {}
+}
+
 class _FakeApiClient extends MajarraApiClient {
   _FakeApiClient() : super(http.Client());
 
   bool logoutCalled = false;
+
+  @override
+  Future<List<Map<String, Object?>>> fetchChildren() async => const [];
 
   @override
   Future<Map<String, dynamic>> logout() async {
@@ -54,9 +83,16 @@ void main() {
 
   /// Pumps SettingsPage inside a router so `context.go('/login')` resolves.
   Future<void> pumpSettings(WidgetTester tester) async {
-    // SettingsNotifier reads SharedPreferences on construction; without mock
-    // values the page fails to build and no tile is ever rendered.
-    SharedPreferences.setMockInitialValues({});
+    // SettingsNotifier and the teardown stores read SharedPreferences. Injecting
+    // one mock instance keeps this existing widget harness plugin-free.
+    //
+    // The reader entry is seeded so the teardown assertion is meaningful: an
+    // empty store would pass whether or not logout clears anything.
+    SharedPreferences.setMockInitialValues({
+      'majarra_reader_pages_v1.story.story-bird-home.ar':
+          '{"saved_at":9999999999999,"envelope":{"data":[{"id":"p1","page_number":1,"dwell_ms":13200}]}}',
+    });
+    final preferences = await SharedPreferences.getInstance();
 
     // The page is a long scroll and the sign-out tile sits at the very bottom.
     // A tall surface keeps it on screen so taps land without scrolling, which
@@ -91,6 +127,15 @@ void main() {
           catalogCacheProvider.overrideWithValue(cache),
           majarraApiClientProvider.overrideWithValue(api),
           authGuardProvider.overrideWithValue(guard),
+          recentSearchesStoreProvider.overrideWithValue(
+            RecentSearchesStore(prefs: preferences),
+          ),
+          localCreationStoreProvider.overrideWithValue(
+            LocalCreationStore(preferences: () async => preferences),
+          ),
+          downloadRepositoryProvider.overrideWithValue(
+            _FakeDownloadRepository(preferences),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -142,6 +187,16 @@ void main() {
     expect(cache.cleared, isTrue);
     expect(guard.isAuthenticated, isFalse);
     expect(find.text('LOGIN'), findsOneWidget);
+
+    // Reader page snapshots hold page text and timing for whichever stories
+    // this account opened. Leaving them behind carried one family's reading
+    // material into the next family's session on a shared device.
+    final prefs = await SharedPreferences.getInstance();
+    expect(
+      prefs.getKeys().where((key) => key.startsWith('majarra_reader_pages_v1')),
+      isEmpty,
+      reason: 'logout must wipe cached reader pages',
+    );
   });
 
   testWidgets('the dialog warns that the parent PIN will be deleted', (

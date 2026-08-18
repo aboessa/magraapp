@@ -21,7 +21,7 @@ const copy = {
     runs: 'التشغيلات',
     inbox: 'صندوق المراجعة',
     myWork: 'مهامي',
-    overdue: 'المتأخر',
+    overdue: 'المتأخّر',
     blocked: 'المعطل',
     unassigned: 'غير مسند',
     templates: 'القوالب',
@@ -151,7 +151,22 @@ const copy = {
   },
 }
 
-type View = 'overview' | 'runs' | 'inbox' | 'my' | 'overdue' | 'blocked' | 'unassigned' | 'templates'
+type View = 'overview' | 'runs' | 'inbox' | 'mine' | 'overdue' | 'blocked' | 'unassigned' | 'templates'
+
+const workflowStatusCopy = {
+  ar: {
+    blocksPublish: 'حاجبة للنشر',
+    escalated: 'مصعّد',
+    runsLimitation: 'GET /admin/workflows/runs يدعم الترقيم فقط، ولا يقبل فلترة بحالة ولا بقالب على الخادم.',
+    lateHours: (hours: number) => `${hours} ساعة تأخّر`,
+  },
+  en: {
+    blocksPublish: 'Blocks publishing',
+    escalated: 'Escalated',
+    runsLimitation: 'GET /admin/workflows/runs supports pagination only; it does not support server-side status or template filtering.',
+    lateHours: (hours: number) => `${hours} hours overdue`,
+  },
+}
 
 function dueLabel(dueAt: string | null) {
   if (!dueAt) return '—'
@@ -166,9 +181,10 @@ function dueLabel(dueAt: string | null) {
 export function WorkflowPage() {
   const { locale } = usePreferences()
   const text = copy[locale==='en'?'en':'ar'] as typeof copy.ar
+  const statusText = workflowStatusCopy[locale==='en'?'en':'ar']
   const navigate = useNavigate()
   const url = useUrlListState({}, { defaultView: 'overview' })
-  const view = (url.view as View) || 'overview'
+  const view = (url.view === 'my' ? 'mine' : url.view) as View
   const setView = (v: View) => url.setView(v as any)
 
   const [runs, setRuns] = useState<WorkflowRunRecord[]>([])
@@ -288,8 +304,12 @@ export function WorkflowPage() {
 
       {/* Tabs */}
       <div className="detail-tabs" role="tablist">
-        {(['overview','runs','inbox','my','overdue','blocked','templates'] as View[]).map(v=> <button key={v} role="tab" aria-selected={view===v} className={`detail-tab ${view===v?'detail-tab--active':''}`} onClick={()=> setView(v)}>{(text as any)[v] ?? v}</button>)}
+        {(['overview','runs','inbox','mine','overdue','blocked','templates'] as View[]).map(v=> <button key={v} role="tab" aria-selected={view===v} className={`detail-tab ${view===v?'detail-tab--active':''}`} onClick={()=> setView(v)}>{(text as any)[v==='mine'?'myWork':v] ?? v}</button>)}
       </div>
+
+      {(view==='overview' || view==='runs') && (
+        <p className="panel__note">{statusText.runsLimitation}</p>
+      )}
 
       {/* Filters */}
       <div className="filters-row" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -310,7 +330,32 @@ export function WorkflowPage() {
         </div>
       )}
 
-      {(view==='runs' || view==='inbox' || view==='blocked' || view==='overdue') && (
+      {view==='overdue' && (
+        <section className="panel panel--table">
+          <div className="table-scroll" tabIndex={0}>
+            <table className="data-table data-table--wide">
+              <thead><tr><th>{text.content}</th><th>{text.filterStage}</th><th>{text.status}</th><th>{text.owner}</th><th>{text.due}</th><th>{text.age}</th><th>{text.sla}</th><th /></tr></thead>
+              <tbody>
+                {overdue.map((row) => (
+                  <tr key={`${row.run_id}:${row.stage_key}`}>
+                    <td><Link to={adminPath(row.content_type==='episode'?`episodes/${row.content_id}`:row.content_type==='story'?`stories/${row.content_id}`:'workflows')}>{row.content_type} · {row.content_id.slice(0,8)}</Link></td>
+                    <td><strong>{row.name_ar ?? row.stage_key}</strong><small>{row.stage_key}</small></td>
+                    <td><span className="status-badge status-badge--review">{row.status}</span></td>
+                    <td>{row.assignee_id ?? row.assignee_team_id ?? '—'}</td>
+                    <td dir="ltr">{row.due_at?.slice(0,10) ?? '—'}</td>
+                    <td>{statusText.lateHours(row.hours_late)}</td>
+                    <td>{row.escalated ? statusText.escalated : '—'}</td>
+                    <td><button className="button button--ghost button--small" onClick={()=> void openRun(row.run_id)}>{text.open}</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {overdue.length===0 && <EmptyState title={text.emptyOverdue} description="" />}
+        </section>
+      )}
+
+      {(view==='runs' || view==='inbox' || view==='blocked') && (
         <section className="panel panel--table">
           <div className="table-scroll" tabIndex={0}>
             <table className="data-table data-table--wide">
@@ -351,9 +396,9 @@ export function WorkflowPage() {
         </section>
       )}
 
-      {view==='my' && (
+      {view==='mine' && (
         <section className="panel panel--table"><div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>{text.content}</th><th>{text.stage}</th><th>{text.status}</th><th>{text.due}</th><th /></tr></thead>
-          <tbody>{mine.map(m=> <tr key={`${m.run_id}:${m.stage_key}`}><td>{m.content_type}·{m.content_id.slice(0,8)}</td><td>{m.name_ar}</td><td>{m.status}</td><td dir="ltr">{m.due_at?.slice(0,10)??'—'}</td><td><button className="button button--ghost button--small" onClick={()=> void openRun(m.run_id)}>{text.open}</button></td></tr>)}</tbody></table></div>{mine.length===0 && <EmptyState title={text.emptyMy} description="" />}</section>
+          <tbody>{mine.map(m=> <tr key={`${m.run_id}:${m.stage_key}`}><td>{m.content_type}·{m.content_id.slice(0,8)}</td><td>{m.name_ar}{m.blocks_publish ? ` · ${statusText.blocksPublish}` : ''}</td><td>{m.status}</td><td dir="ltr">{m.due_at?.slice(0,10)??'—'}</td><td><button className="button button--ghost button--small" onClick={()=> void openRun(m.run_id)}>{text.open}</button></td></tr>)}</tbody></table></div>{mine.length===0 && <EmptyState title={text.emptyMy} description="" />}</section>
       )}
 
       {view==='templates' && (

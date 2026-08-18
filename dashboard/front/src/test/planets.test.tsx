@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest'
+﻿import { describe, expect, test, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PlanetsPage } from '../pages/PlanetsPage'
@@ -218,7 +218,7 @@ describe('PlanetsPage', () => {
     renderWithProviders(<PlanetsPage />, { route: '/planets' })
 
     const link = await screen.findByRole('link', { name: 'كوكب القصص' })
-    expect(link).toHaveAttribute('href', '/iamnotsite/planets/qisas')
+    expect(link).toHaveAttribute('href', '/admin/planets/qisas')
     expect(link.className).toContain('planet-card__link')
   })
 
@@ -334,11 +334,11 @@ describe('PlanetsPage', () => {
     await user.click(screen.getByRole('button', { name: /إجراءات الكوكب/ }))
     const menu = screen.getByRole('menu')
     expect(within(menu).getByRole('menuitem', { name: /وسائط الكوكب/ }))
-      .toHaveAttribute('href', '/iamnotsite/planets/qisas?tab=media')
+      .toHaveAttribute('href', '/admin/planets/qisas?tab=media')
     expect(within(menu).getByRole('menuitem', { name: /إنتاج الكوكب/ }))
-      .toHaveAttribute('href', '/iamnotsite/planets/qisas?tab=production')
+      .toHaveAttribute('href', '/admin/planets/qisas?tab=production')
     expect(within(menu).getByRole('menuitem', { name: /إضافة سلسلة هنا/ }))
-      .toHaveAttribute('href', '/iamnotsite/series?planet=qisas&new=1')
+      .toHaveAttribute('href', '/admin/series?planet=qisas&new=1')
   })
 
   test('disabling a planet with content confirms with the impact the server reported', async () => {
@@ -419,8 +419,8 @@ describe('PlanetWorkspacePage', () => {
     // وجهة داخل الصفحة تصير تبويبًا، ووجهة خارجية تصير شاشة أخرى
     const links = screen.getAllByRole('link', { name: /فتح/ })
     const hrefs = links.map((link) => link.getAttribute('href'))
-    expect(hrefs).toContain('/iamnotsite/planets/qisas?tab=media')
-    expect(hrefs).toContain('/iamnotsite/episodes?status=ready')
+    expect(hrefs).toContain('/admin/planets/qisas?tab=media')
+    expect(hrefs).toContain('/admin/episodes?status=ready')
   })
 
   test('the tab lives in the URL so the view is shareable', async () => {
@@ -486,18 +486,18 @@ describe('PlanetWorkspacePage', () => {
     // عقد الشجرة روابط حقيقية لا أزرار تستدعي navigate: الشجرة يُتنقَّل فيها
     // كثيرًا، والرابط يتيح النقر الأوسط وفتح في تبويب جديد ونسخ العنوان.
     expect(within(tree).getByRole('link', { name: /حكايات/ }))
-      .toHaveAttribute('href', '/iamnotsite/series/s1')
+      .toHaveAttribute('href', '/admin/series/s1')
     // الموسم مطوي في البداية، ويُفتح بزرّ
     await user.click(within(tree).getAllByRole('button', { expanded: false })[0])
     expect(await screen.findByRole('link', { name: /الأولى/ }))
-      .toHaveAttribute('href', '/iamnotsite/episodes/ep1')
+      .toHaveAttribute('href', '/admin/episodes/ep1')
     // الحلقة بلا موسم ليست مخفيّة. المجموعة نفسها ليست كيانًا يُفتح، فهي نصّ لا
     // رابط — لأن «حلقات بلا موسم» مجموعة اصطناعية لا صفّ في قاعدة البيانات.
     expect(within(tree).getByText('حلقات بلا موسم')).toBeInTheDocument()
     expect(within(tree).queryByRole('link', { name: 'حلقات بلا موسم' })).not.toBeInTheDocument()
     await user.click(within(tree).getAllByRole('button', { expanded: false })[0])
     expect(await screen.findByRole('link', { name: /الثانية/ }))
-      .toHaveAttribute('href', '/iamnotsite/episodes/ep2')
+      .toHaveAttribute('href', '/admin/episodes/ep2')
   })
 
   test('a tree row carries the readiness signals the payload already knows', async () => {
@@ -588,7 +588,7 @@ describe('PlanetWorkspacePage', () => {
     // المتطلب بلا مسؤول ولا فريق يُعلَن في صفّه، لا يُترك فارغًا
     expect(within(table).getByText('بلا مالك')).toBeInTheDocument()
     expect(within(table).getByRole('link', { name: 'فتح' }))
-      .toHaveAttribute('href', '/iamnotsite/episodes/ep-1')
+      .toHaveAttribute('href', '/admin/episodes/ep-1')
   })
 
   test('the production board is requested for this planet only', async () => {
@@ -627,7 +627,7 @@ describe('PlanetWorkspacePage', () => {
     mountWorkspace('/planets/nope')
 
     expect(await screen.findByText('الكوكب غير موجود')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'الكواكب' })).toHaveAttribute('href', '/iamnotsite/planets')
+    expect(screen.getByRole('link', { name: 'الكواكب' })).toHaveAttribute('href', '/admin/planets')
   })
 
   test('breadcrumbs are clickable up the hierarchy', async () => {
@@ -637,8 +637,8 @@ describe('PlanetWorkspacePage', () => {
     mountWorkspace()
 
     await screen.findByRole('heading', { name: 'كوكب القصص' })
-    expect(screen.getByRole('link', { name: 'الكواكب' })).toHaveAttribute('href', '/iamnotsite/planets')
-    expect(screen.getByRole('link', { name: 'المحتوى' })).toHaveAttribute('href', '/iamnotsite')
+    expect(screen.getByRole('link', { name: 'الكواكب' })).toHaveAttribute('href', '/admin/planets')
+    expect(screen.getByRole('link', { name: 'المحتوى' })).toHaveAttribute('href', '/admin')
   })
 
   test('English keeps the same structure with English labels', async () => {

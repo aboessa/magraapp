@@ -92,6 +92,7 @@ const copy = {
     bulkAssign: 'إسناد جماعي',
     matrixHint: 'مصفوفة المتطلبات — عرض متقدم، التمرير الأفقي مسموح هنا فقط.',
     notRequired: '—',
+    episodeType: 'الحلقات', storyType: 'القصص',
   },
   en: {
     eyebrow: 'Production',
@@ -117,10 +118,11 @@ const copy = {
     export: 'Export', bulkAssign: 'Bulk assign',
     matrixHint: 'Requirements matrix — advanced view, horizontal scroll allowed here only.',
     notRequired: '—',
+    episodeType: 'Episodes', storyType: 'Stories',
   },
 }
 
-const FILTER_DEFAULTS = { type: 'episode', status: '', planet_id: '', lang: '', owner: '', q: '' }
+const FILTER_DEFAULTS = { type: 'episode', status: '', planet_id: '', lang: '', owner: '', q: '', with_publish: '1' }
 
 export function ProductionPage() {
   const { locale } = usePreferences()
@@ -151,7 +153,7 @@ export function ProductionPage() {
         const res = await api.productionQueue()
         setQueue(res.data)
       } else {
-        const res = await api.productionBoard({ type: filters.type || 'episode', limit: list.limit, offset: list.offset, with_publish: 1 })
+        const res = await api.productionBoard({ type: filters.type || 'episode', limit: list.limit, offset: list.offset, with_publish: filters.with_publish })
         let data = res.data
         // client-side filters for demo where board does not support planet/lang/owner search
         if (q) data = data.filter((it) => it.title.toLowerCase().includes(q.toLowerCase()))
@@ -159,7 +161,7 @@ export function ProductionPage() {
       }
     } catch (e) { setError(e instanceof Error ? e.message : 'تعذر التحميل') }
     finally { setLoading(false) }
-  }, [view, filters.type, list.limit, list.offset, q])
+  }, [view, filters.type, filters.with_publish, list.limit, list.offset, q])
 
   useEffect(() => { void load() }, [load])
   useEffect(() => { list.setView(view as any) }, [view])
@@ -286,7 +288,7 @@ export function ProductionPage() {
       {/* Filters + View switcher */}
       <ListToolbar
         fields={[
-          { key: 'type', label: text.typeLabel, type: 'select', options: [{ value: 'episode', label: 'Episode' }, { value: 'story', label: 'Story' }] },
+          { key: 'type', label: text.typeLabel, type: 'select', options: [{ value: 'episode', label: text.episodeType }, { value: 'story', label: text.storyType }] },
           { key: 'status', label: text.statusLabel, type: 'select', options: [{ value: '', label: 'الكل' }, { value: 'blocked', label: 'معطل' }, { value: 'overdue', label: 'متأخر' }] },
         ] as FilterField[]}
         values={filters as any}

@@ -1,0 +1,28 @@
+{
+  "measuredAt": "2026-08-11",
+  "source": "tools/tts/act-s1.narration.en.json",
+  "voice": "Leda",
+  "model": "gemini-3.1-flash-tts-preview",
+  "language": "en-US",
+  "register": "calm bedtime narration for ages 3-5",
+  "primaryUnit": "latin_characters_per_second",
+  "charactersPerSecond": 5.04,
+  "derivedWordsPerMinute": 83,
+  "totals": { "pages": 8, "measuredMs": 47040, "words": 66 },
+  "why_this_file_exists": "Proof that a words-per-minute target cannot be shared across languages. This is the SAME story, the SAME voice, and effectively the SAME total duration as the Arabic narration (47.0s against 47.2s), yet it runs at 83 wpm against Arabic's 53 — a 57% difference. The 90 wpm figure the story specs carried was, quite literally, an English-language number applied to Arabic. Any future language needs its own calibration run; do not scale one from another.",
+  "cross_language_comparison": {
+    "arabic": { "words": 42, "wordsPerMinute": 53, "unitsPerSecond": 3.51, "unit": "arabic_letters" },
+    "english": { "words": 66, "wordsPerMinute": 83, "unitsPerSecond": 5.04, "unit": "latin_characters" },
+    "note": "The per-second unit is not comparable between the two rows either, since an Arabic letter and a Latin character carry different amounts of speech. Each unit is only valid for comparing pages WITHIN its own language."
+  },
+  "closing_page_check": {
+    "requirement": "The story file requires the closing page to be the slowest.",
+    "result": "Satisfied on the first attempt. Page 8 reads at 3.53 characters/sec against 4.60-5.88 for every other page.",
+    "how": "An inline [very slow, drowsy, one gentle word at a time] audio tag plus the spec's 800 ms pre-roll. Prose direction alone failed to carry tempo in Arabic, needing two regenerations; carrying the tag over meant English needed none."
+  },
+  "caveats": [
+    "One voice, one register. Other registers in this planet need separate calibration.",
+    "Page duration includes leading and trailing silence, so this is a page rate, not an articulation rate.",
+    "Timbre, accent and pronunciation were not verified: they cannot be checked programmatically and no human has listened yet."
+  ]
+}

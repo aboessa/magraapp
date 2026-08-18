@@ -28,12 +28,17 @@
 /// live in the private bucket, so there is no public URL to hand out.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { callDurable, familyStub } from '../lib/doClient';
-import { contentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass';
-import { authenticateParent, createMediaToken, mediaIsConfigured } from '../lib/parentAuth';
-import { availabilityContext, availabilityFor, availabilityRefusal } from '../lib/requestGeo.ts';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { callDurable, familyStub } from '../lib/doClient.ts';
+import { contentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass.ts';
+import { authenticateParent, createMediaToken, mediaIsConfigured } from '../lib/parentAuth.ts';
+import {
+  availabilityContext,
+  availabilityFor,
+  availabilityForBatch,
+  availabilityRefusal,
+} from '../lib/requestGeo.ts';
 import {
   isGameLanguage,
   localizePack,
@@ -72,6 +77,43 @@ function parseStringMap(value: unknown): Record<string, string> {
   return out;
 }
 
+function pagination(value: string | undefined, fallback: number, minimum = 0) {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isInteger(parsed)
+    ? Math.min(Math.max(parsed, minimum), 100)
+    : fallback;
+}
+
+interface FamilyChild {
+  id: string;
+  birth_month: number;
+  birth_year: number;
+  language: string;
+}
+
+function ageInYears(child: FamilyChild, now = new Date()): number | null {
+  const birthMonth = Number(child.birth_month);
+  const birthYear = Number(child.birth_year);
+  if (!Number.isInteger(birthMonth) || birthMonth < 1 || birthMonth > 12) return null;
+  if (!Number.isInteger(birthYear) || birthYear < 1900 || birthYear > now.getUTCFullYear()) return null;
+  const currentMonth = now.getUTCMonth() + 1;
+  return now.getUTCFullYear() - birthYear - (currentMonth < birthMonth ? 1 : 0);
+}
+
+interface GameSummaryRow {
+  id: string;
+  title: string;
+  engine_id: string;
+  series_id: string;
+  episode_id: string | null;
+  planet_id: string;
+  difficulty: string;
+  age_min: number;
+  age_max: number;
+  is_free: number;
+  engine_mechanics: string | null;
+}
+
 interface GameRow {
   id: string;
   engine_id: string;
@@ -96,6 +138,116 @@ interface GameRow {
   objective_title: string | null;
   objective_criteria: string | null;
 }
+
+// GET /api/v1/games - child-specific, published summaries only.
+//
+// This endpoint deliberately fails closed for standalone games. `games` has no
+// `content_class` or `planet_id`; both are authoritative on the parent series.
+// A direct series link or an episode's series is therefore required before a
+// row can be proven production content and checked against inherited territory
+// policy. No pack, asset id, media capability or editorial field is selected.
+gamesRoute.get('/', async (c) => {
+  const auth = await authenticateParent(c.env, c.req.header('Authorization'));
+  if (!auth.ok) return unauthorized(auth.reason);
+
+  const childId = c.req.query('child_id')?.trim();
+  if (!childId) return c.json({ success: false, error: 'child_id is required' }, 400);
+
+  const family = await callDurable<{ data?: FamilyChild[] }>(
+    familyStub(c.env, auth.principal.parentId),
+    '/children',
+  );
+  if (family.status !== 200) {
+    return Response.json(
+      family.data ?? { success: false, error: 'Family service unavailable' },
+      { status: family.status },
+    );
+  }
+  const child = family.data?.data?.find((entry) => String(entry.id) === childId);
+  if (!child) return c.json({ success: false, error: 'Child not found for this account' }, 404);
+
+  const childAge = ageInYears(child);
+  if (childAge === null) {
+    return c.json({ success: false, error: 'Child profile has no valid age' }, 409);
+  }
+
+  const requestedRaw = c.req.query('language') ?? child.language ?? 'ar';
+  const requested: GameLanguage = isGameLanguage(requestedRaw) ? requestedRaw : 'ar';
+  const limit = pagination(c.req.query('limit'), 100, 1);
+  const offset = pagination(c.req.query('offset'), 0);
+  const serveFixtures = shouldServeTestFixtures(c.env);
+  const context = availabilityContext(c.req.raw, c.env, { language: requested });
+
+  // `queryAll` prepares and binds this statement. The only interpolation is the
+  // trusted content-class predicate built from the literal alias `s`.
+  const rows = await queryAll<GameSummaryRow>(c.env.DB, `
+    SELECT g.id,
+           COALESCE(NULLIF(TRIM(gl.title), ''), g.title_ar) AS title,
+           g.engine_id,
+           s.id AS series_id,
+           g.episode_id,
+           p.id AS planet_id,
+           g.difficulty,
+           g.age_min,
+           g.age_max,
+           g.is_free,
+           ge.mechanics AS engine_mechanics
+      FROM games g
+      JOIN game_engines ge ON ge.id = g.engine_id
+      LEFT JOIN episodes e ON e.id = g.episode_id
+      JOIN series s ON s.id = COALESCE(g.series_id, e.series_id)
+      JOIN planets p ON p.id = s.planet_id
+      LEFT JOIN game_localizations gl
+        ON gl.game_id = g.id
+       AND gl.language = ?
+       AND gl.status IN ('ready', 'published')
+     WHERE g.status = 'published'
+       AND s.status = 'published'
+       AND p.is_active = 1
+       AND g.age_min <= ? AND g.age_max >= ?
+       AND s.age_min <= ? AND s.age_max >= ?
+       AND (
+         g.episode_id IS NULL OR (
+           e.id IS NOT NULL
+           AND e.status = 'published'
+           AND e.is_published = 1
+           AND e.series_id = s.id
+         )
+       )
+       ${contentClassPredicate('s', serveFixtures)}
+     ORDER BY COALESCE(g.updated_at, g.created_at) DESC, g.id ASC
+     LIMIT ? OFFSET ?
+  `, [requested, childAge, childAge, childAge, childAge, limit, offset]);
+
+  const decisions = await availabilityForBatch(c.env, 'game', rows, (row) => ({
+    id: row.id,
+    series_id: row.series_id,
+    planet_id: row.planet_id,
+  }), context);
+  const visible = rows.filter((row) => decisions.get(row.id)?.available !== false);
+
+  return c.json({
+    success: true,
+    data: visible.map((row) => ({
+      id: row.id,
+      title: row.title,
+      engine: row.engine_id,
+      series_id: row.series_id,
+      episode_id: row.episode_id,
+      planet_id: row.planet_id,
+      difficulty: row.difficulty,
+      age_min: row.age_min,
+      age_max: row.age_max,
+      is_free: Boolean(row.is_free),
+      supports_dpad: parseJsonObject(row.engine_mechanics).supports_dpad === true,
+    })),
+    meta: {
+      limit,
+      offset,
+      withheld_in_territory: rows.length - visible.length,
+    },
+  });
+});
 
 gamesRoute.get('/:id', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));

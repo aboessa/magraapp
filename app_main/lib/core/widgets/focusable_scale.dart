@@ -16,7 +16,7 @@ class FocusableScale extends StatefulWidget {
   });
 
   final Widget child;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final String? semanticLabel;
   final bool autofocus;
   final BorderRadius borderRadius;
@@ -33,33 +33,43 @@ class _FocusableScaleState extends State<FocusableScale> {
 
   @override
   Widget build(BuildContext context) {
-    final highlighted = _focused || _hovered;
+    final onPressed = widget.onPressed;
+    final enabled = onPressed != null;
+    final highlighted = enabled && (_focused || _hovered);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final animationDuration = reduceMotion
         ? Duration.zero
         : const Duration(milliseconds: 180);
+
     Widget result = Semantics(
       button: true,
+      enabled: enabled,
       label: widget.semanticLabel,
       child: CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.select): widget.onPressed,
-          const SingleActivator(LogicalKeyboardKey.enter): widget.onPressed,
-          const SingleActivator(LogicalKeyboardKey.gameButtonA):
-              widget.onPressed,
+        bindings: <ShortcutActivator, VoidCallback>{
+          if (onPressed != null)
+            const SingleActivator(LogicalKeyboardKey.select): onPressed,
+          if (onPressed != null)
+            const SingleActivator(LogicalKeyboardKey.enter): onPressed,
+          if (onPressed != null)
+            const SingleActivator(LogicalKeyboardKey.gameButtonA): onPressed,
         },
         child: FocusableActionDetector(
-          autofocus: widget.autofocus,
-          mouseCursor: SystemMouseCursors.click,
+          enabled: enabled,
+          autofocus: enabled && widget.autofocus,
+          mouseCursor: enabled
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
           onShowFocusHighlight: (value) => setState(() => _focused = value),
           onShowHoverHighlight: (value) => setState(() => _hovered = value),
-          actions: {
-            ActivateIntent: CallbackAction<ActivateIntent>(
-              onInvoke: (_) {
-                widget.onPressed();
-                return null;
-              },
-            ),
+          actions: <Type, Action<Intent>>{
+            if (onPressed != null)
+              ActivateIntent: CallbackAction<ActivateIntent>(
+                onInvoke: (_) {
+                  onPressed();
+                  return null;
+                },
+              ),
           },
           child: AnimatedScale(
             scale: highlighted ? widget.focusScale : 1,
@@ -78,9 +88,20 @@ class _FocusableScaleState extends State<FocusableScale> {
                 ),
                 boxShadow: highlighted
                     ? [
-                        BoxShadow(color: Colors.white.withValues(alpha: 0.92), blurRadius: 0, spreadRadius: 1),
-                        BoxShadow(color: AppColors.electricCyan.withValues(alpha: 0.38), blurRadius: 22, spreadRadius: 3),
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.22), blurRadius: 12),
+                        BoxShadow(
+                          color: Colors.white.withValues(alpha: 0.92),
+                          blurRadius: 0,
+                          spreadRadius: 1,
+                        ),
+                        BoxShadow(
+                          color: AppColors.electricCyan.withValues(alpha: 0.38),
+                          blurRadius: 22,
+                          spreadRadius: 3,
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.22),
+                          blurRadius: 12,
+                        ),
                       ]
                     : const [],
               ),
@@ -88,7 +109,7 @@ class _FocusableScaleState extends State<FocusableScale> {
                 borderRadius: widget.borderRadius,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: widget.onPressed,
+                  onTap: onPressed,
                   child: widget.child,
                 ),
               ),

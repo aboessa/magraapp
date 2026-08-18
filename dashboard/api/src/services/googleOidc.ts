@@ -1,4 +1,4 @@
-import type { Env } from '../lib/db';
+import type { Env } from '../lib/db.ts';
 
 const GOOGLE_JWKS_URL = 'https://www.googleapis.com/oauth2/v3/certs';
 const VALID_ISSUERS = new Set(['accounts.google.com', 'https://accounts.google.com']);

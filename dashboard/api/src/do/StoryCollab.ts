@@ -1,7 +1,14 @@
 export class StoryCollab {
   private sql: SqlStorage
+  private state: DurableObjectState
 
-  constructor(private state: DurableObjectState) {
+  // Written as an explicit field rather than a constructor parameter property.
+  // Node's type-stripping loader rejects parameter properties, and this single
+  // occurrence in the whole worker made `import('src/index.ts')` impossible from
+  // a test — so no test could ever observe middleware composition or route
+  // mount order. Semantically identical.
+  constructor(state: DurableObjectState) {
+    this.state = state
     this.sql = state.storage.sql
     this.sql.exec(`
       CREATE TABLE IF NOT EXISTS presence (user_id TEXT PRIMARY KEY, name TEXT, cursor_page INTEGER, updated_at INTEGER);

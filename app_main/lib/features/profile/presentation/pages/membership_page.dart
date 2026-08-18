@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/failures/app_failure.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../data/billing_status.dart';
+import '../widgets/profile_page_content.dart';
 
 /// Membership and subscription state.
 ///
@@ -53,8 +55,7 @@ class MembershipPage extends ConsumerWidget {
               ],
             ),
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(18),
+              child: ProfilePageContent(
                 child: status.when(
                   loading: () => const Padding(
                     padding: EdgeInsets.symmetric(vertical: 60),
@@ -64,7 +65,9 @@ class MembershipPage extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  error: (_, __) => _SignInNotice(
+                  error: (error, _) => _MembershipError(
+                    failure: AppFailure.fromException(error),
+                    onRetry: () => ref.invalidate(billingStatusProvider),
                     onSignIn: () => context.push('/login'),
                   ),
                   data: (data) => Column(
@@ -83,25 +86,26 @@ class MembershipPage extends ConsumerWidget {
                       // Purchase and management flows require Google Play
                       // Billing on the client, which is not integrated. The
                       // buttons stay disabled rather than opening a dead end.
-                      SizedBox(
-                        height: 52,
-                        child: FilledButton(
-                          onPressed: null,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.starGold,
-                            foregroundColor: AppColors.deepSpace,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                      FilledButton(
+                        onPressed: null,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(52),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 14,
                           ),
-                          child: Text(
-                            data.plan.isPaid
-                                ? 'إدارة الاشتراك — عبر Google Play'
-                                : 'الترقية — غير متاحة بعد',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                            ),
+                          backgroundColor: AppColors.starGold,
+                          foregroundColor: AppColors.deepSpace,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
+                        ),
+                        child: Text(
+                          data.plan.isPaid
+                              ? 'إدارة الاشتراك — عبر Google Play'
+                              : 'الترقية — غير متاحة بعد',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -144,11 +148,7 @@ class _PlanCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF6A3DF2),
-            Color(0xFF1B2550),
-            Color(0xFF0B1026),
-          ],
+          colors: [Color(0xFF6A3DF2), Color(0xFF1B2550), Color(0xFF0B1026)],
         ),
         border: Border.all(
           color: AppColors.starGold.withValues(alpha: paid ? 0.42 : 0.16),
@@ -217,7 +217,11 @@ class _PlanCard extends StatelessWidget {
           ),
           if (subscription != null) ...[
             const SizedBox(height: 16),
-            Row(
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 8,
               children: [
                 Text(
                   subscription.sourceLabel,
@@ -227,13 +231,10 @@ class _PlanCard extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const Spacer(),
                 Text(
-                  // Renewal date is only shown when the server actually
-                  // reported one; a null expiry means a non-expiring grant.
                   subscription.expiresAt == null
                       ? 'بدون تاريخ انتهاء'
-                      : 'حتى ${_formatDate(subscription.expiresAt!)}',
+                      : 'حتى ${MaterialLocalizations.of(context).formatShortDate(subscription.expiresAt!.toLocal())}',
                   style: TextStyle(
                     color: AppColors.mutedText.withValues(alpha: 0.72),
                     fontSize: 11,
@@ -245,13 +246,6 @@ class _PlanCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  static String _formatDate(DateTime value) {
-    final local = value.toLocal();
-    final month = local.month.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    return '$day/$month/${local.year}';
   }
 }
 
@@ -339,7 +333,7 @@ class _UsageSection extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         _LimitLine(
-          label: 'أجهزة التنزيل',
+          label: 'أجهزة التنزيل المحمي',
           value: limits.downloadDevices == 0
               ? 'غير متاح في هذه الباقة'
               : '${limits.downloadDevices}',
@@ -377,15 +371,17 @@ class _UsageRow extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 10),
                   Text(
                     '$used / $total',
                     style: TextStyle(
@@ -426,21 +422,27 @@ class _LimitLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        label,
-        style: TextStyle(
-          color: AppColors.mutedText.withValues(alpha: 0.82),
-          fontSize: 11.5,
+      Expanded(
+        child: Text(
+          label,
+          style: TextStyle(
+            color: AppColors.mutedText.withValues(alpha: 0.82),
+            fontSize: 11.5,
+          ),
         ),
       ),
-      const Spacer(),
-      Text(
-        value,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 11.5,
-          fontWeight: FontWeight.w700,
+      const SizedBox(width: 12),
+      Flexible(
+        child: Text(
+          value,
+          textAlign: TextAlign.end,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     ],
@@ -459,19 +461,15 @@ class _EntitlementsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final paid = status.plan.isPaid;
-    final downloads = status.limits.downloadDevices > 0;
 
     return Column(
       children: [
-        _Feature(
+        const _Feature(
           icon: Icons.download_rounded,
-          title: 'تحميل دون اتصال',
-          included: downloads,
-          // Downloads need the offline service, which is not implemented, so
-          // this is stated even when the plan would allow it.
-          note: downloads
-              ? 'مسموح في باقتك — الميزة قيد التطوير'
-              : 'غير مضمّن في باقتك',
+          title: 'تنزيل الصوت العام',
+          included: true,
+          note:
+              'مدعوم للمحتوى الصوتي العام فقط؛ الوسائط الخاصة المحمية غير متاحة دون اتصال.',
         ),
         const SizedBox(height: 10),
         _Feature(
@@ -577,46 +575,65 @@ class _Feature extends StatelessWidget {
   );
 }
 
-class _SignInNotice extends StatelessWidget {
-  const _SignInNotice({required this.onSignIn});
+class _MembershipError extends StatelessWidget {
+  const _MembershipError({
+    required this.failure,
+    required this.onRetry,
+    required this.onSignIn,
+  });
 
+  final AppFailure failure;
+  final VoidCallback onRetry;
   final VoidCallback onSignIn;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 40),
-    child: Column(
-      children: [
-        Icon(
-          Icons.lock_outline_rounded,
-          color: AppColors.mutedText.withValues(alpha: 0.5),
-          size: 46,
+  Widget build(BuildContext context) {
+    final needsLogin = failure.kind == FailureKind.unauthorized;
+    return Semantics(
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(
+          children: [
+            Icon(
+              needsLogin
+                  ? Icons.lock_outline_rounded
+                  : Icons.cloud_off_outlined,
+              color: AppColors.mutedText.withValues(alpha: 0.6),
+              size: 46,
+            ),
+            const SizedBox(height: 14),
+            Text(
+              needsLogin ? 'يتطلب تسجيل الدخول' : 'تعذّر تحميل العضوية',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              needsLogin
+                  ? 'العضوية مرتبطة بحساب الأسرة. سجّل الدخول لعرض باقتك وحدودها.'
+                  : failure.message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.mutedText.withValues(alpha: 0.72),
+                fontSize: 12,
+                height: 1.7,
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: needsLogin ? onSignIn : onRetry,
+              icon: Icon(
+                needsLogin ? Icons.login_rounded : Icons.refresh_rounded,
+              ),
+              label: Text(needsLogin ? 'تسجيل الدخول' : 'إعادة المحاولة'),
+            ),
+          ],
         ),
-        const SizedBox(height: 14),
-        const Text(
-          'يتطلب تسجيل الدخول',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'العضوية مرتبطة بحساب الأسرة. سجّل الدخول لعرض باقتك وحدودها.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppColors.mutedText.withValues(alpha: 0.72),
-            fontSize: 12,
-            height: 1.7,
-          ),
-        ),
-        const SizedBox(height: 18),
-        FilledButton(
-          onPressed: onSignIn,
-          child: const Text('تسجيل الدخول'),
-        ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }

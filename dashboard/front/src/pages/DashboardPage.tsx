@@ -1,209 +1,40 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../lib/api'
-import type { ContentReviewRecord, DashboardStats, ExecutiveOverview, RightsLicenseRecord, TaskRecord } from '../types/api'
+import { api, apiRoot } from '../lib/api'
+import type { DashboardStats } from '../types/api'
 import { StatCard } from '../components/StatCard'
-import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { ErrorState, LoadingState } from '../components/PageState'
 import { Icon } from '../components/Icon'
-import { StatusBadge } from '../components/StatusBadge'
-import { formatDate, formatNumber, planLabels, trackLabels } from '../lib/labels'
+import { formatNumber } from '../lib/labels'
 import { adminPath } from '../lib/adminPath'
 import { readAdminUser } from '../lib/adminSession'
-import { orderModules, readPreset, writePreset } from '../lib/dashboardPresets'
-import type { DashboardPreset } from '../lib/dashboardPresets'
 import { usePreferences } from '../context/preferences'
+import { DASHBOARD_VERSION, rangeToParams, type DashboardRange } from '../lib/dashboardRange'
+import { HeroKpis } from '../components/HeroKpis'
+import { AnalyticsPanel, RevenuePanel } from '../components/dashboard/RevenuePanels'
+import { AttentionPanels } from '../components/dashboard/AttentionPanels'
+import { ExecutiveModules } from '../components/dashboard/ExecutiveModules'
+import { ContentHealthPanels } from '../components/dashboard/ContentPanels'
+import { FailedPanel, PlatformPanel, SearchPanel, TeamPanel, TimelinePanel, WebsitePanel } from '../components/dashboard/OperationalPanels'
+import { AdvancedPanels } from '../components/dashboard/AdvancedPanels'
+import { BulkOpsPanel as _BulkOpsPanel } from '../components/dashboard/BulkOpsPanel'
+void _BulkOpsPanel
 
-/**
- * الوحدات التنفيذية: كل رقم من `GET /admin/dashboard/executive` وكل رقم قابل
- * للنقر.
- *
- * ## القاعدة
- *
- * لا مؤشّر بلا مقصد. الشاشة السابقة كانت تعرض عدّادات، والسؤال التالي — «أي
- * تذاكر؟ أي صفحات؟» — لم يكن له جواب إلا إعادة بناء الفلاتر يدويًا. كل مؤشّر هنا
- * يحمل `drill` من الخادم: مسار الشاشة المفلترة على نفس المجموعة بالضبط، وبما أن
- * الفلاتر محفوظة في العنوان فالرابط يكفي.
- *
- * ## الوحدة التي لا يمكن الإجابة عنها تقول ذلك
- *
- * `unavailable` نصّ من الخادم يشرح حدّ البيانات (مثل عدّ الأجهزة من إسقاط لم يعد
- * يُكتب). يُعرض فوق المؤشّرات لا مخفيًّا في تلميح: مؤشّر بحدّ غير مقروء يُتَّخذ
- * قرار على أساسه.
- */
-/**
- * الوحدات التشغيلية من `/admin/dashboard/executive`.
- *
- * مُصدَّرة ليُختبَر ترتيبها وعرض المقياس غير المتاح وحدها: تركيب `DashboardPage`
- * كاملة يستلزم تزييف أربعة مسارات أخرى، فيصير الاختبار عن شكل استجاباتها لا عن
- * ما يُقاس هنا.
- */
-export function ExecutiveModules({ locale }: { locale: 'ar' | 'en' }) {
-  const [overview, setOverview] = useState<ExecutiveOverview | null>(null)
-  const [preset, setPreset] = useState<DashboardPreset>(() => readPreset())
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(true)
+export { DASHBOARD_VERSION, rangeToParams, type DashboardRange }
+export { ExecutiveModules } from '../components/dashboard/ExecutiveModules'
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const response = await api.executiveOverview()
-      setOverview(response.data)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'executive_overview_failed')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { void load() }, [load])
-
-  const text = locale === 'ar'
-    ? { title: 'الوحدات التشغيلية', lede: 'كل رقم من قاعدة البيانات، وكل رقم يفتح الشاشة المفلترة على نفس المجموعة.', limits: 'ما لا تستطيع هذه اللوحة قوله', generated: 'محدَّثة في', retry: 'إعادة المحاولة', failed: 'تعذر تحميل الوحدات التشغيلية', source: 'المصدر', layout: 'الترتيب', more: 'وحدات أخرى', unavailable: 'غير متاح', localPreset: 'الترتيب تفضيل في هذا المتصفح، ولا يُشارك مع الفريق.', presets: { executive: 'تنفيذي', content: 'مدير محتوى', production: 'مدير إنتاج', support: 'مدير دعم', marketing: 'تسويق و SEO', tech: 'تشغيل تقني', all: 'الكل' } as Record<DashboardPreset, string> }
-    : { title: 'Operational modules', lede: 'Every number comes from the database, and every number opens the screen filtered to the same set.', limits: 'What this dashboard cannot say', generated: 'Generated at', retry: 'Try again', failed: 'Unable to load the operational modules', source: 'Source', layout: 'Layout', more: 'Other modules', unavailable: 'Unavailable', localPreset: 'The layout is a preference in this browser and is not shared with the team.', presets: { executive: 'Executive', content: 'Content manager', production: 'Production manager', support: 'Support manager', marketing: 'Marketing & SEO', tech: 'Technical ops', all: 'All' } as Record<DashboardPreset, string> }
-
-  if (loading && !overview) return <LoadingState />
-  if (error && !overview) {
-    return (
-      <section className="panel panel--notice">
-        <strong>{text.failed}</strong>
-        <p>{error}</p>
-        <button className="button button--secondary" type="button" onClick={() => void load()}>
-          <Icon name="refresh" size={15} />{text.retry}
-        </button>
-      </section>
-    )
-  }
-  if (!overview) return null
-
-  const { primary, secondary } = orderModules(overview.modules, preset)
-
-  return (
-    <>
-      <section className="page-intro page-intro--sub">
-        <div>
-          <span className="eyebrow">{text.title}</span>
-          <p>{text.lede}</p>
-        </div>
-        <div className="exec-head">
-          <label className="field field--inline">
-            <span>{text.layout}</span>
-            <select
-              value={preset}
-              onChange={(event) => {
-                const next = event.target.value as DashboardPreset
-                setPreset(next)
-                writePreset(next)
-              }}
-            >
-              {(['executive', 'content', 'production', 'support', 'marketing', 'tech', 'all'] as DashboardPreset[])
-                .map((value) => <option value={value} key={value}>{text.presets[value]}</option>)}
-            </select>
-          </label>
-          <span className="data-note" dir="ltr">{text.generated} {new Date(overview.generated_at).toLocaleString(locale === 'ar' ? 'ar' : 'en-GB')}</span>
-        </div>
-      </section>
-      <p className="panel__note">{text.localPreset}</p>
-
-      <div className="exec-grid">
-        {primary.map((module) => renderModule(module))}
-      </div>
-
-      {secondary.length > 0 && (
-        <>
-          {/* الوحدات خارج إعداد الدور تُنقل لا تُخفى: مدير الدعم يجب أن يعرف أن
-              وحدة الحقوق موجودة، حتى وهي ليست أولويته. */}
-          <section className="page-intro page-intro--sub">
-            <div><span className="eyebrow">{text.more}</span></div>
-          </section>
-          <div className="exec-grid">
-            {secondary.map((module) => renderModule(module))}
-          </div>
-        </>
-      )}
-
-      <section className="panel panel--notice">
-        <strong>{text.limits}</strong>
-        <ul className="planned-list">{overview.limits.map((limit) => <li key={limit}>{limit}</li>)}</ul>
-      </section>
-    </>
-  )
-
-  function renderModule(module: ExecutiveOverview['modules'][number]) {
-    return (
-      <article className="panel exec-module" key={module.key}>
-        <header className="panel__header">
-          <div>
-            <h3>{locale === 'ar' ? module.label_ar : module.label_en}</h3>
-            <p className="panel__note"><code dir="ltr">{text.source}: {module.source}</code></p>
-          </div>
-        </header>
-        {module.unavailable && (
-          <p className="panel--notice panel--inline"><Icon name="warning" size={14} />{module.unavailable}</p>
-        )}
-        <ul className="exec-metrics">
-          {module.metrics.map((metric) => {
-            const label = locale === 'ar' ? metric.label_ar : metric.label_en
-            // `value: null` يعني «لا يمكن معرفته» لا «صفر». طباعته عبر formatNumber
-            // كانت ستُخرج صفرًا، وهو بالضبط الخلط الذي أُصلح في الخادم: مصدر غير
-            // متاح كان يُعرَض رقمًا حقيقيًّا.
-            const unknown = metric.value === null || metric.value === undefined
-            const body = (
-              <>
-                <strong>{unknown ? '—' : formatNumber(metric.value as number, locale)}</strong>
-                <span>{label}</span>
-                {unknown && <small className="exec-metric__note">{metric.unavailable ?? text.unavailable}</small>}
-              </>
-            )
-            // مقياس بلا قيمة لا يفتح شاشة مفلترة: الرابط كان سيوعد بمجموعة لا
-            // يعرف حجمها.
-            return (
-              <li key={metric.key}>
-                {metric.drill && !unknown ? (
-                  <Link
-                    className={`exec-metric exec-metric--${metric.tone}`}
-                    to={adminPath(metric.drill.replace(/^\//, ''))}
-                  >{body}</Link>
-                ) : (
-                  <span className={`exec-metric exec-metric--${metric.tone}${unknown ? ' exec-metric--unknown' : ''}`}>{body}</span>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      </article>
-    )
-  }
-}
-
-/**
- * ويدجتات العمليات الإضافية (UX-20 «مركز قيادة الأعمال» في DASHBOARD v3).
- *
- * لا يوجد في الخادم مسار واحد يجمع هذه الأرقام، فتُجلب من نفس المسارات التي
- * تستخدمها صفحاتها المخصّصة (content-reviews, tasks, rights, failed-family-
- * events) بدل إضافة مسار مجمّع جديد لهذا العرض فقط. لا KPI بفترة زمنية
- * (اليوم/٧ أيام/٣٠ يومًا) لأن /admin/dashboard/stats لا يدعم نطاقات تاريخ
- * فعليًا بعد — إضافة مبدّل لا يُغيّر شيئًا نوع من التضليل تحديدًا ما تحذّر
- * منه UX-44، فتُرك خارج هذا الإصدار حتى يُضاف الدعم الحقيقي في الخادم.
- */
-type OpsWidgets = {
-  pendingReviews: ContentReviewRecord[]
-  myTasks: TaskRecord[]
-  expiringRights: RightsLicenseRecord[]
-}
-
-async function loadOpsWidgets(actorId: string | null): Promise<OpsWidgets> {
+async function loadOpsWidgets(actorId: string | null) {
   const [reviews, tasks, rights] = await Promise.all([
-    api.contentReviews({ status: 'pending', limit: 6 }).catch(() => ({ data: [] as ContentReviewRecord[] })),
-    actorId ? api.tasks().catch(() => ({ data: [] as TaskRecord[] })) : Promise.resolve({ data: [] as TaskRecord[] }),
-    api.rights().catch(() => ({ data: [] as RightsLicenseRecord[] })),
+    api.contentReviews({ status: 'pending', limit: 6 }).catch(() => ({ data: [] as any })),
+    actorId ? api.tasks().catch(() => ({ data: [] as any })) : Promise.resolve({ data: [] as any }),
+    api.rights().catch(() => ({ data: [] as any })),
   ])
   const now = Date.now()
   const soon = now + 30 * 24 * 60 * 60 * 1000
   return {
     pendingReviews: reviews.data,
-    myTasks: tasks.data.filter((task) => task.status !== 'done' && (!actorId || task.assignee_id === actorId)).slice(0, 6),
-    expiringRights: rights.data.filter((right) => {
+    myTasks: tasks.data.filter((task: any) => task.status !== 'done' && (!actorId || task.assignee_id === actorId)).slice(0, 6),
+    expiringRights: rights.data.filter((right: any) => {
       if (!right.expiry_date) return false
       const expiry = new Date(right.expiry_date).getTime()
       return Number.isFinite(expiry) && expiry >= now && expiry <= soon
@@ -250,6 +81,7 @@ const copy = {
   },
 }
 
+type OpsWidgets = { pendingReviews: any[]; myTasks: any[]; expiringRights: any[] }
 export function DashboardPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
@@ -257,47 +89,114 @@ export function DashboardPage() {
   const [ops, setOps] = useState<OpsWidgets | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [range, setRange] = useState<DashboardRange>('all')
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(() => {
+    try { return localStorage.getItem('majarra-dashboard-advanced') === '1' } catch { return false }
+  })
+  useEffect(() => {
+    try { localStorage.setItem('majarra-dashboard-advanced', showAdvanced ? '1' : '0') } catch {}
+  }, [showAdvanced])
+
+  useEffect(() => {
+    document.title = locale === 'ar' ? 'لوحة التحكم · مجرة' : 'Dashboard · Majarra'
+  }, [locale])
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const response = await api.dashboard()
+      const response = await api.dashboard(rangeToParams(range))
       setData(response.data)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.unexpected)
     } finally {
       setLoading(false)
     }
-    // ويدجتات العمليات لا تُوقف تحميل اللوحة الرئيسية إن فشلت: كل مصدر منها
-    // معالج بأمان (catch يعيد مصفوفة فارغة) داخل loadOpsWidgets.
     void loadOpsWidgets(readAdminUser()?.id ?? null).then(setOps)
-  }, [text.unexpected])
+  }, [text.unexpected, range])
 
   useEffect(() => { void load() }, [load])
+
+  const [revDetail, setRevDetail] = useState<any>(null)
+  const [analytics, setAnalytics] = useState<any>(null)
+  const [failedCount, setFailedCount] = useState<number|null>(null)
+  const [failedList, setFailedList] = useState<any[]>([])
+  const [timeline, setTimeline] = useState<any[]>([])
+  const [attention, setAttention] = useState<{ blocked: any[]; atRisk: any[]; overdue: number|null }>({ blocked: [], atRisk: [], overdue: null })
+  const [teamLoad, setTeamLoad] = useState<{ teams:number|null; overdueTasks:number|null; websitePages?:number|null }>({ teams:null, overdueTasks:null })
+  const [teasers, setTeasers] = useState<{ cal7:number|null; transPending:number|null; transStale?:number|null; calDetail?:{total:number}; factoryRuns?:number|null }>({ cal7:null, transPending:null })
+  useEffect(() => {
+    const p = rangeToParams(range)
+    try { void (api as any).revenueOverview?.(p.range)?.then((r:any)=>setRevDetail(r.data)).catch(()=>setRevDetail({_unavailable:true})) } catch { setRevDetail({_unavailable:true}) }
+    try { void (api as any).analyticsOverview?.()?.then((r:any)=>setAnalytics(r.data)).catch(()=>setAnalytics(null)) } catch { setAnalytics(null) }
+    try { void (api as any).failedFamilyEvents?.({ limit:1 } as any)?.then((r:any)=>setFailedCount(r.meta?.total ?? r.data?.length ?? null)).catch(()=>setFailedCount(null)) } catch { setFailedCount(null) }
+    try { void (api as any).failedFamilyEvents?.({ limit:3 } as any)?.then((r:any)=>setFailedList(Array.isArray(r.data)? r.data.slice(0,3):[])).catch(()=>setFailedList([])) } catch { setFailedList([]) }
+    try { void (api as any).opsTimeline?.(5)?.then((r:any)=>setTimeline(Array.isArray((r as any).data)? (r as any).data.slice(0,5):[])).catch(()=>setTimeline([])) } catch { setTimeline([]) }
+    try { void (api as any).productionBoard?.({ limit:5 })?.then((r:any)=>setAttention(prev=>({ ...prev, blocked: r.data?.slice(0,5) ?? [] }))).catch(()=>{}) } catch {}
+    try { void (api as any).customers?.({ limit:5 })?.then((r:any)=>setAttention(prev=>({ ...prev, atRisk: r.data?.slice(0,5) ?? [] }))).catch(()=>{}) } catch {}
+    try { void (api as any).supportSla?.()?.then((r:any)=>setAttention(prev=>({ ...prev, overdue: r.data?.overdue ?? r.data?.breaches ?? null }))).catch(()=>{}) } catch {}
+    try { void (api as any).teams?.()?.then((r:any)=>setTeamLoad(prev=>({ ...prev, teams: Array.isArray(r.data)? r.data.length : null }))).catch(()=>{}) } catch {}
+    try { void (api as any).tasks?.()?.then((r:any)=>{ const arr = Array.isArray(r.data)? r.data:[]; const overdue = arr.filter((t:any)=> t.due_date && new Date(t.due_date) < new Date() && t.status!=='done').length; setTeamLoad(prev=>({ ...prev, overdueTasks: overdue })) }).catch(()=>{}) } catch {}
+    try { void (api as any).workflowOverdue?.()?.then((r:any)=>setTeamLoad(prev=>({ ...prev, workflowOverdue: r.meta?.total ?? (Array.isArray(r.data)? r.data.length: null) } as any))).catch(()=>{}) } catch {}
+    try { void (api as any).webPages?.({} as any)?.then((r:any)=>setTeamLoad(prev=>({ ...prev, websitePages: (r as any).meta?.total ?? (r as any).data?.length ?? null } as any))).catch(()=>{}) } catch {}
+    try {
+      const from = new Date().toISOString()
+      const to = new Date(Date.now()+7*24*60*60*1000).toISOString()
+      void (api as any).contentCalendar?.({ from, to })?.then((r:any)=>setTeasers(prev=>({ ...prev, cal7: r.data?.events?.length ?? r.data?.total_unfiltered ?? null }))).catch(()=>setTeasers(prev=>({ ...prev, cal7: null })))
+    } catch {}
+    try { void (api as any).translationQueue?.({ limit:1 })?.then((r:any)=>setTeasers(prev=>({ ...prev, transPending: r.meta?.total ?? (Array.isArray(r.data)? r.data.length:null) }))).catch(()=>{}) } catch {}
+    try { void (api as any).translationQueue?.({ status:'stale', limit:1 } as any)?.then((r:any)=>setTeasers(prev=>({ ...prev, transStale: r.meta?.total ?? (Array.isArray(r.data)? r.data.length:0) } as any))).catch(()=>{}) } catch {}
+    try { void (api as any).contentFactoryRuns?.({ limit:1 } as any)?.then((r:any)=>setTeasers(prev=>({ ...prev, factoryRuns: r.meta?.total ?? (Array.isArray(r.data)? r.data.length:0) } as any))).catch(()=>{}) } catch {}
+    try {
+      const calFrom = new Date().toISOString().slice(0,10)
+      const calTo = new Date(Date.now()+30*24*60*60*1000).toISOString().slice(0,10)
+      void (api as any).contentCalendar?.({ from: calFrom, to: calTo } as any)?.then((r:any)=>setTeasers(prev=>({ ...prev, calDetail: { total: r.data?.total_unfiltered ?? r.data?.events?.length ?? 0 } } as any))).catch(()=>{})
+    } catch {}
+  }, [range])
 
   if (loading && !data) return <LoadingState label={text.loading} />
   if (error && !data) return <ErrorState message={error} onRetry={() => void load()} />
   if (!data) return null
 
   const totals = data.totals
-  const trackTotal = Object.values(data.series_by_track).reduce((sum, count) => sum + Number(count), 0)
-  const actionLabel = (action: string) => action === 'create' ? text.create : action === 'archive' ? text.archive : text.update
-  const entityLabel = (entity: string) => entity === 'series' ? text.seriesEntity : entity === 'episode' ? text.episodeEntity : text.childEntity
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div><span className="eyebrow">{text.operations}</span><h2>{text.welcome}</h2><p>{text.liveData}</p></div>
-        <div className="page-intro__actions">
-          <button className="button button--secondary" type="button" onClick={() => void load()} disabled={loading}><Icon name="refresh" size={17} />{text.refresh}</button>
-          <Link className="button button--primary" to={adminPath('series')}><Icon name="plus" size={17} />{text.newSeries}</Link>
+    <div className="page-stack" style={{ gap: 20 }}>
+      <section className="page-intro" style={{ alignItems: 'flex-start', paddingBottom: 4 }}>
+        <div style={{ minWidth: 0 }}>
+          <span className="eyebrow" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+            {text.operations}
+            <span style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'4px 9px', borderRadius:999, background:'var(--surface-3)', border:'1px solid var(--line)', fontSize:10.5, color:'var(--muted)', letterSpacing:0, textTransform:'none', fontWeight:600 }}>
+              <span style={{ width:6, height:6, borderRadius:'50%', background:'#10b981', display:'inline-block' }} /> {locale==='ar' ? 'مباشر من قاعدة البيانات' : 'Live from database'}
+            </span>
+          </span>
+          <h2 style={{ fontSize:24, letterSpacing:'-.03em', marginTop:6 }}>{text.welcome}</h2>
+          <p style={{ marginTop:6, fontSize:12.5, maxWidth:620 }}>{text.liveData}</p>
+        </div>
+        <div className="page-intro__actions" style={{ flexWrap:'wrap' }}>
+          <button className="button button--secondary" type="button" onClick={() => void load()} disabled={loading}><Icon name="refresh" size={15} />{text.refresh}</button>
+          <Link className="button button--primary" to={adminPath('series')}><Icon name="plus" size={15} />{text.newSeries}</Link>
         </div>
       </section>
 
+      <section className="panel" style={{ padding:'10px 12px', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+        <div className="preset-tabs" role="tablist" aria-label="Range">
+          {(['today','7d','30d','all'] as DashboardRange[]).map(v=>{
+            const label = v==='today' ? (locale==='ar'?'اليوم':'Today') : v==='7d' ? (locale==='ar'?'7 أيام':'7 days') : v==='30d' ? (locale==='ar'?'30 يومًا':'30 days') : (locale==='ar'?'الكل':'All')
+            return <button key={v} role="tab" aria-selected={range===v} onClick={()=>setRange(v)} type="button">{label}</button>
+          })}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--muted)' }}>
+          <Icon name="clock" size={13} />
+          <span>{range==='all' ? (locale==='ar'?'لقطة حالية من قاعدة البيانات':'Snapshot from database') : (locale==='ar'?`نطاق ${range} — يُمرَّر إلى /admin/revenue/overview و /admin/dashboard/executive`:`Range ${range} — sent to /admin/revenue/overview & /admin/dashboard/executive`)}</span>
+        </div>
+      </section>
+
+      <HeroKpis locale={locale} range={range} />
+
       {error && <div className="inline-alert inline-alert--error">{text.updateError} {error}</div>}
 
-      <ExecutiveModules locale={locale} />
+      <ExecutiveModules locale={locale} range={range} />
 
       <section className="stats-grid" aria-label={text.statsAria}>
         <StatCard label={text.totalSeries} value={formatNumber(totals.total_series, locale)} description={`${formatNumber(totals.published_series, locale)} ${text.publishedNow}`} icon="series" tone="blue" />
@@ -307,79 +206,92 @@ export function DashboardPage() {
       </section>
 
       <section className="dashboard-grid dashboard-grid--tracks">
-        <article className="panel">
-          <header className="panel__header"><div><span className="panel__kicker">{text.launchCoverage}</span><h3>{text.byTrack}</h3></div><span className="data-note">{text.total} {formatNumber(trackTotal, locale)}</span></header>
-          <div className="track-distribution">
-            {(['preschool', 'kids', 'junior'] as const).map((track) => {
-              const count = Number(data.series_by_track[track] ?? 0)
-              const percentage = trackTotal ? Math.round((count / trackTotal) * 100) : 0
-              return <div className={`track-row track-row--${track}`} key={track}><div className="track-row__label"><span className="track-dot"/><div><strong>{trackLabels[locale][track]}</strong><small>{formatNumber(count, locale)} {text.seriesUnit}</small></div></div><div className="track-progress"><span style={{ width: `${percentage}%` }} /></div><b>{formatNumber(percentage, locale)}{text.percent}</b></div>
-            })}
-          </div>
-        </article>
-
-        <article className="panel">
-          <header className="panel__header"><div><span className="panel__kicker">{text.workflow}</span><h3>{text.seriesStatuses}</h3></div></header>
-          {data.series_by_status.length ? <div className="status-summary">{data.series_by_status.map((row) => row.status && <div key={row.status}><StatusBadge status={row.status} /><strong>{formatNumber(Number(row.count), locale)}</strong></div>)}</div> : <EmptyState title={text.noStatuses} description={text.noStatusesDesc} />}
-        </article>
+        <RevenuePanel revDetail={revDetail} locale={locale} />
+        <AnalyticsPanel analytics={analytics} failedCount={failedCount} locale={locale} />
       </section>
+
+      <section className="dashboard-grid dashboard-grid--tracks">
+        <AttentionPanels attention={attention} ops={ops} locale={locale} />
+      </section>
+
+      <ContentHealthPanels data={data} locale={locale} />
 
       <section className="dashboard-grid dashboard-grid--activity">
-        <article className="panel panel--table">
-          <header className="panel__header"><div><span className="panel__kicker">{text.latestUpdate}</span><h3>{text.recentSeries}</h3></div><Link className="text-link" to={adminPath('series')}>{text.viewAll} <Icon name="arrow" size={15} /></Link></header>
-          {data.recent_series.length ? <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>{text.series}</th><th>{text.planet}</th><th>{text.age}</th><th>{text.episodeCount}</th><th>{text.status}</th></tr></thead><tbody>{data.recent_series.map((series) => { const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar; return <tr key={series.id}><td><div className="entity-cell"><span className="entity-avatar" style={{ background: series.planet_color || undefined }}>{title.charAt(0)}</span><div><strong>{title}</strong><small>{series.slug}</small></div></div></td><td>{series.planet_name || '—'}</td><td>{formatNumber(series.age_min, locale)}–{formatNumber(series.age_max, locale)}</td><td>{formatNumber(Number(series.episodes_count ?? 0), locale)}</td><td><StatusBadge status={series.status} /></td></tr> })}</tbody></table></div> : <EmptyState title={text.noSeries} description={text.noSeriesDesc} action={<Link className="button button--primary" to={adminPath('series')}><Icon name="plus" size={17} />{text.addSeries}</Link>} />}
-        </article>
+        <TimelinePanel timeline={timeline} locale={locale} />
+        <FailedPanel failedCount={failedCount} failedList={failedList} locale={locale} />
+      </section>
 
+      <section className="dashboard-grid dashboard-grid--tracks">
+        <SearchPanel locale={locale} />
+        <PlatformPanel failedCount={failedCount} locale={locale} />
+      </section>
+
+      <section className="dashboard-grid dashboard-grid--tracks">
+        <TeamPanel teamLoad={teamLoad} locale={locale} />
         <article className="panel">
-          <header className="panel__header"><div><span className="panel__kicker">{text.audit}</span><h3>{text.latestActivity}</h3></div></header>
-          {data.recent_activity.length ? <div className="activity-list">{data.recent_activity.map((item) => <div className="activity-item" key={item.id}><span className="activity-item__icon"><Icon name={item.action === 'create' ? 'plus' : item.action === 'archive' ? 'archive' : 'edit'} size={17} /></span><div><strong>{actionLabel(item.action)} {entityLabel(item.entity_type)}</strong><small>{item.actor_id || text.admin} • {formatDate(item.created_at, locale, true)}</small></div></div>)}</div> : <EmptyState title={text.noActivity} description={text.noActivityDesc} />}
+          <header className="panel__header"><div><span className="panel__kicker">Release</span><h3>{locale==='ar'?'الإصدارات':'Releases'}</h3></div><Link className="text-link" to={adminPath('app-releases')}>Releases <Icon name="arrow" size={12} /></Link></header>
+          <div style={{ padding:'14px 16px', display:'grid', gap:8 }}>
+            <div style={{ display:'flex', gap:8, alignItems:'center', padding:'10px', border:'1px dashed var(--line)', borderRadius:10, background:'var(--surface-3)' }}>
+              <Icon name="devices" size={16} />
+              <span style={{ fontSize:12, color:'var(--muted)' }}>{locale==='ar'?'الإصدارات تُدار من /app-releases — لا تكامل متجر خارجي حتى الآن':'Releases managed at /app-releases — no external store integration yet'}</span>
+            </div>
+            <small style={{ color:'var(--muted)', fontSize:11 }}>Phase 27 — {locale==='ar'?'تتبع إصدار الأندرويد/iOS والحدّ الأدنى':'Tracks Android/iOS versions & minimum supported'}</small>
+          </div>
         </article>
       </section>
 
-      {data.parents_by_plan.length > 0 && <section className="panel compact-panel"><header className="panel__header"><div><span className="panel__kicker">{text.families}</span><h3>{text.accountsByPlan}</h3></div></header><div className="plan-chips">{data.parents_by_plan.map((row) => row.plan && <span key={row.plan}><b>{formatNumber(Number(row.count), locale)}</b>{planLabels[locale][row.plan]}</span>)}</div></section>}
+      <section className="dashboard-grid dashboard-grid--tracks">
+        <WebsitePanel teamLoad={teamLoad} locale={locale} />
+      </section>
 
-      {ops && (
-        <section className="dashboard-grid dashboard-grid--activity">
-          <article className="panel">
-            <header className="panel__header"><div><span className="panel__kicker">{text.contentOps}</span><h3>{text.pendingReviews}</h3></div><Link className="text-link" to={adminPath('content-reviews')}>{text.viewReviews} <Icon name="arrow" size={15} /></Link></header>
-            {ops.pendingReviews.length ? (
-              <div className="activity-list">
-                {ops.pendingReviews.map((review) => (
-                  <div className="activity-item" key={review.id}>
-                    <span className="activity-item__icon"><Icon name="reviews" size={17} /></span>
-                    <div><strong>{review.entity_type} · {review.reviewer_role}</strong><small>{formatDate(review.created_at, locale, true)}</small></div>
-                  </div>
-                ))}
-              </div>
-            ) : <EmptyState title={text.noPendingReviews} description="" />}
-          </article>
+      {!showAdvanced ? (
+        <button className="button button--secondary" type="button" onClick={()=>setShowAdvanced(true)} style={{ alignSelf:'center' }}>
+          <Icon name="arrow" size={12} /> {locale==='ar'?'عرض الأقسام المتقدّمة — تقويم 7 أيام، جودة، ترجمة، تسويق، أداء، قانوني':'Show advanced — Calendar, Quality, Translation, Marketing, Performance, Legal'} ({locale==='ar'?'مطوي':'collapsed'})
+        </button>
+      ) : (
+        <>
+        <button className="button button--ghost button--small" type="button" onClick={()=>setShowAdvanced(false)} style={{ alignSelf:'center' }}>
+          {locale==='ar'?'إخفاء المتقدّم — إبقاء الأساسي فقط':'Hide advanced — keep essentials only'}
+        </button>
 
-          <article className="panel">
-            <header className="panel__header"><div><span className="panel__kicker">{text.operations}</span><h3>{text.myTasks}</h3></div><Link className="text-link" to={adminPath('tasks')}>{text.viewTasks} <Icon name="arrow" size={15} /></Link></header>
-            {ops.myTasks.length ? (
-              <div className="activity-list">
-                {ops.myTasks.map((task) => (
-                  <div className="activity-item" key={task.id}>
-                    <span className="activity-item__icon"><Icon name="reviews" size={17} /></span>
-                    <div><strong>{task.title_ar}</strong><small>{task.due_date ? `${text.due}: ${formatDate(task.due_date, locale)}` : text.noDue}</small></div>
-                  </div>
-                ))}
-              </div>
-            ) : <EmptyState title={text.noMyTasks} description="" />}
-          </article>
-        </section>
+      <AdvancedPanels teasers={teasers} locale={locale} />
+        <button className="button button--ghost button--small" type="button" onClick={()=>setShowAdvanced(false)} style={{ alignSelf:'center' }}>
+          {locale==='ar'?'إخفاء المتقدّم':'Hide advanced'}
+        </button>
+        </>
       )}
 
-      {ops && ops.expiringRights.length > 0 && (
-        <section className="panel compact-panel">
-          <header className="panel__header"><div><span className="panel__kicker">{text.families}</span><h3>{text.rightsExpiring}</h3></div><Link className="text-link" to={adminPath('rights')}>{text.viewRights} <Icon name="arrow" size={15} /></Link></header>
-          <div className="badge-list" style={{ flexWrap: 'wrap', gap: 8, padding: '0 18px 18px' }}>
-            {ops.expiringRights.map((right) => (
-              <span className="track-badge" key={right.id}>{right.series_title || right.content_id} · {text.expiresOn} {right.expiry_date ? formatDate(right.expiry_date, locale) : '—'}</span>
-            ))}
+      <section className="dashboard-grid dashboard-grid--tracks">
+        <article className="panel">
+          <header className="panel__header"><div><span className="panel__kicker">{locale==='ar'?'اختصارات':'Quick actions'}</span><h3>{locale==='ar'?'إجراءات سريعة':'Quick actions'}</h3></div><span style={{ fontSize:11, color:'var(--muted)' }}>Ctrl+K</span></header>
+          <div style={{ padding:'12px 14px', display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
+            <Link className="button button--secondary" to={adminPath('series')} style={{ justifyContent:'flex-start' }}><Icon name="plus" size={14} />{locale==='ar'?'سلسلة جديدة':'New series'}</Link>
+            <Link className="button button--secondary" to={adminPath('stories')} style={{ justifyContent:'flex-start' }}><Icon name="books" size={14} />{locale==='ar'?'قصة جديدة':'New story'}</Link>
+            <Link className="button button--secondary" to={adminPath('content-reviews')} style={{ justifyContent:'flex-start' }}><Icon name="reviews" size={14} />{locale==='ar'?'المراجعات':'Reviews'}</Link>
+            <Link className="button button--secondary" to={adminPath('production')} style={{ justifyContent:'flex-start' }}><Icon name="episodes" size={14} />{locale==='ar'?'مركز الإنتاج':'Production'}</Link>
           </div>
-        </section>
-      )}
+        </article>
+        <article className="panel">
+          <header className="panel__header"><div><span className="panel__kicker">{locale==='ar'?'التقارير':'Exports'}</span><h3>{locale==='ar'?'تصدير التقارير':'Export reports'}</h3></div></header>
+          <div style={{ padding:'12px 14px', display:'grid', gap:8 }}>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+              <a className="button button--ghost button--small" href={`${apiRoot}/admin/production/board?format=csv`} target="_blank" rel="noreferrer"><Icon name="upload" size={12} /> {locale==='ar'?'الإنتاج CSV':'Production CSV'}</a>
+              <a className="button button--ghost button--small" href={`${apiRoot}/admin/rights?format=csv`} target="_blank" rel="noreferrer"><Icon name="rights" size={12} /> Rights CSV</a>
+              <Link className="button button--ghost button--small" to={adminPath('revenue')}><Icon name="analytics" size={12} /> {locale==='ar'?'المالية':'Revenue'}</Link>
+              <Link className="button button--ghost button--small" to={adminPath('ops')}><Icon name="devices" size={12} /> Ops</Link>
+            </div>
+            <small style={{ color:'var(--muted)', fontSize:11 }}>{locale==='ar'?'التصدير يحترم الصلاحيات ولا يكشف بيانات الأطفال':'Exports respect permissions and never expose child private data'}</small>
+          </div>
+        </article>
+      </section>
+
+      <footer className="panel" style={{ padding:'12px 16px', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:10, background:'var(--surface-3)' }}>
+        <span style={{ fontSize:11, color:'var(--muted)' }}>
+          Dashboard v{DASHBOARD_VERSION} · {new Date().toISOString().slice(0,10)} · <code style={{ fontSize:11, background:'var(--surface)', padding:'2px 6px', borderRadius:6, border:'1px solid var(--line)' }}>majarra-dashboard@{locale}</code>
+          {data?.generated_at && <> · generated {new Date(data.generated_at).toLocaleTimeString(locale==='ar'?'ar':'en-GB')}</>}
+        </span>
+        <button className="button button--ghost button--small" type="button" onClick={()=>window.scrollTo({top:0, behavior:'smooth'})}><span style={{ transform:'rotate(-90deg)', display:'inline-block' }}><Icon name="arrow" size={12} /></span> {locale==='ar'?'للأعلى':'Top'}</button>
+      </footer>
     </div>
   )
 }

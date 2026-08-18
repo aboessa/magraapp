@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
+import { ListToolbar } from '../components/AdvancedFilters'
+import type { FilterField } from '../components/AdvancedFilters'
 import { EmptyState, LoadingState } from '../components/PageState'
 import { Pagination } from '../components/Pagination'
 import { usePreferences } from '../context/preferences'
-import { api } from '../lib/api'
+import { api, ApiError } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
 import { useUrlListState } from '../hooks/useUrlListState'
 import type { PublishGateResult } from '../types/api'
@@ -19,6 +21,24 @@ const entityLabels: Record<'ar'|'en', Record<EntityType,string>> = {
   en: { series:'Series', story:'Story', book:'Book', game:'Game', project:'Project', episode:'Episode' },
 }
 
+const QUALITY_FILTER_DEFAULTS = { type:'', id:'', verdict:'', blocker:'', planet:'' }
+const FINDING_GROUPS = ['CONTENT','PRODUCTION','LOCALIZATION','MEDIA','AUDIO','REVIEWS','WORKFLOW','RIGHTS','SAFETY','PUBLISHING'] as const
+type FindingGroup = typeof FINDING_GROUPS[number]
+
+function findingGroup(finding: GateFinding): FindingGroup {
+  const id = finding.id.toLowerCase()
+  if (id.includes('workflow')) return 'WORKFLOW'
+  if (id.includes('right') || id.includes('license')) return 'RIGHTS'
+  if (id.includes('safety') || id.includes('age_gate') || id.includes('child')) return 'SAFETY'
+  if (id.includes('translation') || id.includes('localization') || id.includes('language')) return 'LOCALIZATION'
+  if (id.includes('audio') || id.includes('voice') || id.includes('narration')) return 'AUDIO'
+  if (id.includes('review') || id.includes('approval')) return 'REVIEWS'
+  if (id.includes('video') || id.includes('artwork') || id.includes('production')) return 'PRODUCTION'
+  if (id.includes('image') || id.includes('asset') || id.includes('media') || id.includes('thumbnail')) return 'MEDIA'
+  if (id.includes('page') || id.includes('cover') || id.includes('episode') || id.includes('content')) return 'CONTENT'
+  return 'PUBLISHING'
+}
+
 const copy = {
   ar: {
     eyebrow: 'بوابة الجودة',
@@ -26,7 +46,7 @@ const copy = {
     lede: 'نفس البوابة التي يفرضها النشر — كل العوائق مرة واحدة مع المالك والإجراء.',
     metrics: { ready:'جاهز للنشر', blocked:'محجوب', warnings:'تحذيرات فقط', notEval:'لم يُفحص', changed:'تغيّر بعد الفحص' },
     search: 'بحث بالعنوان...',
-    type:'النوع', verdict:'الحكم', blockerType:'نوع العائق', planet:'الكوكب', series:'السلسلة',
+    type:'النوع', id:'المعرّف', verdict:'الحكم', blockerType:'نوع العائق', planet:'الكوكب', series:'السلسلة',
     all:'الكل', ready:'جاهز', blocked:'محجوب', warnings:'تحذيرات', notEval:'لم يُفحص',
     content:'المحتوى', context:'السياق', readiness:'الجاهزية', blockers:'العوائق', warningsCol:'التحذيرات', lastCheck:'آخر فحص', changed:'التغيّر', owner:'المسؤول', scheduled:'مجدول', actions:'إجراءات',
     openReadiness:'افتح الجاهزية', openContent:'افتح المحتوى', recheck:'إعادة الفحص', check:'فحص',
@@ -36,6 +56,8 @@ const copy = {
     lastEvaluated:'آخر تقييم', scheduledPublish:'النشر المجدول', publishNow:'انشر الآن',
     history:'السجل', showPassed:'إظهار الناجحة', batch:'فحص دفعي', batchResult:'نتيجة الدفعي', exportReport:'تصدير تقرير الجاهزية',
     noData:'لا بيانات', selectContent:'اختر محتوى للفحص', gateNote:'هذه هي بوابة النشر نفسها — لا قواعد موازية.',
+    publishing:'يُنشر…', publishDone:'تم النشر', publishFailed:'تعذّر النشر',
+    publishBlocked:'النشر ممنوع', publishUnsupported:'هذا النوع لا يُنشر من هنا',
   },
   en: {
     eyebrow:'Quality Gate',
@@ -43,7 +65,7 @@ const copy = {
     lede:'Same gate as publish — all blockers at once with owner and action.',
     metrics: { ready:'Ready', blocked:'Blocked', warnings:'Warnings only', notEval:'Not evaluated', changed:'Changed since check' },
     search:'Search by title...',
-    type:'Type', verdict:'Verdict', blockerType:'Blocker type', planet:'Planet', series:'Series',
+    type:'Type', id:'ID', verdict:'Verdict', blockerType:'Blocker type', planet:'Planet', series:'Series',
     all:'All', ready:'Ready', blocked:'Blocked', warnings:'Warnings', notEval:'Not evaluated',
     content:'Content', context:'Context', readiness:'Readiness', blockers:'Blockers', warningsCol:'Warnings', lastCheck:'Last check', changed:'Changed', owner:'Owner', scheduled:'Scheduled', actions:'Actions',
     openReadiness:'Open readiness', openContent:'Open content', recheck:'Re-check', check:'Check',
@@ -53,7 +75,29 @@ const copy = {
     lastEvaluated:'Last evaluated', scheduledPublish:'Scheduled publish', publishNow:'Publish now',
     history:'History', showPassed:'Show passed', batch:'Batch check', batchResult:'Batch result', exportReport:'Export readiness report',
     noData:'No data', selectContent:'Select content to check', gateNote:'This is the publish gate itself — no parallel rules.',
+    publishing:'Publishing…', publishDone:'Published', publishFailed:'Publish failed',
+    publishBlocked:'Publish blocked', publishUnsupported:'This type cannot be published here',
   }
+}
+
+function qualityFilterFields(text: typeof copy.ar, locale: 'ar'|'en'): FilterField[] {
+  return [
+    {
+      key: 'type', label: text.type, type: 'select',
+      options: [{ value:'', label:text.all }, ...ENTITY_TYPES.map((type) => ({ value:type, label:entityLabels[locale][type] }))],
+    },
+    { key:'id', label:text.id, type:'text' },
+    {
+      key:'verdict', label:text.verdict, type:'select', advanced:true,
+      options: [
+        { value:'', label:text.all },
+        { value:'READY', label:text.ready },
+        { value:'BLOCKED', label:text.blocked },
+        { value:'READY_WITH_WARNINGS', label:text.warnings },
+        { value:'NOT_EVALUATED', label:text.notEval },
+      ],
+    },
+  ]
 }
 
 function verdictOf(result: PublishGateResult | null): Verdict {
@@ -63,15 +107,18 @@ function verdictOf(result: PublishGateResult | null): Verdict {
   return 'READY'
 }
 
-type ListItem = { type: EntityType; id: string; title: string; planet?: string; series?: string; thumb?: string|null; result: PublishGateResult | null; checkedAt: string; changed?: boolean }
+type ListItem = { type: EntityType; id: string; title: string; planet?: string; series?: string; thumb?: string|null; result: PublishGateResult | null; checkedAt: string }
 
 export function QualityPage(){
   const { locale } = usePreferences()
   const text = copy[locale] as typeof copy.ar
-  const url = useUrlListState({ type:'', verdict:'', blocker:'', planet:'', q:'' }, { limit: 20 })
+  const url = useUrlListState(QUALITY_FILTER_DEFAULTS, { limit: 20 })
   const [items, setItems] = useState<ListItem[]>([])
-  const [filtered, setFiltered] = useState<ListItem[]>([])
   const [loading, setLoading] = useState(true)
+  // Publishing is a mutation from a screen that otherwise only reads, so its
+  // in-flight and result states are explicit rather than inferred.
+  const [publishing, setPublishing] = useState(false)
+  const [publishNote, setPublishNote] = useState<string | null>(null)
   const [workspace, setWorkspace] = useState<PublishGateResult | null>(null)
   const [workspaceMeta, setWorkspaceMeta] = useState<{ title:string; type:EntityType; id:string; checkedAt:string } | null>(null)
   const [showPassed, setShowPassed] = useState(false)
@@ -102,40 +149,70 @@ export function QualityPage(){
 
       // Parallel gate evaluations — bounded to candidates length (max 32) to avoid N+1 storm.
       const results = await Promise.all(candidates.map(async c=>{
-        try{ const r = await api.publishReadiness(c.type as any, c.id); return { ...c, result: r.data as PublishGateResult, checkedAt: new Date().toISOString(), changed: Math.random()<0.2 } as ListItem } catch { return { ...c, result: null, checkedAt: new Date().toISOString() } as ListItem }
+        try{ const r = await api.publishReadiness(c.type as any, c.id); return { ...c, result: r.data as PublishGateResult, checkedAt: new Date().toISOString() } as ListItem } catch { return { ...c, result: null, checkedAt: new Date().toISOString() } as ListItem }
       }))
       setItems(results)
     } catch(e){ setError(e instanceof Error? e.message: 'تعذر التحميل') } finally{ setLoading(false) }
   },[])
 
-  useEffect(()=>{ void loadList() },[loadList])
+  const directId = url.filters.id.trim()
+  const directType = (url.filters.type || 'story') as EntityType
+  const filterFields = useMemo(() => qualityFilterFields(text, locale as 'ar'|'en'), [locale, text])
 
-  // Filters
-  useEffect(()=>{
-    let arr=[...items]
-    const q=(url.filters.q as string) || ''
-    if(q) arr=arr.filter(i=> i.title.toLowerCase().includes(q.toLowerCase()))
-    if(url.filters.type) arr=arr.filter(i=> i.type===url.filters.type)
-    if(url.filters.verdict){
-      arr=arr.filter(i=> verdictOf(i.result)===url.filters.verdict)
+  useEffect(()=>{ if (!directId) void loadList() },[directId, loadList])
+
+  useEffect(() => {
+    if (!directId) {
+      setWorkspace(null)
+      setWorkspaceMeta(null)
+      return
     }
-    if(url.filters.blocker){
-      arr=arr.filter(i=> i.result?.blockers.some(b=> b.id===url.filters.blocker))
-    }
-    setFiltered(arr)
-  },[items, url.filters])
+
+    let active = true
+    const checkedAt = new Date().toISOString()
+    setLoading(true)
+    setError('')
+    void api.publishReadiness(directType, directId)
+      .then((response) => {
+        if (!active) return
+        const result = response.data as PublishGateResult
+        setWorkspace(result)
+        setWorkspaceMeta({ title: directId, type: directType, id: directId, checkedAt })
+        setHistory((current) => [result, ...current].slice(0, 5))
+      })
+      .catch((caught) => {
+        if (active) setError(caught instanceof Error ? caught.message : locale === 'ar' ? 'تعذر التحميل' : 'Unable to load')
+      })
+      .finally(() => { if (active) setLoading(false) })
+
+    return () => { active = false }
+  }, [directId, directType, locale])
+
+  const filtered = useMemo(() => {
+    let result = [...items]
+    const query = url.query.trim().toLowerCase()
+    if(query) result=result.filter((item)=> item.title.toLowerCase().includes(query))
+    if(url.filters.type) result=result.filter((item)=> item.type===url.filters.type)
+    if(url.filters.verdict) result=result.filter((item)=> verdictOf(item.result)===url.filters.verdict)
+    if(url.filters.blocker) result=result.filter((item)=> item.result?.blockers.some((blocker)=> blocker.id===url.filters.blocker))
+    return result
+  }, [items, url.filters.blocker, url.filters.type, url.filters.verdict, url.query])
+
+  const pageItems = useMemo(
+    () => filtered.slice(url.offset, url.offset + url.limit),
+    [filtered, url.limit, url.offset],
+  )
 
   const metrics = useMemo(()=>{
-    let ready=0, blocked=0, warnings=0, notEval=0, changed=0
+    let ready=0, blocked=0, warnings=0, notEval=0
     for(const i of items){
       const v=verdictOf(i.result)
       if(v==='READY') ready++
       else if(v==='BLOCKED') blocked++
       else if(v==='READY_WITH_WARNINGS') warnings++
       else notEval++
-      if(i.changed) changed++
     }
-    return { ready, blocked, warnings, notEval, changed }
+    return { ready, blocked, warnings, notEval, changed: 0 }
   },[items])
 
   const openWorkspace = async (it: ListItem)=>{
@@ -162,39 +239,44 @@ export function QualityPage(){
   return (
     <div className="page-stack">
       <section className="page-intro"><div><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2><p>{text.lede}</p><p className="panel__note">{text.gateNote}</p></div>
-        <div className="page-intro__actions">
-          <button className="button button--ghost" onClick={()=> void loadList()}><Icon name="refresh" size={14}/>إعادة الفحص</button>
+        {!directId && <div className="page-intro__actions">
+          <button className="button button--ghost" onClick={()=> void loadList()}><Icon name="refresh" size={14}/>{text.recheck}</button>
           <button className="button button--primary" onClick={runBatch} disabled={batchRunning}>{text.batch}</button>
-        </div>
+        </div>}
       </section>
 
       {error && <div className="inline-alert inline-alert--error">{error}</div>}
-      {batchSummary && <div className="inline-alert inline-alert--info">{text.batchResult}: {batchSummary.ready} {text.metrics.ready} · {batchSummary.blocked} محجوب · {batchSummary.warnings} تحذيرات</div>}
+      {!directId && batchSummary && <div className="inline-alert inline-alert--info">{text.batchResult}: {batchSummary.ready} {text.metrics.ready} · {batchSummary.blocked} محجوب · {batchSummary.warnings} تحذيرات</div>}
 
       {/* Top summary */}
-      <section className="prod-command">
+      {!directId && <section className="prod-command">
         <button className="prod-metric" onClick={()=> url.setFilter('verdict','READY')}><strong>{metrics.ready}</strong><span>{text.metrics.ready}</span></button>
         <button className="prod-metric prod-metric--blocked" onClick={()=> url.setFilter('verdict','BLOCKED')}><strong>{metrics.blocked}</strong><span>{text.metrics.blocked}</span></button>
         <button className="prod-metric" onClick={()=> url.setFilter('verdict','READY_WITH_WARNINGS')}><strong>{metrics.warnings}</strong><span>{text.metrics.warnings}</span></button>
         <button className="prod-metric" onClick={()=> url.setFilter('verdict','NOT_EVALUATED')}><strong>{metrics.notEval}</strong><span>{text.metrics.notEval}</span></button>
         <button className="prod-metric" onClick={()=> url.setFilter('verdict','BLOCKED')}><strong>{metrics.changed}</strong><span>{text.metrics.changed}</span></button>
-      </section>
+      </section>}
 
-      {/* Filters */}
-      <div className="filters-row" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-        <div className="search-field" style={{ flex:1 }}><Icon name="search" size={16}/><input value={(url.filters.q as string)||''} onChange={(e)=> url.setFilter('q', e.target.value)} placeholder={text.search} /></div>
-        <select value={(url.filters.type as string)||''} onChange={(e)=> url.setFilter('type', e.target.value)}><option value="">{text.type}: {text.all}</option>{ENTITY_TYPES.map(t=> <option key={t} value={t}>{entityLabels[locale as 'ar'|'en'][t]}</option>)}</select>
-        <select value={(url.filters.verdict as string)||''} onChange={(e)=> url.setFilter('verdict', e.target.value)}><option value="">{text.verdict}: {text.all}</option><option value="READY">{text.ready}</option><option value="BLOCKED">{text.blocked}</option><option value="READY_WITH_WARNINGS">{text.warnings}</option></select>
-      </div>
+      <ListToolbar
+        searchValue={url.query}
+        onSearchChange={url.setQuery}
+        searchPlaceholder={text.search}
+        fields={filterFields}
+        values={url.filters}
+        defaults={QUALITY_FILTER_DEFAULTS}
+        onApply={url.setFilters}
+        onClear={url.clearFilters}
+        onRemove={(key) => url.setFilter(key as keyof typeof QUALITY_FILTER_DEFAULTS, '')}
+      />
 
       {/* Primary list */}
-      {loading ? <LoadingState/> : (
+      {directId ? (loading ? <LoadingState/> : null) : loading ? <LoadingState/> : (
         <section className="panel panel--table">
           <div className="table-scroll" tabIndex={0}>
             <table className="data-table data-table--wide">
               <thead><tr><th>{text.content}</th><th>{text.readiness}</th><th>{text.blockers}</th><th>{text.warningsCol}</th><th>{text.lastCheck}</th><th>{text.changed}</th><th>{text.owner}</th><th>{text.actions}</th></tr></thead>
               <tbody>
-                {filtered.map(it=>{
+                {pageItems.map(it=>{
                   const v=verdictOf(it.result)
                   return (
                     <tr key={`${it.type}:${it.id}`}>
@@ -208,7 +290,7 @@ export function QualityPage(){
                       <td>{it.result?.blockers.length ?? 0}</td>
                       <td>{it.result?.warnings.length ?? 0}</td>
                       <td dir="ltr">{it.checkedAt.slice(0,16).replace('T',' ')}</td>
-                      <td>{it.changed? <span className="prod-chip prod-chip--blocked">+1</span> : '—'}</td>
+                      <td>—</td>
                       <td>{it.result?.blockers[0]?.owner ?? '—'}<br/><small>{it.result?.blockers[0]?.required_action?.slice(0,20) ?? ''}</small></td>
                       <td><button className="button button--ghost button--small" onClick={()=> void openWorkspace(it)}>{text.openReadiness}</button></td>
                     </tr>
@@ -229,22 +311,52 @@ export function QualityPage(){
             <div className="table-actions">
               <button className="button button--ghost button--small" onClick={async()=>{ const r=await api.publishReadiness(workspaceMeta.type as any, workspaceMeta.id); setWorkspace(r.data as any) }}>{text.recheck}</button>
               <Link className="button button--ghost button--small" to={adminPath(workspaceMeta.type==='episode'?`episodes/${workspaceMeta.id}`: workspaceMeta.type==='story'?`stories/${workspaceMeta.id}`: `${workspaceMeta.type}s/${workspaceMeta.id}`)}>{text.openContent}</Link>
-              {verdictOf(workspace)==='READY' && <button className="button button--primary button--small">{text.publishNow}</button>}
+              {verdictOf(workspace)==='READY' && <button className="button button--primary button--small" disabled={publishing} onClick={async()=>{
+                // This button had no handler at all, so a reviewer could clear
+                // every blocker and still have no way to publish. The four content
+                // types it covers had no publish endpoint either until now.
+                setPublishing(true)
+                setPublishNote(null)
+                try {
+                  const publisher = {
+                    story: api.publishStory,
+                    book: api.publishBook,
+                    game: api.publishGame,
+                    project: api.publishProject,
+                    series: api.publishSeries,
+                    episode: api.publishEpisode,
+                  }[workspaceMeta.type as 'story'|'book'|'game'|'project'|'series'|'episode']
+                  if(!publisher){ setPublishNote(text.publishUnsupported); return }
+                  await publisher(workspaceMeta.id)
+                  // Re-evaluate rather than assume: the server is the authority on
+                  // what state the content is now in.
+                  const r = await api.publishReadiness(workspaceMeta.type as any, workspaceMeta.id)
+                  setWorkspace(r.data as any)
+                  setPublishNote(text.publishDone)
+                } catch (error) {
+                  // The 409 body carries every blocker; showing "failed" alone
+                  // would send the reviewer back to guessing.
+                  const blockers = (error as ApiError)?.payload as { data?: { blockers?: Array<{ id: string }> } } | undefined
+                  const ids = blockers?.data?.blockers?.map((blocker)=> blocker.id) ?? []
+                  setPublishNote(ids.length ? `${text.publishBlocked}: ${ids.join(', ')}` : ((error as Error)?.message ?? text.publishFailed))
+                } finally {
+                  setPublishing(false)
+                }
+              }}>{publishing ? text.publishing : text.publishNow}</button>}
             </div>
           </header>
           <div className="panel__body">
+            {publishNote && (
+              // Stated rather than swallowed: a 409 carries every blocker, and a
+              // reviewer who cleared the checklist needs to know which one is left.
+              <p role="status" aria-live="polite" className="story-inspector__hint" style={{ marginBottom: 8 }}>{publishNote}</p>
+            )}
             <label className="checkbox"><input type="checkbox" checked={showPassed} onChange={(e)=> setShowPassed(e.target.checked)} />{text.showPassed}</label>
             {/* Grouped by domain */}
-            {['CONTENT','PRODUCTION','LOCALIZATION','MEDIA','AUDIO','REVIEWS','WORKFLOW','RIGHTS','SAFETY','PUBLISHING'].map(group=>{
-              const findings = workspace.findings.filter((f: GateFinding)=> {
-                const id=f.id.toLowerCase()
-                if(group==='CONTENT') return id.includes('pages')||id.includes('cover')||id.includes('episode')
-                if(group==='WORKFLOW') return id.includes('workflow')
-                if(group==='RIGHTS') return id.includes('rights')
-                return true
-              }).slice(0,3)
-              if(!findings.length) return null
-              const visible = showPassed? findings: findings.filter((f: GateFinding)=> f.severity!=='none')
+            {FINDING_GROUPS.map((group)=>{
+              const visible = workspace.findings
+                .filter((finding: GateFinding) => findingGroup(finding) === group && (showPassed || finding.severity !== 'none'))
+                .slice(0, 3)
               if(!visible.length) return null
               return (
                 <div key={group} className="readiness-group" style={{ marginTop:12 }}>

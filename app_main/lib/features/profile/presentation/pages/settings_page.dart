@@ -10,6 +10,7 @@ import '../../../../core/security/biometric_auth.dart';
 import '../../../auth/application/auth_controller.dart';
 import '../../../auth/data/parent_pin_store.dart';
 import '../../data/settings_store.dart';
+import '../widgets/profile_page_content.dart';
 
 /// App settings.
 ///
@@ -51,8 +52,7 @@ class SettingsPage extends ConsumerWidget {
               centerTitle: true,
             ),
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(18),
+              child: ProfilePageContent(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -63,12 +63,6 @@ class SettingsPage extends ConsumerWidget {
                       value: settings.autoplayNext,
                       onChanged: controller.setAutoplay,
                     ),
-                    const SizedBox(height: 8),
-                    _TileNav(
-                      title: l10n.videoQualityTitle,
-                      trailing: settings.quality.label,
-                      onTap: () => _pickQuality(context, ref, settings),
-                    ),
                     const SizedBox(height: 18),
                     _SectionHeader(title: l10n.settingsSectionDownload),
                     _TileSwitch(
@@ -78,22 +72,20 @@ class SettingsPage extends ConsumerWidget {
                       onChanged: controller.setDownloadOverWifiOnly,
                     ),
                     const SizedBox(height: 18),
-                    _SectionHeader(title: l10n.settingsSectionNotifications),
-                    _TileSwitch(
-                      title: l10n.contentNotificationsTitle,
-                      subtitle: l10n.contentNotificationsSubtitle,
-                      value: settings.contentNotifications,
-                      onChanged: controller.setContentNotifications,
-                    ),
-                    const SizedBox(height: 18),
                     _SectionHeader(title: l10n.settingsSectionGeneral),
                     // Language and appearance are single-option today: the app
                     // ships Arabic only and one cinematic dark theme. They are
                     // shown as read-only rows rather than as taps that do
                     // nothing when pressed.
-                    _TileInfo(title: l10n.languageLabel, value: l10n.languageValueArabic),
+                    _TileInfo(
+                      title: l10n.languageLabel,
+                      value: l10n.languageValueArabic,
+                    ),
                     const SizedBox(height: 8),
-                    _TileInfo(title: l10n.appearanceLabel, value: l10n.appearanceValueDark),
+                    _TileInfo(
+                      title: l10n.appearanceLabel,
+                      value: l10n.appearanceValueDark,
+                    ),
                     const SizedBox(height: 24),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -123,45 +115,6 @@ class SettingsPage extends ConsumerWidget {
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _pickQuality(BuildContext context, WidgetRef ref, AppSettings settings) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF0B1026),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final option in VideoQuality.values)
-              ListTile(
-                title: Text(
-                  option.label,
-                  style: TextStyle(
-                    color: option == settings.quality
-                        ? AppColors.starGold
-                        : Colors.white,
-                  ),
-                ),
-                trailing: option == settings.quality
-                    ? const Icon(
-                        Icons.check_rounded,
-                        color: AppColors.starGold,
-                      )
-                    : null,
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  ref.read(settingsProvider.notifier).setQuality(option);
-                },
-              ),
           ],
         ),
       ),
@@ -243,61 +196,6 @@ class _TileSwitch extends StatelessWidget {
   );
 }
 
-class _TileNav extends StatelessWidget {
-  const _TileNav({
-    required this.title,
-    required this.trailing,
-    required this.onTap,
-  });
-
-  final String title;
-  final String trailing;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: const Color(0xFF111A3A).withValues(alpha: 0.72),
-    borderRadius: BorderRadius.circular(14),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              trailing,
-              style: TextStyle(
-                color: AppColors.mutedText.withValues(alpha: 0.62),
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(width: 6),
-            const Icon(
-              Icons.chevron_left_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
 /// Sign-out row.
 ///
 /// Stateful so the button can show progress and refuse a second tap: the
@@ -350,9 +248,21 @@ class _LogoutTileState extends ConsumerState<_LogoutTile> {
     if (confirmed != true || !mounted) return;
 
     setState(() => _busy = true);
-    await ref.read(authControllerProvider).logout();
+    try {
+      await ref.read(authControllerProvider).logout();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تعذّر تأمين بيانات الجلسة. أعد المحاولة.'),
+          ),
+        );
+      }
+      return;
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
     if (!mounted) return;
-    setState(() => _busy = false);
     // The router guard also redirects on the auth flag flipping; going
     // explicitly clears this page off the stack so back cannot return to it.
     context.go('/login');
@@ -373,11 +283,7 @@ class _LogoutTileState extends ConsumerState<_LogoutTile> {
         ),
         child: Row(
           children: [
-            const Icon(
-              Icons.logout_rounded,
-              color: AppColors.danger,
-              size: 18,
-            ),
+            const Icon(Icons.logout_rounded, color: AppColors.danger, size: 18),
             const SizedBox(width: 10),
             const Text(
               'تسجيل الخروج',
@@ -421,27 +327,31 @@ class _TileInfo extends StatelessWidget {
     ),
     child: Row(
       children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.82),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.82),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-        const Spacer(),
-        Text(
-          value,
-          style: TextStyle(
-            color: AppColors.mutedText.withValues(alpha: 0.62),
-            fontSize: 12,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              color: AppColors.mutedText.withValues(alpha: 0.62),
+              fontSize: 12,
+            ),
           ),
         ),
       ],
     ),
   );
 }
-
 
 /// Manages the biometric parent-area unlock (§8).
 ///
@@ -482,7 +392,9 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
     try {
       hasPin = await _store.hasPin();
       enabled = await _store.isBiometricEnabled();
-      availability = await ref.read(biometricAuthenticatorProvider).availability();
+      availability = await ref
+          .read(biometricAuthenticatorProvider)
+          .availability();
     } catch (_) {
       // Safe defaults already set above.
     }
@@ -507,18 +419,16 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
   }
 
   bool get _canToggle =>
-      !_busy &&
-      _hasPin &&
-      _availability == BiometricAvailability.available;
+      !_busy && _hasPin && _availability == BiometricAvailability.available;
 
   Future<void> _onChanged(bool value) async {
     if (_busy) return;
     setState(() => _busy = true);
     if (value) {
       // Prove presence before enabling, so turning it on is itself gated.
-      final ok = await ref.read(biometricAuthenticatorProvider).authenticate(
-            localizedReason: 'أكّد هويتك لتفعيل الدخول بالبصمة',
-          );
+      final ok = await ref
+          .read(biometricAuthenticatorProvider)
+          .authenticate(localizedReason: 'أكّد هويتك لتفعيل الدخول بالبصمة');
       if (ok) await _store.setBiometricEnabled(true);
       if (mounted) setState(() => _enabled = ok);
     } else {
@@ -539,7 +449,11 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.fingerprint_rounded, color: AppColors.starGold, size: 22),
+          const Icon(
+            Icons.fingerprint_rounded,
+            color: AppColors.starGold,
+            size: 22,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -547,11 +461,18 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
               children: [
                 const Text(
                   'الدخول بالبصمة / Face ID',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
                 Text(
                   _subtitle,
-                  style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.62), fontSize: 11),
+                  style: TextStyle(
+                    color: AppColors.mutedText.withValues(alpha: 0.62),
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),

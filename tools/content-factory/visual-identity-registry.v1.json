@@ -1,0 +1,26 @@
+{
+  "schema_version": "content-factory.visual-identity-registry/v1",
+  "packs": [
+    {
+      "identity_id": "luna-discovers-words/luna-v2",
+      "version": "luna-v2",
+      "series_slug": "luna-discovers-words",
+      "status": "approved",
+      "reference_pack_sha256": "0132d294f45a6fe644d5b2034e86f15e4627ff146f5f8130247d41c9202905a7",
+      "references": [
+        {
+          "kind": "character_sheet",
+          "path": "majarra_images/assets/images/characters/luna-preschool-character-sheet.png",
+          "sha256": "0edcd9e6280dbece120a3f6a6247dac55e0fac20a09489b54e37f04a08b20deb"
+        },
+        {
+          "kind": "visual_guide",
+          "path": "tools/content-factory/reference-packs/luna-v2-visual-guide.json",
+          "sha256": "ba579c39b4b462d7709e53fdb984601d8c926a3525c63dcbf0b05f02007ff1c6"
+        }
+      ],
+      "approved_by": "majarra-creative-direction",
+      "approved_at": "2026-08-12T00:00:00.000Z"
+    }
+  ]
+}

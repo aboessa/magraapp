@@ -155,23 +155,40 @@ class ColoringConfig {
     required this.palette,
     this.regions = const [],
     this.templateAsset,
+    this.structuredRegions = const [],
   });
 
-  factory ColoringConfig.fromJson(Map<String, dynamic> json) => ColoringConfig(
-        enabled: json['enabled'] == true,
-        palette: (json['palette'] as List<dynamic>? ?? const [])
-            .whereType<String>()
-            .toList(growable: false),
-        regions: (json['regions'] as List<dynamic>? ?? const [])
-            .whereType<String>()
-            .toList(growable: false),
-        templateAsset: json['template_asset'] as String?,
-      );
+  factory ColoringConfig.fromJson(Map<String, dynamic> json) {
+    final raw = json['regions'] as List<dynamic>? ?? const [];
+    final strings = raw.whereType<String>().toList(growable: false);
+    // Structured form: [{"id":"bird.body","polygon":[[0.1,0.2],...]}, ...]
+    final structured = <Map<String, dynamic>>[];
+    for (final entry in raw) {
+      if (entry is Map) {
+        final m = entry is Map<String, dynamic> ? entry : Map<String, dynamic>.from(entry);
+        if ((m['id'] as String?)?.isNotEmpty == true) structured.add(m);
+      }
+    }
+    return ColoringConfig(
+      enabled: json['enabled'] == true,
+      palette: (json['palette'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList(growable: false),
+      regions: strings,
+      structuredRegions: structured,
+      templateAsset: json['template_asset'] as String?,
+    );
+  }
 
   final bool enabled;
   final List<String> palette;
+  /// Legacy ids (strings). Kept for packs that only declare ids.
   final List<String> regions;
+  /// New structured regions with polygon/path. Empty for legacy packs.
+  final List<Map<String, dynamic>> structuredRegions;
   final String? templateAsset;
+
+  bool get hasStructuredRegions => structuredRegions.isNotEmpty;
 }
 
 class SimplifiedMotorConfig {

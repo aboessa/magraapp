@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
-import { queryAll, queryFirst } from '../lib/db'
-import { requireAdmin } from '../lib/adminAuth'
+import type { Env } from '../lib/db.ts'
+import { queryAll, queryFirst } from '../lib/db.ts'
+import { requireAdmin } from '../lib/adminAuth.ts'
 
 type AppEnv = { Bindings: Env }
 const route = new Hono<AppEnv>()

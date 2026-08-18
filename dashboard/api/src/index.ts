@@ -1,53 +1,105 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import type { Env } from './lib/db';
-import adminRoute from './routes/admin';
-import authRoute from './routes/auth';
-import billingRoute from './routes/billing';
-import booksRoute from './routes/books';
-import episodesRoute from './routes/episodes';
+import { corsOptions } from './lib/corsOptions.ts';
+import type { Env } from './lib/db.ts';
+import adminRoute from './routes/admin.ts';
+import accountRoute from './routes/account.ts';
+import authRoute from './routes/auth.ts';
+import billingRoute from './routes/billing.ts';
+import booksRoute from './routes/books.ts';
+import episodesRoute from './routes/episodes.ts';
+import storiesRoute from './routes/stories.ts';
 import gamesRoute from './routes/games.ts';
 import creationsRoute from './routes/creations.ts';
 import adminGamesRoute from './routes/adminGames.ts';
-import familyRoute from './routes/family';
-import mediaRoute from './routes/media';
-import planetsRoute from './routes/planets';
-import seriesRoute from './routes/series';
-import adminBillingRoute from './routes/adminBilling';
-import adminAnalyticsRoute from './routes/adminAnalytics';
-import adminPartnershipsRoute from './routes/adminPartnerships';
-import partnershipsRoute from './routes/partnerships';
-import adminSiteModeRoute from './routes/adminSiteMode';
-import siteModeRoute from './routes/siteMode';
+import adminRecommendationsRoute from './routes/adminRecommendations.ts';
+import adminPublishRoute from './routes/adminPublish.ts';
+import familyRoute from './routes/family.ts';
+import mediaRoute from './routes/media.ts';
+import planetsRoute from './routes/planets.ts';
+import seriesRoute from './routes/series.ts';
+import adminBillingRoute from './routes/adminBilling.ts';
+import adminAnalyticsRoute from './routes/adminAnalytics.ts';
+import adminPartnershipsRoute from './routes/adminPartnerships.ts';
+import partnershipsRoute from './routes/partnerships.ts';
+import adminSiteModeRoute from './routes/adminSiteMode.ts';
+import siteModeRoute from './routes/siteMode.ts';
 import publicSiteRoute, { siteFiles } from './routes/publicSite.ts';
 import publicRenderRoute, { rootNegotiation } from './routes/publicRender.ts';
-import adminAuthRoute from './routes/adminAuth';
-import adminUsersRoute from './routes/adminUsers';
+import adminAuthRoute from './routes/adminAuth.ts';
+import adminUsersRoute from './routes/adminUsers.ts';
 import adminSearchRoute from './routes/adminSearch.ts';
 import adminCalendarRoute from './routes/adminCalendar.ts';
-import { handleFamilyEvents } from './queue/familyEvents';
-import { handleFamilyEventsDlq } from './queue/dlq';
-import { handleScheduled } from './scheduled/cleanup';
-import { adminLimit, billingLimit, strictAuthLimit } from './lib/rateLimit';
+import adminCampaignsRoute from './routes/adminCampaigns.ts';
+import appConfigRoute from './routes/appConfig.ts';
+import adminEpisodeStreamingRoute from './routes/adminEpisodeStreaming.ts';
+import recommendationsRoute from './routes/recommendations.ts';
+import childSettingsRoute from './routes/childSettings.ts';
+import analyticsIngestRoute from './routes/analyticsIngest.ts';
+import notificationsRoute from './routes/notifications.ts';
+import homeResolvedRoute from './routes/homeResolved.ts';
+import creativeRoute from './routes/creative.ts';
+import { handleFamilyEvents } from './queue/familyEvents.ts';
+import { handleFamilyEventsDlq } from './queue/dlq.ts';
+import {
+  handleContentFactoryDlq,
+  handleContentFactoryJobs,
+  isContentFactoryQueue,
+} from './queue/contentFactory.ts';
+import { handleScheduled } from './scheduled/cleanup.ts';
+import {
+  adminLimit,
+  analyticsLimit,
+  billingLimit,
+  creationWriteLimit,
+  mediaSessionLimit,
+  parentWriteLimit,
+  strictAuthLimit,
+} from './lib/rateLimit.ts';
 
 type AppEnv = { Bindings: Env };
 
 const app = new Hono<AppEnv>();
 
-app.use('/api/*', cors({
-  origin: '*',
-  // X-Admin-Actor يُرسله عميل اللوحة على كل نداء إدارة (lib/api.ts).
-  // غيابه من هذه القائمة يجعل المتصفح يحجب النداء بعد نجاح الـpreflight،
-  // فتفشل اللوحة كلها عبر الأصول (majarra.app ← api.majarra.app) بلا خطأ ظاهر.
-  allowHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'X-Admin-Actor', 'X-File-Name', 'X-File-Size', 'X-File-SHA256', 'X-Part-Size', 'X-Image-Width', 'X-Image-Height'],
-  exposeHeaders: ['Content-Length', 'Content-Range', 'ETag'],
-  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-}));
+// عقد CORS في وحدة واحدة (`lib/corsOptions.ts`) لأن الاختبار كان ينسخ الإعداد
+// إلى تطبيق خاص به، فبقي أخضر بينما كان حجب ترويسة يكسر العميل فعليًا.
+app.use('/api/*', cors(corsOptions));
 
 // حماية الحافة - يمنع الإساءة قبل وصولها للـ DO/D1
 app.use('/api/v1/auth/*', strictAuthLimit);
+app.use('/api/v1/account', strictAuthLimit);
+app.use('/api/v1/account/*', strictAuthLimit);
 app.use('/api/v1/billing/*', billingLimit);
 app.use('/api/v1/admin/*', adminLimit);
+// Telemetry writes a D1 row per call and accepts an anonymous `app_open`, so it
+// needs its own quota. Its absence here was half of the ingest defect.
+app.use('/api/v1/analytics/*', analyticsLimit);
+
+// Session minting on the media path.
+//
+// `POST /episodes/:id/playback-sessions`, `/books/:id/audio-sessions` and
+// `/stories/:id/audio-sessions` each mint a lease plus a capability token inside
+// the family object. They were the most expensive authenticated writes in the API
+// and had no quota at all, so a loop could farm media tokens as fast as the
+// object would answer. Registered by prefix rather than by exact path because a
+// limiter that misses a route is worse than a slightly wide one — and the reads
+// on these prefixes are cheap enough that 40/minute never troubles a real child.
+app.use('/api/v1/episodes/*', mediaSessionLimit);
+app.use('/api/v1/books/*', mediaSessionLimit);
+app.use('/api/v1/stories/*', mediaSessionLimit);
+// Signed-media redemption. A short-lived token, but an unbounded redemption rate
+// is still an egress amplifier.
+app.use('/api/v1/media/*', mediaSessionLimit);
+
+// Parental-control writes, counted per parent rather than per address.
+app.use('/api/v1/child-settings/*', parentWriteLimit);
+app.use('/api/v1/notifications/*', parentWriteLimit);
+app.use('/api/v1/family/*', parentWriteLimit);
+
+// The one child-path endpoint that writes an R2 object, so an unconstrained loop
+// costs storage rather than only CPU.
+app.use('/api/v1/creations', creationWriteLimit);
+app.use('/api/v1/creations/*', creationWriteLimit);
 
 // تفاوض اللغة على الجذر قبل وصف الـAPI: المتصفّح يُحوَّل إلى /ar أو /en أو /fr،
 // وأي عميل غير HTML يمرّ بـnext() إلى الوصف أدناه. باقي عارض الصفحات العامة
@@ -71,6 +123,7 @@ app.route('/api/v1/admin/auth', adminAuthRoute);
 // أي مسار عام في adminRoute.
 app.route('/api/v1/admin', adminSearchRoute);
 app.route('/api/v1/admin', adminCalendarRoute);
+app.route('/api/v1/admin', adminCampaignsRoute);
 // Drawing-game readiness, ops and production queues. **Before** adminRoute, not after.
 //
 // Mounted after it, `GET /admin/games/ops` and `GET /admin/games/analytics` were both
@@ -83,8 +136,18 @@ app.route('/api/v1/admin', adminCalendarRoute);
 //
 // Same class of defect as the billing and analytics double-prefix bug recorded below.
 app.route('/api/v1/admin', adminGamesRoute);
+// Declares its full path (`/recommendations`) and guards itself with
+// requireAdmin, so it is mounted before adminRoute for the same reason the
+// routers above are: a two-segment literal must not bind as an `:id` on a
+// generic admin route.
+app.route('/api/v1/admin', adminRecommendationsRoute);
+// Publishing for stories, books, games and projects. Mounted before adminRoute
+// because it declares three-segment literals (`/stories/:id/publish`) that must
+// not be reached through a generic two-segment route first.
+app.route('/api/v1/admin', adminPublishRoute);
 app.route('/api/v1/admin', adminRoute);
 app.route('/api/v1/auth', authRoute);
+app.route('/api/v1/account', accountRoute);
 app.route('/api/v1/billing', billingRoute);
 app.route('/api/v1/media', mediaRoute);
 app.route('/api/v1/planets', planetsRoute);
@@ -93,10 +156,19 @@ app.route('/api/v1/episodes', episodesRoute);
 app.route('/api/v1/games', gamesRoute);
 app.route('/api/v1/creations', creationsRoute);
 app.route('/api/v1/books', booksRoute);
+app.route('/api/v1/stories', storiesRoute);
 app.route('/api/v1/family', familyRoute);
 app.route('/api/v1/partnerships', partnershipsRoute);
 // حالة الموقع عامة بلا مصادقة: صفحة الهبوط تستعلم عنها قبل أن تعرض أي شيء
 app.route('/api/v1/site-mode', siteModeRoute);
+app.route('/api/v1/admin', adminEpisodeStreamingRoute);
+app.route('/api/v1/app-config', appConfigRoute);
+app.route('/api/v1/recommendations', recommendationsRoute);
+app.route('/api/v1/child-settings', childSettingsRoute);
+app.route('/api/v1/analytics', analyticsIngestRoute);
+app.route('/api/v1/notifications', notificationsRoute);
+app.route('/api/v1/home', homeResolvedRoute);
+app.route('/api/v1', creativeRoute);
 // المحتوى العام للموقع والمدونة: صفحات، مقالات، حلّ المسار والتحويلات، وكل
 // بيانات الرأس (canonical/robots/OG/hreflang/JSON-LD) محسوبة على الخادم.
 app.route('/api/v1/site', publicSiteRoute);
@@ -132,15 +204,24 @@ app.onError((error, c) => {
   return c.json({ success: false, error: 'Internal server error' }, 500);
 });
 
-export { FamilyState } from './do/FamilyState';
-export { IdentityState } from './do/IdentityState';
-export { StoryCollab } from './do/StoryCollab';
+export { FamilyState } from './do/FamilyState.ts';
+export { IdentityState } from './do/IdentityState.ts';
+export { StoryCollab } from './do/StoryCollab.ts';
+export { RateLimiter } from './do/RateLimiter.ts';
 
 const worker: ExportedHandler<Env, unknown> = {
   fetch: app.fetch,
   async queue(batch, env, ctx) {
-    // وجه كل batch حسب اسم الطابور
+    // Paid content jobs have a dedicated contract and consumer. They must never
+    // fall through to the family-event parser (or its DLQ) merely because both
+    // are Cloudflare Queues.
     const queueName = (batch as any).queue ?? ''
+    if (isContentFactoryQueue(queueName)) {
+      if (queueName.includes('-dlq')) {
+        return handleContentFactoryDlq(batch as MessageBatch<unknown>, env)
+      }
+      return handleContentFactoryJobs(batch as MessageBatch<unknown>, env)
+    }
     if (queueName.includes('-dlq')) {
       return handleFamilyEventsDlq(batch as MessageBatch<unknown>, env)
     }

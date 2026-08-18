@@ -1,12 +1,12 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
+import type { Env } from '../lib/db.ts'
 import { pathParam } from '../lib/routeParams.ts'
-import { queryAll, queryFirst } from '../lib/db'
-import { auditActor, requireAdmin, requirePermission } from '../lib/adminAuth'
-import { actorId, auditStatement } from '../lib/auditLog'
-import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation'
-import { checkSelfApproval, SELF_APPROVAL_ERROR } from '../lib/separationOfDuties'
-import type { AdminSessionUser } from '../lib/adminUsers'
+import { queryAll, queryFirst } from '../lib/db.ts'
+import { auditActor, requireAdmin, requirePermission } from '../lib/adminAuth.ts'
+import { actorId, auditStatement } from '../lib/auditLog.ts'
+import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation.ts'
+import { checkSelfApproval, SELF_APPROVAL_ERROR } from '../lib/separationOfDuties.ts'
+import type { AdminSessionUser } from '../lib/adminUsers.ts'
 
 type AppEnv = { Bindings: Env; Variables: { adminUser?: AdminSessionUser; adminIsLegacyKey?: boolean } }
 const route = new Hono<AppEnv>()

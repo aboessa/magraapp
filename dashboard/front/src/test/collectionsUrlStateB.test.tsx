@@ -137,11 +137,20 @@ const attemptRow = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
-const qualityReport = (overrides: Record<string, unknown> = {}) => ({
-  entity_type: 'story', entity_id: 'st-1', readyToPublish: false,
-  checks: [{ check: 'page_images', passed: false, message: 'الصفحة ٣ بلا صورة' }],
+const qualityFinding = (overrides: Record<string, unknown> = {}) => ({
+  id: 'page_images', label_ar: 'صور الصفحات', status: 'blocked', severity: 'blocker',
+  detail: 'الصفحة ٣ بلا صورة', owner: 'production', required_action: 'إضافة صورة', items: ['page-3'],
   ...overrides,
 })
+
+const qualityReport = (overrides: Record<string, unknown> = {}) => {
+  const finding = qualityFinding()
+  return {
+    entity_type: 'story', entity_id: 'st-1', publishable: false,
+    findings: [finding], blockers: [finding], warnings: [],
+    ...overrides,
+  }
+}
 
 const childRow = (overrides: Record<string, unknown> = {}) => ({
   id: 'ch-1', nickname: 'سارة', avatar_id: 'av-1', parent_id: 'fam-1', parent_name: 'أبو سارة',
@@ -190,17 +199,17 @@ beforeEach(() => { vi.restoreAllMocks(); window.localStorage.clear() })
 describe('ProductionPage', () => {
   const mockBoard = (total = 1) => {
     const board = vi.spyOn(api, 'productionBoard')
-      .mockResolvedValue({ success: true, data: [productionItem()], meta: { total, limit: 20, offset: 0, board_limit: 40 } } as never)
+      .mockResolvedValue({ success: true, data: [productionItem()], meta: { total, limit: 25, offset: 0, board_limit: 40 } } as never)
     const queue = vi.spyOn(api, 'productionQueue').mockResolvedValue(envelope([], 0) as never)
     return { board, queue }
   }
 
   test('a pre-filtered link sends type, with_publish and the page to GET /admin/production/board', async () => {
     const { board } = mockBoard()
-    renderWithProviders(<ProductionPage />, { route: `${adminPath('production')}?type=story&with_publish=0&offset=20` })
+    renderWithProviders(<ProductionPage />, { route: `${adminPath('production')}?type=story&with_publish=0&offset=25` })
 
     await waitFor(() => expect(board).toHaveBeenCalled())
-    expect(board).toHaveBeenCalledWith({ type: 'story', with_publish: '0', limit: 20, offset: 20 })
+    expect(board).toHaveBeenCalledWith({ type: 'story', with_publish: '0', limit: 25, offset: 25 })
   })
 
   test('the applied type shows as a chip that drops only itself', async () => {
@@ -246,7 +255,7 @@ describe('ProductionPage', () => {
     renderWithProviders(<><ProductionPage /><UrlProbe /></>, { route: adminPath('production') })
 
     await waitFor(() => expect(probe()).toBe(''))
-    await user.click(screen.getByRole('button', { name: 'كانبان' }))
+    await user.click(screen.getByRole('tab', { name: 'كانبان' }))
 
     await waitFor(() => expect(probe()).toContain('view=kanban'))
   })
@@ -284,8 +293,8 @@ describe('WorkflowPage', () => {
     const user = userEvent.setup()
     renderWithProviders(<><WorkflowPage /><UrlProbe /></>, { route: adminPath('workflows') })
 
-    await screen.findByText('المرحلة الحالية')
-    await user.click(screen.getByRole('button', { name: /مهامي/ }))
+    await screen.findByRole('tab', { name: 'نظرة عامة' })
+    await user.click(screen.getByRole('tab', { name: /مهامي/ }))
 
     await waitFor(() => expect(probe()).toBe('?view=mine'))
     expect(await screen.findByText('المراجعة اللغوية · حاجبة للنشر')).toBeInTheDocument()
@@ -303,7 +312,7 @@ describe('WorkflowPage', () => {
 
     // الحدّ الباقي مُعلَن: المسار لا يقبل فلترة بحالة ولا بقالب.
     expect(await screen.findByText(/ولا يقبل فلترة بحالة ولا بقالب/)).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /المتأخّر/ }))
+    await user.click(screen.getByRole('tab', { name: /المتأخّر/ }))
     await waitFor(() => expect(screen.queryByText(/GET \/admin\/workflows\/runs/)).not.toBeInTheDocument())
   })
 })
@@ -364,7 +373,18 @@ describe('MediaLibraryPage', () => {
 
 describe('StoriesPage', () => {
   const mockStories = () => {
-    const stories = vi.spyOn(api, 'stories').mockResolvedValue(envelope([storyRow()], 1) as never)
+    // المكتبة الجديدة `storyLibrary` تحلّ محلّ `stories` القديمة: نفس المعاملات
+    // `q` و`type` تصل إلى الخادم عبرها، فالاختبار يُثبّت وصولها لا اسم الدالة.
+    const libraryRow = {
+      ...storyRow(),
+      planet_id: 'qisas', planet_name: 'كوكب القصص', planet_color: '#FECA57',
+      cover_url: null, pages_total: 5, pages_with_image: 5,
+      coverage: [{ language: 'ar', declared: true, text_done: 5, narration_done: 5, timing_done: 0, total: 5 }],
+      readiness: 'ready',
+    }
+    const stories = vi.spyOn(api, 'storyLibrary').mockResolvedValue({
+      success: true, data: [libraryRow], meta: { total: 1, summary: { total: 1, ready: 1, partial: 0, empty: 0, published: 0, in_review: 0, missing_pages: 0, missing_artwork: 0, missing_cover: 0 }, notes: [] },
+    } as never)
     vi.spyOn(api, 'series').mockResolvedValue(envelope([seriesRow('s1', 'لونا')]) as never)
     vi.spyOn(api, 'visualStyles').mockResolvedValue(envelope([]) as never)
     return stories
@@ -375,7 +395,7 @@ describe('StoriesPage', () => {
     renderWithProviders(<StoriesPage />, { route: `${adminPath('stories')}?q=قمر&type=comic` })
 
     await waitFor(() => expect(stories).toHaveBeenCalled())
-    expect(stories).toHaveBeenCalledWith({ q: 'قمر', type: 'comic' })
+    expect(stories).toHaveBeenCalledWith(expect.objectContaining({ q: 'قمر', type: 'comic' }))
   })
 
   test('the applied type shows as a chip that drops only itself', async () => {
@@ -386,9 +406,10 @@ describe('StoriesPage', () => {
     expect(await within(chips()).findByText('النوع: كوميكس')).toBeInTheDocument()
     await user.click(within(chips()).getByRole('button', { name: 'إزالة الفلتر: النوع' }))
 
-    // النوع وحده يسقط، والبحث النصّي يبقى.
-    await waitFor(() => expect(lastArgs(stories).type).toBe(''))
-    expect(lastArgs(stories).q).toBe('قمر')
+    // النوع وحده يسقط، والبحث النصّي يبقى. القيمة الفارغة لا تُرسل كمعامل
+    // فارغ بل تُحذف — فالتحقق على الفقد لا على سلسلة فارغة.
+    await waitFor(() => expect((lastArgs(stories) as Record<string, unknown>).type ?? '').toBe(''))
+    expect((lastArgs(stories) as Record<string, unknown>).q).toBe('قمر')
   })
 
   test('changing a filter clears a stale offset from the URL', async () => {
@@ -449,7 +470,7 @@ describe('MasteryPage', () => {
     expect(await screen.findByText('المستوى: يحتاج مراجعة')).toBeInTheDocument()
     await user.click(within(chips()).getByRole('button', { name: 'إزالة الفلتر: المستوى' }))
 
-    await waitFor(() => expect(lastArgs(objectives).level).toBe(''))
+    await waitFor(() => expect(lastArgs(objectives).level ?? '').toBe(''))
   })
 
   test('changing a filter returns to the first page', async () => {
@@ -478,19 +499,19 @@ describe('MasteryPage', () => {
 
 // --- فحص الجاهزية ----------------------------------------------------------
 //
-// `GET /admin/quality/:type/:id` في `api/src/routes/adminBackup.ts` لا يقبل أي
-// معامل استعلام: `type` و`id` جزءا مسار. ولذلك هما ما يُحفظ في العنوان، فنتيجة
-// الفحص تصير قابلة للمشاركة برابط بدل إعادة لصق المعرّف.
+// `GET /admin/publish-readiness/:type/:id` لا يقبل أي معامل استعلام: `type`
+// و`id` جزءا مسار. ولذلك هما ما يُحفظ في العنوان، فنتيجة الفحص تصير قابلة
+// للمشاركة برابط بدل إعادة لصق المعرّف.
 
 describe('QualityPage', () => {
-  const mockReport = () => vi.spyOn(api, 'qualityReport').mockResolvedValue(envelope(qualityReport()) as never)
+  const mockReport = () => vi.spyOn(api, 'publishReadiness').mockResolvedValue(envelope(qualityReport()) as never)
 
   test('a link carrying the type and id runs that check without a second click', async () => {
     const report = mockReport()
     renderWithProviders(<QualityPage />, { route: `${adminPath('quality')}?type=story&id=st-1` })
 
     await waitFor(() => expect(report).toHaveBeenCalled())
-    // وسائط مسار لا استعلام: الترتيب هو ما يبنيه `api.qualityReport`.
+    // وسائط مسار لا استعلام: الترتيب هو ما يبنيه `api.publishReadiness`.
     expect(lastCall(report)).toEqual(['story', 'st-1'])
     expect(await screen.findByText('الصفحة ٣ بلا صورة')).toBeInTheDocument()
   })
@@ -527,7 +548,7 @@ describe('QualityPage', () => {
 //
 // أسماء المعاملات من `GET /admin/children` في
 // `api/src/routes/adminFamilyProjection.ts`: `q`, `track`, `parent_id`,
-// `status`, `limit`, `offset`. الشاشة تُرسل `q` و`track` والحدّ كما كانت.
+// `status`, `limit`, `offset`. الشاشة تُرسل `q` و`track` و`status` والترقيم.
 
 describe('ChildrenPage', () => {
   const mockChildren = () =>
@@ -538,7 +559,7 @@ describe('ChildrenPage', () => {
     renderWithProviders(<ChildrenPage />, { route: `${adminPath('children')}?track=kids` })
 
     await waitFor(() => expect(children).toHaveBeenCalled())
-    expect(children).toHaveBeenCalledWith({ q: '', track: 'kids', limit: 100 })
+    expect(children).toHaveBeenCalledWith({ q: '', track: 'kids', status: undefined, limit: 25, offset: 0 })
   })
 
   test('the applied track shows as a chip that drops only itself', async () => {
@@ -549,7 +570,7 @@ describe('ChildrenPage', () => {
     expect(await within(chips()).findByText('المسار المحسوب: المستكشفون 6–8')).toBeInTheDocument()
     await user.click(within(chips()).getByRole('button', { name: 'إزالة الفلتر: المسار المحسوب' }))
 
-    await waitFor(() => expect(lastArgs(children).track).toBe(''))
+    await waitFor(() => expect(lastArgs(children).track).toBeUndefined())
     expect(lastArgs(children).q).toBe('سارة')
   })
 

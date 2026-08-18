@@ -1,0 +1,4198 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-12T18:23:10.839752Z",
+  "manifest_id": "majarra-games-wave-visual-production-closure-v1",
+  "summary": {
+    "generated_assets": 89,
+    "canonical_assets_written": 89,
+    "transparent_assets": 45,
+    "opaque_assets": 44,
+    "thumbnails_written": 18,
+    "automatic_pass": 88,
+    "automatic_warn": 1,
+    "automatic_fail": 0,
+    "set_consistency_pass": 8,
+    "set_consistency_warn": 4,
+    "set_consistency_fail": 2,
+    "set_consistency_manual_review": 3,
+    "contact_sheet_review": "PENDING",
+    "contact_sheets_written": 18
+  },
+  "failures": [],
+  "warnings": [
+    {
+      "key": "game-wave2-match-2/match-moon",
+      "warnings": [
+        "high_dark_semtransparent_edge_ratio_manual_fringe_review"
+      ]
+    }
+  ],
+  "set_consistency": [
+    {
+      "game_id": "game-wave1-memory-animals",
+      "asset_set": "animal-pair-set",
+      "members": [
+        "animal-cat",
+        "animal-bird",
+        "animal-fish",
+        "animal-rabbit"
+      ],
+      "visible_ratio_min": 0.2869,
+      "visible_ratio_max": 0.45837,
+      "visible_ratio_spread": 1.5977,
+      "status": "WARN",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave1-picture-match",
+      "asset_set": "pair-token-set",
+      "members": [
+        "match-cat",
+        "match-bird"
+      ],
+      "visible_ratio_min": 0.30574,
+      "visible_ratio_max": 0.33758,
+      "visible_ratio_spread": 1.1041,
+      "status": "PASS",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave1-color-sort",
+      "asset_set": "bin-set",
+      "members": [
+        "bin-red",
+        "bin-blue"
+      ],
+      "visible_ratio_min": 0.39814,
+      "visible_ratio_max": 0.45719,
+      "visible_ratio_spread": 1.1483,
+      "status": "PASS",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave1-color-sort",
+      "asset_set": "object-set",
+      "members": [
+        "red-apple",
+        "red-rocket",
+        "blue-fish",
+        "blue-sailboat"
+      ],
+      "visible_ratio_min": 0.22156,
+      "visible_ratio_max": 0.4427,
+      "visible_ratio_spread": 1.9981,
+      "status": "FAIL",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave1-sequence-kids",
+      "asset_set": "sequence-card-set",
+      "members": [
+        "sequence-seed",
+        "sequence-sprout",
+        "sequence-tree"
+      ],
+      "visible_ratio_min": null,
+      "visible_ratio_max": null,
+      "visible_ratio_spread": null,
+      "status": "MANUAL_REVIEW_REQUIRED",
+      "reason": "opaque_set_has_no_reliable_automated_style_consistency_metric",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave1-logic-kids",
+      "asset_set": "pattern-token-set",
+      "members": [
+        "pattern-moon",
+        "pattern-rocket",
+        "pattern-comet"
+      ],
+      "visible_ratio_min": 0.24633,
+      "visible_ratio_max": 0.33036,
+      "visible_ratio_spread": 1.3411,
+      "status": "PASS",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave1-block-code",
+      "asset_set": "obstacle-set",
+      "members": [
+        "obstacle-planter",
+        "obstacle-crate"
+      ],
+      "visible_ratio_min": 0.47947,
+      "visible_ratio_max": 0.55023,
+      "visible_ratio_spread": 1.1476,
+      "status": "PASS",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave2-memory-2",
+      "asset_set": "animal-pair-set",
+      "members": [
+        "animal-lion",
+        "animal-turtle",
+        "animal-owl"
+      ],
+      "visible_ratio_min": 0.28549,
+      "visible_ratio_max": 0.44604,
+      "visible_ratio_spread": 1.5624,
+      "status": "WARN",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave2-match-2",
+      "asset_set": "pair-token-set",
+      "members": [
+        "match-moon",
+        "match-rainbow"
+      ],
+      "visible_ratio_min": 0.31627,
+      "visible_ratio_max": 0.43475,
+      "visible_ratio_spread": 1.3746,
+      "status": "WARN",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave2-sort-junior",
+      "asset_set": "bin-set",
+      "members": [
+        "bin-circle",
+        "bin-star"
+      ],
+      "visible_ratio_min": 0.59194,
+      "visible_ratio_max": 0.59982,
+      "visible_ratio_spread": 1.0133,
+      "status": "PASS",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave2-sort-junior",
+      "asset_set": "shape-token-set",
+      "members": [
+        "shape-orb",
+        "shape-star"
+      ],
+      "visible_ratio_min": 0.38399,
+      "visible_ratio_max": 0.52214,
+      "visible_ratio_spread": 1.3598,
+      "status": "PASS",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave2-timeline",
+      "asset_set": "event-card-set",
+      "members": [
+        "event-pyramids",
+        "event-library"
+      ],
+      "visible_ratio_min": null,
+      "visible_ratio_max": null,
+      "visible_ratio_spread": null,
+      "status": "MANUAL_REVIEW_REQUIRED",
+      "reason": "opaque_set_has_no_reliable_automated_style_consistency_metric",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave2-rhythm",
+      "asset_set": "drum-pad-set",
+      "members": [
+        "drum-coral",
+        "drum-teal"
+      ],
+      "visible_ratio_min": 0.51282,
+      "visible_ratio_max": 0.51923,
+      "visible_ratio_spread": 1.0125,
+      "status": "PASS",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave2-rhythm",
+      "asset_set": "beat-token-set",
+      "members": [
+        "beat-coral",
+        "beat-teal"
+      ],
+      "visible_ratio_min": 0.50691,
+      "visible_ratio_max": 0.52188,
+      "visible_ratio_spread": 1.0295,
+      "status": "PASS",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave3-timeline-detail",
+      "asset_set": "event-card-set",
+      "members": [
+        "event-carthage",
+        "event-house-wisdom",
+        "event-ibn-battuta"
+      ],
+      "visible_ratio_min": null,
+      "visible_ratio_max": null,
+      "visible_ratio_spread": null,
+      "status": "MANUAL_REVIEW_REQUIRED",
+      "reason": "opaque_set_has_no_reliable_automated_style_consistency_metric",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave3-block-advanced",
+      "asset_set": "obstacle-set",
+      "members": [
+        "obstacle-boulder",
+        "obstacle-gate",
+        "obstacle-supply-crate"
+      ],
+      "visible_ratio_min": 0.30365,
+      "visible_ratio_max": 0.52788,
+      "visible_ratio_spread": 1.7384,
+      "status": "WARN",
+      "manual_style_review_required": true
+    },
+    {
+      "game_id": "game-wave3-sim-saturating",
+      "asset_set": "solubility-apparatus-set",
+      "members": [
+        "beaker-water",
+        "salt-spoon",
+        "salt-crystals"
+      ],
+      "visible_ratio_min": 0.15332,
+      "visible_ratio_max": 0.46417,
+      "visible_ratio_spread": 3.0275,
+      "status": "FAIL",
+      "manual_style_review_required": true
+    }
+  ],
+  "thumbnails": [
+    {
+      "game_id": "game-wave1-memory-animals",
+      "source_cover": "app_main/assets/images/games/wave/wave1-memory-animals/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave1-memory-animals/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.5
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 45610,
+      "checksum_sha256": "8a978563c5d61bc0cb14808aae520736ee729258ee85bb126afb30d05667929f",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave1-picture-match",
+      "source_cover": "app_main/assets/images/games/wave/wave1-picture-match/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave1-picture-match/thumbnail.webp",
+      "focal_point": [
+        0.52,
+        0.53
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 50376,
+      "checksum_sha256": "38632b68e6a459b15fc0f0c0b60b1b078ab8e89e2ea89b7f3adf1ca41624cf1f",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave1-color-sort",
+      "source_cover": "app_main/assets/images/games/wave/wave1-color-sort/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave1-color-sort/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.55
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 42748,
+      "checksum_sha256": "dc2a22ca80b1038572035d5221bb1053642647377bb80cb80f3d4be92b214a04",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave1-count-place",
+      "source_cover": "app_main/assets/images/games/wave/wave1-count-place/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave1-count-place/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.48
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 26608,
+      "checksum_sha256": "9deb35b3eada26880cedeca5d44afba689be0fcaaa0f3be269ebf50921442851",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave1-sequence-kids",
+      "source_cover": "app_main/assets/images/games/wave/wave1-sequence-kids/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave1-sequence-kids/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.5
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 53732,
+      "checksum_sha256": "c11090e2e20c309b988c791bbef7d40ed236c21ef4cc9476f8590fb1a2a99927",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave1-logic-kids",
+      "source_cover": "app_main/assets/images/games/wave/wave1-logic-kids/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave1-logic-kids/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.52
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 33540,
+      "checksum_sha256": "75b7a918c88db565ddd238a3d17c214741730aa423ad13e6226be4aa0fb527e0",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave1-word-kids",
+      "source_cover": "app_main/assets/images/games/wave/wave1-word-kids/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave1-word-kids/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.48
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 70240,
+      "checksum_sha256": "41b8e8af9e2e315bee955533391c0c246f3814deab8dce71099670f2f54fe50a",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave1-block-code",
+      "source_cover": "app_main/assets/images/games/wave/wave1-block-code/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave1-block-code/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.5
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 77578,
+      "checksum_sha256": "57ccc41d8fcd8b761863a24740a656813f476d167111bb0fcad3444e137b118b",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave1-sim-lab",
+      "source_cover": "app_main/assets/images/games/wave/wave1-sim-lab/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave1-sim-lab/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.5
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 47364,
+      "checksum_sha256": "c900e0cee4bf5061a9b509296a2946515d6e4a55882dd3787e6e500135063fd2",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave2-memory-2",
+      "source_cover": "app_main/assets/images/games/wave/wave2-memory-2/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave2-memory-2/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.5
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 49726,
+      "checksum_sha256": "15767efc6fbb387b52c9e26f09672ec16ec63f309817eb1d8cad0a55198aca14",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave2-match-2",
+      "source_cover": "app_main/assets/images/games/wave/wave2-match-2/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave2-match-2/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.5
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 54942,
+      "checksum_sha256": "7b57a01d5647165f41d87e3291c230609c24e2ef2f41bd8fededaf1ff2818c07",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave2-sort-junior",
+      "source_cover": "app_main/assets/images/games/wave/wave2-sort-junior/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave2-sort-junior/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.52
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 58870,
+      "checksum_sha256": "3e6d774aa72402b50d6918c6801fc5b0095353e36361fc61f8402657fee4e968",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave2-count-drag",
+      "source_cover": "app_main/assets/images/games/wave/wave2-count-drag/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave2-count-drag/thumbnail.webp",
+      "focal_point": [
+        0.48,
+        0.5
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 72158,
+      "checksum_sha256": "0f92245b9a324236123f74b2dc297d4d0a4bcb1aec82703198e0dce5f2509ede",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave2-timeline",
+      "source_cover": "app_main/assets/images/games/wave/wave2-timeline/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave2-timeline/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.52
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 82218,
+      "checksum_sha256": "f0437dbaf31b3b23501a94e30e476b337609ad2c833c4f967b08924ff28c76e6",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave2-rhythm",
+      "source_cover": "app_main/assets/images/games/wave/wave2-rhythm/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave2-rhythm/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.52
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 42476,
+      "checksum_sha256": "640feeb98982eff84e76cb8962638942a9c8fba08a2a69b40589298559ee3f41",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave3-timeline-detail",
+      "source_cover": "app_main/assets/images/games/wave/wave3-timeline-detail/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave3-timeline-detail/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.5
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 75850,
+      "checksum_sha256": "3373fdfe93085f398f9a66279f7b4203fe0b7b477c374eb34eeb4f4e36b9f751",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave3-block-advanced",
+      "source_cover": "app_main/assets/images/games/wave/wave3-block-advanced/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave3-block-advanced/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.52
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 64182,
+      "checksum_sha256": "8a2d3db1050e486d54ec429f418a3b1755de03fa0bcd11931f33519311e739ec",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    },
+    {
+      "game_id": "game-wave3-sim-saturating",
+      "source_cover": "app_main/assets/images/games/wave/wave3-sim-saturating/cover.webp",
+      "thumbnail_file": "app_main/assets/images/games/wave/wave3-sim-saturating/thumbnail.webp",
+      "focal_point": [
+        0.5,
+        0.5
+      ],
+      "size": [
+        800,
+        800
+      ],
+      "bytes": 28720,
+      "checksum_sha256": "c2daf263b2aea6439eca31b09612aadad9914ecd9a5d4e8c79492cf35493bafc",
+      "status": "PENDING_CONTACT_SHEET_REVIEW"
+    }
+  ],
+  "assets": [
+    {
+      "key": "game-wave1-memory-animals/cover",
+      "game_id": "game-wave1-memory-animals",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-memory-animals/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-memory-animals/cover.webp",
+      "source_checksum_sha256": "d7c3a55d54864be0a8f0da927f4f155d76c520fdb14cd139b8af946f2d01165b",
+      "target_checksum_sha256": "859de886903c2809153de37850e1eb85b66297cc7d26520fa04d32eac3a4880d",
+      "target_bytes": 78968,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          199.09,
+          213.89,
+          191.2
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-memory-animals/board-background",
+      "game_id": "game-wave1-memory-animals",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-memory-animals/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-memory-animals/board-background.webp",
+      "source_checksum_sha256": "76bf65ba0ebc9fa673a3ca7e573b1d9076064c9d6da9a7ce036dd6072cfefe73",
+      "target_checksum_sha256": "5ad28eb25334db1f8c2746150d5324af613c71a720dea89b3a3c5d25d1929a29",
+      "target_bytes": 28580,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          227.14,
+          227.96,
+          207.79
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-memory-animals/animal-cat",
+      "game_id": "game-wave1-memory-animals",
+      "asset": "animal-pair-set",
+      "member": "animal-cat",
+      "source_file": "tools/playveo/output/wave/wave1-memory-animals/derived/animal-cat.removed.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-memory-animals/animal-cat.png",
+      "source_checksum_sha256": "32158cc6c9b486cc1225c68764800f121297fd99ea8de4167a590903a7348c03",
+      "target_checksum_sha256": "cf331b572221df52319c7866e3ec1d2f120c9077c8896bb2b01c3a489d9d3507",
+      "target_bytes": 377234,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.54163,
+        "semi_transparent_ratio": 0.33926,
+        "visible_ratio": 0.45837,
+        "subject_bbox": [
+          70,
+          85,
+          699,
+          683
+        ],
+        "margins_px": {
+          "left": 70,
+          "top": 85,
+          "right": 69,
+          "bottom": 85
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.09962,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-memory-animals/animal-bird",
+      "game_id": "game-wave1-memory-animals",
+      "asset": "animal-pair-set",
+      "member": "animal-bird",
+      "source_file": "tools/playveo/output/wave/wave1-memory-animals/derived/animal-bird.removed.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-memory-animals/animal-bird.png",
+      "source_checksum_sha256": "7050d9618ef31a21c897683627abb194d33b2a3f262683a152ddbd942263c203",
+      "target_checksum_sha256": "8d8a9e81fe79109054e9b773ecc3991798d64b7d44f63c2249664e292b1703f0",
+      "target_bytes": 318056,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.59619,
+        "semi_transparent_ratio": 0.35539,
+        "visible_ratio": 0.40381,
+        "subject_bbox": [
+          106,
+          70,
+          661,
+          698
+        ],
+        "margins_px": {
+          "left": 106,
+          "top": 70,
+          "right": 107,
+          "bottom": 70
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.10836,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-memory-animals/animal-fish",
+      "game_id": "game-wave1-memory-animals",
+      "asset": "animal-pair-set",
+      "member": "animal-fish",
+      "source_file": "tools/playveo/output/wave/wave1-memory-animals/derived/animal-fish.removed.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-memory-animals/animal-fish.png",
+      "source_checksum_sha256": "cadac7ce08af81d86d71350159baf556aaa389a1183860b20fe0eb0b9f8df242",
+      "target_checksum_sha256": "3bfae50eca0114deb1016f70d058f4dcd55f49907bcff5e417427cd84e16888e",
+      "target_bytes": 285655,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.7131,
+        "semi_transparent_ratio": 0.21316,
+        "visible_ratio": 0.2869,
+        "subject_bbox": [
+          70,
+          160,
+          698,
+          608
+        ],
+        "margins_px": {
+          "left": 70,
+          "top": 160,
+          "right": 70,
+          "bottom": 160
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.06039,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-memory-animals/animal-rabbit",
+      "game_id": "game-wave1-memory-animals",
+      "asset": "animal-pair-set",
+      "member": "animal-rabbit",
+      "source_file": "tools/playveo/output/wave/wave1-memory-animals/derived/animal-rabbit.removed.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-memory-animals/animal-rabbit.png",
+      "source_checksum_sha256": "00a12ff576e481267e7f94bcd4dad36709e3c7f1b64fba8ad7299d962a61aaa5",
+      "target_checksum_sha256": "ca720e7f049f8e8adfe3a5d09fbc1a022226533645e5de3a09bb2751aad25927",
+      "target_bytes": 285154,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.68375,
+        "semi_transparent_ratio": 0.28116,
+        "visible_ratio": 0.31625,
+        "subject_bbox": [
+          166,
+          71,
+          601,
+          698
+        ],
+        "margins_px": {
+          "left": 166,
+          "top": 71,
+          "right": 167,
+          "bottom": 70
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.00154,
+        "dark_semtransparent_edge_ratio": 0.09972,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-memory-animals/card-back",
+      "game_id": "game-wave1-memory-animals",
+      "asset": "card-back",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-memory-animals/source/card-back.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-memory-animals/card-back.webp",
+      "source_checksum_sha256": "4ac6890a117187fd7777adb376d6ee27502fe4892f27c2881f983b887e89739b",
+      "target_checksum_sha256": "6171b3bf00987e09f067e8d65d61bf3af024c05a08f460b72cd662d3263fa85e",
+      "target_bytes": 30340,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          223.06,
+          226.49,
+          203.84
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-picture-match/cover",
+      "game_id": "game-wave1-picture-match",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-picture-match/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-picture-match/cover.webp",
+      "source_checksum_sha256": "a658f2d3fba45855d5cbaa0e6dcb68ec0f3d2f42e3f470f62893441131b194fc",
+      "target_checksum_sha256": "2224bbced5ea88668fb2df0d35807a011ca54d4776596789c910aa43941a539f",
+      "target_bytes": 77224,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          216.89,
+          191.36,
+          154.36
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-picture-match/board-background",
+      "game_id": "game-wave1-picture-match",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-picture-match/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-picture-match/board-background.webp",
+      "source_checksum_sha256": "9367781cc4860dc6c27fbe8b3d1c713145a9c0173324a0d70e93ac123b8b9956",
+      "target_checksum_sha256": "1ce6bb93410c055df8119c4ebac97f2403a98452ff33404be3b6eb13e5057a5a",
+      "target_bytes": 31848,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          219.53,
+          210.46,
+          180.8
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-picture-match/match-cat",
+      "game_id": "game-wave1-picture-match",
+      "asset": "pair-token-set",
+      "member": "match-cat",
+      "source_file": "tools/playveo/output/wave/wave1-picture-match/removed/match-cat.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-picture-match/match-cat.png",
+      "source_checksum_sha256": "86836c2c0c89148ff7a8003bbe7afd0ad198b4d223d071c3d81c1ab572feb488",
+      "target_checksum_sha256": "9d8b4baaf332c56764d2cd77c076fe5860e1a43b81d0b5f87549b3b604c7905b",
+      "target_bytes": 323768,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.69426,
+        "semi_transparent_ratio": 0.28822,
+        "visible_ratio": 0.30574,
+        "subject_bbox": [
+          146,
+          72,
+          622,
+          696
+        ],
+        "margins_px": {
+          "left": 146,
+          "top": 72,
+          "right": 146,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.37971,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-picture-match/match-bird",
+      "game_id": "game-wave1-picture-match",
+      "asset": "pair-token-set",
+      "member": "match-bird",
+      "source_file": "tools/playveo/output/wave/wave1-picture-match/removed/match-bird.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-picture-match/match-bird.png",
+      "source_checksum_sha256": "62e0c493daa4d4806a9aee380fd2b3b2c0a7a692d91a61ebc70464363706ef8c",
+      "target_checksum_sha256": "1bdae25f092c870ee84aae9c49c59a73bc6d89b1c76ed8bf71e896a6d6cb3b9b",
+      "target_bytes": 337679,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.66242,
+        "semi_transparent_ratio": 0.26107,
+        "visible_ratio": 0.33758,
+        "subject_bbox": [
+          131,
+          72,
+          637,
+          696
+        ],
+        "margins_px": {
+          "left": 131,
+          "top": 72,
+          "right": 131,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.00299,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.42054,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-color-sort/cover",
+      "game_id": "game-wave1-color-sort",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-color-sort/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-color-sort/cover.webp",
+      "source_checksum_sha256": "decef359fb624d94414cf17e2a3ff7d62034345f6d97fc686eae9d9e9644a49d",
+      "target_checksum_sha256": "d01fa8860c06255232c2d091118ad748560c84d06e54f7ef2d49d3ab3e57c38d",
+      "target_bytes": 64820,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          219.2,
+          199.67,
+          184.6
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-color-sort/board-background",
+      "game_id": "game-wave1-color-sort",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-color-sort/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-color-sort/board-background.webp",
+      "source_checksum_sha256": "9a97a632d512d2ad6dd495ae75f189edf795e3196ac85fcc039c88d12354b7d5",
+      "target_checksum_sha256": "1235f0db136820baacc9de26f4a9fb3b5343804a6ce4524ee6a4be4531bc1e5f",
+      "target_bytes": 54374,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          220.02,
+          199.33,
+          170.78
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-color-sort/bin-red",
+      "game_id": "game-wave1-color-sort",
+      "asset": "bin-set",
+      "member": "bin-red",
+      "source_file": "tools/playveo/output/wave/wave1-color-sort/removed/bin-red.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-color-sort/bin-red.png",
+      "source_checksum_sha256": "62a36ded810fbfc34a2f24df773ce7ff1df1e7392153aea5d20cf673f0f9a9b3",
+      "target_checksum_sha256": "bc025247e32c3099b3b1094c7f359cecea3313a791a52e7dba71c99a8f68b2e9",
+      "target_bytes": 348606,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.60186,
+        "semi_transparent_ratio": 0.35401,
+        "visible_ratio": 0.39814,
+        "subject_bbox": [
+          72,
+          152,
+          696,
+          615
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 152,
+          "right": 72,
+          "bottom": 153
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.3865,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-color-sort/bin-blue",
+      "game_id": "game-wave1-color-sort",
+      "asset": "bin-set",
+      "member": "bin-blue",
+      "source_file": "tools/playveo/output/wave/wave1-color-sort/removed/bin-blue.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-color-sort/bin-blue.png",
+      "source_checksum_sha256": "8348939451014fa5c6f250b6efe71f7c559e57a2d89fc373f4799fe58c886e76",
+      "target_checksum_sha256": "555c453a60240b9c562e0636cc83f80648de28c31718f894d45ddbd2dc220b3b",
+      "target_bytes": 422858,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.54281,
+        "semi_transparent_ratio": 0.35178,
+        "visible_ratio": 0.45719,
+        "subject_bbox": [
+          72,
+          126,
+          695,
+          641
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 126,
+          "right": 73,
+          "bottom": 127
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.35917,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-color-sort/red-apple",
+      "game_id": "game-wave1-color-sort",
+      "asset": "object-set",
+      "member": "red-apple",
+      "source_file": "tools/playveo/output/wave/wave1-color-sort/removed/red-apple.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-color-sort/red-apple.png",
+      "source_checksum_sha256": "f57e56e6754e992ef051412d27dfbeba564e14fe0fa0c2acd81ef69ff11a2b1f",
+      "target_checksum_sha256": "6751cb9aca7cb7d2c6304334ae5dd44fac9ed7f3003162de9d886a6b88d525a6",
+      "target_bytes": 365596,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.5573,
+        "semi_transparent_ratio": 0.26659,
+        "visible_ratio": 0.4427,
+        "subject_bbox": [
+          111,
+          72,
+          657,
+          695
+        ],
+        "margins_px": {
+          "left": 111,
+          "top": 72,
+          "right": 111,
+          "bottom": 73
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.39367,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-color-sort/red-rocket",
+      "game_id": "game-wave1-color-sort",
+      "asset": "object-set",
+      "member": "red-rocket",
+      "source_file": "tools/playveo/output/wave/wave1-color-sort/removed/red-rocket.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-color-sort/red-rocket.png",
+      "source_checksum_sha256": "1e7bc4a004ed6cc28dc8d1af40fd55b1a3f8e65ecc2543b0d85715728779f743",
+      "target_checksum_sha256": "2e2d623ed40e7dc8f9fa626fbc744eede98de2f772b03738a92e7eda99a96a21",
+      "target_bytes": 210324,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.77844,
+        "semi_transparent_ratio": 0.17927,
+        "visible_ratio": 0.22156,
+        "subject_bbox": [
+          216,
+          73,
+          551,
+          695
+        ],
+        "margins_px": {
+          "left": 216,
+          "top": 73,
+          "right": 217,
+          "bottom": 73
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.41365,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-color-sort/blue-fish",
+      "game_id": "game-wave1-color-sort",
+      "asset": "object-set",
+      "member": "blue-fish",
+      "source_file": "tools/playveo/output/wave/wave1-color-sort/removed/blue-fish.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-color-sort/blue-fish.png",
+      "source_checksum_sha256": "b5d3e1c9766a338b8c1313cc505841a27e531c0f880bc2a785c2a5b4d0eb9703",
+      "target_checksum_sha256": "5fb167ff41bba5b7ba70b5728b237a6586a8f3251af4a906afb851c86eaa43af",
+      "target_bytes": 310234,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.66798,
+        "semi_transparent_ratio": 0.25408,
+        "visible_ratio": 0.33202,
+        "subject_bbox": [
+          72,
+          146,
+          696,
+          621
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 146,
+          "right": 72,
+          "bottom": 147
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.38265,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-color-sort/blue-sailboat",
+      "game_id": "game-wave1-color-sort",
+      "asset": "object-set",
+      "member": "blue-sailboat",
+      "source_file": "tools/playveo/output/wave/wave1-color-sort/removed/blue-sailboat.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-color-sort/blue-sailboat.png",
+      "source_checksum_sha256": "f7f737d744e5db065054447db26cf8df9a46d52a7b6c403f86c99973436640d2",
+      "target_checksum_sha256": "7d534fbc3d53a9a80b3b7ce5bd6321aaca2a2cdf0805221f944ab32669ebe3f8",
+      "target_bytes": 299540,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.65501,
+        "semi_transparent_ratio": 0.33337,
+        "visible_ratio": 0.34499,
+        "subject_bbox": [
+          113,
+          72,
+          655,
+          696
+        ],
+        "margins_px": {
+          "left": 113,
+          "top": 72,
+          "right": 113,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.34674,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-count-place/cover",
+      "game_id": "game-wave1-count-place",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-count-place/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-count-place/cover.webp",
+      "source_checksum_sha256": "589b21d67c84ca0f2b0288171dcafc3e2903b31b5dbe84e40794aff9217295d3",
+      "target_checksum_sha256": "b6c3c4466080f7437f23e8861c63d8b9ed719f9e7626164b43f5f53301d4d682",
+      "target_bytes": 39894,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          142.0,
+          152.76,
+          156.65
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-count-place/board-background",
+      "game_id": "game-wave1-count-place",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-count-place/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-count-place/board-background.webp",
+      "source_checksum_sha256": "b15f6028cc2897f00100b4077f55b88fd73929f63abc5acf1903c0a836dab449",
+      "target_checksum_sha256": "6190a110c0581d65f26636acff72eb0212f3bc5ff269d1435756ea14b023f6d3",
+      "target_bytes": 19182,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          166.36,
+          161.23,
+          149.2
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-count-place/count-token-star",
+      "game_id": "game-wave1-count-place",
+      "asset": "count-token-star",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-count-place/removed/count-token-star.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-count-place/count-token-star.png",
+      "source_checksum_sha256": "94b6b2449ead9b1cea013aec799eee85d880c0e83bc7d28f282607adba92d15e",
+      "target_checksum_sha256": "d1e2ac07040732494398f8456bee81199e072603dba7efc3a54fd15866b50903",
+      "target_bytes": 303848,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.61772,
+        "semi_transparent_ratio": 0.2342,
+        "visible_ratio": 0.38228,
+        "subject_bbox": [
+          73,
+          88,
+          696,
+          680
+        ],
+        "margins_px": {
+          "left": 73,
+          "top": 88,
+          "right": 72,
+          "bottom": 88
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.40707,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-sequence-kids/cover",
+      "game_id": "game-wave1-sequence-kids",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-sequence-kids/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-sequence-kids/cover.webp",
+      "source_checksum_sha256": "1a27cd08af4a806ddfcb467309e992c41849cdb1da94f93dacf7097b79dbdb8f",
+      "target_checksum_sha256": "224f42b2f5d9cb0582577d11df732b48e6f8955b2d46792159b51d1e1a8dbef2",
+      "target_bytes": 92234,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          175.91,
+          167.84,
+          132.09
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-sequence-kids/board-background",
+      "game_id": "game-wave1-sequence-kids",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-sequence-kids/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-sequence-kids/board-background.webp",
+      "source_checksum_sha256": "68065739fc84b6c8afa09fb2a68fbfb502ecde564d9976443277f7888c9e5be2",
+      "target_checksum_sha256": "281441bfd9e44e3bf0027905e47ca8516eeb7a053659c136a1a4998672632d4c",
+      "target_bytes": 44594,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          167.77,
+          155.54,
+          137.69
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-sequence-kids/sequence-seed",
+      "game_id": "game-wave1-sequence-kids",
+      "asset": "sequence-card-set",
+      "member": "sequence-seed",
+      "source_file": "tools/playveo/output/wave/wave1-sequence-kids/derived/sequence-seed.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-sequence-kids/sequence-seed.webp",
+      "source_checksum_sha256": "0849bc7c143ce26fc75ffea43ee9aeca65c42d8a4f06d182d2af0925833bce18",
+      "target_checksum_sha256": "b185536b0ece1b85c06716a7b5410f792ca7137729c5f99e19e20c6c541a1876",
+      "target_bytes": 19328,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          612,
+          459
+        ],
+        "aspect_ratio": 1.33333,
+        "mean_rgb": [
+          211.95,
+          193.67,
+          164.95
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-sequence-kids/sequence-sprout",
+      "game_id": "game-wave1-sequence-kids",
+      "asset": "sequence-card-set",
+      "member": "sequence-sprout",
+      "source_file": "tools/playveo/output/wave/wave1-sequence-kids/derived/sequence-sprout.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-sequence-kids/sequence-sprout.webp",
+      "source_checksum_sha256": "41b040242536fc3421101c238f6a9f67e8c0af184ee9d4def2e29fb74cceb743",
+      "target_checksum_sha256": "f2b29a15c387293e76372c1bbca88a09bd509c3d3354ce75d8a7bd38d47a94a2",
+      "target_bytes": 21344,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          611,
+          458
+        ],
+        "aspect_ratio": 1.33406,
+        "mean_rgb": [
+          209.25,
+          191.23,
+          162.14
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-sequence-kids/sequence-tree",
+      "game_id": "game-wave1-sequence-kids",
+      "asset": "sequence-card-set",
+      "member": "sequence-tree",
+      "source_file": "tools/playveo/output/wave/wave1-sequence-kids/derived/sequence-tree.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-sequence-kids/sequence-tree.webp",
+      "source_checksum_sha256": "fae5da6ebe728f356a16f9ac7e1267996a9a7c76e4e22686b8768887c8af8ba3",
+      "target_checksum_sha256": "62d09a77613a5740dda533984a00954f7c91e0134c7dd9d569d76d6f277a17ef",
+      "target_bytes": 30264,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          612,
+          459
+        ],
+        "aspect_ratio": 1.33333,
+        "mean_rgb": [
+          203.65,
+          185.72,
+          156.18
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-logic-kids/cover",
+      "game_id": "game-wave1-logic-kids",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-logic-kids/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-logic-kids/cover.webp",
+      "source_checksum_sha256": "61905345871025bf2ff4140537f37c1a911c77bdc1bae480d372674c13f44e4a",
+      "target_checksum_sha256": "e0b5a73c235a529bf37b0b2eaa88aea18ecbb906e8d74dfdd8465943662ad9a9",
+      "target_bytes": 55306,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          189.35,
+          186.49,
+          195.68
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-logic-kids/board-background",
+      "game_id": "game-wave1-logic-kids",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-logic-kids/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-logic-kids/board-background.webp",
+      "source_checksum_sha256": "71f3abeee134148c42b2af630ac4aa7817b99c5d1bdf24bb75c321b33a488ceb",
+      "target_checksum_sha256": "7d5c3e6d4222bf763b0f1ea62130f1bfd08e8c02a323a34b880f9ecad3713395",
+      "target_bytes": 30236,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          156.13,
+          163.44,
+          185.76
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-logic-kids/pattern-moon",
+      "game_id": "game-wave1-logic-kids",
+      "asset": "pattern-token-set",
+      "member": "pattern-moon",
+      "source_file": "tools/playveo/output/wave/wave1-logic-kids/removed/pattern-moon.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-logic-kids/pattern-moon.png",
+      "source_checksum_sha256": "bfcbbdc25a49ffa0a13784ff965a6e3a3e2cc92b44f7cc9097cd5f528990c4d9",
+      "target_checksum_sha256": "c152af2c138c2ec8fb60a1b54f3fef650ba0f3ebd3413973ce3ce5a9f573c572",
+      "target_bytes": 269054,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.67338,
+        "semi_transparent_ratio": 0.3218,
+        "visible_ratio": 0.32662,
+        "subject_bbox": [
+          100,
+          72,
+          667,
+          696
+        ],
+        "margins_px": {
+          "left": 100,
+          "top": 72,
+          "right": 101,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.39023,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-logic-kids/pattern-rocket",
+      "game_id": "game-wave1-logic-kids",
+      "asset": "pattern-token-set",
+      "member": "pattern-rocket",
+      "source_file": "tools/playveo/output/wave/wave1-logic-kids/removed/pattern-rocket.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-logic-kids/pattern-rocket.png",
+      "source_checksum_sha256": "25a056f7deb024f23ce613be466c5d64c11261cfde73de086f75a21ab248c10e",
+      "target_checksum_sha256": "3fdbf5c8b79e895f2bbed0cbc2ff1a4415df02e828b46833be8d249111120f3d",
+      "target_bytes": 206833,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.75367,
+        "semi_transparent_ratio": 0.24221,
+        "visible_ratio": 0.24633,
+        "subject_bbox": [
+          216,
+          73,
+          553,
+          695
+        ],
+        "margins_px": {
+          "left": 216,
+          "top": 73,
+          "right": 215,
+          "bottom": 73
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.3641,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-logic-kids/pattern-comet",
+      "game_id": "game-wave1-logic-kids",
+      "asset": "pattern-token-set",
+      "member": "pattern-comet",
+      "source_file": "tools/playveo/output/wave/wave1-logic-kids/removed/pattern-comet.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-logic-kids/pattern-comet.png",
+      "source_checksum_sha256": "4ef972ae18d8b365f28a10ee8de123b42d394aa2871c51ef4699d6a86f8b6e29",
+      "target_checksum_sha256": "464dec45676a2f5c3eeca8027f9cd7f2ffc1614148426fb8d3a85ce7e2470445",
+      "target_bytes": 241092,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.66964,
+        "semi_transparent_ratio": 0.20951,
+        "visible_ratio": 0.33036,
+        "subject_bbox": [
+          87,
+          138,
+          681,
+          629
+        ],
+        "margins_px": {
+          "left": 87,
+          "top": 138,
+          "right": 87,
+          "bottom": 139
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.34811,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-word-kids/cover",
+      "game_id": "game-wave1-word-kids",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-word-kids/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-word-kids/cover.webp",
+      "source_checksum_sha256": "f90ee76da24dec8c3fb193257ec0a8e6d2ebe3ed1684578dd83df9bb0263214f",
+      "target_checksum_sha256": "bf7b5761d48623d5fbcaca1cf76c7dcf7b7f9b65ec357695b1d93244e13b67f5",
+      "target_bytes": 121108,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          169.28,
+          172.65,
+          149.22
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-word-kids/board-background",
+      "game_id": "game-wave1-word-kids",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-word-kids/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-word-kids/board-background.webp",
+      "source_checksum_sha256": "2ed24528e127cdb3e58c228a9f524fff49368aae59a21f15b1bab7000572b669",
+      "target_checksum_sha256": "753b57effc950beebffab32d387ffbea4c1dc0982c572403a96b6ce59117a55a",
+      "target_bytes": 70378,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          190.67,
+          180.11,
+          140.64
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-word-kids/target-house",
+      "game_id": "game-wave1-word-kids",
+      "asset": "target-house",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-word-kids/removed/target-house.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-word-kids/target-house.png",
+      "source_checksum_sha256": "a7a0fa869c5d37d58165bb76141ced016beac0fc41573c3b6538aabfcb65c035",
+      "target_checksum_sha256": "20222952fa53068058fac2e75ec440f66b92dffea5b5a943e1067dc94bc1aaf0",
+      "target_bytes": 417495,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.57348,
+        "semi_transparent_ratio": 0.366,
+        "visible_ratio": 0.42652,
+        "subject_bbox": [
+          72,
+          115,
+          696,
+          654
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 115,
+          "right": 72,
+          "bottom": 114
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.3872,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-block-code/cover",
+      "game_id": "game-wave1-block-code",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-block-code/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-block-code/cover.webp",
+      "source_checksum_sha256": "ee75d4b0f408521be66173efdd2c852abc67a22494be0b4d628253812cc02e8b",
+      "target_checksum_sha256": "0f159ef4561732ec6d14588c6be3912e1891992b84c86c37f43c7d5dd64fbb8c",
+      "target_bytes": 129418,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          116.52,
+          178.18,
+          145.79
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-block-code/robot-token",
+      "game_id": "game-wave1-block-code",
+      "asset": "robot-token",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-block-code/removed/robot-token.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-block-code/robot-token.png",
+      "source_checksum_sha256": "fbb04f384118a33b287029fc666210d3d0335ae75bd9c4afee1ebcedf320c38b",
+      "target_checksum_sha256": "5f016bfd389ae6f7784fd1476047508e48683c9e34d070c42e75c4e08de74bbe",
+      "target_bytes": 274416,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.72041,
+        "semi_transparent_ratio": 0.20452,
+        "visible_ratio": 0.27959,
+        "subject_bbox": [
+          186,
+          72,
+          582,
+          696
+        ],
+        "margins_px": {
+          "left": 186,
+          "top": 72,
+          "right": 186,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.37033,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-block-code/goal-token",
+      "game_id": "game-wave1-block-code",
+      "asset": "goal-token",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-block-code/removed/goal-token.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-block-code/goal-token.png",
+      "source_checksum_sha256": "6016e54e557d88768d9b6ee1437acb25e989235c4be152a91da2a7494a73c02c",
+      "target_checksum_sha256": "efd84d48cde1f2029e1e384626257ab6df30aaab07b164ae1d5e175cfa8f8538",
+      "target_bytes": 341683,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.63988,
+        "semi_transparent_ratio": 0.27926,
+        "visible_ratio": 0.36012,
+        "subject_bbox": [
+          110,
+          72,
+          658,
+          695
+        ],
+        "margins_px": {
+          "left": 110,
+          "top": 72,
+          "right": 110,
+          "bottom": 73
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.36005,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-block-code/obstacle-planter",
+      "game_id": "game-wave1-block-code",
+      "asset": "obstacle-set",
+      "member": "obstacle-planter",
+      "source_file": "tools/playveo/output/wave/wave1-block-code/removed/obstacle-planter.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-block-code/obstacle-planter.png",
+      "source_checksum_sha256": "fc8fb92617ec2ce0d021e877a0f7590297c6b5770db3d2a66df0b8d8015176e7",
+      "target_checksum_sha256": "5cef945b0d57dd7724ea907a62533a7625f3b9c68b1668bf1955dfcf56b2f601",
+      "target_bytes": 461890,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.52053,
+        "semi_transparent_ratio": 0.33425,
+        "visible_ratio": 0.47947,
+        "subject_bbox": [
+          72,
+          98,
+          695,
+          669
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 98,
+          "right": 73,
+          "bottom": 99
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.35979,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-block-code/obstacle-crate",
+      "game_id": "game-wave1-block-code",
+      "asset": "obstacle-set",
+      "member": "obstacle-crate",
+      "source_file": "tools/playveo/output/wave/wave1-block-code/removed/obstacle-crate.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-block-code/obstacle-crate.png",
+      "source_checksum_sha256": "3eb572294c086d44064f15d61e8252249f9506a2637808800922e7bd0bed8edc",
+      "target_checksum_sha256": "35c42d704beefa7d0246361b0d8dea282a598d360e30cecd7590794777253980",
+      "target_bytes": 439548,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.44977,
+        "semi_transparent_ratio": 0.28638,
+        "visible_ratio": 0.55023,
+        "subject_bbox": [
+          76,
+          73,
+          692,
+          696
+        ],
+        "margins_px": {
+          "left": 76,
+          "top": 73,
+          "right": 76,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.35777,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-sim-lab/cover",
+      "game_id": "game-wave1-sim-lab",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-sim-lab/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-sim-lab/cover.webp",
+      "source_checksum_sha256": "6dd8d77afb66d25e139fd2bda16eb8e525276e0eab3665dd9436e6c1026deb0b",
+      "target_checksum_sha256": "493adc7027d00f7e556d9372971ec437bd96be1a7ba0ff41ecc125791ce3583f",
+      "target_bytes": 68866,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          197.41,
+          185.58,
+          170.39
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-sim-lab/lab-background",
+      "game_id": "game-wave1-sim-lab",
+      "asset": "lab-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-sim-lab/source/lab-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave1-sim-lab/lab-background.webp",
+      "source_checksum_sha256": "1855432f990166e3dd2840bfd6f9df1a18ee9f553e36da97d6b0cd7b6e5ec3fe",
+      "target_checksum_sha256": "4c7c351be572742fe79e8cf2f8351ede1890b5b0c635190dc54e986d3d24c01e",
+      "target_bytes": 43506,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          200.41,
+          194.26,
+          178.72
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave1-sim-lab/heat-apparatus",
+      "game_id": "game-wave1-sim-lab",
+      "asset": "heat-apparatus",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave1-sim-lab/removed/heat-apparatus.png",
+      "target_file": "app_main/assets/images/games/wave/wave1-sim-lab/heat-apparatus.png",
+      "source_checksum_sha256": "418fa2f9a7a2e6ecf22399384da56b331818dc47be1bca33e05ebba2d4c8e9da",
+      "target_checksum_sha256": "0cd1b52ab8ead8f06de348011b5ea71a67b0f01237d96dffb684a56b307471b6",
+      "target_bytes": 332890,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.61789,
+        "semi_transparent_ratio": 0.33431,
+        "visible_ratio": 0.38211,
+        "subject_bbox": [
+          73,
+          97,
+          724,
+          670
+        ],
+        "margins_px": {
+          "left": 73,
+          "top": 97,
+          "right": 44,
+          "bottom": 98
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 3e-05,
+        "dark_semtransparent_edge_ratio": 0.3153,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-memory-2/cover",
+      "game_id": "game-wave2-memory-2",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-memory-2/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-memory-2/cover.webp",
+      "source_checksum_sha256": "e16662ccb4ea0ecf8c8097c0bec2401a9f60c545e7a7d9ec3fc54adb62fb0a8e",
+      "target_checksum_sha256": "4ad0ab1fea6923b1c6d95142c89fd08a1fceabead53db590baa92b0804f74a44",
+      "target_bytes": 79826,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          92.51,
+          97.37,
+          91.93
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-memory-2/board-background",
+      "game_id": "game-wave2-memory-2",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-memory-2/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-memory-2/board-background.webp",
+      "source_checksum_sha256": "9b70ed588d21a92b1f7bd31a456fb370781c673e8499b06cbf8da41b3036befb",
+      "target_checksum_sha256": "ab3eb1e76063d4130d6bdc593ca072ac90923497b589efc5b8e56c8d5c5d2595",
+      "target_bytes": 36012,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          149.17,
+          111.76,
+          91.69
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-memory-2/animal-lion",
+      "game_id": "game-wave2-memory-2",
+      "asset": "animal-pair-set",
+      "member": "animal-lion",
+      "source_file": "tools/playveo/output/wave/wave2-memory-2/derived/animal-lion.removed.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-memory-2/animal-lion.png",
+      "source_checksum_sha256": "fd6241b90fa336712525b046fbe7f72bc764f0f616cce6ac83d0b31f60221145",
+      "target_checksum_sha256": "afff7263fcffd14e3c788dfbf4ea6c5f010d67abb12added7bce3602b080aaf5",
+      "target_bytes": 518455,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.55396,
+        "semi_transparent_ratio": 0.35388,
+        "visible_ratio": 0.44604,
+        "subject_bbox": [
+          120,
+          70,
+          647,
+          697
+        ],
+        "margins_px": {
+          "left": 120,
+          "top": 70,
+          "right": 121,
+          "bottom": 71
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.00061,
+        "dark_semtransparent_edge_ratio": 0.07045,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-memory-2/animal-turtle",
+      "game_id": "game-wave2-memory-2",
+      "asset": "animal-pair-set",
+      "member": "animal-turtle",
+      "source_file": "tools/playveo/output/wave/wave2-memory-2/derived/animal-turtle.removed.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-memory-2/animal-turtle.png",
+      "source_checksum_sha256": "7b7d82912386374f9dc4c71582d6c319b8aa89d360cb439dae4b4ba72fc75b74",
+      "target_checksum_sha256": "56b47f18cc4c9a7439ba5a7296ea0e3ec841cf1fe9a12b7f6f03a89cbbd6ae35",
+      "target_bytes": 368796,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.71451,
+        "semi_transparent_ratio": 0.22007,
+        "visible_ratio": 0.28549,
+        "subject_bbox": [
+          70,
+          162,
+          698,
+          605
+        ],
+        "margins_px": {
+          "left": 70,
+          "top": 162,
+          "right": 70,
+          "bottom": 163
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.07308,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-memory-2/animal-owl",
+      "game_id": "game-wave2-memory-2",
+      "asset": "animal-pair-set",
+      "member": "animal-owl",
+      "source_file": "tools/playveo/output/wave/wave2-memory-2/derived/animal-owl.removed.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-memory-2/animal-owl.png",
+      "source_checksum_sha256": "7a871ea3e9ad55478787da55d0ba97afb24f4245f07eb24c538338a96b8aea53",
+      "target_checksum_sha256": "6330178d1df142ad83748e7a3ec9e9442a043d3424ce0d0e3971a4084388ae4b",
+      "target_bytes": 458651,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.64198,
+        "semi_transparent_ratio": 0.26141,
+        "visible_ratio": 0.35802,
+        "subject_bbox": [
+          154,
+          71,
+          615,
+          697
+        ],
+        "margins_px": {
+          "left": 154,
+          "top": 71,
+          "right": 153,
+          "bottom": 71
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.07799,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-memory-2/card-back",
+      "game_id": "game-wave2-memory-2",
+      "asset": "card-back",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-memory-2/source/card-back.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-memory-2/card-back.webp",
+      "source_checksum_sha256": "775bd7af2684252c62b61603b38bd39348917ff94ffc5bb8d2dead39545e9072",
+      "target_checksum_sha256": "9dc4588f82ddfe0b1e508016f1d6a13a3eb4443f8ec946b9d98f3a2331f0ae16",
+      "target_bytes": 85736,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          134.53,
+          151.14,
+          169.47
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-match-2/cover",
+      "game_id": "game-wave2-match-2",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-match-2/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-match-2/cover.webp",
+      "source_checksum_sha256": "a1d4ef93720fc3a74f3f0a8da1ef123029e19d107e3706dd5dffe3f230104a0d",
+      "target_checksum_sha256": "cae93d4ae7f076bdd1edd8396f5597bfebf401db08d22293285054a65b61c921",
+      "target_bytes": 90912,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          117.27,
+          116.87,
+          137.33
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-match-2/board-background",
+      "game_id": "game-wave2-match-2",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-match-2/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-match-2/board-background.webp",
+      "source_checksum_sha256": "bcfd2f7e3635f03b89e8b8cca3bd63d90f07886a301c2c7b8cb662d1ccbe7d3d",
+      "target_checksum_sha256": "bb354f610ade07028bd91ca1dd7d40be7327f91a2b5e6ac131de9ae481be60be",
+      "target_bytes": 47892,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          87.97,
+          107.48,
+          133.31
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-match-2/match-moon",
+      "game_id": "game-wave2-match-2",
+      "asset": "pair-token-set",
+      "member": "match-moon",
+      "source_file": "tools/playveo/output/wave/wave2-match-2/removed/match-moon.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-match-2/match-moon.png",
+      "source_checksum_sha256": "389af3648e721957fdeaca9cb4ff05563fb790a387768bc242036154bafead7e",
+      "target_checksum_sha256": "8f2b653cbf348fcc7af7c89f43fe0ef64e388df85bc1b5349704dbe5210dbc70",
+      "target_bytes": 373224,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.56525,
+        "semi_transparent_ratio": 0.43349,
+        "visible_ratio": 0.43475,
+        "subject_bbox": [
+          98,
+          72,
+          670,
+          696
+        ],
+        "margins_px": {
+          "left": 98,
+          "top": 72,
+          "right": 98,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.46123,
+        "warnings": [
+          "high_dark_semtransparent_edge_ratio_manual_fringe_review"
+        ],
+        "failures": [],
+        "status": "WARN"
+      }
+    },
+    {
+      "key": "game-wave2-match-2/match-rainbow",
+      "game_id": "game-wave2-match-2",
+      "asset": "pair-token-set",
+      "member": "match-rainbow",
+      "source_file": "tools/playveo/output/wave/wave2-match-2/removed/match-rainbow.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-match-2/match-rainbow.png",
+      "source_checksum_sha256": "5c9d6c16a3744ade4b9f63d24dc2386045f97c93bafc31a00bc7200cb6f48381",
+      "target_checksum_sha256": "a0d9b781003d301ce0e2f9333beedd169f4f121713f20c31ca749a3f3ea574aa",
+      "target_bytes": 317927,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.68373,
+        "semi_transparent_ratio": 0.30834,
+        "visible_ratio": 0.31627,
+        "subject_bbox": [
+          72,
+          178,
+          695,
+          588
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 178,
+          "right": 73,
+          "bottom": 180
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.38178,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-sort-junior/cover",
+      "game_id": "game-wave2-sort-junior",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-sort-junior/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-sort-junior/cover.webp",
+      "source_checksum_sha256": "7a4bad35596934704da61c653b22d847954014f519e1abe9f63a99801c16e4b0",
+      "target_checksum_sha256": "c47694024b24d7d448a8f8e48c5734f43b396a749052d4232d7284d2d3cf6d05",
+      "target_bytes": 93196,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          115.19,
+          135.05,
+          163.11
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-sort-junior/board-background",
+      "game_id": "game-wave2-sort-junior",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-sort-junior/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-sort-junior/board-background.webp",
+      "source_checksum_sha256": "849ba8bffc27b5e12d6a50185df42bb7eda2774d464757e187611d298607c7e2",
+      "target_checksum_sha256": "ed407a3c7933ce0893c913b2d2a63243724c1be051ab25d3c5e951c6d2448144",
+      "target_bytes": 71046,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          148.71,
+          162.06,
+          178.79
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-sort-junior/bin-circle",
+      "game_id": "game-wave2-sort-junior",
+      "asset": "bin-set",
+      "member": "bin-circle",
+      "source_file": "tools/playveo/output/wave/wave2-sort-junior/removed/bin-circle.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-sort-junior/bin-circle.png",
+      "source_checksum_sha256": "e545bb3dad46252a157d3d110e9e10b507c9bd3908f00042f0067ace9e791c96",
+      "target_checksum_sha256": "0ae00aebcc782dec4dca5b81f67965e7af67dfcfc6be9cd6d43436bfbe636d8b",
+      "target_bytes": 497900,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.40018,
+        "semi_transparent_ratio": 0.59576,
+        "visible_ratio": 0.59982,
+        "subject_bbox": [
+          74,
+          72,
+          694,
+          696
+        ],
+        "margins_px": {
+          "left": 74,
+          "top": 72,
+          "right": 74,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.35882,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-sort-junior/bin-star",
+      "game_id": "game-wave2-sort-junior",
+      "asset": "bin-set",
+      "member": "bin-star",
+      "source_file": "tools/playveo/output/wave/wave2-sort-junior/removed/bin-star.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-sort-junior/bin-star.png",
+      "source_checksum_sha256": "07e3b4195403d711d5f8a1e291d0cac1f60dc81261252f289031569161ca5938",
+      "target_checksum_sha256": "47d2e076b795cccdb26eb61674d4ba414185e423927d60055b3fe3e4341537e3",
+      "target_bytes": 473268,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.40806,
+        "semi_transparent_ratio": 0.58881,
+        "visible_ratio": 0.59194,
+        "subject_bbox": [
+          73,
+          79,
+          696,
+          689
+        ],
+        "margins_px": {
+          "left": 73,
+          "top": 79,
+          "right": 72,
+          "bottom": 79
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.39661,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-sort-junior/shape-orb",
+      "game_id": "game-wave2-sort-junior",
+      "asset": "shape-token-set",
+      "member": "shape-orb",
+      "source_file": "tools/playveo/output/wave/wave2-sort-junior/removed/shape-orb.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-sort-junior/shape-orb.png",
+      "source_checksum_sha256": "1fa1e83cfcaa8e09db196a128442165d7762e447f52987fd970054a3d5e9567d",
+      "target_checksum_sha256": "f0a193fb44bf6d1a15bd31fa23aba26809d28ccffe352c6ff20effa65ae4f769",
+      "target_bytes": 407306,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.47786,
+        "semi_transparent_ratio": 0.26777,
+        "visible_ratio": 0.52214,
+        "subject_bbox": [
+          77,
+          73,
+          692,
+          696
+        ],
+        "margins_px": {
+          "left": 77,
+          "top": 73,
+          "right": 76,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.38373,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-sort-junior/shape-star",
+      "game_id": "game-wave2-sort-junior",
+      "asset": "shape-token-set",
+      "member": "shape-star",
+      "source_file": "tools/playveo/output/wave/wave2-sort-junior/removed/shape-star.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-sort-junior/shape-star.png",
+      "source_checksum_sha256": "14812b032b7a81e764d731d6fa636709267cd84f3c4b6c85517654181ae1965b",
+      "target_checksum_sha256": "56f71bb1e52ca4e755aa80788dd3c2046bcd8ae94b7665ab1d3977dfaf949cdb",
+      "target_bytes": 360667,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.61601,
+        "semi_transparent_ratio": 0.29051,
+        "visible_ratio": 0.38399,
+        "subject_bbox": [
+          72,
+          76,
+          696,
+          691
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 76,
+          "right": 72,
+          "bottom": 77
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.40351,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-count-drag/cover",
+      "game_id": "game-wave2-count-drag",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-count-drag/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-count-drag/cover.webp",
+      "source_checksum_sha256": "1401246d3827cec6247b2f1b24094f3610fd96d5fbd9619903487690c03d8369",
+      "target_checksum_sha256": "503fe594ab4e1365cdf3107cac02eda12e6b5b31e9d954e68bf126e097d8cb9b",
+      "target_bytes": 116208,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          180.92,
+          140.05,
+          93.75
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-count-drag/board-background",
+      "game_id": "game-wave2-count-drag",
+      "asset": "board-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-count-drag/source/board-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-count-drag/board-background.webp",
+      "source_checksum_sha256": "f0d55b93cc7675d5c8965a61911a522e8a3133268b07cdc53dc2fc0f5e553788",
+      "target_checksum_sha256": "d95366a73ee249cfedcc1c097fdefd3788c4726f84d8eec9e984f93ac2b0e7df",
+      "target_bytes": 36606,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          199.56,
+          180.84,
+          148.05
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-count-drag/apple-token",
+      "game_id": "game-wave2-count-drag",
+      "asset": "apple-token",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-count-drag/removed/apple-token.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-count-drag/apple-token.png",
+      "source_checksum_sha256": "94ae2f64d6b26d063b4744fabf335e85e8998204015df77fdd497084352032c3",
+      "target_checksum_sha256": "4617badc6d9250e64a58cbea08568451af7b42ea3f5eccdaee09e44092407e36",
+      "target_bytes": 361818,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.60367,
+        "semi_transparent_ratio": 0.26359,
+        "visible_ratio": 0.39633,
+        "subject_bbox": [
+          132,
+          72,
+          637,
+          696
+        ],
+        "margins_px": {
+          "left": 132,
+          "top": 72,
+          "right": 131,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0022,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.38062,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-count-drag/target-basket",
+      "game_id": "game-wave2-count-drag",
+      "asset": "target-basket",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-count-drag/removed/target-basket.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-count-drag/target-basket.png",
+      "source_checksum_sha256": "7b3c99d535e7e6baa06faf946d98f00858d8704f218659d6c9d8602e3e41e013",
+      "target_checksum_sha256": "fdfbecc3d689bab788a9cd4eae84923ad18bb69f0abadd02d6cf74142a59bd5d",
+      "target_bytes": 407277,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.61247,
+        "semi_transparent_ratio": 0.29099,
+        "visible_ratio": 0.38753,
+        "subject_bbox": [
+          72,
+          161,
+          696,
+          606
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 161,
+          "right": 72,
+          "bottom": 162
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.40911,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-timeline/cover",
+      "game_id": "game-wave2-timeline",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-timeline/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-timeline/cover.webp",
+      "source_checksum_sha256": "22a91fa3c52261958d43c17975cc370e51780f174bcac70f9d45231d20206cbd",
+      "target_checksum_sha256": "1060537880c896e0f58e8ae6839d95496a9cc03607e6ab5cd50c571dd664574d",
+      "target_bytes": 127372,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          189.17,
+          145.98,
+          106.29
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-timeline/timeline-background",
+      "game_id": "game-wave2-timeline",
+      "asset": "timeline-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-timeline/source/timeline-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-timeline/timeline-background.webp",
+      "source_checksum_sha256": "217d9bd14c1c0e9e64f94a8955a355b9aae91e08b8ab9dba406371e9fcc06e3a",
+      "target_checksum_sha256": "112add416f16d371cf04e90cc9b15a6890b6a780dbf1bbce531eee8b9d04115b",
+      "target_bytes": 47010,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          189.71,
+          168.04,
+          141.29
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-timeline/event-pyramids",
+      "game_id": "game-wave2-timeline",
+      "asset": "event-card-set",
+      "member": "event-pyramids",
+      "source_file": "tools/playveo/output/wave/wave2-timeline/source/event-pyramids.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-timeline/event-pyramids.webp",
+      "source_checksum_sha256": "d5d0fc2a1ef18409a890029fd0387cec71805cd16f23010dadb86f5256df9ba7",
+      "target_checksum_sha256": "c2134b9ce53c44165bb3a4ba5f232cf3dc5a539776b30b00a72ce29a036b8556",
+      "target_bytes": 120828,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          159.36,
+          142.09,
+          118.81
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-timeline/event-library",
+      "game_id": "game-wave2-timeline",
+      "asset": "event-card-set",
+      "member": "event-library",
+      "source_file": "tools/playveo/output/wave/wave2-timeline/source/event-library.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-timeline/event-library.webp",
+      "source_checksum_sha256": "f663b611dfd05fb58b4bcebf3ed99970a768e492355ce6277eef15add88744aa",
+      "target_checksum_sha256": "f7b73592a17eb3d8a1dec3c221a3fcda031956275cb9ad1faf7fd8c5d0aed3e0",
+      "target_bytes": 229060,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          145.3,
+          115.51,
+          87.4
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-rhythm/cover",
+      "game_id": "game-wave2-rhythm",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-rhythm/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-rhythm/cover.webp",
+      "source_checksum_sha256": "5d746ff39ce0bfb8500717fa4e85ec2bb567f4a646bc1f503b16ab4977ca31c6",
+      "target_checksum_sha256": "188917ba3d235a5fb5d91a35eb09bdd56dc0a841672740190194e5c6bd3f4553",
+      "target_bytes": 67776,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          168.72,
+          147.15,
+          128.96
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-rhythm/stage-background",
+      "game_id": "game-wave2-rhythm",
+      "asset": "stage-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave2-rhythm/source/stage-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave2-rhythm/stage-background.webp",
+      "source_checksum_sha256": "8dd7c23c1b1341c998fa1ca52314c9b5cb3ca3c474057b52220975c7a3b5f80b",
+      "target_checksum_sha256": "dcde63342078ac5d52e12d09787c4c8219d27729ca3459009c52a879561838f2",
+      "target_bytes": 24504,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          60.0,
+          75.48,
+          103.6
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-rhythm/drum-coral",
+      "game_id": "game-wave2-rhythm",
+      "asset": "drum-pad-set",
+      "member": "drum-coral",
+      "source_file": "tools/playveo/output/wave/wave2-rhythm/removed/drum-coral.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-rhythm/drum-coral.png",
+      "source_checksum_sha256": "5577e6b114ba56bd948f5d3d058e1fd34d6120964011359629c7b3cb521d79ad",
+      "target_checksum_sha256": "b6d208ea2eddbadc7bb7f923945003945bfc99b9c7e53d51d55925b354dd484a",
+      "target_bytes": 407917,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.48718,
+        "semi_transparent_ratio": 0.46275,
+        "visible_ratio": 0.51282,
+        "subject_bbox": [
+          80,
+          72,
+          688,
+          696
+        ],
+        "margins_px": {
+          "left": 80,
+          "top": 72,
+          "right": 80,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.36934,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-rhythm/drum-teal",
+      "game_id": "game-wave2-rhythm",
+      "asset": "drum-pad-set",
+      "member": "drum-teal",
+      "source_file": "tools/playveo/output/wave/wave2-rhythm/removed/drum-teal.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-rhythm/drum-teal.png",
+      "source_checksum_sha256": "0b0fad03d59c0c0f25c7d486bf01961961038d0f283a926b825637fd31dda673",
+      "target_checksum_sha256": "b11f673b8f7a32c12a49e72c1cb54e0bc8fbc080597eddf4a3c6ae49dd8c43f9",
+      "target_bytes": 402063,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.48077,
+        "semi_transparent_ratio": 0.47622,
+        "visible_ratio": 0.51923,
+        "subject_bbox": [
+          75,
+          72,
+          693,
+          696
+        ],
+        "margins_px": {
+          "left": 75,
+          "top": 72,
+          "right": 75,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.36846,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-rhythm/beat-coral",
+      "game_id": "game-wave2-rhythm",
+      "asset": "beat-token-set",
+      "member": "beat-coral",
+      "source_file": "tools/playveo/output/wave/wave2-rhythm/removed/beat-coral.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-rhythm/beat-coral.png",
+      "source_checksum_sha256": "99c82a6bc143a6be6cfac608218cef554e299e2205377bb763c2a48dc81d41e8",
+      "target_checksum_sha256": "90b1f90ec34d541d65d71cbf723647ad93ddac853c33baa57607d8d5fc58e058",
+      "target_bytes": 448702,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.47812,
+        "semi_transparent_ratio": 0.35436,
+        "visible_ratio": 0.52188,
+        "subject_bbox": [
+          81,
+          72,
+          687,
+          696
+        ],
+        "margins_px": {
+          "left": 81,
+          "top": 72,
+          "right": 81,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.3731,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave2-rhythm/beat-teal",
+      "game_id": "game-wave2-rhythm",
+      "asset": "beat-token-set",
+      "member": "beat-teal",
+      "source_file": "tools/playveo/output/wave/wave2-rhythm/removed/beat-teal.png",
+      "target_file": "app_main/assets/images/games/wave/wave2-rhythm/beat-teal.png",
+      "source_checksum_sha256": "1a6a7ab50673417ff4c09276cb311c05299f1b926d521fea4626ea679db3dce7",
+      "target_checksum_sha256": "71e4f2a8b4ff635fcf934545871b199fbb50aa3541480e1dd4be620c4d7ba7a7",
+      "target_bytes": 470957,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.49309,
+        "semi_transparent_ratio": 0.40417,
+        "visible_ratio": 0.50691,
+        "subject_bbox": [
+          90,
+          72,
+          677,
+          696
+        ],
+        "margins_px": {
+          "left": 90,
+          "top": 72,
+          "right": 91,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.362,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-timeline-detail/cover",
+      "game_id": "game-wave3-timeline-detail",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave3-timeline-detail/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave3-timeline-detail/cover.webp",
+      "source_checksum_sha256": "ead4e8a66ee44db8e1186393e61db8ba1809363fad92d2259d2edabef6013489",
+      "target_checksum_sha256": "21e3cc041b61e48abb8fa91f26a14b19527fad6ad0c09b7d92fa4aa491ab79bd",
+      "target_bytes": 125868,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          181.27,
+          149.44,
+          120.32
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-timeline-detail/map-timeline-background",
+      "game_id": "game-wave3-timeline-detail",
+      "asset": "map-timeline-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave3-timeline-detail/source/map-timeline-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave3-timeline-detail/map-timeline-background.webp",
+      "source_checksum_sha256": "2fb8dc274f8da0f2ebd1a76a8b86a7fe8d68368ad0bedf3677299483e25349a7",
+      "target_checksum_sha256": "b984833da2ebf87eeddd7981afcbd1e27eb91413417268343f5828393ac1139e",
+      "target_bytes": 114552,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          176.52,
+          149.66,
+          119.54
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-timeline-detail/event-carthage",
+      "game_id": "game-wave3-timeline-detail",
+      "asset": "event-card-set",
+      "member": "event-carthage",
+      "source_file": "tools/playveo/output/wave/wave3-timeline-detail/source/event-carthage.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave3-timeline-detail/event-carthage.webp",
+      "source_checksum_sha256": "7ec83ba94f9239cffc606d9e126b9389d2668d33f508982558cf3a58a5b6ef25",
+      "target_checksum_sha256": "05080e46e3ad43d7e5fb30e5a7356dc34fa645220c19d1e169caefb74db60bbc",
+      "target_bytes": 114128,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          150.46,
+          142.94,
+          126.47
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-timeline-detail/event-house-wisdom",
+      "game_id": "game-wave3-timeline-detail",
+      "asset": "event-card-set",
+      "member": "event-house-wisdom",
+      "source_file": "tools/playveo/output/wave/wave3-timeline-detail/source/event-house-wisdom.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave3-timeline-detail/event-house-wisdom.webp",
+      "source_checksum_sha256": "e3692dd5fe56a546d5c3d5b6730bcd28845bdac755041d8c198359af0e6b822b",
+      "target_checksum_sha256": "ff6b0b5d1903532db0e27384954c537ba48c796afc32919d07ddfd5a4514eb5a",
+      "target_bytes": 195396,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          135.99,
+          118.18,
+          96.47
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-timeline-detail/event-ibn-battuta",
+      "game_id": "game-wave3-timeline-detail",
+      "asset": "event-card-set",
+      "member": "event-ibn-battuta",
+      "source_file": "tools/playveo/output/wave/wave3-timeline-detail/source/event-ibn-battuta.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave3-timeline-detail/event-ibn-battuta.webp",
+      "source_checksum_sha256": "19a06093988f9267370a239b18298dbbdb8edc213dc8df9eefc2477fb96d35e1",
+      "target_checksum_sha256": "f40e25946ea0b3a6ea2cf99def3f6fb2bae20efc723acb22d4d9afe1ff4ae5ab",
+      "target_bytes": 154240,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          132.36,
+          116.81,
+          97.84
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-block-advanced/cover",
+      "game_id": "game-wave3-block-advanced",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave3-block-advanced/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave3-block-advanced/cover.webp",
+      "source_checksum_sha256": "6bd4537b99d23e0e69cb16e04e36a6adeec78d81ae110381dd59ed6f516f0c80",
+      "target_checksum_sha256": "29bff6f0b950a7841ffa442890b4aab64e87d466792d3b8680f2958054f7bee8",
+      "target_bytes": 97316,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          188.11,
+          161.34,
+          119.35
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-block-advanced/rover-token",
+      "game_id": "game-wave3-block-advanced",
+      "asset": "rover-token",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave3-block-advanced/removed/rover-token.png",
+      "target_file": "app_main/assets/images/games/wave/wave3-block-advanced/rover-token.png",
+      "source_checksum_sha256": "23d002cab2804ee1d41fe7d1ef1e9e7ec46b926a0de60628d2d34a56b21f539d",
+      "target_checksum_sha256": "6c56f64df59128055257be0e65fd5d77ff68f372c6763d26d493bca17e1e8a9e",
+      "target_bytes": 371688,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.66323,
+        "semi_transparent_ratio": 0.28499,
+        "visible_ratio": 0.33677,
+        "subject_bbox": [
+          72,
+          107,
+          696,
+          661
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 107,
+          "right": 72,
+          "bottom": 107
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.39319,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-block-advanced/goal-beacon",
+      "game_id": "game-wave3-block-advanced",
+      "asset": "goal-beacon",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave3-block-advanced/removed/goal-beacon.png",
+      "target_file": "app_main/assets/images/games/wave/wave3-block-advanced/goal-beacon.png",
+      "source_checksum_sha256": "d0fc15c5806c08a73837758be7fa52ee4005e77d88a8090f64bea0493f1b6adf",
+      "target_checksum_sha256": "f26ca53b377c3a0bb5f87686ad473c891981e2d19c531500f0f10851e078f5a3",
+      "target_bytes": 197618,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.79386,
+        "semi_transparent_ratio": 0.18432,
+        "visible_ratio": 0.20614,
+        "subject_bbox": [
+          278,
+          72,
+          490,
+          696
+        ],
+        "margins_px": {
+          "left": 278,
+          "top": 72,
+          "right": 278,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.39345,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-block-advanced/obstacle-boulder",
+      "game_id": "game-wave3-block-advanced",
+      "asset": "obstacle-set",
+      "member": "obstacle-boulder",
+      "source_file": "tools/playveo/output/wave/wave3-block-advanced/removed/obstacle-boulder.png",
+      "target_file": "app_main/assets/images/games/wave/wave3-block-advanced/obstacle-boulder.png",
+      "source_checksum_sha256": "9f94c371cbf97e49610d4f9b64cc71e031fb3c3caa90ae1a90bf6d761f558fe8",
+      "target_checksum_sha256": "8779d8295462e75e5cb4a676996062e1213bc80457410589d94644fd545feca6",
+      "target_bytes": 302541,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.69635,
+        "semi_transparent_ratio": 0.27503,
+        "visible_ratio": 0.30365,
+        "subject_bbox": [
+          72,
+          183,
+          696,
+          584
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 183,
+          "right": 72,
+          "bottom": 184
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.37599,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-block-advanced/obstacle-gate",
+      "game_id": "game-wave3-block-advanced",
+      "asset": "obstacle-set",
+      "member": "obstacle-gate",
+      "source_file": "tools/playveo/output/wave/wave3-block-advanced/removed/obstacle-gate.png",
+      "target_file": "app_main/assets/images/games/wave/wave3-block-advanced/obstacle-gate.png",
+      "source_checksum_sha256": "2bb3be8fa5113a62eafa82c3dea947a309d831921132bcb5ad9c337287e40263",
+      "target_checksum_sha256": "9d759fe698da16fd31375cc70b45139c4ac764e25d3c74225a83002843abfab5",
+      "target_bytes": 318918,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.66652,
+        "semi_transparent_ratio": 0.27993,
+        "visible_ratio": 0.33348,
+        "subject_bbox": [
+          72,
+          145,
+          696,
+          623
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 145,
+          "right": 72,
+          "bottom": 145
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.36927,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-block-advanced/obstacle-supply-crate",
+      "game_id": "game-wave3-block-advanced",
+      "asset": "obstacle-set",
+      "member": "obstacle-supply-crate",
+      "source_file": "tools/playveo/output/wave/wave3-block-advanced/removed/obstacle-supply-crate.png",
+      "target_file": "app_main/assets/images/games/wave/wave3-block-advanced/obstacle-supply-crate.png",
+      "source_checksum_sha256": "808e077a35772972fe60b36201c764c1e34188a3e8abb4dedf77559c09302973",
+      "target_checksum_sha256": "e00bcd9807fdc7f15e33710b423805b1f87747fb2c3ed0e70ecddc454dd9df9e",
+      "target_bytes": 501158,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.47212,
+        "semi_transparent_ratio": 0.41855,
+        "visible_ratio": 0.52788,
+        "subject_bbox": [
+          71,
+          80,
+          696,
+          688
+        ],
+        "margins_px": {
+          "left": 71,
+          "top": 80,
+          "right": 72,
+          "bottom": 80
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.37416,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-sim-saturating/cover",
+      "game_id": "game-wave3-sim-saturating",
+      "asset": "cover",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave3-sim-saturating/source/cover.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave3-sim-saturating/cover.webp",
+      "source_checksum_sha256": "1d6b1c2f054b1c4eef3d75aca8f917d1f29c26561e222250ce54f35a8c684b32",
+      "target_checksum_sha256": "4e596e8b69b5181a7c73e928302b31bc78d9c66a5b063e898ad19bb0d42722a1",
+      "target_bytes": 44652,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          206.31,
+          205.51,
+          194.75
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-sim-saturating/lab-background",
+      "game_id": "game-wave3-sim-saturating",
+      "asset": "lab-background",
+      "member": null,
+      "source_file": "tools/playveo/output/wave/wave3-sim-saturating/source/lab-background.jpg",
+      "target_file": "app_main/assets/images/games/wave/wave3-sim-saturating/lab-background.webp",
+      "source_checksum_sha256": "b761d19fa0f2ddd783ba75b3b4d69a9634a7bcda7823786a8c05231aead1a507",
+      "target_checksum_sha256": "09f6dc37fab5c6ce2f28aab1dab83bb0faff19b45a3a57238f81c11b907d9285",
+      "target_bytes": 14936,
+      "transparent": false,
+      "metrics": {
+        "mode": "RGB",
+        "size": [
+          1195,
+          896
+        ],
+        "aspect_ratio": 1.33371,
+        "mean_rgb": [
+          126.15,
+          159.72,
+          148.44
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-sim-saturating/beaker-water",
+      "game_id": "game-wave3-sim-saturating",
+      "asset": "solubility-apparatus-set",
+      "member": "beaker-water",
+      "source_file": "tools/playveo/output/wave/wave3-sim-saturating/removed/beaker-water.png",
+      "target_file": "app_main/assets/images/games/wave/wave3-sim-saturating/beaker-water.png",
+      "source_checksum_sha256": "24cdc76f191c0830433dec60ccfd67e6846050119b55c53eccac9d04c5849abe",
+      "target_checksum_sha256": "1a18c0ddbe1ac7ce3a6048c0382373fbf0e7afc530432970ae494864207bc71d",
+      "target_bytes": 344138,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.53583,
+        "semi_transparent_ratio": 0.46088,
+        "visible_ratio": 0.46417,
+        "subject_bbox": [
+          136,
+          72,
+          632,
+          696
+        ],
+        "margins_px": {
+          "left": 136,
+          "top": 72,
+          "right": 136,
+          "bottom": 72
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.37928,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-sim-saturating/salt-spoon",
+      "game_id": "game-wave3-sim-saturating",
+      "asset": "solubility-apparatus-set",
+      "member": "salt-spoon",
+      "source_file": "tools/playveo/output/wave/wave3-sim-saturating/removed/salt-spoon.png",
+      "target_file": "app_main/assets/images/games/wave/wave3-sim-saturating/salt-spoon.png",
+      "source_checksum_sha256": "e934b27f9fdd22c5df130e5a39ec4cca109c3d9581486e31a7297e553cf511eb",
+      "target_checksum_sha256": "4bb4da1b3ff98b9efbf1c0cdcae5ab904c498e1b5d80e51c9fbb3963afbff383",
+      "target_bytes": 183456,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.84668,
+        "semi_transparent_ratio": 0.12876,
+        "visible_ratio": 0.15332,
+        "subject_bbox": [
+          72,
+          192,
+          696,
+          576
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 192,
+          "right": 72,
+          "bottom": 192
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.0,
+        "dark_semtransparent_edge_ratio": 0.35076,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "key": "game-wave3-sim-saturating/salt-crystals",
+      "game_id": "game-wave3-sim-saturating",
+      "asset": "solubility-apparatus-set",
+      "member": "salt-crystals",
+      "source_file": "tools/playveo/output/wave/wave3-sim-saturating/removed/salt-crystals.png",
+      "target_file": "app_main/assets/images/games/wave/wave3-sim-saturating/salt-crystals.png",
+      "source_checksum_sha256": "a0d02348df4e77f5cf98aa8c26a0b2ce9da9e48c06c42e3f60760ad50ed294b9",
+      "target_checksum_sha256": "406ff959befa020700415882678e08d1ff6d400882beeedf32bb589a24194fbc",
+      "target_bytes": 295486,
+      "transparent": true,
+      "metrics": {
+        "mode": "RGBA",
+        "size": [
+          768,
+          768
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "transparent_ratio": 0.74021,
+        "semi_transparent_ratio": 0.17241,
+        "visible_ratio": 0.25979,
+        "subject_bbox": [
+          72,
+          198,
+          696,
+          569
+        ],
+        "margins_px": {
+          "left": 72,
+          "top": 198,
+          "right": 72,
+          "bottom": 199
+        },
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "possible_hole_ratio": 0.0,
+        "visible_components_128px": 1,
+        "white_semtransparent_edge_ratio": 0.00158,
+        "dark_semtransparent_edge_ratio": 0.32981,
+        "warnings": [],
+        "failures": [],
+        "status": "PASS"
+      }
+    }
+  ],
+  "contact_sheets": [
+    {
+      "game_id": "game-wave1-block-code",
+      "file": "tools/playveo/contact-sheets/wave/wave1-block-code.png",
+      "items": 6,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave1-color-sort",
+      "file": "tools/playveo/contact-sheets/wave/wave1-color-sort.png",
+      "items": 9,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave1-count-place",
+      "file": "tools/playveo/contact-sheets/wave/wave1-count-place.png",
+      "items": 4,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave1-logic-kids",
+      "file": "tools/playveo/contact-sheets/wave/wave1-logic-kids.png",
+      "items": 6,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave1-memory-animals",
+      "file": "tools/playveo/contact-sheets/wave/wave1-memory-animals.png",
+      "items": 8,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave1-picture-match",
+      "file": "tools/playveo/contact-sheets/wave/wave1-picture-match.png",
+      "items": 5,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave1-sequence-kids",
+      "file": "tools/playveo/contact-sheets/wave/wave1-sequence-kids.png",
+      "items": 6,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave1-sim-lab",
+      "file": "tools/playveo/contact-sheets/wave/wave1-sim-lab.png",
+      "items": 4,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave1-word-kids",
+      "file": "tools/playveo/contact-sheets/wave/wave1-word-kids.png",
+      "items": 4,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave2-count-drag",
+      "file": "tools/playveo/contact-sheets/wave/wave2-count-drag.png",
+      "items": 5,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave2-match-2",
+      "file": "tools/playveo/contact-sheets/wave/wave2-match-2.png",
+      "items": 5,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave2-memory-2",
+      "file": "tools/playveo/contact-sheets/wave/wave2-memory-2.png",
+      "items": 7,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave2-rhythm",
+      "file": "tools/playveo/contact-sheets/wave/wave2-rhythm.png",
+      "items": 7,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave2-sort-junior",
+      "file": "tools/playveo/contact-sheets/wave/wave2-sort-junior.png",
+      "items": 7,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave2-timeline",
+      "file": "tools/playveo/contact-sheets/wave/wave2-timeline.png",
+      "items": 5,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave3-block-advanced",
+      "file": "tools/playveo/contact-sheets/wave/wave3-block-advanced.png",
+      "items": 7,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave3-sim-saturating",
+      "file": "tools/playveo/contact-sheets/wave/wave3-sim-saturating.png",
+      "items": 6,
+      "review": "ART_REVIEW_PENDING"
+    },
+    {
+      "game_id": "game-wave3-timeline-detail",
+      "file": "tools/playveo/contact-sheets/wave/wave3-timeline-detail.png",
+      "items": 6,
+      "review": "ART_REVIEW_PENDING"
+    }
+  ],
+  "contact_sheets_generated_at": "2026-08-12T18:23:26.680040Z"
+}

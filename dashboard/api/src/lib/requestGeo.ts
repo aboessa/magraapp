@@ -32,7 +32,7 @@
 /// production is not a configuration choice — it is checked in code, so enabling it
 /// there would take a code change and a review.
 
-import type { Env } from './db';
+import type { Env } from './db.ts';
 import {
   availabilityChainScopes,
   resolveAvailability,
@@ -41,7 +41,7 @@ import {
   type AvailabilityPolicy,
   type AvailabilityScope,
 } from './availabilityPolicy.ts';
-import { queryAll } from './db';
+import { queryAll } from './db.ts';
 
 const COUNTRY_HEADER = 'X-Majarra-Country';
 const PLATFORM_HEADER = 'X-Majarra-Platform';

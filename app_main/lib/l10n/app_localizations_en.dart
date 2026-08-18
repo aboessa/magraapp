@@ -31,7 +31,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get termsNotice =>
-      'By signing in you agree to the Terms and Privacy Policy';
+      'You can review the privacy and data information before continuing';
 
   @override
   String get registerButton => 'Create account';
@@ -259,7 +259,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get supportHeadline => 'How can we help?';
 
   @override
-  String get supportResponseTime => 'The Majarra team replies within 24 hours';
+  String get supportResponseTime => 'No response time is currently published';
 
   @override
   String get supportChannelPending => 'Contact channel is being set up';
@@ -331,4 +331,242 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enable => 'Enable';
+
+  @override
+  String get creativeStudioTitle => 'Creative Studio';
+
+  @override
+  String get myBoards => 'My Boards';
+
+  @override
+  String get drawLikeThis => 'Draw Like This';
+
+  @override
+  String get coloring => 'Coloring';
+
+  @override
+  String get tracing => 'Tracing';
+
+  @override
+  String get connectDots => 'Connect the Dots';
+
+  @override
+  String get completeDrawing => 'Complete the Drawing';
+
+  @override
+  String get copyPattern => 'Copy the Pattern';
+
+  @override
+  String get drawFromPrompt => 'Draw from Prompt';
+
+  @override
+  String get newBoard => 'New Board';
+
+  @override
+  String get newBlankBoard => 'Blank Board';
+
+  @override
+  String get continueDrawing => 'Continue Drawing';
+
+  @override
+  String get startDrawing => 'Start Drawing';
+
+  @override
+  String get chooseBoardType => 'Choose board type';
+
+  @override
+  String get portrait => 'Portrait';
+
+  @override
+  String get landscape => 'Landscape';
+
+  @override
+  String get square => 'Square';
+
+  @override
+  String get backgroundBlank => 'Blank';
+
+  @override
+  String get backgroundSpace => 'Space';
+
+  @override
+  String get backgroundUnderwater => 'Underwater';
+
+  @override
+  String get backgroundGarden => 'Garden';
+
+  @override
+  String get backgroundSky => 'Sky';
+
+  @override
+  String get backgroundRoom => 'Room';
+
+  @override
+  String get backgroundGrid => 'Grid';
+
+  @override
+  String get brush => 'Brush';
+
+  @override
+  String get color => 'Color';
+
+  @override
+  String get brushSize => 'Brush size';
+
+  @override
+  String get eraser => 'Eraser';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get redo => 'Redo';
+
+  @override
+  String get clear => 'Clear';
+
+  @override
+  String get clearConfirmTitle => 'Clear board?';
+
+  @override
+  String get clearConfirmBody =>
+      'This will clear the drawing. You can undo right after.';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get saved => 'Saved';
+
+  @override
+  String get saving => 'Saving…';
+
+  @override
+  String get unsaved => 'Unsaved';
+
+  @override
+  String get saveAndExit => 'Save and exit';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
+  String get continueDrawingAction => 'Continue';
+
+  @override
+  String get referenceShow => 'Show example';
+
+  @override
+  String get referenceHide => 'Hide example';
+
+  @override
+  String get referenceEnlarge => 'Enlarge example';
+
+  @override
+  String get ghostMode => 'Ghost background';
+
+  @override
+  String get ghostOpacity => 'Ghost opacity';
+
+  @override
+  String get compareDrawings => 'Compare drawings';
+
+  @override
+  String stepOf(Object current, Object total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get previous => 'Previous';
+
+  @override
+  String get tryToDraw => 'Try to draw it';
+
+  @override
+  String get awesomeWeSaved => 'Awesome! We saved your drawing.';
+
+  @override
+  String get chooseColor => 'Choose a color';
+
+  @override
+  String get colorThePicture => 'Color the picture';
+
+  @override
+  String get connectTheDots => 'Connect the dots in order';
+
+  @override
+  String get drawAsYouLike => 'Draw as you like';
+
+  @override
+  String get tapDoneWhenFinished => 'Tap Done when finished';
+
+  @override
+  String get startHere => 'Start here';
+
+  @override
+  String get traceLine => 'Trace the line';
+
+  @override
+  String get wellDone => 'Well done';
+
+  @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String get categoryAnimals => 'Animals';
+
+  @override
+  String get categorySpace => 'Space';
+
+  @override
+  String get categoryNature => 'Nature';
+
+  @override
+  String get categoryVehicles => 'Vehicles';
+
+  @override
+  String get categoryHome => 'Home';
+
+  @override
+  String get categoryPatterns => 'Patterns';
+
+  @override
+  String get difficultyEasy => 'Easy';
+
+  @override
+  String get difficultyMedium => 'Medium';
+
+  @override
+  String get difficultyDetailed => 'Detailed';
+
+  @override
+  String get age45 => '4–5';
+
+  @override
+  String get age67 => '6–7';
+
+  @override
+  String get age89 => '8–9';
+
+  @override
+  String boardTitleDefault(Object number) {
+    return 'My Board $number';
+  }
+
+  @override
+  String get boardOrientationPortrait => 'Portrait';
+
+  @override
+  String get boardOrientationLandscape => 'Landscape';
+
+  @override
+  String get boardOrientationSquare => 'Square';
+
+  @override
+  String referenceBadge(Object title) {
+    return 'From: $title';
+  }
 }

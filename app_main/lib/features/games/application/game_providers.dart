@@ -34,8 +34,10 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../child/application/child_provider.dart';
 import '../../home/application/home_providers.dart';
 import '../../home/data/majarra_api_client.dart';
+import '../../home/domain/content_models.dart';
 import '../engine/game_pack.dart';
 import '../engine/game_services.dart';
 
@@ -46,7 +48,11 @@ import '../engine/game_services.dart';
 /// mid-level would mean a fresh session and a lost board.
 @immutable
 class GameRequest {
-  const GameRequest({required this.gameId, required this.childId, this.language});
+  const GameRequest({
+    required this.gameId,
+    required this.childId,
+    this.language,
+  });
 
   final String gameId;
   final String childId;
@@ -115,13 +121,33 @@ class ResolvedGame {
       missingPromptKeys.isNotEmpty || missingVoiceKeys.isNotEmpty;
 }
 
+/// Child-specific game summaries for Home, Search and the portal.
+///
+/// A missing child and a successful empty response both produce an empty list.
+/// Network, authentication and envelope failures remain errors; consumers merge
+/// only a completed [AsyncData], so a failed request never revives packaged demo
+/// slugs or games cached for a previously selected child.
+final gameCatalogProvider = FutureProvider<List<ExperienceItem>>((ref) async {
+  final childId = ref.watch(
+    childProvider.select((state) => state.activeChildId?.trim()),
+  );
+  if (childId == null || childId.isEmpty) return const [];
+
+  final rows = await ref
+      .watch(majarraApiClientProvider)
+      .fetchGames(childId: childId);
+  return List<ExperienceItem>.unmodifiable(rows.map((row) => row.toDomain()));
+});
+
 /// The published pack for one game.
 ///
 /// Errors are left to propagate. A game that cannot be fetched must not fall back
 /// to something invented locally — that is the whole point — so the route renders
 /// an honest unavailable state from the [AsyncValue] error instead.
-final gamePackProvider =
-    FutureProvider.family<ResolvedGame, GameRequest>((ref, request) async {
+final gamePackProvider = FutureProvider.family<ResolvedGame, GameRequest>((
+  ref,
+  request,
+) async {
   final api = ref.watch(majarraApiClientProvider);
   final envelope = await api.fetchGame(
     gameId: request.gameId,
@@ -198,8 +224,9 @@ Map<String, dynamic>? _asMap(Object? value) {
   return null;
 }
 
-List<String> _stringList(Object? value) =>
-    value is List ? value.whereType<String>().toList(growable: false) : const [];
+List<String> _stringList(Object? value) => value is List
+    ? value.whereType<String>().toList(growable: false)
+    : const [];
 
 /// Sends attempts to `POST /api/v1/family/progress`.
 ///

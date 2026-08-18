@@ -11,6 +11,7 @@ import type {
   EpisodePayload,
   EpisodeRecord,
   PaginatedEnvelope,
+  PaginationMeta,
   ParentRecord,
   Planet,
   SeasonRecord,
@@ -26,7 +27,13 @@ import type {
 import { readAdminActor, readAdminToken } from './adminSession'
 
 const API_ROOT = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/, '')
-const DIRECT_UPLOAD_LIMIT = 95 * 1024 * 1024
+/** للاستخدام خارج lib/api.ts للروابط المباشرة (exports) حتى تحترم VITE_API_BASE_URL */
+export const apiRoot = API_ROOT
+/**
+ * فوق هذا الحد يُستخدم رفع مجزأ عبر asset-upload-sessions (R2 multipart).
+ * 95 MiB هو حدّ Worker's bundling — لا يُنقل إلى .env لأنه قيد منصة لا إعداد.
+ */
+const DIRECT_UPLOAD_LIMIT = 95 * 1024 * 1024 // bytes
 
 export class ApiError extends Error {
   status: number
@@ -81,12 +88,23 @@ function authorizedHeaders(initial?: HeadersInit) {
 }
 
 async function responseError(response: Response) {
-  const payload = await response.clone().json().catch(() => null) as { error?: string; details?: unknown; data?: unknown } | null
+  const payload = await response.clone().json().catch(() => null) as {
+    error?: string | { code?: unknown; message?: unknown; field?: unknown }
+    details?: unknown
+    data?: unknown
+  } | null
   const fallbackMessage = document.documentElement.lang === 'en' ? 'Unable to complete the request' : 'تعذر إكمال الطلب'
   const details = Array.isArray(payload?.details)
     ? payload.details.filter((item): item is string => typeof item === 'string')
     : []
-  return new ApiError(payload?.error || fallbackMessage, response.status, details, payload?.data ?? null)
+  const message = typeof payload?.error === 'string'
+    ? payload.error
+    : typeof payload?.error?.message === 'string'
+      ? payload.error.message
+      : fallbackMessage
+  // أخطاء المصنع تحمل code/field داخل error لا data. حفظ الجسم المركّب يتيح
+  // للواجهة عرض السبب ولا يسطّح PLAN/QC mismatch إلى رسالة عامة.
+  return new ApiError(message, response.status, details, payload?.data ?? payload?.error ?? null)
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -230,7 +248,7 @@ async function saveNarrationAsset(payload: {
 }
 
 export const api = {
-  dashboard: () => request<ApiEnvelope<DashboardStats>>('/admin/dashboard/stats'),
+  dashboard: (params?: { from?: string; to?: string; range?: string }) => request<ApiEnvelope<DashboardStats>>(`/admin/dashboard/stats${queryString(params ?? {})}`),
 
   planets: () => request<ApiEnvelope<Planet[]>>('/planets'),
   cmsPlanets: (includeInactive = false) => request<ApiEnvelope<Planet[]>>(`/admin/planets${queryString({ include_inactive: includeInactive ? 1 : undefined })}`),
@@ -387,9 +405,9 @@ export const api = {
   },
 
   parents: (filters: Record<string, string | number | undefined> = {}) => request<PaginatedEnvelope<ParentRecord>>(`/admin/parents${queryString(filters)}`),
-  /// تفصيل ولي أمر واحد مع أطفاله من family_projection. كان بلا مستدعٍ.
   parentDetail: (id: string) => request<ApiEnvelope<import('../types/api').ParentDetail>>(`/admin/parents/${encodeURIComponent(id)}`),
   children: (filters: Record<string, string | number | undefined> = {}) => request<PaginatedEnvelope<ChildRecord>>(`/admin/children${queryString(filters)}`),
+  childDetail: (id: string) => request<ApiEnvelope<ChildRecord>>(`/admin/children/${encodeURIComponent(id)}`),
   createChild: (payload: ChildPayload) => request<ApiEnvelope<{ id: string; age: number; age_track: string }>>('/admin/children', { method: 'POST', body: JSON.stringify(payload) }),
   updateChild: (id: string, payload: Partial<ChildPayload>) => request<ApiEnvelope<{ id: string; updated: boolean }>>(`/admin/children/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   archiveChild: (id: string) => request<ApiEnvelope<{ id: string; status: string }>>(`/admin/children/${id}`, { method: 'DELETE' }),
@@ -403,6 +421,25 @@ export const api = {
   updateAdminUser: (id: string, payload: { display_name?: string; is_active?: boolean }) => request<ApiEnvelope<{ id: string; updated: boolean }>>(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   resetAdminUserPassword: (id: string, password: string) => request<ApiEnvelope<{ id: string }>>(`/admin/users/${id}/reset-password`, { method: 'POST', body: JSON.stringify({ password }) }),
   revokeAdminUserSessions: (id: string) => request<ApiEnvelope<{ id: string; revoked: boolean }>>(`/admin/users/${id}/revoke-sessions`, { method: 'POST' }),
+
+  /// جلسات المتصل نفسه — مقصورة عليه، فلا معرّف مستخدم في المسار.
+  ///
+  /// شاشة «جلساتي» كانت تعرض مصفوفة وهمية وزرّ سحب بلا معالج، وتنادي
+  /// `revokeAdminUserSessions('me')` بمعرّف غير صالح. تلك النقطة تطلب صلاحية
+  /// إدارة المستخدمين، وهي لإدارة غيرك لا لرؤية جلساتك.
+  mySessions: () => request<ApiEnvelope<Array<{
+    id: string
+    user_agent: string | null
+    source_ip: string | null
+    created_at: string
+    last_seen_at: string | null
+    expires_at: string
+    current: boolean
+  }>>>('/admin/auth/sessions'),
+  revokeMySession: (id: string) =>
+    request<ApiEnvelope<{ id: string; revoked: boolean }>>(`/admin/auth/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  revokeMyOtherSessions: () =>
+    request<ApiEnvelope<{ revoked: number }>>('/admin/auth/sessions/revoke-others', { method: 'POST' }),
   roles: () => request<ApiEnvelope<import('../types/api').RoleRecord[]>>('/admin/roles'),
   permissions: () => request<ApiEnvelope<import('../types/api').PermissionRecord[]>>('/admin/permissions'),
   grants: () => request<ApiEnvelope<import('../types/api').AccessGrantRecord[]>>('/admin/grants'),
@@ -438,12 +475,18 @@ export const api = {
   remoteConfig: () => request<ApiEnvelope<import('../types/api').RemoteConfigRecord[]>>('/admin/remote-config'),
   saveRemoteConfig: (key: string, payload: { value: unknown; rollout_percent?: number; targeting?: Record<string, unknown> }) => request<ApiEnvelope<{ key: string; rollout_percent: number }>>(`/admin/remote-config/${encodeURIComponent(key)}`, { method: 'PUT', body: JSON.stringify(payload) }),
   featureFlags: () => request<ApiEnvelope<import('../types/api').FeatureFlagRecord[]>>('/admin/feature-flags'),
-  homeExperience: () => request<ApiEnvelope<import('../types/api').HomeBlockRecord[]>>('/admin/home-experience'),
-  createHomeBlock: (payload: { block_type: string; title_ar?: string | null }) => request<ApiEnvelope<{ id: string }>>('/admin/home-experience', { method: 'POST', body: JSON.stringify(payload) }),
-  updateHomeBlock: (id: string, payload: Record<string, unknown>) => request<ApiEnvelope<{ id: string }>>(`/admin/home-experience/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
-  reorderHomeBlocks: (order: string[]) => request<ApiEnvelope<{ ok: boolean }>>('/admin/home-experience/reorder', { method: 'POST', body: JSON.stringify({ order }) }),
-  rollbackHomeBlock: (id: string) => request<ApiEnvelope<{ id: string }>>(`/admin/home-experience/${id}/rollback`, { method: 'POST' }),
-  homeExperiencePreview: (filters: { track?: string; country?: string; platform?: string; plan?: string }) => request<ApiEnvelope<import('../types/api').HomePreviewEnvelope>>(`/admin/home-experience/preview${queryString(filters)}`),
+  /// القائمة تعيد meta تحمل الأنواع والأبعاد التي يقبلها الخادم.
+  homeExperience: () => request<ApiEnvelope<import('../types/api').HomeBlockRecord[]> & { meta: import('../types/api').HomeBuilderMeta }>('/admin/home-experience'),
+  createHomeBlock: (payload: { block_type: string; title_ar?: string | null; sort_order?: number; is_active?: boolean; is_draft?: boolean }) => request<ApiEnvelope<import('../types/api').HomeBlockRecord>>('/admin/home-experience', { method: 'POST', body: JSON.stringify(payload) }),
+  /// يعيد الكتلة بعد التعديل لا `{id}` فقط، فتُحدَّث الشاشة من حالة الخادم.
+  updateHomeBlock: (id: string, payload: Record<string, unknown>) => request<ApiEnvelope<import('../types/api').HomeBlockRecord>>(`/admin/home-experience/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteHomeBlock: (id: string) => request<ApiEnvelope<{ id: string; deleted: boolean }>>(`/admin/home-experience/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  reorderHomeBlocks: (order: string[]) => request<ApiEnvelope<{ order: string[] }>>('/admin/home-experience/reorder', { method: 'POST', body: JSON.stringify({ order }) }),
+  homeBlockVersions: (id: string) => request<ApiEnvelope<import('../types/api').HomeBlockVersion[]> & { meta: import('../types/api').HomeVersionsMeta }>(`/admin/home-experience/${encodeURIComponent(id)}/versions`),
+  /// الاستعادة تحتاج نسخة محددة: الاستعادة «إلى آخر شيء» لا تُعرض للمسؤول ما
+  /// سيحدث قبل أن يحدث.
+  rollbackHomeBlock: (id: string, versionId: string) => request<ApiEnvelope<{ block: import('../types/api').HomeBlockRecord; restored_from: string }>>(`/admin/home-experience/${encodeURIComponent(id)}/rollback`, { method: 'POST', body: JSON.stringify({ version_id: versionId }) }),
+  homeExperiencePreview: (filters: { track?: string; language?: string; country?: string; platform?: string; plan?: string; app_version?: string; is_new_user?: string }) => request<ApiEnvelope<import('../types/api').HomePreviewEnvelope>>(`/admin/home-experience/preview${queryString(filters)}`),
   supportFamily: (id: string) => request<ApiEnvelope<import('../types/api').SupportFamilyEnvelope>>(`/admin/support/family/${encodeURIComponent(id)}`),
   /// قراءة حيّة من FamilyState. منفصلة عن `supportFamily` لأنها نداء إلى مصدر
   /// السلطة لا إلى الإسقاط، وقد يفشل وحده (503) بلا أن يُفقد باقي الملف.
@@ -484,6 +527,77 @@ export const api = {
   ) => request<ApiEnvelope<{ requirement: string }>>(`/admin/production/${type}/${encodeURIComponent(id)}/${requirement}`, { method: 'PUT', body: JSON.stringify(payload) }),
   productionQueue: () => request<PaginatedEnvelope<import('../types/api').ProductionQueueRow>>('/admin/production/my-queue'),
 
+  // مصنع المحتوى: الاستيراد والاعتماد والتشغيل أوامر منفصلة عمدًا. لا تستدعي
+  // القائمة أو التفاصيل أي مزوّد، وallow_paid لا يظهر إلا في dispatch/replacement.
+  contentFactoryRuns: (filters: { state?: import('../types/api').ContentFactoryRunState; limit?: number; offset?: number } = {}) =>
+    request<import('../types/api').ContentFactoryListEnvelope>(`/admin/production/factory${queryString(filters)}`),
+  contentFactoryRun: (runId: string) =>
+    request<ApiEnvelope<import('../types/api').ContentFactoryDetail>>(`/admin/production/factory/${encodeURIComponent(runId)}`),
+  importContentFactoryPlan: (manifest: import('../types/api').ContentFactoryManifest) =>
+    request<ApiEnvelope<import('../types/api').ContentFactoryRun> & { meta?: { duplicate: boolean } }>('/admin/production/factory/plans', {
+      method: 'POST', body: JSON.stringify({ manifest }),
+    }),
+  approveContentFactorySpend: (
+    runId: string,
+    payload: { confirmed_plan_sha256: string; ceiling_credits: number; expires_at: string | null; reason?: string },
+  ) => request<ApiEnvelope<import('../types/api').ContentFactoryRun>>(`/admin/production/factory/${encodeURIComponent(runId)}/approve-spend`, {
+    method: 'POST', body: JSON.stringify(payload),
+  }),
+  dispatchContentFactoryRun: (
+    runId: string,
+    payload: { confirmed_plan_sha256: string; allow_paid: true },
+    idempotencyKey: string,
+  ) => request<ApiEnvelope<import('../types/api').ContentFactoryRun> & { meta?: { duplicate: boolean; queued_jobs: number; reserved_credits: number } }>(
+    `/admin/production/factory/${encodeURIComponent(runId)}/dispatch`,
+    { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify(payload) },
+  ),
+  resumeContentFactoryRun: (runId: string) =>
+    request<ApiEnvelope<import('../types/api').ContentFactoryQueueResult>>(`/admin/production/factory/${encodeURIComponent(runId)}/resume`, {
+      method: 'POST', body: JSON.stringify({}),
+    }),
+  retryContentFactoryFailed: (
+    runId: string,
+    payload: {
+      failed_only: true
+      job_id?: string
+      allow_new_paid_attempt?: true
+      allow_paid?: true
+      accept_duplicate_charge_risk?: true
+    },
+  ) => request<ApiEnvelope<import('../types/api').ContentFactoryQueueResult>>(`/admin/production/factory/${encodeURIComponent(runId)}/retry-failed`, {
+    method: 'POST', body: JSON.stringify(payload),
+  }),
+  recordContentFactoryAutomatedQc: (
+    runId: string,
+    jobId: string,
+    payload: {
+      attempt_id: string
+      confirmed_plan_sha256: string
+      confirmed_asset_sha256: string
+      policy_version: string
+      results: import('../types/api').ContentFactoryAutomatedQcResultInput[]
+    },
+  ) => request<ApiEnvelope<import('../types/api').ContentFactoryQcActionResult>>(
+    `/admin/production/factory/${encodeURIComponent(runId)}/jobs/${encodeURIComponent(jobId)}/automated-qc`,
+    { method: 'POST', body: JSON.stringify(payload) },
+  ),
+  recordContentFactoryHumanReview: (
+    runId: string,
+    jobId: string,
+    payload: {
+      attempt_id: string
+      gate_id: string
+      decision: 'approved' | 'rejected'
+      confirmed_plan_sha256: string
+      confirmed_asset_sha256: string
+      confirmed_automated_qc_sha256: string
+      notes?: string
+    },
+  ) => request<ApiEnvelope<import('../types/api').ContentFactoryHumanReviewActionResult>>(
+    `/admin/production/factory/${encodeURIComponent(runId)}/jobs/${encodeURIComponent(jobId)}/human-reviews`,
+    { method: 'POST', body: JSON.stringify(payload) },
+  ),
+
   /// Customer 360 وعمليات الأجهزة الإدارية.
   ///
   /// عمليات الأجهزة تُنادي مسار المشغِّل في FamilyState لا مسار الوالد: السبب
@@ -504,6 +618,28 @@ export const api = {
   billingPurchases: (limit = 100) => request<ApiEnvelope<import('../types/api').BillingPurchaseRecord[]>>(`/admin/billing/purchases${queryString({ limit })}`),
   /// الاستحقاقات النشطة من family_projection. الخادم يستثني plan='free'.
   billingEntitlements: () => request<ApiEnvelope<import('../types/api').BillingEntitlementRecord[]>>('/admin/billing/entitlements'),
+  // Commerce — Subscriptions & Transactions
+  subscriptions: (filters: Record<string,string|number|undefined>={}) => request<PaginatedEnvelope<import('../types/api').SubscriptionRecord>>(`/admin/subscriptions${queryString(filters)}`),
+  subscription: (id:string) => request<ApiEnvelope<import('../types/api').SubscriptionDetail>>(`/admin/subscriptions/${encodeURIComponent(id)}`),
+  transaction: (id:string) => request<ApiEnvelope<import('../types/api').TransactionRecord>>(`/admin/transactions/${encodeURIComponent(id)}`),
+  commerceReconciliation: () => request<ApiEnvelope<{ mismatches:any[]; duplicates:any[]; unmapped_products:any[]; unverified:any[] }>>('/admin/commerce/reconciliation'),
+  commerceIntegrity: () => request<ApiEnvelope<Array<{ check:string; count:number; severity:string }>>>('/admin/commerce/integrity'),
+  // Plans & Pricing
+  planDetail: (id:string) => request<ApiEnvelope<import('../types/api').PlanDetail>>(`/admin/plans/${encodeURIComponent(id)}`),
+  pricingMatrix: (filters: Record<string,string|number|undefined>={}) => request<ApiEnvelope<import('../types/api').PlanPricingRow[]>>(`/admin/pricing/matrix${queryString(filters)}`),
+  storeProducts: () => request<ApiEnvelope<import('../types/api').StoreProduct[]>>('/admin/store-products'),
+  createStoreProduct: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string }>>('/admin/store-products', { method:'POST', body: JSON.stringify(payload) }),
+  createPricing: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string }>>('/admin/pricing', { method:'POST', body: JSON.stringify(payload) }),
+  promotions: () => request<ApiEnvelope<import('../types/api').PromotionRow[]>>('/admin/promotions'),
+  // Rights
+  rightDetail: (id:string) => request<ApiEnvelope<import('../types/api').RightsDetail>>(`/admin/rights/${encodeURIComponent(id)}`),
+  // Revenue & Finance
+  revenueOverview: (range?:string) => request<ApiEnvelope<import('../types/api').RevenueOverview>>(`/admin/revenue/overview${queryString({ range })}`),
+  revenueDrilldown: (dimension:string, value:string) => request<ApiEnvelope<import('../types/api').SubscriptionRecord[]>>(`/admin/revenue/drilldown${queryString({ dimension, value })}`),
+  contentCosts: (filters: Record<string,string|number|undefined>={}) => request<PaginatedEnvelope<import('../types/api').ContentCostRecord>>(`/admin/content-costs${queryString(filters)}`),
+  contentCostDetail: (entityType:string, entityId:string) => request<ApiEnvelope<{ costs:import('../types/api').ContentCostRecord[]; by_category:any[] }>>(`/admin/content-costs/${encodeURIComponent(entityType)}/${encodeURIComponent(entityId)}`),
+  createContentCost: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string }>>('/admin/content-costs', { method:'POST', body: JSON.stringify(payload) }),
+  contentBudgets: () => request<ApiEnvelope<any[]>>('/admin/content-budgets'),
   analyticsOverview: () => request<ApiEnvelope<import('../types/api').AnalyticsOverview>>('/admin/analytics/overview'),
   /// تقدّم طفل واحد من ثلاثة مصادر: watch_progress و mastery و attempts.
   /// كان المسار يستعلم جدولًا اسمه content_progress لا وجود له، فيرمي على كل
@@ -547,6 +683,36 @@ export const api = {
   masteryByChild: (filters: Record<string, string | number | undefined> = {}) => request<PaginatedEnvelope<import('../types/api').MasteryByChild>>(`/admin/mastery/by-child${queryString(filters)}`),
   attempts: (filters: Record<string, string | number | undefined> = {}) => request<PaginatedEnvelope<import('../types/api').AttemptRecord>>(`/admin/attempts${queryString(filters)}`),
 
+   // Campaigns — only real channels
+  campaigns: (filters: Record<string,string|number|undefined>={})=> request<PaginatedEnvelope<any>>(`/admin/campaigns${queryString(filters)}`),
+  campaign: (id:string)=> request<ApiEnvelope<any>>(`/admin/campaigns/${encodeURIComponent(id)}`),
+  createCampaign: (payload: Record<string,unknown>)=> request<ApiEnvelope<{id:string}>>('/admin/campaigns',{ method:'POST', body: JSON.stringify(payload)}),
+  updateCampaign: (id:string, payload: Record<string,unknown>)=> request<ApiEnvelope<{id:string}>>(`/admin/campaigns/${encodeURIComponent(id)}`,{ method:'PATCH', body: JSON.stringify(payload)}),
+  campaignTestSend: (id:string)=> request<ApiEnvelope<{test_sent:boolean}>>(`/admin/campaigns/${encodeURIComponent(id)}/send-test`,{ method:'POST'}),
+  campaignSchedule: (id:string, scheduled_at:string)=> request<ApiEnvelope<any>>(`/admin/campaigns/${encodeURIComponent(id)}/schedule`,{ method:'POST', body: JSON.stringify({scheduled_at})}),
+  campaignCancel: (id:string)=> request<ApiEnvelope<any>>(`/admin/campaigns/${encodeURIComponent(id)}/cancel`,{ method:'POST'}),
+
+  // بنك الأسئلة
+  questions: (filters: Record<string,string|number|undefined>={})=> request<PaginatedEnvelope<import('../types/api').QuestionRecord> & { meta: PaginationMeta & { summary: Record<string,number> }}>(`/admin/questions${queryString(filters)}`),
+  question: (id:string)=> request<ApiEnvelope<import('../types/api').QuestionDetail>>(`/admin/questions/${encodeURIComponent(id)}`),
+  createQuestion: (payload: import('../types/api').QuestionPayload)=> request<ApiEnvelope<{ id:string; code:string }>>('/admin/questions',{ method:'POST', body: JSON.stringify(payload)}),
+  updateQuestion: (id:string, payload: Partial<import('../types/api').QuestionPayload>)=> request<ApiEnvelope<{ id:string; updated:boolean }>>(`/admin/questions/${encodeURIComponent(id)}`,{ method:'PATCH', body: JSON.stringify(payload)}),
+  deleteQuestion: (id:string)=> request<ApiEnvelope<{ id:string; deleted?:boolean; archived?:boolean }>>(`/admin/questions/${encodeURIComponent(id)}`,{ method:'DELETE' }),
+  reviewQuestion: (id:string, payload:{ status:string; comments?:string; reviewer_role?:string })=> request<ApiEnvelope<{ id:string; status:string }>>(`/admin/questions/${encodeURIComponent(id)}/review`,{ method:'POST', body: JSON.stringify(payload)}),
+  importQuestions: (questions: import('../types/api').QuestionPayload[])=> request<ApiEnvelope<{ imported:number; ids:string[] }>>('/admin/questions/import',{ method:'POST', body: JSON.stringify({ questions })}),
+  exportQuestions: (filters: Record<string,string|number|undefined>={})=> request<ApiEnvelope<import('../types/api').QuestionRecord[]>>(`/admin/questions/export${queryString(filters)}`),
+
+  // مركز الترجمة
+  translationQueue: (filters: Record<string,string|number|undefined>={})=> request<PaginatedEnvelope<import('../types/api').TranslationUnit>>(`/admin/translation/queue${queryString(filters)}`),
+  translationUnit: (id:string)=> request<ApiEnvelope<import('../types/api').TranslationDetail>>(`/admin/translation/units/${encodeURIComponent(id)}`),
+  saveTranslation: (id:string, payload:{ target_text:string; status?:string })=> request<ApiEnvelope<{ id:string; status:string }>>(`/admin/translation/units/${encodeURIComponent(id)}`,{ method:'PUT', body: JSON.stringify(payload)}),
+  reviewTranslation: (id:string, payload:{ status:string; comments?:string })=> request<ApiEnvelope<{ id:string; status:string }>>(`/admin/translation/units/${encodeURIComponent(id)}/review`,{ method:'POST', body: JSON.stringify(payload)}),
+  glossary: (filters: Record<string,string|number|undefined>={})=> request<PaginatedEnvelope<import('../types/api').GlossaryTerm>>(`/admin/glossary${queryString(filters)}`),
+  createGlossaryTerm: (payload: Partial<import('../types/api').GlossaryTerm> & { source_term:string; translations:Record<string,string> })=> request<ApiEnvelope<{ id:string }>>('/admin/glossary',{ method:'POST', body: JSON.stringify(payload)}),
+  updateGlossaryTerm: (id:string, payload: Partial<import('../types/api').GlossaryTerm>)=> request<ApiEnvelope<{ id:string }>>(`/admin/glossary/${encodeURIComponent(id)}`,{ method:'PATCH', body: JSON.stringify(payload)}),
+  deleteGlossaryTerm: (id:string)=> request<ApiEnvelope<{ id:string }>>(`/admin/glossary/${encodeURIComponent(id)}`,{ method:'DELETE' }),
+  translationMemory: (q:string, targetLang?:string)=> request<ApiEnvelope<Array<{ source_text:string; target_text:string }>>>(`/admin/translation/memory${queryString({ q, target_language: targetLang })}`),
+
   // فحص الجودة والتصدير. المسارَان كانا موجودَين بلا مستدعٍ، وفيهما أربع علل
   // أُصلحت في الخادم: جدول خاطئ لنوع `story`، وفحص غلاف قيمته `true` دائمًا،
   // وأنواع تُعيد نجاحًا فارغًا، وحدّ صفحات مخترع لا وجود له في بوابات النشر.
@@ -554,6 +720,20 @@ export const api = {
   /// جاهزية النشر الموحّدة. نفس المصدر الذي تستدعيه عملية النشر على الخادم،
   /// فما تعرضه هذه الشاشة هو ما سيفرضه الخادم فعلًا لا تقديرًا مستقلًا.
   publishReadiness: (type: import('../types/api').PublishableEntityType, id: string) => request<ApiEnvelope<import('../types/api').PublishGateResult>>(`/admin/publish-readiness/${type}/${encodeURIComponent(id)}`),
+
+  /// نشر القصص والكتب والألعاب والمشروعات.
+  ///
+  /// لم تكن لهذه الأنواع نقطة نشر أصلًا — أربع نقاط فقط كانت موجودة (السلاسل
+  /// والحلقات وصفحات الموقع والمقالات) — ولهذا كانت قاعدة البيانات تحمل صفر قصة
+  /// منشورة وصفر كتاب. الرفض ٤٠٩ يحمل قائمة العوائق كاملة في `payload`.
+  publishStory: (id: string) =>
+    request<ApiEnvelope<{ id: string; status: 'published'; published: boolean; warnings: unknown[] }>>(`/admin/stories/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
+  publishBook: (id: string) =>
+    request<ApiEnvelope<{ id: string; status: 'published'; published: boolean; warnings: unknown[] }>>(`/admin/books/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
+  publishGame: (id: string) =>
+    request<ApiEnvelope<{ id: string; status: 'published'; published: boolean; warnings: unknown[] }>>(`/admin/games/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
+  publishProject: (id: string) =>
+    request<ApiEnvelope<{ id: string; status: 'published'; published: boolean; warnings: unknown[] }>>(`/admin/projects/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
 
   /// سياسة الإتاحة الجغرافية. `country` معاينة: «هل هذا ظاهر في فرنسا؟» سؤال
   /// يجب أن يُجاب من اللوحة لا بالسفر.
@@ -644,8 +824,28 @@ export const api = {
   seoSlugCheck: (path: string, slug?: string) =>
     request<ApiEnvelope<import('../types/api').SeoSlugCheck>>(`/admin/seo/slug-check${queryString({ path, slug })}`),
 
+  // --- Operations / Reliability ----------------------------------------------------
+  opsOverview: () => request<ApiEnvelope<any>>('/admin/ops/overview'),
+  opsServices: () => request<ApiEnvelope<any[]>>('/admin/ops/services'),
+  opsService: (id:string) => request<ApiEnvelope<any>>(`/admin/ops/services/${encodeURIComponent(id)}`),
+  opsAlerts: (filters: Record<string,string|number|undefined>={}) => request<PaginatedEnvelope<any>>(`/admin/ops/alerts${queryString(filters)}`),
+  opsAlertAck: (id:string) => request<ApiEnvelope<any>>(`/admin/ops/alerts/${encodeURIComponent(id)}/acknowledge`, {method:'POST'}),
+  opsIncidents: (filters: Record<string,string|number|undefined>={}) => request<PaginatedEnvelope<any>>(`/admin/ops/incidents${queryString(filters)}`),
+  opsIncident: (id:string) => request<ApiEnvelope<any>>(`/admin/ops/incidents/${encodeURIComponent(id)}`),
+  createOpsIncident: (payload: Record<string,unknown>) => request<ApiEnvelope<{id:string}>>('/admin/ops/incidents',{method:'POST', body: JSON.stringify(payload)}),
+  updateOpsIncident: (id:string, payload: Record<string,unknown>) => request<ApiEnvelope<any>>(`/admin/ops/incidents/${encodeURIComponent(id)}`,{method:'PATCH', body: JSON.stringify(payload)}),
+  opsQueues: () => request<ApiEnvelope<any[]>>('/admin/ops/queues'),
+  opsQueue: (name:string) => request<ApiEnvelope<any>>(`/admin/ops/queues/${encodeURIComponent(name)}`),
+  opsTelemetry: () => request<ApiEnvelope<any[]>>('/admin/ops/telemetry'),
+  opsTimeline: (limit?:number) => request<ApiEnvelope<any[]>>(`/admin/ops/timeline${queryString({limit})}`),
+  slaPolicies: () => request<ApiEnvelope<any[]>>('/admin/sla/policies'),
+  slaPolicy: (id:string) => request<ApiEnvelope<any>>(`/admin/sla/policies/${encodeURIComponent(id)}`),
+  createSlaPolicy: (payload: Record<string,unknown>) => request<ApiEnvelope<{id:string}>>('/admin/sla/policies',{method:'POST', body: JSON.stringify(payload)}),
+  slaCommandCenter: () => request<ApiEnvelope<any>>('/admin/sla/command-center'),
+  opsFailedGrouped: (by?:string) => request<ApiEnvelope<any[]>>(`/admin/ops/failed-grouped${queryString({by})}`),
+
   // --- اللوحة التنفيذية ----------------------------------------------------
-  executiveOverview: () => request<ApiEnvelope<import('../types/api').ExecutiveOverview>>('/admin/dashboard/executive'),
+  executiveOverview: (params?: { from?: string; to?: string; range?: string }) => request<ApiEnvelope<import('../types/api').ExecutiveOverview>>(`/admin/dashboard/executive${queryString(params ?? {})}`),
 
   // --- البحث الشامل والتقويم (adminSearch.ts، adminCalendar.ts) -------------
   /// بحث واحد عبر كل الكيانات، للوحة الأوامر. الخادم يُصفّي بالصلاحيات لا العميل.

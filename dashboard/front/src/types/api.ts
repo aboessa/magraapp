@@ -453,6 +453,18 @@ export interface SeriesRecord {
   episodes_count?: number
   created_at: string
   updated_at: string
+  // Islamic governance (migration 0011) — null for non-islamic series
+  source_type?: 'quran' | 'hadith' | 'sira' | 'adab' | 'general' | null
+  source_reference?: string | null
+  verse_surah?: number | null
+  verse_ayah?: number | null
+  hadith_collection?: string | null
+  hadith_number?: string | null
+  hadith_grade?: string | null
+  religious_reviewer_id?: string | null
+  religious_reviewer_version?: number | null
+  religious_approved_at?: string | null
+  visual_restrictions?: string | null
 }
 
 export interface EpisodeRecord {
@@ -569,6 +581,18 @@ export interface SeriesPayload {
   visual_style?: string
   visual_style_id?: string | null
   status?: ContentStatus
+  // Islamic conditional fields (migration 0011)
+  source_type?: 'quran' | 'hadith' | 'sira' | 'adab' | 'general' | null
+  source_reference?: string | null
+  verse_surah?: number | null
+  verse_ayah?: number | null
+  hadith_collection?: string | null
+  hadith_number?: string | null
+  hadith_grade?: string | null
+  religious_reviewer_id?: string | null
+  religious_reviewer_version?: number | null
+  religious_approved_at?: string | null
+  visual_restrictions?: string | string[] | null
 }
 
 export interface EpisodePayload {
@@ -632,8 +656,21 @@ export interface SeasonRecord {
   title_ar?: string | null
   theme_ar?: string | null
   description_ar?: string | null
-  episode_count: number
-  episodes_count?: number
+  /**
+   * The editorial planning figure, from `seasons.episode_count`.
+   *
+   * It is **not** a number of episodes. It was the source of the 17 seasons that
+   * advertised 91 episodes they did not contain, so it is named for what it is
+   * and the real counts below are what a screen should render. See
+   * `api/src/lib/episodeCounts.ts`.
+   */
+  planned_episode_count: number
+  /// Canonical, non-archived episode rows in the season.
+  total_episodes: number
+  /// Of those, the ones the catalogue serves.
+  published_episodes: number
+  /// Of those, the ones with a video source that can actually be played.
+  available_episodes: number
   watch_order: 'sequential' | 'any'
   learning_goals: string[]
   release_date?: string | null
@@ -742,6 +779,7 @@ export interface StoryPageRecord {
   image_asset_id?: string | null
   background_asset_id?: string | null
   duration_ms?: number | null
+  dwell_ms?: number | null
   transition: string
   sort_order: number
   localizations: StoryPageLocalization[]
@@ -832,6 +870,8 @@ export interface StoryWorkspaceLocalization {
   narration_ready: boolean
   has_timing: boolean
   timing_count: number
+  /// Preserved verbatim when text, alt text, or narration is edited in the builder.
+  timing_cues?: Array<Record<string, unknown>>
   updated_at?: string | null
 }
 
@@ -841,6 +881,7 @@ export interface StoryWorkspacePage {
   layout: 'full_bleed' | 'split' | 'panels' | 'text_focus'
   transition: string
   duration_ms?: number | null
+  dwell_ms?: number | null
   image_asset_id?: string | null
   image_status?: string | null
   /// رابط عام مبنيّ عبر حَرس البادئة نفسه الذي يستخدمه بقيّة الكتالوج، فمفتاح
@@ -1398,6 +1439,33 @@ export interface FeatureFlagRecord {
   created_at: string
 }
 
+/**
+ * الأبعاد التي يطبّقها المُحلِّل فعلًا (`api/src/lib/homeExperience.ts`).
+ *
+ * كانت الواجهة تعرض `age_min`/`age_max` في جملة الاستهداف، وهما بعدان لم يقرأهما
+ * أي مُحلِّل: قاعدة تُكتب فيهما تُحفظ وتُعرض كأنها سارية ثم تُتجاهل في كل طلب.
+ */
+export interface HomeTargeting {
+  track?: string[]
+  language?: string[]
+  country?: string[]
+  plan?: string[]
+  platform?: string[]
+  /// أدنى إصدار تطبيق، مقارنة رقمية لا نصية.
+  min_app_version?: string
+  is_new_user?: boolean
+}
+
+export interface HomeBlockConfig {
+  system?: boolean
+  subtitle?: string | null
+  card_style?: string | null
+  maxItems?: number
+  freshnessDays?: number
+  bannerAsset?: string
+  season?: string
+}
+
 export interface HomeBlockRecord {
   id: string
   block_type: string
@@ -1408,8 +1476,45 @@ export interface HomeBlockRecord {
   scheduled_at?: string | null
   expires_at?: string | null
   version?: number
-  targeting: Record<string, unknown>
-  config: Record<string, unknown>
+  created_at?: string
+  updated_at?: string
+  targeting: HomeTargeting
+  config: HomeBlockConfig
+  /// كتلة يحسب الخادم محتواها من حالة الطفل؛ لا يُختار محتواها تحريريًا.
+  is_system?: boolean
+  /// رسالة الخطأ إن كان JSON المخزَّن لا يجتاز التحقق، وnull إن كان سليمًا.
+  targeting_invalid?: string | null
+  config_invalid?: string | null
+}
+
+/// ما يقبله الخادم، يُرسَل مع القائمة فلا تُخترع الواجهة قائمة أنواع خاصة بها.
+export interface HomeBuilderMeta {
+  block_types: string[]
+  system_block_types: string[]
+  targeting_dimensions: string[]
+  config_keys: string[]
+}
+
+/**
+ * نسخة محفوظة من كتلة.
+ *
+ * `restorable` false للنسخة التي تسجّل إنشاء الكتلة: لا حالة أسبق تُستعاد إليها.
+ */
+export interface HomeBlockVersion {
+  id: string
+  created_at: string
+  action: 'create' | 'update' | 'reorder' | 'rollback' | 'delete'
+  actor_id: string
+  before: Record<string, unknown> | null
+  after: Record<string, unknown> | null
+  restorable: boolean
+}
+
+export interface HomeVersionsMeta {
+  total: number
+  /// سجلات من تطبيق سابق لا تحمل الاستهداف ولا الإعداد، فلا يمكن الاستعادة إليها.
+  legacy_records: number
+  note: string | null
 }
 
 /**
@@ -1454,15 +1559,41 @@ export interface SupportFamilyEnvelope {
   entitlements: SupportEntitlementRecord[]
 }
 
-/** نتيجة معاينة الصفحة الرئيسية بعد تطبيق الاستهداف */
+/**
+ * نتيجة معاينة الصفحة الرئيسية بعد تطبيق الاستهداف والجدولة.
+ *
+ * التشخيصات حقيقية: كانت الشاشة تطبع «Fallback applied: none» دائمًا وتحسب
+ * المستثنى من قائمة فلترتها بنفسها، فكانت تصف فلترتها لا فلترة الخادم.
+ */
 export interface HomePreviewEnvelope {
-  blocks: HomeBlockRecord[]
+  blocks: Array<{
+    id: string
+    type: string
+    title: string | null
+    subtitle: string | null
+    source: 'system' | 'editorial'
+    card_style: string | null
+    config: HomeBlockConfig
+    targeting: HomeTargeting
+    position: number
+    is_system: boolean
+  }>
   meta: {
     track: string
+    language: string
     country: string
-    platform: string
     plan: string
+    platform: string
+    appVersion: string
     isNewUser: boolean
+    resolved_at: string
+    total_blocks: number
+    matched: number
+    excluded: number
+    excluded_inactive: number
+    excluded_draft: number
+    excluded_schedule: number
+    resolver: string
   }
 }
 
@@ -1507,6 +1638,133 @@ export interface BillingEntitlementRecord {
   status: 'active' | 'suspended' | 'archived'
   last_event_at_ms: number
   updated_at: string
+}
+
+// Commerce — Subscriptions & Transactions (billing_audit + family_projection)
+export interface SubscriptionRecord {
+  id: string
+  parent_id: string
+  family_name?: string | null
+  family_status?: string | null
+  family_plan?: string | null
+  product_id: string
+  plan: string
+  provider: string
+  provider_state: string
+  entitlement_status: string
+  starts_at_ms: number | null
+  expires_at_ms: number | null
+  verified_at_ms: number
+  created_at: string
+  has_mismatch?: number
+}
+export interface SubscriptionDetail extends Omit<SubscriptionRecord, 'has_mismatch'> {
+  family_entitlement?: { parent_id: string; plan: string; status: string; last_event_at_ms: number } | null
+  related_transactions?: SubscriptionRecord[]
+  has_mismatch: boolean
+  has_mismatch_num?: number
+}
+export interface TransactionRecord extends SubscriptionRecord {
+  is_duplicate?: boolean
+  history?: Array<{ id:string; action:string; created_at:string }>
+}
+
+// Plans & Pricing
+export interface StoreProduct {
+  id: string
+  provider: string
+  store_product_id: string
+  plan: string
+  billing_period: string
+  base_country?: string | null
+  currency?: string | null
+  base_price_minor?: number | null
+  trial_days?: number | null
+  status: string
+}
+export interface PlanPricingRow {
+  id: string
+  plan: string
+  store_product_id: string
+  country: string
+  currency: string
+  price_minor: number
+  effective_from: string
+  effective_until?: string | null
+  status: string
+  provider?: string
+  billing_period?: string
+}
+export interface PlanDetail {
+  id: string
+  limits: { children:number; devices:number; concurrent_streams:number; download_devices:number }
+  subscribers: number
+  pricing: PlanPricingRow[]
+  products: StoreProduct[]
+  promotions: PromotionRow[]
+}
+export interface PromotionRow {
+  id: string
+  code?: string | null
+  name_ar: string
+  plan?: string | null
+  status: string
+  discount_type?: string | null
+  discount_value?: number | null
+  country?: string | null
+  starts_at?: string | null
+  ends_at?: string | null
+}
+
+// Revenue
+export interface RevenueOverview {
+  range: string
+  metrics: {
+    gross_revenue: { value:number|null; unavailable?:string }
+    net_revenue: { value:number|null; unavailable?:string }
+    mrr: { value:number|null; unavailable?:string }
+    arr: { value:number|null; unavailable?:string }
+    active_paid_subscribers: number
+    new_paid_subscribers: number
+    renewals: number
+    refunds: number
+    trial_starts: Array<{ plan:string; cnt:number }>
+    churn_proxy: number|null
+  }
+  breakdowns: { by_plan:Array<{plan:string;cnt:number}>; by_provider:Array<{provider:string;cnt:number}>; by_currency:any[]; by_country:any[] }
+  data_quality: Array<{ issue:string; cnt:number }>
+  has_pricing: boolean
+}
+
+// Content costs / Finance
+export interface ContentCostRecord {
+  id: string
+  entity_type: string
+  entity_id: string
+  category: string
+  amount_minor: number
+  currency: string
+  vendor?: string | null
+  incurred_at: string
+  period?: string | null
+  allocation_basis?: string | null
+  notes?: string | null
+  series_title?: string | null
+}
+export interface RightsDetail {
+  id: string
+  content_id: string
+  series_title?: string | null
+  series_status?: string | null
+  owner: string
+  license_type: string
+  countries: string
+  languages: string
+  devices: string
+  expiry_date?: string | null
+  affected_content?: Array<{ id:string; title_ar:string; status:string }>
+  availability?: Record<string,unknown> | null
+  history?: Array<{ id:string; action:string; created_at:string }>
 }
 
 /* ------------------------------------- تفصيل ولي الأمر وتقدّم الطفل */
@@ -1676,6 +1934,113 @@ export interface LearningObjectivePayload {
   measurable_criteria?: string | null
   /// إن أُغفلت يشتقّها الخادم من المدى العمري
   track_ids?: AgeTrack[]
+}
+
+/* ---------------------------------------------- بنك الأسئلة */
+
+export type QuestionType = 'MULTIPLE_CHOICE'|'TRUE_FALSE'|'ORDERING'|'MATCHING'|'IMAGE_CHOICE'
+export type QuestionStatus = 'draft'|'in_review'|'approved'|'archived'
+export type QuestionDifficulty = 'easy'|'medium'|'hard'
+
+export interface QuestionRecord {
+  id: string
+  code: string
+  type: QuestionType
+  prompt_ar: string
+  prompt_en?: string | null
+  explanation_ar?: string | null
+  learning_objective_id: string | null
+  objective_title?: string | null
+  objective_code?: string | null
+  skill_id?: string | null
+  skill_name?: string | null
+  age_min: number
+  age_max: number
+  difficulty: QuestionDifficulty
+  status: QuestionStatus
+  correct_answer: Record<string, unknown>
+  distractors: unknown[]
+  media_asset_id?: string | null
+  media_asset_ids: string[]
+  version: number
+  created_at: string
+  updated_at: string
+  languages_count?: number
+  usage_count?: number
+}
+
+export interface QuestionDetail extends QuestionRecord {
+  localizations: Array<{ question_id:string; language:string; prompt:string; correct_answer:Record<string,unknown>; distractors:unknown[]; explanation?:string|null }>
+  reviews: Array<{ id:string; reviewer_role:string; reviewer_id:string|null; status:string; comments:string|null; created_at:string }>
+  usage: Array<{ question_id:string; entity_type:string; entity_id:string }>
+  history: Array<{ id:string; action:string; actor_id:string|null; created_at:string }>
+}
+
+export interface QuestionPayload {
+  code: string
+  type: QuestionType
+  prompt_ar: string
+  prompt_en?: string | null
+  explanation_ar?: string | null
+  learning_objective_id: string|null
+  skill_id?: string|null
+  age_min: number
+  age_max: number
+  difficulty?: QuestionDifficulty
+  status?: QuestionStatus
+  correct_answer?: Record<string,unknown>
+  distractors?: unknown[]
+  media_asset_id?: string|null
+}
+
+/* ------------------------------------------- مركز الترجمة */
+
+export type TranslationStatus = 'pending'|'in_translation'|'ready_for_review'|'changes_requested'|'approved'|'stale'
+export type GlossaryCategory = 'character'|'planet'|'educational'|'islamic'|'scientific'|'ui'|'general'
+
+export interface TranslationUnit {
+  id: string
+  entity_type: string
+  entity_id: string
+  field: string
+  source_language: string
+  source_text: string
+  source_version: number
+  target_language: string
+  target_text?: string|null
+  status: TranslationStatus
+  translator_id?: string|null
+  reviewer_id?: string|null
+  is_reauthor?: number
+  stale?: boolean
+  context_title?: string|null
+  context_image?: string|null
+  story_id?: string|null
+  page_number?: number|null
+  created_at?: string
+  updated_at?: string
+}
+
+export interface TranslationQueueMeta { total:number; limit:number; offset:number; summary?:Record<string,number> }
+
+export interface TranslationDetail extends TranslationUnit {
+  context?: Record<string,unknown>
+  siblings?: Array<{ id:string; page_number:number }>
+  translation_memory?: Array<{ source_text:string; target_text:string; usage_count:number }>
+  glossary?: Array<GlossaryTerm>
+}
+
+export interface GlossaryTerm {
+  id: string
+  source_term: string
+  source_language: string
+  translations: Record<string,string>
+  scope: string
+  category: GlossaryCategory
+  status: string
+  notes?: string|null
+  created_at: string
+  updated_at: string
 }
 
 /* --------------------------------------------------------- مراجعات المحتوى */
@@ -2311,6 +2676,312 @@ export interface ProductionQueueRow {
   note: string | null
   title: string | null
   content_status: string | null
+}
+
+// --- Content factory ---------------------------------------------------------
+
+/**
+ * حالة تشغيل مصنع المحتوى. هذه دورة تشغيل وليست حالة نشر المحتوى، لذلك لا
+ * تستخدم ContentStatus ولا StatusBadge الخاص بالكتالوج.
+ */
+export type ContentFactoryRunState =
+  | 'planned'
+  | 'blocked'
+  | 'awaiting_spend_approval'
+  | 'approved'
+  | 'queued'
+  | 'running'
+  | 'paused'
+  | 'awaiting_qc'
+  | 'awaiting_human_review'
+  | 'partially_failed'
+  | 'failed'
+  | 'completed'
+  | 'cancelled'
+
+export type ContentFactoryEntityType = 'episode' | 'story' | 'story_page'
+export type ContentFactoryJobKind = 'video' | 'image' | 'narration' | 'package'
+
+export interface ContentFactoryRun {
+  id: string
+  manifest_id: string
+  revision: number
+  entity_type: ContentFactoryEntityType
+  entity_id: string
+  planet_slug: string
+  series_slug: string
+  pipeline_profile: string
+  source_sha256: string
+  plan_sha256: string
+  inventory_sha256: string | null
+  state: ContentFactoryRunState
+  blocker_count: number
+  unpriced_job_count: number
+  estimate_low_credits: number
+  estimate_high_credits: number
+  estimate_with_contingency_credits: number
+  approved_ceiling_credits: number | null
+  spend_approval_sha256: string | null
+  created_by: string
+  approved_by: string | null
+  approved_at: string | null
+  dispatched_by: string | null
+  dispatched_at: string | null
+  last_error_code: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ContentFactoryListMeta extends PaginationMeta {
+  by_state: Partial<Record<ContentFactoryRunState, number>>
+}
+
+export interface ContentFactoryListEnvelope extends ApiEnvelope<ContentFactoryRun[]> {
+  meta: ContentFactoryListMeta
+}
+
+export interface ContentFactoryManifestJob {
+  job_id: string
+  kind: ContentFactoryJobKind
+  provider: string
+  operation: string
+  state: 'planned'
+  idempotency_key: string
+  dependencies: string[]
+  duration_seconds?: number
+  count?: number
+  page_index?: number
+  input: Record<string, unknown>
+  cost: {
+    pricing_status: 'priced' | 'unpriced' | 'excluded'
+    pricing_key: string | null
+    low_credits: number
+    high_credits: number
+    basis: string
+  }
+}
+
+export interface ContentFactoryQualityGate {
+  gate_id: string
+  required: boolean
+  status: 'not_run' | 'not_applicable' | 'passed' | 'warning' | 'failed' | 'pending' | 'approved' | 'rejected'
+}
+
+export type ContentFactoryVisualReferenceKind =
+  | 'character_sheet'
+  | 'world_sheet'
+  | 'prop_sheet'
+  | 'style_frame'
+  | 'visual_guide'
+
+export interface ContentFactoryVisualIdentityReference {
+  kind: ContentFactoryVisualReferenceKind
+  path: string
+  sha256: string
+}
+
+export interface ContentFactoryVisualIdentity {
+  identity_id: string
+  version: string
+  series_slug: string
+  status: 'approved'
+  reference_pack_sha256: string
+  references: ContentFactoryVisualIdentityReference[]
+  approved_by: string
+  approved_at: string
+}
+
+/** الخطة الثابتة فقط؛ بيانات المحاولات والمفاتيح ونتائج المزود ليست جزءًا منها. */
+export interface ContentFactoryManifest {
+  schema_version: 'content-factory.production-manifest/v1'
+  manifest_id: string
+  revision: number
+  entity: {
+    entity_type: ContentFactoryEntityType
+    entity_id: string
+    planet_slug: string
+    series_slug: string
+    locale: string
+    title?: string
+    [key: string]: unknown
+  }
+  visual_identity: ContentFactoryVisualIdentity | null
+  source: {
+    path: string
+    sha256: string
+    content_status: string
+    duration_seconds: number | null
+    page_count: number | null
+    reviews: Array<Record<string, unknown>>
+  }
+  pipeline: {
+    profile: string
+    eligibility: 'ready' | 'plannable' | 'blocked' | 'excluded'
+    exclusion_code: string | null
+    notes?: string
+  }
+  preflight: {
+    manifest_ready: boolean
+    scene_plan_ready: boolean
+    prompt_plan_ready: boolean
+  }
+  jobs: ContentFactoryManifestJob[]
+  budget: {
+    unit: 'credits'
+    pricing_version: string
+    estimate_low_credits: number
+    estimate_high_credits: number
+    contingency_pct: number
+    contingency_credits: number
+    estimate_with_contingency_credits: number
+    requested_ceiling_credits: number | null
+    unpriced_job_ids: string[]
+  }
+  quality: {
+    policy_version: string
+    automated_gates: ContentFactoryQualityGate[]
+    human_gates: ContentFactoryQualityGate[]
+  }
+  blockers: Array<{ code: string; severity: string; message: string; [key: string]: unknown }>
+  integrity: { source_sha256: string; plan_sha256: string }
+  spend_approval: null | Record<string, unknown>
+  metadata?: Record<string, unknown>
+}
+
+export interface ContentFactoryJob {
+  id: string
+  job_id: string
+  kind: ContentFactoryJobKind
+  provider: string
+  operation: string
+  idempotency_key: string
+  dependencies: string[]
+  duration_seconds: number | null
+  count: number | null
+  page_index: number | null
+  state: string
+  estimate_low_credits: number
+  estimate_high_credits: number
+  reserved_credits: number
+  current_attempt_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ContentFactoryAttempt {
+  id: string
+  factory_job_id: string
+  sequence: number
+  state: string
+  provider_job_id: string | null
+  provider_model: string | null
+  provider_declared_gross_credits: number | null
+  refund_status: string
+  refund_confirmed_credits: number
+  asset_sha256: string | null
+  automated_qc_sha256: string | null
+  human_review_sha256: string | null
+  submission_outcome: string | null
+  error_code: string | null
+  is_current: number
+  submitted_at: string | null
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+  private_asset_stored: number
+}
+
+export interface ContentFactoryCostEntry {
+  id: string
+  factory_job_id: string
+  attempt_id: string | null
+  entry_type: string
+  amount_credits: number
+  source_ref: string | null
+  notes: string | null
+  created_by: string
+  created_at: string
+}
+
+export interface ContentFactoryQcEvidence {
+  id: string
+  factory_job_id: string
+  attempt_id: string
+  gate_id: string
+  status: string
+  plan_sha256: string
+  asset_sha256: string
+  evidence_sha256: string
+  created_at: string
+}
+
+export interface ContentFactoryHumanReview {
+  id: string
+  factory_job_id: string
+  attempt_id: string
+  gate_id: string
+  decision: string
+  reviewer_id: string
+  plan_sha256: string
+  asset_sha256: string
+  automated_qc_sha256: string
+  review_sha256: string
+  notes: string | null
+  reviewed_at: string
+}
+
+export interface ContentFactoryExposure {
+  provider_declared_gross_credits: number
+  refunds_confirmed_credits: number
+  active_reservations_credits: number
+  total_exposure_credits: number
+  refund_unknown: boolean
+}
+
+export interface ContentFactoryDetail {
+  run: ContentFactoryRun
+  manifest: ContentFactoryManifest
+  jobs: ContentFactoryJob[]
+  attempts: ContentFactoryAttempt[]
+  cost_ledger: ContentFactoryCostEntry[]
+  exposure: ContentFactoryExposure
+  qc_evidence: ContentFactoryQcEvidence[]
+  human_reviews: ContentFactoryHumanReview[]
+}
+
+export interface ContentFactoryAutomatedQcResultInput {
+  gate_id: string
+  status: 'passed' | 'warning' | 'failed' | 'not_applicable'
+  message?: string
+  evidence: Record<string, unknown>
+}
+
+export interface ContentFactoryQcActionResult {
+  run_id: string
+  job_id: string
+  attempt_id: string
+  state: string
+  required_passed: boolean
+  automated_qc_sha256: string
+}
+
+export interface ContentFactoryHumanReviewActionResult {
+  run_id: string
+  job_id: string
+  attempt_id: string
+  gate_id: string
+  decision: 'approved' | 'rejected'
+  state: string
+  review_sha256: string
+  human_reviews_sha256: string | null
+}
+
+export interface ContentFactoryQueueResult {
+  run_id: string
+  queued_jobs: number
+  mode?: 'existing_attempts_only'
+  replacement_jobs?: number
+  failed_only?: boolean
 }
 
 // --- Customer 360 ------------------------------------------------------------

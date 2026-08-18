@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import type { ChildRecord } from '../types/api'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { Pagination } from '../components/Pagination'
 import { TrackBadge } from '../components/StatusBadge'
 import { ListToolbar } from '../components/AdvancedFilters'
 import type { FilterField } from '../components/AdvancedFilters'
-import { SavedViewsMenu } from '../components/ListTools'
+import { ColumnManager, SavedViewsMenu, useColumnPreferences } from '../components/ListTools'
+import type { ColumnDefinition } from '../components/ListTools'
 import { useUrlListState } from '../hooks/useUrlListState'
 import { adminPath } from '../lib/adminPath'
 import { accountStatusLabels, formatNumber, trackLabels } from '../lib/labels'
@@ -18,109 +20,85 @@ const months: Record<Locale, string[]> = {
   en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
 }
 
-/**
- * ملفات الأطفال — سجل إداري للقراءة فقط.
- *
- * ## لماذا لا يوجد إنشاء أو تعديل أو أرشفة من هذه الصفحة
- *
- * كانت الصفحة تعرض نموذج إنشاء/تعديل كاملًا وزرّ أرشفة/تفعيل يبدوان فعّالين،
- * ويستدعيان `api.createChild`/`api.updateChild` فعليًا. لكن الخادم
- * (`adminFamilyProjection.ts`) يرفض `POST /admin/children` و`PATCH
- * /admin/children/:id` و`DELETE /admin/children/:id` **دائمًا** بـ405:
- *
- *   Family administration is read-only; mutate family state through
- *   authenticated Family APIs
- *
- * `child_projection` إسقاطٌ من أحداث العائلة، لا مصدر الحقيقة: `FamilyState`
- * وحده يملك ملفات الأطفال والمسار العمري المشتق منها. أي كتابة من هنا كانت
- * ستُخالف نفس القاعدة التي تحترمها `ParentsPage` و`DevicesAdminPage` بالفعل:
- * لا كتابة مزدوجة على حالة تملكها FamilyState.
- *
- * النتيجة العملية قبل هذا الإصلاح: كل نقرة "حفظ" أو "أرشفة" كانت تفشل 100%
- * من الوقت، والمستخدم يرى رسالة خطأ عامة بلا أي تفسير لسبب الفشل البنيوي.
- * الآن — بدل زرّ يَعِد بعملية لا تعمل — تُعرض القائمة للقراءة فقط مع توضيح
- * صريح، بنفس نمط `DevicesAdminPage`.
- */
-
 const copy = {
   ar: {
-    loadError: 'تعذر تحميل ملفات الأطفال',
-    independent: 'ملفات مستقلة', title: 'ملفات الأطفال', intro: 'سجل إداري للقراءة فقط، مبنيّ من إسقاط أحداث العائلة. يحدد الخادم المسار من شهر وسنة الميلاد، وتبقى بيانات كل طفل معزولة.',
+    loadError: 'تعذر تحميل ملفات الأطفال', independent: 'ملفات الأطفال', title: 'ملفات الأطفال',
+    intro: 'عرض ملفات الأطفال المرتبطة بعائلاتهم. إنشاء الملفات يتم من حساب ولي الأمر.',
     familyProfiles: 'ملفات الأسرة', allProfiles: 'كل الملفات', search: 'اسم الطفل أو ولي الأمر...', allTracks: 'كل المسارات', loading: 'جارٍ تحميل ملفات الأطفال...',
     child: 'الطفل', parent: 'ولي الأمر', birth: 'الميلاد', computedTrack: 'المسار المحسوب', interests: 'الاهتمامات', status: 'الحالة', noName: 'من دون اسم', unspecified: 'لم تُحدد',
-    empty: 'لا توجد ملفات أطفال', emptyDesc: 'ستظهر الملفات عند إضافتها من التطبيق إلى حسابات أولياء الأمور الحقيقية.',
-    authorityTitle: 'الإنشاء والتعديل غير متاحين من هنا',
-    authorityHint: 'ملفات الأطفال تُدار حصريًا عبر Family APIs الموثّقة التي تكتب إلى FamilyState. مسارات إدارة اللوحة (/admin/children) للقراءة فقط عمدًا وترفض أي كتابة بـ405، لمنع كتابة مزدوجة تتعارض مع FamilyState كمصدر السلطة الوحيد لبيانات الأسرة.',
+    empty: 'لا توجد ملفات مطابقة', emptyDesc: 'جرّب تغيير البحث أو الفلاتر.',
+    viewChild: 'فتح الملف', viewFamily: 'العائلة',
   },
   en: {
-    loadError: 'Unable to load child profiles',
-    independent: 'Independent profiles', title: 'Child profiles', intro: 'A read-only administrative record built from the family event projection. The server derives the track from birth month and year while each child’s data remains isolated.',
+    loadError: 'Unable to load child profiles', independent: 'Child profiles', title: 'Child profiles',
+    intro: 'Browse child profiles linked to their families. Profiles are created from the parent account.',
     familyProfiles: 'Family profiles', allProfiles: 'All profiles', search: 'Child or parent name...', allTracks: 'All tracks', loading: 'Loading child profiles...',
-    child: 'Child', parent: 'Parent', birth: 'Birth', computedTrack: 'Calculated track', interests: 'Interests', status: 'Status', noName: 'No name', unspecified: 'Not specified',
-    empty: 'No child profiles', emptyDesc: 'Profiles will appear once they are added from the app to real parent accounts.',
-    authorityTitle: 'Creating and editing are unavailable here',
-    authorityHint: 'Child profiles are managed exclusively through authenticated Family APIs that write to FamilyState. The dashboard\u2019s admin routes (/admin/children) are intentionally read-only and reject any write with 405, to prevent a double write that would conflict with FamilyState as the sole authority for family data.',
+    child: 'Child', parent: 'Parent', birth: 'Birth', computedTrack: 'Computed track', interests: 'Interests', status: 'Status', noName: 'No name', unspecified: 'Not specified',
+    empty: 'No matching profiles', emptyDesc: 'Try changing search or filters.',
+    viewChild: 'Open', viewFamily: 'Family',
   },
 }
 
 function interestsText(value: string, locale: Locale) {
-  try {
-    const parsed = JSON.parse(value) as unknown
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string').join(locale === 'ar' ? '، ' : ', ') : ''
-  } catch { return '' }
+  try { const parsed = JSON.parse(value) as unknown; return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string').join(locale === 'ar' ? '، ' : ', ') : '' } catch { return '' }
 }
 
-/// مفاتيح الفلاتر هي أسماء معاملات الاستعلام التي يقبلها `GET /admin/children`
-/// بالحرف (`q`, `track`, `parent_id`, `status`, `limit`, `offset` في
-/// `api/src/routes/adminFamilyProjection.ts`). `parent_id` و`status` يقبلهما
-/// المعالِج ولا تعرضهما الشاشة، فلا يُرسَلان.
-const DEFAULT_FILTERS = { track: '' }
-const LIMIT = 100
+const DEFAULT_FILTERS = { track: '', status: '' }
+const LIMIT = 25
 
-/// حقل الدرج بيانات لا JSX: القائمة السابقة كانت `<select>` بلا أي تسمية —
-/// يقرؤها قارئ الشاشة «قائمة منسدلة» بلا ذكر ما تختاره.
-const FILTER_FIELDS = (text: (typeof copy)['ar'], locale: Locale): FilterField[] => [
-  {
-    key: 'track',
-    label: text.computedTrack,
-    type: 'select',
-    options: [
-      { value: '', label: text.allTracks },
-      ...Object.entries(trackLabels[locale]).map(([value, label]) => ({ value, label })),
-    ],
-  },
+const COLUMNS: ColumnDefinition[] = [
+  { key: 'child', label: 'child', locked: true },
+  { key: 'parent', label: 'parent' },
+  { key: 'birth', label: 'birth' },
+  { key: 'computedTrack', label: 'computedTrack' },
+  { key: 'interests', label: 'interests' },
+  { key: 'status', label: 'status' },
 ]
+
+const FILTER_FIELDS = (text: (typeof copy)['ar'], locale: Locale): FilterField[] => [
+  { key: 'track', label: text.computedTrack, type: 'select', options: [{ value: '', label: text.allTracks }, ...Object.entries(trackLabels[locale]).map(([value, label]) => ({ value, label }))] },
+  { key: 'status', label: text.status, type: 'select', options: [{ value: '', label: text.status }, { value: 'active', label: 'active' }, { value: 'archived', label: 'archived' }] },
+]
+
+function ageBand(birthMonth: number, birthYear: number, locale: Locale) {
+  const now = new Date()
+  const age = now.getFullYear() - birthYear - (now.getMonth() + 1 < birthMonth ? 1 : 0)
+  if (age < 3 || age > 12) return locale === 'ar' ? '—' : '—'
+  return `${age} ${locale === 'ar' ? 'سنة' : 'y'}`
+}
 
 export function ChildrenPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
   const navigate = useNavigate()
-  // حالة القائمة في العنوان لا في الذاكرة: رابط «أطفال مسار الصغار» يجب أن يفتح
-  // تلك المجموعة، والتحديث لا يجوز أن يُفقد التصفية.
   const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
-  const { query, filters } = list
-  const { track } = filters
+  const { query, filters, offset, limit } = list
+  const { track, status } = filters
   const [records, setRecords] = useState<ChildRecord[]>([])
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const columns = useColumnPreferences('children', COLUMNS)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
-    try { const response = await api.children({ q: query, track, limit: LIMIT }); setRecords(response.data) }
-    catch (caught) { setError(caught instanceof Error ? caught.message : text.loadError) }
+    try {
+      const response = await api.children({ q: query, track: track || undefined, status: status || undefined, limit, offset })
+      setRecords(response.data)
+      setTotal(response.meta?.total ?? response.data.length)
+    } catch (caught) { setError(caught instanceof Error ? caught.message : text.loadError) }
     finally { setLoading(false) }
-  }, [query, text.loadError, track])
+  }, [query, text.loadError, track, status, limit, offset])
 
   useEffect(() => { const timer = window.setTimeout(() => void load(), 220); return () => window.clearTimeout(timer) }, [load])
 
   return (
     <div className="page-stack">
       <section className="page-intro"><div><span className="eyebrow">{text.independent}</span><h2>{text.title}</h2><p>{text.intro}</p></div></section>
-
       <section className="panel panel--table">
         <header className="panel__header panel__header--filters">
-          <div><span className="panel__kicker">{text.familyProfiles}</span><h3>{text.allProfiles} <span className="title-count">{formatNumber(records.length, locale)}</span></h3></div>
+          <div><span className="panel__kicker">{text.familyProfiles}</span><h3>{text.allProfiles} <span className="title-count">{total}</span></h3></div>
           <ListToolbar
             searchValue={query}
             onSearchChange={list.setQuery}
@@ -132,38 +110,46 @@ export function ChildrenPage() {
             onClear={list.clearFilters}
             onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')}
             trailing={
-              <SavedViewsMenu
-                storageKey="children"
-                currentSearch={list.search}
-                onApply={(search) => navigate(`${adminPath('children')}${search}`)}
-              />
+              <>
+                <SavedViewsMenu storageKey="children" currentSearch={list.search} onApply={(search) => navigate(`${adminPath('children')}${search}`)} />
+                <ColumnManager columns={COLUMNS.map((c) => ({ ...c, label: text[c.label as keyof typeof text] ?? c.label }))} hidden={columns.hidden} onToggle={columns.toggle} onReset={columns.reset} />
+              </>
             }
           />
         </header>
-        {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? (
-          <div className="table-scroll" tabIndex={0}>
-            <table className="data-table">
-              <thead><tr><th>{text.child}</th><th>{text.parent}</th><th>{text.birth}</th><th>{text.computedTrack}</th><th>{text.interests}</th><th>{text.status}</th></tr></thead>
-              <tbody>
-                {records.map((child) => (
-                  <tr key={child.id}>
-                    <td><div className="entity-cell"><span className={`entity-avatar child-avatar child-avatar--${child.age_track}`}>{child.nickname.charAt(0)}</span><div><strong>{child.nickname}</strong><small>{child.avatar_id}</small></div></div></td>
-                    <td><strong className="table-primary">{child.parent_name || text.noName}</strong><small className="table-secondary">{child.parent_email || child.parent_id}</small></td>
-                    <td>{months[locale][child.birth_month - 1]} {formatNumber(child.birth_year, locale)}</td>
-                    <td><TrackBadge track={child.age_track}/></td>
-                    <td className="cell-wrap">{interestsText(child.interests, locale) || text.unspecified}</td>
-                    <td><span className={`account-status account-status--${child.status}`}>{accountStatusLabels[locale][child.status]}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {loading && !records.length ? <LoadingState label={text.loading} /> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()} /> : records.length ? (
+          <>
+            <div className="table-scroll" tabIndex={0}>
+              <table className="data-table">
+                <thead><tr><th>{text.child}</th>{columns.isVisible('parent') && <th>{text.parent}</th>}{columns.isVisible('birth') && <th>{text.birth}</th>}{columns.isVisible('computedTrack') && <th>{text.computedTrack}</th>}{columns.isVisible('interests') && <th>{text.interests}</th>}{columns.isVisible('status') && <th>{text.status}</th>}<th /></tr></thead>
+                <tbody>
+                  {records.map((child) => (
+                    <tr key={child.id}>
+                      <td>
+                        <Link className="entity-cell entity-cell--button" to={adminPath(`children/${child.id}`)}>
+                          <span className={`entity-avatar child-avatar child-avatar--${child.age_track}`}>{child.nickname.charAt(0)}</span>
+                          <div><strong>{child.nickname}</strong><small>{ageBand(child.birth_month, child.birth_year, locale)} · {child.avatar_id}</small></div>
+                        </Link>
+                      </td>
+                      {columns.isVisible('parent') && <td><Link className="table-primary" to={adminPath(`parents/${child.parent_id}`)}>{child.parent_name || text.noName}</Link><small className="table-secondary">{child.parent_email || ''}</small></td>}
+                      {columns.isVisible('birth') && <td>{months[locale][child.birth_month - 1]} {formatNumber(child.birth_year, locale)}</td>}
+                      {columns.isVisible('computedTrack') && <td><TrackBadge track={child.age_track} /></td>}
+                      {columns.isVisible('interests') && <td className="cell-wrap">{interestsText(child.interests, locale) || text.unspecified}</td>}
+                      {columns.isVisible('status') && <td><span className={`account-status account-status--${child.status}`}>{accountStatusLabels[locale][child.status]}</span></td>}
+                      <td>
+                        <div className="table-actions">
+                          <Link className="button button--ghost button--small" to={adminPath(`children/${child.id}`)}>{text.viewChild}</Link>
+                          <Link className="button button--ghost button--small" to={adminPath(`customers/${child.parent_id}`)}>{text.viewFamily}</Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
+          </>
         ) : <EmptyState title={text.empty} description={text.emptyDesc} />}
-      </section>
-
-      <section className="panel panel--notice">
-        <strong>{text.authorityTitle}</strong>
-        <p>{text.authorityHint}</p>
       </section>
     </div>
   )

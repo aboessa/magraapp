@@ -7,7 +7,9 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/auth_guard.dart';
 import '../../../child/application/child_provider.dart';
 import '../../../home/application/home_providers.dart';
 import '../../application/creation_cloud_service.dart';
@@ -54,7 +56,10 @@ class MyCollectionRoute extends ConsumerWidget {
               children: [
                 const Icon(Icons.face_outlined, size: 56),
                 const SizedBox(height: 12),
-                Text('اختر طفلًا أولًا', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'اختر طفلًا أولًا',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 6),
                 const Text(
                   'مجموعتي تعرض رسومات طفل واحد وملصقاته.',
@@ -71,7 +76,23 @@ class MyCollectionRoute extends ConsumerWidget {
       childId: childId,
       creationStore: ref.watch(localCreationStoreProvider),
       loadStickers: () async => await ref.read(earnedStickersProvider.future),
-      onKeepInAlbum: (creation) => _keepInAlbum(context, ref, childId, creation),
+      onOpenStudio: () async {
+        await context.push<void>('/studio');
+      },
+      onContinueEditing: (creation, _) async {
+        await context.push<void>('/studio', extra: creation);
+      },
+      authorizeShare: () async {
+        if (ref.read(authGuardProvider).hasParentAccess) return true;
+        final unlocked = await context.push<bool>(
+          '/parent-pin?from=/my-collection',
+        );
+        return unlocked == true &&
+            context.mounted &&
+            ref.read(authGuardProvider).hasParentAccess;
+      },
+      onKeepInAlbum: (creation) =>
+          _keepInAlbum(context, ref, childId, creation),
       onRemoveFromAlbum: (creation) async {
         final removed = await ref
             .read(creationCloudServiceProvider)
@@ -79,7 +100,7 @@ class MyCollectionRoute extends ConsumerWidget {
         if (!removed) return 'لم نتمكّن من الإزالة. رسمتك ما زالت على الجهاز.';
         await ref
             .read(localCreationStoreProvider)
-            .markUploaded(childId, creation.id, '');
+            .clearUploaded(childId, creation.id);
         return null;
       },
     );

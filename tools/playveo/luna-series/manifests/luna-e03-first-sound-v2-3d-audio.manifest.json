@@ -1,0 +1,361 @@
+{
+  "schema_version": "luna-series.preproduction/v1",
+  "production_id": "luna-e03-first-sound-v2-3d-model-audio-glyph-overlay",
+  "episode": {
+    "entity_type": "episode",
+    "episode_id": "ep-03",
+    "episode_number": 3,
+    "series_id": "luna-discovers-words",
+    "series_slug": "luna-discovers-words",
+    "planet_slug": "01-abjad",
+    "locale": "ar",
+    "title_ar": "أول حرف",
+    "description_ar": "التعرّف على صوت الحرف الأول في الكلمة",
+    "duration_seconds": 180,
+    "age_min": 4,
+    "age_max": 5,
+    "reading_level": "pre_reader",
+    "interaction_mode": "tap",
+    "supervision_level": "recommended",
+    "difficulty": "easy",
+    "is_free": false,
+    "learning_objective_id": "lang.phonics.first_sound",
+    "linked_game_id": "wb-luna-ep3",
+    "prerequisites": ["ep-01", "ep-02"],
+    "content_status": "draft",
+    "localization_policy": "language_specific_reauthor_per_locale"
+  },
+  "source": {
+    "path": "docs/content/planets/01-abjad/luna-discovers-words/ep-03-first-sound.md",
+    "sha256": "afcc5688ff5f1d64ca659c4247cbe0c41a4783d30ab092abf59065e3e676d9a0",
+    "content_status": "draft",
+    "dialogue_section": "نص التعليق الصوتي للتسجيل",
+    "dialogue_count": 37,
+    "normalizations": [],
+    "overrides": [],
+    "production_notes": [
+      "The source remains draft and is not modified by this preproduction plan.",
+      "All pedagogical glyphs are deterministic post-model overlays; the video model must not draw letters or words.",
+      "No linguistic or calligraphy approval is claimed."
+    ]
+  },
+  "visual_identity": {
+    "identity_id": "luna-discovers-words/luna-v2",
+    "version": "luna-v2",
+    "series_slug": "luna-discovers-words",
+    "status": "approved",
+    "reference_pack_sha256": "0132d294f45a6fe644d5b2034e86f15e4627ff146f5f8130247d41c9202905a7",
+    "references": [
+      {
+        "kind": "character_sheet",
+        "path": "majarra_images/assets/images/characters/luna-preschool-character-sheet.png",
+        "sha256": "0edcd9e6280dbece120a3f6a6247dac55e0fac20a09489b54e37f04a08b20deb"
+      },
+      {
+        "kind": "visual_guide",
+        "path": "tools/content-factory/reference-packs/luna-v2-visual-guide.json",
+        "sha256": "ba579c39b4b462d7709e53fdb984601d8c926a3525c63dcbf0b05f02007ff1c6"
+      }
+    ],
+    "approved_by": "majarra-creative-direction",
+    "approved_at": "2026-08-12T00:00:00.000Z"
+  },
+  "pipeline": {
+    "profile": "model_video_audio_plus_deterministic_glyph_overlay",
+    "factory_profile": "cartoon_video_model_audio",
+    "factory_provider": "flux",
+    "operation": "text-to-video-model-audio",
+    "model_audio_required": true,
+    "external_tts_forbidden": true,
+    "external_dubbing_forbidden": true,
+    "retain_model_audio_in_master": true,
+    "provider_result_urls_persisted": false,
+    "model_generated_text_forbidden": true,
+    "model_generated_glyphs_forbidden": true,
+    "burned_in_captions_forbidden": true,
+    "dispatch_blocked": true,
+    "dispatch_blockers": [
+      "SOURCE_EDITORIAL_REVIEW_PENDING",
+      "SOURCE_LINGUISTIC_REVIEW_PENDING",
+      "LINGUISTIC_CALLIGRAPHY_REVIEW_PENDING"
+    ]
+  },
+  "format": {
+    "aspect_ratio": "16:9",
+    "resolution": "hd",
+    "expected_total_seconds": 180,
+    "clip_duration_min_seconds": 5,
+    "clip_duration_max_seconds": 20
+  },
+  "output_root": "assets/episodes/luna-e03-first-sound-v2-3d-audio",
+  "runtime_state_policy": {
+    "state_file": "_production-state.json",
+    "create_placeholder": false,
+    "provider_result_urls_persisted": false,
+    "clip_review_fingerprint_required": true,
+    "overlay_evidence_required": true
+  },
+  "shared_locks": {
+    "visual_guide_path": "tools/content-factory/reference-packs/luna-v2-visual-guide.json",
+    "visual_guide_sha256": "ba579c39b4b462d7709e53fdb984601d8c926a3525c63dcbf0b05f02007ff1c6",
+    "style": "Original high-end contemporary stylized 3D preschool feature animation. Polished studio-quality rendering, rounded appealing character design, expressive facial animation, soft physically based materials, subtle subsurface skin shading, detailed cloth with clean folds, cinematic global illumination, warm volumetric rim light, gentle depth of field, rich dimensional environments, smooth natural body mechanics, and premium color grading. The result must look current and cinematic, not like flat educational clip art.",
+    "luna": "Luna is the same consistent five-year-old Arab girl in every clip: warm tan skin, round cheeks, large expressive brown eyes, soft eyebrows, small friendly nose, golden-yellow hijab fully covering her hair and neck, a small silver crescent pin at her left shoulder, knee-length golden-yellow long-sleeve tunic, dark teal trousers, and dark teal shoes. Child proportions, four fingers plus thumb per hand, same face, same outfit, same materials, and same scale in all shots.",
+    "najmi": "Najmi is the same palm-sized living five-point golden star in every clip, with rounded points, two small dark-brown eyes, one tiny friendly mouth, no arms, no legs, no accessories. Najmi floats slowly and gives a restrained cyan volumetric glow when guiding attention. Najmi never speaks words.",
+    "base_world": "Planet Abjad is a magical safe 3D learning garden under a deep navy cosmic sky: softly rolling indigo hills, warm cream paths, rounded coral and cyan plants, tiny golden stars, soft atmospheric depth, and no readable letters. It feels bright, warm, premium, spacious, and safe for ages three to five.",
+    "camera": "Cinematic child-eye-level 16:9 camera, gentle dolly or slow arc only, stable horizon, readable staging, no handheld shake, no rapid zoom, no fast cuts, no extreme lens distortion.",
+    "negative": "No 2D illustration, no flat vector art, no cutout animation, no old television-cartoon look, no model sheet, no storyboard, no checkerboard, no on-screen text, no captions, no letters, no numbers, no logos, no watermark, no extra people, no duplicate Luna, no duplicate Najmi, no extra limbs, no visible hair, no wardrobe change, no frightening darkness, no storm, no flashing, no violence, and no object morphing.",
+    "voice": "One consistent youthful warm Arabic female character voice performs Luna in every clip. The voice is light, friendly, clear, curious, and natural, never an announcer, never robotic, never babyish, and never shouted. Use clear simplified Modern Standard Arabic with natural educated Egyptian articulation.",
+    "dialogue_rule": "Speak every exact Arabic line exactly as supplied, without translation, paraphrase, added words, repeated words, labels, narrator commentary, or gibberish. Luna is the only speaking character. Match Luna's mouth accurately whenever she is visible; when absent, use the same voice gently off-camera.",
+    "mix": "Dialogue is always foreground and intelligible. Use soft magical orchestral-marimba underscore at low volume, gentle ambience, one short crystalline chime for Najmi, and restrained success sparkles. No other voices, no singing, no loud percussion, no sudden sound, and no music covering speech.",
+    "silence_rule": "Thinking pauses are real silence in dialogue; retain only very low ambience during them."
+  },
+  "episode_direction": {
+    "world": "A phonics-focused Planet Abjad garden with clean blank presentation panels and safe toy-like objects. Every model-rendered panel remains completely blank for deterministic overlays.",
+    "props": "Stable cream house, clear water vessel, friendly fish, softly glowing moon, and blank dimensional panels. No model-rendered writing, pseudo-writing, symbols, captions, or glyph-like marks.",
+    "pronunciation": "Pronounce every target as its phoneme sound, never the letter name: short clear بَ, مَ, سَ, قَ, and لَ. Keep a 500 millisecond separation in sound-then-word patterns. Pronounce قَ as a clear Arabic qaf, never kaf, and سَ as a clean sibilant sin, never shin. The four closing sounds are slow with about 600 milliseconds between them. Target delivery is about 85 words per minute."
+  },
+  "ui_overlays": {
+    "delivery": "player_or_application_layer",
+    "burned_in": false,
+    "requirements": [
+      "WebVTT captions remain a player overlay.",
+      "Written fallbacks for sound questions remain application UI.",
+      "Pedagogical glyphs are governed only by overlay_plan and never by the model prompt."
+    ]
+  },
+  "overlay_plan": {
+    "required": true,
+    "renderer_implemented": false,
+    "execution_stage": "deterministic_post_model_pre_master",
+    "model_visual_policy": "No letters, words, captions, pseudo-writing, or glyph-like marks may be generated by the video model.",
+    "font_family": "Readex Pro",
+    "selected_font": {
+      "path": "app_main/assets/fonts/ReadexPro-SemiBold.ttf",
+      "sha256": "2b8fb0b6936c31994fb485124f9394b3cf32995c3258d3d724af32bf60fce189",
+      "weight": 600
+    },
+    "font_assets": [
+      {"path": "app_main/assets/fonts/ReadexPro-Regular.ttf", "sha256": "2a311de08d0a786b277527545b3a3d797cc4ca3a4f620cac5e1b0b0ca9140683", "weight": 400},
+      {"path": "app_main/assets/fonts/ReadexPro-Medium.ttf", "sha256": "7605421efc9d8aec49ecb321f62dcc7b8bdb00b3d8fbdfc905aca2e2974c3b2a", "weight": 500},
+      {"path": "app_main/assets/fonts/ReadexPro-SemiBold.ttf", "sha256": "2b8fb0b6936c31994fb485124f9394b3cf32995c3258d3d724af32bf60fce189", "weight": 600},
+      {"path": "app_main/assets/fonts/ReadexPro-Bold.ttf", "sha256": "e1a492385e6813495b1e6856e52a67acc1468727dbe27779f2a9f526615263e6", "weight": 700}
+    ],
+    "license": {
+      "path": "app_main/assets/fonts/OFL.txt",
+      "sha256": "b41267a3903a45955f77b44596e080480c577fb7221df59672d0bc8cd8cd4b6f",
+      "identifier": "OFL-1.1"
+    },
+    "rendering": {
+      "direction": "rtl",
+      "shaping_required": true,
+      "bidi_required": true,
+      "color": "#00D6F5",
+      "visible_seconds": 1.5,
+      "safe_area_pct": 8,
+      "anti_aliasing": true
+    },
+    "glyphs": [
+      {"glyph_id": "ba-initial", "glyph": "بـ", "form": "initial", "clip_id": "E03-C02", "start_seconds": 9, "duration_seconds": 1.5, "anchor": "beside_active_object"},
+      {"glyph_id": "ba-initial-repeat", "glyph": "بـ", "form": "initial", "clip_id": "E03-C03", "start_seconds": 1, "duration_seconds": 1.5, "anchor": "beside_active_object"},
+      {"glyph_id": "mim-initial", "glyph": "مـ", "form": "initial", "clip_id": "E03-C04", "start_seconds": 6, "duration_seconds": 1.5, "anchor": "beside_active_object"},
+      {"glyph_id": "mim-initial-repeat", "glyph": "مـ", "form": "initial", "clip_id": "E03-C05", "start_seconds": 7, "duration_seconds": 1.5, "anchor": "beside_active_object"},
+      {"glyph_id": "sin-initial", "glyph": "سـ", "form": "initial", "clip_id": "E03-C06", "start_seconds": 5, "duration_seconds": 1.5, "anchor": "beside_active_object"},
+      {"glyph_id": "sin-initial-repeat", "glyph": "سـ", "form": "initial", "clip_id": "E03-C07", "start_seconds": 4, "duration_seconds": 1.5, "anchor": "beside_active_object"},
+      {"glyph_id": "qaf-initial", "glyph": "قـ", "form": "initial", "clip_id": "E03-C08", "start_seconds": 6, "duration_seconds": 1.5, "anchor": "beside_active_object"},
+      {"glyph_id": "sin-initial-application", "glyph": "سـ", "form": "initial", "clip_id": "E03-C10", "start_seconds": 3, "duration_seconds": 1.5, "anchor": "question_focus"},
+      {"glyph_id": "review-ba", "glyph": "بـ", "form": "initial", "clip_id": "E03-C12", "start_seconds": 0, "duration_seconds": 8, "anchor": "review_cell_1"},
+      {"glyph_id": "review-mim", "glyph": "مـ", "form": "initial", "clip_id": "E03-C12", "start_seconds": 0, "duration_seconds": 8, "anchor": "review_cell_2"},
+      {"glyph_id": "review-sin", "glyph": "سـ", "form": "initial", "clip_id": "E03-C12", "start_seconds": 0, "duration_seconds": 8, "anchor": "review_cell_3"},
+      {"glyph_id": "review-qaf", "glyph": "قـ", "form": "initial", "clip_id": "E03-C12", "start_seconds": 0, "duration_seconds": 8, "anchor": "review_cell_4"}
+    ],
+    "overlay_plan_sha256": "15626ac485ee90d5fbf5735527dbe67173c40b7073594fe357dd4dbbc410a01f",
+    "linguistic_and_calligraphy_review_required": true,
+    "dispatch_blocked": true
+  },
+  "reviews": {
+    "source_status": "draft",
+    "preproduction_ready": false,
+    "dispatch_blocked": true,
+    "required": [
+      {"review_type": "editorial", "required": true, "status": "pending", "source_sha256": "afcc5688ff5f1d64ca659c4247cbe0c41a4783d30ab092abf59065e3e676d9a0"},
+      {"review_type": "linguistic", "required": true, "status": "pending", "source_sha256": "afcc5688ff5f1d64ca659c4247cbe0c41a4783d30ab092abf59065e3e676d9a0"},
+      {"review_type": "educational", "required": true, "status": "pending", "source_sha256": "afcc5688ff5f1d64ca659c4247cbe0c41a4783d30ab092abf59065e3e676d9a0"},
+      {"review_type": "calligraphy_and_glyph", "required": true, "status": "pending", "source_sha256": "afcc5688ff5f1d64ca659c4247cbe0c41a4783d30ab092abf59065e3e676d9a0"}
+    ]
+  },
+  "blockers": [
+    {"code": "SOURCE_EDITORIAL_REVIEW_PENDING", "severity": "hard_block", "message": "Explicit editorial approval fingerprinting the current draft source is required before dispatch."},
+    {"code": "SOURCE_LINGUISTIC_REVIEW_PENDING", "severity": "hard_block", "message": "Explicit Arabic linguistic approval of phoneme delivery is required before dispatch."},
+    {"code": "LINGUISTIC_CALLIGRAPHY_REVIEW_PENDING", "severity": "hard_block", "message": "A qualified Arabic linguist or calligrapher must approve initial glyph forms, shaping, placement, and the current overlay plan before dispatch."}
+  ],
+  "finalization_blockers": [
+    "DETERMINISTIC_OVERLAY_RENDERER_NOT_IMPLEMENTED",
+    "OVERLAY_EVIDENCE_NOT_AVAILABLE",
+    "LINGUISTIC_CALLIGRAPHY_APPROVAL_NOT_AVAILABLE"
+  ],
+  "budget": {
+    "unit": "credits",
+    "pricing_version": "playveo-observed-2026-08-12-v1",
+    "baseline_credits": 9,
+    "contingency_pct": 15,
+    "contingency_credits": 1.35,
+    "ceiling_credits": 10.35
+  },
+  "packaging": {
+    "generated_now": false,
+    "requirements": [
+      {"kind": "thumbnail", "required": true, "status": "not_generated", "file": "thumbnail.jpg", "aspect_ratio": "16:9"},
+      {"kind": "captions", "required": true, "status": "not_generated", "file": "captions.ar.vtt", "format": "webvtt", "locale": "ar", "delivery": "player_overlay", "burned_in": false}
+    ]
+  },
+  "clips": [
+    {
+      "id": "E03-C01", "file": "clips/E03-C01.mp4", "duration_seconds": 15, "source_range": "0:00-0:15", "editorial_scene": 1,
+      "visual": "Opening in the Planet Abjad garden. Luna enters through a clean environment with no writing or symbols while Najmi floats beside her.",
+      "timeline": [
+        {"at_seconds": 0, "action": "Soft six-second opening motif and ambience."},
+        {"at_seconds": 6, "spoken": "مرحبًا! أنا لونا."},
+        {"at_seconds": 9, "action": "Najmi gives one short chime and glow."},
+        {"at_seconds": 11, "spoken": "اليوم نسمع أول صوت."}
+      ],
+      "exact_spoken_dialogue": ["مرحبًا! أنا لونا.", "اليوم نسمع أول صوت."]
+    },
+    {
+      "id": "E03-C02", "file": "clips/E03-C02.mp4", "duration_seconds": 17, "source_range": "0:15-0:32", "editorial_scene": 2,
+      "visual": "Luna presents the recurring cream toy house beside a completely blank cyan presentation panel. The model must leave every panel blank and free of marks.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "كل كلمة لها بداية."},
+        {"at_seconds": 4, "action": "One-second dialogue pause."},
+        {"at_seconds": 5, "spoken": "استمع: بَيت."},
+        {"at_seconds": 8, "action": "One-second dialogue silence."},
+        {"at_seconds": 9, "spoken": "بَ... بَيت."},
+        {"at_seconds": 12, "action": "Najmi gives a restrained synchronized glow."},
+        {"at_seconds": 14, "spoken": "أول صوت هو بَ."}
+      ],
+      "exact_spoken_dialogue": ["كل كلمة لها بداية.", "استمع: بَيت.", "بَ... بَيت.", "أول صوت هو بَ."]
+    },
+    {
+      "id": "E03-C03", "file": "clips/E03-C03.mp4", "duration_seconds": 13, "source_range": "0:32-0:45", "editorial_scene": 2,
+      "visual": "The cream house remains beside the blank panel. Najmi pulses three times without drawing any symbol, then Luna invites the next examples.",
+      "timeline": [
+        {"at_seconds": 1, "spoken": "بَ... بَ... بَيت."},
+        {"at_seconds": 5, "action": "Najmi completes three gentle synchronized pulses."},
+        {"at_seconds": 8, "spoken": "هيا نسمع أصواتًا أخرى."}
+      ],
+      "exact_spoken_dialogue": ["بَ... بَ... بَيت.", "هيا نسمع أصواتًا أخرى."]
+    },
+    {
+      "id": "E03-C04", "file": "clips/E03-C04.mp4", "duration_seconds": 15, "source_range": "0:45-1:00", "editorial_scene": 3,
+      "visual": "Two clean toy-like choices show water and a softly glowing moon. Najmi focuses the water while a nearby dimensional panel stays completely blank.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "استمع لهذه الكلمة."},
+        {"at_seconds": 3, "spoken": "ماء."},
+        {"at_seconds": 5, "action": "One-second dialogue silence."},
+        {"at_seconds": 6, "spoken": "مَ... ماء."},
+        {"at_seconds": 9, "spoken": "أول صوت هو مَ."},
+        {"at_seconds": 12, "action": "Calm pause."},
+        {"at_seconds": 13, "spoken": "قل معي: مَ."}
+      ],
+      "exact_spoken_dialogue": ["استمع لهذه الكلمة.", "ماء.", "مَ... ماء.", "أول صوت هو مَ.", "قل معي: مَ."]
+    },
+    {
+      "id": "E03-C05", "file": "clips/E03-C05.mp4", "duration_seconds": 15, "source_range": "1:00-1:15", "editorial_scene": 3,
+      "visual": "Hold on the water choice with Najmi. A three-second response window is followed by a restrained success glow and a final visual emphasis on water.",
+      "timeline": [
+        {"at_seconds": 0, "action": "Three full seconds with no dialogue for the child to respond."},
+        {"at_seconds": 3, "spoken": "أحسنت!"},
+        {"at_seconds": 5, "action": "One restrained success cue."},
+        {"at_seconds": 7, "spoken": "مَ... ماء."}
+      ],
+      "exact_spoken_dialogue": ["أحسنت!", "مَ... ماء."]
+    },
+    {
+      "id": "E03-C06", "file": "clips/E03-C06.mp4", "duration_seconds": 17, "source_range": "1:15-1:32", "editorial_scene": 4,
+      "visual": "A friendly fish swims slowly in a safe clear pool beside a blank dimensional panel. Najmi follows without making marks.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "وهذه سَمَكة."},
+        {"at_seconds": 3, "action": "Very soft water sound under 300 milliseconds."},
+        {"at_seconds": 5, "spoken": "سَ... سَمَكة."},
+        {"at_seconds": 8, "spoken": "أول صوت هو سَ."},
+        {"at_seconds": 11, "action": "Calm pause."},
+        {"at_seconds": 12, "spoken": "قل معي: سَ."},
+        {"at_seconds": 14, "action": "Three full seconds with no dialogue for the child to respond."}
+      ],
+      "exact_spoken_dialogue": ["وهذه سَمَكة.", "سَ... سَمَكة.", "أول صوت هو سَ.", "قل معي: سَ."]
+    },
+    {
+      "id": "E03-C07", "file": "clips/E03-C07.mp4", "duration_seconds": 13, "source_range": "1:32-1:45", "editorial_scene": 4,
+      "visual": "Hold on the friendly fish after the completed response window, then show a restrained success sparkle and one slow swimming arc.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "جميل جدًا!"},
+        {"at_seconds": 2, "action": "One restrained success cue."},
+        {"at_seconds": 4, "spoken": "سَ... سَمَكة."},
+        {"at_seconds": 7, "action": "Calm pause."}
+      ],
+      "exact_spoken_dialogue": ["جميل جدًا!", "سَ... سَمَكة."]
+    },
+    {
+      "id": "E03-C08", "file": "clips/E03-C08.mp4", "duration_seconds": 18, "source_range": "1:45-2:03", "editorial_scene": 5,
+      "visual": "Wide upward-looking garden shot with one softly glowing moon and a completely blank presentation panel. Najmi hovers below the moon.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "انظر إلى السماء."},
+        {"at_seconds": 3, "spoken": "قَمَر."},
+        {"at_seconds": 5, "action": "One-second dialogue silence."},
+        {"at_seconds": 6, "spoken": "قَ... قَمَر."},
+        {"at_seconds": 9, "spoken": "أول صوت هو قَ."},
+        {"at_seconds": 12, "action": "Calm pause."},
+        {"at_seconds": 13, "spoken": "قل معي: قَ."},
+        {"at_seconds": 15, "action": "Three full seconds with no dialogue for the child to respond."}
+      ],
+      "exact_spoken_dialogue": ["انظر إلى السماء.", "قَمَر.", "قَ... قَمَر.", "أول صوت هو قَ.", "قل معي: قَ."]
+    },
+    {
+      "id": "E03-C09", "file": "clips/E03-C09.mp4", "duration_seconds": 12, "source_range": "2:03-2:15", "editorial_scene": 5,
+      "visual": "The moon remains visible after the completed response window. Luna turns warmly toward the child and gestures to herself; Najmi gives a happy glow.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "هكذا تمامًا!"},
+        {"at_seconds": 2, "action": "One restrained success cue."},
+        {"at_seconds": 4, "spoken": "واسمي أنا... لونا."},
+        {"at_seconds": 7, "spoken": "أول صوت لَ."},
+        {"at_seconds": 10, "action": "Najmi gives one happy glow."}
+      ],
+      "exact_spoken_dialogue": ["هكذا تمامًا!", "واسمي أنا... لونا.", "أول صوت لَ."]
+    },
+    {
+      "id": "E03-C10", "file": "clips/E03-C10.mp4", "duration_seconds": 13, "source_range": "2:15-2:28", "editorial_scene": 6,
+      "visual": "Application challenge with exactly three clean toy-like objects: cream house, friendly fish, and softly glowing moon. No labels, symbols, writing, or marks appear in model frames.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "دورك الآن."},
+        {"at_seconds": 2, "action": "Short calm pause."},
+        {"at_seconds": 3, "spoken": "أي كلمة تبدأ بـ سَ؟"},
+        {"at_seconds": 6, "action": "Five full seconds with no dialogue or hint."},
+        {"at_seconds": 11, "action": "Najmi begins a delayed hint toward the fish."}
+      ],
+      "exact_spoken_dialogue": ["دورك الآن.", "أي كلمة تبدأ بـ سَ؟"]
+    },
+    {
+      "id": "E03-C11", "file": "clips/E03-C11.mp4", "duration_seconds": 17, "source_range": "2:28-2:45", "editorial_scene": 6,
+      "visual": "Najmi confirms the friendly fish. The fish makes one slow safe arc while the other choices dim slightly without disappearing.",
+      "timeline": [
+        {"at_seconds": 1, "spoken": "نعم! سَمَكة."},
+        {"at_seconds": 3, "action": "One restrained success cue."},
+        {"at_seconds": 5, "spoken": "سَ... سَمَكة."},
+        {"at_seconds": 8, "spoken": "أذناك ذكيّتان!"},
+        {"at_seconds": 11, "action": "Calm pause."},
+        {"at_seconds": 13, "spoken": "الأصوات تبني الكلمات."}
+      ],
+      "exact_spoken_dialogue": ["نعم! سَمَكة.", "سَ... سَمَكة.", "أذناك ذكيّتان!", "الأصوات تبني الكلمات."]
+    },
+    {
+      "id": "E03-C12", "file": "clips/E03-C12.mp4", "duration_seconds": 15, "source_range": "2:45-3:00", "editorial_scene": 7,
+      "visual": "Closing shot with Luna, Najmi, and four clean object cells for house, water, fish, and moon. Every model-rendered cell remains blank around the objects for deterministic glyph overlays.",
+      "timeline": [
+        {"at_seconds": 0, "spoken": "تعلّمنا: بَ، مَ، سَ، قَ."},
+        {"at_seconds": 6, "action": "Calm pause and Najmi glow."},
+        {"at_seconds": 7, "spoken": "هيا نلعب بالحروف!"},
+        {"at_seconds": 10, "action": "Gentle completion cue and closing motif."}
+      ],
+      "exact_spoken_dialogue": ["تعلّمنا: بَ، مَ، سَ، قَ.", "هيا نلعب بالحروف!"]
+    }
+  ]
+}

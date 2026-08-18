@@ -38,8 +38,28 @@ class CinematicImage extends StatelessWidget {
         ? null
         : (decodeWidth! * ratio).round();
 
+    // The local catalogue's checked-in act-s1 preview has the same path below
+    // the public catalog prefix. Use that exact bundled file as its fallback;
+    // never hand a https URL to Image.asset (which becomes a bogus web asset
+    // request ending in cover.jpg).
+    const publicCatalogPrefix = '/public/catalog/';
+    final networkUri = Uri.tryParse(networkUrl ?? '');
+    final bundledStoryPreview =
+        networkUri != null &&
+            networkUri.host == 'cdn.majarra.app' &&
+            networkUri.path.startsWith(
+              '${publicCatalogPrefix}assets/images/stories/act-s1-playveo/',
+            )
+        ? networkUri.path.substring(publicCatalogPrefix.length)
+        : null;
+    final fallbackAssetPath =
+        bundledStoryPreview ??
+        (assetPath.startsWith('assets/')
+            ? assetPath
+            : 'assets/brand/majarra-logo.png');
+
     final fallback = Image.asset(
-      assetPath,
+      fallbackAssetPath,
       fit: fit,
       alignment: alignment,
       cacheWidth: cacheWidth,
@@ -55,6 +75,10 @@ class CinematicImage extends StatelessWidget {
           child: _hasSafeNetworkUrl
               ? Image.network(
                   networkUrl!,
+                  // The public CDN is intentionally anonymous. On web, render
+                  // through a DOM image so absent R2 CORS metadata cannot turn a
+                  // valid public image into an XHR statusCode 0 failure.
+                  webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
                   fit: fit,
                   alignment: alignment,
                   cacheWidth: cacheWidth,
@@ -233,14 +257,18 @@ class PlanetSymbol extends StatelessWidget {
                   height: size,
                   fit: BoxFit.cover,
                   filterQuality: FilterQuality.high,
-                  errorBuilder: (_, __, ___) => _fallbackSphere(accent, lightAccent, selected, size),
+                  errorBuilder: (_, __, ___) =>
+                      _fallbackSphere(accent, lightAccent, selected, size),
                 ),
               ),
               if (showOrbit)
                 Positioned.fill(
                   child: IgnorePointer(
                     child: CustomPaint(
-                      painter: _PlanetOrbitPainter(accent: accent, selected: selected),
+                      painter: _PlanetOrbitPainter(
+                        accent: accent,
+                        selected: selected,
+                      ),
                     ),
                   ),
                 ),
@@ -377,19 +405,33 @@ class PlanetSymbol extends StatelessWidget {
     };
   }
 
-  Widget _fallbackSphere(Color accent, Color lightAccent, bool selected, double size) {
+  Widget _fallbackSphere(
+    Color accent,
+    Color lightAccent,
+    bool selected,
+    double size,
+  ) {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
           center: const Alignment(-0.34, -0.42),
           radius: 1.15,
-          colors: [lightAccent, accent, const Color(0xFF101735), const Color(0xFF06091A)],
+          colors: [
+            lightAccent,
+            accent,
+            const Color(0xFF101735),
+            const Color(0xFF06091A),
+          ],
           stops: const [0, 0.22, 0.72, 1],
         ),
       ),
       child: Center(
-        child: Icon(_iconForPlanet(planetId), color: Colors.white, size: size * 0.46),
+        child: Icon(
+          _iconForPlanet(planetId),
+          color: Colors.white,
+          size: size * 0.46,
+        ),
       ),
     );
   }
@@ -439,10 +481,7 @@ class _PlanetOrbitPainter extends CustomPainter {
     // Gold star dot
     dotPaint.color = AppColors.starGold;
     canvas.drawCircle(
-      Offset(
-        center.dx + shortSide * 0.38,
-        center.dy - shortSide * 0.18,
-      ),
+      Offset(center.dx + shortSide * 0.38, center.dy - shortSide * 0.18),
       shortSide * 0.042,
       dotPaint,
     );
@@ -450,10 +489,7 @@ class _PlanetOrbitPainter extends CustomPainter {
     // Accent dot
     dotPaint.color = accent.withValues(alpha: 0.92);
     canvas.drawCircle(
-      Offset(
-        center.dx - shortSide * 0.34,
-        center.dy + shortSide * 0.22,
-      ),
+      Offset(center.dx - shortSide * 0.34, center.dy + shortSide * 0.22),
       shortSide * 0.032,
       dotPaint,
     );
@@ -461,10 +497,7 @@ class _PlanetOrbitPainter extends CustomPainter {
     // Small white dot for depth
     dotPaint.color = Colors.white.withValues(alpha: 0.65);
     canvas.drawCircle(
-      Offset(
-        center.dx - shortSide * 0.18,
-        center.dy - shortSide * 0.36,
-      ),
+      Offset(center.dx - shortSide * 0.18, center.dy - shortSide * 0.36),
       shortSide * 0.022,
       dotPaint,
     );

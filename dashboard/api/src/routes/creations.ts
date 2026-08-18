@@ -11,9 +11,9 @@
 /// authenticated request or not at all.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { callDurable, familyStub } from '../lib/doClient';
-import { authenticateParent } from '../lib/parentAuth';
+import type { Env } from '../lib/db.ts';
+import { callDurable, familyStub } from '../lib/doClient.ts';
+import { authenticateParent, verifyParentProof } from '../lib/parentAuth.ts';
 import { evaluateConsent, type ConsentRow } from '../lib/consent.ts';
 import {
   creationClaimError,
@@ -256,10 +256,36 @@ creationsRoute.get('/:id/image', async (c) => {
   });
 });
 
-/// `DELETE /api/v1/creations/:id`
+/**
+ * `DELETE /api/v1/creations/:id`
+ *
+ * Requires a consumed `delete_creation` proof, matching `POST /purge`.
+ *
+ * Both endpoints destroy a child's drawing irrecoverably; the only difference is
+ * how many. Requiring a parent proof for the many and none for the one meant the
+ * gate could be bypassed by looping the unprotected path — and `delete_creation`
+ * was a purpose the API issued and never checked. `consume: true` for the same
+ * reason `purge` consumes: a destructive action must not be replayable from a
+ * captured header.
+ */
 creationsRoute.delete('/:id', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return unauthorized(auth.reason);
+
+  const proof = await verifyParentProof(c.env, {
+    principal: auth.principal,
+    header: c.req.header('X-Parent-Proof'),
+    purpose: 'delete_creation',
+    consume: true,
+  });
+  if (!proof.ok) {
+    return c.json({
+      success: false,
+      error: proof.reason === 'unconfigured'
+        ? 'Parent authentication is not configured'
+        : 'A current parent proof is required',
+    }, proof.reason === 'unconfigured' ? 503 : 403);
+  }
 
   const bucket = creationsBucket(c.env);
   const creationId = c.req.param('id');
@@ -329,6 +355,20 @@ async function deleteByPrefix(bucket: R2Bucket, prefix: string): Promise<number>
 creationsRoute.post('/purge', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return unauthorized(auth.reason);
+  const proof = await verifyParentProof(c.env, {
+    principal: auth.principal,
+    header: c.req.header('X-Parent-Proof'),
+    purpose: 'purge_creations',
+    consume: true,
+  });
+  if (!proof.ok) {
+    return c.json({
+      success: false,
+      error: proof.reason === 'unconfigured'
+        ? 'Parent authentication is not configured'
+        : 'A current parent proof is required',
+    }, proof.reason === 'unconfigured' ? 503 : 403);
+  }
 
   const bucket = creationsBucket(c.env);
   const value = await c.req.json().catch(() => null) as Record<string, unknown> | null;

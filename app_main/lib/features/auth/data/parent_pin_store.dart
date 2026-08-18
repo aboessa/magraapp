@@ -59,19 +59,19 @@ class ParentPinVerification {
 /// It does not stop an attacker, and it must not gate entitlements, billing,
 /// content permissions, or any decision with a server-side consequence.
 ///
-/// ## Required backend work before this can be trusted
+/// ## Server boundary
 ///
-/// See `AUDIT_FLUTTER_APP.md` §9 C2. The API must add:
-///  1. A hashed PIN column on the family/identity record (`IdentityState` DO).
-///  2. `POST /api/v1/family/parent-pin`        — enrol / change (auth required).
-///  3. `POST /api/v1/family/parent-pin/verify` — verify, server-side rate
-///     limited and lockout-tracked, returning a short-lived parental-area scope.
-///  4. Every parental-area mutation must re-check that scope. The client must
-///     never be the sole authority.
+/// This verifier is only a convenience for child-facing locks. Parental API
+/// actions use a separate, signed `parent_proof` issued after the server verifies
+/// the PIN. That proof is bound to the family session, auth epoch, PIN version,
+/// purpose and expiry; destructive-purpose JTIs are consumed once by
+/// `FamilyState`. Flutter keeps it in memory only and clears it on background,
+/// logout, refresh failure and PIN change.
 class ParentPinStore {
   ParentPinStore({FlutterSecureStorage? storage})
     : _store = storage ?? const FlutterSecureStorage();
 
+  static const _ownerKey = 'majarra_parent_pin_owner';
   static const _saltKey = 'majarra_parent_pin_salt';
   static const _verifierKey = 'majarra_parent_pin_verifier';
   static const _failuresKey = 'majarra_parent_pin_failures';
@@ -89,10 +89,16 @@ class ParentPinStore {
   /// the PIN satisfies policy.
   static String? validatePin(String pin) => PinKdf.validatePin(pin);
 
-  Future<bool> hasPin() async {
+  Future<bool> hasPin({String? ownerId}) async {
     final verifier = await _store.read(key: _verifierKey);
     final salt = await _store.read(key: _saltKey);
-    return verifier != null &&
+    final owner = await _store.read(key: _ownerKey);
+    final ownerMatches =
+        ownerId == null ||
+        ownerId.isEmpty ||
+        (owner != null && owner == ownerId);
+    return ownerMatches &&
+        verifier != null &&
         verifier.isNotEmpty &&
         salt != null &&
         salt.isNotEmpty;
@@ -100,20 +106,29 @@ class ParentPinStore {
 
   /// Enrols [pin]. Throws [ArgumentError] when the PIN fails policy so callers
   /// cannot silently persist a weak value.
-  Future<void> setPin(String pin) async {
+  Future<void> setPin(String pin, {String? ownerId}) async {
     final problem = validatePin(pin);
     if (problem != null) throw ArgumentError(problem);
 
     final salt = PinKdf.randomSalt();
     final verifier = PinKdf.deriveVerifier(pin, salt);
 
+    if (ownerId != null && ownerId.isNotEmpty) {
+      await _store.write(key: _ownerKey, value: ownerId);
+    }
     await _store.write(key: _saltKey, value: PinKdf.toHex(salt));
     await _store.write(key: _verifierKey, value: PinKdf.toHex(verifier));
     await _store.delete(key: _failuresKey);
     await _store.delete(key: _lockedUntilKey);
   }
 
-  Future<ParentPinVerification> verify(String pin) async {
+  Future<ParentPinVerification> verify(String pin, {String? ownerId}) async {
+    if (ownerId != null && ownerId.isNotEmpty) {
+      final owner = await _store.read(key: _ownerKey);
+      if (owner != ownerId) {
+        return const ParentPinVerification(ParentPinResult.notEnrolled);
+      }
+    }
     final lockedUntil = await _lockedUntil();
     if (lockedUntil != null) {
       return ParentPinVerification(
@@ -178,6 +193,7 @@ class ParentPinStore {
   /// Removes the enrolled PIN. Must be called on sign-out so a PIN from one
   /// account can never unlock another account's parent area.
   Future<void> clear() async {
+    await _store.delete(key: _ownerKey);
     await _store.delete(key: _saltKey);
     await _store.delete(key: _verifierKey);
     await _store.delete(key: _failuresKey);

@@ -1,188 +1,940 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
-import { EmptyState, LoadingState } from '../components/PageState'
+import { EmptyState, ErrorState } from '../components/PageState'
 import { StatusBadge } from '../components/StatusBadge'
 import { ListToolbar } from '../components/AdvancedFilters'
 import type { FilterField } from '../components/AdvancedFilters'
 import { ColumnManager, SavedViewsMenu, useColumnPreferences } from '../components/ListTools'
 import type { ColumnDefinition } from '../components/ListTools'
+import { ViewSwitcher, useStoredViewMode } from '../components/ViewSwitcher'
+import type { ViewMode } from '../components/ViewSwitcher'
+import { StoryThumbnail } from '../components/StoryThumbnail'
 import { usePreferences } from '../context/preferences'
-import { api } from '../lib/api'
+import { api, ApiError } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
+import { formatDate, formatNumber } from '../lib/labels'
+import { hasPermission } from '../lib/adminSession'
 import { useQuickCreate } from '../hooks/useQuickCreate'
 import { useUrlListState } from '../hooks/useUrlListState'
-import { statusLabels } from '../lib/labels'
-import type { AssetRecord, ContentStatus, SeriesRecord, StoryDetail, StoryPageRecord, StoryRecord, StoryType, VisualStyleRecord } from '../types/api'
+import type { ContentStatus, SeriesRecord, StoryLibraryRow, StoryLibrarySummary, StoryType, VisualStyleRecord } from '../types/api'
 
-const statuses: ContentStatus[] = ['draft', 'writing', 'review_edu', 'review_lang', 'review_sharia', 'production', 'qa', 'ready', 'scheduled', 'published']
 const types: StoryType[] = ['picture_book', 'audio_story', 'interactive', 'comic']
-const typeLabels = { ar: { picture_book: 'كتاب مصور', audio_story: 'قصة صوتية', interactive: 'قصة تفاعلية', comic: 'كوميكس' }, en: { picture_book: 'Picture book', audio_story: 'Audio story', interactive: 'Interactive', comic: 'Comic' } }
-type StoryForm = { title_ar: string; slug: string; series_id: string; type: StoryType; age_min: string; age_max: string; visual_style_id: string; languages: string; description_ar: string; status: ContentStatus }
-const initial: StoryForm = { title_ar: '', slug: '', series_id: '', type: 'picture_book', age_min: '6', age_max: '8', visual_style_id: '', languages: 'ar,en', description_ar: '', status: 'draft' }
 
-/// مفاتيح الفلاتر هي أسماء معاملات الاستعلام التي يقبلها `GET /admin/stories`
-/// بالحرف (`q`, `status`, `type`, `series_id`, `limit`, `offset` في
-/// `api/src/routes/adminContent.ts`). `status` و`series_id` يقبلهما المعالِج ولا
-/// تعرضهما الشاشة، فلا يُرسَلان: الفلاتر المنقولة إلى العنوان هي نفسها التي كانت
-/// الشاشة تُرسلها.
-/// ‏`planet` ليس فلترًا تعرضه الشاشة بل سياق وارد من مساحة عمل الكوكب: عدّاد
-/// «١٢ قصة» هناك يجب أن يفتح تلك الاثنتي عشرة لا كل قصص مَجرّة. يُرسل إلى الخادم
-/// ويُقصر عليه مُنتقي السلسلة في نموذج الإنشاء.
-const DEFAULT_FILTERS = { type: '', planet: '' }
+const typeLabels: Record<'ar' | 'en', Record<StoryType, string>> = {
+  ar: { picture_book: 'كتاب مصور', audio_story: 'قصة صوتية', interactive: 'قصة تفاعلية', comic: 'كوميكس' },
+  en: { picture_book: 'Picture book', audio_story: 'Audio story', interactive: 'Interactive', comic: 'Comic' },
+}
 
-/// حقل الدرج بيانات لا JSX، فتسميته تأتي من التعريف نفسه الذي يرسم شريحته.
-const FILTER_FIELDS = (ar: boolean, locale: 'ar' | 'en'): FilterField[] => [
+const statuses: ContentStatus[] = [
+  'draft',
+  'writing',
+  'review_edu',
+  'review_lang',
+  'review_sharia',
+  'production',
+  'qa',
+  'ready',
+  'scheduled',
+  'published',
+]
+
+type StoryForm = {
+  title_ar: string
+  slug: string
+  series_id: string
+  type: StoryType
+  age_min: string
+  age_max: string
+  visual_style_id: string
+  languages: string
+  description_ar: string
+  status: ContentStatus
+}
+
+const initialForm: StoryForm = {
+  title_ar: '',
+  slug: '',
+  series_id: '',
+  type: 'picture_book',
+  age_min: '3',
+  age_max: '5',
+  visual_style_id: '',
+  languages: 'ar',
+  description_ar: '',
+  status: 'draft',
+}
+
+const copy = {
+  ar: {
+    eyebrow: 'المكتبة',
+    title: 'القصص والكوميكس',
+    intro: 'مكتبة القصص: غلاف حقيقي، صفحات، نصوص وسرد وتغطية محسوبة لكل لغة.',
+    create: 'قصة جديدة',
+    createDenied: 'إنشاء قصة يحتاج صلاحية الإنشاء.',
+    editDenied: 'التعديل يحتاج صلاحية تعديل البيانات.',
+    archiveDenied: 'الأرشفة تحتاج صلاحية الأرشفة.',
+    summaryTotal: 'قصة',
+    summaryReady: 'جاهزة',
+    summaryPartial: 'جزئية',
+    summaryEmpty: 'فارغة',
+    summaryPublished: 'منشورة',
+    summaryReview: 'قيد المراجعة',
+    summaryArtwork: 'صور ناقصة',
+    summaryCover: 'بلا غلاف',
+    search: 'بحث بالعنوان أو المعرف...',
+    filterType: 'النوع',
+    typeAll: 'كل الأنواع',
+    filterStatus: 'الحالة',
+    statusAll: 'كل الحالات',
+    filterReadiness: 'الجاهزية',
+    readinessAll: 'أي جاهزية',
+    readinessReady: 'جاهزة',
+    readinessPartial: 'جزئية',
+    readinessEmpty: 'فارغة',
+    filterMissing: 'النواقص',
+    missingAll: 'كل الحالات',
+    missingPages: 'بلا صفحات',
+    missingArtwork: 'صور ناقصة',
+    missingNarration: 'سرد ناقص',
+    missingTranslation: 'ترجمة ناقصة',
+    missingCover: 'بلا غلاف',
+    filterSeries: 'السلسلة',
+    seriesAll: 'كل السلاسل',
+    colCover: 'الغلاف',
+    colStory: 'القصة',
+    colSeries: 'السلسلة',
+    colPlanet: 'الكوكب',
+    colType: 'النوع',
+    colAge: 'العمر',
+    colPages: 'الصفحات',
+    colText: 'النص',
+    colNarration: 'السرد',
+    colArtwork: 'الرسوم',
+    colReadiness: 'الجاهزية',
+    colStatus: 'الحالة',
+    colUpdated: 'آخر تعديل',
+    openWorkspace: 'مساحة العمل',
+    openBuilder: 'فتح المحرر',
+    actions: 'إجراءات',
+    edit: 'تعديل',
+    archive: 'أرشفة',
+    addFirstPage: 'إضافة الصفحة الأولى',
+    noPages: 'بلا صفحات',
+    noCover: 'بلا غلاف',
+    pagesLabel: 'صفحة',
+    of: 'من',
+    never: 'لا تعديل مسجّل',
+    loading: 'جارٍ تحميل القصص...',
+    loadError: 'تعذر تحميل القصص',
+    retry: 'إعادة المحاولة',
+    denied: 'لا تملك صلاحية عرض القصص. اطلب صلاحية «view» من مدير النظام.',
+    empty: 'لا قصص بعد',
+    emptyDesc: 'أنشئ أول قصة لتبدأ بناء مكتبة القصص والكوميكس.',
+    noResults: 'لا قصة تطابق هذه الفلترة',
+    noResultsDesc: 'وسّع الفلترة أو امسحها لعرض كل القصص.',
+    clear: 'مسح الفلاتر',
+    formCreate: 'إنشاء قصة',
+    formEdit: 'تعديل القصة',
+    titleAr: 'عنوان القصة *',
+    slug: 'المعرّف (slug)',
+    slugHint: 'يُستخدم في الرابط. اتركه فارغًا ليُنشأ تلقائيًا.',
+    series: 'السلسلة',
+    seriesNone: 'بلا سلسلة',
+    typeField: 'النوع',
+    ageMin: 'العمر الأدنى',
+    ageMax: 'العمر الأقصى',
+    style: 'النمط البصري',
+    styleNone: 'بلا نمط',
+    languagesField: 'اللغات',
+    languagesHint: 'افصل بفاصلة، مثال: ar,en',
+    description: 'الوصف',
+    statusField: 'الحالة',
+    statusHint: 'تُحدّد مرحلة القصة في سير العمل.',
+    cancel: 'إلغاء',
+    save: 'حفظ',
+    saving: 'جارٍ الحفظ...',
+    required: 'العنوان مطلوب.',
+    saveError: 'تعذر حفظ القصة',
+    archiveConfirm: (title: string) => `أرشفة «${title}»؟`,
+  },
+  en: {
+    eyebrow: 'Library',
+    title: 'Stories & comics',
+    intro: 'Story library: real cover, pages, text and narration coverage counted per language.',
+    create: 'New story',
+    createDenied: 'Creating a story needs the create permission.',
+    editDenied: 'Editing needs the edit_metadata permission.',
+    archiveDenied: 'Archiving needs the archive permission.',
+    summaryTotal: 'stories',
+    summaryReady: 'ready',
+    summaryPartial: 'partial',
+    summaryEmpty: 'empty',
+    summaryPublished: 'published',
+    summaryReview: 'in review',
+    summaryArtwork: 'artwork missing',
+    summaryCover: 'no cover',
+    search: 'Search by title or slug...',
+    filterType: 'Type',
+    typeAll: 'All types',
+    filterStatus: 'Status',
+    statusAll: 'All statuses',
+    filterReadiness: 'Readiness',
+    readinessAll: 'Any readiness',
+    readinessReady: 'Ready',
+    readinessPartial: 'Partial',
+    readinessEmpty: 'Empty',
+    filterMissing: 'Missing',
+    missingAll: 'All',
+    missingPages: 'No pages',
+    missingArtwork: 'Artwork missing',
+    missingNarration: 'Narration missing',
+    missingTranslation: 'Translation missing',
+    missingCover: 'No cover',
+    filterSeries: 'Series',
+    seriesAll: 'All series',
+    colCover: 'Cover',
+    colStory: 'Story',
+    colSeries: 'Series',
+    colPlanet: 'Planet',
+    colType: 'Type',
+    colAge: 'Age',
+    colPages: 'Pages',
+    colText: 'Text',
+    colNarration: 'Narration',
+    colArtwork: 'Artwork',
+    colReadiness: 'Readiness',
+    colStatus: 'Status',
+    colUpdated: 'Updated',
+    openWorkspace: 'Workspace',
+    openBuilder: 'Open editor',
+    actions: 'Actions',
+    edit: 'Edit',
+    archive: 'Archive',
+    addFirstPage: 'Add first page',
+    noPages: 'No pages',
+    noCover: 'No cover',
+    pagesLabel: 'pages',
+    of: 'of',
+    never: 'No recorded update',
+    loading: 'Loading stories...',
+    loadError: 'Unable to load stories',
+    retry: 'Try again',
+    denied: 'You do not have permission to view stories. Ask a system administrator for the “view” permission.',
+    empty: 'No stories yet',
+    emptyDesc: 'Create the first story to start building the library.',
+    noResults: 'No story matches this filter',
+    noResultsDesc: 'Widen or clear the filter to see every story.',
+    clear: 'Clear filters',
+    formCreate: 'Create story',
+    formEdit: 'Edit story',
+    titleAr: 'Arabic title *',
+    slug: 'Slug',
+    slugHint: 'Used in the URL. Leave empty to auto-generate.',
+    series: 'Series',
+    seriesNone: 'No series',
+    typeField: 'Type',
+    ageMin: 'Min age',
+    ageMax: 'Max age',
+    style: 'Visual style',
+    styleNone: 'No style',
+    languagesField: 'Languages',
+    languagesHint: 'Comma-separated, e.g. ar,en',
+    description: 'Description',
+    statusField: 'Status',
+    statusHint: 'Determines the workflow stage of the story.',
+    cancel: 'Cancel',
+    save: 'Save',
+    saving: 'Saving...',
+    required: 'Title is required.',
+    saveError: 'Unable to save story',
+    archiveConfirm: (title: string) => `Archive “${title}”?`,
+  },
+}
+
+const DEFAULT_FILTERS = {
+  type: '',
+  status: '',
+  readiness: '',
+  missing: '',
+  series_id: '',
+  planet: '',
+}
+
+const FILTER_FIELDS = (
+  text: typeof copy['ar'],
+  locale: 'ar' | 'en',
+  series: SeriesRecord[],
+): FilterField[] => [
   {
     key: 'type',
-    label: ar ? 'النوع' : 'Type',
+    label: text.filterType,
     type: 'select',
     options: [
-      { value: '', label: ar ? 'كل الأنواع' : 'All types' },
+      { value: '', label: text.typeAll },
       ...types.map((item) => ({ value: item, label: typeLabels[locale][item] })),
+    ],
+  },
+  {
+    key: 'readiness',
+    label: text.filterReadiness,
+    type: 'select',
+    options: [
+      { value: '', label: text.readinessAll },
+      { value: 'ready', label: text.readinessReady },
+      { value: 'partial', label: text.readinessPartial },
+      { value: 'empty', label: text.readinessEmpty },
+    ],
+  },
+  {
+    key: 'status',
+    label: text.filterStatus,
+    type: 'select',
+    options: [
+      { value: '', label: text.statusAll },
+      ...statuses.map((item) => ({ value: item, label: item })),
+    ],
+  },
+  {
+    key: 'missing',
+    label: text.filterMissing,
+    type: 'select',
+    advanced: true,
+    options: [
+      { value: '', label: text.missingAll },
+      { value: 'pages', label: text.missingPages },
+      { value: 'artwork', label: text.missingArtwork },
+      { value: 'narration', label: text.missingNarration },
+      { value: 'translation', label: text.missingTranslation },
+      { value: 'cover', label: text.missingCover },
+    ],
+  },
+  {
+    key: 'series_id',
+    label: text.filterSeries,
+    type: 'select',
+    advanced: true,
+    options: [
+      { value: '', label: text.seriesAll },
+      ...series.map((item) => ({
+        value: item.id,
+        label: locale === 'en' ? item.title_en || item.title_ar : item.title_ar,
+      })),
     ],
   },
 ]
 
-/// جدول القصص سبعة أعمدة، وهو أعرض من شاشة محمول. عمود القصة مُقفل: صفٌّ بلا اسم
-/// لا هوية له، ومنه يُفتح المحرّر.
 const COLUMNS: ColumnDefinition[] = [
-  { key: 'story', label: 'story', locked: true },
-  { key: 'type', label: 'type' },
-  { key: 'series', label: 'series' },
-  { key: 'languages', label: 'languages' },
-  { key: 'pages', label: 'pages' },
-  { key: 'status', label: 'status' },
+  { key: 'story', label: 'colStory', locked: true },
+  { key: 'series', label: 'colSeries' },
+  { key: 'planet', label: 'colPlanet' },
+  { key: 'type', label: 'colType' },
+  { key: 'pages', label: 'colPages' },
+  { key: 'text', label: 'colText' },
+  { key: 'narration', label: 'colNarration' },
+  { key: 'artwork', label: 'colArtwork' },
+  { key: 'readiness', label: 'colReadiness' },
+  { key: 'status', label: 'colStatus' },
+  { key: 'age', label: 'colAge' },
+  { key: 'updated', label: 'colUpdated' },
 ]
 
-const columnLabels = {
-  ar: { story: 'القصة', type: 'النوع', series: 'السلسلة', languages: 'اللغات', pages: 'الصفحات', status: 'الحالة' },
-  en: { story: 'Story', type: 'Type', series: 'Series', languages: 'Languages', pages: 'Pages', status: 'Status' },
+function Ratio({ done, total }: { done: number; total: number }) {
+  // keep raw digits (no formatNumber) because Arabic-Indic digits
+  // in an LTR badge would mix numeral systems with surrounding text
+  const tone = total === 0 ? 'muted' : done >= total ? 'ok' : done > 0 ? 'warn' : 'bad'
+  return (
+    <span className={`ratio ratio--${tone}`} dir="ltr">
+      {done}/{total}
+    </span>
+  )
 }
 
-function AssetImage({ id }: { id?: string | null }) {
-  const [url, setUrl] = useState('')
-  useEffect(() => { if (!id) { setUrl(''); return }; let active = true; let objectUrl = ''; void api.assetBlob(id).then((blob) => { if (active) { objectUrl = URL.createObjectURL(blob); setUrl(objectUrl) } }).catch(() => setUrl('')); return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl) } }, [id])
-  return url ? <img src={url} alt=""/> : <span><Icon name="media" size={28}/></span>
+function CoverageChips({
+  row,
+  kind,
+}: {
+  row: StoryLibraryRow
+  kind: 'text' | 'narration'
+}) {
+  // filter declared languages only; undeclared coverage is not actionable
+  const items = row.coverage.filter((entry) => entry.declared)
+  if (!items.length) return <span className="chip chip--muted">—</span>
+  return (
+    <span className="chip-list">
+      {items.map((entry) => {
+        const done = kind === 'text' ? entry.text_done : entry.narration_done
+        // do not mix Arabic-Indic numerals with LTR badge; keep raw latin digits and LTR
+        return (
+          <span key={entry.language} className="chip" dir="ltr">
+            {entry.language.toUpperCase()} {done}/{entry.total}
+          </span>
+        )
+      })}
+    </span>
+  )
 }
 
-function StoryPageEditor({ story, page, language, imageAssets, audioAssets, onReload }: { story: StoryDetail; page: StoryPageRecord; language: string; imageAssets: AssetRecord[]; audioAssets: AssetRecord[]; onReload: () => Promise<void> }) {
-  const { locale } = usePreferences(); const ar = locale === 'ar'
-  const localized = page.localizations.find((item) => item.language === language)
-  const [text, setText] = useState(localized?.body_text ?? '')
-  const [alt, setAlt] = useState(localized?.alt_text ?? '')
-  const [narration, setNarration] = useState(localized?.narration_asset_id ?? '')
-  const [saving, setSaving] = useState(false)
-  useEffect(() => { setText(localized?.body_text ?? ''); setAlt(localized?.alt_text ?? ''); setNarration(localized?.narration_asset_id ?? '') }, [language, localized?.alt_text, localized?.body_text, localized?.narration_asset_id])
-  async function save() { setSaving(true); try { await api.savePageLocalization(page.id, language, { body_text: text || null, alt_text: alt || null, narration_asset_id: narration || null, timing_cues: localized?.timing_cues ?? [] }); await onReload() } finally { setSaving(false) } }
-  async function upload(file: File, kind: 'image' | 'audio') { const created = await api.createAsset({ title_ar: `${story.title_ar} - ${kind === 'image' ? `صفحة ${page.page_number}` : `صوت ${language} صفحة ${page.page_number}`}`, kind, source: 'upload', status: 'planned', original_filename: file.name, mime_type: file.type, visibility: 'private', language: kind === 'audio' ? language : null, metadata: { story_id: story.id, page_id: page.id } }); await api.uploadAssetFile(created.data.id, file); if (kind === 'image') await api.updateStoryPage(page.id, { image_asset_id: created.data.id }); else { setNarration(created.data.id); await api.savePageLocalization(page.id, language, { body_text: text || null, alt_text: alt || null, narration_asset_id: created.data.id, timing_cues: [] }) } await onReload() }
-  async function addBubble() { const bubbleText = window.prompt(ar ? 'نص الفقاعة' : 'Bubble text'); if (!bubbleText) return; await api.createBubble(page.id, { kind: 'dialogue', localized_text: { [language]: bubbleText }, audio_tracks: {}, position_x: 50, position_y: 20, width: 32, height: 18, sort_order: page.bubbles.length }); await onReload() }
-  async function removePage() { if (!window.confirm(ar ? 'حذف الصفحة وكل نصوصها وفقاعاتها؟' : 'Delete this page and its text/bubbles?')) return; await api.deleteStoryPage(page.id); await onReload() }
-  return <article className="story-page-card"><header><div><span>{ar ? 'صفحة' : 'Page'} {page.page_number}</span><strong>{page.layout}</strong></div><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void removePage()}><Icon name="archive" size={14}/></button></header><div className="story-page-card__content"><div className="story-page-visual"><AssetImage id={page.image_asset_id}/><div className="story-page-visual__actions"><label className="button button--ghost file-button"><Icon name="upload" size={13}/>{page.image_asset_id ? (ar ? 'استبدال الصورة' : 'Replace image') : (ar ? 'رفع صورة' : 'Upload image')}<input type="file" accept="image/*" onChange={(event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void upload(file, 'image') }}/></label><select value={page.image_asset_id ?? ''} onChange={(event) => void api.updateStoryPage(page.id, { image_asset_id: event.target.value || null }).then(onReload)}><option value="">{ar ? 'أو اختر من المكتبة' : 'Or select from library'}</option>{imageAssets.map((asset) => <option value={asset.id} key={asset.id}>{asset.title_ar}</option>)}</select></div></div><div className="story-page-fields"><label className="field"><span>{ar ? `نص الصفحة — ${language}` : `Page text — ${language}`}</span><textarea rows={5} value={text} onChange={(event) => setText(event.target.value)}/></label><label className="field"><span>{ar ? 'وصف الصورة لسهولة الوصول' : 'Accessible image description'}</span><input value={alt} onChange={(event) => setAlt(event.target.value)}/></label><div className="form-grid"><label className="field"><span>{ar ? 'صوت الراوي' : 'Narration'}</span><select value={narration} onChange={(event) => setNarration(event.target.value)}><option value="">{ar ? 'بدون صوت' : 'No narration'}</option>{audioAssets.filter((asset) => !asset.language || asset.language === language).map((asset) => <option value={asset.id} key={asset.id}>{asset.title_ar}</option>)}</select></label><label className="field"><span>{ar ? 'رفع تسجيل جديد' : 'Upload narration'}</span><input type="file" accept="audio/*" onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void upload(file, 'audio') }}/></label></div><div className="story-page-actions"><button className="button button--secondary" type="button" onClick={() => void addBubble()}><Icon name="plus" size={13}/>{ar ? 'فقاعة اختيارية' : 'Optional bubble'}</button><button className="button button--primary" type="button" disabled={saving} onClick={() => void save()}>{ar ? 'حفظ النص والصوت' : 'Save text & audio'}</button></div>{page.bubbles.length > 0 && <div className="bubble-list">{page.bubbles.map((bubble) => <span key={bubble.id}>{bubble.localized_text[language] || bubble.localized_text.ar || '…'}<button type="button" onClick={() => void api.deleteBubble(bubble.id).then(onReload)}>×</button></span>)}</div>}</div></div></article>
+function ReadinessBadge({ readiness }: { readiness: StoryLibraryRow['readiness'] }) {
+  const className =
+    readiness === 'ready'
+      ? 'readiness readiness--ready'
+      : readiness === 'empty'
+        ? 'readiness readiness--empty'
+        : 'readiness readiness--partial'
+  const label = readiness === 'ready' ? 'ready' : readiness === 'empty' ? 'empty' : 'partial'
+  return <span className={className}>{label}</span>
 }
 
 export function StoriesPage() {
-  const { locale } = usePreferences(); const ar = locale === 'ar'
-  const { id: routeStoryId } = useParams()
+  const { locale } = usePreferences()
+  const text = copy[locale]
   const navigate = useNavigate()
-  const [items, setItems] = useState<StoryRecord[]>([]); const [series, setSeries] = useState<SeriesRecord[]>([]); const [styles, setStyles] = useState<VisualStyleRecord[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [open, setOpen] = useState(false); const [editing, setEditing] = useState<StoryRecord | null>(null); const [form, setForm] = useState<StoryForm>(initial); const [saving, setSaving] = useState(false); const [detail, setDetail] = useState<StoryDetail | null>(null); const [detailLoading, setDetailLoading] = useState(false); const [language, setLanguage] = useState('ar'); const [imageAssets, setImageAssets] = useState<AssetRecord[]>([]); const [audioAssets, setAudioAssets] = useState<AssetRecord[]>([])
-  // حالة القائمة في العنوان لا في الذاكرة: رابط «الكوميكس قيد الإنتاج» يجب أن
-  // يفتح تلك المجموعة، وزرّ الرجوع من المحرّر يجب أن يُعيد نفس التصفية.
-  const list = useUrlListState(DEFAULT_FILTERS, {})
+  const list = useUrlListState(DEFAULT_FILTERS, { defaultView: 'table' })
   const { query, filters } = list
-  const { type: typeFilter, planet: planetFilter } = filters
-  const columns = useColumnPreferences('stories', COLUMNS)
-  const load = useCallback(async () => { setLoading(true); setError(''); try { const [stories, seriesResponse, styleResponse] = await Promise.all([api.stories({ q: query, type: typeFilter, planet: planetFilter || undefined }), api.series({ status: 'all', limit: 100, planet: planetFilter || undefined }), api.visualStyles()]); setItems(stories.data); setSeries(seriesResponse.data.filter((item) => item.status !== 'archived')); setStyles(styleResponse.data) } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل القصص' : 'Unable to load stories') } finally { setLoading(false) } }, [ar, query, typeFilter, planetFilter])
-  useEffect(() => { const timer = setTimeout(() => void load(), 180); return () => clearTimeout(timer) }, [load])
-  const loadDetail = useCallback(async (id = detail?.id) => { if (!id) return; setDetailLoading(true); try { const [storyResponse, images, audio] = await Promise.all([api.story(id), api.assets({ status: 'ready', kind: 'image', limit: 200 }), api.assets({ status: 'ready', kind: 'audio', limit: 200 })]); setDetail(storyResponse.data); setImageAssets(images.data); setAudioAssets(audio.data); if (!storyResponse.data.languages.includes(language)) setLanguage(storyResponse.data.default_language) } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر تحميل القصة' : 'Unable to load story') } finally { setDetailLoading(false) } }, [ar, detail?.id, language])
-  useEffect(() => { if (routeStoryId && routeStoryId !== detail?.id) void loadDetail(routeStoryId) }, [detail?.id, loadDetail, routeStoryId])
-  // ‏?new=1 من لوحة الأوامر يفتح نموذج القصة نفسه.
-  useQuickCreate(() => create())
 
-  function create() { setEditing(null); setForm({ ...initial, series_id: series[0]?.id || '', visual_style_id: styles[0]?.id || '' }); setOpen(true) }
-  function edit(item: StoryRecord) { setEditing(item); setForm({ title_ar: item.title_ar, slug: item.slug, series_id: item.series_id ?? '', type: item.type, age_min: String(item.age_min), age_max: String(item.age_max), visual_style_id: item.visual_style_id ?? '', languages: item.languages.join(','), description_ar: item.description_ar ?? '', status: item.status }); setOpen(true) }
-  async function submit(event: FormEvent) { event.preventDefault(); if (!form.title_ar.trim()) return; setSaving(true); const payload = { ...form, series_id: form.series_id || null, visual_style_id: form.visual_style_id || null, age_min: Number(form.age_min), age_max: Number(form.age_max), languages: form.languages.split(',').map((item) => item.trim()).filter(Boolean), default_language: form.languages.split(',')[0]?.trim() || 'ar' }; try { if (editing) await api.updateStory(editing.id, payload); else await api.createStory(payload); setOpen(false); await load() } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر حفظ القصة' : 'Unable to save story') } finally { setSaving(false) } }
-  function selectStory(item: StoryRecord) { setLanguage(item.default_language); navigate(adminPath(`stories/${item.id}`)) }
-  async function addPage() { if (!detail) return; await api.createStoryPage(detail.id, { layout: 'full_bleed' }); await loadDetail(detail.id) }
-  async function archive(item: StoryRecord) { if (!window.confirm(ar ? 'أرشفة القصة؟' : 'Archive story?')) return; await api.archiveStory(item.id); await load() }
-  if (routeStoryId && detailLoading && !detail) return <LoadingState label={ar ? 'جارٍ تحميل القصة...' : 'Loading story...'} />
-  if (detail) return (
-    <div className="page-stack story-editor--three">
+  const [storedView, setStoredView] = useStoredViewMode('stories', 'table')
+  const view: ViewMode = list.rawView === 'table' || list.rawView === 'grid' ? (list.rawView as ViewMode) : storedView
+  const setView = (mode: ViewMode) => {
+    setStoredView(mode)
+    list.setView(mode)
+  }
+
+  const [rows, setRows] = useState<StoryLibraryRow[]>([])
+  const [summary, setSummary] = useState<StoryLibrarySummary | null>(null)
+  const [series, setSeries] = useState<SeriesRecord[]>([])
+  const [styles, setStyles] = useState<VisualStyleRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [denied, setDenied] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState<StoryLibraryRow | null>(null)
+  const [form, setForm] = useState<StoryForm>(initialForm)
+  const [formError, setFormError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const canCreate = hasPermission('create')
+  const canEdit = hasPermission('edit_metadata')
+  const canArchive = hasPermission('archive')
+
+  const columns = useColumnPreferences('stories', COLUMNS)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const response = await api.storyLibrary({
+        q: query || undefined,
+        type: filters.type || undefined,
+        status: filters.status || undefined,
+        readiness: filters.readiness || undefined,
+        missing: filters.missing || undefined,
+        series_id: filters.series_id || undefined,
+        planet: filters.planet || undefined,
+      })
+      setRows(response.data)
+      // summary lives in meta.summary per PaginatedEnvelope extension
+      const meta = (response as unknown as { meta: { summary: StoryLibrarySummary } }).meta
+      setSummary(meta.summary)
+      setDenied(false)
+    } catch (caught) {
+      if (caught instanceof ApiError && (caught.status === 401 || caught.status === 403)) {
+        setDenied(true)
+        setError(caught.message)
+      } else {
+        setError(caught instanceof Error ? caught.message : text.loadError)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [query, filters.type, filters.status, filters.readiness, filters.missing, filters.series_id, filters.planet, text.loadError])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 200)
+    return () => window.clearTimeout(timer)
+  }, [load])
+
+  useEffect(() => {
+    void api
+      .series({ status: 'all', limit: 100, planet: filters.planet || undefined })
+      .then((response) => setSeries(response.data.filter((item) => item.status !== 'archived')))
+      .catch(() => setSeries([]))
+    void api
+      .visualStyles()
+      .then((response) => setStyles(response.data))
+      .catch(() => setStyles([]))
+  }, [filters.planet])
+
+  useQuickCreate(() => openCreate())
+
+  function openCreate() {
+    if (!canCreate) return
+    setEditing(null)
+    setForm({ ...initialForm, series_id: series[0]?.id ?? '', visual_style_id: styles[0]?.id ?? '' })
+    setFormError('')
+    setOpen(true)
+  }
+
+  function openEdit(row: StoryLibraryRow) {
+    if (!canEdit) return
+    setEditing(row)
+    setForm({
+      title_ar: row.title_ar,
+      slug: row.slug,
+      series_id: row.series_id ?? '',
+      type: row.type,
+      age_min: String(row.age_min),
+      age_max: String(row.age_max),
+      visual_style_id: (row as unknown as { visual_style_id?: string }).visual_style_id ?? '',
+      languages: row.languages.join(','),
+      description_ar: row.description_ar ?? '',
+      status: row.status,
+    })
+    setFormError('')
+    setOpen(true)
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    if (!form.title_ar.trim()) {
+      setFormError(text.required)
+      return
+    }
+    setSaving(true)
+    setFormError('')
+    const languages = form.languages
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+    const default_language = languages[0] || 'ar'
+    const payload = {
+      title_ar: form.title_ar.trim(),
+      slug: form.slug.trim(),
+      series_id: form.series_id || null,
+      type: form.type,
+      age_min: Number(form.age_min),
+      age_max: Number(form.age_max),
+      visual_style_id: form.visual_style_id || null,
+      languages,
+      default_language,
+      description_ar: form.description_ar.trim() || null,
+      status: form.status,
+    }
+    try {
+      if (editing) await api.updateStory(editing.id, payload)
+      else await api.createStory(payload)
+      setOpen(false)
+      await load()
+    } catch (caught) {
+      setFormError(caught instanceof Error ? caught.message : text.saveError)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function archive(row: StoryLibraryRow) {
+    if (!canArchive) return
+    if (!window.confirm(text.archiveConfirm(row.title_ar))) return
+    try {
+      await api.archiveStory(row.id)
+      await load()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : text.loadError)
+    }
+  }
+
+  const filtersActive = list.activeFilterCount > 0 || !!query
+
+  const summaryCells = useMemo(() => {
+    if (!summary) return []
+    // 7 cells: total not button, ready/partial/empty with readiness filter, published with status, artwork/cover with missing
+    return [
+      { key: 'total', label: text.summaryTotal, value: summary.total, tone: undefined as string | undefined, filters: undefined as Record<string, string> | undefined },
+      { key: 'ready', label: text.summaryReady, value: summary.ready, tone: 'ok', filters: { readiness: 'ready' } },
+      { key: 'partial', label: text.summaryPartial, value: summary.partial, tone: 'warn', filters: { readiness: 'partial' } },
+      { key: 'empty', label: text.summaryEmpty, value: summary.empty, tone: 'bad', filters: { readiness: 'empty' } },
+      { key: 'published', label: text.summaryPublished, value: summary.published, tone: 'ok', filters: { status: 'published' } },
+      { key: 'artwork', label: text.summaryArtwork, value: summary.missing_artwork, tone: 'warn', filters: { missing: 'artwork' } },
+      { key: 'cover', label: text.summaryCover, value: summary.missing_cover, tone: 'warn', filters: { missing: 'cover' } },
+    ]
+  }, [summary, text])
+
+  const rowMenu = (row: StoryLibraryRow) => (
+    <div className="table-actions">
+      <Link className="icon-button icon-button--small" to={adminPath(`stories/${row.id}`)} title={text.openWorkspace}>
+        <Icon name="eye" size={15} />
+      </Link>
+      <Link className="icon-button icon-button--small" to={adminPath(`stories/${row.id}/builder`)} title={text.openBuilder}>
+        <Icon name="edit" size={15} />
+      </Link>
+      <button className="icon-button icon-button--small" type="button" onClick={() => openEdit(row)} disabled={!canEdit} title={canEdit ? text.edit : text.editDenied}>
+        <Icon name="edit" size={15} />
+      </button>
+      <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(row)} disabled={!canArchive} title={canArchive ? text.archive : text.archiveDenied}>
+        <Icon name="archive" size={15} />
+      </button>
+    </div>
+  )
+
+  const table = (
+    <div className="table-scroll" tabIndex={0}>
+      <table className="data-table data-table--wide">
+        <thead>
+          <tr>
+            <th>{text.colStory}</th>
+            {columns.isVisible('series') && <th>{text.colSeries}</th>}
+            {columns.isVisible('planet') && <th>{text.colPlanet}</th>}
+            {columns.isVisible('type') && <th>{text.colType}</th>}
+            {columns.isVisible('pages') && <th>{text.colPages}</th>}
+            {columns.isVisible('text') && <th>{text.colText}</th>}
+            {columns.isVisible('narration') && <th>{text.colNarration}</th>}
+            {columns.isVisible('artwork') && <th>{text.colArtwork}</th>}
+            {columns.isVisible('readiness') && <th>{text.colReadiness}</th>}
+            {columns.isVisible('status') && <th>{text.colStatus}</th>}
+            {columns.isVisible('age') && <th>{text.colAge}</th>}
+            {columns.isVisible('updated') && <th>{text.colUpdated}</th>}
+            <th>{text.actions}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.id}>
+              <td>
+                <Link className="entity-cell" to={adminPath(`stories/${row.id}`)}>
+                  <StoryThumbnail src={row.cover_url} alt={row.title_ar} title={row.title_ar} color={row.planet_color} size={44} />
+                  <div>
+                    <strong>{row.title_ar}</strong>
+                    <small dir="ltr">{row.slug}</small>
+                  </div>
+                </Link>
+              </td>
+              {columns.isVisible('series') && <td>{row.series_title || '—'}</td>}
+              {columns.isVisible('planet') && <td>{row.planet_name || '—'}</td>}
+              {columns.isVisible('type') && <td>{typeLabels[locale][row.type]}</td>}
+              {columns.isVisible('pages') && (
+                <td dir="ltr">
+                  {row.pages_total === 0 ? <span className="chip chip--muted">{text.noPages}</span> : <Ratio done={row.pages_with_image} total={row.pages_total} />}
+                </td>
+              )}
+              {columns.isVisible('text') && (
+                <td>
+                  <CoverageChips row={row} kind="text" />
+                </td>
+              )}
+              {columns.isVisible('narration') && (
+                <td>
+                  <CoverageChips row={row} kind="narration" />
+                </td>
+              )}
+              {columns.isVisible('artwork') && (
+                <td dir="ltr">
+                  <Ratio done={row.pages_with_image} total={row.pages_total} />
+                </td>
+              )}
+              {columns.isVisible('readiness') && (
+                <td>
+                  <ReadinessBadge readiness={row.readiness} />
+                </td>
+              )}
+              {columns.isVisible('status') && (
+                <td>
+                  <StatusBadge status={row.status} />
+                </td>
+              )}
+              {columns.isVisible('age') && (
+                <td dir="ltr">
+                  {formatNumber(row.age_min, locale)}–{formatNumber(row.age_max, locale)}
+                </td>
+              )}
+              {columns.isVisible('updated') && (
+                <td dir="ltr">{row.updated_at ? formatDate(row.updated_at.replace(' ', 'T') + 'Z', locale) : text.never}</td>
+              )}
+              <td>{rowMenu(row)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+
+  const cards = (
+    <div className="story-grid" role="list">
+      {rows.map((row) => (
+        <article key={row.id} className="story-card" role="listitem">
+          <div className="story-card__media">
+            <StoryThumbnail src={row.cover_url} alt={row.title_ar} title={row.title_ar} color={row.planet_color} fill />
+            {!row.cover_url && <span className="story-card__badge">{text.noCover}</span>}
+            <span className="story-card__type">{typeLabels[locale][row.type]}</span>
+          </div>
+          <div className="story-card__body">
+            <h3>
+              <Link className="story-card__link" to={adminPath(`stories/${row.id}`)}>
+                {row.title_ar}
+              </Link>
+            </h3>
+            <p className="story-card__where">
+              {[row.series_title, row.planet_name].filter(Boolean).join(' · ') || '—'}
+            </p>
+            {row.pages_total === 0 ? (
+              <p className="story-card__facts">
+                <Link className="button button--ghost button--small" to={adminPath(`stories/${row.id}/builder`)}>
+                  <Icon name="plus" size={14} />
+                  {text.addFirstPage}
+                </Link>
+              </p>
+            ) : (
+              <p className="story-card__facts">
+                <span>
+                  {formatNumber(row.pages_total, locale)} {text.pagesLabel} · {formatNumber(row.pages_with_image, locale)} {text.of} {formatNumber(row.pages_total, locale)} {text.colArtwork}
+                </span>
+                <span>
+                  <CoverageChips row={row} kind="text" /> · <CoverageChips row={row} kind="narration" />
+                </span>
+              </p>
+            )}
+          </div>
+          <footer className="story-card__foot">
+            <ReadinessBadge readiness={row.readiness} />
+            <StatusBadge status={row.status} />
+            <Link className="button button--ghost button--small" to={adminPath(`stories/${row.id}/builder`)}>
+              {text.openBuilder}
+            </Link>
+          </footer>
+        </article>
+      ))}
+    </div>
+  )
+
+  const skeleton = (
+    <div className="story-grid" aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="story-card story-card--skeleton">
+          <div className="story-card__media" />
+          <div className="story-card__body">
+            <span className="skeleton-line skeleton-line--title" />
+            <span className="skeleton-line skeleton-line--short" />
+            <span className="skeleton-line" />
+          </div>
+          <div className="story-card__foot">
+            <span className="skeleton-chip" />
+            <span className="skeleton-chip" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="page-stack">
       <section className="page-intro">
         <div>
-          <button className="text-link story-back" type="button" onClick={() => { setDetail(null); navigate(adminPath('stories')) }}>← {ar ? 'كل القصص' : 'All stories'}</button>
-          <h2>{detail.title_ar}</h2>
-          <p>{typeLabels[locale][detail.type]} — {detail.pages.length} {ar ? 'صفحة' : 'pages'} — {detail.visual_style_name || (ar ? 'بدون استايل' : 'No style')}</p>
+          <span className="eyebrow">{text.eyebrow}</span>
+          <h2>{text.title}</h2>
+          <p>{text.intro}</p>
         </div>
         <div className="page-intro__actions">
-          <select className="language-select" value={language} onChange={(event) => setLanguage(event.target.value)}>{detail.languages.map((item) => <option value={item} key={item}>{item.toUpperCase()}</option>)}</select>
-          <button className="button button--ghost" type="button" onClick={() => void navigator.clipboard.writeText(detail.id)}><Icon name="edit" size={14}/>{ar ? 'نسخ' : 'Copy'}</button>
-          <button className="button button--primary" type="button" onClick={() => void addPage()}><Icon name="plus" size={16}/>{ar ? 'إضافة صفحة' : 'Add page'}</button>
+          <button className="button button--primary" type="button" onClick={openCreate} disabled={!canCreate} title={canCreate ? undefined : text.createDenied}>
+            <Icon name="plus" size={16} />
+            {text.create}
+          </button>
         </div>
       </section>
 
-      <div className="editor-summary">
-        <StatusBadge status={detail.status} />
-        <span>{ar ? 'ترتيب الصفحات الحالي • رفع صور جماعي' : 'Current page order • Bulk image upload'}</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <label className="button button--ghost file-button" style={{ fontSize: 12 }}>
-            <Icon name="upload" size={13}/>{ar ? 'رفع صور جماعي' : 'Bulk images'}
-            <input type="file" accept="image/*" multiple onChange={async (e) => { const files = Array.from(e.target.files || []); for (let i = 0; i < files.length; i++) { const f = files[i]; const created = await api.createAsset({ title_ar: `${detail.title_ar} - صورة ${detail.pages.length + i + 1}`, kind: 'image', source: 'upload', status: 'ready', original_filename: f.name, mime_type: f.type, visibility: 'private' }); await api.uploadAssetFile(created.data.id, f); await api.createStoryPage(detail.id, { layout: 'full_bleed', image_asset_id: created.data.id }); } await loadDetail(detail.id); (e.target as HTMLInputElement).value = '' }} />
-          </label>
-        </div>
-      </div>
-
-      <div className="story-editor-layout">
-        {/* Left: Page list */}
-        <aside className="story-editor__nav">
-          <div className="story-editor__nav-header">
-            <strong>{ar ? 'الصفحات' : 'Pages'} ({detail.pages.length})</strong>
-            <span style={{ fontSize: 11, color: '#64748b' }}>{ar ? 'الترتيب الحالي' : 'Current order'}</span>
-          </div>
-          <div className="story-pages-nav">
-            {detail.pages.map((p, idx) => (
-              <button key={p.id} className="story-page-thumb" onClick={() => document.getElementById(`page-${p.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
-                <span className="thumb-number">{idx + 1}</span>
-                <span className="thumb-preview"><AssetImage id={p.image_asset_id} /></span>
-                <span className="thumb-title">{ar ? 'صفحة' : 'Page'} {p.page_number}</span>
+      {summary && (
+        <section className="planet-summary" aria-label={text.title}>
+          {summaryCells.map((cell) => {
+            const body = (
+              <>
+                <strong>{formatNumber(cell.value, locale)}</strong>
+                <span>{cell.label}</span>
+              </>
+            )
+            const tone = cell.value > 0 && cell.tone ? ` planet-summary__cell--${cell.tone}` : ''
+            return cell.filters ? (
+              <button key={cell.key} type="button" className={`planet-summary__cell planet-summary__cell--button${tone}`} onClick={() => list.setFilters(cell.filters!)}>
+                {body}
               </button>
-            ))}
-            <button className="story-page-thumb story-page-thumb--add" onClick={() => void addPage()}><Icon name="plus" size={18}/><span>{ar ? 'إضافة صفحة' : 'Add page'}</span></button>
-          </div>
-        </aside>
+            ) : (
+              <div key={cell.key} className={`planet-summary__cell${tone}`}>
+                {body}
+              </div>
+            )
+          })}
+        </section>
+      )}
 
-        {/* Middle: Editor */}
-        <main className="story-editor__main">
-          {detailLoading && !detail.pages.length ? <LoadingState label={ar ? 'جارٍ التحميل...' : 'Loading...'}/> : detail.pages.length ? <div className="story-pages">{detail.pages.map((page) => <div id={`page-${page.id}`} key={page.id}><StoryPageEditor story={detail} page={page} language={language} imageAssets={imageAssets} audioAssets={audioAssets} onReload={() => loadDetail(detail.id)} /></div>)}</div> : <EmptyState title={ar ? 'القصة بلا صفحات' : 'Story has no pages'} description={ar ? 'أضف الصفحة الأولى ثم ارفع الصورة والنص والصوت لكل لغة.' : 'Add the first page, then upload its image, text, and narration per language.'} action={<button className="button button--primary" type="button" onClick={() => void addPage()}><Icon name="plus" size={16}/>{ar ? 'الصفحة الأولى' : 'First page'}</button>}/>}
-        </main>
+      <section className="panel panel--table">
+        <header className="panel__header panel__header--filters">
+          <div>
+            <span className="panel__kicker">{text.title}</span>
+            <h3>
+              {formatNumber(rows.length, locale)} <span className="title-count">{text.pagesLabel}</span>
+            </h3>
+          </div>
+          <ListToolbar
+            searchValue={query}
+            onSearchChange={list.setQuery}
+            searchPlaceholder={text.search}
+            fields={FILTER_FIELDS(text, locale, series)}
+            values={filters}
+            defaults={DEFAULT_FILTERS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')}
+            trailing={
+              <>
+                <SavedViewsMenu storageKey="stories" currentSearch={list.search} onApply={(search) => navigate(`${adminPath('stories')}${search}`)} />
+                {view === 'table' && (
+                  <ColumnManager
+                    columns={COLUMNS.map((column) => ({ ...column, label: text[column.label as keyof typeof text] as string }))}
+                    hidden={columns.hidden}
+                    onToggle={columns.toggle}
+                    onReset={columns.reset}
+                  />
+                )}
+                <ViewSwitcher value={view} onChange={setView} modes={['table', 'grid']} locale={locale} />
+              </>
+            }
+          />
+        </header>
 
-        {/* Right: Status */}
-        <aside className="story-editor__status">
-          <div className="status-card">
-            <h4>{ar ? 'حالة القصة' : 'Status'}</h4>
-            <div className="status-grid">
-              <div><small>{ar ? 'الصور' : 'Images'}</small><strong style={{ color: detail.pages.every(p => p.image_asset_id) ? '#16a34a' : '#d97706' }}>{detail.pages.filter(p => p.image_asset_id).length} / {detail.pages.length}</strong></div>
-              <div><small>{language.toUpperCase()} نص</small><strong>{detail.pages.filter(p => p.localizations.find(l => l.language === language)?.body_text).length} / {detail.pages.length}</strong></div>
-              <div><small>{language.toUpperCase()} صوت</small><strong>{detail.pages.filter(p => p.localizations.find(l => l.language === language)?.narration_asset_id).length} / {detail.pages.length}</strong></div>
-            </div>
-            <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-              <span className="data-unavailable">{ar ? 'معاينة الأجهزة غير متاحة بعد' : 'Device preview is not available yet'}</span>
-              <button className="button button--ghost" onClick={() => navigator.clipboard.writeText(JSON.stringify(detail, null, 2))}>JSON</button>
-            </div>
+        {denied ? (
+          <ErrorState message={error || text.denied} />
+        ) : loading && !rows.length ? (
+          <>
+            <p className="planet-loading" role="status" aria-live="polite">
+              {text.loading}
+            </p>
+            {skeleton}
+          </>
+        ) : error && !rows.length ? (
+          <ErrorState message={error} onRetry={() => void load()} />
+        ) : rows.length === 0 ? (
+          filtersActive ? (
+            <EmptyState title={text.noResults} description={text.noResultsDesc} action={<button className="button button--ghost" type="button" onClick={list.clearFilters}>{text.clear}</button>} />
+          ) : (
+            <EmptyState
+              title={text.empty}
+              description={text.emptyDesc}
+              action={
+                canCreate ? (
+                  <button className="button button--primary" type="button" onClick={openCreate}>
+                    <Icon name="plus" size={16} />
+                    {text.create}
+                  </button>
+                ) : undefined
+              }
+            />
+          )
+        ) : view === 'grid' ? (
+          cards
+        ) : (
+          table
+        )}
+
+        {error && rows.length > 0 && (
+          <div className="inline-alert inline-alert--error" role="alert">
+            {error}
           </div>
-          <div className="status-card" style={{ marginTop: 12 }}>
-            <h4>{ar ? 'أخطاء النشر' : 'Publish errors'}</h4>
-            <ul style={{ fontSize: 12, color: '#64748b', paddingInlineStart: 16 }}>
-              {!detail.pages.every(p => p.image_asset_id) && <li>{ar ? 'صفحات بلا صور' : 'Pages without images'}</li>}
-              {detail.pages.filter(p => !p.localizations.find(l => l.language === language)?.body_text).length > 0 && <li>{ar ? `نصوص ناقصة ${language}` : `Missing ${language} text`}</li>}
-              {!detail.visual_style_id && <li>{ar ? 'بدون استايل بصري' : 'No visual style'}</li>}
-            </ul>
+        )}
+      </section>
+
+      <Modal open={open} onClose={() => !saving && setOpen(false)} title={editing ? text.formEdit : text.formCreate}>
+        <form className="entity-form" onSubmit={submit}>
+          {formError && <div className="inline-alert inline-alert--error">{formError}</div>}
+          <div className="form-grid">
+            <label className="field">
+              <span>{text.titleAr}</span>
+              <input autoFocus value={form.title_ar} onChange={(event) => setForm({ ...form, title_ar: event.target.value })} />
+            </label>
+            <label className="field">
+              <span>{text.slug}</span>
+              <input value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} />
+              <small>{text.slugHint}</small>
+            </label>
           </div>
-        </aside>
-      </div>
+
+          <div className="form-grid">
+            <label className="field">
+              <span>{text.series}</span>
+              <select value={form.series_id} onChange={(event) => setForm({ ...form, series_id: event.target.value })}>
+                <option value="">{text.seriesNone}</option>
+                {series.map((item) => (
+                  <option value={item.id} key={item.id}>
+                    {locale === 'en' ? item.title_en || item.title_ar : item.title_ar}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>{text.typeField}</span>
+              <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as StoryType })}>
+                {types.map((item) => (
+                  <option value={item} key={item}>
+                    {typeLabels[locale][item]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="form-grid form-grid--three">
+            <label className="field">
+              <span>{text.ageMin}</span>
+              <input type="number" min={0} value={form.age_min} onChange={(event) => setForm({ ...form, age_min: event.target.value })} />
+            </label>
+            <label className="field">
+              <span>{text.ageMax}</span>
+              <input type="number" min={0} value={form.age_max} onChange={(event) => setForm({ ...form, age_max: event.target.value })} />
+            </label>
+            <label className="field">
+              <span>{text.style}</span>
+              <select value={form.visual_style_id} onChange={(event) => setForm({ ...form, visual_style_id: event.target.value })}>
+                <option value="">{text.styleNone}</option>
+                {styles.map((item) => (
+                  <option value={item.id} key={item.id}>
+                    {locale === 'en' ? item.name_en : item.name_ar}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <label className="field">
+            <span>{text.languagesField}</span>
+            <input value={form.languages} onChange={(event) => setForm({ ...form, languages: event.target.value })} />
+            <small>{text.languagesHint}</small>
+          </label>
+
+          <label className="field">
+            <span>{text.description}</span>
+            <textarea rows={3} value={form.description_ar} onChange={(event) => setForm({ ...form, description_ar: event.target.value })} />
+          </label>
+
+          <label className="field">
+            <span>{text.statusField}</span>
+            <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as ContentStatus })}>
+              {statuses.map((item) => (
+                <option value={item} key={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+            <small>{text.statusHint}</small>
+          </label>
+
+          <div className="form-actions">
+            <button className="button button--ghost" type="button" onClick={() => setOpen(false)} disabled={saving}>
+              {text.cancel}
+            </button>
+            <button className="button button--primary" type="submit" disabled={saving}>
+              {saving ? text.saving : text.save}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
-  return <div className="page-stack"><section className="page-intro"><div><span className="eyebrow">{ar ? 'القصص والكوميكس' : 'Stories & comics'}</span><h2>{ar ? 'محرر القصص المصورة' : 'Visual story editor'}</h2><p>{ar ? 'أنشئ قصة متعددة الصفحات واللغات، واربط صورة وصوتًا لكل صفحة. فقاعات الحوار اختيارية.' : 'Create multilingual paged stories with page images and narration. Dialogue bubbles remain optional.'}</p></div><button className="button button--primary" type="button" onClick={create}><Icon name="plus" size={16}/>{ar ? 'قصة جديدة' : 'New story'}</button></section>{error && <div className="inline-alert inline-alert--error">{error}</div>}<section className="panel panel--table"><header className="panel__header panel__header--filters"><div><span className="panel__kicker">{ar ? 'المكتبة' : 'Library'}</span><h3>{items.length}</h3></div><ListToolbar searchValue={query} onSearchChange={list.setQuery} searchPlaceholder={ar ? 'بحث...' : 'Search...'} fields={FILTER_FIELDS(ar, locale)} values={filters} defaults={DEFAULT_FILTERS} onApply={(next) => list.setFilters(next)} onClear={list.clearFilters} onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')} trailing={<><SavedViewsMenu storageKey="stories" currentSearch={list.search} onApply={(search) => navigate(`${adminPath('stories')}${search}`)}/><ColumnManager columns={COLUMNS.map((column) => ({ ...column, label: columnLabels[locale][column.label as keyof (typeof columnLabels)['ar']] }))} hidden={columns.hidden} onToggle={columns.toggle} onReset={columns.reset}/></>}/></header>{loading ? <LoadingState label={ar ? 'جارٍ التحميل...' : 'Loading...'}/> : items.length ? <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>{ar ? 'القصة' : 'Story'}</th>{columns.isVisible('type') && <th>{ar ? 'النوع' : 'Type'}</th>}{columns.isVisible('series') && <th>{ar ? 'السلسلة' : 'Series'}</th>}{columns.isVisible('languages') && <th>{ar ? 'اللغات' : 'Languages'}</th>}{columns.isVisible('pages') && <th>{ar ? 'الصفحات' : 'Pages'}</th>}{columns.isVisible('status') && <th>{ar ? 'الحالة' : 'Status'}</th>}<th/></tr></thead><tbody>{items.map((item) => <tr key={item.id}><td><button className="entity-cell entity-cell--button" type="button" onClick={() => void selectStory(item)}><span className="entity-avatar"><Icon name="books" size={18}/></span><div><strong>{item.title_ar}</strong><small>{item.slug}</small></div></button></td>{columns.isVisible('type') && <td>{typeLabels[locale][item.type]}</td>}{columns.isVisible('series') && <td>{item.series_title || '—'}</td>}{columns.isVisible('languages') && <td>{item.languages.join(' · ')}</td>}{columns.isVisible('pages') && <td>{Number(item.pages_count ?? 0)}</td>}{columns.isVisible('status') && <td><StatusBadge status={item.status}/></td>}<td><div className="table-actions"><button className="button button--ghost" type="button" onClick={() => void selectStory(item)}>{ar ? 'فتح المحرر' : 'Open editor'}</button><button className="icon-button icon-button--small" type="button" onClick={() => edit(item)} aria-label={`${ar ? 'تعديل' : 'Edit'}: ${item.title_ar}`}><Icon name="edit" size={14}/></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(item)} aria-label={`${ar ? 'أرشفة' : 'Archive'}: ${item.title_ar}`}><Icon name="archive" size={14}/></button></div></td></tr>)}</tbody></table></div> : <EmptyState title={ar ? 'لا توجد قصص بعد' : 'No stories yet'} description={ar ? 'أنشئ أول قصة وأضف صفحاتها وصوتها.' : 'Create the first story and add pages and narration.'}/>}</section><Modal open={open} onClose={() => !saving && setOpen(false)} title={editing ? (ar ? 'تعديل القصة' : 'Edit story') : (ar ? 'قصة جديدة' : 'New story')}><form className="entity-form" onSubmit={submit}><div className="form-grid"><label className="field"><span>{ar ? 'العنوان *' : 'Title *'}</span><input value={form.title_ar} onChange={(event) => setForm({ ...form, title_ar: event.target.value })}/></label><label className="field"><span>Slug</span><input value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })}/></label></div><div className="form-grid form-grid--three"><label className="field"><span>{ar ? 'النوع' : 'Type'}</span><select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as StoryType })}>{types.map((item) => <option value={item} key={item}>{typeLabels[locale][item]}</option>)}</select></label><label className="field"><span>{ar ? 'من عمر' : 'Min age'}</span><input type="number" min="3" max="12" value={form.age_min} onChange={(event) => setForm({ ...form, age_min: event.target.value })}/></label><label className="field"><span>{ar ? 'إلى عمر' : 'Max age'}</span><input type="number" min="3" max="12" value={form.age_max} onChange={(event) => setForm({ ...form, age_max: event.target.value })}/></label></div><div className="form-grid"><label className="field"><span>{ar ? 'السلسلة' : 'Series'}</span><select value={form.series_id} onChange={(event) => setForm({ ...form, series_id: event.target.value })}><option value="">—</option>{series.map((item) => <option value={item.id} key={item.id}>{item.title_ar}</option>)}</select></label><label className="field"><span>{ar ? 'الاستايل' : 'Visual style'}</span><select value={form.visual_style_id} onChange={(event) => setForm({ ...form, visual_style_id: event.target.value })}><option value="">—</option>{styles.map((item) => <option value={item.id} key={item.id}>{ar ? item.name_ar : item.name_en}</option>)}</select></label></div><label className="field"><span>{ar ? 'اللغات — افصل بفاصلة' : 'Languages — comma separated'}</span><input dir="ltr" value={form.languages} onChange={(event) => setForm({ ...form, languages: event.target.value })}/></label><label className="field"><span>{ar ? 'الوصف' : 'Description'}</span><textarea rows={3} value={form.description_ar} onChange={(event) => setForm({ ...form, description_ar: event.target.value })}/></label><label className="field"><span>{ar ? 'الحالة' : 'Status'}</span><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as ContentStatus })}>{statuses.map((status) => <option value={status} key={status}>{statusLabels[locale][status]}</option>)}</select></label><div className="form-actions"><button className="button button--ghost" type="button" onClick={() => setOpen(false)}>{ar ? 'إلغاء' : 'Cancel'}</button><button className="button button--primary" disabled={saving}>{ar ? 'حفظ' : 'Save'}</button></div></form></Modal></div>
 }

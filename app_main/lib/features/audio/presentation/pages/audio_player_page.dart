@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
+import '../../../../core/widgets/cinematic_image.dart';
 import '../../../../core/widgets/focusable_scale.dart';
 import '../../../../core/analytics/analytics.dart';
 import '../../../child/application/child_provider.dart';
@@ -54,8 +56,11 @@ class AudioPlayerPage extends ConsumerStatefulWidget {
     required this.title,
     this.subtitle,
     this.audioUrl,
+    this.artworkUrl,
+    this.artworkAsset,
     this.bookId,
     this.pageId,
+    this.downloadId,
     super.key,
   });
 
@@ -65,12 +70,19 @@ class AudioPlayerPage extends ConsumerStatefulWidget {
   /// Public audio source. Null when the track is private or unpublished.
   final String? audioUrl;
 
+  final String? artworkUrl;
+  final String? artworkAsset;
+
   /// When set, narration is fetched through a capability token instead of
   /// [audioUrl].
   final String? bookId;
 
   /// Optional per-page narration within [bookId].
   final String? pageId;
+
+  /// Explicit offline item to open from the downloads page. This avoids
+  /// deriving a content id by parsing a storage key.
+  final String? downloadId;
 
   @override
   ConsumerState<AudioPlayerPage> createState() => _AudioPlayerPageState();
@@ -85,7 +97,9 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
   /// True when the page can attempt playback at all: either a public URL or a
   /// book id it can mint a token for.
   bool get _hasSource =>
-      (widget.audioUrl ?? '').isNotEmpty || (widget.bookId ?? '').isNotEmpty;
+      (widget.audioUrl ?? '').isNotEmpty ||
+      (widget.bookId ?? '').isNotEmpty ||
+      (widget.downloadId ?? '').isNotEmpty;
 
   @override
   void initState() {
@@ -95,12 +109,25 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
 
   @override
   void dispose() {
+    final downloadId = _downloadId;
     _controller?.removeListener(_onTick);
     _controller?.dispose();
+    if (downloadId != null) {
+      unawaited(
+        ref
+            .read(downloadManagerProvider.notifier)
+            .cleanupPlaybackFile(downloadId),
+      );
+    }
     super.dispose();
   }
 
   Future<void> _open() async {
+    final previous = _controller;
+    _controller = null;
+    previous?.removeListener(_onTick);
+    await previous?.dispose();
+    if (!mounted) return;
     setState(() {
       _initialising = true;
       _error = null;
@@ -144,6 +171,8 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
   /// A stable download id for this book's public audio, or null when there is
   /// no public source to download.
   String? get _downloadId {
+    final explicit = widget.downloadId;
+    if (explicit != null && explicit.isNotEmpty) return explicit;
     if ((widget.audioUrl ?? '').isEmpty) return null;
     final book = widget.bookId;
     return book != null && book.isNotEmpty
@@ -172,7 +201,13 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
     if (bookId != null && bookId.isNotEmpty) {
       return _privateController(bookId);
     }
-    return VideoPlayerController.networkUrl(Uri.parse(widget.audioUrl!));
+    final publicUrl = widget.audioUrl;
+    if (publicUrl == null || publicUrl.isEmpty) {
+      throw const _AudioSourceError(
+        'الملف المحمّل غير متاح. أعد تنزيله من صفحة القصة.',
+      );
+    }
+    return VideoPlayerController.networkUrl(Uri.parse(publicUrl));
   }
 
   Future<VideoPlayerController> _privateController(String bookId) async {
@@ -185,11 +220,13 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
 
     final Map<String, dynamic> session;
     try {
-      session = await ref.read(majarraApiClientProvider).createAudioSession(
-        bookId: bookId,
-        childId: childId,
-        pageId: widget.pageId,
-      );
+      session = await ref
+          .read(majarraApiClientProvider)
+          .createAudioSession(
+            bookId: bookId,
+            childId: childId,
+            pageId: widget.pageId,
+          );
     } catch (_) {
       throw const _AudioSourceError(
         'تعذّر تجهيز القصة. تحقّق من تسجيل الدخول والاشتراك.',
@@ -264,125 +301,192 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
     await _controller?.setPlaybackSpeed(next);
   }
 
+  Widget _playbackContent({
+    required VideoPlayerController? controller,
+    required bool isPlaying,
+    required String? childId,
+  }) {
+    if (!_hasSource) {
+      return const _Notice(
+        icon: Icons.cloud_off_rounded,
+        text: 'لم يُرفع الملف الصوتي لهذه القصة بعد.',
+      );
+    }
+    if (_error != null) {
+      return _Notice(
+        icon: Icons.error_outline_rounded,
+        text: _error!,
+        actionLabel: 'إعادة المحاولة',
+        onAction: _open,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ProgressSection(controller: controller),
+        const SizedBox(height: 16),
+        _Controls(
+          playing: isPlaying,
+          enabled: controller != null,
+          onPlayPause: _togglePlay,
+          onRewind: () => _seekBy(const Duration(seconds: -10)),
+          onForward: () => _seekBy(const Duration(seconds: 10)),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 10,
+          runSpacing: 8,
+          children: [
+            ActionChip(
+              tooltip: 'تغيير سرعة التشغيل',
+              label: Text(
+                '${_speed}x',
+                style: const TextStyle(color: Colors.white, fontSize: 11),
+              ),
+              backgroundColor: Colors.white.withValues(alpha: 0.08),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+              onPressed: controller == null ? null : _cycleSpeed,
+            ),
+            // Private narration cannot be persisted without an offline licence.
+            if (_downloadId != null &&
+                (widget.audioUrl ?? '').isNotEmpty &&
+                childId != null &&
+                childId.isNotEmpty)
+              DownloadButton(
+                request: DownloadRequest(
+                  id: _downloadId!,
+                  childId: childId,
+                  contentType: 'audio_story',
+                  title: widget.title,
+                  subtitle: widget.subtitle ?? '',
+                  sourceUrl: widget.audioUrl!,
+                  posterUrl: widget.artworkUrl,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
     final isPlaying = controller?.value.isPlaying ?? false;
+    final childId = ref.watch(childProvider).activeChildId;
 
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
       body: CinematicBackground(
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.arrow_forward_rounded,
-                        color: Colors.white,
-                      ),
-                      tooltip: 'رجوع',
-                      onPressed: () => context.pop(),
-                    ),
-                    const Spacer(),
-                    const Text(
-                      'استمع',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const Spacer(),
-                    const SizedBox(width: 40),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _Artwork(controller: controller, busy: _initialising),
-                const SizedBox(height: 24),
-                Text(
-                  widget.title,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final landscape = constraints.maxWidth > constraints.maxHeight;
+              final sideBySide = landscape && constraints.maxWidth >= 620;
+              final sizeBasis = landscape
+                  ? constraints.maxHeight * 0.42
+                  : constraints.maxWidth * 0.58;
+              final artworkSize = sizeBasis.clamp(132.0, 220.0).toDouble();
+
+              final storyDetails = Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _Artwork(
+                    controller: controller,
+                    busy: _initialising,
+                    title: widget.title,
+                    artworkUrl: widget.artworkUrl,
+                    artworkAsset: widget.artworkAsset,
+                    size: artworkSize,
                   ),
-                ),
-                if (widget.subtitle != null) ...[
-                  const SizedBox(height: 6),
+                  SizedBox(height: landscape ? 14 : 22),
                   Text(
-                    widget.subtitle!,
+                    widget.title,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.mutedText.withValues(alpha: 0.72),
-                      fontSize: 12,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                ],
-                const Spacer(),
-                if (!_hasSource)
-                  const _Notice(
-                    icon: Icons.cloud_off_rounded,
-                    text: 'لم يُرفع الملف الصوتي لهذه القصة بعد.',
-                  )
-                else if (_error != null)
-                  _Notice(icon: Icons.error_outline_rounded, text: _error!)
-                else ...[
-                  _ProgressSection(controller: controller),
-                  const SizedBox(height: 16),
-                  _Controls(
-                    playing: isPlaying,
-                    enabled: controller != null,
-                    onPlayPause: _togglePlay,
-                    onRewind: () => _seekBy(const Duration(seconds: -10)),
-                    onForward: () => _seekBy(const Duration(seconds: 10)),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ActionChip(
-                        label: Text(
-                          '${_speed}x',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                          ),
-                        ),
-                        backgroundColor: Colors.white.withValues(alpha: 0.08),
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.08),
-                        ),
-                        onPressed: controller == null ? null : _cycleSpeed,
+                  if (widget.subtitle != null &&
+                      widget.subtitle!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.subtitle!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.mutedText.withValues(alpha: 0.72),
+                        fontSize: 12,
+                        height: 1.5,
                       ),
-                      // Offline download for the public audio, when one exists.
-                      // Private narration is not downloadable without an offline
-                      // licence endpoint, so the button appears only for a
-                      // public sample source.
-                      if (_downloadId != null && (widget.audioUrl ?? '').isNotEmpty) ...[
-                        const SizedBox(width: 10),
-                        DownloadButton(
-                          request: DownloadRequest(
-                            id: _downloadId!,
-                            childId: ref.read(childProvider).activeChildId ?? 'guest',
-                            contentType: 'audio_story',
-                            title: widget.title,
-                            subtitle: widget.subtitle ?? '',
-                            sourceUrl: widget.audioUrl!,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                    ),
+                  ],
                 ],
-                const SizedBox(height: 12),
-              ],
-            ),
+              );
+
+              final playback = _playbackContent(
+                controller: controller,
+                isPlaying: isPlaying,
+                childId: childId,
+              );
+
+              return SingleChildScrollView(
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 24),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    child: FocusTraversalGroup(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: Colors.white,
+                                ),
+                                tooltip: 'رجوع',
+                                onPressed: () => context.pop(),
+                              ),
+                              const Expanded(
+                                child: Text(
+                                  'استمع',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 48),
+                            ],
+                          ),
+                          SizedBox(height: landscape ? 10 : 22),
+                          if (sideBySide)
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(child: storyDetails),
+                                const SizedBox(width: 32),
+                                Expanded(child: playback),
+                              ],
+                            )
+                          else ...[
+                            storyDetails,
+                            const SizedBox(height: 28),
+                            playback,
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -391,72 +495,82 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
 }
 
 class _Artwork extends StatelessWidget {
-  const _Artwork({required this.controller, required this.busy});
+  const _Artwork({
+    required this.controller,
+    required this.busy,
+    required this.title,
+    required this.size,
+    this.artworkUrl,
+    this.artworkAsset,
+  });
 
   final VideoPlayerController? controller;
   final bool busy;
+  final String title;
+  final double size;
+  final String? artworkUrl;
+  final String? artworkAsset;
 
   @override
   Widget build(BuildContext context) {
+    final centerSize = (size * 0.27).clamp(44.0, 58.0).toDouble();
     return Center(
-      child: SizedBox(
-        width: 220,
-        height: 220,
+      child: SizedBox.square(
+        dimension: size,
         child: Stack(
           alignment: Alignment.center,
           children: [
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const RadialGradient(
-                  center: Alignment(-0.3, -0.3),
-                  colors: [Color(0xFF6A3DF2), Color(0xFF0B1026)],
-                ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  width: 1.5,
+                  color: Colors.white.withValues(alpha: 0.14),
+                  width: 2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.cosmicPurple.withValues(alpha: 0.22),
+                    color: AppColors.cosmicPurple.withValues(alpha: 0.28),
                     blurRadius: 32,
                   ),
                 ],
               ),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox.expand(
+                child: CinematicImage(
+                  networkUrl: artworkUrl,
+                  assetPath: artworkAsset ?? 'assets/brand/majarra-logo.png',
+                  semanticLabel: 'غلاف $title',
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
             Container(
-              width: 72,
-              height: 72,
+              width: centerSize,
+              height: centerSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.starGold,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.starGold.withValues(alpha: 0.32),
-                    blurRadius: 18,
-                  ),
-                ],
+                color: AppColors.deepSpace.withValues(alpha: 0.82),
+                border: Border.all(
+                  color: AppColors.starGold.withValues(alpha: 0.72),
+                ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.headphones_rounded,
-                color: AppColors.deepSpace,
-                size: 32,
+                color: AppColors.starGold,
+                size: centerSize * 0.48,
               ),
             ),
-            // Ring reflects genuine playback position.
             if (busy)
-              const SizedBox(
-                width: 220,
-                height: 220,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
+              SizedBox.square(
+                dimension: size,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 3,
                   color: AppColors.starGold,
                 ),
               )
             else if (controller != null)
-              SizedBox(
-                width: 220,
-                height: 220,
+              SizedBox.square(
+                dimension: size,
                 child: ValueListenableBuilder<VideoPlayerValue>(
                   valueListenable: controller!,
                   builder: (context, value, _) {
@@ -468,8 +582,8 @@ class _Artwork extends StatelessWidget {
                               .toDouble();
                     return CircularProgressIndicator(
                       value: progress,
-                      strokeWidth: 2,
-                      backgroundColor: Colors.white.withValues(alpha: 0.06),
+                      strokeWidth: 3,
+                      backgroundColor: Colors.white.withValues(alpha: 0.08),
                       valueColor: const AlwaysStoppedAnimation(
                         AppColors.starGold,
                       ),
@@ -503,7 +617,9 @@ class _ProgressSection extends StatelessWidget {
         final total = value.duration.inMilliseconds;
         final progress = total <= 0
             ? 0.0
-            : (value.position.inMilliseconds / total).clamp(0.0, 1.0).toDouble();
+            : (value.position.inMilliseconds / total)
+                  .clamp(0.0, 1.0)
+                  .toDouble();
 
         return Column(
           children: [
@@ -591,29 +707,25 @@ class _Controls extends StatelessWidget {
           onPressed: enabled ? onRewind : null,
         ),
         const SizedBox(width: 20),
-        Semantics(
-          button: true,
-          label: playing ? 'إيقاف مؤقت' : 'تشغيل',
-          child: FocusableScale(
-            onPressed: enabled ? onPlayPause : () {},
-            semanticLabel: playing ? 'إيقاف مؤقت' : 'تشغيل',
-            autofocus: true,
-            borderRadius: BorderRadius.circular(32),
-            focusScale: 1.07,
-            child: Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: enabled
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.34),
-              ),
-              child: Icon(
-                playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                color: AppColors.deepSpace,
-                size: 32,
-              ),
+        FocusableScale(
+          onPressed: enabled ? onPlayPause : null,
+          semanticLabel: playing ? 'إيقاف مؤقت' : 'تشغيل',
+          autofocus: enabled,
+          borderRadius: BorderRadius.circular(32),
+          focusScale: 1.07,
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: enabled
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.34),
+            ),
+            child: Icon(
+              playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              color: AppColors.deepSpace,
+              size: 32,
             ),
           ),
         ),
@@ -653,10 +765,17 @@ class _RoundButton extends StatelessWidget {
 }
 
 class _Notice extends StatelessWidget {
-  const _Notice({required this.icon, required this.text});
+  const _Notice({
+    required this.icon,
+    required this.text,
+    this.actionLabel,
+    this.onAction,
+  });
 
   final IconData icon;
   final String text;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -666,20 +785,35 @@ class _Notice extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       border: Border.all(color: AppColors.starGold.withValues(alpha: 0.24)),
     ),
-    child: Row(
+    child: Column(
       children: [
-        Icon(icon, color: AppColors.starGold, size: 20),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: AppColors.mutedText,
-              fontSize: 11.5,
-              height: 1.6,
+        Row(
+          children: [
+            Icon(icon, color: AppColors.starGold, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: AppColors.mutedText,
+                  fontSize: 11.5,
+                  height: 1.6,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (onAction != null && actionLabel != null) ...[
+          const SizedBox(height: 10),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: FilledButton.icon(
+              onPressed: onAction,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(actionLabel!),
             ),
           ),
-        ),
+        ],
       ],
     ),
   );

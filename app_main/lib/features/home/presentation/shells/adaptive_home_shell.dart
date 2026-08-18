@@ -9,17 +9,9 @@ import '../widgets/majarra_bottom_navigation.dart';
 import '../widgets/majarra_portal.dart';
 
 class AdaptiveHomeShell extends StatefulWidget {
-  const AdaptiveHomeShell({
-    required this.catalog,
-    this.useV2Home = true,
-    super.key,
-  });
+  const AdaptiveHomeShell({required this.catalog, super.key});
 
   final HomeCatalog catalog;
-
-  /// Selects the home surface. `/` renders the original feed; `/home-v2`
-  /// passes `true` so the new cinematic home stays reachable for comparison.
-  final bool useV2Home;
 
   @override
   State<AdaptiveHomeShell> createState() => _AdaptiveHomeShellState();
@@ -47,7 +39,6 @@ class _AdaptiveHomeShellState extends State<AdaptiveHomeShell> {
       catalog: widget.catalog,
       isTelevision: false,
       onOpenPlanet: _openPlanet,
-      useV2Home: widget.useV2Home,
       onSelectDestination: _select,
       onOpenPortal: _showPortal,
     );
@@ -56,10 +47,12 @@ class _AdaptiveHomeShellState extends State<AdaptiveHomeShell> {
     // routes television devices to TvHomeShell instead. A stale `!isTelevision`
     // term used to appear here and referenced an identifier that does not exist
     // on this widget, which broke compilation.
+    final layoutClass = context.layoutClass;
     final isTablet =
-        context.layoutClass != AppLayoutClass.compact &&
+        layoutClass != AppLayoutClass.compact &&
         MediaQuery.sizeOf(context).width >= 600 &&
         MediaQuery.sizeOf(context).height > 480;
+    final isDesktop = layoutClass == AppLayoutClass.expanded;
 
     if (isTablet) {
       return Scaffold(
@@ -67,36 +60,82 @@ class _AdaptiveHomeShellState extends State<AdaptiveHomeShell> {
         body: Row(
           children: [
             NavigationRail(
+              extended: isDesktop,
+              minWidth: 82,
+              minExtendedWidth: 204,
               backgroundColor: const Color(0xFF080C22).withValues(alpha: 0.96),
               selectedIndex: _selectedIndex,
               onDestinationSelected: _select,
-              labelType: NavigationRailLabelType.all,
+              labelType: isDesktop
+                  ? NavigationRailLabelType.none
+                  : NavigationRailLabelType.all,
               useIndicator: true,
               indicatorColor: AppColors.royalBlue.withValues(alpha: 0.22),
               selectedIconTheme: const IconThemeData(color: Colors.white),
-              unselectedIconTheme: IconThemeData(color: AppColors.mutedText.withValues(alpha: 0.62)),
-              selectedLabelTextStyle: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
-              unselectedLabelTextStyle: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.58), fontSize: 11),
+              unselectedIconTheme: IconThemeData(
+                color: AppColors.mutedText.withValues(alpha: 0.62),
+              ),
+              selectedLabelTextStyle: TextStyle(
+                color: Colors.white,
+                fontSize: isDesktop ? 14 : 11,
+                fontWeight: FontWeight.w700,
+              ),
+              unselectedLabelTextStyle: TextStyle(
+                color: AppColors.mutedText.withValues(alpha: 0.58),
+                fontSize: isDesktop ? 14 : 11,
+              ),
               leading: Padding(
                 padding: const EdgeInsets.only(top: 18, bottom: 18),
                 child: Column(
                   children: [
-                    Image.asset('assets/brand/majarra-logo.png', width: 48, height: 48, errorBuilder: (_, __, ___) => const Icon(Icons.auto_awesome_rounded, color: AppColors.starGold)),
+                    Image.asset(
+                      'assets/brand/majarra-logo.png',
+                      width: isDesktop ? 72 : 48,
+                      height: isDesktop ? 56 : 48,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.auto_awesome_rounded,
+                        color: AppColors.starGold,
+                      ),
+                    ),
                     const SizedBox(height: 18),
-                    MajarraPortalButton(size: 56, onPressed: _showPortal),
+                    MajarraPortalButton(
+                      size: isDesktop ? 60 : 56,
+                      onPressed: _showPortal,
+                    ),
                   ],
                 ),
               ),
               destinations: const [
-                NavigationRailDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: Text('الرئيسية')),
-                NavigationRailDestination(icon: Icon(Icons.play_circle_outline_rounded), selectedIcon: Icon(Icons.play_circle_rounded), label: Text('قصيرة')),
-                NavigationRailDestination(icon: Icon(Icons.search_rounded), selectedIcon: Icon(Icons.search_rounded), label: Text('بحث')),
-                NavigationRailDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: Text('ملفي')),
+                NavigationRailDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
+                  label: Text('الرئيسية'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.play_circle_outline_rounded),
+                  selectedIcon: Icon(Icons.play_circle_rounded),
+                  label: Text('مقاطع'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.search_rounded),
+                  selectedIcon: Icon(Icons.search_rounded),
+                  label: Text('بحث'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.person_outline_rounded),
+                  selectedIcon: Icon(Icons.person_rounded),
+                  label: Text('ملفي'),
+                ),
               ],
             ),
             const VerticalDivider(width: 1, color: Color(0xFF1B2550)),
             Expanded(
-              child: PageView(controller: _pageController, physics: const NeverScrollableScrollPhysics(), children: pages),
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: pages,
+              ),
             ),
           ],
         ),
@@ -142,15 +181,40 @@ class _AdaptiveHomeShellState extends State<AdaptiveHomeShell> {
     );
   }
 
+  void _openReading() {
+    final story = widget.catalog.stories.firstOrNull;
+    if (story != null) {
+      context.push('/reader/${story.id}?contentType=story');
+      return;
+    }
+    final book = widget.catalog.books
+        .where((item) => item.type != 'audio_story')
+        .firstOrNull;
+    if (book != null) context.push('/reader/${book.id}?contentType=book');
+  }
+
+  void _openListening() {
+    final book = widget.catalog.books
+        .where((item) => item.type == 'audio_story' || item.isPlayable)
+        .firstOrNull;
+    if (book == null) return;
+    context.push(
+      Uri(path: '/audio', queryParameters: {'bookId': book.id}).toString(),
+    );
+  }
+
   void _showPortal() {
     showMajarraPortal(
       context,
       catalog: widget.catalog,
       onExplore: () => context.push('/planets'),
       onOpenPlanet: _openPlanet,
-      onOpenLibrary: () => _select(2),
-      onOpenProfile: () => _select(3),
+      onOpenLibrary: () => context.push('/watchlist'),
+      onOpenProfile: () => _select(HomeDestinationIndex.profile),
+      onOpenReading: _openReading,
+      onOpenListening: _openListening,
       onOpenSeries: (item) => context.push('/series/${item.id}'),
+      onOpenGame: (item) => context.push('/game/${item.id}'),
     );
   }
 }

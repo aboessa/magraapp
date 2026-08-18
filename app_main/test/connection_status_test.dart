@@ -19,9 +19,9 @@ void main() {
       );
     });
 
-    test('local means offline-with-cache', () {
+    test('bundled content means offline-with-cache', () {
       expect(
-        connectionStatusFromSource(ContentSource.local),
+        connectionStatusFromSource(ContentSource.bundled),
         ConnectionStatus.offlineWithCache,
       );
     });

@@ -6,47 +6,48 @@ import 'package:majarra/features/search/presentation/search_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 HomeCatalog _catalog() => const HomeCatalog(
-      planets: [],
-      spotlights: [],
-      series: [
-        SeriesItem(
-          id: 's1',
-          title: 'مغامرات الأرقام',
-          description: 'سلسلة تعليمية',
-          planetName: 'كوكب الأرقام',
-          posterAsset: 'a',
-          bannerAsset: 'b',
-          ageMin: 6,
-          ageMax: 8,
-          episodesCount: 4,
-          type: 'series',
-          isFree: true,
-        ),
-      ],
-      episodes: [],
-      experiences: [],
-      books: [],
-      source: ContentSource.local,
-    );
+  planets: [],
+  spotlights: [],
+  series: [
+    SeriesItem(
+      id: 's1',
+      title: 'مغامرات الأرقام',
+      description: 'سلسلة تعليمية',
+      planetName: 'كوكب الأرقام',
+      posterAsset: 'a',
+      bannerAsset: 'b',
+      ageMin: 6,
+      ageMax: 8,
+      episodesCount: 4,
+      type: 'series',
+      isFree: true,
+    ),
+  ],
+  episodes: [],
+  experiences: [],
+  books: [],
+  source: ContentSource.bundled,
+);
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   Widget host() => ProviderScope(
-        child: MaterialApp(
-          home: Directionality(
-            textDirection: TextDirection.rtl,
-            // SearchPage is normally hosted inside a shell Scaffold; provide one
-            // so its TextField/Chips find a Material ancestor.
-            child: Scaffold(
-              body: SearchPage(catalog: _catalog(), isTelevision: false),
-            ),
-          ),
+    child: MaterialApp(
+      home: Directionality(
+        textDirection: TextDirection.rtl,
+        // SearchPage is normally hosted inside a shell Scaffold; provide one
+        // so its TextField/Chips find a Material ancestor.
+        child: Scaffold(
+          body: SearchPage(catalog: _catalog(), isTelevision: false),
         ),
-      );
+      ),
+    ),
+  );
 
-  testWidgets('idle state prompts suggestions, then a query shows real results',
-      (tester) async {
+  testWidgets('idle state prompts suggestions, then a query shows real results', (
+    tester,
+  ) async {
     await tester.pumpWidget(host());
     await tester.pump();
 
@@ -62,7 +63,9 @@ void main() {
     expect(find.textContaining('مسلسلات'), findsOneWidget);
   });
 
-  testWidgets('a non-matching query shows the honest empty state', (tester) async {
+  testWidgets('a non-matching query shows the honest empty state', (
+    tester,
+  ) async {
     await tester.pumpWidget(host());
     await tester.pump();
 

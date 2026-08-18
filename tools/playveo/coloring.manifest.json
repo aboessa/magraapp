@@ -1,0 +1,38 @@
+{
+  "story": "coloring",
+  "spec_file": "docs/games/engines/02-trace-color.md",
+  "out_dir": "assets/images/coloring/raw",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "notes": [
+    "Line art for the trace_color engine's colouring stage. The engine spec asks for a 1:1 line drawing per level, and KIRO_REPORT_HISTORY.md lists 'no line art' as an outstanding blocker keeping four game packs in draft.",
+    "THE BINDING CONSTRAINT IS FLOOD FILL, NOT LOOKS. The spec says colouring is one tap per region ('التلوين بلمسة واحدة للمنطقة'), which means the app flood-fills an enclosed area. Every outline must therefore be CLOSED. A single one-pixel gap lets colour escape and floods the whole drawing, so prompts demand closed shapes explicitly and the result is verified, not trusted.",
+    "PlayVeo returns JPEG, which is the worst format for line art: its compression smears sharp black edges into grey gradients and those gradients contain gaps that break flood fill. So these raw JPEGs are an intermediate, never the delivered asset. tools/coloring/prepare-lineart.mjs thresholds them to pure black and white and writes PNG.",
+    "This is the opposite of the story artwork decision, on purpose. For painted scenes a JPEG-to-PNG conversion is pointless because the loss already happened. For line art the threshold pass removes compression artefacts and restores the closed contours the engine needs, so it adds real value.",
+    "3-5 year olds are the audience. Very thick strokes, very large regions, very few of them. The series bible for this age asks for larger shapes and fewer objects, and a small child colouring on a tablet cannot aim at a thin gap.",
+    "No colour, no grey, no shading, no hatching, no outline thickness variation: any of those either confuses the fill or gives the child a region too small to hit.",
+    "Subjects are drawn from the act-s1 story so the colouring connects to something the child has just heard. The story's own family activity asks the family to draw a home for an animal, so a nest and a bird are the natural first subjects."
+  ],
+  "model": "nano_banana_2",
+  "style_tail": " Black and white colouring book line art for a 3 year old. Very thick uniform black outlines, at least 8 pixels wide. Every shape fully CLOSED with no gaps anywhere. Pure white inside all shapes. No colour, no grey, no shading, no hatching, no texture, no background pattern, no text. Only 3 to 5 very large simple regions. Centred with a wide white margin.",
+  "assets": [
+    {
+      "id": "coloring-probe-nest",
+      "file": "probe-nest.jpg",
+      "order": 1,
+      "aspect_ratio": "1:1",
+      "scene": "A very simple colouring page outline of one round bird nest sitting on a single thick tree branch, with two large leaves.",
+      "light": "",
+      "regions_expected": 4
+    },
+    {
+      "id": "coloring-probe-bird",
+      "file": "probe-bird.jpg",
+      "order": 2,
+      "aspect_ratio": "1:1",
+      "scene": "A very simple colouring page outline of one small round baby bird facing forward, with a tiny beak, two big round eyes, and two wings.",
+      "light": "",
+      "regions_expected": 5
+    }
+  ]
+}

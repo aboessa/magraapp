@@ -30,10 +30,11 @@
 /// actually means.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { requireAdmin } from '../lib/adminAuth';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { requireAdmin } from '../lib/adminAuth.ts';
 import { parseJson } from '../lib/catalogueValidation.ts';
+import { seasonEpisodeCounts, seasonEpisodeCountSelect } from '../lib/episodeCounts.ts';
 import {
   evaluatePublishGate,
   isPublishableType,
@@ -173,6 +174,14 @@ export async function gatherPublishGateFacts(
         FROM series s WHERE s.id = ?
     `, [id]);
     if (!row) return null;
+    // Season counts are loaded as their own query rather than joined: the series
+    // row is one row and its seasons are many, so a join would multiply the
+    // series facts by the season count for no benefit.
+    const seasonRows = await queryAll<Record<string, unknown>>(db, `
+      SELECT se.id, se.season_number, se.title_ar, se.status, se.episode_count,
+        ${seasonEpisodeCountSelect('se')}
+      FROM seasons se WHERE se.series_id = ? ORDER BY se.season_number
+    `, [id]);
     return {
       entity_type: 'series',
       entity_id: row.id,
@@ -194,6 +203,14 @@ export async function gatherPublishGateFacts(
       description_ar: row.description_ar,
       episode_count: Number(row.episode_count) || 0,
       published_episode_count: Number(row.published_episode_count) || 0,
+      seasons: seasonRows.map((season) => ({
+        season_id: String(season.id),
+        season_number: Number(season.season_number) || 0,
+        title_ar: season.title_ar === null || season.title_ar === undefined
+          ? null : String(season.title_ar),
+        status: String(season.status),
+        ...seasonEpisodeCounts(season),
+      })),
     };
   }
 

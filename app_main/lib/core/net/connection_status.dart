@@ -39,7 +39,7 @@ extension ConnectionStatusX on ConnectionStatus {
 /// reported.
 ///
 /// [ContentSource.remote] means at least the primary collections came live;
-/// [ContentSource.local] means nothing did and the on-device fallback is in
+/// [ContentSource.bundled] means nothing did and the on-device fallback is in
 /// use, which is only reached after the network failed; [ContentSource.mixed]
 /// is treated as online because live data is present and a stale shelf is a
 /// lesser concern than a misleading "offline" banner.
@@ -48,6 +48,10 @@ ConnectionStatus connectionStatusFromSource(ContentSource source) {
     case ContentSource.remote:
     case ContentSource.mixed:
       return ConnectionStatus.online;
+    case ContentSource.cached:
+    case ContentSource.bundled:
+    // Kept only to decode catalogue snapshots written before `bundled`.
+    // ignore: deprecated_member_use_from_same_package
     case ContentSource.local:
       return ConnectionStatus.offlineWithCache;
   }

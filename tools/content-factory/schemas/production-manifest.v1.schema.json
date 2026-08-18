@@ -1,0 +1,242 @@
+{
+  "$comment": "JSON Schema draft 2020-12. Kept self-contained so planning never resolves a remote meta-schema.",
+  "title": "Majarra Content Factory Production Manifest v1",
+  "description": "Immutable, provider-neutral production plan. Runtime attempts and provider credentials are deliberately excluded.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "manifest_id", "revision", "entity", "visual_identity", "source", "pipeline", "preflight", "jobs", "budget", "quality", "blockers", "integrity", "spend_approval"],
+  "properties": {
+    "schema_version": { "const": "content-factory.production-manifest/v1" },
+    "manifest_id": { "$ref": "#/$defs/id" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "entity": { "$ref": "#/$defs/entity" },
+    "visual_identity": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/visualIdentity" }
+      ]
+    },
+    "source": { "$ref": "#/$defs/source" },
+    "pipeline": { "$ref": "#/$defs/pipeline" },
+    "preflight": { "$ref": "#/$defs/preflight" },
+    "jobs": { "type": "array", "items": { "$ref": "#/$defs/job" } },
+    "budget": { "$ref": "#/$defs/budget" },
+    "quality": { "$ref": "#/$defs/quality" },
+    "blockers": { "type": "array", "items": { "$ref": "#/$defs/blocker" } },
+    "integrity": { "$ref": "#/$defs/integrity" },
+    "spend_approval": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/spendApproval" }
+      ]
+    },
+    "metadata": { "type": "object", "additionalProperties": true }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]+$"
+    },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "credits": { "type": "number", "minimum": 0, "multipleOf": 0.000001 },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity_type", "entity_id", "planet_slug", "series_slug", "locale"],
+      "properties": {
+        "entity_type": { "enum": ["episode", "story", "story_page"] },
+        "entity_id": { "$ref": "#/$defs/id" },
+        "planet_slug": { "$ref": "#/$defs/id" },
+        "series_slug": { "$ref": "#/$defs/id" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "locale": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$" },
+        "age_min": { "type": "integer", "minimum": 0, "maximum": 18 },
+        "age_max": { "type": "integer", "minimum": 0, "maximum": 18 },
+        "track": { "type": "string", "maxLength": 100 }
+      }
+    },
+    "visualReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "sha256"],
+      "properties": {
+        "kind": { "enum": ["character_sheet", "world_sheet", "prop_sheet", "style_frame", "visual_guide"] },
+        "path": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "visualIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity_id", "version", "series_slug", "status", "reference_pack_sha256", "references", "approved_by", "approved_at"],
+      "properties": {
+        "identity_id": { "$ref": "#/$defs/id" },
+        "version": { "$ref": "#/$defs/id" },
+        "series_slug": { "$ref": "#/$defs/id" },
+        "status": { "const": "approved" },
+        "reference_pack_sha256": { "$ref": "#/$defs/sha256" },
+        "references": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/visualReference" }
+        },
+        "approved_by": { "$ref": "#/$defs/id" },
+        "approved_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "sourceReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_type", "required", "status"],
+      "properties": {
+        "review_type": { "enum": ["editorial", "educational", "age_safety", "scientific", "historical", "sleep", "religious"] },
+        "required": { "type": "boolean" },
+        "status": { "enum": ["pending", "approved", "rejected", "not_applicable"] },
+        "source_sha256": { "$ref": "#/$defs/sha256" },
+        "reviewer_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "reviewed_at": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string", "maxLength": 4000 }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "content_status", "duration_seconds", "page_count", "reviews"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "content_status": { "enum": ["shell", "draft", "review", "approved", "locked"] },
+        "duration_seconds": { "type": ["integer", "null"], "minimum": 1 },
+        "page_count": { "type": ["integer", "null"], "minimum": 1 },
+        "reviews": { "type": "array", "items": { "$ref": "#/$defs/sourceReview" } }
+      }
+    },
+    "pipeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "eligibility", "exclusion_code"],
+      "properties": {
+        "profile": { "enum": ["cartoon_video_model_audio", "motion_story_video", "illustrated_read_to_me", "live_action"] },
+        "eligibility": { "enum": ["ready", "plannable", "blocked", "excluded"] },
+        "exclusion_code": { "type": ["string", "null"], "maxLength": 100 },
+        "notes": { "type": "string", "maxLength": 2000 }
+      }
+    },
+    "preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_ready", "scene_plan_ready", "prompt_plan_ready"],
+      "properties": {
+        "manifest_ready": { "type": "boolean" },
+        "scene_plan_ready": { "type": "boolean" },
+        "prompt_plan_ready": { "type": "boolean" }
+      }
+    },
+    "jobCost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pricing_status", "pricing_key", "low_credits", "high_credits", "basis"],
+      "properties": {
+        "pricing_status": { "enum": ["priced", "unpriced", "excluded"] },
+        "pricing_key": { "type": ["string", "null"], "maxLength": 120 },
+        "low_credits": { "$ref": "#/$defs/credits" },
+        "high_credits": { "$ref": "#/$defs/credits" },
+        "basis": { "type": "string", "maxLength": 500 }
+      }
+    },
+    "job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["job_id", "kind", "provider", "operation", "state", "idempotency_key", "dependencies", "input", "cost"],
+      "properties": {
+        "job_id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["video", "image", "narration", "package"] },
+        "provider": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "operation": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "state": { "const": "planned" },
+        "idempotency_key": { "type": "string", "minLength": 16, "maxLength": 160 },
+        "dependencies": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "duration_seconds": { "type": "integer", "minimum": 1, "maximum": 3600 },
+        "count": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "page_index": { "type": "integer", "minimum": 1 },
+        "input": { "type": "object", "additionalProperties": true },
+        "cost": { "$ref": "#/$defs/jobCost" }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "pricing_version", "estimate_low_credits", "estimate_high_credits", "contingency_pct", "contingency_credits", "estimate_with_contingency_credits", "requested_ceiling_credits", "unpriced_job_ids"],
+      "properties": {
+        "unit": { "const": "credits" },
+        "pricing_version": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "estimate_low_credits": { "$ref": "#/$defs/credits" },
+        "estimate_high_credits": { "$ref": "#/$defs/credits" },
+        "contingency_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "contingency_credits": { "$ref": "#/$defs/credits" },
+        "estimate_with_contingency_credits": { "$ref": "#/$defs/credits" },
+        "requested_ceiling_credits": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/credits" }] },
+        "unpriced_job_ids": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "qualityGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate_id", "required", "status"],
+      "properties": {
+        "gate_id": { "$ref": "#/$defs/id" },
+        "required": { "type": "boolean" },
+        "status": { "enum": ["not_run", "not_applicable", "passed", "warning", "failed", "pending", "approved", "rejected"] }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_version", "automated_gates", "human_gates"],
+      "properties": {
+        "policy_version": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "automated_gates": { "type": "array", "items": { "$ref": "#/$defs/qualityGate" } },
+        "human_gates": { "type": "array", "items": { "$ref": "#/$defs/qualityGate" } }
+      }
+    },
+    "blocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^[A-Z0-9_]+$", "maxLength": 100 },
+        "severity": { "enum": ["warning", "error", "hard_block"] },
+        "message": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "path": { "type": "string", "maxLength": 500 },
+        "details": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_sha256", "plan_sha256"],
+      "properties": {
+        "source_sha256": { "$ref": "#/$defs/sha256" },
+        "plan_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "spendApproval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approval_id", "status", "plan_sha256", "ceiling_credits", "approved_by", "approved_at", "expires_at", "approval_sha256"],
+      "properties": {
+        "approval_id": { "$ref": "#/$defs/id" },
+        "status": { "const": "approved" },
+        "plan_sha256": { "$ref": "#/$defs/sha256" },
+        "ceiling_credits": { "$ref": "#/$defs/credits" },
+        "approved_by": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "approved_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": ["string", "null"], "format": "date-time" },
+        "approval_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

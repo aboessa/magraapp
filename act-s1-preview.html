@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>معاينة — act-s1 · بيت الطائر</title>
+<style>
+  :root {
+    --deep: #06091A; --navy: #0B1026; --royal: #2856D8;
+    --cyan: #00D6F5; --star: #FFD34D; --ink: #E8ECF8; --muted: #8E99BC;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1.25rem 4rem;
+    background: linear-gradient(180deg, var(--deep), var(--navy));
+    color: var(--ink);
+    font-family: "Readex Pro", "Segoe UI", system-ui, sans-serif;
+    line-height: 1.7;
+  }
+  h1 { font-size: 1.6rem; margin: 0 0 .35rem; }
+  .sub { color: var(--muted); margin: 0 0 1.5rem; font-size: .9rem; }
+  .facts { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
+  .facts span {
+    background: rgba(40,86,216,.18); border: 1px solid rgba(0,214,245,.28);
+    padding: .3rem .7rem; border-radius: 999px; font-size: .8rem;
+  }
+  .warn {
+    background: rgba(255,211,77,.12); border: 1px solid var(--star);
+    padding: .9rem 1.1rem; border-radius: .6rem; margin-bottom: 2rem; font-size: .88rem;
+  }
+  .warn strong { color: var(--star); }
+  h2 { font-size: 1.05rem; margin: 2.5rem 0 1rem; color: var(--cyan); }
+  .grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+  .page {
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09);
+    border-radius: .8rem; padding: .9rem; display: flex; flex-direction: column; gap: .6rem;
+  }
+  .page header { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .num { font-weight: 600; color: var(--star); font-size: .9rem; }
+  .meta { color: var(--muted); font-size: .75rem; }
+  .art { position: relative; border-radius: .5rem; overflow: hidden; background: #000; }
+  .art img { width: 100%; display: block; }
+  .overlay {
+    position: absolute; inset-inline: 0; bottom: 0; margin: 0; padding: 1.6rem .9rem .8rem;
+    background: linear-gradient(transparent, rgba(6,9,26,.88));
+    font-size: 1.05rem; font-weight: 500;
+  }
+  .art.missing, .missing { color: #FF9C9C; font-size: .85rem; padding: 1rem; }
+  .text { margin: 0; font-size: 1.1rem; }
+  .en {
+    border-top: 1px solid rgba(0,214,245,.22); padding-top: .6rem;
+    display: flex; flex-direction: column; gap: .4rem;
+  }
+  .en .text { font-size: .98rem; color: #CFE0FF; }
+  audio { width: 100%; }
+  details { font-size: .8rem; color: var(--muted); }
+  summary { cursor: pointer; }
+  .dir { margin: .4rem 0 0; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: .8rem; border-top: 1px solid rgba(255,255,255,.1); padding-top: 1rem; }
+</style>
+</head>
+<body>
+  <h1>بيت الطائر — معاينة الإنتاج</h1>
+  <p class="sub">صور من PlayVeo (nano_banana_2) · سرد من gemini-3.1-flash-tts-preview بصوت Leda</p>
+
+  <div class="facts">
+    <span>8 صفحات</span>
+    <span>سرد عربي 47.2 ث</span>
+    <span>سرد إنجليزي 47.0 ث</span>
+    <span>الصوت Leda</span>
+    <span>صورة واحدة لكل صفحة · لغتان</span>
+    <span>جهارة موحّدة داخل كل لغة</span>
+  </div>
+
+  <div class="warn">
+    <strong>ما لم يُتحقّق منه آليًا.</strong> النبرة والتيمبر ونطق العربية تحتاج سماعًا بشريًا.
+    وفيه ثلاث ملاحظات مقيسة تحتاج قرارك: إيقاع السرد أبطأ من هدف ~90 كلمة/دقيقة في الملف التحريري،
+    والصفحة 8 ليست أبطأ صفحة كما يفرض الملف، والصفحة 7 فيها 860 ملّي ثانية صمت ابتدائي مقابل 240–380 في الباقي.
+    كما أن المخرجات JPEG لا PNG، فهي براهين إنتاج لا ماسترز نهائية.
+  </div>
+
+  <h2>الصفحات</h2>
+  <div class="grid">
+  <article class="page">
+    <header>
+      <span class="num">صفحة 1</span>
+      <span class="meta">سطوع 1</span>
+      <span class="meta">5.48 ث</span>
+      <span class="meta">تقليب بعد 6.48 ث</span>
+    </header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/page-001.jpg" alt="هذا زُغب. بيته عشّ صغير." loading="lazy"><p class="overlay">هذا زُغب. بيته عشّ صغير.</p></div>
+    <p class="text">هذا زُغب. بيته عشّ صغير.</p>
+    <audio controls preload="none" src="assets/audio/stories/act-s1/ar/page-001-ar.wav"></audio>
+
+    <div class="en" dir="ltr">
+      <p class="text">This is Fluff. His home is a small nest.</p>
+      <audio controls preload="none" src="assets/audio/stories/act-s1/en/page-001-en.wav"></audio>
+      <span class="meta">6.52s</span>
+    </div>
+    <details><summary>توجيه الأداء</summary><p class="dir">Steady and welcoming, at the story's normal pace. Pronounce the name زُغب clearly with a short u vowel on the first letter; this is the first time the child hears it. Give عشّ its shadda clearly. Articulate carefully WITHOUT stretching the line out: this page must not be slower than the rest of the story.</p></details>
+  </article>
+
+  <article class="page">
+    <header>
+      <span class="num">صفحة 2</span>
+      <span class="meta">سطوع 0.97</span>
+      <span class="meta">4.04 ث</span>
+      <span class="meta">تقليب بعد 5.04 ث</span>
+    </header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/page-002.jpg" alt="اليوم يريد أن يطير قليلًا." loading="lazy"><p class="overlay">اليوم يريد أن يطير قليلًا.</p></div>
+    <p class="text">اليوم يريد أن يطير قليلًا.</p>
+    <audio controls preload="none" src="assets/audio/stories/act-s1/ar/page-002-ar.wav"></audio>
+
+    <div class="en" dir="ltr">
+      <p class="text">Today he wants to fly a little.</p>
+      <audio controls preload="none" src="assets/audio/stories/act-s1/en/page-002-en.wav"></audio>
+      <span class="meta">4.08s</span>
+    </div>
+    <details><summary>توجيه الأداء</summary><p class="dir">Gentle and matter-of-fact. No anticipation, no excitement.</p></details>
+  </article>
+
+  <article class="page">
+    <header>
+      <span class="num">صفحة 3</span>
+      <span class="meta">سطوع 0.94</span>
+      <span class="meta">5.96 ث</span>
+      <span class="meta">تقليب بعد 6.96 ث</span>
+    </header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/page-003.jpg" alt="طار إلى الشجرة. ثم أبعد قليلًا." loading="lazy"><p class="overlay">طار إلى الشجرة. ثم أبعد قليلًا.</p></div>
+    <p class="text">طار إلى الشجرة. ثم أبعد قليلًا.</p>
+    <audio controls preload="none" src="assets/audio/stories/act-s1/ar/page-003-ar.wav"></audio>
+
+    <div class="en" dir="ltr">
+      <p class="text">He flew to the tree. Then a little farther.</p>
+      <audio controls preload="none" src="assets/audio/stories/act-s1/en/page-003-en.wav"></audio>
+      <span class="meta">6.60s</span>
+    </div>
+    <details><summary>توجيه الأداء</summary><p class="dir">Even pace with a small natural pause between the two sentences. Do not let the pitch rise on أبعد.</p></details>
+  </article>
+
+  <article class="page">
+    <header>
+      <span class="num">صفحة 4</span>
+      <span class="meta">سطوع 0.9</span>
+      <span class="meta">7.16 ث</span>
+      <span class="meta">تقليب بعد 8.16 ث</span>
+    </header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/page-004.jpg" alt="هبّت ريح خفيفة. فتحرّكت الأوراق." loading="lazy"><p class="overlay">هبّت ريح خفيفة. فتحرّكت الأوراق.</p></div>
+    <p class="text">هبّت ريح خفيفة. فتحرّكت الأوراق.</p>
+    <audio controls preload="none" src="assets/audio/stories/act-s1/ar/page-004-ar.wav"></audio>
+
+    <div class="en" dir="ltr">
+      <p class="text">A soft wind blew. The leaves moved.</p>
+      <audio controls preload="none" src="assets/audio/stories/act-s1/en/page-004-en.wav"></audio>
+      <span class="meta">5.28s</span>
+    </div>
+    <details><summary>توجيه الأداء</summary><p class="dir">This is the story's peak and it must stay completely calm. Give خفيفة its shadda clearly but with zero tension. Absolutely no volume increase, no urgency, no drama, no worry in the voice.</p></details>
+  </article>
+
+  <article class="page">
+    <header>
+      <span class="num">صفحة 5</span>
+      <span class="meta">سطوع 0.86</span>
+      <span class="meta">6.56 ث</span>
+      <span class="meta">تقليب بعد 7.56 ث</span>
+    </header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/page-005.jpg" alt="نظر زُغب إلى بيته. وعرف طريقه." loading="lazy"><p class="overlay">نظر زُغب إلى بيته. وعرف طريقه.</p></div>
+    <p class="text">نظر زُغب إلى بيته. وعرف طريقه.</p>
+    <audio controls preload="none" src="assets/audio/stories/act-s1/ar/page-005-ar.wav"></audio>
+
+    <div class="en" dir="ltr">
+      <p class="text">Fluff looked at his home. He knew the way.</p>
+      <audio controls preload="none" src="assets/audio/stories/act-s1/en/page-005-en.wav"></audio>
+      <span class="meta">5.56s</span>
+    </div>
+    <details><summary>توجيه الأداء</summary><p class="dir">Quiet confidence on وعرف طريقه. He is sure, not relieved and not searching.</p></details>
+  </article>
+
+  <article class="page">
+    <header>
+      <span class="num">صفحة 6</span>
+      <span class="meta">سطوع 0.82</span>
+      <span class="meta">5.72 ث</span>
+      <span class="meta">تقليب بعد 6.72 ث</span>
+    </header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/page-006.jpg" alt="فطار إلى العشّ. وأمّه تنتظره." loading="lazy"><p class="overlay">فطار إلى العشّ. وأمّه تنتظره.</p></div>
+    <p class="text">فطار إلى العشّ. وأمّه تنتظره.</p>
+    <audio controls preload="none" src="assets/audio/stories/act-s1/ar/page-006-ar.wav"></audio>
+
+    <div class="en" dir="ltr">
+      <p class="text">He flew to the nest. His mother was waiting.</p>
+      <audio controls preload="none" src="assets/audio/stories/act-s1/en/page-006-en.wav"></audio>
+      <span class="meta">6.08s</span>
+    </div>
+    <details><summary>توجيه الأداء</summary><p class="dir">Warmth on تنتظره, soft and affectionate, still at the same loudness.</p></details>
+  </article>
+
+  <article class="page">
+    <header>
+      <span class="num">صفحة 7</span>
+      <span class="meta">سطوع 0.76</span>
+      <span class="meta">6.60 ث</span>
+      <span class="meta">تقليب بعد 7.60 ث</span>
+    </header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/page-007.jpg" alt="جلس قريبًا منها. والريح هدأت." loading="lazy"><p class="overlay">جلس قريبًا منها. والريح هدأت.</p></div>
+    <p class="text">جلس قريبًا منها. والريح هدأت.</p>
+    <audio controls preload="none" src="assets/audio/stories/act-s1/ar/page-007-ar.wav"></audio>
+
+    <div class="en" dir="ltr">
+      <p class="text">He sat close beside her. The wind grew still.</p>
+      <audio controls preload="none" src="assets/audio/stories/act-s1/en/page-007-en.wav"></audio>
+      <span class="meta">6.36s</span>
+    </div>
+    <details><summary>توجيه الأداء</summary><p class="dir">Slow down on والريح هدأت and let it settle. Softer and sleepier, but not quieter in level.</p></details>
+  </article>
+
+  <article class="page">
+    <header>
+      <span class="num">صفحة 8</span>
+      <span class="meta">سطوع 0.7</span>
+      <span class="meta">5.68 ث</span>
+      <span class="meta">بلا تقليب تلقائي</span>
+    </header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/page-008.jpg" alt="والآن ينام زُغب في بيته." loading="lazy"><p class="overlay">والآن ينام زُغب في بيته.</p></div>
+    <p class="text">والآن ينام زُغب في بيته.</p>
+    <audio controls preload="none" src="assets/audio/stories/act-s1/ar/page-008-ar.wav"></audio>
+
+    <div class="en" dir="ltr">
+      <p class="text">And now Fluff sleeps in his home.</p>
+      <audio controls preload="none" src="assets/audio/stories/act-s1/en/page-008-en.wav"></audio>
+      <span class="meta">6.56s + 800ms beat</span>
+    </div>
+    <details><summary>توجيه الأداء</summary><p class="dir">This must be the SLOWEST line in the whole story, noticeably slower than every page before it. Begin after a short silent beat. Put a clear unhurried pause between each word and let the final word settle into silence. Read it as a closing statement of stillness, not a goodbye and not a question.</p></details>
+  </article></div>
+
+  <h2>أصول إضافية</h2>
+  <div class="grid">
+  <article class="page">
+    <header><span class="num">cover</span><span class="meta">1:1</span><span class="meta">790 KB</span></header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/cover.jpg" alt="asset-act-s1-cover" loading="lazy"></div>
+  </article>
+
+  <article class="page">
+    <header><span class="num">hero</span><span class="meta">16:9</span><span class="meta">632 KB</span></header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/hero.jpg" alt="asset-act-s1-hero" loading="lazy"></div>
+  </article>
+
+  <article class="page">
+    <header><span class="num">thumb</span><span class="meta">3:4</span><span class="meta">653 KB</span></header>
+    <div class="art"><img src="assets/images/stories/act-s1-playveo/thumb.jpg" alt="asset-act-s1-thumb" loading="lazy"></div>
+  </article></div>
+
+  <footer>
+    وُلِّد بـ tools/build-story-preview.mjs — لا تُحرَّر هذه الصفحة يدويًا، أعِد بناءها.
+    <br>كل الملفات المرجعية موجودة على القرص.
+  </footer>
+</body>
+</html>

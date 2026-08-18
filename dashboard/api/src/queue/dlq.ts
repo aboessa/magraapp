@@ -1,4 +1,4 @@
-import type { Env } from '../lib/db'
+import type { Env } from '../lib/db.ts'
 
 /**
  * family-events-dlq: آخر محطة لحدث فشل كل محاولاته.

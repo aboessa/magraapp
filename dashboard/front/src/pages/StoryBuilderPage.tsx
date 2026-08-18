@@ -145,8 +145,13 @@ const copy = {
     layoutTextFocus: 'نصّ بارز',
     layoutPanelsNote: 'قيمة «لوحات» بلا جدول لوحات في المخطَّط: لا هندسة ولا ترتيب قراءة. تُحفظ كتخطيط ولا تُنتج بنية لوحات.',
     transition: 'الانتقال',
-    duration: 'مدّة العرض (ملّي ثانية)',
-    durationHint: 'مدّة عرض الصفحة، وليست بالضرورة طول السرد: صفحة قد تحمل صمتًا مقصودًا.',
+    duration: 'مدّة السرد (ملّي ثانية)',
+    durationHint: 'طول ملف الصوت الفعلي فقط — لا يشمل وقت تأمّل الرسم.',
+    dwell: 'وقت تأمّل الرسم بعد السرد (ثانية)',
+    dwellHint: 'يبقى الرسم ظاهرًا بعد انتهاء الصوت قبل التقليب التلقائي. يظهر بالثواني للوضوح؛ يُحفظ بالمللي ثانية. اتركه 0 لاستخدام السلوك السابق.',
+    narrationDurationLabel: 'مدة السرد',
+    viewingPauseLabel: 'وقت التأمل',
+    estimatedPageExperienceLabel: 'الخبرة المقدرة للصفحة',
 
     completeness: 'اكتمال الصفحة',
     hasImage: 'صورة',
@@ -259,8 +264,13 @@ const copy = {
     layoutTextFocus: 'Text focus',
     layoutPanelsNote: 'The “panels” value has no panel table in the schema: no geometry, no reading order. It is stored as a layout and produces no panel structure.',
     transition: 'Transition',
-    duration: 'Display duration (ms)',
-    durationHint: 'How long the page is shown, which is not necessarily the narration length: a page may carry deliberate silence.',
+    duration: 'Narration duration (ms)',
+    durationHint: 'Actual audio file length only — does not include illustration viewing time.',
+    dwell: 'Viewing pause after narration (seconds)',
+    dwellHint: 'How long the illustration stays after narration ends before auto-turn. Enter seconds; stored as ms. Leave 0 for legacy behaviour.',
+    narrationDurationLabel: 'Narration',
+    viewingPauseLabel: 'Viewing pause',
+    estimatedPageExperienceLabel: 'Estimated page experience',
 
     completeness: 'Page completeness',
     hasImage: 'Image',
@@ -389,7 +399,7 @@ export function StoryBuilderPage() {
         narration_asset_id: localized?.narration_asset_id ?? null,
         // مؤشّرات التوقيت تُمرَّر كما هي: لا شيء في هذا المحرّر يكتبها، وإفراغها
         // بالحفظ كان سيمحو بيانات ربّما كتبها مسار آخر.
-        timing_cues: [],
+        timing_cues: localized?.timing_cues ?? [],
       })
       setSaveState('saved')
       await load()
@@ -397,7 +407,7 @@ export function StoryBuilderPage() {
       setSaveState('failed')
       setError(caught instanceof Error ? caught.message : text.loadError)
     }
-  }, [selected, canEdit, language, draftText, draftAlt, localized?.narration_asset_id, load, text.loadError])
+  }, [selected, canEdit, language, draftText, draftAlt, localized?.narration_asset_id, localized?.timing_cues, load, text.loadError])
 
   // Ctrl/Cmd+S يحفظ. لا نختطف مفاتيح أخرى: أسهم التنقّل تتعارض مع الكتابة في
   // منطقة نصّ، والتنقّل بين الصفحات له أزراره.
@@ -498,7 +508,7 @@ export function StoryBuilderPage() {
           body_text: draftText.trim() || null,
           alt_text: draftAlt.trim() || null,
           narration_asset_id: assetId,
-          timing_cues: [],
+          timing_cues: localized?.timing_cues ?? [],
         })
       }
       await load()
@@ -529,7 +539,7 @@ export function StoryBuilderPage() {
         body_text: draftText.trim() || null,
         alt_text: draftAlt.trim() || null,
         narration_asset_id: null,
-        timing_cues: [],
+        timing_cues: localized?.timing_cues ?? [],
       })
       await load()
     } finally {
@@ -980,6 +990,31 @@ export function StoryBuilderPage() {
                     />
                   </label>
                   <p className="story-inspector__hint">{text.durationHint}</p>
+                  <label>
+                    <span>{text.dwell}</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="60"
+                      step="1"
+                      dir="ltr"
+                      defaultValue={selected.dwell_ms != null ? String((selected.dwell_ms / 1000).toFixed(1).replace(/\.0$/, '')) : ''}
+                      disabled={!canEdit || busy}
+                      onBlur={(event) => {
+                        const raw = event.target.value.trim()
+                        if (!raw) { void updateLayout({ dwell_ms: null }); return }
+                        const seconds = Number(raw)
+                        if (Number.isNaN(seconds) || seconds < 0) return
+                        void updateLayout({ dwell_ms: Math.round(seconds * 1000) })
+                      }}
+                    />
+                  </label>
+                  <p className="story-inspector__hint">{text.dwellHint}</p>
+                  <div className="story-facts" style={{ marginTop: 8 }}>
+                    <div><dt>{text.narrationDurationLabel}</dt><dd dir="ltr">{selected.duration_ms != null ? `${(selected.duration_ms / 1000).toFixed(1)}s` : '—'}</dd></div>
+                    <div><dt>{text.viewingPauseLabel}</dt><dd dir="ltr">{selected.dwell_ms != null ? `${(selected.dwell_ms / 1000).toFixed(1)}s` : `0s (${locale === 'ar' ? 'افتراضي' : 'legacy'})`}</dd></div>
+                    <div><dt>{text.estimatedPageExperienceLabel}</dt><dd dir="ltr">{(() => { const n = selected.duration_ms ?? 0; const d = selected.dwell_ms ?? 0; const total = (n + d) / 1000; return total > 0 ? `~${total.toFixed(1)}s` : '—'; })()}</dd></div>
+                  </div>
                   <label>
                     <span>{text.transition}</span>
                     <input

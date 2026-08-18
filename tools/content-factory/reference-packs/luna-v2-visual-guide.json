@@ -1,0 +1,22 @@
+{
+  "schema_version": "content-factory.visual-guide/v1",
+  "identity_id": "luna-discovers-words/luna-v2",
+  "version": "luna-v2",
+  "series_slug": "luna-discovers-words",
+  "visual_direction": {
+    "style": "Original high-end contemporary stylized 3D preschool feature animation. Polished studio-quality rendering, rounded appealing character design, expressive facial animation, soft physically based materials, subtle subsurface skin shading, detailed cloth with clean folds, cinematic global illumination, warm volumetric rim light, gentle depth of field, rich dimensional environments, smooth natural body mechanics, and premium color grading. The result must look current and cinematic, not like flat educational clip art.",
+    "luna": "Luna is the same consistent five-year-old Arab girl in every clip: warm tan skin, round cheeks, large expressive brown eyes, soft eyebrows, small friendly nose, golden-yellow hijab fully covering her hair and neck, a small silver crescent pin at her left shoulder, knee-length golden-yellow long-sleeve tunic, dark teal trousers, and dark teal shoes. Child proportions, four fingers plus thumb per hand, same face, same outfit, same materials, and same scale in all shots.",
+    "najmi": "Najmi is the same palm-sized living five-point golden star in every clip, with rounded points, two small dark-brown eyes, one tiny friendly mouth, no arms, no legs, no accessories. Najmi floats slowly and gives a restrained cyan volumetric glow when guiding attention. Najmi never speaks words.",
+    "world": "Planet Abjad is a magical safe 3D learning garden under a deep navy cosmic sky: softly rolling indigo hills, warm cream paths, rounded coral and cyan plants, tiny golden stars, soft atmospheric depth, and no readable letters. It feels bright, warm, premium, spacious, and safe for ages three to five.",
+    "props": "The same recurring 3D props persist exactly: one glossy red apple with one green leaf; one teal ball with one broad golden-yellow diagonal band; one friendly small ginger cat with no clothes; one cream toy-like house with coral roof and cyan door. A picture card is the same object shown as a clean 3D miniature inside a thick rounded cyan frame.",
+    "camera": "Cinematic child-eye-level 16:9 camera, gentle dolly or slow arc only, stable horizon, readable staging, no handheld shake, no rapid zoom, no fast cuts, no extreme lens distortion.",
+    "negative": "No 2D illustration, no flat vector art, no cutout animation, no old television-cartoon look, no model sheet, no storyboard, no checkerboard, no on-screen text, no captions, no letters, no numbers, no logos, no watermark, no extra people, no duplicate Luna, no duplicate Najmi, no extra limbs, no visible hair, no wardrobe change, no frightening darkness, no storm, no flashing, no violence, and no object morphing."
+  },
+  "audio_direction": {
+    "voice": "One consistent youthful warm Arabic female character voice performs Luna in all ten clips. The voice is light, friendly, clear, curious, and natural, never an announcer, never robotic, never babyish, and never shouted. Use clear simplified Modern Standard Arabic with natural educated Egyptian articulation.",
+    "dialogue_rule": "Speak every quoted Arabic line exactly as written, without translation, paraphrase, added words, repeated words, labels, narrator commentary, or gibberish. Luna is the only speaking character. Match Luna's mouth accurately to the Arabic speech whenever she is visible; when she is absent, the same voice is heard gently off-camera.",
+    "pronunciation": "Pronounce تُفّاحة with a clearly doubled ف, كُرة with damma on ك, قِطّة with kasra on ق and a clearly doubled ط, and بَيت with fatha on ب. In the final four-word list, pause about 400 milliseconds between words.",
+    "mix": "Dialogue is always foreground and intelligible. Use soft magical orchestral-marimba underscore at low volume, gentle garden ambience, one short crystalline chime for Najmi, and restrained success sparkles. No other voices, no singing, no loud percussion, no sudden sound, and no music covering speech.",
+    "silence_rule": "Thinking pauses specified in each clip are real silence in dialogue; retain only very low ambience during them."
+  }
+}

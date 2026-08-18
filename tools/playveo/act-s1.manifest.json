@@ -1,0 +1,124 @@
+{
+  "story": "act-s1",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-01-bird-home.md",
+  "out_dir": "assets/images/stories/act-s1-playveo",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "notes": [
+    "Scenes are copied from tools/autoflow/act-s1.manifest.json. They are already reviewed against the story file's hard rules, so re-authoring them here would risk losing a rule.",
+    "Prompts are English on purpose: image models parse visual description more accurately. No Arabic text is ever rendered inside an image; the story text is a separate layer.",
+    "No humans appear in this story, so the catalog hijab / Arab-features clauses do not apply.",
+    "Hard rules from the story file, enforced inline in every prompt: nest visible on every page, mother present from page 1, no full darkness, no visible teeth, bird never afraid, 2 characters only, 2-3 elements per page, no burnt-in text.",
+    "page-001 is generated FIRST and alone via text-to-image, then reused as a base64 image-to-image reference for every other asset so the bird stays the same character.",
+    "PlayVeo returns JPEG, not PNG. The catalog asks for a PNG master, so these outputs are proofs, not final masters, until the provider can emit PNG or a lossless path is added.",
+    "PlayVeo accepts explicit ratio strings such as 16:9, 1:1 and 3:4, unlike the AutoFlow Flow models which only expose landscape/portrait/square. That removes the reason act-s1 thumb had to be routed to freepik.",
+    "The shared style tail deliberately does NOT fix the sky colour. The catalog's brand palette clause says 'deep space / midnight navy sky', and carrying that into this manifest produced a first attempt at page-001 that came back as a night sky full of stars — directly against the story file, where page 1 is the BRIGHTEST page (brightness 1.00, warm daylight) and a visible moon is mandatory only on the night pages 7 and 8. The brightness curve in the story file outranks the palette default, so light is set per page in the `light` field.",
+    "The `light` field carries an explicit negative clause on the daytime pages. Stating the light positively was not enough on the first attempt; the stars only disappeared once 'no stars, no moon' was named."
+  ],
+  "model": "nano_banana_2",
+  "style_tail": " Soft preschool storybook art, rounded shapes, 3 elements max, cyan and star-yellow accents used sparingly, full-bleed to all four edges, no text, no logo, no frame, no border, no visible teeth, no fear.",
+  "mode": "text-to-image",
+  "mode_note": "Every asset is text-to-image. The image-to-image endpoint on this provider was tested with six live jobs and returns a byte-identical result for a given source image regardless of the prompt — even 'a bright red sports car in a desert' returned the bird nest, and an explicit strength of 1.0 was echoed back but changed nothing. Padding the file after the JPEG EOI marker did not miss the cache either, so the key is derived from the decoded image, not the bytes. It still bills 0.15 credits per call. Until that is fixed, character identity has to be carried by words, not by a reference image, which is why `character_lock` exists and is prepended to every prompt.",
+  "character_lock": "Zughb is a tiny round baby bird with very pale light-gray downy feathers, a small soft orange-brown beak, big round dark friendly eyes, soft pink cheek blush, and no teeth ever. His mother is the same pale light-gray but clearly larger, with faint light-brown wing markings and the same big gentle eyes. Only these two birds appear, and they look exactly the same on every page.",
+  "character_lock_note": "Transcribed from the approved page-001 output so the remaining pages match what was actually generated, rather than describing an intent the model did not follow.",
+  "reference_seed": "page-001",
+  "assets": [
+    {
+      "id": "asset-act-s1-page-001",
+      "file": "page-001.jpg",
+      "order": 1,
+      "aspect_ratio": "16:9",
+      "brightness": 1.0,
+      "scene": "A small round nest on a tree branch. Inside it a tiny light-gray baby bird with big friendly gentle eyes, and beside him his slightly larger mother bird. Soft green leaves.",
+      "light": "Bright warm midday daylight, clear light blue daytime sky. Brightest page of the story. No stars, no moon, no night."
+    },
+    {
+      "id": "asset-act-s1-page-002",
+      "file": "page-002.jpg",
+      "order": 2,
+      "aspect_ratio": "16:9",
+      "brightness": 0.97,
+      "scene": "A tiny light-gray baby bird with big gentle eyes stands on the rim of his round nest on a branch, looking up at the open sky. His larger mother bird stays in the nest beside him.",
+      "light": "Warm daylight, clear light blue daytime sky. No stars, no moon, no night."
+    },
+    {
+      "id": "asset-act-s1-page-003",
+      "file": "page-003.jpg",
+      "order": 3,
+      "aspect_ratio": "16:9",
+      "brightness": 0.94,
+      "scene": "A tiny light-gray baby bird with big gentle eyes flies calmly near a leafy tree, wings open and relaxed. His round nest stays visible, small in the background, with his mother bird in it.",
+      "light": "Warm daylight, clear light blue daytime sky. No stars, no moon, no night."
+    },
+    {
+      "id": "asset-act-s1-page-004",
+      "file": "page-004.jpg",
+      "order": 4,
+      "aspect_ratio": "16:9",
+      "brightness": 0.9,
+      "scene": "A tiny light-gray baby bird with big gentle eyes glides calmly, tilting a little as a soft breeze moves a few leaves. Calm face, not startled. His round nest with his mother bird stays visible in the background.",
+      "light": "Warm daylight, gently overcast but still bright, light blue daytime sky. A soft breeze only, never a storm. No stars, no moon, no night."
+    },
+    {
+      "id": "asset-act-s1-page-005",
+      "file": "page-005.jpg",
+      "order": 5,
+      "aspect_ratio": "16:9",
+      "brightness": 0.86,
+      "scene": "A tiny light-gray baby bird with big gentle eyes turns his head confidently toward his round nest on a branch, where his mother bird waits for him.",
+      "light": "Late afternoon turning golden, warm low sun, sky still light. No stars, no moon yet."
+    },
+    {
+      "id": "asset-act-s1-page-006",
+      "file": "page-006.jpg",
+      "order": 6,
+      "aspect_ratio": "16:9",
+      "brightness": 0.82,
+      "scene": "A tiny light-gray baby bird with big gentle eyes lands into his round nest on a branch while his larger mother bird opens one wing to welcome him.",
+      "light": "Soft golden evening light, warm amber sky near the horizon. No stars yet."
+    },
+    {
+      "id": "asset-act-s1-page-007",
+      "file": "page-007.jpg",
+      "order": 7,
+      "aspect_ratio": "16:9",
+      "brightness": 0.76,
+      "scene": "A tiny light-gray baby bird with big gentle eyes sits close under his mother bird's wing inside their round nest on a branch. Leaves completely still.",
+      "light": "Calm blue evening with a soft glowing crescent moon clearly visible as the light source. Dimmer than the daytime pages but never dark; every shape stays readable."
+    },
+    {
+      "id": "asset-act-s1-page-008",
+      "file": "page-008.jpg",
+      "order": 8,
+      "aspect_ratio": "16:9",
+      "brightness": 0.7,
+      "scene": "A small round nest on a tree branch seen from a little further away, a tiny light-gray baby bird asleep beside his mother bird.",
+      "light": "Quiet blue night with a soft glowing moon clearly visible as the light source. Dimmest page of the story, yet never fully dark and always readable."
+    },
+    {
+      "id": "asset-act-s1-cover",
+      "file": "cover.jpg",
+      "order": 9,
+      "aspect_ratio": "1:1",
+      "scene": "Square cover art: a small round nest on a tree branch holding a tiny light-gray baby bird with big gentle eyes and his larger mother bird, centered, soft leaves framing.",
+      "light": "Gentle daylight sky behind. No stars, no moon."
+    },
+    {
+      "id": "asset-act-s1-hero",
+      "file": "hero.jpg",
+      "order": 10,
+      "aspect_ratio": "16:9",
+      "scene": "Wide cinematic scene: a tiny light-gray baby bird with big gentle eyes flying calmly at left, his round nest with his mother bird on a branch behind him. Keep the right 40 percent calm, dim and uncluttered so an Arabic title can be placed there later.",
+      "light": "Warm evening sky, soft and low contrast."
+    },
+    {
+      "id": "asset-act-s1-thumb",
+      "file": "thumb.jpg",
+      "order": 11,
+      "aspect_ratio": "3:4",
+      "ratio_note": "Native 3:4 straight from PlayVeo, so the freepik detour the AutoFlow manifest needed is not required here.",
+      "scene": "Vertical cover: a tall tree branch with a small round nest holding a tiny light-gray baby bird with big gentle eyes and his larger mother bird. Composition built vertically, clean calm upper quarter so an Arabic title can be placed there later.",
+      "light": "Soft evening sky with a gentle moon."
+    }
+  ]
+}

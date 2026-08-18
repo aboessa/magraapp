@@ -39,7 +39,7 @@ async function hmac(value: string, secret: string) {
   return new Uint8Array(signature);
 }
 
-export function hasUsableSecret(value: string | undefined) {
+export function hasUsableSecret(value: string | undefined): value is string {
   return typeof value === 'string' && encoder.encode(value).length >= 32;
 }
 
@@ -84,6 +84,57 @@ export async function verifyPassword(password: string, stored: string) {
 export async function createHmacSignature(value: string, secret: string) {
   if (!hasUsableSecret(secret)) throw new Error('Signing secret is not configured');
   return base64Url(await hmac(value, secret));
+}
+
+/// Encrypts a small server-side locator with authenticated encryption. The
+/// purpose is included both in the HMAC-based key derivation and as AES-GCM
+/// additional data, so the auth signing secret can be reused without allowing a
+/// ciphertext from one domain to be opened in another.
+export async function sealOpaqueValue(value: string, secret: string, purpose: string) {
+  if (!hasUsableSecret(secret) || !purpose) throw new Error('Encryption secret is not configured');
+  const keyBytes = await hmac(`majarra:opaque-key:v1:${purpose}`, secret);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    keyBytes as BufferSource,
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt'],
+  );
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({
+    name: 'AES-GCM',
+    iv: iv as BufferSource,
+    additionalData: encoder.encode(`majarra:opaque-aad:v1:${purpose}`) as BufferSource,
+  }, key, encoder.encode(value) as BufferSource);
+  return `v1.${base64Url(iv)}.${base64Url(new Uint8Array(encrypted))}`;
+}
+
+export async function openOpaqueValue(value: string, secret: string, purpose: string): Promise<string | null> {
+  if (!hasUsableSecret(secret) || !purpose) return null;
+  const [version, ivText, encryptedText, ...extra] = value.split('.');
+  if (version !== 'v1' || !ivText || !encryptedText || extra.length) return null;
+  const iv = fromBase64Url(ivText);
+  const encrypted = fromBase64Url(encryptedText);
+  if (!iv || iv.length !== 12 || !encrypted || encrypted.length < 16) return null;
+
+  try {
+    const keyBytes = await hmac(`majarra:opaque-key:v1:${purpose}`, secret);
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyBytes as BufferSource,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt'],
+    );
+    const plaintext = await crypto.subtle.decrypt({
+      name: 'AES-GCM',
+      iv: iv as BufferSource,
+      additionalData: encoder.encode(`majarra:opaque-aad:v1:${purpose}`) as BufferSource,
+    }, key, encrypted as BufferSource);
+    return decoder.decode(plaintext);
+  } catch {
+    return null;
+  }
 }
 
 export async function verifyHmacSignature(value: string, signature: string, secret: string) {

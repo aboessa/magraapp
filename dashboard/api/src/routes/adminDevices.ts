@@ -33,11 +33,11 @@
 /// support routers.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryFirst } from '../lib/db';
-import { requireAdmin, requirePermission } from '../lib/adminAuth';
-import { actorId, auditStatement } from '../lib/auditLog';
-import { callDurable, familyStub } from '../lib/doClient';
+import type { Env } from '../lib/db.ts';
+import { queryFirst } from '../lib/db.ts';
+import { requireAdmin, requirePermission } from '../lib/adminAuth.ts';
+import { actorId, auditStatement } from '../lib/auditLog.ts';
+import { callDurable, familyStub } from '../lib/doClient.ts';
 
 type AppEnv = { Bindings: Env };
 

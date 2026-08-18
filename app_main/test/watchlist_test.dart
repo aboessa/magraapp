@@ -23,8 +23,11 @@ void main() {
   group('WatchlistNotifier toggle flow', () {
     // childId=null keeps the server mirror a no-op, so no network is touched and
     // the local add/read/remove flow can be verified deterministically.
-    WatchlistNotifier build() =>
-        WatchlistNotifier(WatchlistStore(), MajarraApiClient(http.Client()), null);
+    WatchlistNotifier build() => WatchlistNotifier(
+      WatchlistStore(),
+      MajarraApiClient(http.Client()),
+      null,
+    );
 
     test('add then read then remove', () async {
       final notifier = build();

@@ -185,10 +185,10 @@ describe('DashboardPage executive modules', () => {
 
     await screen.findByText('وحدة support')
     // إعداد الدعم يقدّم الدعم والعملاء؛ الحقوق تُنقل إلى «وحدات أخرى» ولا تُخفى.
-    expect(screen.getByText('وحدات أخرى')).toBeInTheDocument()
+    expect(screen.getByText(/وحدات أخرى/)).toBeInTheDocument()
     expect(screen.getByText('وحدة rights')).toBeInTheDocument()
 
-    await user.selectOptions(screen.getByLabelText('الترتيب'), 'all')
+    await user.click(screen.getByRole('tab', { name: 'الكل' }))
     await waitFor(() => expect(screen.queryByText('وحدات أخرى')).not.toBeInTheDocument())
     expect(screen.getByText('وحدة rights')).toBeInTheDocument()
   })
@@ -199,7 +199,7 @@ describe('DashboardPage executive modules', () => {
     renderWithProviders(<ExecutiveModules locale="ar" />, { route: '/' })
 
     await screen.findByText('وحدة support')
-    await user.selectOptions(screen.getByLabelText('الترتيب'), 'marketing')
+    await user.click(screen.getByRole('tab', { name: /تسويق/ }))
     expect(window.localStorage.getItem('majarra-admin-dashboard-preset')).toBe('marketing')
     // الحدّ مُعلَن: لا جدول تفضيلات في الخادم، فالاختيار لا يسافر مع الحساب.
     expect(screen.getByText(/تفضيل في هذا المتصفح/)).toBeInTheDocument()

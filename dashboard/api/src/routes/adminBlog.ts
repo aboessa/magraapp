@@ -12,11 +12,11 @@
 /// created. `is_autosave` separates them; autosaves are pruned, manual revisions are not.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { requireAdmin, requirePermission } from '../lib/adminAuth';
-import { actorId, auditStatement } from '../lib/auditLog';
-import { isIslamicContent } from '../lib/islamicContent';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { requireAdmin, requirePermission } from '../lib/adminAuth.ts';
+import { actorId, auditStatement } from '../lib/auditLog.ts';
+import { isIslamicContent } from '../lib/islamicContent.ts';
 import {
   blocksToText,
   isCmsLanguage,

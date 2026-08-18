@@ -51,7 +51,7 @@
 /// invented figure. They are listed in `limits` instead, by name, with the reason.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
+import type { Env } from '../lib/db.ts';
 import { queryFirst } from '../lib/db.ts';
 import { requireAdmin } from '../lib/adminAuth.ts';
 import { SQL_DEADLINE_PASSED } from '../lib/supportCrm.ts';

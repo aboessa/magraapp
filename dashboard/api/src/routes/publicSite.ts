@@ -18,9 +18,9 @@
 /// directive.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { cachedPublicJson } from '../lib/publicCache';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { cachedPublicJson } from '../lib/publicCache.ts';
 import { CMS_LANGUAGES, direction, type CmsLanguage } from '../lib/cmsContent.ts';
 import { planetLanguages, planetPath, seriesLanguages, seriesPath } from '../lib/publicRoutes.ts';
 

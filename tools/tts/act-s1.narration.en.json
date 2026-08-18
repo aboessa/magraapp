@@ -1,0 +1,96 @@
+{
+  "story": "act-s1",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-01-bird-home.md",
+  "language": "en",
+  "language_code": "en-US",
+  "out_dir": "assets/audio/stories/act-s1/en",
+  "model": "gemini-3.1-flash-tts-preview",
+  "voice": "Leda",
+  "status": "APPROVED for generation — wording and the name 'Fluff' signed off by the project owner on 2026-08-11",
+  "review_note": "Approved for audio generation. This records approval to generate, not the formal مراجعة لغوية the story file requires before PUBLISHING; that sign-off is still outstanding and is tracked in the story's acceptance criteria.",
+  "authoring_rules_applied": [
+    "Each sentence is 8 words or fewer, per the series bible's hard limit.",
+    "Re-authored rather than translated literally, as the story file and series bible both require.",
+    "The name زُغب means soft down feathers. It is replaced with 'Fluff' — short, concrete, and familiar to an English-speaking three-year-old — because the story file states the name is substituted locally rather than transliterated. 'Zughb' would be unpronounceable for the target reader and carries no meaning.",
+    "Page 4 uses the English line already present in the story file's page-4 data example, so the one approved English sentence in the repository is not silently replaced.",
+    "Page 5 keeps 'He knew the way' and never implies searching or being lost: the story file forbids تيه or بحث on this page, and that constraint is about meaning, so it survives translation.",
+    "Page 8 is a statement of stillness with no event, no farewell and no question, per the story file.",
+    "The mother is present and named on the pages where Arabic names her, so the rule that no character disappears holds in English too."
+  ],
+  "notes": [
+    "Durations must be measured from the English audio, never copied from Arabic. The series bible states this explicitly: durationMs and autoTurnAfterMs differ per language.",
+    "English averages more words but shorter words than Arabic (Arabic here is 3.95 letters per word), so the Arabic letters/sec calibration does NOT transfer. English needs its own calibration once generated.",
+    "Voice is Leda for continuity of character across languages. This is a choice, not a measurement: Leda was auditioned on Arabic only."
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma\n## \"The Kind Older Sister\"\nSalma is a young woman in her early twenties with a light, bright, distinctly feminine voice. She is not a professional announcer and does not sound like one. She sounds like a kind older sister who reads to a small child every night.\n\n## THE SCENE\nA child's bedroom, late evening, one warm lamp on. A three year old is lying down, already sleepy, holding the edge of the blanket. Salma is sitting on the floor beside the bed with the picture book open on her knees. The room is quiet enough that she never needs to raise her voice.\n\n### DIRECTOR'S NOTES\nStyle: Bright, soft and affectionate, with a gentle vocal smile the listener can hear. Light and youthful in timbre, never breathy, never babyish, and never a performed cartoon voice. Warm and reassuring throughout.\nPacing: Slow and unhurried. Leave a small natural pause at every full stop so a small child can follow.\nAccent: Clear, neutral, unhurried English as an educated speaker reads a picture book aloud to a toddler.\nLoudness: Constant from the first word to the last. No build-up, no escalation, no dramatic emphasis, no gasps or exclamations.",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-act-s1-vo-en-001",
+      "file": "page-001-en.wav",
+      "text": "This is Fluff. His home is a small nest.",
+      "audio_tag": "[warm, steady, unhurried]",
+      "style": "Steady and welcoming, at the story's normal pace. Say the name Fluff clearly; this is the first time the child hears it. Articulate carefully WITHOUT stretching the line out: this page must not be slower than the rest of the story.",
+      "planned_duration_ms": 5000
+    },
+    {
+      "page": 2,
+      "id": "asset-act-s1-vo-en-002",
+      "file": "page-002-en.wav",
+      "text": "Today he wants to fly a little.",
+      "style": "Gentle and matter-of-fact. No anticipation, no excitement.",
+      "planned_duration_ms": 4200
+    },
+    {
+      "page": 3,
+      "id": "asset-act-s1-vo-en-003",
+      "file": "page-003-en.wav",
+      "text": "He flew to the tree. Then a little farther.",
+      "style": "Even pace with a small natural pause between the two sentences. Do not let the pitch rise on farther.",
+      "planned_duration_ms": 5200
+    },
+    {
+      "page": 4,
+      "id": "asset-act-s1-vo-en-004",
+      "file": "page-004-en.wav",
+      "text": "A soft wind blew. The leaves moved.",
+      "style": "This is the story's peak and it must stay completely calm. Absolutely no volume increase, no urgency, no drama, no worry in the voice.",
+      "planned_duration_ms": 4600
+    },
+    {
+      "page": 5,
+      "id": "asset-act-s1-vo-en-005",
+      "file": "page-005-en.wav",
+      "text": "Fluff looked at his home. He knew the way.",
+      "style": "Quiet confidence on He knew the way. He is sure, not relieved and not searching.",
+      "planned_duration_ms": 5000
+    },
+    {
+      "page": 6,
+      "id": "asset-act-s1-vo-en-006",
+      "file": "page-006-en.wav",
+      "text": "He flew to the nest. His mother was waiting.",
+      "style": "Warmth on His mother was waiting, soft and affectionate, still at the same loudness.",
+      "planned_duration_ms": 5200
+    },
+    {
+      "page": 7,
+      "id": "asset-act-s1-vo-en-007",
+      "file": "page-007-en.wav",
+      "text": "He sat close beside her. The wind grew still.",
+      "style": "Slow down on The wind grew still and let it settle. Softer and sleepier, but not quieter in level.",
+      "planned_duration_ms": 5200
+    },
+    {
+      "page": 8,
+      "id": "asset-act-s1-vo-en-008",
+      "file": "page-008-en.wav",
+      "text": "And now Fluff sleeps in his home.",
+      "audio_tag": "[very slow, drowsy, one gentle word at a time]",
+      "pre_roll_ms": 800,
+      "style": "This must be the SLOWEST line in the whole story, noticeably slower than every page before it. Begin after a short silent beat. Put a clear unhurried pause between each word and let the final word settle into silence. Read it as a closing statement of stillness, not a goodbye and not a question.",
+      "planned_duration_ms": 5600
+    }
+  ]
+}

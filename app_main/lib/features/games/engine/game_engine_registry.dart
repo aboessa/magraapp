@@ -41,7 +41,7 @@ abstract class GameEngine {
 
 class GameEngineRegistry {
   GameEngineRegistry(Iterable<GameEngine> engines)
-      : _engines = {for (final engine in engines) engine.engineId: engine};
+    : _engines = {for (final engine in engines) engine.engineId: engine};
 
   final Map<String, GameEngine> _engines;
 
@@ -71,7 +71,10 @@ enum GameUnavailableReason {
   /// This build has no implementation for the pack's engine.
   unsupportedEngine,
 
-  /// The pack asks for a newer engine version than this build implements.
+  /// The content was authored for a newer implementation of a known engine.
+  unsupportedEngineVersion,
+
+  /// The pack schema is newer than the parser in this build.
   unsupportedPackVersion,
 
   /// Touch-only content opened on a television.
@@ -82,9 +85,7 @@ enum GameUnavailableReason {
 }
 
 class GameAvailability {
-  const GameAvailability.available()
-      : reason = null,
-        detail = null;
+  const GameAvailability.available() : reason = null, detail = null;
 
   const GameAvailability.unavailable(this.reason, {this.detail});
 
@@ -96,17 +97,24 @@ class GameAvailability {
 
 /// Decides whether a resolved pack can actually run here.
 ///
-/// Kept separate from the registry so it can be tested without widgets, and so
-/// the same decision serves both the game screen and any catalogue filtering.
+/// [requiredEngineVersion] comes from the published game row. It is independent
+/// from [pack.packVersion], which versions the JSON contract itself. Keeping the
+/// two checks separate prevents a new engine implementation from accidentally
+/// being accepted merely because its pack still uses an old schema (and vice
+/// versa).
 GameAvailability evaluateAvailability({
   required GameEngineRegistry registry,
   required String engineId,
   required GamePack? pack,
-  required int engineVersionSupported,
+  required int requiredEngineVersion,
+  required int supportedEngineVersion,
+  required int supportedPackVersion,
   required bool isTelevision,
 }) {
   if (pack == null) {
-    return const GameAvailability.unavailable(GameUnavailableReason.malformedPack);
+    return const GameAvailability.unavailable(
+      GameUnavailableReason.malformedPack,
+    );
   }
   final engine = registry.resolve(engineId);
   if (engine == null) {
@@ -115,14 +123,23 @@ GameAvailability evaluateAvailability({
       detail: engineId,
     );
   }
-  if (pack.packVersion > engineVersionSupported) {
+  if (requiredEngineVersion > supportedEngineVersion) {
+    return GameAvailability.unavailable(
+      GameUnavailableReason.unsupportedEngineVersion,
+      detail:
+          'engine v$requiredEngineVersion > supported v$supportedEngineVersion',
+    );
+  }
+  if (pack.packVersion > supportedPackVersion) {
     return GameAvailability.unavailable(
       GameUnavailableReason.unsupportedPackVersion,
-      detail: 'pack v${pack.packVersion} > engine v$engineVersionSupported',
+      detail: 'pack v${pack.packVersion} > supported v$supportedPackVersion',
     );
   }
   if (isTelevision && !(engine.supportsDpad && pack.supportsDpad)) {
-    return const GameAvailability.unavailable(GameUnavailableReason.requiresTouch);
+    return const GameAvailability.unavailable(
+      GameUnavailableReason.requiresTouch,
+    );
   }
   return const GameAvailability.available();
 }

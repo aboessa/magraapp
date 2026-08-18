@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,7 +8,7 @@ import '../../../../core/analytics/analytics.dart';
 import '../../../../core/widgets/cinematic_image.dart';
 import '../../domain/content_models.dart';
 
-/// Central portal orb button - cinematic premium glowing orb
+/// Focusable portal trigger shared by touch, keyboard and television shells.
 class MajarraPortalButton extends StatefulWidget {
   const MajarraPortalButton({
     required this.onPressed,
@@ -30,6 +29,7 @@ class _MajarraPortalButtonState extends State<MajarraPortalButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _orbitController;
   bool? _reducedMotion;
+  bool _focused = false;
 
   @override
   void initState() {
@@ -61,127 +61,92 @@ class _MajarraPortalButtonState extends State<MajarraPortalButton>
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: widget.semanticLabel,
-      child: GestureDetector(
-        onTap: widget.onPressed,
-        child: SizedBox(
-          width: widget.size,
-          height: widget.size,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Outer glow
-              Container(
-                width: widget.size,
-                height: widget.size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6A3DF2).withValues(alpha: 0.38),
-                      blurRadius: widget.size * 0.32,
-                      spreadRadius: 2,
-                    ),
-                    BoxShadow(
-                      color: const Color(0xFF00D6F5).withValues(alpha: 0.18),
-                      blurRadius: widget.size * 0.5,
-                    ),
-                  ],
-                ),
-              ),
-              // Rotating orbit ring
-              AnimatedBuilder(
-                animation: _orbitController,
-                builder: (_, __) => Transform.rotate(
-                  angle: _orbitController.value * math.pi * 2,
-                  child: CustomPaint(
-                    size: Size.square(widget.size),
-                    painter: _PortalOrbitPainter(),
-                  ),
-                ),
-              ),
-              // Core orb - Majarra Galaxy professional
-              Container(
-                width: widget.size * 0.78,
-                height: widget.size * 0.78,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const RadialGradient(
-                    center: Alignment(0.18, -0.28),
-                    radius: 1.22,
-                    colors: [
-                      Color(0xFFEDE8FF),
-                      Color(0xFFB8AAFF),
-                      Color(0xFF7A5CFF),
-                      Color(0xFF4A2DB8),
-                      Color(0xFF1B1450),
-                      Color(0xFF0B0F2A),
-                    ],
-                    stops: [0, 0.18, 0.38, 0.62, 0.84, 1],
-                  ),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.24),
-                    width: 1.2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.32),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
+    return Tooltip(
+      message: widget.semanticLabel,
+      child: Semantics(
+        button: true,
+        label: widget.semanticLabel,
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkResponse(
+            onTap: widget.onPressed,
+            onFocusChange: (focused) => setState(() => _focused = focused),
+            radius: widget.size * 0.62,
+            containedInkWell: true,
+            customBorder: const CircleBorder(),
+            focusColor: AppColors.electricCyan.withValues(alpha: 0.24),
+            hoverColor: Colors.white.withValues(alpha: 0.08),
+            child: SizedBox.square(
+              dimension: widget.size,
+              child: ExcludeSemantics(
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Galaxy spiral arms
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _GalaxySpiralPainter(),
-                      ),
-                    ),
-                    // Center star
-                    Container(
-                      width: widget.size * 0.26,
-                      height: widget.size * 0.26,
+                    AnimatedContainer(
+                      duration: MediaQuery.disableAnimationsOf(context)
+                          ? Duration.zero
+                          : const Duration(milliseconds: 140),
+                      width: widget.size,
+                      height: widget.size,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: const RadialGradient(
-                          colors: [Color(0xFFFFF8D0), Color(0xFFFFD34D), Color(0xFFFF9F1C)],
+                        border: Border.all(
+                          color: _focused
+                              ? AppColors.electricCyan
+                              : Colors.white.withValues(alpha: 0.14),
+                          width: _focused ? 3 : 1,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFFD34D).withValues(alpha: 0.85),
-                            blurRadius: 12,
-                            spreadRadius: 1,
+                            color: const Color(
+                              0xFF6A3DF2,
+                            ).withValues(alpha: _focused ? 0.62 : 0.38),
+                            blurRadius: widget.size * 0.34,
+                            spreadRadius: _focused ? 3 : 1,
                           ),
                         ],
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.55)),
+                      ),
+                    ),
+                    AnimatedBuilder(
+                      animation: _orbitController,
+                      builder: (context, _) => Transform.rotate(
+                        angle: _orbitController.value * math.pi * 2,
+                        child: CustomPaint(
+                          size: Size.square(widget.size * 0.9),
+                          painter: const _PortalOrbitPainter(),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: widget.size * 0.72,
+                      height: widget.size * 0.72,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const RadialGradient(
+                          center: Alignment(0.18, -0.28),
+                          radius: 1.2,
+                          colors: [
+                            Color(0xFFEDE8FF),
+                            Color(0xFF9B8CFF),
+                            Color(0xFF6A3DF2),
+                            Color(0xFF24186D),
+                          ],
+                        ),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Icon(
                         Icons.auto_awesome_rounded,
-                        color: const Color(0xFF1A1450),
-                        size: widget.size * 0.15,
+                        color: const Color(0xFFFFE27A),
+                        size: widget.size * 0.28,
                       ),
                     ),
                   ],
                 ),
               ),
-              // Hidden semantics helper
-              IgnorePointer(
-                child: SizedBox(
-                  width: widget.size * 0.1,
-                  height: widget.size * 0.1,
-                  child: const Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Colors.transparent,
-                    size: 1,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -195,7 +160,10 @@ Future<void> showMajarraPortal(
   required VoidCallback onExplore,
   required VoidCallback onOpenLibrary,
   required VoidCallback onOpenProfile,
+  required VoidCallback onOpenReading,
+  required VoidCallback onOpenListening,
   required ValueChanged<SeriesItem> onOpenSeries,
+  required ValueChanged<ExperienceItem> onOpenGame,
   ValueChanged<String>? onOpenPlanet,
 }) {
   final reduceMotion = MediaQuery.disableAnimationsOf(context);
@@ -203,27 +171,39 @@ Future<void> showMajarraPortal(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'إغلاق بوابة مجرة',
-    barrierColor: const Color(0xFF050817).withValues(alpha: 0.84),
-    transitionDuration: reduceMotion ? Duration.zero : const Duration(milliseconds: 340),
-    pageBuilder: (_, __, ___) => _PremiumPortalDialog(
+    barrierColor: const Color(0xFF02040E).withValues(alpha: 0.9),
+    transitionDuration: reduceMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 240),
+    pageBuilder: (context, _, __) => _PremiumPortalDialog(
       catalog: catalog,
       onExplore: onExplore,
       onOpenLibrary: onOpenLibrary,
       onOpenProfile: onOpenProfile,
+      onOpenReading: onOpenReading,
+      onOpenListening: onOpenListening,
       onOpenSeries: onOpenSeries,
+      onOpenGame: onOpenGame,
       onOpenPlanet: onOpenPlanet,
     ),
-    transitionBuilder: (_, animation, __, child) {
+    transitionBuilder: (context, animation, _, child) {
       if (reduceMotion) return child;
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      );
       return FadeTransition(
-        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-        child: child,
+        opacity: curved,
+        child: ScaleTransition(
+          scale: Tween(begin: 0.97, end: 1.0).animate(curved),
+          child: child,
+        ),
       );
     },
   );
 }
 
-enum _PortalMode { main, planets }
+enum _PortalMode { actions, planets }
 
 class _PremiumPortalDialog extends StatefulWidget {
   const _PremiumPortalDialog({
@@ -231,7 +211,10 @@ class _PremiumPortalDialog extends StatefulWidget {
     required this.onExplore,
     required this.onOpenLibrary,
     required this.onOpenProfile,
+    required this.onOpenReading,
+    required this.onOpenListening,
     required this.onOpenSeries,
+    required this.onOpenGame,
     this.onOpenPlanet,
   });
 
@@ -239,104 +222,18 @@ class _PremiumPortalDialog extends StatefulWidget {
   final VoidCallback onExplore;
   final VoidCallback onOpenLibrary;
   final VoidCallback onOpenProfile;
+  final VoidCallback onOpenReading;
+  final VoidCallback onOpenListening;
   final ValueChanged<SeriesItem> onOpenSeries;
+  final ValueChanged<ExperienceItem> onOpenGame;
   final ValueChanged<String>? onOpenPlanet;
 
   @override
   State<_PremiumPortalDialog> createState() => _PremiumPortalDialogState();
 }
 
-class _PremiumPortalDialogState extends State<_PremiumPortalDialog>
-    with TickerProviderStateMixin {
-  _PortalMode _mode = _PortalMode.main;
-  double _rotation = 0;
-  int _activeIndex = 0;
-  late final AnimationController _snapController;
-  late final AnimationController _enterController;
-
-  List<_PortalOrbAction> get _mainActions {
-    final featured = _featuredSeries;
-    return [
-      _PortalOrbAction(
-        id: 'watch',
-        label: 'شاهد',
-        sub: 'سلاسل وأفلام',
-        icon: Icons.play_arrow_rounded,
-        color: const Color(0xFFFFD34D),
-        onTap: featured == null
-            ? null
-            : () {
-                Navigator.of(context).pop();
-                widget.onOpenSeries(featured);
-              },
-      ),
-      _PortalOrbAction(
-        id: 'read',
-        label: 'اقرأ',
-        sub: 'قصص وكوميكس',
-        icon: Icons.menu_book_rounded,
-        color: const Color(0xFF00D6F5),
-        onTap: () {
-          Navigator.of(context).pop();
-          widget.onExplore();
-        },
-      ),
-      _PortalOrbAction(
-        id: 'listen',
-        label: 'استمع',
-        sub: 'صوتيات وأناشيد',
-        icon: Icons.headphones_rounded,
-        color: const Color(0xFF6A3DF2),
-        onTap: () {
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('الصوتيات ستتوفر قريباً في هذا الكوكب.')),
-          );
-        },
-      ),
-      _PortalOrbAction(
-        id: 'play',
-        label: 'العب',
-        sub: 'ألعاب تفاعلية',
-        icon: Icons.sports_esports_rounded,
-        color: const Color(0xFF5BE7A9),
-        onTap: () {
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('الألعاب الآمنة داخل الكواكب.')),
-          );
-        },
-      ),
-      _PortalOrbAction(
-        id: 'learn',
-        label: 'تعلّم',
-        sub: 'رحلات ومهارات',
-        icon: Icons.science_rounded,
-        color: const Color(0xFF2856D8),
-        onTap: () {
-          Navigator.of(context).pop();
-          widget.onExplore();
-        },
-      ),
-      _PortalOrbAction(
-        id: 'discover',
-        label: 'اكتشف',
-        sub: 'الكواكب التسعة',
-        icon: Icons.public_rounded,
-        color: const Color(0xFFFF6FAE),
-        isDiscover: true,
-        onTap: () {
-          MajarraAnalytics.log('portal_mode_selected', params: {'mode': 'planets'});
-          setState(() {
-            _mode = _PortalMode.planets;
-            _rotation = 0;
-            _activeIndex = 0;
-          });
-          HapticFeedback.lightImpact();
-        },
-      ),
-    ];
-  }
+class _PremiumPortalDialogState extends State<_PremiumPortalDialog> {
+  _PortalMode _mode = _PortalMode.actions;
 
   SeriesItem? get _featuredSeries {
     for (final spotlight in widget.catalog.spotlights) {
@@ -344,872 +241,618 @@ class _PremiumPortalDialogState extends State<_PremiumPortalDialog>
       final series = widget.catalog.seriesById(spotlight.seriesId);
       if (series != null) return series;
     }
-    return widget.catalog.series.isEmpty ? null : widget.catalog.series.first;
+    return widget.catalog.series.firstOrNull;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _snapController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 420),
-    );
-    _enterController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 520),
-    );
-    _enterController.forward();
+  ExperienceItem? get _featuredGame => widget.catalog.experiences
+      .where((item) => item.isServerBacked)
+      .firstOrNull;
+
+  bool get _hasReading =>
+      widget.catalog.stories.isNotEmpty ||
+      widget.catalog.books.any((book) => book.type != 'audio_story');
+
+  bool get _hasListening => widget.catalog.books.any(
+    (book) => book.type == 'audio_story' || book.isPlayable,
+  );
+
+  List<_PortalAction> get _actions => [
+    if (_featuredSeries case final series?)
+      _PortalAction(
+        id: 'watch',
+        label: 'شاهد',
+        description: series.title,
+        icon: Icons.play_arrow_rounded,
+        color: AppColors.starGold,
+        onPressed: () => _closeThen(() => widget.onOpenSeries(series)),
+      ),
+    if (_featuredGame case final game?)
+      _PortalAction(
+        id: 'play',
+        label: 'العب',
+        description: game.title,
+        icon: Icons.sports_esports_rounded,
+        color: const Color(0xFF5BE7A9),
+        onPressed: () => _closeThen(() => widget.onOpenGame(game)),
+      ),
+    if (_hasReading)
+      _PortalAction(
+        id: 'read',
+        label: 'اقرأ',
+        description: 'القصص والكتب المنشورة',
+        icon: Icons.menu_book_rounded,
+        color: AppColors.electricCyan,
+        onPressed: () => _closeThen(widget.onOpenReading),
+      ),
+    if (_hasListening)
+      _PortalAction(
+        id: 'listen',
+        label: 'استمع',
+        description: 'القصص الصوتية المتاحة',
+        icon: Icons.headphones_rounded,
+        color: AppColors.cosmicPurple,
+        onPressed: () => _closeThen(widget.onOpenListening),
+      ),
+    _PortalAction(
+      id: 'library',
+      label: 'المسلسلات المحفوظة',
+      description: 'المسلسلات التي حفظها الطفل',
+      icon: Icons.bookmark_rounded,
+      color: const Color(0xFF5BE7A9),
+      onPressed: () => _closeThen(widget.onOpenLibrary),
+    ),
+    _PortalAction(
+      id: 'profile',
+      label: 'ملفي',
+      description: 'الملف والإعدادات',
+      icon: Icons.face_rounded,
+      color: const Color(0xFFFF6FAE),
+      onPressed: () => _closeThen(widget.onOpenProfile),
+    ),
+    if (widget.catalog.planets.isNotEmpty)
+      _PortalAction(
+        id: 'planets',
+        label: 'الكواكب',
+        description: '${widget.catalog.planets.length} عوالم متاحة',
+        icon: Icons.public_rounded,
+        color: AppColors.royalBlue,
+        onPressed: () {
+          MajarraAnalytics.log(
+            'portal_mode_selected',
+            params: {'mode': 'planets'},
+          );
+          setState(() => _mode = _PortalMode.planets);
+        },
+      ),
+  ];
+
+  void _closeThen(VoidCallback action) {
+    Navigator.of(context).pop();
+    action();
   }
 
-  @override
-  void dispose() {
-    _snapController.dispose();
-    _enterController.dispose();
-    super.dispose();
+  void _recommend() {
+    final featured = _featuredSeries;
+    if (featured != null) {
+      MajarraAnalytics.log(
+        'portal_recommendation_opened',
+        params: {'kind': 'series'},
+      );
+      _closeThen(() => widget.onOpenSeries(featured));
+      return;
+    }
+    final game = _featuredGame;
+    if (game != null) {
+      MajarraAnalytics.log(
+        'portal_recommendation_opened',
+        params: {'kind': 'game'},
+      );
+      _closeThen(() => widget.onOpenGame(game));
+      return;
+    }
+    if (_hasReading) {
+      MajarraAnalytics.log(
+        'portal_recommendation_opened',
+        params: {'kind': 'reading'},
+      );
+      _closeThen(widget.onOpenReading);
+      return;
+    }
+    if (_hasListening) {
+      MajarraAnalytics.log(
+        'portal_recommendation_opened',
+        params: {'kind': 'audio'},
+      );
+      _closeThen(widget.onOpenListening);
+      return;
+    }
+    final planet = widget.catalog.planets.firstOrNull;
+    if (planet != null) {
+      _openPlanet(planet);
+      return;
+    }
+    _closeThen(widget.onOpenLibrary);
   }
 
-  void _onPanStart(DragStartDetails _) {
-    _snapController.stop();
-  }
-
-  void _onPanUpdate(DragUpdateDetails details, int count) {
-    // Horizontal drag rotates, like gear
-    final delta = details.delta.dx;
-    setState(() {
-      _rotation += delta * 0.012;
-      _updateActive(count);
-    });
-  }
-
-  void _onPanEnd(DragEndDetails _, int count) {
-    _snapToNearest(count);
-  }
-
-  void _updateActive(int count) {
-    final step = 2 * math.pi / count;
-    // active is item whose angle closest to top (-pi/2)
-    // angle = base + rotation + i*step, base = -pi/2
-    // => we want i where angle % 2pi == -pi/2 => rotation + i*step == 0 mod 2pi
-    // => i = -rotation/step
-    final raw = (-_rotation / step);
-    var idx = raw.round() % count;
-    if (idx < 0) idx += count;
-    if (idx != _activeIndex) {
-      _activeIndex = idx;
-      HapticFeedback.selectionClick();
+  void _openPlanet(Planet planet) {
+    MajarraAnalytics.planetSelected(planet.id);
+    Navigator.of(context).pop();
+    if (widget.onOpenPlanet case final openPlanet?) {
+      openPlanet(planet.id);
+    } else {
+      widget.onExplore();
     }
   }
 
-  void _snapToNearest(int count) {
-    final step = 2 * math.pi / count;
-    final targetRot = -_activeIndex * step;
-    // Normalize rotation diff to shortest path
-    var diff = targetRot - _rotation;
-    // wrap diff to [-pi, pi]
-    diff = (diff + math.pi) % (2 * math.pi) - math.pi;
-
-    final startRot = _rotation;
-    final endRot = startRot + diff;
-
-    _snapController
-      ..value = 0
-      ..animateTo(1, curve: Curves.easeOutCubic).whenComplete(() {});
-    
-    _snapController.addListener(() {
-      if (!mounted) return;
-      final t = Curves.easeOutCubic.transform(_snapController.value);
-      setState(() {
-        _rotation = lerpDouble(startRot, endRot, t)!;
-      });
-    });
-  }
-
-  void _selectActiveMain() {
-    final action = _mainActions[_activeIndex];
-    if (action.onTap != null) action.onTap!();
+  void _back() {
+    if (_mode == _PortalMode.planets) {
+      setState(() => _mode = _PortalMode.actions);
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (MediaQuery.disableAnimationsOf(context)) {
-      return _buildReducedMotion();
-    }
-
-    final size = MediaQuery.sizeOf(context);
-    final isSmall = size.height < 700;
-    final count = _mode == _PortalMode.main ? 6 : widget.catalog.planets.length;
-    final step = count == 0 ? 1.0 : 2 * math.pi / count;
-
-    return Semantics(
-      scopesRoute: true,
-      explicitChildNodes: true,
-      namesRoute: true,
-      label: 'بوابة مجرة',
-      child: Material(
-        type: MaterialType.transparency,
-        child: Stack(
-          children: [
-            // Cinematic backdrop with blur
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF06091A).withValues(alpha: 0.86),
-                        gradient: RadialGradient(
-                          center: const Alignment(0, 0.6),
-                          radius: 1.2,
-                          colors: [
-                            const Color(0xFF101A40).withValues(alpha: 0.72),
-                            const Color(0xFF06091A).withValues(alpha: 0.92),
-                            const Color(0xFF02040E),
-                          ],
-                        ),
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): _back,
+        const SingleActivator(LogicalKeyboardKey.goBack): _back,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Semantics(
+          scopesRoute: true,
+          namesRoute: true,
+          label: 'بوابة مجرة',
+          child: Material(
+            type: MaterialType.transparency,
+            child: SafeArea(
+              minimum: const EdgeInsets.all(16),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 780,
+                    maxHeight: 760,
+                  ),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF080D24),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.cosmicPurple.withValues(alpha: 0.2),
+                          blurRadius: 48,
+                        ),
+                      ],
+                      gradient: const RadialGradient(
+                        center: Alignment(0.6, -0.8),
+                        radius: 1.5,
+                        colors: [Color(0xFF1A2552), Color(0xFF080D24)],
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        _PortalHeader(mode: _mode, onBack: _back),
+                        Expanded(
+                          child: AnimatedSwitcher(
+                            duration: MediaQuery.disableAnimationsOf(context)
+                                ? Duration.zero
+                                : const Duration(milliseconds: 180),
+                            child: _mode == _PortalMode.actions
+                                ? _buildActions(context)
+                                : _buildPlanets(context),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
 
-            // Large circular glow backdrop
-            Positioned(
-              bottom: -180,
-              left: size.width * 0.5 - 340,
-              child: IgnorePointer(
-                child: Container(
-                  width: 680,
-                  height: 680,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF1B2550).withValues(alpha: 0.92),
-                        const Color(0xFF101735).withValues(alpha: 0.88),
-                        const Color(0xFF06091A).withValues(alpha: 0.0),
-                      ],
-                      stops: const [0, 0.58, 1],
-                    ),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.cosmicPurple.withValues(alpha: 0.12),
-                        blurRadius: 60,
+  Widget _buildActions(BuildContext context) {
+    return LayoutBuilder(
+      key: const ValueKey('portal-actions'),
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 620 ? 3 : 2;
+        return Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(20, 4, 20, 22),
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 18),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.auto_awesome_rounded,
+                        color: AppColors.starGold,
+                        size: 42,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'إلى أين نذهب؟',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'كل اختيار يفتح وجهة متاحة فعلًا',
+                        style: TextStyle(
+                          color: AppColors.mutedText.withValues(alpha: 0.78),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      FilledButton.icon(
+                        autofocus: true,
+                        onPressed: _recommend,
+                        icon: const Icon(Icons.auto_awesome_rounded),
+                        label: const Text('اقترح لي محتوى'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.starGold,
+                          foregroundColor: AppColors.deepSpace,
+                          minimumSize: const Size(180, 48),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-
-            SafeArea(
-              child: Column(
-                children: [
-                  // Top bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            if (_mode == _PortalMode.planets) {
-                              setState(() {
-                                _mode = _PortalMode.main;
-                                _rotation = 0;
-                                _activeIndex = 0;
-                              });
-                            } else {
-                              Navigator.of(context).pop();
-                            }
-                          },
-                          icon: Icon(
-                            _mode == _PortalMode.planets
-                                ? Icons.arrow_forward_rounded
-                                : Icons.close_rounded,
-                            color: Colors.white.withValues(alpha: 0.82),
-                          ),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.white.withValues(alpha: 0.08),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _mode == _PortalMode.main ? 'بوابة مجرة' : 'الكواكب التسعة',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Text(
-                              _mode == _PortalMode.main
-                                  ? 'اسحب الحلقة للدوران • اضغط للاختيار'
-                                  : 'اختر كوكبك للانطلاق',
-                              style: TextStyle(
-                                color: AppColors.mutedText.withValues(alpha: 0.72),
-                                fontSize: 10.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  // Active item detail at top of orbit
-                  AnimatedBuilder(
-                    animation: _enterController,
-                    builder: (_, __) {
-                      final activeAction = _mode == _PortalMode.main
-                          ? _mainActions[_activeIndex]
-                          : null;
-                      final activePlanet = _mode == _PortalMode.planets &&
-                              widget.catalog.planets.isNotEmpty
-                          ? widget.catalog.planets[
-                              _activeIndex % widget.catalog.planets.length]
-                          : null;
-
-                      return Opacity(
-                        opacity: _enterController.value.clamp(0.0, 1.0),
-                        child: Transform.translate(
-                          offset: Offset(0, (1 - _enterController.value) * 18),
-                          child: Column(
-                            children: [
-                              if (activeAction != null) ...[
-                                Container(
-                                  width: 64,
-                                  height: 64,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: activeAction.color.withValues(alpha: 0.18),
-                                    border: Border.all(
-                                      color: activeAction.color.withValues(alpha: 0.62),
-                                      width: 1.4,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: activeAction.color.withValues(alpha: 0.32),
-                                        blurRadius: 22,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    activeAction.icon,
-                                    color: Colors.white,
-                                    size: 30,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  activeAction.label,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  activeAction.sub,
-                                  style: TextStyle(
-                                    color: AppColors.mutedText.withValues(alpha: 0.78),
-                                    fontSize: 11.5,
-                                  ),
-                                ),
-                              ] else if (activePlanet != null) ...[
-                                PlanetSymbol(
-                                  planetId: activePlanet.id,
-                                  colorHex: activePlanet.colorHex,
-                                  semanticLabel: activePlanet.name,
-                                  size: 82,
-                                  selected: true,
-                                  imageAsset: activePlanet.imageAsset,
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  activePlanet.name,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  activePlanet.description,
-                                  style: TextStyle(
-                                    color: AppColors.mutedText.withValues(alpha: 0.78),
-                                    fontSize: 11.5,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // Orbital fan
-                  _buildOrbitalFan(context, count, step, isSmall),
-
-                  const SizedBox(height: 18),
-
-                  // Bottom hint
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.swipe_rounded,
-                          size: 14,
-                          color: Colors.white.withValues(alpha: 0.32),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'اسحب يمين أو يسار للدوران',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.32),
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: constraints.maxWidth >= 620 ? 1.75 : 1.35,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) =>
+                      _PortalActionCard(action: _actions[index]),
+                  childCount: _actions.length,
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildOrbitalFan(BuildContext context, int count, double step, bool isSmall) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final fanWidth = math.min(screenWidth - 24, 400.0);
-    final fanHeight = _mode == _PortalMode.main
-        ? (isSmall ? 320.0 : 380.0)
-        : (isSmall ? 360.0 : 420.0);
-    const portalSize = 88.0;
-    final portalCenter = Offset(fanWidth / 2, fanHeight - portalSize / 2 - 12);
-    final radius = _mode == _PortalMode.main
-        ? fanWidth * 0.38
-        : fanWidth * 0.40;
-
-    return GestureDetector(
-      onHorizontalDragStart: _onPanStart,
-      onHorizontalDragUpdate: (d) => _onPanUpdate(d, count),
-      onHorizontalDragEnd: (d) => _onPanEnd(d, count),
-      onPanStart: (d) => _onPanStart(DragStartDetails()),
-      onPanUpdate: (d) => _onPanUpdate(
-        DragUpdateDetails(
-          delta: d.delta,
-          globalPosition: d.globalPosition,
-          localPosition: d.localPosition,
-        ),
-        count,
-      ),
-      child: SizedBox(
-        width: fanWidth,
-        height: fanHeight,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.bottomCenter,
+  Widget _buildPlanets(BuildContext context) {
+    final planets = widget.catalog.planets;
+    if (planets.isEmpty) {
+      return Center(
+        key: const ValueKey('portal-planets-empty'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Orbit circle line
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _OrbitLinePainter(
-                  center: portalCenter,
-                  radius: radius,
-                  activeIndex: _activeIndex,
-                  count: count,
-                  rotation: _rotation,
-                ),
-              ),
+            const Icon(
+              Icons.public_off_rounded,
+              color: AppColors.mutedText,
+              size: 44,
             ),
-
-            // Place actions / planets
-            for (int i = 0; i < count; i++)
-              _buildOrbItem(
-                index: i,
-                count: count,
-                step: step,
-                portalCenter: portalCenter,
-                radius: radius,
-                fanWidth: fanWidth,
-              ),
-
-            // Center portal orb - "اختر لي"
-            Positioned(
-              left: portalCenter.dx - portalSize / 2,
-              top: portalCenter.dy - portalSize / 2,
-              child: GestureDetector(
-                onTap: () {
-                  if (_mode == _PortalMode.main) {
-                    _selectActiveMain();
-                  } else {
-                    final planet = widget.catalog.planets[
-                        _activeIndex % widget.catalog.planets.length];
-                    // Planet id is a fixed catalogue key, not user content, so
-                    // it carries no PII.
-                    MajarraAnalytics.planetSelected(planet.id);
-                    if (widget.onOpenPlanet != null) {
-                      Navigator.of(context).pop();
-                      widget.onOpenPlanet!(planet.id);
-                    } else {
-                      Navigator.of(context).pop();
-                      widget.onExplore();
-                    }
-                  }
-                },
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Glow
-                    Container(
-                      width: portalSize + 18,
-                      height: portalSize + 18,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF6A3DF2).withValues(alpha: 0.34),
-                            blurRadius: 28,
-                          ),
-                          BoxShadow(
-                            color: const Color(0xFF00D6F5).withValues(alpha: 0.18),
-                            blurRadius: 42,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: portalSize,
-                      height: portalSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const RadialGradient(
-                          center: Alignment(0.15, -0.25),
-                          radius: 1.15,
-                          colors: [
-                            Color(0xFFEDE8FF),
-                            Color(0xFF9B8CFF),
-                            Color(0xFF6A3DF2),
-                            Color(0xFF2A1F80),
-                          ],
-                          stops: [0, 0.24, 0.52, 1],
-                        ),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.22),
-                          width: 1.2,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.auto_awesome_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _mode == _PortalMode.main ? 'اختر لي' : 'ادخل',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            const SizedBox(height: 12),
+            const Text('لا توجد كواكب منشورة الآن'),
+            TextButton(onPressed: _back, child: const Text('العودة')),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOrbItem({
-    required int index,
-    required int count,
-    required double step,
-    required Offset portalCenter,
-    required double radius,
-    required double fanWidth,
-  }) {
-    final angle = -math.pi / 2 + _rotation + index * step;
-    final x = portalCenter.dx + radius * math.cos(angle);
-    final y = portalCenter.dy + radius * math.sin(angle);
-    final isActive = index == _activeIndex;
-    final distFromActive = (index - _activeIndex).abs();
-    final wrappedDist = math.min(distFromActive, count - distFromActive);
-    final scale = isActive ? 1.18 : (0.86 - wrappedDist * 0.06).clamp(0.68, 0.92).toDouble();
-    final opacity = isActive ? 1.0 : (0.58 - wrappedDist * 0.08).clamp(0.32, 0.72).toDouble();
-
-    if (_mode == _PortalMode.main) {
-      final action = _mainActions[index % _mainActions.length];
-      return Positioned(
-        left: x - 32,
-        top: y - 38,
-        child: Opacity(
-          opacity: opacity,
-          child: Transform.scale(
-            scale: scale,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _activeIndex = index;
-                  _rotation = -index * step;
-                });
-                HapticFeedback.lightImpact();
-                Future.delayed(const Duration(milliseconds: 120), () {
-                  if (action.onTap != null) action.onTap!();
-                });
-              },
-              child: Column(
-                children: [
-                  Container(
-                    width: isActive ? 62 : 54,
-                    height: isActive ? 62 : 54,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isActive
-                          ? action.color.withValues(alpha: 0.22)
-                          : const Color(0xFF121A38).withValues(alpha: 0.86),
-                      border: Border.all(
-                        color: isActive
-                            ? action.color.withValues(alpha: 0.82)
-                            : Colors.white.withValues(alpha: 0.10),
-                        width: isActive ? 1.6 : 1,
-                      ),
-                      boxShadow: [
-                        if (isActive)
-                          BoxShadow(
-                            color: action.color.withValues(alpha: 0.32),
-                            blurRadius: 18,
-                          ),
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.28),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      action.icon,
-                      color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.78),
-                      size: isActive ? 28 : 24,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    action.label,
-                    style: TextStyle(
-                      color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.62),
-                      fontSize: isActive ? 11 : 10,
-                      fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    } else {
-      final planet = widget.catalog.planets[index % widget.catalog.planets.length];
-      return Positioned(
-        left: x - 32,
-        top: y - 40,
-        child: Opacity(
-          opacity: opacity,
-          child: Transform.scale(
-            scale: scale,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _activeIndex = index;
-                  _rotation = -index * step;
-                });
-                HapticFeedback.lightImpact();
-              },
-              child: Column(
-                children: [
-                  PlanetSymbol(
-                    planetId: planet.id,
-                    colorHex: planet.colorHex,
-                    semanticLabel: planet.name,
-                    size: isActive ? 62 : 52,
-                    selected: isActive,
-                    imageAsset: planet.imageAsset,
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    planet.name.replaceFirst('كوكب ', ''),
-                    style: TextStyle(
-                      color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.62),
-                      fontSize: isActive ? 11 : 10,
-                      fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
       );
     }
-  }
 
-  Widget _buildReducedMotion() {
-    return SafeArea(
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Material(
-          color: const Color(0xFF0B1026),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480, maxHeight: 560),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 42,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'بوابة مجرة',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 16),
-                  GridView.count(
-                    crossAxisCount: 3,
-                    shrinkWrap: true,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    children: _mainActions
-                        .map((a) => InkWell(
-                              onTap: a.onTap,
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF121A38),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(a.icon, color: Colors.white),
-                                    const SizedBox(height: 6),
-                                    Text(a.label, style: const TextStyle(color: Colors.white, fontSize: 11)),
-                                  ],
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('إغلاق'),
-                  ),
-                ],
-              ),
+    return LayoutBuilder(
+      key: const ValueKey('portal-planets'),
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 660
+            ? 4
+            : constraints.maxWidth >= 430
+            ? 3
+            : 2;
+        return GridView.builder(
+          padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 22),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.95,
+          ),
+          itemCount: planets.length,
+          itemBuilder: (context, index) {
+            final planet = planets[index];
+            return _PlanetPortalCard(
+              planet: planet,
+              onPressed: () => _openPlanet(planet),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _PortalHeader extends StatelessWidget {
+  const _PortalHeader({required this.mode, required this.onBack});
+
+  final _PortalMode mode;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 18, 10),
+      child: Row(
+        children: [
+          IconButton(
+            autofocus: false,
+            tooltip: mode == _PortalMode.planets ? 'العودة' : 'إغلاق',
+            onPressed: onBack,
+            icon: mode == _PortalMode.planets
+                ? const BackButtonIcon()
+                : const Icon(Icons.close_rounded),
+            color: Colors.white,
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.08),
             ),
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  mode == _PortalMode.planets ? 'اختر كوكبًا' : 'بوابة مجرة',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  mode == _PortalMode.planets
+                      ? 'العوالم المنشورة في مكتبتك'
+                      : 'وصول سريع لوجهاتك',
+                  style: TextStyle(
+                    color: AppColors.mutedText.withValues(alpha: 0.7),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _PortalOrbAction {
-  const _PortalOrbAction({
+class _PortalAction {
+  const _PortalAction({
     required this.id,
     required this.label,
-    required this.sub,
+    required this.description,
     required this.icon,
     required this.color,
-    this.isDiscover = false,
-    this.onTap,
+    required this.onPressed,
   });
 
   final String id;
   final String label;
-  final String sub;
+  final String description;
   final IconData icon;
   final Color color;
-  final bool isDiscover;
-  final VoidCallback? onTap;
+  final VoidCallback onPressed;
 }
 
-class _OrbitLinePainter extends CustomPainter {
-  const _OrbitLinePainter({
-    required this.center,
-    required this.radius,
-    required this.activeIndex,
-    required this.count,
-    required this.rotation,
-  });
+class _PortalActionCard extends StatefulWidget {
+  const _PortalActionCard({required this.action});
 
-  final Offset center;
-  final double radius;
-  final int activeIndex;
-  final int count;
-  final double rotation;
+  final _PortalAction action;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final orbitPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = Colors.white.withValues(alpha: 0.09);
-
-    canvas.drawCircle(center, radius, orbitPaint);
-
-    // Active tick
-    final step = 2 * math.pi / count;
-    final activeAngle = -math.pi / 2 + rotation + activeIndex * step;
-    final tickPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..color = AppColors.starGold.withValues(alpha: 0.52);
-    
-    final tickStart = Offset(
-      center.dx + (radius - 6) * math.cos(activeAngle),
-      center.dy + (radius - 6) * math.sin(activeAngle),
-    );
-    final tickEnd = Offset(
-      center.dx + (radius + 6) * math.cos(activeAngle),
-      center.dy + (radius + 6) * math.sin(activeAngle),
-    );
-    canvas.drawLine(tickStart, tickEnd, tickPaint);
-
-    // Dots
-    final dotPaint = Paint()..color = AppColors.electricCyan.withValues(alpha: 0.28);
-    for (int i = 0; i < count; i++) {
-      final ang = -math.pi / 2 + rotation + i * step;
-      if (i == activeIndex) continue;
-      final p = Offset(
-        center.dx + radius * math.cos(ang),
-        center.dy + radius * math.sin(ang),
-      );
-      canvas.drawCircle(p, 2, dotPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _OrbitLinePainter old) =>
-      old.center != center ||
-      old.radius != radius ||
-      old.activeIndex != activeIndex ||
-      old.count != count ||
-      old.rotation != rotation;
+  State<_PortalActionCard> createState() => _PortalActionCardState();
 }
 
-class _GalaxySpiralPainter extends CustomPainter {
+class _PortalActionCardState extends State<_PortalActionCard> {
+  bool _focused = false;
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
-    final r = size.shortestSide * 0.34;
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6
-      ..strokeCap = StrokeCap.round;
-
-    // Two spiral arms
-    for (int arm = 0; arm < 2; arm++) {
-      final path = Path();
-      final startAngle = arm * math.pi;
-      bool first = true;
-      for (double t = 0; t <= 1; t += 0.02) {
-        final angle = startAngle + t * math.pi * 1.65;
-        final rad = r * (0.18 + t * 0.82);
-        final x = center.dx + rad * math.cos(angle);
-        final y = center.dy + rad * math.sin(angle) * 0.55;
-        if (first) {
-          path.moveTo(x, y);
-          first = false;
-        } else {
-          path.lineTo(x, y);
-        }
-      }
-      paint.color = arm == 0
-          ? const Color(0xFF00D6F5).withValues(alpha: 0.85)
-          : const Color(0xFFFF6FAE).withValues(alpha: 0.75);
-      paint.strokeWidth = arm == 0 ? 1.8 : 1.4;
-      canvas.drawPath(path, paint);
-      // Glow under
-      paint.color = paint.color.withValues(alpha: 0.18);
-      paint.strokeWidth = 4;
-      canvas.drawPath(path, paint);
-    }
-
-    // Small stars
-    final starPaint = Paint()..color = Colors.white.withValues(alpha: 0.72);
-    canvas.drawCircle(Offset(center.dx + r * 0.62, center.dy - r * 0.22), 1.6, starPaint);
-    canvas.drawCircle(Offset(center.dx - r * 0.48, center.dy + r * 0.18), 1.2, starPaint);
-    canvas.drawCircle(Offset(center.dx + r * 0.22, center.dy + r * 0.42), 1, starPaint);
+  Widget build(BuildContext context) {
+    final action = widget.action;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return Semantics(
+      button: true,
+      label: '${action.label}، ${action.description}',
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: action.onPressed,
+          onFocusChange: (focused) => setState(() => _focused = focused),
+          borderRadius: BorderRadius.circular(18),
+          focusColor: action.color.withValues(alpha: 0.18),
+          child: AnimatedContainer(
+            duration: reduceMotion
+                ? Duration.zero
+                : const Duration(milliseconds: 130),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _focused
+                  ? action.color.withValues(alpha: 0.16)
+                  : const Color(0xFF121A38).withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: _focused
+                    ? action.color
+                    : Colors.white.withValues(alpha: 0.09),
+                width: _focused ? 2.5 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: action.color.withValues(alpha: 0.18),
+                  ),
+                  child: Icon(action.icon, color: action.color, size: 25),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        action.label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        action.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.mutedText.withValues(alpha: 0.76),
+                          fontSize: 10.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
+}
+
+class _PlanetPortalCard extends StatefulWidget {
+  const _PlanetPortalCard({required this.planet, required this.onPressed});
+
+  final Planet planet;
+  final VoidCallback onPressed;
 
   @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
+  State<_PlanetPortalCard> createState() => _PlanetPortalCardState();
+}
+
+class _PlanetPortalCardState extends State<_PlanetPortalCard> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final planet = widget.planet;
+    return Semantics(
+      button: true,
+      label: '${planet.name}، ${planet.description}',
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: widget.onPressed,
+          onFocusChange: (focused) => setState(() => _focused = focused),
+          borderRadius: BorderRadius.circular(18),
+          child: AnimatedContainer(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 130),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF121A38),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: _focused
+                    ? AppColors.electricCyan
+                    : Colors.white.withValues(alpha: 0.09),
+                width: _focused ? 2.5 : 1,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                PlanetSymbol(
+                  planetId: planet.id,
+                  colorHex: planet.colorHex,
+                  semanticLabel: planet.name,
+                  size: 68,
+                  selected: _focused,
+                  imageAsset: planet.imageAsset,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  planet.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  planet.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.mutedText.withValues(alpha: 0.72),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _PortalOrbitPainter extends CustomPainter {
+  const _PortalOrbitPainter();
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
-    final outerRadius = size.shortestSide * 0.46;
-    final paint = Paint()
+    final radius = size.shortestSide * 0.46;
+    final ring = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = Colors.white.withValues(alpha: 0.18);
+      ..strokeWidth = 1.2
+      ..color = Colors.white.withValues(alpha: 0.34);
+    canvas.drawCircle(center, radius, ring);
 
-    canvas.drawCircle(center, outerRadius, paint);
-    canvas.drawCircle(center, outerRadius * 0.66, paint..color = Colors.white.withValues(alpha: 0.08));
-
-    // Small dots on orbit
-    final dotPaint = Paint()..color = AppColors.starGold.withValues(alpha: 0.92);
-    canvas.drawCircle(Offset(center.dx, center.dy - outerRadius), 2.6, dotPaint);
-    canvas.drawCircle(Offset(center.dx + outerRadius * 0.72, center.dy + outerRadius * 0.42), 1.8, dotPaint);
+    final gold = Paint()..color = AppColors.starGold;
+    final cyan = Paint()..color = AppColors.electricCyan;
+    canvas.drawCircle(Offset(center.dx, center.dy - radius), 3, gold);
+    canvas.drawCircle(
+      Offset(
+        center.dx + radius * math.cos(math.pi * 0.7),
+        center.dy + radius * math.sin(math.pi * 0.7),
+      ),
+      2.3,
+      cyan,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _PortalOrbitPainter old) => false;
+  bool shouldRepaint(covariant _PortalOrbitPainter oldDelegate) => false;
 }
-
-double? lerpDouble(double a, double b, double t) => a + (b - a) * t;

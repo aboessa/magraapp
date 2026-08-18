@@ -1,7 +1,15 @@
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { callDurable, familyStub } from '../lib/doClient';
-import { authenticateParent, type ParentPrincipal } from '../lib/parentAuth';
+import type { Env } from '../lib/db.ts';
+import { callDurable, familyStub } from '../lib/doClient.ts';
+import {
+  authenticateParent,
+  createParentProof,
+  parseParentProofPurpose,
+  PARENT_PROOF_PURPOSES,
+  verifyParentProof,
+  type ParentPrincipal,
+  type ParentProofPurpose,
+} from '../lib/parentAuth.ts';
 import {
   CONSENT_TYPES,
   evaluateConsent,
@@ -14,6 +22,18 @@ type JsonBody = Record<string, unknown>;
 type Envelope<T> = { success: boolean; data?: T; error?: string };
 
 const familyRoute = new Hono<AppEnv>();
+/**
+ * Purposes a `parent_area` session may exchange for without re-entering the PIN.
+ *
+ * Derived from `PARENT_PROOF_PURPOSES` minus `parent_area` itself rather than
+ * listed by hand: the hand-written list had drifted, and it still offered
+ * `manage_billing`, `support_ticket` and `approve_tv` — purposes no endpoint ever
+ * checked. A set that can issue something unverifiable is how the gate became
+ * decorative in the first place.
+ */
+const exchangeableParentPurposes = new Set<ParentProofPurpose>(
+  PARENT_PROOF_PURPOSES.filter((purpose) => purpose !== 'parent_area'),
+);
 
 async function principal(c: { env: Env; req: { header(name: string): string | undefined } }) {
   return authenticateParent(c.env, c.req.header('Authorization'));
@@ -24,6 +44,30 @@ function unauthorized(reason: 'unconfigured' | 'unauthorized') {
     success: false,
     error: reason === 'unconfigured' ? 'Parent authentication is not configured' : 'Unauthorized',
   }, { status: reason === 'unconfigured' ? 503 : 401 });
+}
+
+function parentProofDenied(reason: 'unconfigured' | 'invalid') {
+  return Response.json({
+    success: false,
+    error: reason === 'unconfigured'
+      ? 'Parent authentication is not configured'
+      : 'A current parent proof is required',
+  }, { status: reason === 'unconfigured' ? 503 : 403 });
+}
+
+async function requireParentProof(
+  env: Env,
+  parent: ParentPrincipal,
+  header: string | undefined,
+  purpose: ParentProofPurpose,
+  consume = false,
+) {
+  return verifyParentProof(env, {
+    principal: parent,
+    header,
+    purpose,
+    consume,
+  });
 }
 
 async function body(c: { req: { json(): Promise<unknown> } }): Promise<JsonBody | null> {
@@ -59,6 +103,17 @@ familyRoute.get('/children', async (c) => {
 familyRoute.post('/children', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
+  // Creating a child profile is a parental-control operation: it sets the age
+  // track that decides which library the child is served, and it consumes a slot
+  // the plan limits. It required no proof at all, so `manage_children` was
+  // issuable and never checked.
+  const proof = await requireParentProof(
+    c.env,
+    auth.principal,
+    c.req.header('X-Parent-Proof'),
+    'manage_children',
+  );
+  if (!proof.ok) return parentProofDenied(proof.reason);
   const value = await body(c);
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400);
   return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/children', {
@@ -158,6 +213,19 @@ familyRoute.get('/consents', async (c) => {
 familyRoute.post('/consents', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
+  // `manage_consents`, not the generic `parent_area`. Granting or revoking a
+  // consent is the legal record of what the account holder permitted for a
+  // child — analytics, cloud storage of drawings, and so on. Accepting the
+  // broad parent-area proof meant any screen behind the PIN could change it with
+  // a token minted for something else, and it left `manage_consents` as a purpose
+  // that could be issued but was never checked.
+  const proof = await requireParentProof(
+    c.env,
+    auth.principal,
+    c.req.header('X-Parent-Proof'),
+    'manage_consents',
+  );
+  if (!proof.ok) return parentProofDenied(proof.reason);
   const value = await body(c);
   if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400);
 
@@ -231,12 +299,27 @@ familyRoute.post('/favorites', async (c) => {
 familyRoute.get('/devices', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
+  const proof = await requireParentProof(
+    c.env,
+    auth.principal,
+    c.req.header('X-Parent-Proof'),
+    'parent_area',
+  );
+  if (!proof.ok) return parentProofDenied(proof.reason);
   return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/devices'));
 });
 
 familyRoute.post('/devices/revoke', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
+  const proof = await requireParentProof(
+    c.env,
+    auth.principal,
+    c.req.header('X-Parent-Proof'),
+    'revoke_device',
+    true,
+  );
+  if (!proof.ok) return parentProofDenied(proof.reason);
   const value = await body(c);
   if (!value || typeof value.device_id !== 'string') return c.json({ success: false, error: 'device_id is required' }, 400);
   return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/devices/revoke', {
@@ -249,9 +332,53 @@ familyRoute.post('/parent-pin', async (c) => {
   if (!auth.ok) return unauthorized(auth.reason);
   const value = await body(c);
   if (!value || typeof value.pin !== 'string') return c.json({ success: false, error: 'pin is required' }, 400);
-  return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/parent-pin', {
-    body: { pin: value.pin, session_id: auth.principal.sessionId },
-  }));
+
+  // Initial enrolment is allowed with the authenticated parent session. Once a
+  // PIN exists, FamilyState refuses the write unless this route supplies the
+  // exact current version from a consumed change_parent_pin proof.
+  let expectedPinVersion: number | undefined;
+  const proofHeader = c.req.header('X-Parent-Proof');
+  if (proofHeader) {
+    const proof = await requireParentProof(
+      c.env,
+      auth.principal,
+      proofHeader,
+      'change_parent_pin',
+      true,
+    );
+    if (!proof.ok) return parentProofDenied(proof.reason);
+    expectedPinVersion = proof.proof.pinVersion;
+  }
+
+  const result = await callDurable<Envelope<{
+    enrolled: boolean;
+    changed: boolean;
+    pin_version: number;
+  }>>(familyStub(c.env, auth.principal.parentId), '/parent-pin', {
+    body: {
+      pin: value.pin,
+      session_id: auth.principal.sessionId,
+      expected_pin_version: expectedPinVersion,
+    },
+  });
+  const data = result.data?.success ? result.data.data : null;
+  if (!result.ok || !data) return forward(result);
+
+  const issued = await createParentProof(c.env, {
+    principal: auth.principal,
+    pinVersion: data.pin_version,
+    purpose: 'parent_area',
+  });
+  return c.json({
+    success: true,
+    data: {
+      ...data,
+      parent_proof: issued.token,
+      purpose: issued.purpose,
+      issued_at: new Date(issued.issuedAt).toISOString(),
+      expires_at: new Date(issued.expiresAt).toISOString(),
+    },
+  });
 });
 
 familyRoute.post('/parent-pin/verify', async (c) => {
@@ -259,9 +386,72 @@ familyRoute.post('/parent-pin/verify', async (c) => {
   if (!auth.ok) return unauthorized(auth.reason);
   const value = await body(c);
   if (!value || typeof value.pin !== 'string') return c.json({ success: false, error: 'pin is required' }, 400);
-  return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/parent-pin/verify', {
+  const purpose = value.purpose === undefined
+    ? 'parent_area'
+    : parseParentProofPurpose(value.purpose);
+  if (!purpose) return c.json({ success: false, error: 'A valid proof purpose is required' }, 400);
+
+  const result = await callDurable<Envelope<{
+    verified: boolean;
+    pin_version: number;
+  }>>(familyStub(c.env, auth.principal.parentId), '/parent-pin/verify', {
     body: { pin: value.pin, session_id: auth.principal.sessionId },
-  }));
+  });
+  const data = result.data?.success ? result.data.data : null;
+  if (!result.ok || !data?.verified) return forward(result);
+
+  const issued = await createParentProof(c.env, {
+    principal: auth.principal,
+    pinVersion: data.pin_version,
+    purpose,
+  });
+  return c.json({
+    success: true,
+    data: {
+      verified: true,
+      parent_proof: issued.token,
+      purpose: issued.purpose,
+      issued_at: new Date(issued.issuedAt).toISOString(),
+      expires_at: new Date(issued.expiresAt).toISOString(),
+    },
+  });
+});
+
+// Exchanges a still-current parent-area proof for a purpose-bound capability.
+// The new token cannot outlive the proof established by the PIN verification.
+familyRoute.post('/parent-proof/authorize', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const value = await body(c);
+  const purpose = parseParentProofPurpose(value?.purpose);
+  if (!purpose || !exchangeableParentPurposes.has(purpose)) {
+    return c.json({ success: false, error: 'A valid action purpose is required' }, 400);
+  }
+
+  const parentArea = await requireParentProof(
+    c.env,
+    auth.principal,
+    c.req.header('X-Parent-Proof'),
+    'parent_area',
+  );
+  if (!parentArea.ok) return parentProofDenied(parentArea.reason);
+
+  const issued = await createParentProof(c.env, {
+    principal: auth.principal,
+    pinVersion: parentArea.proof.pinVersion,
+    purpose,
+    notAfter: parentArea.proof.expiresAt,
+  });
+  return c.json({
+    success: true,
+    data: {
+      parent_proof: issued.token,
+      purpose: issued.purpose,
+      issued_at: new Date(issued.issuedAt).toISOString(),
+      expires_at: new Date(issued.expiresAt).toISOString(),
+      one_time: true,
+    },
+  }, 201);
 });
 
 export default familyRoute;

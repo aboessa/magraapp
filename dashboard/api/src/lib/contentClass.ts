@@ -50,3 +50,21 @@ export function contentClassPredicate(
   if (serveTestFixtures) return '';
   return ` AND ${seriesAlias}.content_class = 'production'`;
 }
+
+/// SQL predicate for content whose parent series is optional.
+///
+/// Stories and books carry no `content_class` of their own and may have no
+/// series at all, so they are classified through their parent. Using
+/// [contentClassPredicate] on a `LEFT JOIN`ed series would compare NULL and
+/// silently hide every unparented story and book, which is a different bug.
+///
+/// A test fixture is always created under a fixture series, so unparented
+/// content cannot be one: NULL is treated as production. That is the narrow
+/// reading, and it is the one that cannot hide real content.
+export function optionalContentClassPredicate(
+  seriesAlias: string,
+  serveTestFixtures: boolean,
+): string {
+  if (serveTestFixtures) return '';
+  return ` AND (${seriesAlias}.content_class IS NULL OR ${seriesAlias}.content_class = 'production')`;
+}

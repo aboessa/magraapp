@@ -56,6 +56,8 @@ import {
   text,
 } from './catalogueValidation.ts';
 import type { PublishReadiness } from './publishReadiness.ts';
+import type { SeasonCountFact } from './episodeCounts.ts';
+import { emptyPublishedSeasons, seasonCountContradictions } from './episodeCounts.ts';
 import type { WorkflowPublishBlocker } from './workflowEngine.ts';
 
 export const PUBLISHABLE_TYPES = ['series', 'episode', 'story', 'book', 'game', 'project'] as const;
@@ -182,6 +184,16 @@ export interface SeriesFacts extends CommonFacts {
   description_ar: string | null;
   episode_count: number;
   published_episode_count: number;
+  /**
+   * Every non-archived season of the series with its planning figure and its
+   * canonical counts. Supplied so the gate can refuse a series whose seasons
+   * advertise episodes that do not exist — see `lib/episodeCounts.ts`.
+   *
+   * Optional because seasons are a series-only concept and older callers built
+   * `SeriesFacts` without them; absent is reported as not-applicable rather than
+   * silently passing.
+   */
+  seasons?: SeasonCountFact[];
 }
 
 export interface EpisodeFacts extends CommonFacts {
@@ -458,6 +470,66 @@ function workflowCheck(facts: CommonFacts): GateFinding[] {
     blockers.map((blocker) => `${blocker.name_ar} (${blocker.status}): ${blocker.detail}`))];
 }
 
+/**
+ * A season must not advertise episodes it does not contain.
+ *
+ * ## Semantics
+ *
+ * `seasons.episode_count` is an editorial plan, not a count (`episodeCounts.ts`).
+ * Every read surface now derives real totals, so a stale plan can no longer be
+ * rendered as content. What remains is the publish decision itself: shipping a
+ * *published* season that claims eight episodes and holds three is a promise to
+ * a parent that the catalogue cannot keep, so it **blocks**. The same gap on a
+ * season still in production is a plan not yet fulfilled, which is the normal
+ * state of work in progress, so it **warns**.
+ *
+ * A published season with zero episodes blocks unconditionally: the app routes
+ * to episodes through their season, so it renders as an empty shelf.
+ */
+function seasonCountChecks(facts: SeriesFacts): GateFinding[] {
+  if (facts.seasons === undefined) {
+    return [skip('season_counts', 'أعداد الحلقات في المواسم',
+      'لم تُقدَّم مواسم لهذا التقييم.')];
+  }
+  if (!facts.seasons.length) {
+    return [skip('season_counts', 'أعداد الحلقات في المواسم', 'لا مواسم في السلسلة.')];
+  }
+
+  const findings: GateFinding[] = [];
+  const empty = emptyPublishedSeasons(facts.seasons);
+  if (empty.length) {
+    findings.push(block('empty_published_seasons', 'مواسم منشورة بلا حلقات',
+      `${empty.length} موسم منشور لا يحتوي أي حلقة، فسيظهر للطفل رفًّا فارغًا.`,
+      'publisher',
+      'أضف حلقات للموسم أو أعِد حالته إلى غير منشورة.',
+      empty.map((season) => `الموسم ${season.season_number} (${season.season_id})`)));
+  }
+
+  const contradictions = seasonCountContradictions(facts.seasons);
+  if (!contradictions.length) {
+    return [...findings, pass('season_counts', 'أعداد الحلقات في المواسم',
+      `كل المواسم (${facts.seasons.length}) تحتوي ما تخطّط له أو أكثر.`)];
+  }
+
+  const publishedGaps = contradictions.filter((gap) => gap.status === 'published');
+  const missing = contradictions.reduce((total, gap) => total + gap.missing, 0);
+  const items = contradictions.map((gap) => `الموسم ${gap.season_number} (${gap.season_id}): `
+    + `الخطة ${gap.planned_episode_count} حلقة، الموجود ${gap.total_episodes} — ناقص ${gap.missing}`);
+
+  findings.push(publishedGaps.length
+    ? block('season_counts', 'أعداد الحلقات في المواسم',
+        `${publishedGaps.length} موسم منشور يعلن حلقات غير موجودة (${missing} حلقة ناقصة إجمالًا).`,
+        'publisher',
+        'أنتج الحلقات الناقصة، أو صحّح planned_episode_count ليطابق ما أُنتج فعلًا، أو أوقف نشر الموسم.',
+        items)
+    : warn('season_counts', 'أعداد الحلقات في المواسم',
+        `${contradictions.length} موسم غير منشور خطّته أكبر من محتواه (${missing} حلقة ناقصة).`,
+        'editor',
+        'هذه خطة تحريرية لم تكتمل بعد؛ صحّحها أو أكملها قبل نشر الموسم.',
+        items));
+  return findings;
+}
+
 function evaluateSeries(facts: SeriesFacts): GateFinding[] {
   const findings: GateFinding[] = [testFixtureCheck(facts), archivedCheck(facts)];
 
@@ -481,6 +553,8 @@ function evaluateSeries(facts: SeriesFacts): GateFinding[] {
       'كل الحلقات غير منشورة، فالسلسلة ستظهر بلا محتوى قابل للتشغيل.', 'publisher',
       'انشر حلقة واحدة على الأقل، أو انشر السلسلة عمدًا كـ«قريبًا».'));
   }
+
+  findings.push(...seasonCountChecks(facts));
 
   findings.push(facts.visual_style_id
     ? pass('visual_style', 'الأسلوب البصري', facts.visual_style_id)

@@ -192,7 +192,7 @@ describe('ProductionPage', () => {
   test('an empty board says so instead of rendering an empty grid', async () => {
     renderWithProviders(<ProductionPage />, { route: adminPath('production') })
     await waitFor(() => expect(apiMock.productionBoard).toHaveBeenCalled())
-    expect(await screen.findByText(/لا عناصر|No items|لا نتائج/)).toBeInTheDocument()
+    expect(await screen.findByText('لا عمل إنتاجي مطابق')).toBeInTheDocument()
   })
 
   test('a failed board load reports the server message', async () => {

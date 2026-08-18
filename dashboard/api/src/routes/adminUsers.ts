@@ -1,17 +1,18 @@
 ﻿import { Hono } from 'hono'
-import type { Env } from '../lib/db'
-import { queryAll, queryFirst } from '../lib/db'
+import type { Env } from '../lib/db.ts'
+import { queryAll, queryFirst } from '../lib/db.ts'
 import {
   hasPermission,
+  isSuperuser,
   normalizeEmail,
   revokeAllSessions,
   setPassword,
   validatePassword,
   type AdminSessionUser,
-} from '../lib/adminUsers'
-import { requireAdmin } from '../lib/adminAuth'
-import { auditStatement } from '../lib/auditLog'
-import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation'
+} from '../lib/adminUsers.ts'
+import { requireAdmin } from '../lib/adminAuth.ts'
+import { auditStatement } from '../lib/auditLog.ts'
+import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation.ts'
 
 type AppEnv = { Bindings: Env; Variables: { adminUser?: AdminSessionUser; adminIsLegacyKey?: boolean } }
 
@@ -54,6 +55,76 @@ function actorId(c: { get: (key: 'adminUser') => unknown }) {
 
 function audit(db: D1Database, actor: string, action: string, entityId: string, details: unknown) {
   return auditStatement(db, actor, action, 'admin_user', entityId, details)
+}
+
+/// Privilege comparison for granting a role.
+///
+/// `canManage` only asks whether the actor may manage permissions at all. It
+/// does not ask whether the actor may hand out *this* role, so any holder of
+/// `manage_permissions` could mint an `owner` grant and escalate past their own
+/// level. The rule enforced here is the standard one: you cannot give away a
+/// permission you do not hold.
+///
+/// Returns the permissions the actor is missing, or null when the grant is
+/// within the actor's own privilege.
+async function permissionsBeyondActor(
+  db: D1Database,
+  c: { get: (key: 'adminUser') => unknown },
+  roleId: string,
+): Promise<string[] | null> {
+  const user = c.get('adminUser') as AdminSessionUser | undefined
+  // Break-glass before the first account exists, matching canManage(): there is
+  // no actor to compare against yet. requireAdmin already refuses this path once
+  // any admin user is seeded.
+  if (!user) return null
+  // owner / system_admin already hold everything; the subset test would pass
+  // anyway, and skipping it keeps seeding a new owner possible.
+  if (isSuperuser(user)) return null
+
+  const rows = await queryAll<{ permission_id: string }>(
+    db,
+    'SELECT permission_id FROM role_permissions WHERE role_id = ?',
+    [roleId],
+  )
+  const held = new Set(user.permissions)
+  const missing = rows
+    .map((row) => row.permission_id)
+    .filter((permission) => !held.has(permission))
+    .sort()
+  return missing.length ? missing : null
+}
+
+/// Whether removing [grantId] would leave [userId] unable to manage permissions.
+///
+/// Without this, an actor can delete their own `manage_permissions` grant and
+/// lock themselves out of the only screen that could restore it. Last-owner
+/// protection already exists below; this is its self-inflicted counterpart.
+async function wouldLockOutSelf(
+  db: D1Database,
+  userId: string,
+  grantId: string,
+  roleId: string,
+): Promise<boolean> {
+  const confers = await queryFirst<{ ok: number }>(
+    db,
+    `SELECT 1 AS ok FROM role_permissions WHERE role_id = ? AND permission_id = 'manage_permissions'`,
+    [roleId],
+  )
+  if (!confers) return false
+
+  const remaining = await queryFirst<{ total: number }>(db, `
+    SELECT COUNT(*) AS total
+      FROM access_grants ag
+      JOIN role_permissions rp ON rp.role_id = ag.role_id
+     WHERE ag.grantee_type = 'user'
+       AND ag.grantee_id = ?
+       AND ag.id <> ?
+       AND rp.permission_id = 'manage_permissions'
+       AND ag.valid_from <= datetime('now')
+       AND (ag.valid_until IS NULL OR ag.valid_until > datetime('now'))
+  `, [userId, grantId])
+
+  return Number(remaining?.total ?? 0) === 0
 }
 
 type UserListRow = {
@@ -251,6 +322,18 @@ adminUsersRoute.post('/users/:id/grants', async (c) => {
   if (!SCOPES.includes(scopeType)) return c.json({ success: false, error: 'Ù†Ø·Ø§Ù‚ ØºÙŠØ± Ù…Ø¹Ø±ÙˆÙ' }, 400)
   const scopeId = typeof body.scope_id === 'string' ? body.scope_id.trim() || null : null
 
+  // Privilege escalation guard: refuse a role carrying permissions the actor
+  // does not hold. Without this, holding `manage_permissions` was enough to
+  // mint an `owner` grant and escalate past your own level.
+  const beyond = await permissionsBeyondActor(c.env.DB, c, roleId)
+  if (beyond) {
+    return c.json({
+      success: false,
+      error: 'cannot grant a role that exceeds your own privilege',
+      details: { missing_permissions: beyond },
+    }, 403)
+  }
+
   const grantId = crypto.randomUUID()
   await c.env.DB.batch([
     c.env.DB.prepare(`
@@ -285,6 +368,15 @@ adminUsersRoute.delete('/users/:id/grants/:grantId', async (c) => {
     if (Number(owners?.total ?? 0) <= 1) {
       return c.json({ success: false, error: 'Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø²Ø§Ù„Ø© Ø¢Ø®Ø± Ù…Ø§Ù„Ùƒ Ù„Ù„Ù…Ù†ØµÙ‘Ø©' }, 400)
     }
+  }
+
+  // Self-lockout guard: removing your own last manage_permissions grant leaves
+  // you unable to restore it, on the one screen that could.
+  if (id === actorId(c) && await wouldLockOutSelf(c.env.DB, id, grantId, grant.role_id)) {
+    return c.json({
+      success: false,
+      error: 'cannot remove your own last permission-management grant',
+    }, 400)
   }
 
   await c.env.DB.batch([

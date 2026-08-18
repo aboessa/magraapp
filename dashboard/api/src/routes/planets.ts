@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { queryAll } from '../lib/db';
-import { cachedPublicJson } from '../lib/publicCache';
+import { queryAll } from '../lib/db.ts';
+import { cachedPublicJson } from '../lib/publicCache.ts';
 import {
   PLANET_COVER_ROLES,
   PLANET_ICON_ROLES,
@@ -8,7 +8,7 @@ import {
   applyArtworkUrl,
   artworkSelect,
   publicAssetBaseUrl,
-} from '../lib/assetUrls';
+} from '../lib/assetUrls.ts';
 
 type Env = { Bindings: { DB: D1Database; CACHE: KVNamespace; PUBLIC_ASSET_BASE_URL?: string } };
 

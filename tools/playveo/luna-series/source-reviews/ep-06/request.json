@@ -1,0 +1,44 @@
+{
+  "schema_version": "luna-series.source-review-request/v1",
+  "created_at": "2026-08-13T13:32:56.586Z",
+  "status": "awaiting_human_reviews",
+  "bindings": {
+    "episode_id": "ep-06",
+    "episode_number": 6,
+    "title_ar": "أسمّي ما أرى",
+    "locale": "ar",
+    "manifest_path": "tools/playveo/luna-series/manifests/luna-e06-i-name-what-i-see-v2-3d-audio.manifest.json",
+    "source_path": "docs/content/planets/01-abjad/luna-discovers-words/ep-06-i-name-what-i-see.md",
+    "source_sha256": "998bdfe6dde01adee363ed00f672417196ba1bf567f273b1df6f898b48198df3",
+    "preproduction_plan_sha256": "f13810ea3397dce1ce65ee966c27bcc63c7baa42b8fb16f6fa614ff72aa0389e",
+    "visual_identity_pack_sha256": "0132d294f45a6fe644d5b2034e86f15e4627ff146f5f8130247d41c9202905a7",
+    "dialogue_count": 31
+  },
+  "required_reviews": [
+    {
+      "review_type": "editorial",
+      "required": true,
+      "acceptance_criteria": "Confirm narrative clarity, exact dialogue order, age-appropriate wording, scene continuity, and correspondence with the current source bytes."
+    },
+    {
+      "review_type": "linguistic",
+      "required": true,
+      "acceptance_criteria": "Confirm Arabic grammar, diacritics, pronunciation directions, target-word forms, and child-appropriate Modern Standard Arabic for the current source bytes."
+    },
+    {
+      "review_type": "educational",
+      "required": true,
+      "acceptance_criteria": "Confirm the learning objective, scaffolding, response windows, feedback, repetition, and age suitability for the current source bytes."
+    }
+  ],
+  "reviewer_instructions": [
+    "Open and review the source_path whose bytes match source_sha256.",
+    "Confirm the preproduction plan hash and the acceptance criteria for only your review type.",
+    "Record approval with the attest command; never edit an attestation or copy approval from another source hash.",
+    "A linguistic approval must be made by a human with an explicitly recorded Arabic-language qualification."
+  ],
+  "identity_assurance": "operator-supplied human reviewer identity; repository audit trail; no automatic approval",
+  "network_requests_sent": 0,
+  "paid_requests_sent": 0,
+  "request_sha256": "742cdd03c5dcf1c64b4a4bafab1caade46de7962115c69544d1109e48e7d5a89"
+}

@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
-import { isEmailAddress, parseEmailList, sendEmail } from '../lib/email'
-import { consumeRateLimit, generalLimit } from '../lib/rateLimit'
+import type { Env } from '../lib/db.ts'
+import { isEmailAddress, parseEmailList, sendEmail } from '../lib/email.ts'
+import { consumeRateLimit, generalLimit } from '../lib/rateLimit.ts'
 import {
   buildPartnershipEmail,
   KINDS,
@@ -10,7 +10,7 @@ import {
   readSetting,
   type PartnershipKind,
   type PartnershipLocale,
-} from '../lib/partnerships'
+} from '../lib/partnerships.ts'
 
 type AppEnv = { Bindings: Env }
 

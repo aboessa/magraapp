@@ -1,25 +1,29 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
-import type { Env } from '../lib/db'
+import type { Env } from '../lib/db.ts'
 import { pathParam } from '../lib/routeParams.ts'
-import { queryAll, queryFirst } from '../lib/db'
-import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, SERIES_COVER_ROLES, EPISODE_THUMBNAIL_ROLES } from '../lib/assetUrls'
-import { bumpPublicContentCacheVersion } from '../lib/publicCache'
-import adminAssetsRoute from './adminAssets'
-import adminCatalogueRoute from './adminCatalogue'
-import adminContentRoute from './adminContent'
+import { queryAll, queryFirst } from '../lib/db.ts'
+import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, SERIES_COVER_ROLES, EPISODE_THUMBNAIL_ROLES } from '../lib/assetUrls.ts'
+import { bumpPublicContentCacheVersion } from '../lib/publicCache.ts'
+import adminAssetsRoute from './adminAssets.ts'
+import adminCatalogueRoute from './adminCatalogue.ts'
+import adminContentRoute from './adminContent.ts'
 import adminPlanetsRoute from './adminPlanets.ts'
-import adminFamilyProjectionRoute from './adminFamilyProjection'
-import adminTeamsRoute from './adminTeams'
-import adminAppExperienceRoute from './adminAppExperience'
-import adminPlansRoute from './adminPlans'
-import adminBackupRoute from './adminBackup'
-import adminMasteryRoute from './adminMastery'
-import adminTtsRoute from './adminTts'
+import adminStoriesRoute from './adminStories.ts'
+import adminFamilyProjectionRoute from './adminFamilyProjection.ts'
+import adminTeamsRoute from './adminTeams.ts'
+import adminAppExperienceRoute from './adminAppExperience.ts'
+import adminOpsReliabilityRoute from './adminOpsReliability.ts'
+import adminCommerceRoute from './adminCommerce.ts'
+import adminPlansRoute from './adminPlans.ts'
+import adminBackupRoute from './adminBackup.ts'
+import adminMasteryRoute from './adminMastery.ts'
+import adminTtsRoute from './adminTts.ts'
 import adminPublishGateRoute, { evaluateFor, gateRefusal } from './adminPublishGate.ts'
 import adminAvailabilityRoute from './adminAvailability.ts'
 import adminWorkflowRoute from './adminWorkflow.ts'
 import adminSupportRoute from './adminSupport.ts'
+import adminContentFactoryRoute from './adminContentFactory.ts'
 import adminProductionRoute from './adminProduction.ts'
 import adminDevicesRoute from './adminDevices.ts'
 import adminCustomerRoute from './adminCustomer.ts'
@@ -27,11 +31,13 @@ import adminWebsiteRoute from './adminWebsite.ts'
 import adminBlogRoute from './adminBlog.ts'
 import adminSeoRoute from './adminSeo.ts'
 import adminExecutiveRoute from './adminExecutive.ts'
+import adminQuestionsRoute from './adminQuestions.ts'
+import adminTranslationRoute from './adminTranslation.ts'
 import { summarizeGate } from '../lib/publishGate.ts'
-import { validateIslamicFields } from '../lib/islamicContent'
-import { actorId, auditStatement } from '../lib/auditLog'
-import { requireAdmin, requirePermission } from '../lib/adminAuth'
-import { parseTrackIds } from '../lib/catalogueValidation'
+import { validateIslamicFields } from '../lib/islamicContent.ts'
+import { actorId, auditStatement } from '../lib/auditLog.ts'
+import { requireAdmin, requirePermission } from '../lib/adminAuth.ts'
+import { parseTrackIds } from '../lib/catalogueValidation.ts'
 
 type AppEnv = { Bindings: Env }
 type DbRow = Record<string, unknown>
@@ -77,9 +83,10 @@ adminRoute.use('*', async (c, next) => {
 // read path while mutations fail closed.
 adminRoute.route('/', adminContentRoute)
 // الكواكب: القائمة بمؤشّراتها الحقيقية، تجميعة مساحة العمل، شجرة المحتوى،
-// والكتابات الثلاث. مركّبة بعد adminContent الذي لم يبقَ فيه أي مسار كوكب، فلا
-// تظليل. مسار `/planets/:id/workspace` أخصّ من `/planets/:id` ولا يتقاطع معه.
+ // والكتابات الثلاث. مركّبة بعد adminContent الذي لم يبقَ فيه أي مسار كوكب، فلا
+ // تظليل. مسار `/planets/:id/workspace` أخصّ من `/planets/:id` ولا يتقاطع معه.
 adminRoute.route('/', adminPlanetsRoute)
+adminRoute.route('/', adminStoriesRoute)
 // Catalogue rows that had no HTTP surface at all: learning objectives and their
 // track rows, skills, content reviews, story-page reads and the cascading story
 // purge. Mounted after adminContent so nothing here shadows an existing handler.
@@ -110,6 +117,10 @@ adminRoute.route('/', adminWorkflowRoute)
 // مركز الدعم: التذاكر وخطها الزمني وSLA والوسوم والعروض المحفوظة. مركّب بعد
 // adminAppExperience الذي يحمل `/support/family/:id`، ومساراته لا تتقاطع معه.
 adminRoute.route('/', adminSupportRoute)
+// مصنع المحتوى: مسارات /production/factory أخصّ من /production/:type/:id،
+// لذلك يجب تركيبه قبل مركز الإنتاج حتى لا يُفسَّر "factory" كنوع محتوى.
+// التخطيط/الاستيراد منفصلان عن approve-spend وعن dispatch المدفوع.
+adminRoute.route('/', adminContentFactoryRoute)
 // مركز الإنتاج: مصفوفة متطلبات لكل عنصر، مشتقّة من الأصول نفسها، وطبقة إسناد
 // بشرية مخزَّنة. مركّب بعد بوابة النشر لأنه يستدعي تقييمها لصفّ «النشر».
 adminRoute.route('/', adminProductionRoute)
@@ -128,6 +139,10 @@ adminRoute.route('/', adminSeoRoute)
 // اللوحة التنفيذية: تجميعة واحدة على الجداول التشغيلية. مركّبة بعدها كلها لأنها
 // تقرأ من جداولها جميعًا ولا تملك جدولًا خاصًّا بها.
 adminRoute.route('/', adminExecutiveRoute)
+adminRoute.route('/', adminQuestionsRoute)
+adminRoute.route('/', adminTranslationRoute)
+adminRoute.route('/', adminCommerceRoute)
+adminRoute.route('/', adminOpsReliabilityRoute)
 
 function parsePagination(limitValue?: string, offsetValue?: string) {
   const parsedLimit = Number.parseInt(limitValue ?? '20', 10)
@@ -461,19 +476,75 @@ adminRoute.post('/series', requirePermission('create'), async (c) => {
   const slug = text(body.slug) ?? slugify(titleAr)
   const publishedAt = null
 
+  // Islamic conditional fields (migration 0011)
+  const sourceTypeRaw = body.source_type === undefined ? null : nullableText(body.source_type)
+  if (sourceTypeRaw === undefined) return c.json({ success: false, error: 'Invalid source_type' }, 400)
+  const sourceType = sourceTypeRaw as string | null
+  if (sourceType !== null && !['quran', 'hadith', 'sira', 'adab', 'general'].includes(sourceType)) return c.json({ success: false, error: 'Invalid source_type' }, 400)
+  const sourceReference = body.source_reference === undefined ? null : nullableText(body.source_reference)
+  if (sourceReference === undefined) return c.json({ success: false, error: 'Invalid source_reference' }, 400)
+  let verseSurah: number | null = null
+  if (body.verse_surah !== undefined) {
+    if (body.verse_surah === null || body.verse_surah === '') verseSurah = null
+    else {
+      const v = integer(body.verse_surah)
+      if (v === null) return c.json({ success: false, error: 'verse_surah must be an integer' }, 400)
+      verseSurah = v
+    }
+  }
+  let verseAyah: number | null = null
+  if (body.verse_ayah !== undefined) {
+    if (body.verse_ayah === null || body.verse_ayah === '') verseAyah = null
+    else {
+      const v = integer(body.verse_ayah)
+      if (v === null) return c.json({ success: false, error: 'verse_ayah must be an integer' }, 400)
+      verseAyah = v
+    }
+  }
+  const hadithCollection = body.hadith_collection === undefined ? null : nullableText(body.hadith_collection)
+  if (hadithCollection === undefined) return c.json({ success: false, error: 'Invalid hadith_collection' }, 400)
+  const hadithNumber = body.hadith_number === undefined ? null : nullableText(body.hadith_number)
+  if (hadithNumber === undefined) return c.json({ success: false, error: 'Invalid hadith_number' }, 400)
+  const hadithGrade = body.hadith_grade === undefined ? null : nullableText(body.hadith_grade)
+  if (hadithGrade === undefined) return c.json({ success: false, error: 'Invalid hadith_grade' }, 400)
+  const religiousReviewerId = body.religious_reviewer_id === undefined ? null : nullableText(body.religious_reviewer_id)
+  if (religiousReviewerId === undefined) return c.json({ success: false, error: 'Invalid religious_reviewer_id' }, 400)
+  let religiousReviewerVersion: number | null = null
+  if (body.religious_reviewer_version !== undefined) {
+    if (body.religious_reviewer_version === null || body.religious_reviewer_version === '') religiousReviewerVersion = null
+    else {
+      const v = integer(body.religious_reviewer_version)
+      if (v === null) return c.json({ success: false, error: 'religious_reviewer_version must be an integer' }, 400)
+      religiousReviewerVersion = v
+    }
+  }
+  const religiousApprovedAt = body.religious_approved_at === undefined ? null : nullableText(body.religious_approved_at)
+  if (religiousApprovedAt === undefined) return c.json({ success: false, error: 'Invalid religious_approved_at' }, 400)
+  let visualRestrictions: string | null = null
+  if (body.visual_restrictions !== undefined) {
+    if (body.visual_restrictions === null || body.visual_restrictions === '') visualRestrictions = null
+    else if (Array.isArray(body.visual_restrictions)) visualRestrictions = JSON.stringify(body.visual_restrictions)
+    else if (typeof body.visual_restrictions === 'string') visualRestrictions = body.visual_restrictions.trim() || null
+    else return c.json({ success: false, error: 'Invalid visual_restrictions' }, 400)
+  }
+
   const insert = db.prepare(`
     INSERT INTO series (
       id, title_ar, title_en, slug, planet_id, type, age_min, age_max,
       reading_level, interaction_mode, supervision_level, cover_url, description_ar,
       visual_style, visual_style_id, difficulty, production_level, status, is_free, price_tier,
-      sort_order, published_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      sort_order, published_at,
+      source_type, source_reference, verse_surah, verse_ayah, hadith_collection, hadith_number, hadith_grade,
+      religious_reviewer_id, religious_reviewer_version, religious_approved_at, visual_restrictions
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     id, titleAr, nullableText(body.title_en) ?? null, slug, planetId, type, ageMin, ageMax,
     readingLevel, interactionMode, supervisionLevel, nullableText(body.cover_url) ?? null,
     nullableText(body.description_ar) ?? null, nullableText(body.visual_style) ?? null,
     nullableText(body.visual_style_id) ?? null, difficulty, productionLevel, status, asBooleanInteger(body.is_free), priceTier,
     integer(body.sort_order) ?? 0, publishedAt,
+    sourceType, sourceReference, verseSurah, verseAyah, hadithCollection, hadithNumber, hadithGrade,
+    religiousReviewerId, religiousReviewerVersion, religiousApprovedAt, visualRestrictions,
   )
 
   const statements = [
@@ -563,7 +634,65 @@ adminRoute.patch('/series/:id', requirePermission('edit_metadata'), async (c) =>
   }
   if (body.is_free !== undefined) add('is_free', asBooleanInteger(body.is_free))
 
-  if (!sets.length && !updateTracks) return c.json({ success: false, error: 'No supported fields supplied' }, 400)
+  // Islamic conditional fields (migration 0011) — PATCH allows clearing with null
+  const islamicAllowed = new Set(['source_type', 'source_reference', 'verse_surah', 'verse_ayah', 'hadith_collection', 'hadith_number', 'hadith_grade', 'religious_reviewer_id', 'religious_reviewer_version', 'religious_approved_at', 'visual_restrictions'])
+  const hasIslamic = Object.keys(body).some((k) => islamicAllowed.has(k))
+  if (body.source_type !== undefined) {
+    const v = nullableText(body.source_type)
+    if (v === undefined) return c.json({ success: false, error: 'Invalid source_type' }, 400)
+    if (v !== null && !['quran', 'hadith', 'sira', 'adab', 'general'].includes(v)) return c.json({ success: false, error: 'Invalid source_type' }, 400)
+    add('source_type', v)
+  }
+  if (body.source_reference !== undefined) {
+    const v = nullableText(body.source_reference)
+    if (v === undefined) return c.json({ success: false, error: 'Invalid source_reference' }, 400)
+    add('source_reference', v)
+  }
+  if (body.verse_surah !== undefined) {
+    if (body.verse_surah === null || body.verse_surah === '') add('verse_surah', null)
+    else { const v = integer(body.verse_surah); if (v === null) return c.json({ success: false, error: 'verse_surah must be an integer' }, 400); add('verse_surah', v) }
+  }
+  if (body.verse_ayah !== undefined) {
+    if (body.verse_ayah === null || body.verse_ayah === '') add('verse_ayah', null)
+    else { const v = integer(body.verse_ayah); if (v === null) return c.json({ success: false, error: 'verse_ayah must be an integer' }, 400); add('verse_ayah', v) }
+  }
+  if (body.hadith_collection !== undefined) {
+    const v = nullableText(body.hadith_collection)
+    if (v === undefined) return c.json({ success: false, error: 'Invalid hadith_collection' }, 400)
+    add('hadith_collection', v)
+  }
+  if (body.hadith_number !== undefined) {
+    const v = nullableText(body.hadith_number)
+    if (v === undefined) return c.json({ success: false, error: 'Invalid hadith_number' }, 400)
+    add('hadith_number', v)
+  }
+  if (body.hadith_grade !== undefined) {
+    const v = nullableText(body.hadith_grade)
+    if (v === undefined) return c.json({ success: false, error: 'Invalid hadith_grade' }, 400)
+    add('hadith_grade', v)
+  }
+  if (body.religious_reviewer_id !== undefined) {
+    const v = nullableText(body.religious_reviewer_id)
+    if (v === undefined) return c.json({ success: false, error: 'Invalid religious_reviewer_id' }, 400)
+    add('religious_reviewer_id', v)
+  }
+  if (body.religious_reviewer_version !== undefined) {
+    if (body.religious_reviewer_version === null || body.religious_reviewer_version === '') add('religious_reviewer_version', null)
+    else { const v = integer(body.religious_reviewer_version); if (v === null) return c.json({ success: false, error: 'religious_reviewer_version must be an integer' }, 400); add('religious_reviewer_version', v) }
+  }
+  if (body.religious_approved_at !== undefined) {
+    const v = nullableText(body.religious_approved_at)
+    if (v === undefined) return c.json({ success: false, error: 'Invalid religious_approved_at' }, 400)
+    add('religious_approved_at', v)
+  }
+  if (body.visual_restrictions !== undefined) {
+    if (body.visual_restrictions === null || body.visual_restrictions === '') add('visual_restrictions', null)
+    else if (Array.isArray(body.visual_restrictions)) add('visual_restrictions', JSON.stringify(body.visual_restrictions))
+    else if (typeof body.visual_restrictions === 'string') add('visual_restrictions', body.visual_restrictions.trim() || null)
+    else return c.json({ success: false, error: 'Invalid visual_restrictions' }, 400)
+  }
+
+  if (!sets.length && !updateTracks && !hasIslamic) return c.json({ success: false, error: 'No supported fields supplied' }, 400)
 
   const statements: D1PreparedStatement[] = []
   if (sets.length) {

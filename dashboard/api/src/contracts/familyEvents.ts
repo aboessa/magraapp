@@ -1,8 +1,12 @@
 export const FAMILY_EVENT_TYPES = [
   'family.initialized',
+  'family.updated',
+  'family.deletion_requested',
+  'family.deleted',
   'session.created',
   'session.revoked',
   'child.created',
+  'child.deleted',
   'progress.updated',
   'content.completed',
   'favorite.updated',

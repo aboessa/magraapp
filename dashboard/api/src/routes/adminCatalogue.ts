@@ -14,12 +14,13 @@
 /// without booting a worker (test/catalogueValidation.test.mjs).
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
+import type { Env } from '../lib/db.ts';
 import { pathParam } from '../lib/routeParams.ts';
-import { queryAll, queryFirst } from '../lib/db';
-import { actorId, auditStatement, claimedActor } from '../lib/auditLog';
-import { requirePermission } from '../lib/adminAuth';
-import { checkSelfApproval, isApproval, SELF_APPROVAL_ERROR } from '../lib/separationOfDuties';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { actorId, auditStatement, claimedActor } from '../lib/auditLog.ts';
+import { requirePermission } from '../lib/adminAuth.ts';
+import { checkSelfApproval, isApproval, SELF_APPROVAL_ERROR } from '../lib/separationOfDuties.ts';
+import { seasonEpisodeCountSelect, withSeasonEpisodeCounts } from '../lib/episodeCounts.ts';
 import {
   CHARACTER_ROLES,
   REVIEWER_ROLES,
@@ -41,14 +42,14 @@ import {
   text,
   tracksForRange,
   type AgeTrack,
-} from '../lib/catalogueValidation';
+} from '../lib/catalogueValidation.ts';
 import {
   objectiveSkillWrites,
   parseObjectiveSkills,
   referencedSkillIds,
   serializeObjectiveSkills,
   type ObjectiveSkillRow,
-} from '../lib/objectiveSkills';
+} from '../lib/objectiveSkills.ts';
 
 type AppEnv = { Bindings: Env };
 type Row = Record<string, unknown>;
@@ -874,7 +875,8 @@ route.get('/seasons/:id', async (c) => {
   const db = c.env.DB;
   const id = pathParam(c, 'id');
   const row = await queryFirst<Row>(db, `
-    SELECT se.*, s.title_ar AS series_title
+    SELECT se.*, s.title_ar AS series_title,
+      ${seasonEpisodeCountSelect('se')}
     FROM seasons se
     JOIN series s ON s.id = se.series_id
     WHERE se.id = ?
@@ -889,7 +891,13 @@ route.get('/seasons/:id', async (c) => {
 
   return c.json({
     success: true,
-    data: { ...row, learning_goals: parseJson(row.learning_goals, []), episodes },
+    // Same treatment as the list: the planning figure keeps its own name and the
+    // three real counts come from the episode rows.
+    data: withSeasonEpisodeCounts({
+      ...row,
+      learning_goals: parseJson(row.learning_goals, []),
+      episodes,
+    }),
   });
 });
 

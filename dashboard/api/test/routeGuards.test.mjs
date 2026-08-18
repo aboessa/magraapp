@@ -61,6 +61,27 @@ const adminRouterFiles = readdirSync(routesDir)
   .filter((name) => name.startsWith('admin') && name.endsWith('.ts'))
   .sort();
 
+/// Every other router. These serve the app, not the dashboard.
+///
+/// ## Why the sweep could not stay admin-only
+///
+/// The filter above is a file-name test, so a mutation placed in a non-admin
+/// file was structurally invisible to this suite. That is not hypothetical:
+/// `recommendations.ts` carried `POST /admin` with no authentication at all —
+/// its only authorization was a comment reading "reuse requireAdmin via
+/// parentAuth? simple check" — and it wrote rows that
+/// `GET /api/v1/recommendations` serves straight into children's home rails.
+/// An anonymous caller could pin arbitrary content into every child's feed, and
+/// the one test written to catch exactly this class of defect skipped the file
+/// because of its name.
+///
+/// Public routers guard inside the handler rather than with router middleware,
+/// so the assertion differs: a mutating handler must reach an authentication
+/// helper somewhere in its body, or be listed as deliberately anonymous.
+const publicRouterFiles = readdirSync(routesDir)
+  .filter((name) => name.endsWith('.ts') && !name.startsWith('admin'))
+  .sort();
+
 const MUTATING = ['post', 'put', 'patch', 'delete'];
 
 /// Every mutating handler in a router, paired with whatever guard sits between
@@ -106,6 +127,16 @@ const UNGUARDED_BY_DESIGN = new Map([
   ['adminAuth.ts POST /logout-all', 'revokes the caller\u2019s own sessions'],
   ['adminAuth.ts POST /change-password', 'acts on the caller\u2019s own credentials'],
 
+  // Self-scoped session management. There is no user id in the path: each handler
+  // resolves the caller from the presented token and constrains every statement
+  // to that `user_id`, so there is nothing to authorise beyond holding the
+  // session. Requiring a content permission would hide a security screen from
+  // ordinary administrators, which is why the pre-existing
+  // `GET /users/:id/sessions` (behind manage_permissions, for managing *others*)
+  // could not be reused for "my sessions".
+  ['adminAuth.ts DELETE /sessions/:id', 'revokes one of the caller\u2019s own sessions'],
+  ['adminAuth.ts POST /sessions/revoke-others', 'revokes the caller\u2019s own other sessions'],
+
   // adminUsers.ts predates requirePermission and guards every mutation with a
   // local canManage() built on hasPermission(user, 'manage_permissions'). The
   // coverage is real; the mechanism differs. Asserted separately below.
@@ -129,6 +160,185 @@ test('every mutating admin handler carries an authorization guard', () => {
     [],
     'a mutating admin route has no permission check, no 405 refusal, and no recorded exemption',
   );
+});
+
+/// Mutating handlers in a public router, paired with the authentication helper
+/// reachable inside the handler body.
+///
+/// The body is bounded by the next route registration rather than by brace
+/// counting: a regex cannot balance braces, and stopping at the next
+/// `<router>.<verb>(` is both simple and conservative — it can only ever
+/// include *more* text than the handler, never less, so a missing auth call is
+/// never masked by a truncated window.
+const AUTH_MARKERS = /authenticateParent|requireAdmin|requirePermission|verifyMediaToken|verifyGooglePubSubToken|readOnly/;
+
+/// Names of top-level helpers in this file that themselves authenticate.
+///
+/// Public routers wrap `authenticateParent` in a local helper — `family.ts` uses
+/// `principal(c)`, `creations.ts` resolves ownership through its own guard — so a
+/// literal search for the imported helper reports every one of those handlers as
+/// unauthenticated. Resolving one level of indirection removes ~11 false alarms
+/// without weakening the check: the wrapper still has to reach a real helper.
+///
+/// Declarations are bounded by a closing brace in column zero, which is what a
+/// top-level function looks like in this codebase.
+function localAuthHelpers(source) {
+  const names = new Set();
+  const declaration = /^(?:export\s+)?(?:async\s+)?function\s+(\w+)|^(?:export\s+)?const\s+(\w+)\s*=\s*(?:async\s*)?\(/gm;
+
+  for (const match of source.matchAll(declaration)) {
+    const name = match[1] ?? match[2];
+    const rest = source.slice(match.index);
+    const end = rest.search(/\n\}/);
+    const body = end === -1 ? rest : rest.slice(0, end);
+    if (AUTH_MARKERS.test(body)) names.add(name);
+  }
+
+  return names;
+}
+
+function publicMutatingHandlers(file) {
+  const source = stripComments(read(file));
+  const helpers = localAuthHelpers(source);
+  const registration = /(\w+)\.(post|put|patch|delete)\(\s*'([^']+)'/g;
+  const found = [];
+
+  for (const match of source.matchAll(registration)) {
+    const rest = source.slice(match.index + match[0].length);
+    const nextRegistration = rest.search(/\n\s*\w+\.(get|post|put|patch|delete)\(\s*'/);
+    const body = nextRegistration === -1 ? rest : rest.slice(0, nextRegistration);
+    const viaHelper = [...helpers].some((name) => new RegExp(String.raw`\b${name}\s*\(`).test(body));
+
+    found.push({
+      file,
+      method: match[2].toUpperCase(),
+      path: match[3],
+      authenticated: AUTH_MARKERS.test(body) || viaHelper,
+      signature: `${file} ${match[2].toUpperCase()} ${match[3]}`,
+    });
+  }
+
+  return found;
+}
+
+const publicMutations = publicRouterFiles.flatMap(publicMutatingHandlers);
+
+/// Endpoints that must work without a session, each with the reason.
+///
+/// Anything not listed here has to reach an authentication helper. Adding an
+/// anonymous mutation therefore requires an explicit, reviewed entry rather
+/// than passing silently.
+const ANONYMOUS_BY_DESIGN = new Map([
+  ['auth.ts POST /register', 'creates the account a session would belong to'],
+  ['auth.ts POST /login', 'issues the session'],
+  ['auth.ts POST /refresh', 'presents a refresh token, not a session'],
+  ['auth.ts POST /verify-email', 'presented with a one-time verification token'],
+  ['auth.ts POST /resend-verification', 'the caller cannot yet sign in'],
+  ['auth.ts POST /forgot-password', 'the caller has lost access by definition'],
+  ['auth.ts POST /reset-password', 'presented with a one-time reset token'],
+  ['auth.ts POST /logout', 'revokes the presented refresh token'],
+
+  // Authorized by a capability rather than a session: the caller presents a
+  // 43-character deletion receipt whose hash is verified inside FamilyState. A
+  // deleted account has no session left to authenticate with, which is the
+  // whole point of issuing a receipt.
+  ['account.ts POST /deletions/status', 'deletion receipt capability, verified in the DO'],
+
+  // Public enquiry form on the marketing site. It writes a partnership request
+  // for staff review and reads nothing.
+  ['partnerships.ts POST /', 'public partnership enquiry form'],
+]);
+
+test('every mutating public handler authenticates or is a recorded exception', () => {
+  const unauthenticated = publicMutations.filter((handler) => (
+    !handler.authenticated && !ANONYMOUS_BY_DESIGN.has(handler.signature)
+  ));
+
+  assert.deepEqual(
+    unauthenticated.map((handler) => handler.signature),
+    [],
+    'a mutating public route neither authenticates nor is recorded as deliberately anonymous',
+  );
+});
+
+test('the public sweep actually inspected the routers', () => {
+  assert.ok(
+    publicRouterFiles.length >= 15,
+    `expected the public routers, found ${publicRouterFiles.length}`,
+  );
+  assert.ok(
+    publicMutations.length >= 25,
+    `expected the public mutations, found ${publicMutations.length}`,
+  );
+});
+
+test('editorial recommendation writes are an admin capability', () => {
+  // The regression this pins: the write used to live on the public router with
+  // no authentication, and the read below serves it to children.
+  const publicRouter = stripComments(read('recommendations.ts'));
+  assert.doesNotMatch(
+    publicRouter,
+    /\.(post|put|patch|delete)\(/,
+    'recommendations.ts must be read-only; editorial writes belong in an admin router',
+  );
+
+  const adminRouter = stripComments(read('adminRecommendations.ts'));
+  assert.match(adminRouter, /\.use\(\s*'\*'\s*,\s*requireAdmin\s*\)/, 'mounted directly, so it must guard itself');
+  assert.match(adminRouter, /requirePermission\('publish'\)/, 'pinning content for a child is a publishing act');
+  assert.match(adminRouter, /auditStatement\(/, 'the write must be attributable');
+  assert.match(adminRouter, /SELECT id FROM series WHERE id = \?/, 'the series reference must be validated');
+});
+
+test('granting a role cannot exceed the actor\u2019s own privilege', () => {
+  // canManage() only asks whether the actor may manage permissions at all, so
+  // any holder of manage_permissions could mint an `owner` grant and escalate
+  // past their own level. The rule is the standard one: you cannot give away a
+  // permission you do not hold.
+  const source = stripComments(read('adminUsers.ts'));
+
+  assert.match(source, /async function permissionsBeyondActor\(/, 'the privilege comparison must exist');
+  assert.match(
+    source,
+    /SELECT permission_id FROM role_permissions WHERE role_id = \?/,
+    'the comparison must read the granted role\u2019s actual permissions',
+  );
+  assert.match(source, /isSuperuser\(user\)/, 'owner/system_admin already hold everything');
+
+  // And it must be applied on the grant path, before the insert.
+  const grantHandler = source.slice(
+    source.indexOf("adminUsersRoute.post('/users/:id/grants'"),
+    source.indexOf("adminUsersRoute.delete('/users/:id/grants/:grantId'"),
+  );
+  assert.ok(grantHandler.length > 0, 'the grant handler must exist');
+  assert.match(grantHandler, /await permissionsBeyondActor\(/, 'the grant handler must run the comparison');
+  assert.ok(
+    grantHandler.indexOf('permissionsBeyondActor') < grantHandler.indexOf('INSERT INTO access_grants'),
+    'the comparison must run before the grant is written',
+  );
+  assert.match(grantHandler, /403/, 'an over-privileged grant must be refused, not downgraded');
+});
+
+test('an actor cannot remove their own last permission-management grant', () => {
+  // Last-owner protection already existed; this is its self-inflicted
+  // counterpart. Removing your own manage_permissions grant locks you out of the
+  // only screen that could restore it.
+  const source = stripComments(read('adminUsers.ts'));
+
+  assert.match(source, /async function wouldLockOutSelf\(/);
+  assert.match(
+    source,
+    /rp\.permission_id = 'manage_permissions'/,
+    'the check must count remaining grants that confer permission management',
+  );
+
+  const deleteHandler = source.slice(source.indexOf("adminUsersRoute.delete('/users/:id/grants/:grantId'"));
+  assert.match(deleteHandler, /id === actorId\(c\) && await wouldLockOutSelf\(/);
+  assert.ok(
+    deleteHandler.indexOf('wouldLockOutSelf') < deleteHandler.indexOf('DELETE FROM access_grants'),
+    'the check must run before the grant is deleted',
+  );
+  // The pre-existing last-owner rule must survive alongside it.
+  assert.match(deleteHandler, /role_id = 'owner' AND grantee_type = 'user'/);
 });
 
 test('the guard sweep actually inspected the routers', () => {
@@ -170,6 +380,11 @@ const CRITICAL_GUARDS = [
   ['adminCatalogue.ts', 'PATCH', '/content-reviews/:id', 'review'],
   // Narration preview spends real money on a paid Google API per call.
   ['adminTts.ts', 'POST', '/tts/preview', 'upload_audio'],
+  // Content-factory spend approval and paid execution are distinct privilege boundaries.
+  ['adminContentFactory.ts', 'POST', '/production/factory/:runId/approve-spend', 'approve'],
+  ['adminContentFactory.ts', 'POST', '/production/factory/:runId/dispatch', 'publish'],
+  ['adminContentFactory.ts', 'POST', '/production/factory/:runId/resume', 'publish'],
+  ['adminContentFactory.ts', 'POST', '/production/factory/:runId/retry-failed', 'publish'],
   // Partnership settings redirect where official enquiries are delivered.
   ['adminPartnerships.ts', 'PUT', '/settings', 'publish'],
 ];
@@ -266,6 +481,26 @@ test('the login router is the one place without requireAdmin', () => {
     /\.use\(\s*'\*'\s*,\s*requireAdmin\s*\)/,
     'adminAuth issues sessions; requiring one would lock everybody out',
   );
+});
+
+test('self-scoped session endpoints cannot reach another user\u2019s sessions', () => {
+  // These carry no permission check by design, so the constraint that makes them
+  // safe is that every statement is bound to the resolved caller. A handler that
+  // took a user id from the path would be an IDOR with no guard in front of it.
+  const source = stripComments(read('adminAuth.ts'));
+  const start = source.indexOf("adminAuthRoute.get('/sessions'");
+  const block = source.slice(start, source.indexOf("adminAuthRoute.post('/logout-all'"));
+
+  assert.ok(start > 0, 'the self-scoped session listing must exist');
+  // No user id may appear in any of these paths.
+  assert.doesNotMatch(block, /\/users\/:id/, 'a self-scoped endpoint must not accept a user id');
+  // Every read and write is bound to the resolved session's user.
+  assert.match(block, /WHERE user_id = \?/);
+  assert.match(block, /AND user_id = \?/);
+  assert.match(block, /user_id = \? AND revoked_at IS NULL AND token_hash <> \?/, 'revoke-others must spare the current session');
+  // The raw token is never returned; the current session is identified by hash.
+  assert.match(block, /row\.token_hash === currentHash/);
+  assert.doesNotMatch(block, /token_hash: row\.token_hash/, 'a token hash must not be sent to the client');
 });
 
 test('workflow review takes the reviewer from the session, not the request body', () => {

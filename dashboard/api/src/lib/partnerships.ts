@@ -1,4 +1,4 @@
-import { queryFirst } from './db'
+import { queryFirst } from './db.ts'
 
 /** أنواع الجهات وحالات الطلب. مطابقة لقيود CHECK في المهاجرة 0017. */
 export const KINDS = ['school', 'nursery', 'publisher', 'producer', 'creator', 'other'] as const

@@ -1,11 +1,11 @@
 import { Hono } from 'hono'
-import { requireAdmin, requirePermission } from '../lib/adminAuth'
+import { requireAdmin, requirePermission } from '../lib/adminAuth.ts'
 import { pathParam } from '../lib/routeParams.ts'
-import { actorId, auditStatement } from '../lib/auditLog'
-import type { Env } from '../lib/db'
-import type { AdminSessionUser } from '../lib/adminUsers'
-import { queryAll, queryFirst } from '../lib/db'
-import { isEmailAddress, parseEmailList, sendEmail } from '../lib/email'
+import { actorId, auditStatement } from '../lib/auditLog.ts'
+import type { Env } from '../lib/db.ts'
+import type { AdminSessionUser } from '../lib/adminUsers.ts'
+import { queryAll, queryFirst } from '../lib/db.ts'
+import { isEmailAddress, parseEmailList, sendEmail } from '../lib/email.ts'
 import {
   buildPartnershipEmail,
   EDITABLE_SETTINGS,
@@ -16,7 +16,7 @@ import {
   writeSetting,
   type PartnershipRequestRow,
   type PartnershipStatus,
-} from '../lib/partnerships'
+} from '../lib/partnerships.ts'
 
 type AppEnv = { Bindings: Env; Variables: { adminUser?: AdminSessionUser; adminIsLegacyKey?: boolean } }
 

@@ -1,10 +1,10 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/crypto/file_crypto.dart';
-import '../../home/application/home_providers.dart';
 import '../../profile/data/billing_status.dart';
 import '../../profile/data/settings_store.dart';
 import '../data/download_repository.dart';
@@ -49,8 +49,9 @@ Future<bool> _networkAllowsDownload(Ref ref) async {
   }
   final wifiOnly = ref.read(settingsProvider).downloadOverWifiOnly;
   if (!wifiOnly) return true;
-  return results.any((r) =>
-      r == ConnectivityResult.wifi || r == ConnectivityResult.ethernet);
+  return results.any(
+    (r) => r == ConnectivityResult.wifi || r == ConnectivityResult.ethernet,
+  );
 }
 
 /// Whether the family's plan entitles it to offline downloads.
@@ -65,10 +66,10 @@ Future<bool> _isEntitledToDownload(Ref ref) async {
 
 final downloadManagerProvider =
     StateNotifierProvider<DownloadManager, List<DownloadItem>>((ref) {
-  return DownloadManager(
-    repository: ref.watch(downloadRepositoryProvider),
-    client: ref.watch(httpClientProvider),
-    isEntitled: () => _isEntitledToDownload(ref),
-    networkAllowsDownload: () => _networkAllowsDownload(ref),
-  );
-});
+      return DownloadManager(
+        repository: ref.watch(downloadRepositoryProvider),
+        client: http.Client(),
+        isEntitled: () => _isEntitledToDownload(ref),
+        networkAllowsDownload: () => _networkAllowsDownload(ref),
+      );
+    });

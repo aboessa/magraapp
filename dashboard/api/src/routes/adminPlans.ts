@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
-import { PLAN_LIMITS, type Plan } from '../lib/familyPolicy'
-import { requireAdmin } from '../lib/adminAuth'
+import type { Env } from '../lib/db.ts'
+import { PLAN_LIMITS, type Plan } from '../lib/familyPolicy.ts'
+import { requireAdmin } from '../lib/adminAuth.ts'
 
 type AppEnv = { Bindings: Env }
 

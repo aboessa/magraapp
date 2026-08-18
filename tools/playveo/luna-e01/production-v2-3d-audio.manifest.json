@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "production_id": "luna-e01-picture-and-thing-v2-3d-model-audio",
+  "title_ar": "الصورة والشيء",
+  "series_ar": "لونا تكتشف الكلمات",
+  "series_slug": "luna-discovers-words",
+  "episode_source": "docs/content/planets/01-abjad/luna-discovers-words/ep-01-picture-and-thing.md",
+  "visual_identity": {
+    "identity_id": "luna-discovers-words/luna-v2",
+    "version": "luna-v2",
+    "series_slug": "luna-discovers-words",
+    "status": "approved",
+    "reference_pack_sha256": "0132d294f45a6fe644d5b2034e86f15e4627ff146f5f8130247d41c9202905a7",
+    "references": [
+      {
+        "kind": "character_sheet",
+        "path": "majarra_images/assets/images/characters/luna-preschool-character-sheet.png",
+        "sha256": "0edcd9e6280dbece120a3f6a6247dac55e0fac20a09489b54e37f04a08b20deb"
+      },
+      {
+        "kind": "visual_guide",
+        "path": "tools/content-factory/reference-packs/luna-v2-visual-guide.json",
+        "sha256": "ba579c39b4b462d7709e53fdb984601d8c926a3525c63dcbf0b05f02007ff1c6"
+      }
+    ],
+    "approved_by": "majarra-creative-direction",
+    "approved_at": "2026-08-12T00:00:00.000Z"
+  },
+  "output_root": "assets/episodes/luna-e01-picture-and-thing-v2-3d-audio",
+  "production_policy": {
+    "cartoon_video": "Generate visuals, animation, spoken dialogue, ambience, music, and sound effects together inside the video model. Preserve model audio in the final master. External dubbing is a repair path only.",
+    "illustrated_read_to_me": "Generate and approve still images first, then create narration and assemble the illustrated story as a separate images-plus-audio workflow.",
+    "this_production_mode": "cartoon_video",
+    "model_audio_required": true,
+    "external_tts_forbidden_by_default": true,
+    "retain_flux_audio_in_master": true
+  },
+  "provider": {
+    "name": "PlayVeo FLUX 3",
+    "base_url": "https://playveo-api.aboessa101.workers.dev",
+    "create_route": "/v1/flux/videos",
+    "get_route": "/v1/flux/videos/{id}",
+    "operation": "text-to-video"
+  },
+  "execution": {
+    "max_concurrency": 10,
+    "aspect_ratio": "16:9",
+    "resolution": "hd",
+    "poll_interval_seconds": 10,
+    "timeout_minutes": 35,
+    "expected_total_seconds": 180,
+    "estimated_credit_cost": 9.0
+  },
+  "visual_direction": {
+    "style": "Original high-end contemporary stylized 3D preschool feature animation. Polished studio-quality rendering, rounded appealing character design, expressive facial animation, soft physically based materials, subtle subsurface skin shading, detailed cloth with clean folds, cinematic global illumination, warm volumetric rim light, gentle depth of field, rich dimensional environments, smooth natural body mechanics, and premium color grading. The result must look current and cinematic, not like flat educational clip art.",
+    "luna": "Luna is the same consistent five-year-old Arab girl in every clip: warm tan skin, round cheeks, large expressive brown eyes, soft eyebrows, small friendly nose, golden-yellow hijab fully covering her hair and neck, a small silver crescent pin at her left shoulder, knee-length golden-yellow long-sleeve tunic, dark teal trousers, and dark teal shoes. Child proportions, four fingers plus thumb per hand, same face, same outfit, same materials, and same scale in all shots.",
+    "najmi": "Najmi is the same palm-sized living five-point golden star in every clip, with rounded points, two small dark-brown eyes, one tiny friendly mouth, no arms, no legs, no accessories. Najmi floats slowly and gives a restrained cyan volumetric glow when guiding attention. Najmi never speaks words.",
+    "world": "Planet Abjad is a magical safe 3D learning garden under a deep navy cosmic sky: softly rolling indigo hills, warm cream paths, rounded coral and cyan plants, tiny golden stars, soft atmospheric depth, and no readable letters. It feels bright, warm, premium, spacious, and safe for ages three to five.",
+    "props": "The same recurring 3D props persist exactly: one glossy red apple with one green leaf; one teal ball with one broad golden-yellow diagonal band; one friendly small ginger cat with no clothes; one cream toy-like house with coral roof and cyan door. A picture card is the same object shown as a clean 3D miniature inside a thick rounded cyan frame.",
+    "camera": "Cinematic child-eye-level 16:9 camera, gentle dolly or slow arc only, stable horizon, readable staging, no handheld shake, no rapid zoom, no fast cuts, no extreme lens distortion.",
+    "negative": "No 2D illustration, no flat vector art, no cutout animation, no old television-cartoon look, no model sheet, no storyboard, no checkerboard, no on-screen text, no captions, no letters, no numbers, no logos, no watermark, no extra people, no duplicate Luna, no duplicate Najmi, no extra limbs, no visible hair, no wardrobe change, no frightening darkness, no storm, no flashing, no violence, and no object morphing."
+  },
+  "audio_direction": {
+    "voice": "One consistent youthful warm Arabic female character voice performs Luna in all ten clips. The voice is light, friendly, clear, curious, and natural, never an announcer, never robotic, never babyish, and never shouted. Use clear simplified Modern Standard Arabic with natural educated Egyptian articulation.",
+    "dialogue_rule": "Speak every quoted Arabic line exactly as written, without translation, paraphrase, added words, repeated words, labels, narrator commentary, or gibberish. Luna is the only speaking character. Match Luna's mouth accurately to the Arabic speech whenever she is visible; when she is absent, the same voice is heard gently off-camera.",
+    "pronunciation": "Pronounce تُفّاحة with a clearly doubled ف, كُرة with damma on ك, قِطّة with kasra on ق and a clearly doubled ط, and بَيت with fatha on ب. In the final four-word list, pause about 400 milliseconds between words.",
+    "mix": "Dialogue is always foreground and intelligible. Use soft magical orchestral-marimba underscore at low volume, gentle garden ambience, one short crystalline chime for Najmi, and restrained success sparkles. No other voices, no singing, no loud percussion, no sudden sound, and no music covering speech.",
+    "silence_rule": "Thinking pauses specified in each clip are real silence in dialogue; retain only very low ambience during them."
+  },
+  "scenes": [
+    {
+      "id": "S01",
+      "duration_seconds": 15,
+      "file": "clips/S01.mp4",
+      "visual": "Opening in the 3D Planet Abjad garden. Full-body Luna walks in from the left along a warm cream path, stops near center-left, smiles directly toward the child, and gives one small welcoming wave. Najmi floats near her right shoulder. Exactly Luna and Najmi as foreground characters; softly rolling indigo hills and two tiny distant stars remain background atmosphere.",
+      "timeline": [
+        "0.0-2.5s: soft magical opening motif and garden ambience; no speech.",
+        "2.5s: Luna says exactly: «مرحبًا! أنا لونا.»",
+        "6.0-7.0s: natural pause; Najmi bobs once.",
+        "8.0s: Luna says exactly: «وهذا صديقي نجمي.»",
+        "12.0s: Najmi makes one short crystalline chime and soft cyan glow; Luna smiles; no more speech."
+      ]
+    },
+    {
+      "id": "S02",
+      "duration_seconds": 20,
+      "file": "clips/S02.mp4",
+      "visual": "Medium 3D shot. Luna stands center-left. A cyan-framed miniature picture of the locked red apple floats at upper right, then the matching glossy real apple rises gently below it. Najmi floats between Luna and the card. Luna points first to the picture and then to the real apple. Exactly four foreground elements: Luna, Najmi, picture card, real apple.",
+      "timeline": [
+        "0.8s: Luna says exactly: «انظر معي.»",
+        "3.2s: Luna says exactly: «هذه صورة.»",
+        "5.8s: Najmi gives one soft chime and glows above the card.",
+        "7.0s: Luna says exactly: «وهذه تُفّاحة حقيقية.»",
+        "11.0s: Luna says exactly: «الصورة تشبه الشيء.»",
+        "15.2s: Luna says exactly: «هيا نبحث معًا.»",
+        "18.0-20.0s: gentle musical transition; no additional speech."
+      ]
+    },
+    {
+      "id": "S03",
+      "duration_seconds": 20,
+      "file": "clips/S03.mp4",
+      "visual": "Wide 3D matching challenge with no visible Luna. A cyan-framed picture of the locked teal-and-gold ball floats above. On the cream path below are exactly three well-separated choices: the matching ball, the ginger cat, and the cream house. Use premium toy-like materials and soft contact shadows. Luna's same voice is heard gently off-camera.",
+      "timeline": [
+        "1.0s: off-camera Luna says exactly: «هذه صورة كُرة.»",
+        "4.5s: off-camera Luna asks exactly: «أين الكُرة الحقيقية؟»",
+        "7.0-10.0s: three full seconds with no dialogue; only very low garden ambience.",
+        "10.5s: off-camera Luna asks exactly: «هل ترى؟»",
+        "12.0-14.0s: two seconds with no dialogue.",
+        "14.5s: Najmi enters slowly, glides toward the real ball, makes one short crystalline chime, and glows cyan; no spoken words.",
+        "18.0-20.0s: hold on the real ball; no additional speech."
+      ]
+    },
+    {
+      "id": "S04",
+      "duration_seconds": 20,
+      "file": "clips/S04.mp4",
+      "visual": "3D ball success shot. The real locked teal-and-gold ball is centered, its cyan-framed matching picture floats above, and Najmi hovers beside it. The ball makes one gentle quarter turn and rolls a short safe distance. A restrained golden success sparkle appears once. Luna remains off-camera; exactly three foreground elements.",
+      "timeline": [
+        "1.0s: off-camera Luna says exactly: «نعم! هذه هي الكُرة.»",
+        "4.8s: off-camera Luna says exactly: «أحسنت!»",
+        "7.0s: the ball rolls gently with soft rolling sound.",
+        "8.0s: off-camera Luna says exactly: «الكُرة تتحرك وتدور.»",
+        "13.5s: off-camera Luna says exactly: «الآن صورة أخرى.»",
+        "17.0-20.0s: soft transition music; no additional words."
+      ]
+    },
+    {
+      "id": "S05",
+      "duration_seconds": 20,
+      "file": "clips/S05.mp4",
+      "visual": "Wide 3D cat challenge with no visible Luna. A cyan-framed picture of the same ginger cat floats above. The real ginger cat sits on the left, the cream house stands on the right, and Najmi floats near the cat. The cat blinks and moves its tail once. Exactly four foreground elements. Luna's same voice is off-camera.",
+      "timeline": [
+        "1.0s: off-camera Luna says exactly: «هذه صورة قِطّة.»",
+        "4.3s: one very soft cat meow, under 400 milliseconds.",
+        "5.2s: off-camera Luna asks exactly: «أين القِطّة؟»",
+        "7.0-10.0s: three full seconds with no dialogue; only low ambience.",
+        "10.5s: Najmi glides above the real cat, chimes once, and glows cyan.",
+        "11.5s: off-camera Luna says exactly: «وجدتها! هذه القِطّة.»",
+        "15.5s: off-camera Luna says exactly: «القِطّة لها فَرْو ناعم.»",
+        "19.0-20.0s: quiet hold; no extra speech."
+      ]
+    },
+    {
+      "id": "S06",
+      "duration_seconds": 20,
+      "file": "clips/S06.mp4",
+      "visual": "Medium 3D house challenge with no visible Luna. The cyan-framed picture of the locked cream house floats above the exact same real house. Najmi waits calmly between them. One house window has a very soft warm glow. Exactly three foreground elements. Luna's same voice remains off-camera.",
+      "timeline": [
+        "1.0s: off-camera Luna says exactly: «بقيت صورة واحدة.»",
+        "4.5s: off-camera Luna says exactly: «هذه صورة بَيت.»",
+        "8.0s: off-camera Luna asks exactly: «أين البَيت؟»",
+        "10.0-13.0s: three full seconds with no dialogue; only low ambience.",
+        "13.5s: Najmi glides toward the real house, chimes once, and glows cyan.",
+        "17.0-20.0s: hold on the matched house; no additional speech."
+      ]
+    },
+    {
+      "id": "S07",
+      "duration_seconds": 20,
+      "file": "clips/S07.mp4",
+      "visual": "Premium 3D success and transition shot. Luna stands at center-left, the real cream house is at right, and Najmi floats above it. Luna nods and opens one hand toward the house. A soft golden halo appears behind the house without dark smoke. Then Luna turns warmly toward the child. Exactly Luna, Najmi, house, and one halo effect.",
+      "timeline": [
+        "0.8s: Luna says exactly: «نعم! هذا البَيت.»",
+        "4.0s: Luna says exactly: «البَيت نسكن فيه.»",
+        "7.5s: a restrained success sparkle sounds once.",
+        "8.5s: Luna says exactly: «وجدنا الثلاثة!»",
+        "11.8s: Luna says exactly: «دورك الآن.»",
+        "14.5s: a cyan-framed apple picture card begins to float in at the far right while Luna says exactly: «هذه صورة تُفّاحة.»",
+        "18.5-20.0s: gentle hold; no extra words."
+      ]
+    },
+    {
+      "id": "S08",
+      "duration_seconds": 15,
+      "file": "clips/S08.mp4",
+      "visual": "Wide 3D child application challenge with no visible Luna or Najmi at first. A cyan-framed picture of the locked red apple floats above exactly three choices: matching real apple, teal-and-gold ball, and cream house. Hold the choices clearly and calmly. Near the end Najmi enters and softly guides toward the real apple. Luna's same voice is off-camera.",
+      "timeline": [
+        "0.8s: off-camera Luna asks exactly: «أين التُّفّاحة؟»",
+        "2.5-7.5s: five full seconds with no dialogue and no hint; only very low ambience.",
+        "7.8s: Najmi enters slowly, gives one soft chime, and adds a restrained cyan rim glow around the real apple.",
+        "9.0s: off-camera Luna says exactly: «هذه هي! أحسنت.»",
+        "12.5s: one soft success sparkle; no additional speech."
+      ]
+    },
+    {
+      "id": "S09",
+      "duration_seconds": 15,
+      "file": "clips/S09.mp4",
+      "visual": "Warm premium 3D apple success shot. Luna stands center-left and presents the glossy red apple on her open palm. Its matching cyan-framed picture floats at right and Najmi hovers above the card. Luna looks between the apple and the child. Exactly four foreground elements.",
+      "timeline": [
+        "1.0s: Luna says exactly: «أنت تعرف الكلمات.»",
+        "5.8s: Luna says exactly: «الصورة تشبه الشيء.»",
+        "9.5s: Najmi makes one happy crystalline chime and a soft golden-cyan glow.",
+        "12.0-15.0s: calm musical bridge; no additional speech."
+      ]
+    },
+    {
+      "id": "S10",
+      "duration_seconds": 15,
+      "file": "clips/S10.mp4",
+      "visual": "Cinematic 3D closing shot. Luna and Najmi stand together at center-left. At right, one premium rounded cyan review board contains four clean 3D cells showing the exact apple, ball, cat, and house. Luna makes one gentle come-play gesture. Warm volumetric light and tiny golden particles create a polished finale. Exactly Luna, Najmi, and the grouped board as foreground groups.",
+      "timeline": [
+        "0.7s: Luna says exactly and slowly: «تعلّمنا: تُفّاحة، كُرة، قِطّة، بَيت.» Pause about 400 milliseconds between each of the four object words.",
+        "8.8s: Najmi makes one joyful but soft crystalline chime and glows cyan.",
+        "10.0s: Luna says exactly: «هيا نلعب معًا!»",
+        "12.5-15.0s: gentle orchestral-marimba closing motif, Luna and Najmi hold a warm smile, no additional speech."
+      ]
+    }
+  ],
+  "acceptance": {
+    "scene_count": 10,
+    "duration_seconds": 180,
+    "duration_tolerance_seconds": 2,
+    "audio_track_required_per_clip": true,
+    "model_generated_dialogue_required": true,
+    "external_dub_forbidden": true,
+    "final_master_must_retain_clip_audio": true,
+    "spoken_language": "ar",
+    "visual_style": "stylized_3d_cinematic",
+    "burned_in_text_forbidden": true
+  }
+}

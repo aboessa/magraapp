@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
+import type { Env } from '../lib/db.ts'
 // امتدادات `.ts` صريحة على مسارات هذا الملف وحده.
 //
 // مجموعة الاختبارات تعمل بـ`node --experimental-strip-types`، وهو يطالب
@@ -11,7 +11,7 @@ import type { Env } from '../lib/db'
 // لا يخصّ هذا العمل. wrangler يقبل الصيغتين، فلا أثر على البناء.
 import { queryAll, queryFirst } from '../lib/db.ts'
 import { requireAdmin, requirePermission } from '../lib/adminAuth.ts'
-import type { AdminSessionUser } from '../lib/adminUsers'
+import type { AdminSessionUser } from '../lib/adminUsers.ts'
 import { storyPublishError } from '../lib/catalogueValidation.ts'
 
 type AppEnv = { Bindings: Env; Variables: { adminUser?: AdminSessionUser; adminIsLegacyKey?: boolean } }

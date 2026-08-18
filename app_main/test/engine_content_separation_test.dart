@@ -91,6 +91,44 @@ const _allowedConstantLists = <String, String>{
   // content: a pack chooses the two quantities, never what the two sets are called.
   'wave_two_engines.dart:labels':
       'names for the compare-mode answer ids the engine itself defines',
+
+  // The creative studio and its drawing reference library are standalone,
+  // local-first tools. These lists describe gallery filters, drawing prompts and
+  // bundled reference sheets; none is consumed by a game engine or can affect a
+  // pack's board, score or progression.
+  'creative_studio_page.dart:_coloringItems':
+      'standalone studio gallery entries, not pack-driven game content',
+  'creative_studio_page.dart:_traceItems':
+      'standalone studio tracing references, not pack-driven game content',
+  'creative_studio_page.dart:_letterItems':
+      'standalone studio letter references, not pack-driven game content',
+  'creative_studio_page.dart:_numberItems':
+      'standalone studio numeral references, not pack-driven game content',
+  'creative_studio_page.dart:_dotsItems':
+      'standalone studio dot-sheet references, not pack-driven game content',
+  'creative_studio_page.dart:_completeItems':
+      'standalone studio completion sheets, not pack-driven game content',
+  'creative_studio_page.dart:_copyItems':
+      'standalone studio copying references, not pack-driven game content',
+  'creative_studio_page.dart:_promptItems':
+      'standalone studio free-drawing prompts, not pack-driven game content',
+  'my_boards_page.dart:_bgOptions':
+      'local creation-board appearance options, not gameplay content',
+  'reference_catalogue_page.dart:_categories':
+      'filters for the standalone drawing reference catalogue',
+  'reference_catalogue_page.dart:_ages':
+      'age filters for the standalone drawing reference catalogue',
+  'reference_catalogue_page.dart:_activities':
+      'standalone drawing reference sheets, never consumed by an engine',
+  'reference_drawing_page.dart:cards':
+      'presentation cards for a selected standalone reference sheet',
+  'drawing_asset_map.dart:kDrawingAssetMap':
+      'maps stable drawing reference ids to bundled files; no game logic',
+
+  // Creation document sync in the session controller — schema keys for the
+  // editable document, not authored content.
+  'game_session_controller.dart:doc':
+      'creation document schema keys, identical for every creation',
 };
 
 /// Identifiers that named content in the deleted page, kept as a tripwire.
@@ -126,10 +164,12 @@ List<File> _dartFiles() {
   for (final path in _scannedDirectories) {
     final dir = Directory(path);
     if (!dir.existsSync()) continue;
-    files.addAll(dir
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((file) => file.path.endsWith('.dart')));
+    files.addAll(
+      dir
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart')),
+    );
   }
   return files;
 }
@@ -224,19 +264,19 @@ Map<String, dynamic> _packOf({
   required String engineId,
   required List<Map<String, dynamic>> levels,
 }) => {
-      'pack_version': 1,
-      'engine_id': engineId,
-      'supports_dpad': true,
-      'progression': {'levels_to_finish': 1, 'advance_on': 'level_complete'},
-      'accessibility': {
-        'simplified_motor': {'tolerance_dp': 44, 'coverage_required': 0.6},
-        'sequential_tap_alternative': true,
-        'min_touch_target_dp': 48,
-      },
-      'levels': levels,
-      'assets': {'images': [], 'audio': []},
-      'voice_manifest': {'vo.intro': 'asset-vo-intro'},
-    };
+  'pack_version': 1,
+  'engine_id': engineId,
+  'supports_dpad': true,
+  'progression': {'levels_to_finish': 1, 'advance_on': 'level_complete'},
+  'accessibility': {
+    'simplified_motor': {'tolerance_dp': 44, 'coverage_required': 0.6},
+    'sequential_tap_alternative': true,
+    'min_touch_target_dp': 48,
+  },
+  'levels': levels,
+  'assets': {'images': [], 'audio': []},
+  'voice_manifest': {'vo.intro': 'asset-vo-intro'},
+};
 
 /// A pack running inside the real screen and the real registry.
 ///
@@ -244,8 +284,8 @@ Map<String, dynamic> _packOf({
 /// built by hand is not pack-driven, and this file is about that exact claim.
 class _Harness {
   _Harness(Map<String, dynamic> json)
-      : pack = GamePack.fromJson(json),
-        reporter = RecordingAttemptReporter() {
+    : pack = GamePack.fromJson(json),
+      reporter = RecordingAttemptReporter() {
     controller = GameSessionController(
       pack: pack,
       gameId: 'game-under-test',
@@ -263,15 +303,15 @@ class _Harness {
   late final GameSessionController controller;
 
   Widget widget() => MaterialApp(
-        home: Directionality(
-          textDirection: TextDirection.rtl,
-          child: GameScreen(
-            pack: pack,
-            controller: controller,
-            registry: buildDefaultRegistry(),
-          ),
-        ),
-      );
+    home: Directionality(
+      textDirection: TextDirection.rtl,
+      child: GameScreen(
+        pack: pack,
+        controller: controller,
+        registry: buildDefaultRegistry(),
+      ),
+    ),
+  );
 }
 
 Future<void> _pumpBig(WidgetTester tester, Widget widget) async {
@@ -290,14 +330,14 @@ Future<void> _pumpBig(WidgetTester tester, Widget widget) async {
 /// viewport, so half of it would never be built and a count assertion would
 /// measure the viewport instead of the pack.
 Map<String, dynamic> _memoryLevel(List<String> assetIds, {int columns = 2}) => {
-      'level': 1,
-      'grid': [2, columns],
-      'pair_type': 'identical',
-      'pairs': [
-        for (final id in assetIds) {'a': id, 'b': '$id-2'},
-      ],
-      'flip_back_delay_ms': 900,
-    };
+  'level': 1,
+  'grid': [2, columns],
+  'pair_type': 'identical',
+  'pairs': [
+    for (final id in assetIds) {'a': id, 'b': '$id-2'},
+  ],
+  'flip_back_delay_ms': 900,
+};
 
 void main() {
   group('no engine file carries authored content', () {
@@ -323,7 +363,8 @@ void main() {
         expect(
           matches.map((m) => m.group(0)).toList(),
           isEmpty,
-          reason: '${file.path} contains placeholder pictographs; artwork is an '
+          reason:
+              '${file.path} contains placeholder pictographs; artwork is an '
               'asset id in the pack',
         );
       }
@@ -336,7 +377,8 @@ void main() {
           expect(
             source.contains(identifier),
             isFalse,
-            reason: '${file.path} declares $identifier, which named content that '
+            reason:
+                '${file.path} declares $identifier, which named content that '
                 'belongs in a pack',
           );
         }
@@ -352,7 +394,10 @@ void main() {
 
         for (final match in _constCollection.allMatches(source)) {
           final identifier = match.group(1)!;
-          final body = _literalBody(source, match.start + match.group(0)!.length - 1);
+          final body = _literalBody(
+            source,
+            match.start + match.group(0)!.length - 1,
+          );
           final strings = _stringLiteral.allMatches(body).length;
 
           // Two strings is a pair, not a deck. Three is where a list starts to look
@@ -367,7 +412,8 @@ void main() {
       expect(
         offenders,
         isEmpty,
-        reason: 'these constants may be content. Move them into a pack, or add '
+        reason:
+            'these constants may be content. Move them into a pack, or add '
             'them to _allowedConstantLists with the reason they are interface',
       );
     });
@@ -384,15 +430,22 @@ void main() {
         }
       }
       for (final key in _allowedConstantLists.keys) {
-        expect(present, contains(key), reason: '$key no longer exists; remove it');
+        expect(
+          present,
+          contains(key),
+          reason: '$key no longer exists; remove it',
+        );
       }
     });
 
     test('the deleted hard-coded page has not come back', () {
       expect(
-        File('lib/features/games/presentation/pages/game_page.dart').existsSync(),
+        File(
+          'lib/features/games/presentation/pages/game_page.dart',
+        ).existsSync(),
         isFalse,
-        reason: 'memory_flip is pack-driven in wave_one_engines.dart; a second '
+        reason:
+            'memory_flip is pack-driven in wave_one_engines.dart; a second '
             'implementation would be one the CMS cannot reach',
       );
     });
@@ -400,10 +453,14 @@ void main() {
 
   group('the board is whatever the pack says', () {
     testWidgets('two packs, one engine, two different boards', (tester) async {
-      final small = _Harness(_packOf(
-        engineId: 'memory_flip',
-        levels: [_memoryLevel(['asset-moon', 'asset-star'])],
-      ));
+      final small = _Harness(
+        _packOf(
+          engineId: 'memory_flip',
+          levels: [
+            _memoryLevel(['asset-moon', 'asset-star']),
+          ],
+        ),
+      );
       await _pumpBig(tester, small.widget());
       // 2 pairs => 4 tiles. The old board would have shown 6, from its
       // pairs-per-level constant.
@@ -415,24 +472,32 @@ void main() {
       // in `initState` — the assertion would then measure the first pack twice.
       await tester.pumpWidget(const SizedBox.shrink());
 
-      final large = _Harness(_packOf(
-        engineId: 'memory_flip',
-        levels: [
-          _memoryLevel(
-            ['asset-moon', 'asset-star', 'asset-rocket', 'asset-comet'],
-            columns: 4,
-          )
-        ],
-      ));
+      final large = _Harness(
+        _packOf(
+          engineId: 'memory_flip',
+          levels: [
+            _memoryLevel([
+              'asset-moon',
+              'asset-star',
+              'asset-rocket',
+              'asset-comet',
+            ], columns: 4),
+          ],
+        ),
+      );
       await _pumpBig(tester, large.widget());
       expect(find.byIcon(Icons.question_mark), findsNWidgets(8));
     });
 
     testWidgets('a revealed tile shows the pack\'s asset id', (tester) async {
-      final harness = _Harness(_packOf(
-        engineId: 'memory_flip',
-        levels: [_memoryLevel(['asset-only-in-this-test'])],
-      ));
+      final harness = _Harness(
+        _packOf(
+          engineId: 'memory_flip',
+          levels: [
+            _memoryLevel(['asset-only-in-this-test']),
+          ],
+        ),
+      );
       await _pumpBig(tester, harness.widget());
 
       await tester.tap(find.byKey(const ValueKey('memory_tile_0')));
@@ -444,49 +509,58 @@ void main() {
       expect(shown, findsOneWidget);
     });
 
-    testWidgets('an empty content list produces an empty board', (tester) async {
+    testWidgets('an empty content list produces an empty board', (
+      tester,
+    ) async {
       // The strongest form of the claim: with nothing authored there is nothing to
       // play. An engine holding a fallback deck would fill the grid here.
-      final harness = _Harness(_packOf(
-        engineId: 'memory_flip',
-        levels: [_memoryLevel(const [])],
-      ));
+      final harness = _Harness(
+        _packOf(engineId: 'memory_flip', levels: [_memoryLevel(const [])]),
+      );
       await _pumpBig(tester, harness.widget());
 
       expect(find.byIcon(Icons.question_mark), findsNothing);
       expect(find.byKey(const ValueKey('memory_tile_0')), findsNothing);
     });
 
-    testWidgets('count_quantity offers exactly the options in the pack', (tester) async {
-      final harness = _Harness(_packOf(
-        engineId: 'count_quantity',
-        levels: [
-          {
-            'level': 1,
-            'mode': 'count_and_pick',
-            'scoring': 'discrete',
-            'range': [1, 9],
-            // Western numerals so the assertion reads the authored value directly
-            // rather than through the numeral table.
-            'numeral_system': 'western',
-            'items': [
-              {
-                'id': 'q1',
-                'items': [
-                  {'image': 'asset-star', 'count': 7}
-                ],
-                'question_key': 'count.how_many',
-                'options': [6, 7, 8],
-                'answer': 7,
-              },
-            ],
-          }
-        ],
-      ));
+    testWidgets('count_quantity offers exactly the options in the pack', (
+      tester,
+    ) async {
+      final harness = _Harness(
+        _packOf(
+          engineId: 'count_quantity',
+          levels: [
+            {
+              'level': 1,
+              'mode': 'count_and_pick',
+              'scoring': 'discrete',
+              'range': [1, 9],
+              // Western numerals so the assertion reads the authored value directly
+              // rather than through the numeral table.
+              'numeral_system': 'western',
+              'items': [
+                {
+                  'id': 'q1',
+                  'items': [
+                    {'image': 'asset-star', 'count': 7},
+                  ],
+                  'question_key': 'count.how_many',
+                  'options': [6, 7, 8],
+                  'answer': 7,
+                },
+              ],
+            },
+          ],
+        ),
+      );
       await _pumpBig(tester, harness.widget());
 
       for (final option in ['6', '7', '8']) {
-        expect(find.text(option), findsWidgets, reason: 'option $option is authored');
+        expect(
+          find.text(option),
+          findsWidgets,
+          reason: 'option $option is authored',
+        );
       }
       // A neighbouring value the pack did not offer. Its absence is what shows the
       // options were read rather than generated around the answer.
@@ -503,30 +577,33 @@ void main() {
       Map<String, dynamic>? gaps,
       Object? title,
     }) => {
-          'success': true,
-          'data': {
-            'id': 'game-1',
-            if (engineId != null) 'engine_id': engineId,
-            if (title != null) 'title': title,
-            'age_min': 3,
-            'age_max': 5,
-            'engine_version': 1,
-            'episode_id': 'ep-1',
-            'objective': {'id': 'objective-1', 'code': 'OBJ'},
-            'engine': engine ?? {'supports_dpad': true},
-            'content_pack': pack ??
-                {
-                  'pack_version': 1,
-                  // Deliberately disagreeing with the envelope, to prove which one
-                  // the client trusts.
-                  'engine_id': 'something_else',
-                  'levels': [_memoryLevel(['asset-a'])],
-                  'progression': {'levels_to_finish': 1},
-                  'voice_manifest': const <String, dynamic>{},
-                },
-            'gaps': gaps ?? {'missing_prompt_keys': [], 'missing_voice_keys': []},
-          },
-        };
+      'success': true,
+      'data': {
+        'id': 'game-1',
+        if (engineId != null) 'engine_id': engineId,
+        if (title != null) 'title': title,
+        'age_min': 3,
+        'age_max': 5,
+        'engine_version': 1,
+        'episode_id': 'ep-1',
+        'objective': {'id': 'objective-1', 'code': 'OBJ'},
+        'engine': engine ?? {'supports_dpad': true},
+        'content_pack':
+            pack ??
+            {
+              'pack_version': 1,
+              // Deliberately disagreeing with the envelope, to prove which one
+              // the client trusts.
+              'engine_id': 'something_else',
+              'levels': [
+                _memoryLevel(['asset-a']),
+              ],
+              'progression': {'levels_to_finish': 1},
+              'voice_manifest': const <String, dynamic>{},
+            },
+        'gaps': gaps ?? {'missing_prompt_keys': [], 'missing_voice_keys': []},
+      },
+    };
 
     test('the engine id comes from the row, not from the pack body', () {
       // The registry is keyed on the `games.engine_id` column. A pack whose embedded
@@ -537,22 +614,28 @@ void main() {
       expect(buildDefaultRegistry().supports(resolved.pack.engineId), isTrue);
     });
 
-    test('D-pad support comes from the engine row, so TV gating is the server\'s', () {
-      final off = resolvedGameFromEnvelope(
-        'fallback',
-        envelope(engine: {'supports_dpad': false}),
-      );
-      expect(off.pack.supportsDpad, isFalse);
-      final on = resolvedGameFromEnvelope('fallback', envelope());
-      expect(on.pack.supportsDpad, isTrue);
-    });
+    test(
+      'D-pad support comes from the engine row, so TV gating is the server\'s',
+      () {
+        final off = resolvedGameFromEnvelope(
+          'fallback',
+          envelope(engine: {'supports_dpad': false}),
+        );
+        expect(off.pack.supportsDpad, isFalse);
+        final on = resolvedGameFromEnvelope('fallback', envelope());
+        expect(on.pack.supportsDpad, isTrue);
+      },
+    );
 
     test('a missing title stays missing rather than becoming a placeholder', () {
       // An empty title renders as an empty title, which is visible and reportable.
       // A stand-in string would look like real content and hide the gap.
       expect(resolvedGameFromEnvelope('fallback', envelope()).title, isEmpty);
       expect(
-        resolvedGameFromEnvelope('fallback', envelope(title: 'ذاكرة النجوم')).title,
+        resolvedGameFromEnvelope(
+          'fallback',
+          envelope(title: 'ذاكرة النجوم'),
+        ).title,
         'ذاكرة النجوم',
       );
     });
@@ -560,10 +643,12 @@ void main() {
     test('content gaps the server reported are carried, not swallowed', () {
       final resolved = resolvedGameFromEnvelope(
         'fallback',
-        envelope(gaps: {
-          'missing_prompt_keys': ['count.how_many'],
-          'missing_voice_keys': ['vo.intro'],
-        }),
+        envelope(
+          gaps: {
+            'missing_prompt_keys': ['count.how_many'],
+            'missing_voice_keys': ['vo.intro'],
+          },
+        ),
       );
       expect(resolved.missingPromptKeys, ['count.how_many']);
       expect(resolved.missingVoiceKeys, ['vo.intro']);
@@ -574,7 +659,8 @@ void main() {
       // The failure mode this replaces: a half-built pack that throws later, inside
       // a paint call, where the cause is no longer visible.
       expect(
-        () => resolvedGameFromEnvelope('fallback', {'success': true, 'data': {}}),
+        () =>
+            resolvedGameFromEnvelope('fallback', {'success': true, 'data': {}}),
         throwsA(isA<GamePackParseException>()),
       );
       expect(
@@ -586,8 +672,10 @@ void main() {
     test('the age track follows the pack\'s authored range', () {
       // Taken from the game, not the child: a pack authored for 3–5 should sound
       // like a preschool pack even when an older sibling opens it.
-      expect(resolvedGameFromEnvelope('fallback', envelope()).ageTrack,
-          AgeTrack.preschool);
+      expect(
+        resolvedGameFromEnvelope('fallback', envelope()).ageTrack,
+        AgeTrack.preschool,
+      );
     });
   });
 }

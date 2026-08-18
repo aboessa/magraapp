@@ -1,10 +1,10 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
+import type { Env } from '../lib/db.ts'
 import { pathParam } from '../lib/routeParams.ts'
-import { queryAll, queryFirst } from '../lib/db'
-import { bucketForAsset, keyScopeForAsset, type BucketName } from '../lib/assetBuckets'
-import { inferVisibilityFromPath } from '../lib/assetClassification'
-import { requirePermission } from '../lib/adminAuth'
+import { queryAll, queryFirst } from '../lib/db.ts'
+import { bucketForAsset, keyScopeForAsset, type BucketName } from '../lib/assetBuckets.ts'
+import { inferVisibilityFromPath } from '../lib/assetClassification.ts'
+import { requirePermission } from '../lib/adminAuth.ts'
 
 type AppEnv = { Bindings: Env }
 type Row = Record<string, unknown>

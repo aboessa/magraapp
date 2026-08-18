@@ -28,7 +28,16 @@ dependencies:
   path_provider: ^2.1.4
   speech_to_text: ^7.0.0
   share_plus: ^10.1.2
+  in_app_purchase: 3.2.3
+  in_app_purchase_android: 0.4.0+10
+  url_launcher: 6.3.2
   cryptography: ^2.7.0
+  # Pinned to the version already resolved in pubspec.lock, so declaring it
+  # changes no dependency graph. It was a transitive package used directly by
+  # core/env/app_version.dart: the forced-update gate and the X-App-Version
+  # header both compared against a hardcoded '0.1.0' and could never be correct.
+  package_info_plus: 9.0.1
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -73,3 +82,13 @@ flutter:
     - assets/images/planets/
     - assets/images/games/
     - assets/images/episodes/
+    - assets/images/stories/
+    # Flutter directory entries are not recursive. These checked-in story
+    # previews must be listed explicitly so their web paths exist under
+    # build/web/assets/assets/... and can serve as honest offline fallbacks.
+    - assets/images/stories/act-s1/
+    - assets/images/stories/act-s1-playveo/
+    - assets/images/drawing/coloring/
+    - assets/images/drawing/templates/
+    - assets/images/drawing/covers/
+    - assets/data/

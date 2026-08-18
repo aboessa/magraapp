@@ -118,7 +118,7 @@ export function FilterDrawer({
           onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })}
         >
           {(field.options ?? []).map((option) => (
-            <option value={option.value} key={option.value || 'all'}>{option.label}</option>
+            <option value={option.value} key={`${field.key}:${option.value === '' ? 'empty' : `value-${option.value}`}`}>{option.label}</option>
           ))}
         </select>
       ) : field.type === 'boolean' ? (

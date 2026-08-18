@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_ar.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_fr.dart';
 
 // ignore_for_file: type=lint
 
@@ -96,6 +97,7 @@ abstract class AppLocalizations {
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
     Locale('en'),
+    Locale('fr'),
   ];
 
   /// No description provided for @appTitle.
@@ -143,7 +145,7 @@ abstract class AppLocalizations {
   /// No description provided for @termsNotice.
   ///
   /// In ar, this message translates to:
-  /// **'بالدخول توافق على الشروط وسياسة الخصوصية'**
+  /// **'يمكنك مراجعة معلومات الخصوصية والبيانات قبل المتابعة'**
   String get termsNotice;
 
   /// No description provided for @registerButton.
@@ -563,7 +565,7 @@ abstract class AppLocalizations {
   /// No description provided for @supportResponseTime.
   ///
   /// In ar, this message translates to:
-  /// **'فريق مجرة جاهز للإجابة خلال 24 ساعة'**
+  /// **'لا توجد مدة استجابة منشورة حاليًا'**
   String get supportResponseTime;
 
   /// No description provided for @supportChannelPending.
@@ -703,6 +705,468 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تفعيل'**
   String get enable;
+
+  /// No description provided for @creativeStudioTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استوديو الإبداع'**
+  String get creativeStudioTitle;
+
+  /// No description provided for @myBoards.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوحاتي'**
+  String get myBoards;
+
+  /// No description provided for @drawLikeThis.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارسم مثلي'**
+  String get drawLikeThis;
+
+  /// No description provided for @coloring.
+  ///
+  /// In ar, this message translates to:
+  /// **'التلوين'**
+  String get coloring;
+
+  /// No description provided for @tracing.
+  ///
+  /// In ar, this message translates to:
+  /// **'التتبع'**
+  String get tracing;
+
+  /// No description provided for @connectDots.
+  ///
+  /// In ar, this message translates to:
+  /// **'صل النقاط'**
+  String get connectDots;
+
+  /// No description provided for @completeDrawing.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكمل الرسمة'**
+  String get completeDrawing;
+
+  /// No description provided for @copyPattern.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ النمط'**
+  String get copyPattern;
+
+  /// No description provided for @drawFromPrompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارسم من الفكرة'**
+  String get drawFromPrompt;
+
+  /// No description provided for @newBoard.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوحة جديدة'**
+  String get newBoard;
+
+  /// No description provided for @newBlankBoard.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوحة بيضاء فارغة'**
+  String get newBlankBoard;
+
+  /// No description provided for @continueDrawing.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة الرسم'**
+  String get continueDrawing;
+
+  /// No description provided for @startDrawing.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ الرسم'**
+  String get startDrawing;
+
+  /// No description provided for @chooseBoardType.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر نوع اللوحة'**
+  String get chooseBoardType;
+
+  /// No description provided for @portrait.
+  ///
+  /// In ar, this message translates to:
+  /// **'طولي'**
+  String get portrait;
+
+  /// No description provided for @landscape.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرضي'**
+  String get landscape;
+
+  /// No description provided for @square.
+  ///
+  /// In ar, this message translates to:
+  /// **'مربع'**
+  String get square;
+
+  /// No description provided for @backgroundBlank.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبيض'**
+  String get backgroundBlank;
+
+  /// No description provided for @backgroundSpace.
+  ///
+  /// In ar, this message translates to:
+  /// **'فضاء'**
+  String get backgroundSpace;
+
+  /// No description provided for @backgroundUnderwater.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحت الماء'**
+  String get backgroundUnderwater;
+
+  /// No description provided for @backgroundGarden.
+  ///
+  /// In ar, this message translates to:
+  /// **'حديقة'**
+  String get backgroundGarden;
+
+  /// No description provided for @backgroundSky.
+  ///
+  /// In ar, this message translates to:
+  /// **'سماء'**
+  String get backgroundSky;
+
+  /// No description provided for @backgroundRoom.
+  ///
+  /// In ar, this message translates to:
+  /// **'غرفة'**
+  String get backgroundRoom;
+
+  /// No description provided for @backgroundGrid.
+  ///
+  /// In ar, this message translates to:
+  /// **'شبكة'**
+  String get backgroundGrid;
+
+  /// No description provided for @brush.
+  ///
+  /// In ar, this message translates to:
+  /// **'فرشاة'**
+  String get brush;
+
+  /// No description provided for @color.
+  ///
+  /// In ar, this message translates to:
+  /// **'لون'**
+  String get color;
+
+  /// No description provided for @brushSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الفرشاة'**
+  String get brushSize;
+
+  /// No description provided for @eraser.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممحاة'**
+  String get eraser;
+
+  /// No description provided for @undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع'**
+  String get undo;
+
+  /// No description provided for @redo.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة'**
+  String get redo;
+
+  /// No description provided for @clear.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح'**
+  String get clear;
+
+  /// No description provided for @clearConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح اللوحة؟'**
+  String get clearConfirmTitle;
+
+  /// No description provided for @clearConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم مسح كل الرسم. لا يمكن التراجع إلا عبر زر التراجع.'**
+  String get clearConfirmBody;
+
+  /// No description provided for @save.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get save;
+
+  /// No description provided for @saved.
+  ///
+  /// In ar, this message translates to:
+  /// **'محفوظ'**
+  String get saved;
+
+  /// No description provided for @saving.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري الحفظ'**
+  String get saving;
+
+  /// No description provided for @unsaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير محفوظ'**
+  String get unsaved;
+
+  /// No description provided for @saveAndExit.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ وخروج'**
+  String get saveAndExit;
+
+  /// No description provided for @discard.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاهل'**
+  String get discard;
+
+  /// No description provided for @continueDrawingAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة الرسم'**
+  String get continueDrawingAction;
+
+  /// No description provided for @referenceShow.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار المثال'**
+  String get referenceShow;
+
+  /// No description provided for @referenceHide.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخفاء المثال'**
+  String get referenceHide;
+
+  /// No description provided for @referenceEnlarge.
+  ///
+  /// In ar, this message translates to:
+  /// **'تكبير المثال'**
+  String get referenceEnlarge;
+
+  /// No description provided for @ghostMode.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلفية شفافة'**
+  String get ghostMode;
+
+  /// No description provided for @ghostOpacity.
+  ///
+  /// In ar, this message translates to:
+  /// **'شفافية الخلفية'**
+  String get ghostOpacity;
+
+  /// No description provided for @compareDrawings.
+  ///
+  /// In ar, this message translates to:
+  /// **'قارن الرسمتين'**
+  String get compareDrawings;
+
+  /// No description provided for @stepOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخطوة {current} من {total}'**
+  String stepOf(Object current, Object total);
+
+  /// No description provided for @next.
+  ///
+  /// In ar, this message translates to:
+  /// **'التالي'**
+  String get next;
+
+  /// No description provided for @previous.
+  ///
+  /// In ar, this message translates to:
+  /// **'السابق'**
+  String get previous;
+
+  /// No description provided for @tryToDraw.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاول ترسمها'**
+  String get tryToDraw;
+
+  /// No description provided for @awesomeWeSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'رائع! حفظنا رسمتك.'**
+  String get awesomeWeSaved;
+
+  /// No description provided for @chooseColor.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر لونًا'**
+  String get chooseColor;
+
+  /// No description provided for @colorThePicture.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوّن الصورة'**
+  String get colorThePicture;
+
+  /// No description provided for @connectTheDots.
+  ///
+  /// In ar, this message translates to:
+  /// **'صل النقاط بالترتيب'**
+  String get connectTheDots;
+
+  /// No description provided for @drawAsYouLike.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارسم كما تحب'**
+  String get drawAsYouLike;
+
+  /// No description provided for @tapDoneWhenFinished.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط تم عندما تنتهي'**
+  String get tapDoneWhenFinished;
+
+  /// No description provided for @startHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ من هنا'**
+  String get startHere;
+
+  /// No description provided for @traceLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبّع الخط'**
+  String get traceLine;
+
+  /// No description provided for @wellDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحسنت'**
+  String get wellDone;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب مرة أخرى'**
+  String get tryAgain;
+
+  /// No description provided for @categoryAnimals.
+  ///
+  /// In ar, this message translates to:
+  /// **'حيوانات'**
+  String get categoryAnimals;
+
+  /// No description provided for @categorySpace.
+  ///
+  /// In ar, this message translates to:
+  /// **'فضاء'**
+  String get categorySpace;
+
+  /// No description provided for @categoryNature.
+  ///
+  /// In ar, this message translates to:
+  /// **'طبيعة'**
+  String get categoryNature;
+
+  /// No description provided for @categoryVehicles.
+  ///
+  /// In ar, this message translates to:
+  /// **'مركبات'**
+  String get categoryVehicles;
+
+  /// No description provided for @categoryHome.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيت'**
+  String get categoryHome;
+
+  /// No description provided for @categoryPatterns.
+  ///
+  /// In ar, this message translates to:
+  /// **'زخارف'**
+  String get categoryPatterns;
+
+  /// No description provided for @difficultyEasy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سهل'**
+  String get difficultyEasy;
+
+  /// No description provided for @difficultyMedium.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط'**
+  String get difficultyMedium;
+
+  /// No description provided for @difficultyDetailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفصل'**
+  String get difficultyDetailed;
+
+  /// No description provided for @age45.
+  ///
+  /// In ar, this message translates to:
+  /// **'4-5'**
+  String get age45;
+
+  /// No description provided for @age67.
+  ///
+  /// In ar, this message translates to:
+  /// **'6-7'**
+  String get age67;
+
+  /// No description provided for @age89.
+  ///
+  /// In ar, this message translates to:
+  /// **'8-9'**
+  String get age89;
+
+  /// No description provided for @boardTitleDefault.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوحتي {number}'**
+  String boardTitleDefault(Object number);
+
+  /// No description provided for @boardOrientationPortrait.
+  ///
+  /// In ar, this message translates to:
+  /// **'طولي'**
+  String get boardOrientationPortrait;
+
+  /// No description provided for @boardOrientationLandscape.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرضي'**
+  String get boardOrientationLandscape;
+
+  /// No description provided for @boardOrientationSquare.
+  ///
+  /// In ar, this message translates to:
+  /// **'مربع'**
+  String get boardOrientationSquare;
+
+  /// No description provided for @referenceBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'من: {title}'**
+  String referenceBadge(Object title);
 }
 
 class _AppLocalizationsDelegate
@@ -716,7 +1180,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['ar', 'en'].contains(locale.languageCode);
+      <String>['ar', 'en', 'fr'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -729,6 +1193,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsAr();
     case 'en':
       return AppLocalizationsEn();
+    case 'fr':
+      return AppLocalizationsFr();
   }
 
   throw FlutterError(

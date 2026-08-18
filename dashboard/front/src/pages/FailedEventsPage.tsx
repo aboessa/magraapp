@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
@@ -436,6 +436,7 @@ export function FailedEventsPage() {
                         </td>
                         <td>
                           <div className="table-actions">
+                            <Link className="icon-button icon-button--small" to={adminPath(`failed-events/${row.id}`)} title="Workspace"><Icon name="arrow" size={12}/></Link>
                             <button
                               className="icon-button icon-button--small"
                               type="button"

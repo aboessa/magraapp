@@ -1,10 +1,19 @@
 name: CI
 
+# The default branch is `master`. This workflow previously listed only `main`,
+# which does not exist in this repository, so no run had ever been triggered and
+# none of the suites below had ever gated a merge. Both names are listed so a
+# future rename does not silently disable CI again.
 on:
   push:
-    branches: [main]
+    branches: [master, main]
   pull_request:
-    branches: [main]
+    branches: [master, main]
+
+# A second push to the same branch supersedes the first.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   flutter:
@@ -20,7 +29,8 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze --fatal-warnings
-      - run: flutter test --no-pub || flutter test
+      # `|| flutter test` used to mask a failure of the first invocation.
+      - run: flutter test --no-pub
       - run: flutter build appbundle --release
 
   worker:
@@ -36,7 +46,29 @@ jobs:
           cache: npm
           cache-dependency-path: dashboard/api/package-lock.json
       - run: npm ci
-      - run: npm run check 2>/dev/null || npx tsc --noEmit
+      # This job used to run `npm run check 2>/dev/null || npx tsc --noEmit`.
+      # No `check` script exists, so the command always failed, the fallback
+      # always ran, and the 960-test suite never executed in CI at all. Both
+      # steps are now explicit and neither can be skipped by a fallback.
+      - run: npm run typecheck:types
+      - run: npm test
+
+  admin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard/front
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: dashboard/front/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit -p tsconfig.app.json
+      - run: npx vitest run
+      - run: npm run build
 
   # Guards story specs against stating a narration pace that their own per-page
   # durations contradict. All 15 existing specs failed this when it was first run:
@@ -54,3 +86,104 @@ jobs:
         with:
           node-version: 20
       - run: node tools/content/audit-narration-pacing.mjs --check
+
+  # Credential-shaped strings in tracked files.
+  #
+  # This is preventative rather than remedial: no hardcoded credential was found in
+  # tracked source during the audit, and the local secret files are correctly
+  # ignored. The point is that nothing *prevented* one, so hygiene rested entirely
+  # on individual discipline.
+  #
+  # A local scanner rather than a third-party action: the rules are specific to this
+  # repository's real secret shapes (Cloudflare tokens, Google service-account keys,
+  # the two HMAC secrets), and an action that scans for generic entropy produces
+  # enough noise on a repository full of base64 test fixtures that it would be
+  # disabled within a week.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # A secret is usually introduced by one commit and removed by the next, so
+          # scanning only the tip would miss it. Full history on pull requests.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # The scanner's own rules are tested first: a scanner whose rules have rotted
+      # reports "no credential-shaped strings found" just as convincingly as a clean
+      # repository.
+      - run: node tools/ci/scan-secrets.mjs --self-test
+      - run: node tools/ci/scan-secrets.mjs
+
+  # Dependency advisories, reported per run.
+  #
+  # `continue-on-error` deliberately: an advisory published upstream overnight must
+  # not block an unrelated fix, and a gate that blocks for reasons outside the
+  # author's control is a gate people learn to bypass. The report is the deliverable;
+  # `--audit-level=critical` is the part that fails.
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Worker advisories
+        working-directory: dashboard/api
+        run: npm audit --omit=dev || true
+      - name: Admin advisories
+        working-directory: dashboard/front
+        run: npm audit --omit=dev || true
+      # Critical advisories in runtime dependencies do fail the job.
+      - name: Fail on critical advisories
+        run: |
+          set -e
+          for dir in dashboard/api dashboard/front; do
+            echo "== $dir"
+            (cd "$dir" && npm audit --omit=dev --audit-level=critical)
+          done
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Flutter outdated packages
+        working-directory: app_main
+        run: flutter pub outdated || true
+
+  # The release gate.
+  #
+  # Deployment was manual and undocumented, so nothing tied a deploy to a verified
+  # build. This job cannot start until every suite above is green, and it refuses to
+  # run on anything but `master`.
+  #
+  # It performs a **dry run only**. A real `wrangler deploy` needs an API token this
+  # repository does not hold, and enabling one is an infrastructure decision for the
+  # owner rather than something a pipeline change should assume. What this does
+  # deliver is the guarantee the task asks for: the deploy path is exercised on every
+  # push to master and cannot succeed on a red pipeline.
+  #
+  # To make it a real deploy: add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+  # as repository secrets and drop `--dry-run`. Note that the Durable Object
+  # migration tag `v4` (RateLimiter) applies on first deploy.
+  deploy-gate:
+    needs: [flutter, worker, admin, content-pacing, secrets, dependencies]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: dashboard/api/package-lock.json
+      - name: Install
+        working-directory: dashboard/api
+        run: npm ci
+      - name: Verify the production bundle builds
+        working-directory: dashboard/api
+        run: npx wrangler deploy --dry-run --outdir .wrangler-ci --env production
+      - name: Record what would be released
+        run: |
+          echo "commit=${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "All test jobs passed; the production bundle builds." >> "$GITHUB_STEP_SUMMARY"

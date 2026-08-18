@@ -149,17 +149,42 @@
         }
       }
     },
+    "colorRegion": {
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_.-]+$" },
+        "polygon": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/normalizedPoint" }
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 }
+      }
+    },
     "coloring": {
       "type": "object",
       "required": ["enabled"],
       "additionalProperties": false,
       "properties": {
         "enabled": { "type": "boolean" },
-        "regions": { "type": "array", "items": { "type": "string", "pattern": "^r[0-9]+$" } },
+        "regions": {
+          "type": "array",
+          "maxItems": 24,
+          "items": {
+            "oneOf": [
+              { "type": "string", "pattern": "^[a-z0-9_.-]+$" },
+              { "$ref": "#/$defs/colorRegion" }
+            ]
+          }
+        },
         "palette": {
           "type": "array",
           "minItems": 3,
-          "maxItems": 6,
+          "maxItems": 8,
           "items": { "type": "string", "pattern": "^#[0-9A-F]{6}$" }
         },
         "template_asset": { "$ref": "#/$defs/assetId" }

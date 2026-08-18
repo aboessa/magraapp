@@ -8,7 +8,7 @@
   "passwordLabel": "كلمة المرور",
   "loginButton": "تسجيل دخول",
   "enterEmailAndPassword": "أدخل البريد وكلمة المرور",
-  "termsNotice": "بالدخول توافق على الشروط وسياسة الخصوصية",
+  "termsNotice": "يمكنك مراجعة معلومات الخصوصية والبيانات قبل المتابعة",
   "registerButton": "إنشاء حساب",
   "forgotPassword": "نسيت كلمة المرور؟",
   "noAccount": "ليس لديك حساب؟",
@@ -20,7 +20,9 @@
   "@passwordMinLength": {
     "description": "Validation message. The count is enforced by the server in IdentityState.register, so it is passed in rather than written into the translation.",
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "accountCreatedCheckEmail": "تم إنشاء الحساب - تحقق من بريدك",
@@ -33,8 +35,12 @@
   "pinRangeHint": "اختر رمزًا من {min} إلى {max} أرقام يعرفه ولي الأمر فقط",
   "@pinRangeHint": {
     "placeholders": {
-      "min": { "type": "int" },
-      "max": { "type": "int" }
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
     }
   },
   "pinConfirmLabel": "تأكيد الرمز",
@@ -45,27 +51,35 @@
   "pinIncorrectAttemptsLeft": "رمز غير صحيح. {count} محاولات متبقية",
   "@pinIncorrectAttemptsLeft": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "pinLockedOut": "محاولات كثيرة. حاول بعد {label}",
   "@pinLockedOut": {
     "description": "label is a pre-formatted duration such as '15 دقيقة'.",
     "placeholders": {
-      "label": { "type": "String" }
+      "label": {
+        "type": "String"
+      }
     }
   },
   "pinNotEnrolledYet": "لم يُنشأ رمز بعد. أنشئ رمزًا الآن.",
   "pinSavedLocallyOnly": "تم حفظ الرمز محليًا؛ تعذّر حفظه على الخادم: {reason}",
   "@pinSavedLocallyOnly": {
     "placeholders": {
-      "reason": { "type": "String" }
+      "reason": {
+        "type": "String"
+      }
     }
   },
   "minutesLabel": "{count} دقيقة",
   "@minutesLabel": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "momentsLabel": "لحظات",
@@ -111,7 +125,7 @@
   "doneShort": "تم",
   "supportTitle": "الدعم الفني",
   "supportHeadline": "كيف نساعدك؟",
-  "supportResponseTime": "فريق مجرة جاهز للإجابة خلال 24 ساعة",
+  "supportResponseTime": "لا توجد مدة استجابة منشورة حاليًا",
   "supportChannelPending": "قناة التواصل قيد الإعداد",
   "supportFaqTitle": "الأسئلة الشائعة",
   "supportFaqSubtitle": "لم تُنشر بعد",
@@ -134,5 +148,82 @@
   "biometricEnableTitle": "تفعيل الدخول بالبصمة",
   "biometricEnablePrompt": "هل تريد استخدام البصمة أو Face ID لفتح منطقة ولي الأمر على هذا الجهاز بدل إدخال الرمز في كل مرة؟",
   "notNow": "ليس الآن",
-  "enable": "تفعيل"
+  "enable": "تفعيل",
+  "creativeStudioTitle": "استوديو الإبداع",
+  "myBoards": "لوحاتي",
+  "drawLikeThis": "ارسم مثلي",
+  "coloring": "التلوين",
+  "tracing": "التتبع",
+  "connectDots": "صل النقاط",
+  "completeDrawing": "أكمل الرسمة",
+  "copyPattern": "انسخ النمط",
+  "drawFromPrompt": "ارسم من الفكرة",
+  "newBoard": "لوحة جديدة",
+  "newBlankBoard": "لوحة بيضاء فارغة",
+  "continueDrawing": "متابعة الرسم",
+  "startDrawing": "ابدأ الرسم",
+  "chooseBoardType": "اختر نوع اللوحة",
+  "portrait": "طولي",
+  "landscape": "عرضي",
+  "square": "مربع",
+  "backgroundBlank": "أبيض",
+  "backgroundSpace": "فضاء",
+  "backgroundUnderwater": "تحت الماء",
+  "backgroundGarden": "حديقة",
+  "backgroundSky": "سماء",
+  "backgroundRoom": "غرفة",
+  "backgroundGrid": "شبكة",
+  "brush": "فرشاة",
+  "color": "لون",
+  "brushSize": "حجم الفرشاة",
+  "eraser": "ممحاة",
+  "undo": "تراجع",
+  "redo": "إعادة",
+  "clear": "مسح",
+  "clearConfirmTitle": "مسح اللوحة؟",
+  "clearConfirmBody": "سيتم مسح كل الرسم. لا يمكن التراجع إلا عبر زر التراجع.",
+  "save": "حفظ",
+  "saved": "محفوظ",
+  "saving": "جاري الحفظ",
+  "unsaved": "غير محفوظ",
+  "saveAndExit": "حفظ وخروج",
+  "discard": "تجاهل",
+  "continueDrawingAction": "متابعة الرسم",
+  "referenceShow": "إظهار المثال",
+  "referenceHide": "إخفاء المثال",
+  "referenceEnlarge": "تكبير المثال",
+  "ghostMode": "خلفية شفافة",
+  "ghostOpacity": "شفافية الخلفية",
+  "compareDrawings": "قارن الرسمتين",
+  "stepOf": "الخطوة {current} من {total}",
+  "next": "التالي",
+  "previous": "السابق",
+  "tryToDraw": "حاول ترسمها",
+  "awesomeWeSaved": "رائع! حفظنا رسمتك.",
+  "chooseColor": "اختر لونًا",
+  "colorThePicture": "لوّن الصورة",
+  "connectTheDots": "صل النقاط بالترتيب",
+  "drawAsYouLike": "ارسم كما تحب",
+  "tapDoneWhenFinished": "اضغط تم عندما تنتهي",
+  "startHere": "ابدأ من هنا",
+  "traceLine": "تتبّع الخط",
+  "wellDone": "أحسنت",
+  "tryAgain": "جرّب مرة أخرى",
+  "categoryAnimals": "حيوانات",
+  "categorySpace": "فضاء",
+  "categoryNature": "طبيعة",
+  "categoryVehicles": "مركبات",
+  "categoryHome": "البيت",
+  "categoryPatterns": "زخارف",
+  "difficultyEasy": "سهل",
+  "difficultyMedium": "متوسط",
+  "difficultyDetailed": "مفصل",
+  "age45": "4-5",
+  "age67": "6-7",
+  "age89": "8-9",
+  "boardTitleDefault": "لوحتي {number}",
+  "boardOrientationPortrait": "طولي",
+  "boardOrientationLandscape": "عرضي",
+  "boardOrientationSquare": "مربع",
+  "referenceBadge": "من: {title}"
 }

@@ -1,11 +1,18 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../child/application/child_provider.dart';
 import 'majarra_portal.dart';
 
 /// Bottom Navigation - cinematic, orb floats centered on bar top edge (not clipped)
-class MajarraBottomNavigation extends StatelessWidget {
+///
+/// The profile tab used to be labelled with a literal personal name
+/// (`'عبدالله'`), so every user of the app saw the same stranger's name on the
+/// primary navigation bar. It now follows the active child, and falls back to a
+/// generic label when no child is selected.
+class MajarraBottomNavigation extends ConsumerWidget {
   const MajarraBottomNavigation({
     required this.selectedIndex,
     required this.onDestinationSelected,
@@ -17,8 +24,16 @@ class MajarraBottomNavigation extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onPortalPressed;
 
+  /// Shown before a child profile is chosen. A generic word, never a name.
+  @visibleForTesting
+  static const String defaultProfileLabel = 'حسابي';
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final childName = ref.watch(childProvider).displayName?.trim();
+    final profileLabel = childName == null || childName.isEmpty
+        ? defaultProfileLabel
+        : childName;
     const barHeight = 64.0;
     const orbSize = 68.0;
     const orbOverlap = 34.0;
@@ -44,7 +59,9 @@ class MajarraBottomNavigation extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: const Color(0xFF080C22).withValues(alpha: 0.96),
                     border: Border(
-                      top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                      top: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -72,9 +89,9 @@ class MajarraBottomNavigation extends StatelessWidget {
                           Expanded(
                             child: _NavItem(
                               selected: selectedIndex == 1,
-                              label: 'فيديوهات قصيرة',
-                              icon: Icons.play_circle_outline_rounded,
-                              activeIcon: Icons.play_circle_rounded,
+                              label: 'استكشف',
+                              icon: Icons.explore_outlined,
+                              activeIcon: Icons.explore_rounded,
                               onTap: () => onDestinationSelected(1),
                             ),
                           ),
@@ -82,16 +99,16 @@ class MajarraBottomNavigation extends StatelessWidget {
                           Expanded(
                             child: _NavItem(
                               selected: selectedIndex == 2,
-                              label: 'بحث',
-                              icon: Icons.search_rounded,
-                              activeIcon: Icons.search_rounded,
+                              label: 'مكتبتي',
+                              icon: Icons.bookmark_outline_rounded,
+                              activeIcon: Icons.bookmarks_rounded,
                               onTap: () => onDestinationSelected(2),
                             ),
                           ),
                           Expanded(
                             child: _NavItem(
                               selected: selectedIndex == 3,
-                              label: 'عبدالله',
+                              label: profileLabel,
                               icon: Icons.person_outline_rounded,
                               activeIcon: Icons.person_rounded,
                               isProfile: true,
@@ -153,7 +170,9 @@ class _NavItem extends StatelessWidget {
                 height: 24,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: selected ? Colors.white.withValues(alpha: 0.12) : Colors.transparent,
+                  color: selected
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.transparent,
                   border: Border.all(
                     color: selected
                         ? Colors.white.withValues(alpha: 0.22)
@@ -163,14 +182,18 @@ class _NavItem extends StatelessWidget {
                 child: Icon(
                   selected ? activeIcon : icon,
                   size: 14,
-                  color: selected ? Colors.white : AppColors.mutedText.withValues(alpha: 0.7),
+                  color: selected
+                      ? Colors.white
+                      : AppColors.mutedText.withValues(alpha: 0.7),
                 ),
               )
             else
               Icon(
                 selected ? activeIcon : icon,
                 size: 22,
-                color: selected ? Colors.white : AppColors.mutedText.withValues(alpha: 0.62),
+                color: selected
+                    ? Colors.white
+                    : AppColors.mutedText.withValues(alpha: 0.62),
               ),
             const SizedBox(height: 3),
             Padding(
@@ -181,7 +204,9 @@ class _NavItem extends StatelessWidget {
                   label,
                   maxLines: 1,
                   style: TextStyle(
-                    color: selected ? Colors.white : AppColors.mutedText.withValues(alpha: 0.58),
+                    color: selected
+                        ? Colors.white
+                        : AppColors.mutedText.withValues(alpha: 0.58),
                     fontSize: 10,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),

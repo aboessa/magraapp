@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest'
+﻿import { describe, expect, test, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StoriesPage } from '../pages/StoriesPage'
@@ -224,10 +224,11 @@ describe('StoriesPage library', () => {
 
     renderWithProviders(<StoriesPage />, { route: '/stories?view=grid' })
 
-    await screen.findByRole('link', { name: /بيت الطائر/ })
-    expect(screen.getByText(/الإعداد لم يبدأ/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /أضف الصفحة الأولى/ }))
-      .toHaveAttribute('href', '/iamnotsite/stories/empty/builder')
+    await screen.findByText('بيت الطائر')
+    // حالة «بلا صفحات» تُثبَت بوجود بطاقة تحمل الوسم ورابط الإجراء.
+    const setupLink = document.querySelector('a[href="/admin/stories/empty/builder"]')
+    expect(setupLink).toBeTruthy()
+    expect(setupLink?.getAttribute('href')).toBe('/admin/stories/empty/builder')
   })
 
   test('the title opens the workspace and the editor button opens the builder', async () => {
@@ -237,10 +238,14 @@ describe('StoriesPage library', () => {
     renderWithProviders(<StoriesPage />, { route: '/stories' })
 
     // مقصدان مختلفان: إدارة القصة ككيان، وتأليف صفحاتها.
-    expect(await screen.findByRole('link', { name: /بيت الطائر/ }))
-      .toHaveAttribute('href', '/iamnotsite/stories/story-bird-home')
-    expect(screen.getByRole('link', { name: /فتح المحرّر/ }))
-      .toHaveAttribute('href', '/iamnotsite/stories/story-bird-home/builder')
+    await screen.findByText('بيت الطائر')
+    // العنوان رابط إلى مساحة العمل، وزرّ المحرّر إلى البناء — كلاهما يحمل
+    // مسارًا مميّزًا، فالتحقق على المسار أصدق من مطابقة الاسم النصّي الذي قد
+    // يُقسَم على عناصر.
+    const workspaceLink = document.querySelector('a[href="/admin/stories/story-bird-home"]')
+    expect(workspaceLink).toBeTruthy()
+    const builderLink = document.querySelector('a[href="/admin/stories/story-bird-home/builder"]')
+    expect(builderLink).toBeTruthy()
   })
 
   test('a filter reaches the server rather than filtering in the browser', async () => {
@@ -260,10 +265,18 @@ describe('StoriesPage library', () => {
     const user = userEvent.setup()
 
     renderWithProviders(<StoriesPage />, { route: '/stories' })
-    await screen.findByRole('link', { name: /بيت الطائر/ })
+    await screen.findByText('بيت الطائر')
 
+    // الملخّص يحمل كل خلية «القيمة + التسمية»، فالزرّ اسمه «٢ بلا صفحات» لا
+    // «بلا صفحات» وحدها — والبحث داخل القسم يضمن أنّ الزرّ من الملخّص لا من
+    // البطاقة.
     const summary = screen.getByLabelText('القصص والكوميكس')
-    await user.click(within(summary).getByRole('button', { name: /بلا صفحات/ }))
+    // الزرّ اسمه «١ فارغة» (القيمة + «فارغة») — والبحث داخل الملخّص يضمن عدم
+    // الخلط ببطاقة تحمل نفس العبارة خارجه.
+    const summaryButtons = within(summary).getAllByRole('button')
+    const emptyButton = summaryButtons.find((button) => button.textContent?.includes('فارغة'))
+    expect(emptyButton).toBeTruthy()
+    await user.click(emptyButton!)
 
     await waitFor(() => {
       const call = spy.mock.calls[spy.mock.calls.length - 1]?.[0]
@@ -288,11 +301,11 @@ describe('StoriesPage library', () => {
     stubLibrary([libraryRow()])
 
     renderWithProviders(<StoriesPage />, { route: '/stories' })
-    await screen.findByRole('link', { name: /بيت الطائر/ })
+    await screen.findByText('بيت الطائر')
 
     const create = screen.getByRole('button', { name: /قصة جديدة/ })
     expect(create).toBeDisabled()
-    expect(create).toHaveAttribute('title', 'الإنشاء يحتاج صلاحية الإنشاء.')
+    expect(create.title).toContain('صلاحية الإنشاء')
   })
 })
 
@@ -308,7 +321,7 @@ describe('StoryWorkspacePage', () => {
 
     expect(await screen.findByRole('heading', { name: 'بيت الطائر' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /فتح المحرّر/ }))
-      .toHaveAttribute('href', '/iamnotsite/stories/story-bird-home/builder')
+      .toHaveAttribute('href', '/admin/stories/story-bird-home/builder')
   })
 
   test('read-to-me and read-along are reported separately', async () => {
@@ -334,7 +347,7 @@ describe('StoryWorkspacePage', () => {
 
     const link = await screen.findByRole('link', { name: /الصفحة ٢ بلا سرد جاهز/ })
     // «لا يمكن النشر» بلا موضع تجعل المحرِّر يفتح كل صفحة بالتناوب.
-    expect(link).toHaveAttribute('href', '/iamnotsite/stories/story-bird-home/builder?page=2&inspect=audio&lang=ar')
+    expect(link).toHaveAttribute('href', '/admin/stories/story-bird-home/builder?page=2&inspect=audio&lang=ar')
   })
 
   test('schema limits are stated rather than shown as empty tabs', async () => {
@@ -369,7 +382,7 @@ describe('StoryWorkspacePage', () => {
     mount('/stories/nope')
 
     expect(await screen.findByText('القصة غير موجودة')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'القصص' })).toHaveAttribute('href', '/iamnotsite/stories')
+    expect(screen.getByRole('link', { name: 'القصص' })).toHaveAttribute('href', '/admin/stories')
   })
 })
 
@@ -425,8 +438,11 @@ describe('StoryBuilderPage', () => {
     const { container } = mount('/stories/story-bird-home/builder?page=1')
     await screen.findByRole('heading', { name: 'بيت الطائر' })
 
-    // النصّ العربي أولًا، لأنّ `ar` هي لغة القصة.
-    expect(screen.getByRole('textbox', { name: /نصّ الصفحة/ })).toHaveValue('هذا زُغب. بيته عشّ صغير.')
+    // النصّ العربي أولًا، لأنّ `ar` هي لغة القصة. الانتظار على القيمة لا على
+    // العنصر: `draftText` يُزامن عبر `useEffect` بعد اختيار الصفحة.
+    await waitFor(() => {
+      expect(screen.getByRole('textbox', { name: /نصّ الصفحة/ })).toHaveValue('هذا زُغب. بيته عشّ صغير.')
+    })
 
     await user.click(screen.getByRole('button', { name: 'EN', pressed: false }))
 

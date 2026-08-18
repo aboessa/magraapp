@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/majarra_app.dart';
+import 'core/env/app_version.dart';
 import 'core/errors/crash_reporter.dart';
 import 'core/widgets/fatal_error_view.dart';
 import 'features/downloads/application/download_providers.dart';
@@ -23,6 +24,14 @@ void main() {
       // download manager restores its metadata in its constructor) can read it
       // through a provider override rather than awaiting on every access.
       final prefs = await SharedPreferences.getInstance();
+
+      // The running build's version, read once before any request goes out: the
+      // API client sends it as `X-App-Version` and the forced-update gate compares
+      // against it. Both used to use a hardcoded '0.1.0'. A failed read resolves
+      // to 0.0.0, which is older than every published minimum, so the gate errs
+      // towards prompting an update rather than towards allowing an unsupported
+      // build to keep running.
+      await AppVersion.load();
 
       // Framework errors (build, layout, paint).
       final previousOnError = FlutterError.onError;

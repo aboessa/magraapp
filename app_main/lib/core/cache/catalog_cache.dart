@@ -3,63 +3,81 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Names of independently fetched catalogue collections.
+abstract final class CatalogCollection {
+  static const planets = 'planets';
+  static const series = 'series';
+  static const episodes = 'episodes';
+  static const books = 'books';
+  static const stories = 'stories';
+
+  static const all = <String>{planets, series, episodes, books, stories};
+}
+
 /// Raw catalogue rows as returned by the public API, exactly as cached.
 ///
-/// Deliberately untyped rows rather than domain models: the DTO layer already
-/// knows how to parse this shape, including the Arabic mojibake repair, so the
-/// cache stays a dumb byte store and cannot drift from the parsing rules.
+/// [availableCollections] records successful endpoint responses separately from
+/// row count. This is important because an empty successful response means
+/// "there is no published content", while a missing collection means the
+/// request failed and a fallback may be used.
 class CachedCatalog {
   const CachedCatalog({
     required this.planets,
     required this.series,
     required this.episodes,
     required this.books,
+    this.stories = const [],
+    this.availableCollections = const {},
   });
 
   final List<Map<String, Object?>> planets;
   final List<Map<String, Object?>> series;
   final List<Map<String, Object?>> episodes;
   final List<Map<String, Object?>> books;
+  final List<Map<String, Object?>> stories;
+  final Set<String> availableCollections;
+
+  /// Older cache/test payloads did not store availability metadata. A non-empty
+  /// row list still proves that collection existed and remains readable.
+  bool hasCollection(String name) {
+    if (availableCollections.contains(name)) return true;
+    return switch (name) {
+      CatalogCollection.planets => planets.isNotEmpty,
+      CatalogCollection.series => series.isNotEmpty,
+      CatalogCollection.episodes => episodes.isNotEmpty,
+      CatalogCollection.books => books.isNotEmpty,
+      CatalogCollection.stories => stories.isNotEmpty,
+      _ => false,
+    };
+  }
 
   bool get isEmpty =>
-      planets.isEmpty && series.isEmpty && episodes.isEmpty && books.isEmpty;
+      availableCollections.isEmpty &&
+      planets.isEmpty &&
+      series.isEmpty &&
+      episodes.isEmpty &&
+      books.isEmpty &&
+      stories.isEmpty;
 }
 
-/// Disk cache for the public catalogue (H6).
+/// Disk cache for the public catalogue.
 ///
-/// Before this the app had `shared_preferences` as a dependency with zero
-/// imports, and every cold start went straight to the network: with no
-/// connectivity the home screen fell back to the bundled `LocalCatalog` even
-/// when real content had been fetched minutes earlier.
-///
-/// ## Scope: one entry, not per child
-///
-/// The audit asked for a catalogue cache "partitioned by `child_id`". That does
-/// not apply to these endpoints: `/planets`, `/series`, `/episodes` and `/books`
-/// are public, unauthenticated and identical for every profile — age filtering
-/// happens on the client in `filteredCatalogProvider`. Keying by child would
-/// store N identical copies and multiply the cold-start cost. Per-child caching
-/// belongs to progress and favourites, which are authenticated and genuinely
-/// differ per profile.
-///
-/// ## What is deliberately not cached
-///
-/// Nothing authenticated, and no capability tokens or stream URLs. Those are
-/// short-lived by design (`capability_expires_in: 180`), so persisting them
-/// would store a credential that is useless by the time it is read.
+/// Public rows are shared between children; authenticated progress, favourites,
+/// capability tokens and media URLs are intentionally not stored here.
 class CatalogCache {
   const CatalogCache();
 
   static const _payloadKey = 'majarra_catalog_cache_v1';
   static const _savedAtKey = 'majarra_catalog_cache_saved_at';
 
-  /// Kept deliberately long. A stale poster is a far better cold-start
-  /// experience than the bundled placeholder catalogue, and every read is
-  /// still followed by a live fetch that overwrites it.
+  /// A stale poster is preferable to an unrelated bundled title, while every
+  /// app load still attempts a fresh request before consulting this snapshot.
   static const Duration ttl = Duration(hours: 24);
 
   Future<void> save(CachedCatalog catalog) async {
-    if (catalog.isEmpty) return; // never cache an empty result over a good one
+    // A value with neither rows nor successful-empty metadata represents a
+    // failed fetch and must never overwrite a valid snapshot.
+    if (catalog.isEmpty) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
@@ -69,11 +87,13 @@ class CatalogCache {
           'series': catalog.series,
           'episodes': catalog.episodes,
           'books': catalog.books,
+          'stories': catalog.stories,
+          'available_collections': catalog.availableCollections.toList(),
         }),
       );
       await prefs.setInt(_savedAtKey, DateTime.now().millisecondsSinceEpoch);
     } catch (_) {
-      // A cache write must never break a successful load.
+      // A cache write must never break a successful catalogue load.
     }
   }
 
@@ -86,8 +106,6 @@ class CatalogCache {
       if (savedAt == null || raw == null) return null;
 
       final age = DateTime.now().millisecondsSinceEpoch - savedAt;
-      // A negative age means the device clock moved backwards; treat the entry
-      // as unusable rather than trusting it indefinitely.
       if (age < 0 || age > ttl.inMilliseconds) return null;
 
       final decoded = jsonDecode(raw);
@@ -97,14 +115,14 @@ class CatalogCache {
         series: _rows(decoded['series']),
         episodes: _rows(decoded['episodes']),
         books: _rows(decoded['books']),
+        stories: _rows(decoded['stories']),
+        availableCollections: _strings(decoded['available_collections']),
       );
     } catch (_) {
       return null;
     }
   }
 
-  /// Must be called on sign-out so one account's catalogue state cannot leak
-  /// into the next session on a shared device.
   Future<void> clear() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -118,13 +136,17 @@ class CatalogCache {
   static List<Map<String, Object?>> _rows(Object? value) {
     if (value is! List) return const [];
     return value
-        .whereType<Map<String, Object?>>()
-        .map(Map<String, Object?>.from)
+        .whereType<Map<Object?, Object?>>()
+        .map((row) => row.map((key, value) => MapEntry('$key', value)))
         .toList(growable: false);
+  }
+
+  static Set<String> _strings(Object? value) {
+    if (value is! List) return const {};
+    return value.whereType<String>().toSet();
   }
 }
 
-/// Injectable so sign-out teardown can be exercised in a test.
 final catalogCacheProvider = Provider<CatalogCache>(
   (ref) => const CatalogCache(),
 );

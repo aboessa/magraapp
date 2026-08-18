@@ -1,5 +1,5 @@
 import type { Context, Next } from 'hono'
-import type { Env } from './db'
+import type { Env } from './db.ts'
 // امتداد `.ts` صريح: مجموعة الاختبارات تعمل بـ`node --experimental-strip-types`
 // الذي يطالب بالامتداد في الاستيراد النسبي. بلا ذلك لا يمكن استيراد أي مُوجِّه
 // يعتمد على هذا الحرس في اختبار. wrangler يقبل الصيغتين، فلا أثر على البناء.

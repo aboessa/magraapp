@@ -1,4 +1,4 @@
-import type { Env } from '../lib/db';
+import type { Env } from '../lib/db.ts';
 
 /// Gemini-TTS client.
 ///

@@ -1,4 +1,4 @@
-import type { Env } from '../lib/db';
+import type { Env } from '../lib/db.ts';
 import { isPlan, type Plan } from '../lib/familyPolicy.ts';
 import { sha256Base64Url } from '../lib/security.ts';
 

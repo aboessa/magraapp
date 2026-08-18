@@ -14,52 +14,66 @@ import 'package:majarra/features/games/engine/trace_session.dart';
 import 'package:flutter/widgets.dart';
 
 Map<String, dynamic> baaLevel() => {
-      'level': 1,
-      'mode': 'letter',
-      'scoring': 'geometric_ordered',
-      'prompt_key': 'game.letter_tracing.baa.prompt',
-      'prompt': 'هذا حرف الباء، وصوته بَ.',
-      'completion': {'rule': 'all_strokes_complete'},
-      'language': 'ar',
-      'glyph': 'ب',
-      'letter_form': 'isolated',
-      'writing_direction': 'rtl',
-      'guide_audio': 'asset-vo-sound-baa',
-      'tolerance_dp': 24,
-      'coverage_required': 0.8,
-      // Written dot-first on purpose: the model must sort by `order`, so no
-      // rendering or input path can depend on JSON ordering.
-      'stroke_paths': [
-        {'id': 's2', 'order': 2, 'type': 'dot', 'points': [[0.55, 0.78]]},
-        {
-          'id': 's1', 'order': 1, 'type': 'stroke', 'direction': 'forward',
-          'points': [[0.80, 0.45], [0.55, 0.62], [0.30, 0.45]],
-        },
+  'level': 1,
+  'mode': 'letter',
+  'scoring': 'geometric_ordered',
+  'prompt_key': 'game.letter_tracing.baa.prompt',
+  'prompt': 'هذا حرف الباء، وصوته بَ.',
+  'completion': {'rule': 'all_strokes_complete'},
+  'language': 'ar',
+  'glyph': 'ب',
+  'letter_form': 'isolated',
+  'writing_direction': 'rtl',
+  'guide_audio': 'asset-vo-sound-baa',
+  'tolerance_dp': 24,
+  'coverage_required': 0.8,
+  // Written dot-first on purpose: the model must sort by `order`, so no
+  // rendering or input path can depend on JSON ordering.
+  'stroke_paths': [
+    {
+      'id': 's2',
+      'order': 2,
+      'type': 'dot',
+      'points': [
+        [0.55, 0.78],
       ],
-      'coloring': {
-        'enabled': true,
-        'regions': ['r1'],
-        'palette': ['#FFD34D', '#00D6F5', '#FF6FAE'],
-      },
-    };
+    },
+    {
+      'id': 's1',
+      'order': 1,
+      'type': 'stroke',
+      'direction': 'forward',
+      'points': [
+        [0.80, 0.45],
+        [0.55, 0.62],
+        [0.30, 0.45],
+      ],
+    },
+  ],
+  'coloring': {
+    'enabled': true,
+    'regions': ['r1'],
+    'palette': ['#FFD34D', '#00D6F5', '#FF6FAE'],
+  },
+};
 
 Map<String, dynamic> packJson({List<Map<String, dynamic>>? levels}) => {
-      'pack_version': 1,
-      'engine_id': 'trace_color',
-      'pack_id': 'tc-luna-ep4',
-      'localization': 'language_specific',
-      'supports_dpad': false,
-      'progression': {'levels_to_finish': 1, 'advance_on': 'level_complete'},
-      'accessibility': {
-        'simplified_motor': {'tolerance_dp': 40, 'coverage_required': 0.6},
-        'sequential_tap_alternative': true,
-        'reduced_motion_supported': true,
-        'min_touch_target_dp': 48,
-      },
-      'levels': levels ?? [baaLevel()],
-      'assets': {'images': [], 'audio': []},
-      'voice_manifest': {'vo.intro': 'asset-vo-glt-intro'},
-    };
+  'pack_version': 1,
+  'engine_id': 'trace_color',
+  'pack_id': 'tc-luna-ep4',
+  'localization': 'language_specific',
+  'supports_dpad': false,
+  'progression': {'levels_to_finish': 1, 'advance_on': 'level_complete'},
+  'accessibility': {
+    'simplified_motor': {'tolerance_dp': 40, 'coverage_required': 0.6},
+    'sequential_tap_alternative': true,
+    'reduced_motion_supported': true,
+    'min_touch_target_dp': 48,
+  },
+  'levels': levels ?? [baaLevel()],
+  'assets': {'images': [], 'audio': []},
+  'voice_manifest': {'vo.intro': 'asset-vo-glt-intro'},
+};
 
 /// Traces the baa body on a [size] x [size] canvas.
 ///
@@ -79,19 +93,26 @@ List<Offset2D> traceBody(double size) {
     final to = authored[segment].scale(size, size);
     for (var step = 0; step <= 40; step++) {
       final t = step / 40;
-      points.add(Offset2D(
-        from.dx + (to.dx - from.dx) * t,
-        from.dy + (to.dy - from.dy) * t,
-      ));
+      points.add(
+        Offset2D(
+          from.dx + (to.dx - from.dx) * t,
+          from.dy + (to.dy - from.dy) * t,
+        ),
+      );
     }
   }
   return points;
 }
 
 /// The baa diacritic's authored position, in canvas pixels.
-Offset2D dotAt(double size) => const NormalizedPoint(0.55, 0.78).scale(size, size);
+Offset2D dotAt(double size) =>
+    const NormalizedPoint(0.55, 0.78).scale(size, size);
 
-TraceSession sessionFor(GamePack pack, {bool simplified = false, double canvas = 400}) {
+TraceSession sessionFor(
+  GamePack pack, {
+  bool simplified = false,
+  double canvas = 400,
+}) {
   return TraceSession(
     level: pack.levels.first,
     accessibility: pack.accessibility,
@@ -144,15 +165,19 @@ void main() {
       final scored = GamePack.fromJson(packJson());
       expect(scored.levels.first.maxScore, 2);
 
-      final free = GamePack.fromJson(packJson(levels: [
-        {
-          'level': 1,
-          'mode': 'free_draw',
-          'scoring': 'none',
-          'prompt_key': 'game.free.prompt',
-          'completion': {'rule': 'child_taps_done'},
-        }
-      ]));
+      final free = GamePack.fromJson(
+        packJson(
+          levels: [
+            {
+              'level': 1,
+              'mode': 'free_draw',
+              'scoring': 'none',
+              'prompt_key': 'game.free.prompt',
+              'completion': {'rule': 'child_taps_done'},
+            },
+          ],
+        ),
+      );
       // Colouring "لا يُحسب" — an unscored level contributes nothing, rather
       // than contributing zero out of one, which would drag the ratio down.
       expect(free.levels.first.maxScore, 0);
@@ -160,12 +185,19 @@ void main() {
     });
 
     test('an unknown mode degrades instead of throwing', () {
-      final pack = GamePack.fromJson(packJson(levels: [
-        {
-          'level': 1, 'mode': 'holographic_sculpting', 'scoring': 'none',
-          'prompt_key': 'game.x.prompt', 'completion': {'rule': 'child_taps_done'},
-        }
-      ]));
+      final pack = GamePack.fromJson(
+        packJson(
+          levels: [
+            {
+              'level': 1,
+              'mode': 'holographic_sculpting',
+              'scoring': 'none',
+              'prompt_key': 'game.x.prompt',
+              'completion': {'rule': 'child_taps_done'},
+            },
+          ],
+        ),
+      );
       expect(pack.levels.first.mode, DrawingMode.unknown);
     });
 
@@ -229,18 +261,41 @@ void main() {
     });
 
     test('unordered levels accept any incomplete stroke', () {
-      final pack = GamePack.fromJson(packJson(levels: [
-        {
-          'level': 1, 'mode': 'shape', 'scoring': 'geometric',
-          'prompt_key': 'game.shape.prompt',
-          'completion': {'rule': 'all_strokes_complete'},
-          'tolerance_dp': 24, 'coverage_required': 0.8,
-          'stroke_paths': [
-            {'id': 's1', 'order': 1, 'type': 'stroke', 'points': [[0.1, 0.1], [0.9, 0.1]]},
-            {'id': 's2', 'order': 2, 'type': 'stroke', 'points': [[0.1, 0.9], [0.9, 0.9]]},
+      final pack = GamePack.fromJson(
+        packJson(
+          levels: [
+            {
+              'level': 1,
+              'mode': 'shape',
+              'scoring': 'geometric',
+              'prompt_key': 'game.shape.prompt',
+              'completion': {'rule': 'all_strokes_complete'},
+              'tolerance_dp': 24,
+              'coverage_required': 0.8,
+              'stroke_paths': [
+                {
+                  'id': 's1',
+                  'order': 1,
+                  'type': 'stroke',
+                  'points': [
+                    [0.1, 0.1],
+                    [0.9, 0.1],
+                  ],
+                },
+                {
+                  'id': 's2',
+                  'order': 2,
+                  'type': 'stroke',
+                  'points': [
+                    [0.1, 0.9],
+                    [0.9, 0.9],
+                  ],
+                },
+              ],
+            },
           ],
-        }
-      ]));
+        ),
+      );
       final session = sessionFor(pack);
       expect(session.level.scoring.enforcesOrder, isFalse);
       expect(session.acceptsInput(pack.levels.first.strokes[1]), isTrue);
@@ -259,14 +314,20 @@ void main() {
       final firstPart = all.take(all.length ~/ 3).toList();
       final rest = all.skip(all.length ~/ 3).toList();
 
-      expect(drag(session, body, firstPart), isFalse,
-          reason: 'a third of the stroke must not reach 80% coverage');
+      expect(
+        drag(session, body, firstPart),
+        isFalse,
+        reason: 'a third of the stroke must not reach 80% coverage',
+      );
       final partial = session.strokeStates.first.coverage;
       expect(partial, greaterThan(0));
       expect(partial, lessThan(0.8));
 
-      expect(drag(session, body, rest), isTrue,
-          reason: 'progress from the first attempt must be retained');
+      expect(
+        drag(session, body, rest),
+        isTrue,
+        reason: 'progress from the first attempt must be retained',
+      );
     });
 
     test('stalling escalates help rather than failing', () {
@@ -286,80 +347,131 @@ void main() {
     test('the third stall widens tolerance and re-scores what was drawn', () {
       // A child should not have to trace again at the easier setting: the
       // attempt they just made is re-evaluated against the wider tolerance.
-      final pack = GamePack.fromJson(packJson(levels: [
-        {
-          'level': 1, 'mode': 'path', 'scoring': 'geometric',
-          'prompt_key': 'game.path.prompt',
-          'completion': {'rule': 'all_strokes_complete'},
-          'tolerance_dp': 16, 'coverage_required': 0.8,
-          'stroke_paths': [
-            {'id': 's1', 'order': 1, 'type': 'stroke', 'points': [[0.0, 0.5], [1.0, 0.5]]},
+      final pack = GamePack.fromJson(
+        packJson(
+          levels: [
+            {
+              'level': 1,
+              'mode': 'path',
+              'scoring': 'geometric',
+              'prompt_key': 'game.path.prompt',
+              'completion': {'rule': 'all_strokes_complete'},
+              'tolerance_dp': 16,
+              'coverage_required': 0.8,
+              'stroke_paths': [
+                {
+                  'id': 's1',
+                  'order': 1,
+                  'type': 'stroke',
+                  'points': [
+                    [0.0, 0.5],
+                    [1.0, 0.5],
+                  ],
+                },
+              ],
+            },
           ],
-        }
-      ]));
+        ),
+      );
       final session = sessionFor(pack, canvas: 100);
       final stroke = pack.levels.first.strokes.first;
       // 20px off the path: outside 16dp, inside the widened 24dp.
-      List<Offset2D> offsetTrace() => List.generate(
-            60, (i) => Offset2D(i * 100 / 59, 50 + 20),
-          );
+      List<Offset2D> offsetTrace() =>
+          List.generate(60, (i) => Offset2D(i * 100 / 59, 50 + 20));
 
       for (var attempt = 0; attempt < 3; attempt++) {
         if (drag(session, stroke, offsetTrace())) break;
       }
       expect(session.levelComplete, isTrue);
-      expect(session.usedAssistance, isTrue,
-          reason: 'succeeding only after widening must be recorded as assisted');
-    });
-
-    test('simplified motor mode completes a trace that normal mode would not', () {
-      Map<String, dynamic> strictLevel() => {
-            'level': 1, 'mode': 'path', 'scoring': 'geometric',
-            'prompt_key': 'game.path.prompt',
-            'completion': {'rule': 'all_strokes_complete'},
-            'tolerance_dp': 16, 'coverage_required': 0.9,
-            'stroke_paths': [
-              {'id': 's1', 'order': 1, 'type': 'stroke', 'points': [[0.0, 0.5], [1.0, 0.5]]},
-            ],
-          };
-      // Sloppy trace: drifts 25px away, and only covers part of the path.
-      List<Offset2D> sloppy() => List.generate(
-            40, (i) => Offset2D(i * 70 / 39, 50 + 25),
-          );
-
-      final normal = sessionFor(
-        GamePack.fromJson(packJson(levels: [strictLevel()])), canvas: 100);
-      drag(normal, normal.level.strokes.first, sloppy());
-      expect(normal.levelComplete, isFalse);
-
-      final simplified = sessionFor(
-        GamePack.fromJson(packJson(levels: [strictLevel()])),
-        simplified: true,
-        canvas: 100,
+      expect(
+        session.usedAssistance,
+        isTrue,
+        reason: 'succeeding only after widening must be recorded as assisted',
       );
-      drag(simplified, simplified.level.strokes.first, sloppy());
-      expect(simplified.activeTolerance.toleranceDp, 40);
-      expect(simplified.activeTolerance.coverageRequired, 0.6);
-      expect(simplified.levelComplete, isTrue,
-          reason: 'the mandatory accessible mode must actually let a child finish');
     });
+
+    test(
+      'simplified motor mode completes a trace that normal mode would not',
+      () {
+        Map<String, dynamic> strictLevel() => {
+          'level': 1,
+          'mode': 'path',
+          'scoring': 'geometric',
+          'prompt_key': 'game.path.prompt',
+          'completion': {'rule': 'all_strokes_complete'},
+          'tolerance_dp': 16,
+          'coverage_required': 0.9,
+          'stroke_paths': [
+            {
+              'id': 's1',
+              'order': 1,
+              'type': 'stroke',
+              'points': [
+                [0.0, 0.5],
+                [1.0, 0.5],
+              ],
+            },
+          ],
+        };
+        // Sloppy trace: drifts 25px away, and only covers part of the path.
+        List<Offset2D> sloppy() =>
+            List.generate(40, (i) => Offset2D(i * 70 / 39, 50 + 25));
+
+        final normal = sessionFor(
+          GamePack.fromJson(packJson(levels: [strictLevel()])),
+          canvas: 100,
+        );
+        drag(normal, normal.level.strokes.first, sloppy());
+        expect(normal.levelComplete, isFalse);
+
+        final simplified = sessionFor(
+          GamePack.fromJson(packJson(levels: [strictLevel()])),
+          simplified: true,
+          canvas: 100,
+        );
+        drag(simplified, simplified.level.strokes.first, sloppy());
+        expect(simplified.activeTolerance.toleranceDp, 40);
+        expect(simplified.activeTolerance.coverageRequired, 0.6);
+        expect(
+          simplified.levelComplete,
+          isTrue,
+          reason:
+              'the mandatory accessible mode must actually let a child finish',
+        );
+      },
+    );
   });
 
   group('sequential tap alternative', () {
     test('tapping along the path completes a stroke without dragging', () {
       // Mandatory substitute for continuous drag. Without it, children who
       // cannot drag are excluded from the engine built for motor skills.
-      final pack = GamePack.fromJson(packJson(levels: [
-        {
-          'level': 1, 'mode': 'path', 'scoring': 'geometric',
-          'prompt_key': 'game.path.prompt',
-          'completion': {'rule': 'all_strokes_complete'},
-          'tolerance_dp': 40, 'coverage_required': 0.8,
-          'stroke_paths': [
-            {'id': 's1', 'order': 1, 'type': 'stroke', 'points': [[0.0, 0.5], [1.0, 0.5]]},
+      final pack = GamePack.fromJson(
+        packJson(
+          levels: [
+            {
+              'level': 1,
+              'mode': 'path',
+              'scoring': 'geometric',
+              'prompt_key': 'game.path.prompt',
+              'completion': {'rule': 'all_strokes_complete'},
+              'tolerance_dp': 40,
+              'coverage_required': 0.8,
+              'stroke_paths': [
+                {
+                  'id': 's1',
+                  'order': 1,
+                  'type': 'stroke',
+                  'points': [
+                    [0.0, 0.5],
+                    [1.0, 0.5],
+                  ],
+                },
+              ],
+            },
           ],
-        }
-      ]));
+        ),
+      );
       final session = sessionFor(pack, canvas: 100);
       var completed = false;
       for (var x = 0; x <= 100 && !completed; x += 10) {
@@ -376,8 +488,13 @@ void main() {
       drag(session, pack.levels.first.strokes[0], traceBody(400));
 
       final json = session.metrics().first.toJson();
-      expect(json.keys.toSet(),
-          {'stroke', 'coverage', 'deviation_dp', 'completed', 'help_level'});
+      expect(json.keys.toSet(), {
+        'stroke',
+        'coverage',
+        'deviation_dp',
+        'completed',
+        'help_level',
+      });
       // A child's hand movement has no analytical value once coverage and
       // deviation are known, so the path itself never leaves the device.
       expect(json.toString(), isNot(contains('points')));
@@ -424,7 +541,9 @@ void main() {
         registry: registry,
         engineId: 'sim_lab',
         pack: GamePack.fromJson(packJson()),
-        engineVersionSupported: 1,
+        requiredEngineVersion: 1,
+        supportedEngineVersion: 1,
+        supportedPackVersion: 1,
         isTelevision: false,
       );
       expect(availability.isAvailable, isFalse);
@@ -437,11 +556,16 @@ void main() {
         registry: registry,
         engineId: 'trace_color',
         pack: GamePack.fromJson(packJson()),
-        engineVersionSupported: 1,
+        requiredEngineVersion: 1,
+        supportedEngineVersion: 1,
+        supportedPackVersion: 1,
         isTelevision: true,
       );
       expect(availability.reason, GameUnavailableReason.requiresTouch);
-      expect(registry.playableOnTelevision('trace_color', packSupportsDpad: false), isFalse);
+      expect(
+        registry.playableOnTelevision('trace_color', packSupportsDpad: false),
+        isFalse,
+      );
     });
 
     test('a pack from a newer engine version is refused', () {
@@ -449,7 +573,9 @@ void main() {
         registry: registry,
         engineId: 'trace_color',
         pack: GamePack.fromJson({...packJson(), 'pack_version': 2}),
-        engineVersionSupported: 1,
+        requiredEngineVersion: 1,
+        supportedEngineVersion: 1,
+        supportedPackVersion: 1,
         isTelevision: false,
       );
       expect(availability.reason, GameUnavailableReason.unsupportedPackVersion);
@@ -460,7 +586,9 @@ void main() {
         registry: registry,
         engineId: 'trace_color',
         pack: null,
-        engineVersionSupported: 1,
+        requiredEngineVersion: 1,
+        supportedEngineVersion: 1,
+        supportedPackVersion: 1,
         isTelevision: false,
       );
       expect(availability.reason, GameUnavailableReason.malformedPack);

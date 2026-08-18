@@ -1,12 +1,9 @@
 import '../../../core/text/arabic_search.dart';
 import '../../home/domain/content_models.dart';
 
-/// The kind of catalogue entity a [SearchResult] points at. Drives the icon,
-/// the section grouping, and the navigation target.
-enum SearchResultKind { series, episode, book, game, planet }
+/// Catalogue types that have a real, reachable destination.
+enum SearchResultKind { series, episode, game, story, book, planet }
 
-/// One normalised search hit, independent of the underlying model so the UI can
-/// render a mixed result list without switching on five concrete types.
 class SearchResult {
   const SearchResult({
     required this.kind,
@@ -14,104 +11,183 @@ class SearchResult {
     required this.title,
     required this.subtitle,
     required this.route,
+    required this.imageAsset,
+    required this.relevance,
+    this.imageUrl,
   });
 
   final SearchResultKind kind;
   final String id;
   final String title;
   final String subtitle;
-
-  /// The go_router location to push when the result is tapped.
   final String route;
+  final String imageAsset;
+  final String? imageUrl;
+  final int relevance;
 }
 
-/// Searches the whole in-memory catalogue across content types (§10).
-///
-/// The previous search matched only `series` by raw `toLowerCase().contains`.
-/// This walks series, episodes, books, games (experiences) and planets, matches
-/// with [ArabicSearch] so diacritics and alef/te-marbuta variants fold, and
-/// requires every query token to appear so a two-word query narrows rather than
-/// widens.
-///
-/// It searches the catalogue it is given. The caller passes the age-filtered
-/// catalogue for the active child, so eligibility and rights are already applied
-/// upstream — this function never widens what the child may see.
-List<SearchResult> searchCatalog(HomeCatalog catalog, String query) {
+/// Searches the age-filtered in-memory catalogue and ranks exact title,
+/// title-prefix, title-token and metadata matches in that order.
+List<SearchResult> searchCatalog(
+  HomeCatalog catalog,
+  String query, {
+  Set<SearchResultKind> kinds = const {},
+}) {
   final trimmed = query.trim();
   if (trimmed.isEmpty) return const [];
 
   final results = <SearchResult>[];
   final seen = <String>{};
 
-  void add(SearchResult r) {
-    final key = '${r.kind.name}:${r.id}';
-    if (seen.add(key)) results.add(r);
+  bool includes(SearchResultKind kind) => kinds.isEmpty || kinds.contains(kind);
+
+  void add({
+    required SearchResultKind kind,
+    required String id,
+    required String title,
+    required List<String> fields,
+    required String subtitle,
+    required String route,
+    required String imageAsset,
+    String? imageUrl,
+  }) {
+    if (!includes(kind)) return;
+    final relevance = _score(trimmed, title, fields);
+    if (relevance == 0) return;
+    final key = '${kind.name}:$id';
+    if (!seen.add(key)) return;
+    results.add(
+      SearchResult(
+        kind: kind,
+        id: id,
+        title: title,
+        subtitle: subtitle,
+        route: route,
+        imageAsset: imageAsset,
+        imageUrl: imageUrl,
+        relevance: relevance,
+      ),
+    );
   }
 
-  bool hit(List<String> fields) =>
-      fields.any((f) => ArabicSearch.matchesAllTokens(trimmed, f));
-
-  for (final s in catalog.series) {
-    if (hit([s.title, s.description, s.planetName])) {
-      add(SearchResult(
-        kind: SearchResultKind.series,
-        id: s.id,
-        title: s.title,
-        subtitle: s.planetName,
-        route: '/series/${s.id}',
-      ));
-    }
+  for (final series in catalog.series) {
+    add(
+      kind: SearchResultKind.series,
+      id: series.id,
+      title: series.title,
+      fields: [series.description, series.planetName],
+      subtitle: series.episodesCount > 0
+          ? '${series.planetName} • ${series.ageLabel} • ${series.episodesCount} حلقة'
+          : '${series.planetName} • ${series.ageLabel}',
+      route: '/series/${series.id}',
+      imageAsset: series.posterAsset,
+      imageUrl: series.coverUrl,
+    );
   }
 
-  for (final e in catalog.episodes) {
-    if (hit([e.title, e.description, e.seriesTitle])) {
-      add(SearchResult(
-        kind: SearchResultKind.episode,
-        id: e.id,
-        title: e.title,
-        subtitle: e.seriesTitle,
-        route: '/playback/${e.id}',
-      ));
-    }
+  for (final episode in catalog.episodes) {
+    add(
+      kind: SearchResultKind.episode,
+      id: episode.id,
+      title: episode.title,
+      fields: [episode.description, episode.seriesTitle],
+      subtitle: '${episode.seriesTitle} • ${episode.durationLabel}',
+      route: '/playback/${episode.id}',
+      imageAsset: episode.thumbnailAsset,
+      imageUrl: episode.thumbnailUrl,
+    );
   }
 
-  for (final b in catalog.books) {
-    if (hit([b.title, b.description])) {
-      // A book routes to the reader; audio books also have an audio route, but
-      // the reader is the safe default and offers the listen action itself.
-      add(SearchResult(
-        kind: SearchResultKind.book,
-        id: b.id,
-        title: b.title,
-        subtitle: b.type == 'comic' ? 'قصة مصوّرة' : 'قصة',
-        route: '/reader/${b.id}',
-      ));
-    }
+  for (final game in catalog.experiences) {
+    if (!game.isServerBacked) continue;
+    add(
+      kind: SearchResultKind.game,
+      id: game.id,
+      title: game.title,
+      fields: [game.subtitle, game.difficulty ?? '', game.engineId ?? ''],
+      subtitle: game.subtitle,
+      route: '/game/${game.id}',
+      imageAsset: game.imageAsset,
+    );
   }
 
-  for (final x in catalog.experiences) {
-    if (hit([x.title, x.subtitle])) {
-      add(SearchResult(
-        kind: SearchResultKind.game,
-        id: x.id,
-        title: x.title,
-        subtitle: x.subtitle,
-        route: '/game/${x.id}',
-      ));
-    }
+  for (final story in catalog.stories) {
+    add(
+      kind: SearchResultKind.story,
+      id: story.id,
+      title: story.title,
+      fields: [story.description, _bookTypeLabel(story.type)],
+      subtitle: '${_bookTypeLabel(story.type)} • ${story.ageLabel}',
+      route: Uri(
+        path: '/reader/${story.id}',
+        queryParameters: const {'contentType': 'story'},
+      ).toString(),
+      imageAsset: 'assets/brand/majarra-logo.png',
+      imageUrl: story.coverUrl,
+    );
   }
 
-  for (final p in catalog.planets) {
-    if (hit([p.name, p.description])) {
-      add(SearchResult(
-        kind: SearchResultKind.planet,
-        id: p.id,
-        title: p.name,
-        subtitle: 'كوكب',
-        route: '/planets?planetId=${p.id}',
-      ));
-    }
+  for (final book in catalog.books) {
+    add(
+      kind: SearchResultKind.book,
+      id: book.id,
+      title: book.title,
+      fields: [book.description, _bookTypeLabel(book.type)],
+      subtitle: '${_bookTypeLabel(book.type)} • ${book.ageLabel}',
+      route: book.type == 'audio_story'
+          ? Uri(path: '/audio', queryParameters: {'bookId': book.id}).toString()
+          : Uri(
+              path: '/reader/${book.id}',
+              queryParameters: const {'contentType': 'book'},
+            ).toString(),
+      imageAsset: book.posterAsset,
+      imageUrl: book.coverUrl,
+    );
   }
 
+  for (final planet in catalog.planets) {
+    add(
+      kind: SearchResultKind.planet,
+      id: planet.id,
+      title: planet.name,
+      fields: [planet.description],
+      subtitle: planet.description.isEmpty ? 'كوكب' : planet.description,
+      route: Uri(
+        path: '/planets',
+        queryParameters: {'planetId': planet.id},
+      ).toString(),
+      imageAsset: planet.imageAsset,
+      imageUrl: planet.iconUrl,
+    );
+  }
+
+  results.sort((left, right) {
+    final byScore = right.relevance.compareTo(left.relevance);
+    if (byScore != 0) return byScore;
+    final byKind = left.kind.index.compareTo(right.kind.index);
+    if (byKind != 0) return byKind;
+    return left.title.compareTo(right.title);
+  });
   return results;
 }
+
+int _score(String query, String title, List<String> fields) {
+  final normalizedQuery = ArabicSearch.normalize(query);
+  if (normalizedQuery.isEmpty) return 0;
+  final normalizedTitle = ArabicSearch.normalize(title);
+  final combined = [title, ...fields].join(' ');
+
+  if (normalizedTitle == normalizedQuery) return 500;
+  if (normalizedTitle.startsWith(normalizedQuery)) return 420;
+  if (normalizedTitle.contains(normalizedQuery)) return 360;
+  if (ArabicSearch.matchesAllTokens(query, title)) return 300;
+  if (ArabicSearch.matchesAllTokens(query, combined)) return 220;
+  return 0;
+}
+
+String _bookTypeLabel(String type) => switch (type) {
+  'comic' => 'كوميكس',
+  'audio_story' => 'قصة صوتية',
+  'interactive' => 'قصة تفاعلية',
+  _ => 'قصة مصورة',
+};

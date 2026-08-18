@@ -1,0 +1,416 @@
+{
+  "schema_version": 1,
+  "manifest_id": "majarra-games-wave-visual-production-closure-v1",
+  "created_at": "2026-08-12T00:00:00Z",
+  "scope": "All 18 existing Majarra Wave games; visual production only",
+  "production_rules": {
+    "secret_environment_variable": "PLAYVEO_API_KEY",
+    "secret_must_remain_server_side": true,
+    "provider_urls_forbidden_in_game_packs": true,
+    "generated_text_forbidden": true,
+    "runtime_typography_required_for_arabic_letters_words_and_numbers": true,
+    "generated_assets_default_review": "ART_REVIEW_PENDING",
+    "thumbnail_policy": "Intentional square edit from the approved cover, with a game-specific focal crop; regenerate separately if the crop fails QA",
+    "completion_policy": "Compose each game's approved hero art into a game-specific completion treatment; do not generate a generic completion image",
+    "system_icon_policy": "Retain familiar Flutter system icons for back, close, volume, repeat, retry, and accessibility. Create game-specific treatment only for child-facing gameplay commands and targets.",
+    "empty_loading_error_policy": "Use the shared Majarra system treatment plus the game's hero token. Do not generate eighteen unrelated error illustrations.",
+    "background_policy": "Keep boards quiet and low-contrast behind interactive pieces; preschool boards use the simplest compositions.",
+    "visual_status": "VISUAL_ASSETS_PENDING"
+  },
+  "shared_prompt_contract": {
+    "brand": "Majarra child-friendly premium children's game illustration",
+    "style": "polished 2D storybook game art, rounded readable silhouettes, soft dimensional shading, clean edges, coherent line treatment",
+    "purpose": "the object must be immediately recognizable during gameplay and remain clear at small mobile size",
+    "framing": "single clear focal subject, generous breathing room, no cropped important edges",
+    "camera": "front or gentle three-quarter view, no dramatic perspective distortion",
+    "simplicity": "low visual clutter, no tiny decorative details, strong separation between subject and background",
+    "text_rule": "no text, no letters, no numbers, no symbols that resemble writing",
+    "rights_rule": "no logos, no branded characters, no watermark, no signature",
+    "transparency_rule": "for standalone objects use a plain removable background and preserve the complete silhouette for background removal"
+  },
+  "output": {
+    "root": "app_main/assets/images/games/wave",
+    "cover": { "width": 1600, "height": 1200, "format": "webp", "quality": 88 },
+    "thumbnail": { "width": 800, "height": 800, "format": "webp", "quality": 86 },
+    "background": { "width": 1600, "height": 1200, "format": "webp", "quality": 84 },
+    "card": { "width": 1000, "height": 750, "format": "webp", "quality": 88 },
+    "transparent_object": { "width": 768, "height": 768, "format": "png" }
+  },
+  "games": [
+    {
+      "game_id": "game-wave1-memory-animals",
+      "title_ar": "ذاكرة الحيوانات",
+      "engine": "memory_flip",
+      "age_group": "3-5",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A calm sunrise meadow memory deck with four friendly animal portraits, identical face scale and lighting, softly rounded cards, and a mint-coral-cream preschool palette. The animals are the focus; habitat detail stays faint.",
+      "palette": ["#55BFA6", "#FF8F7A", "#FFD166", "#FFF6E7", "#2C6171"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-color-cat", "asset-color-bird", "asset-color-fish", "asset-color-rabbit", "asset-wave1-memory-cover"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"asset-wave1-memory-cover lacks retained provenance and visual closure","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 animal memory game cover: the same friendly cat, small blue bird, orange fish in a clear round bowl, and white rabbit gathered around two face-down rounded memory cards in a simple sunrise meadow; joyful discovery, balanced 4:3 composition, title-safe open sky, no text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.5]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 animal memory board background: extremely simple pale meadow at sunrise, soft grass edge and two tiny distant clouds, quiet cream center reserved for eight cards, no animals, no objects, no text."},
+        {"asset":"animal-pair-set","role":"four coherent card portraits","needed":true,"existing":"generic Creative Studio SVG set","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"4 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same head-and-shoulders framing, eye line, scale, warm light, rounded storybook treatment","members":[{"id":"animal-cat","subject":"friendly ginger cat portrait facing forward"},{"id":"animal-bird","subject":"friendly small blue bird portrait facing forward"},{"id":"animal-fish","subject":"friendly orange fish side portrait with complete fins, no bowl"},{"id":"animal-rabbit","subject":"friendly white rabbit portrait facing forward with both ears fully visible"}]},
+        {"asset":"card-back","role":"face-down card art","needed":true,"existing":"question-mark Material icon","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1000x750","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 memory card back pattern: one simple Majarra star-orbit emblem made only from abstract shapes, mint field, coral and gold accents, rounded border, centered and readable, no letters, no numbers, no text."},
+        {"asset":"card-states","role":"selected, matched, correct card treatment","needed":true,"existing":"generic colored containers","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"animal-pair-set + card-back"},
+        {"asset":"completion","role":"completion celebration","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"animal-cat + animal-rabbit + game palette"},
+        {"asset":"system-icons","role":"listen, repeat, back, retry","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave1-picture-match",
+      "title_ar": "طابق الصورة",
+      "engine": "match_pairs",
+      "age_group": "3-5",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A sunny playroom matching table with two full-body animal friends, large framed targets, and clear floor tokens. Shapes are chunkier than the memory portraits so this game reads as placement, not card flipping.",
+      "palette": ["#4FA9D8", "#F6C85F", "#F58A8A", "#F8F3E8", "#365A73"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-color-cat", "asset-color-bird", "asset-wave1-picture-match"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"asset-wave1-picture-match lacks retained provenance and full set","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 picture matching game cover in a bright simple playroom: a child-safe display board with a framed cat silhouette target and framed bird silhouette target while matching full-body cat and bird tokens sit below; obvious pairing concept, 4:3, title-safe upper area, no text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.52,0.53]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 matching game board background: minimal warm playroom wall and pale blue floor, two faint empty frame areas across the top and clear open token area below, no toys, no characters, no text."},
+        {"asset":"pair-token-set","role":"draggable/tappable matching objects","needed":true,"existing":"generic SVGs","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"2 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same full-body scale, gentle three-quarter camera, soft floorless shadow, thick clean silhouette","members":[{"id":"match-cat","subject":"friendly ginger cat sitting with tail fully visible"},{"id":"match-bird","subject":"friendly blue bird standing with both wings and feet visible"}]},
+        {"asset":"target-frames","role":"visual match targets","needed":true,"existing":"targets labeled t1/t2","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"pair-token-set rendered as desaturated inset silhouettes"},
+        {"asset":"interaction-states","role":"selected and correct feedback","needed":true,"existing":"generic border","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"game palette + pair-token-set"},
+        {"asset":"completion","role":"completion celebration","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"match-cat + match-bird"},
+        {"asset":"system-icons","role":"listen, repeat, back, retry","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave1-color-sort",
+      "title_ar": "صنّف الألوان",
+      "engine": "sort_bins",
+      "age_group": "3-5",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A cheerful toy-delivery station with one warm red basket and one cool blue basket. Four large real-world objects use both colour and shape cues, keeping the rule understandable without developer labels or colour alone.",
+      "palette": ["#ED5C5C", "#3D8ED0", "#FFD166", "#F7F1E3", "#35556B"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-color-apple", "asset-color-fish", "asset-color-rocket", "asset-color-tree"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"local-only unverified asset-wave1-color-sort; no production link","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 colour sorting game cover: a red rounded toy basket and a blue rounded toy basket, with a red apple and red toy rocket moving toward the red basket and a blue fish toy and blue sailboat toy moving toward the blue basket; clear sorting story, simple cream play space, no text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.55]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 sorting board background: quiet toy-delivery floor with a faint red lane on the left and blue lane on the right, open center and large empty bin zones, very simple, no objects, no text."},
+        {"asset":"bin-set","role":"two visual drop bins","needed":true,"existing":"apple and fish incorrectly stand in for bins","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"2 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same rounded woven toy basket design and camera, one clear category emblem shape but no writing","members":[{"id":"bin-red","subject":"large open red toy basket with warm apple-shaped badge"},{"id":"bin-blue","subject":"large open blue toy basket with gentle wave-shaped badge"}]},
+        {"asset":"object-set","role":"four draggable/tappable objects","needed":true,"existing":"generic unrelated SVGs","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"4 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same toy-like material, scale, three-quarter camera, complete silhouette","members":[{"id":"red-apple","subject":"bright red apple with green leaf"},{"id":"red-rocket","subject":"simple red toy rocket, no logos"},{"id":"blue-fish","subject":"simple blue toy fish, complete fins"},{"id":"blue-sailboat","subject":"simple blue toy sailboat with no markings"}]},
+        {"asset":"target-feedback","role":"accepting and correct bin feedback","needed":true,"existing":"generic border","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"bin-set + palette glow/ripple"},
+        {"asset":"completion","role":"completion celebration","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"both bins + four objects"},
+        {"asset":"system-icons","role":"listen, repeat, back, retry","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave1-count-place",
+      "title_ar": "عدّ وضع",
+      "engine": "count_quantity",
+      "age_group": "3-5",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A quiet night-sky counting picnic with three identical golden star tokens on a clean navy-to-cream board. Every star has the same scale and front-facing angle, with no overlap or perspective ambiguity.",
+      "palette": ["#173B59", "#FFD45C", "#79C9C5", "#FFF8E8", "#E97B6E"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-color-stars", "asset-wave1-count-place"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"asset-wave1-count-place lacks retained provenance and full set","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 counting game cover: exactly three identical golden plush star tokens arranged separately in a gentle arc above three large blank answer pebbles, dreamy but uncluttered night-sky picnic setting, no digits, no text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.48]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 counting board background: very simple deep blue upper sky fading to warm cream counting mat, empty central counting area, a few tiny distant dots only, no stars as countable objects, no text."},
+        {"asset":"count-token-star","role":"repeatable countable object","needed":true,"existing":"generic group-of-stars SVG","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Age 3-5 counting token: one golden five-point plush star, symmetrical friendly rounded points, front view, complete silhouette, plain removable background, no face, no text."},
+        {"asset":"count-layout","role":"three non-overlapping objects","needed":true,"existing":"generic quantity container","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"count-token-star repeated at identical size with deterministic spacing"},
+        {"asset":"answer-options","role":"number answer cards","needed":true,"existing":"generic buttons","reuse_acceptable":true,"action":"EDIT","transparent":false,"size":"runtime typography","status":"DESIGN_READY","operation":"flutter-composite","source":"runtime Arabic numeral typography + palette; never generated"},
+        {"asset":"completion","role":"completion celebration","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"count-token-star + three-count motif"},
+        {"asset":"system-icons","role":"listen, repeat, recount, back","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave1-sequence-kids",
+      "title_ar": "رتّب المراحل",
+      "engine": "sequence_order",
+      "age_group": "6-8",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A three-card seed-to-tree story. The same red watering can, terracotta pot, camera, daylight, and plant identity persist across every card so progression is unmistakable.",
+      "palette": ["#4E9F6F", "#D77A45", "#F2C14E", "#EAF4E2", "#365E4B"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-color-cat", "asset-color-tree", "asset-color-apple"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 sequencing game cover: three floating rounded picture cards show a seed in a terracotta pot, the same pot with a sprout being watered by the same red watering can, and the same plant grown into a small apple tree; clear left-to-right visual progression but no arrows or text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.5]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 sequence board background: quiet greenhouse worktable with three faint empty card slots and a soft leafy edge, central card area plain and high contrast, no plants in the slots, no text."},
+        {"asset":"sequence-card-set","role":"three coherent progression cards","needed":true,"existing":"unrelated cat/tree/apple SVGs","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"3 x 1000x750","status":"PLANNED","operation":"text-to-image","set_style":"identical camera, pot, red watering can, warm daylight, card frame, subject scale and background","members":[{"id":"sequence-seed","subject":"terracotta pot with visible seed just placed in soil, red watering can beside it"},{"id":"sequence-sprout","subject":"same terracotta pot with a small green sprout, same red watering can gently watering it"},{"id":"sequence-tree","subject":"same terracotta pot area now holding a small healthy apple tree with three apples, same red watering can beside it"}]},
+        {"asset":"card-states","role":"order slot, selected, correct visual treatment","needed":true,"existing":"IDs and numbered outlines","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"sequence-card-set + runtime order markers"},
+        {"asset":"completion","role":"completion celebration","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"sequence-tree + falling leaves"},
+        {"asset":"system-icons","role":"undo, listen, repeat, back","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave1-logic-kids",
+      "title_ar": "أكمل النمط",
+      "engine": "logic_pattern",
+      "age_group": "6-8",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A crisp observatory puzzle with simple celestial tokens on a pale grid. Decoration stays peripheral; alternating shapes and the missing cell are the most visible elements.",
+      "palette": ["#234E70", "#F6C85F", "#59B3A8", "#F4F0E6", "#E47D73"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-color-cat", "asset-color-bird", "asset-color-fish"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 logic pattern game cover: a clean two-by-two observatory puzzle board alternates a golden moon token and a teal rocket token with one glowing empty cell, while a small comet option waits below; puzzle logic dominates, no text or symbols."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.52]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 logic board background: minimal pale observatory desk with a very faint dark-blue grid zone in the center and tiny distant telescope shapes at the edge, no celestial tokens, no text, low contrast."},
+        {"asset":"pattern-token-set","role":"matrix cells and answer options","needed":true,"existing":"generic animal SVGs","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"3 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same flat-dimensional material, front view, scale and outline weight","members":[{"id":"pattern-moon","subject":"simple golden crescent moon game token, no face"},{"id":"pattern-rocket","subject":"simple teal toy rocket token, no logo"},{"id":"pattern-comet","subject":"simple coral comet token with short rounded tail"}]},
+        {"asset":"cell-states","role":"empty, selected, correct matrix cells","needed":true,"existing":"text IDs in generic cells","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"pattern-token-set + restrained observatory frame"},
+        {"asset":"completion","role":"completion celebration","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"pattern-rocket + subtle orbit"},
+        {"asset":"system-icons","role":"hint, listen, repeat, back","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave1-word-kids",
+      "title_ar": "كوّن الكلمة",
+      "engine": "word_build",
+      "age_group": "6-8",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A warm neighbourhood word workshop centered on one unmistakable house illustration. Arabic letters remain crisp Readex Pro runtime glyph tiles; generated art contains no glyph-like marks.",
+      "palette": ["#E07A5F", "#3D8A8E", "#F2CC8F", "#F7F2E8", "#3D405B"],
+      "reviews": ["ART_REVIEW_PENDING", "LINGUISTIC_REVIEW_PENDING"],
+      "existing": ["asset-color-house"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 Arabic word-building game cover: a friendly coral-roofed house at the center with three blank rounded wooden letter tiles floating below, warm neighbourhood garden, no letters, no words, no numbers, generous title-safe sky."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.48]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 word puzzle background: very simple sunny neighbourhood path with a pale central worktable and quiet house silhouettes at far edges, blank center for runtime Arabic glyph tiles, no signs, no text, no writing."},
+        {"asset":"target-house","role":"target object illustration","needed":true,"existing":"generic house SVG","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Age 6-8 word target object: one friendly coral-roofed cream house, front three-quarter view, clear door and windows with no markings, complete silhouette, plain removable background, no text."},
+        {"asset":"letter-tiles","role":"Arabic letters and word slots","needed":true,"existing":"runtime Flutter glyphs","reuse_acceptable":true,"action":"REUSE","transparent":false,"size":"runtime typography","status":"APPROVED_FOR_IMPLEMENTATION","operation":"flutter-runtime-text","source":"Readex Pro; never generated"},
+        {"asset":"tile-treatment","role":"draggable tile, slot, selected and correct states","needed":true,"existing":"generic containers","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"wood-like palette shell + runtime glyphs"},
+        {"asset":"completion","role":"completion celebration","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"target-house + warm window lights"},
+        {"asset":"system-icons","role":"listen, repeat, show word, back","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave1-block-code",
+      "title_ar": "برمج الروبوت",
+      "engine": "block_code",
+      "age_group": "9-12",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A teal workshop robot crosses a clean circuit-garden grid toward a golden energy crystal. The grid and command logic remain precise; environment art supports orientation without obscuring cells.",
+      "palette": ["#167D8D", "#F4B942", "#EE6C4D", "#EAF2F2", "#293B4A"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-complete-robot"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 block coding game cover: a small teal workshop robot stands on a clean circuit-garden grid looking toward a golden energy crystal, with two low obstacles and a short row of blank command tiles, dynamic but readable, no arrows, no text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.5]},
+        {"asset":"grid-environment","role":"gameplay board environment","needed":true,"existing":"plain grid","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime vector + generated edge texture","status":"DESIGN_READY","operation":"flutter-composite","source":"procedural high-contrast grid with circuit-garden border"},
+        {"asset":"robot-token","role":"player token","needed":true,"existing":"generic completion robot SVG","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Age 9-12 coding player token: one original small teal workshop robot with round body, two short legs, one antenna, friendly screen face with simple non-text eyes, three-quarter front view, complete silhouette, plain removable background."},
+        {"asset":"goal-token","role":"goal","needed":true,"existing":"generic goal shape","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Age 9-12 coding goal token: one golden energy crystal held in a simple teal charging ring, front three-quarter view, complete silhouette, plain removable background, no writing."},
+        {"asset":"obstacle-set","role":"grid obstacles","needed":true,"existing":"generic blocked cells","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"2 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same circuit-garden material, camera and cell footprint","members":[{"id":"obstacle-planter","subject":"low rounded planter with dense leaves, fits one square cell"},{"id":"obstacle-crate","subject":"low orange circuit crate with blank panels, fits one square cell"}]},
+        {"asset":"command-icons","role":"move, turn, repeat command visuals","needed":true,"existing":"generic text/Material icons","reuse_acceptable":true,"action":"EDIT","transparent":true,"size":"runtime vector","status":"DESIGN_READY","operation":"flutter-vector-treatment","source":"familiar arrows/loop icons in game-specific command chips; no AI-generated directions"},
+        {"asset":"completion","role":"goal reached celebration","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"robot-token + goal-token + circuit pulse"},
+        {"asset":"system-icons","role":"run, clear, undo, back","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave1-sim-lab",
+      "title_ar": "المختبر",
+      "engine": "sim_lab",
+      "age_group": "9-12",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A clean educational heat experiment with one readable beaker, thermometer, and controlled steam. The illustration supports the coded variable relationship and never pretends to be a scientific diagram.",
+      "palette": ["#2A9D8F", "#E76F51", "#F4A261", "#F3F7F5", "#264653"],
+      "reviews": ["ART_REVIEW_PENDING", "SCIENTIFIC_REVIEW_PENDING"],
+      "existing": ["asset-oloom-leaf-bg"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 educational simulation game cover: a clean glass beaker of water on a safe electric warming plate beside a large readable thermometer, a small prediction choice panel with blank shapes, bright modern school lab, no labels, no numbers, no fake diagram."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.5]},
+        {"asset":"lab-background","role":"gameplay background","needed":true,"existing":"unbound generic leaf background","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 simulation background: modern school science bench with pale tiles, a few distant safe lab objects at the edges, large empty central workspace for controls and results, low contrast, no text, no diagrams."},
+        {"asset":"heat-apparatus","role":"experiment support illustration","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Age 9-12 educational heat experiment object: clear glass beaker half-filled with blue water on a small safe electric warming plate, separate vertical thermometer beside it, slight steam only, scientifically readable silhouette, no labels or numbers, plain removable background."},
+        {"asset":"variable-and-result","role":"temperature control and measured response","needed":true,"existing":"generic slider/options","reuse_acceptable":true,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-vector-treatment","source":"canonical coded values, runtime labels and chart; generated art is decorative only"},
+        {"asset":"completion","role":"experiment complete visual","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"heat-apparatus + validated result highlight"},
+        {"asset":"system-icons","role":"predict, reset, safety, back","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave2-memory-2",
+      "title_ar": "ذاكرة ثانية",
+      "engine": "memory_flip",
+      "age_group": "6-8",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A moonlit field-journal memory deck featuring lion, turtle, and owl portraits. It is more adventurous and detailed than the preschool deck while retaining consistent portrait framing and clear silhouettes.",
+      "palette": ["#315A7D", "#D99A43", "#68A691", "#F5E9D3", "#A85D5D"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-color-lion", "asset-color-turtle", "asset-color-owl"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 animal memory game cover: an explorer field journal opens to portrait cards of a young lion, green turtle, and tawny owl beneath a moonlit acacia silhouette, adventurous but gentle, card matching idea clear, no text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.5]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 memory board background: quiet moonlit field-journal table with faint acacia and stars only at the border, plain warm center for six cards, no animals, no text."},
+        {"asset":"animal-pair-set","role":"three coherent card portraits","needed":true,"existing":"generic Creative Studio SVG set","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"3 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same field-guide portrait framing, scale, moonlit rim light and clean storybook realism","members":[{"id":"animal-lion","subject":"friendly young lion portrait facing forward, complete mane"},{"id":"animal-turtle","subject":"friendly green turtle portrait angled slightly forward, complete shell and head"},{"id":"animal-owl","subject":"friendly tawny owl portrait facing forward, both ear tufts and wings visible"}]},
+        {"asset":"card-back","role":"face-down card art","needed":true,"existing":"question-mark icon","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1000x750","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 explorer memory card back: centered compass-star and leaf motif made only from abstract shapes, deep blue and sand palette, clean rounded field-journal border, no letters, no numbers, no text."},
+        {"asset":"card-states","role":"selected, matched, correct treatment","needed":true,"existing":"generic colored containers","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"animal-pair-set + card-back"},
+        {"asset":"completion","role":"completion celebration","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"animal-lion + animal-owl + explorer badge"},
+        {"asset":"system-icons","role":"listen, repeat, back, retry","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave2-match-2",
+      "title_ar": "مطابقة ثانية",
+      "engine": "match_pairs",
+      "age_group": "6-8",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A dreamy weather observatory where moon and rainbow tokens are matched to precise constellation-like target windows. The celestial palette and glassy framing distinguish it from the playroom match game.",
+      "palette": ["#4057A1", "#73C7D4", "#F2C94C", "#F4EFFA", "#E8798E"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-color-moon", "asset-color-rainbow"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 celestial matching game cover: a golden crescent moon token and a bright rainbow token align with two glowing observatory windows showing their matching silhouettes, dreamy blue-lilac sky lab, clear pairing, no text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.5]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 celestial match board background: simple observatory wall with two faint empty glass target windows above and a clear token shelf below, low-detail star haze at edges, no moon, no rainbow, no text."},
+        {"asset":"pair-token-set","role":"matching objects","needed":true,"existing":"generic SVGs","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"2 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same luminous enamel token material, scale, front view and soft outline","members":[{"id":"match-moon","subject":"golden crescent moon token, no face"},{"id":"match-rainbow","subject":"simple five-band rainbow token with two small clouds, no text"}]},
+        {"asset":"target-frames","role":"matching target windows","needed":true,"existing":"target IDs","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"desaturated pair-token-set in glass frames"},
+        {"asset":"interaction-states","role":"selected and correct feedback","needed":true,"existing":"generic border","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"celestial halo + pair-token-set"},
+        {"asset":"completion","role":"completion celebration","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"match-moon + match-rainbow"},
+        {"asset":"system-icons","role":"hint, repeat, back, retry","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave2-sort-junior",
+      "title_ar": "صندوق التصنيف",
+      "engine": "sort_bins",
+      "age_group": "9-12",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A sleek orbital materials lab that sorts round moon-orbs and five-point star crystals. Category receptacles have unmistakable shape apertures, not just different colours.",
+      "palette": ["#25355C", "#50B6A8", "#F3B43F", "#EDF2F6", "#D5636F"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-color-moon", "asset-color-stars"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 sorting game cover in an orbital materials lab: round moon-orbs travel toward a receptacle with a circular aperture while five-point star crystals travel toward a receptacle with a star aperture, sleek educational sci-fi, no labels or text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.52]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 sorting board background: restrained orbital lab deck with two empty receptacle bays at top and a clear materials tray below, navy and pale steel, low contrast, no objects, no text."},
+        {"asset":"bin-set","role":"two shape receptacles","needed":true,"existing":"moon/star objects used as bins","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"2 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same compact orbital receptacle body, front three-quarter camera and material","members":[{"id":"bin-circle","subject":"teal orbital receptacle with one large circular aperture, no labels"},{"id":"bin-star","subject":"gold orbital receptacle with one large five-point star aperture, no labels"}]},
+        {"asset":"shape-token-set","role":"sortable materials","needed":true,"existing":"generic SVGs","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"2 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same polished mineral token material, scale and front view","members":[{"id":"shape-orb","subject":"round teal moon-like mineral orb with subtle craters"},{"id":"shape-star","subject":"gold five-point mineral star crystal with rounded safe edges"}]},
+        {"asset":"target-feedback","role":"accepting and correct bin feedback","needed":true,"existing":"generic border","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"bin aperture pulse + shape tokens"},
+        {"asset":"completion","role":"completion visual","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"both bins + sorted token rows"},
+        {"asset":"system-icons","role":"hint, reset, back, retry","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave2-count-drag",
+      "title_ar": "اسحب العدد",
+      "engine": "count_quantity",
+      "age_group": "6-8",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "An autumn orchard packing challenge with four identical apples and a woven target basket. Spacing and scale make quantity unambiguous; runtime numeral cards remain the only numbers.",
+      "palette": ["#B84A3A", "#5F8D4E", "#E8B45A", "#F5EBDD", "#4C5A45"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-color-apple"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 quantity game cover: exactly four identical red apples arranged separately on a pale orchard table beside an empty woven basket and three blank numeral-card shapes, reliable count with no overlap, no digits, no text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.48,0.5]},
+        {"asset":"board-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 counting board background: simple autumn orchard worktable, faint tree trunks and leaves only at far edges, large clear cream counting area, no apples, no baskets, no text."},
+        {"asset":"apple-token","role":"repeatable countable object","needed":true,"existing":"generic apple SVG","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Age 6-8 quantity token: one realistic-stylized red apple with one green leaf, front three-quarter view, complete silhouette, plain removable background, no face, no text."},
+        {"asset":"target-basket","role":"drag amount target","needed":true,"existing":"generic quantity zone","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Age 6-8 orchard target: one open woven harvest basket with low rim and empty interior clearly visible, front three-quarter view, complete silhouette, plain removable background, no labels."},
+        {"asset":"count-layout-and-options","role":"four objects and runtime numeral cards","needed":true,"existing":"generic controls","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"apple-token repeated identically + runtime numeral typography"},
+        {"asset":"completion","role":"completion visual","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"target-basket with four apple tokens"},
+        {"asset":"system-icons","role":"recount, hint, back, retry","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave2-timeline",
+      "title_ar": "خط الحضارات",
+      "engine": "timeline_map",
+      "age_group": "9-12",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A museum discovery table with two restrained event illustrations in one gouache-and-ink style. Runtime Majarra content supplies all dates and labels; the art never invents inscriptions or precise claims.",
+      "palette": ["#9A633A", "#C9A45D", "#4D7C7A", "#F2E7D3", "#3E4651"],
+      "reviews": ["ART_REVIEW_PENDING", "HISTORICAL_REVIEW_PENDING"],
+      "existing": ["asset-color-mountain", "asset-color-book"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 history timeline game cover: a museum table displays two unlabeled illustrated event cards, one showing ancient pyramid construction at a respectful distance and one showing an ancient Mediterranean library interior with scroll shelves, connected by a blank brass timeline, no dates, no writing, no invented inscriptions."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.52]},
+        {"asset":"timeline-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 history board background: neutral museum parchment and stone table with one empty horizontal timeline band, subtle archival texture, no landmarks, no maps, no writing, no dates."},
+        {"asset":"event-card-set","role":"two historical event illustrations","needed":true,"existing":"generic mountain/book SVGs","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"2 x 1000x750","status":"PLANNED","operation":"text-to-image","set_style":"consistent museum gouache-and-ink illustration, respectful human scale, same border, muted natural light, no text or inscriptions","members":[{"id":"event-pyramids","subject":"distant educational scene of ancient pyramid construction with simple ramps, workers shown respectfully, no exact machinery claims, no text"},{"id":"event-library","subject":"ancient Mediterranean library interior with wooden shelves and rolled scrolls, scholars reading at tables, no identifiable inscriptions or text"}]},
+        {"asset":"timeline-markers","role":"event markers and placement feedback","needed":true,"existing":"generic controls","reuse_acceptable":true,"action":"EDIT","transparent":true,"size":"runtime vector","status":"DESIGN_READY","operation":"flutter-vector-treatment","source":"museum pin and brass line; labels/dates remain runtime"},
+        {"asset":"completion","role":"timeline completion visual","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"both approved event cards + completed brass line"},
+        {"asset":"system-icons","role":"info, hint, reset, back","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave2-rhythm",
+      "title_ar": "أنشودة الإيقاع",
+      "engine": "rhythm_tap",
+      "age_group": "6-8",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A lively coral-and-teal percussion stage with two oversized tactile drum pads and clear beat tokens. Motion comes from lightweight Flutter pulses, not generated video.",
+      "palette": ["#E75B64", "#2EA6A1", "#F4C95D", "#233B5D", "#FFF4E6"],
+      "reviews": ["ART_REVIEW_PENDING", "AUDIO_REVIEW_PENDING", "MUSIC_RIGHTS_REVIEW_PENDING"],
+      "existing": [],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 rhythm game cover: two large friendly hand-drum pads on a small coral-and-teal stage, three glowing beat tokens descending toward them, energetic but uncluttered, no musical notation, no text, no numbers."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.52]},
+        {"asset":"stage-background","role":"gameplay background","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 rhythm board background: simple dark-blue mini stage with two empty vertical lanes and soft coral-teal spotlights at edges, center lanes clear, no instruments, no notes, no text."},
+        {"asset":"drum-pad-set","role":"two tap targets","needed":true,"existing":"generic lanes","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"2 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same round hand-drum construction, front top-three-quarter camera and scale","members":[{"id":"drum-coral","subject":"round coral hand-drum pad with blank cream center"},{"id":"drum-teal","subject":"round teal hand-drum pad with blank cream center"}]},
+        {"asset":"beat-token-set","role":"falling beat objects","needed":true,"existing":"generic circles","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"2 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"simple luminous rounded token with same material and size","members":[{"id":"beat-coral","subject":"small coral pulse token made from concentric rounded rings, no symbol"},{"id":"beat-teal","subject":"small teal pulse token made from concentric rounded rings, no symbol"}]},
+        {"asset":"hit-feedback","role":"tap, hit and streak feedback","needed":true,"existing":"generic highlight","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-animation","source":"pad squash, radial pulse, beat-token dissolve"},
+        {"asset":"completion","role":"rhythm completion visual","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"both drums + three beat pulses"},
+        {"asset":"system-icons","role":"play, pause, repeat, back","needed":true,"existing":"Flutter media icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave3-timeline-detail",
+      "title_ar": "رحلة الحضارة",
+      "engine": "timeline_map",
+      "age_group": "9-12",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A cartographer's travel desk links three historically cautious event cards across North Africa and the wider Islamic world. All dates, place names, and map coordinates stay runtime-controlled.",
+      "palette": ["#315D64", "#B77745", "#D8B967", "#EFE4CE", "#4A4351"],
+      "reviews": ["ART_REVIEW_PENDING", "HISTORICAL_REVIEW_PENDING"],
+      "existing": ["asset-color-mountain", "asset-color-book", "asset-color-boat"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 history journey game cover: a cartographer's desk with three unlabeled illustrated cards showing an ancient North African harbour, a medieval scholarly library interior, and a medieval traveller with pack animals beside a coastal route; blank map and timeline beneath, no dates, no text, no inscriptions."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.5]},
+        {"asset":"map-timeline-background","role":"gameplay map and timeline surface","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 history game background: blank parchment cartography desk with a subtle coast-shaped decorative edge and one empty timeline band, no borders asserted as factual, no place labels, no dates, no text."},
+        {"asset":"event-card-set","role":"three historical event illustrations","needed":true,"existing":"generic mountain/book/boat SVGs","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"3 x 1000x750","status":"PLANNED","operation":"text-to-image","set_style":"consistent museum gouache-and-ink cards, muted daylight, respectful people, no text or invented inscriptions","members":[{"id":"event-carthage","subject":"educational reconstruction of an ancient North African Mediterranean harbour viewed from shore, round harbour forms suggested without asserting exact details, no text"},{"id":"event-house-wisdom","subject":"medieval Baghdad scholarly library interior with books, scrolls and scholars in historically modest clothing, no readable writing"},{"id":"event-ibn-battuta","subject":"medieval North African traveller with pack animals overlooking a coastal route, identity not treated as a photographic portrait, no text"}]},
+        {"asset":"map-markers","role":"event pins, selected and correct states","needed":true,"existing":"generic pins","reuse_acceptable":true,"action":"EDIT","transparent":true,"size":"runtime vector","status":"DESIGN_READY","operation":"flutter-vector-treatment","source":"compass-pin treatment; map data and labels remain runtime"},
+        {"asset":"completion","role":"journey completion visual","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"three approved cards + route glow"},
+        {"asset":"system-icons","role":"map, timeline, info, reset, back","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave3-block-advanced",
+      "title_ar": "مسار متقدم",
+      "engine": "block_code",
+      "age_group": "9-12",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "An amber rover navigates a desert research circuit toward a teal beacon. Distinct obstacle silhouettes and a sand-slate palette make this an advanced expedition rather than a recolour of the first robot game.",
+      "palette": ["#D47A35", "#218C8D", "#F1C46B", "#EDE4D2", "#303D4A"],
+      "reviews": ["ART_REVIEW_PENDING"],
+      "existing": ["asset-complete-robot"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 advanced coding game cover: an original amber six-wheeled research rover navigates a clean desert circuit grid toward a teal survey beacon around boulders, a low electric gate and a supply crate; strategic and readable, no arrows, no text."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.52]},
+        {"asset":"grid-environment","role":"gameplay board environment","needed":true,"existing":"plain grid","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"runtime vector + generated edge texture","status":"DESIGN_READY","operation":"flutter-composite","source":"precise procedural grid with quiet desert research border"},
+        {"asset":"rover-token","role":"player token","needed":true,"existing":"same generic robot as first game","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Age 9-12 coding player token: original compact amber six-wheeled research rover with teal sensor mast and blank side panels, front three-quarter view, complete silhouette, plain removable background, no logos or writing."},
+        {"asset":"goal-beacon","role":"goal","needed":true,"existing":"generic goal shape","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Age 9-12 coding goal token: compact teal survey beacon with a soft golden light ring and blank panel, front three-quarter view, complete silhouette, plain removable background, no text."},
+        {"asset":"obstacle-set","role":"three grid obstacles","needed":true,"existing":"generic blocked cells","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"3 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same desert research expedition material, camera and one-cell footprint","members":[{"id":"obstacle-boulder","subject":"rounded sandstone boulder cluster, low and compact"},{"id":"obstacle-gate","subject":"low teal electric field gate with visible side posts and blank center glow"},{"id":"obstacle-supply-crate","subject":"amber expedition supply crate with blank panels and rounded safe corners"}]},
+        {"asset":"command-icons","role":"move, turn, repeat and conditional visuals","needed":true,"existing":"generic text/Material icons","reuse_acceptable":true,"action":"EDIT","transparent":true,"size":"runtime vector","status":"DESIGN_READY","operation":"flutter-vector-treatment","source":"familiar arrows, loop and path-condition icons in expedition chips"},
+        {"asset":"completion","role":"goal reached visual","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"rover-token + goal-beacon + route pulse"},
+        {"asset":"system-icons","role":"run, clear, undo, back","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    },
+    {
+      "game_id": "game-wave3-sim-saturating",
+      "title_ar": "توازن الماء",
+      "engine": "sim_lab",
+      "age_group": "9-12",
+      "effective_status": "VISUAL_ASSETS_PENDING",
+      "art_direction": "A precise tabletop solubility investigation using a transparent beaker, water, measuring spoon, and salt crystals. Runtime code owns the saturating relationship and safety copy; art stays supportive and scientifically legible.",
+      "palette": ["#247B8A", "#E4A84F", "#D7EEF0", "#F5F3EC", "#49545E"],
+      "reviews": ["ART_REVIEW_PENDING", "SCIENTIFIC_REVIEW_PENDING"],
+      "existing": ["asset-oloom-leaf-bg"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 solubility simulation game cover: a clear beaker of water, measuring spoon with salt crystals, and a simple blank result graph panel on a safe school lab table, clean educational composition, no labels, no numbers, no text, no fake molecular diagram."},
+        {"asset":"thumbnail","role":"catalog thumbnail","needed":true,"existing":"none","reuse_acceptable":false,"action":"EDIT","transparent":false,"size":"800x800","status":"PLANNED","operation":"derive-square","source":"cover","focal_point":[0.5,0.5]},
+        {"asset":"lab-background","role":"gameplay background","needed":true,"existing":"unbound generic leaf background","reuse_acceptable":false,"action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 solubility simulation background: pale school chemistry bench with safety mat and a few distant glassware silhouettes at edges, large clear center for controls and graph, no salt, no beaker in center, no text."},
+        {"asset":"solubility-apparatus-set","role":"experiment support objects","needed":true,"existing":"none","reuse_acceptable":false,"action":"GENERATE","transparent":true,"size":"3 x 768x768","status":"PLANNED","operation":"text-to-image+remove-background","set_style":"same clean educational illustration, front three-quarter camera and neutral lab light","members":[{"id":"beaker-water","subject":"clear straight-sided laboratory beaker half-filled with clean blue-tinted water, no graduations or text"},{"id":"salt-spoon","subject":"small measuring spoon holding white salt crystals, complete handle visible, no labels"},{"id":"salt-crystals","subject":"small compact pile of coarse white salt crystals, clearly granular and not sugar-branded"}]},
+        {"asset":"variable-and-result","role":"salt control and saturation response","needed":true,"existing":"generic slider/options","reuse_acceptable":true,"action":"EDIT","transparent":false,"size":"runtime","status":"DESIGN_READY","operation":"flutter-vector-treatment","source":"canonical coded relationship and runtime labels; no generated chart data"},
+        {"asset":"safety-treatment","role":"adult-supervision note","needed":true,"existing":"Flutter safety icon and runtime Arabic copy","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector/text","status":"APPROVED_FOR_IMPLEMENTATION"},
+        {"asset":"completion","role":"experiment completion visual","needed":true,"existing":"generic completion state","reuse_acceptable":false,"action":"EDIT","transparent":true,"size":"runtime","status":"DESIGN_READY","operation":"flutter-composite","source":"approved apparatus + coded plateau highlight"},
+        {"asset":"system-icons","role":"predict, reset, safety, back","needed":true,"existing":"Flutter system icons","reuse_acceptable":true,"action":"REUSE","transparent":true,"size":"runtime vector","status":"APPROVED_FOR_IMPLEMENTATION"}
+      ]
+    }
+  ]
+}

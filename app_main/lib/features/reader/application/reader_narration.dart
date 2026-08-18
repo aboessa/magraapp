@@ -1,20 +1,18 @@
 import '../../home/data/majarra_api_client.dart';
+import '../../home/domain/content_models.dart';
 
 /// The outcome of resolving a page's narration into something playable.
-///
-/// A sealed result rather than throwing so the reader can distinguish "no
-/// narration for this page" (a truthful, common state while content is being
-/// recorded) from "choose a profile first" (a fixable precondition) and render
-/// the right message for each, without pattern-matching exception strings.
 sealed class NarrationSource {
   const NarrationSource();
 }
 
 class NarrationPlayable extends NarrationSource {
-  const NarrationPlayable({required this.streamUrl, required this.authorization});
+  const NarrationPlayable({
+    required this.streamUrl,
+    required this.authorization,
+  });
 
-  /// Worker-relative stream path; resolved against the API base before use. The
-  /// media worker never returns an R2 URL (`تشفير المحتوي.md:1192`).
+  /// Worker-relative stream path; resolved against the configured API origin.
   final String streamUrl;
 
   /// Short-lived capability token sent as an `Authorization` header, never in
@@ -25,17 +23,9 @@ class NarrationPlayable extends NarrationSource {
 class NarrationUnavailable extends NarrationSource {
   const NarrationUnavailable(this.reason);
 
-  /// Arabic, safe-for-display reason.
   final String reason;
 }
 
-/// Parses a `POST /books/:id/audio-sessions` envelope into a [NarrationSource].
-///
-/// Pure and synchronous so it can be unit tested against captured payloads with
-/// no network. A missing `data` object, or a data object without both a
-/// `stream_url` and an `authorization`, is a page with no published narration —
-/// the 404 the server returns for that case is mapped to the same unavailable
-/// state upstream.
 NarrationSource resolveNarrationSource(Map<String, dynamic> envelope) {
   final data = envelope['data'];
   if (data is! Map) {
@@ -53,33 +43,38 @@ NarrationSource resolveNarrationSource(Map<String, dynamic> envelope) {
   return NarrationPlayable(streamUrl: streamUrl, authorization: authorization);
 }
 
-/// Requests narration for one page, translating transport errors into a
-/// [NarrationUnavailable] so the caller never has to catch here.
-///
-/// A 404 ("Protected narration is unavailable") is the normal "no narration for
-/// this page" outcome and is not surfaced as an error.
+/// Requests protected narration for one localized page of either a canonical
+/// story or a book. Public narration URLs bypass this helper in the reader.
 Future<NarrationSource> fetchPageNarration(
   MajarraApiClient api, {
-  required String bookId,
+  required ReaderContentType contentType,
+  required String contentId,
   required String childId,
   required String pageId,
+  required String language,
+  String? bubbleId,
 }) async {
   try {
     final session = await api.createAudioSession(
-      bookId: bookId,
+      bookId: contentType == ReaderContentType.book ? contentId : null,
+      storyId: contentType == ReaderContentType.story ? contentId : null,
       childId: childId,
       pageId: pageId,
+      language: language,
+      bubbleId: bubbleId,
     );
     return resolveNarrationSource(session);
-  } on MajarraApiException catch (e) {
-    final raw = e.message;
-    if (raw.contains('404') || raw.contains('unavailable')) {
+  } on MajarraApiException catch (error) {
+    if (error.statusCode == 404) {
       return const NarrationUnavailable('لم يُسجَّل صوت لهذه الصفحة بعد.');
     }
-    if (raw.contains('401') || raw.contains('403')) {
+    if (error.statusCode == 401 || error.statusCode == 403) {
       return const NarrationUnavailable(
         'تعذّر تشغيل الصوت. تحقّق من تسجيل الدخول والاشتراك.',
       );
+    }
+    if (error.statusCode == 451) {
+      return const NarrationUnavailable('هذا الصوت غير متاح في منطقتك حاليًا.');
     }
     return const NarrationUnavailable('تعذّر تجهيز الصوت. حاول مرة أخرى.');
   }

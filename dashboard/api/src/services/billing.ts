@@ -1,7 +1,7 @@
-import type { Env } from '../lib/db';
-import { callDurable, familyStub } from '../lib/doClient';
-import { sha256Base64Url } from '../lib/security';
-import { verifyGooglePlaySubscription } from './googlePlay';
+import type { Env } from '../lib/db.ts';
+import { callDurable, familyStub } from '../lib/doClient.ts';
+import { sha256Base64Url } from '../lib/security.ts';
+import { verifyGooglePlaySubscription } from './googlePlay.ts';
 
 type Envelope<T> = { success: boolean; data?: T; error?: string };
 

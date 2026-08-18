@@ -26,6 +26,7 @@
 /// `warnings` (surface in the CMS, do not block a draft save).
 
 import { engineContract, REVIEW_OWNERS } from './engineContracts.ts';
+import { validateDrawingLevel } from './drawingValidator.ts';
 import { validateEngineRules } from './enginePackRules.ts';
 import { validateAgainstSchema, type Schema } from './jsonSchema.ts';
 
@@ -366,6 +367,20 @@ export function validateGamePack(
     if (coloring?.enabled === true && ctx.forPublish) {
       const palette = asArray(coloring.palette);
       if (!palette.length) errors.push(`${label}: colouring is enabled but no palette is defined`);
+    }
+    // Drawing-specific geometry/region validation (participates in publish gate).
+    // Delegates to the canonical drawingValidator so region/polygon/asset checks
+    // live in one place and are testable without a D1 handle.
+    const drawingErrors = validateDrawingLevel(level, {
+      knownAssetIds: ctx.knownAssetIds,
+      readyAssetIds: ctx.readyAssetIds,
+    });
+    // Only surface drawingValidator errors that are not already covered above
+    // to avoid duplicate messages for scoring/completion.
+    for (const e of drawingErrors) {
+      if (e.includes('region') || e.includes('polygon') || e.includes('template_asset') || e.includes('tappable')) {
+        errors.push(`${label}: ${e}`);
+      }
     }
   }
 

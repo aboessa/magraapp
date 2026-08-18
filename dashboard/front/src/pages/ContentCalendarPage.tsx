@@ -215,71 +215,96 @@ export function ContentCalendarPage() {
   const conflictEntries = Object.entries(payload?.conflict_summary ?? {}).filter(([, count]) => count > 0)
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div>
+    <div className="page-stack" style={{ gap: 16 }}>
+      <section className="page-intro" style={{ alignItems: 'flex-start' }}>
+        <div style={{ minWidth: 0 }}>
           <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.intro}</p>
+          <h2 style={{ fontSize: 22, letterSpacing: '-.03em' }}>{text.title}</h2>
+          <p style={{ maxWidth: 720, marginTop: 6 }}>{text.intro}</p>
+        </div>
+        <div className="page-intro__actions" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <span className="exec-head__live" style={{ height: 32, padding:'0 10px' }}>
+            <i />{events.length} {locale==='ar' ? 'حدث' : 'events'}
+          </span>
         </div>
       </section>
 
       {payload && !payload.scheduler_available && (
-        <section className="panel panel--notice">
-          <strong><Icon name="warning" size={15} /> {text.noSchedulerTitle}</strong>
-          <p>{payload.scheduler_note}</p>
-        </section>
-      )}
-
-      <ListToolbar
-        searchValue={list.query}
-        onSearchChange={list.setQuery}
-        searchPlaceholder={text.search}
-        fields={fields}
-        values={list.filters}
-        defaults={DEFAULTS}
-        onApply={(next) => list.setFilters(next)}
-        onClear={list.clearFilters}
-        onRemove={(key) => list.setFilter(key as keyof typeof DEFAULTS, '')}
-        trailing={
-          <SavedViewsMenu
-            storageKey="content-calendar"
-            currentSearch={list.search}
-            onApply={(search) => navigate(`${adminPath('calendar')}${search}`)}
-          />
-        }
-      />
-
-      <ScheduleToolbar
-        view={view}
-        anchor={anchor}
-        onView={(next) => list.setView(next)}
-        onAnchor={(date) => setAnchorKey(date.toISOString().slice(0, 10))}
-      />
-
-      {conflictEntries.length > 0 && (
-        <div className="filter-chips" aria-label={text.conflicts}>
-          {conflictEntries.map(([key, count]) => (
-            <button
-              key={key}
-              type="button"
-              className={`filter-chip filter-chip--button ${list.filters.conflict === key ? 'filter-chip--on' : ''}`}
-              onClick={() => list.setFilter('conflict', list.filters.conflict === key ? '' : key)}
-            >
-              <Icon name="warning" size={12} />
-              {text.conflictNames[key] ?? key} <strong>{count}</strong>
-            </button>
-          ))}
+        <div className="sched__alert" role="alert">
+          <span className="sched__alert-icon"><Icon name="warning" size={18} /></span>
+          <div style={{ minWidth:0 }}>
+            <strong>{text.noSchedulerTitle}</strong>
+            <p>{payload.scheduler_note}</p>
+          </div>
         </div>
       )}
 
-      {notice && <p className="form-note" role="status">{notice}</p>}
+      <section className="sched__toolbar-card">
+        <div className="sched__toolbar-top">
+          <ListToolbar
+            searchValue={list.query}
+            onSearchChange={list.setQuery}
+            searchPlaceholder={text.search}
+            fields={fields}
+            values={list.filters}
+            defaults={DEFAULTS}
+            onApply={(next) => list.setFilters(next)}
+            onClear={list.clearFilters}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULTS, '')}
+            trailing={
+              <SavedViewsMenu
+                storageKey="content-calendar"
+                currentSearch={list.search}
+                onApply={(search) => navigate(`${adminPath('calendar')}${search}`)}
+              />
+            }
+          />
+        </div>
+        <div className="sched__toolbar-bottom">
+          <ScheduleToolbar
+            view={view}
+            anchor={anchor}
+            onView={(next) => list.setView(next)}
+            onAnchor={(date) => setAnchorKey(date.toISOString().slice(0, 10))}
+          />
+          <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+            <span className="data-note" style={{ fontSize:12, fontWeight:600, background:'var(--surface)', border:'1px solid var(--line)', padding:'6px 10px', borderRadius:999 }}>
+              {text.counts(events.length, payload?.total_unfiltered ?? 0)}
+            </span>
+            {conflictEntries.length > 0 && (
+              <span className="filter-chip" style={{ background:'rgba(245,158,11,.10)', borderColor:'rgba(245,158,11,.22)', color:'#92400e' }}>
+                <Icon name="warning" size={12} />{conflictEntries.length} {text.conflicts}
+              </span>
+            )}
+          </div>
+        </div>
+        {conflictEntries.length > 0 && (
+          <div className="filter-chips" aria-label={text.conflicts} style={{ padding:'10px 16px', borderTop:'1px solid var(--line)', background:'var(--surface-3)' }}>
+            {conflictEntries.map(([key, count]) => (
+              <button
+                key={key}
+                type="button"
+                className={`filter-chip filter-chip--button ${list.filters.conflict === key ? 'filter-chip--on' : ''}`}
+                onClick={() => list.setFilter('conflict', list.filters.conflict === key ? '' : key)}
+              >
+                <Icon name="warning" size={12} />
+                {text.conflictNames[key] ?? key} <strong>{count}</strong>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {notice && (
+        <div className="inline-alert inline-alert--info" role="status" style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <Icon name="check" size={14} />{notice}
+        </div>
+      )}
 
       {loading && !payload ? <LoadingState label={text.loading} />
         : error ? <ErrorState message={error} onRetry={() => void load()} />
           : (
-            <>
-              <p className="meta-line">{text.counts(events.length, payload?.total_unfiltered ?? 0)}</p>
+            <div className="sched__card">
               <ScheduleCalendar
                 view={view}
                 anchor={anchor}
@@ -288,16 +313,31 @@ export function ContentCalendarPage() {
                 onOpen={(event) => navigate(adminPath(event.admin_route))}
                 onMove={(event, date) => void move(event, date)}
               />
-            </>
+            </div>
           )}
 
       {payload && payload.unavailable.length > 0 && (
-        <section className="panel">
-          <div className="panel__header"><h3>{text.unavailable}</h3></div>
-          <div className="entity-form">
-            <ul className="planned-list">
-              {payload.unavailable.map((entry) => <li key={entry.type}>{entry.type} — {entry.reason}</li>)}
-            </ul>
+        <section className="panel" style={{ overflow:'hidden' }}>
+          <div className="panel__header">
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <span style={{ width:32, height:32, display:'grid', placeItems:'center', borderRadius:9, background:'var(--surface-3)', border:'1px solid var(--line)', color:'var(--muted)' }}><Icon name="calendar" size={16} /></span>
+              <div>
+                <h3 style={{ margin:0 }}>{text.unavailable}</h3>
+                <small style={{ color:'var(--muted)', fontSize:11 }}>{payload.unavailable.length} {locale==='ar' ? 'نوع غير مجدول' : 'unscheduled types'}</small>
+              </div>
+            </div>
+          </div>
+          <div style={{ display:'grid', gap:10, padding:14, gridTemplateColumns:'repeat(auto-fill, minmax(260px,1fr))' }}>
+            {payload.unavailable.map((entry) => (
+              <div key={entry.type} style={{ display:'flex', gap:10, padding:'12px 13px', border:'1px solid var(--line)', borderRadius:12, background:'var(--surface-2)' }}>
+                <span style={{ width:28, height:28, flex:'0 0 28px', display:'grid', placeItems:'center', borderRadius:8, background:'var(--surface-3)', color:'var(--muted)' }}><Icon name="clock" size={14} /></span>
+                <div style={{ minWidth:0, fontSize:12, lineHeight:1.5 }}>
+                  <span>{entry.type} — {entry.reason}</span>
+                  <br />
+                  <span style={{ fontSize:11, color:'var(--text-soft)' }}>{TYPE_LABELS[entry.type]?.[locale] ?? ''}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       )}

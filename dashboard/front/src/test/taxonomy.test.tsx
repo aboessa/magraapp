@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest'
+﻿import { describe, expect, test, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TaxonomyPage } from '../pages/TaxonomyPage'
@@ -93,7 +93,7 @@ describe('TaxonomyPage', () => {
     mount()
 
     const link = await screen.findByRole('link', { name: 'مغامرة' })
-    expect(link).toHaveAttribute('href', '/iamnotsite/series?category=category-adventure')
+    expect(link).toHaveAttribute('href', '/admin/series?category=category-adventure')
   })
 
   test('a planet card opens its workspace, not an edit dialog', async () => {
@@ -103,7 +103,7 @@ describe('TaxonomyPage', () => {
     mount()
 
     expect(await screen.findByRole('link', { name: 'أبجد' }))
-      .toHaveAttribute('href', '/iamnotsite/planets/abjad')
+      .toHaveAttribute('href', '/admin/planets/abjad')
   })
 
   test('the summary counts every category while the list shows the filtered subset', async () => {

@@ -14,6 +14,7 @@
 		"API_VERSION": "v1",
 		"EMAIL_FROM": "accounts@majarra.app",
 		"EMAIL_VERIFICATION_URL": "https://majarra.app/verify",
+		"PASSWORD_RESET_URL": "https://majarra.app/reset-password",
 		// CDN fronting the PUBLIC asset bucket. Catalogue artwork (posters, banners,
 		// thumbnails) is served from here anonymously. Private video and
 		// downloadables must never sit behind this hostname: they stay in
@@ -76,9 +77,20 @@
 			{
 				"name": "STORY_COLLAB",
 				"class_name": "StoryCollab"
+			},
+			// Rate-limit counters, one object per bucket. A Durable Object rather
+			// than KV because a counter needs strong consistency and KV offers
+			// ~1 write/s per key with reads stale for up to a minute — see
+			// src/do/RateLimiter.ts.
+			{
+				"name": "RATE_LIMITER",
+				"class_name": "RateLimiter"
 			}
 		]
 	},
+	// Durable Object class migrations. Additive and forward-only, and entirely
+	// separate from the D1 migration ledger in `migrations/` — nothing here reads
+	// or writes `d1_migrations`.
 	"migrations": [
 		{
 			"tag": "v1",
@@ -97,6 +109,12 @@
 			"new_sqlite_classes": [
 				"StoryCollab"
 			]
+		},
+		{
+			"tag": "v4",
+			"new_sqlite_classes": [
+				"RateLimiter"
+			]
 		}
 	],
 	"triggers": {
@@ -109,6 +127,10 @@
 			{
 				"queue": "family-events-dev",
 				"binding": "FAMILY_EVENTS"
+			},
+			{
+				"queue": "content-factory-jobs-dev",
+				"binding": "CONTENT_FACTORY_JOBS"
 			}
 		],
 		"consumers": [
@@ -121,6 +143,18 @@
 			},
 			{
 				"queue": "family-events-dev-dlq",
+				"max_batch_size": 10,
+				"max_batch_timeout": 5
+			},
+			{
+				"queue": "content-factory-jobs-dev",
+				"max_batch_size": 1,
+				"max_batch_timeout": 1,
+				"max_retries": 10,
+				"dead_letter_queue": "content-factory-jobs-dev-dlq"
+			},
+			{
+				"queue": "content-factory-jobs-dev-dlq",
 				"max_batch_size": 10,
 				"max_batch_timeout": 5
 			}
@@ -150,6 +184,7 @@
 				"API_VERSION": "v1",
 				"EMAIL_FROM": "accounts@majarra.app",
 				"EMAIL_VERIFICATION_URL": "https://majarra.app/verify",
+		"PASSWORD_RESET_URL": "https://majarra.app/reset-password",
 				"PUBLIC_ASSET_BASE_URL": "https://cdn.majarra.app"
 			},
 			"observability": {
@@ -193,6 +228,10 @@
 					{
 						"name": "STORY_COLLAB",
 						"class_name": "StoryCollab"
+					},
+					{
+						"name": "RATE_LIMITER",
+						"class_name": "RateLimiter"
 					}
 				]
 			},
@@ -214,6 +253,12 @@
 					"new_sqlite_classes": [
 						"StoryCollab"
 					]
+				},
+				{
+					"tag": "v4",
+					"new_sqlite_classes": [
+						"RateLimiter"
+					]
 				}
 			],
 			"triggers": {
@@ -226,6 +271,10 @@
 					{
 						"queue": "family-events",
 						"binding": "FAMILY_EVENTS"
+					},
+					{
+						"queue": "content-factory-jobs",
+						"binding": "CONTENT_FACTORY_JOBS"
 					}
 				],
 				"consumers": [
@@ -238,6 +287,18 @@
 					},
 					{
 						"queue": "family-events-dlq",
+						"max_batch_size": 10,
+						"max_batch_timeout": 5
+					},
+					{
+						"queue": "content-factory-jobs",
+						"max_batch_size": 1,
+						"max_batch_timeout": 1,
+						"max_retries": 10,
+						"dead_letter_queue": "content-factory-jobs-dlq"
+					},
+					{
+						"queue": "content-factory-jobs-dlq",
 						"max_batch_size": 10,
 						"max_batch_timeout": 5
 					}

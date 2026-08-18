@@ -8,17 +8,9 @@ import '../widgets/home_destinations.dart';
 import '../widgets/majarra_portal.dart';
 
 class TvHomeShell extends StatefulWidget {
-  const TvHomeShell({
-    required this.catalog,
-    this.useV2Home = true,
-    super.key,
-  });
+  const TvHomeShell({required this.catalog, super.key});
 
   final HomeCatalog catalog;
-
-  /// Selects the home surface. `/` renders the original feed; `/home-v2`
-  /// passes `true` so the new cinematic home stays reachable for comparison.
-  final bool useV2Home;
 
   @override
   State<TvHomeShell> createState() => _TvHomeShellState();
@@ -46,7 +38,6 @@ class _TvHomeShellState extends State<TvHomeShell> {
       catalog: widget.catalog,
       isTelevision: true,
       onOpenPlanet: (planetId) => context.push('/planets?planetId=$planetId'),
-      useV2Home: widget.useV2Home,
       onSelectDestination: _select,
       onOpenPortal: _showPortal,
     );
@@ -57,7 +48,9 @@ class _TvHomeShellState extends State<TvHomeShell> {
         child: FocusTraversalGroup(
           policy: ReadingOrderTraversalPolicy(),
           child: SafeArea(
-            minimum: EdgeInsets.all(MediaQuery.of(context).size.shortestSide * 0.055),
+            minimum: EdgeInsets.all(
+              MediaQuery.of(context).size.shortestSide * 0.055,
+            ),
             child: Row(
               children: [
                 DecoratedBox(
@@ -96,8 +89,15 @@ class _TvHomeShellState extends State<TvHomeShell> {
                             onPressed: () => context.push('/tv-pairing'),
                             icon: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
-                              child: const Icon(Icons.qr_code_2_rounded, color: Colors.white, size: 18),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.qr_code_2_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 14),
@@ -114,7 +114,7 @@ class _TvHomeShellState extends State<TvHomeShell> {
                       NavigationRailDestination(
                         icon: Icon(Icons.play_circle_outline_rounded),
                         selectedIcon: Icon(Icons.play_circle_rounded),
-                        label: Text('فيديوهات قصيرة'),
+                        label: Text('مقاطع الحلقات'),
                       ),
                       NavigationRailDestination(
                         icon: Icon(Icons.search_rounded),
@@ -153,15 +153,40 @@ class _TvHomeShellState extends State<TvHomeShell> {
     );
   }
 
+  void _openReading() {
+    final story = widget.catalog.stories.firstOrNull;
+    if (story != null) {
+      context.push('/reader/${story.id}?contentType=story');
+      return;
+    }
+    final book = widget.catalog.books
+        .where((item) => item.type != 'audio_story')
+        .firstOrNull;
+    if (book != null) context.push('/reader/${book.id}?contentType=book');
+  }
+
+  void _openListening() {
+    final book = widget.catalog.books
+        .where((item) => item.type == 'audio_story' || item.isPlayable)
+        .firstOrNull;
+    if (book == null) return;
+    context.push(
+      Uri(path: '/audio', queryParameters: {'bookId': book.id}).toString(),
+    );
+  }
+
   void _showPortal() {
     showMajarraPortal(
       context,
       catalog: widget.catalog,
       onExplore: () => context.push('/planets'),
       onOpenPlanet: (id) => context.push('/planets?planetId=$id'),
-      onOpenLibrary: () => setState(() => _selectedIndex = 2),
-      onOpenProfile: () => setState(() => _selectedIndex = 3),
+      onOpenLibrary: () => context.push('/watchlist'),
+      onOpenProfile: () => _select(HomeDestinationIndex.profile),
+      onOpenReading: _openReading,
+      onOpenListening: _openListening,
       onOpenSeries: (item) => context.push('/series/${item.id}'),
+      onOpenGame: (item) => context.push('/game/${item.id}'),
     );
   }
 }

@@ -43,15 +43,27 @@ void main() {
     });
 
     test('all tokens must be present, order-independent', () {
-      expect(ArabicSearch.matchesAllTokens('ارقام مغامرات', 'مغامرات الأرقام'), isTrue);
-      expect(ArabicSearch.matchesAllTokens('ارقام حكايات', 'مغامرات الأرقام'), isFalse);
+      expect(
+        ArabicSearch.matchesAllTokens('ارقام مغامرات', 'مغامرات الأرقام'),
+        isTrue,
+      );
+      expect(
+        ArabicSearch.matchesAllTokens('ارقام حكايات', 'مغامرات الأرقام'),
+        isFalse,
+      );
     });
   });
 
   group('searchCatalog', () {
     final catalog = HomeCatalog(
       planets: const [
-        Planet(id: 'p1', name: 'كوكب العلوم', description: 'اكتشف', colorHex: '#fff', imageAsset: 'a'),
+        Planet(
+          id: 'p1',
+          name: 'كوكب العلوم',
+          description: 'اكتشف',
+          colorHex: '#fff',
+          imageAsset: 'a',
+        ),
       ],
       spotlights: const [],
       series: const [
@@ -81,7 +93,12 @@ void main() {
         ),
       ],
       experiences: const [
-        ExperienceItem(id: 'g1', title: 'لعبة الذاكرة', subtitle: 'تدريب', imageAsset: 'a'),
+        ExperienceItem(
+          id: 'g1',
+          title: 'لعبة الذاكرة',
+          subtitle: 'تدريب',
+          imageAsset: 'a',
+        ),
       ],
       books: const [
         BookItem(
@@ -94,7 +111,7 @@ void main() {
           posterAsset: 'a',
         ),
       ],
-      source: ContentSource.local,
+      source: ContentSource.bundled,
     );
 
     test('empty query returns nothing', () {
@@ -103,18 +120,44 @@ void main() {
 
     test('finds a series by normalised title', () {
       final results = searchCatalog(catalog, 'الارقام');
-      expect(results.any((r) => r.kind == SearchResultKind.series && r.id == 's1'), isTrue);
+      expect(
+        results.any((r) => r.kind == SearchResultKind.series && r.id == 's1'),
+        isTrue,
+      );
     });
 
-    test('searches across content types', () {
-      expect(searchCatalog(catalog, 'حكايه').any((r) => r.kind == SearchResultKind.book), isTrue);
-      expect(searchCatalog(catalog, 'الذاكره').any((r) => r.kind == SearchResultKind.game), isTrue);
-      expect(searchCatalog(catalog, 'العلوم').any((r) => r.kind == SearchResultKind.planet), isTrue);
-      expect(searchCatalog(catalog, 'السباق').any((r) => r.kind == SearchResultKind.episode), isTrue);
+    test('searches across content types with reachable routes', () {
+      expect(
+        searchCatalog(
+          catalog,
+          'حكايه',
+        ).any((r) => r.kind == SearchResultKind.book),
+        isTrue,
+      );
+      // Packaged experiences are not server game rows and therefore stay out
+      // of discovery until a real game listing endpoint supplies routable ids.
+      expect(searchCatalog(catalog, 'الذاكره'), isEmpty);
+      expect(
+        searchCatalog(
+          catalog,
+          'العلوم',
+        ).any((r) => r.kind == SearchResultKind.planet),
+        isTrue,
+      );
+      expect(
+        searchCatalog(
+          catalog,
+          'السباق',
+        ).any((r) => r.kind == SearchResultKind.episode),
+        isTrue,
+      );
     });
 
     test('result routes point at the right destinations', () {
-      final series = searchCatalog(catalog, 'الارقام').firstWhere((r) => r.kind == SearchResultKind.series);
+      final series = searchCatalog(
+        catalog,
+        'الارقام',
+      ).firstWhere((r) => r.kind == SearchResultKind.series);
       expect(series.route, '/series/s1');
     });
   });

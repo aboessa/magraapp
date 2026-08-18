@@ -1,23 +1,23 @@
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { callDurable, familyStub } from '../lib/doClient';
-import { cachedPublicJson } from '../lib/publicCache';
-import { contentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { callDurable, familyStub } from '../lib/doClient.ts';
+import { cachedPublicJson } from '../lib/publicCache.ts';
+import { contentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass.ts';
 import {
   applyArtworkUrl,
   artworkSelect,
   EPISODE_THUMBNAIL_ROLES,
   publicAssetBaseUrl,
-} from '../lib/assetUrls';
-import { authenticateParent, createMediaToken, mediaIsConfigured, type ParentPrincipal } from '../lib/parentAuth';
+} from '../lib/assetUrls.ts';
+import { authenticateParent, createMediaToken, mediaIsConfigured, type ParentPrincipal } from '../lib/parentAuth.ts';
 import {
   availabilityContext,
   availabilityFor,
   availabilityForBatch,
   availabilityRefusal,
 } from '../lib/requestGeo.ts';
-import type { AgeTrack, Plan } from '../lib/familyPolicy';
+import type { AgeTrack, Plan } from '../lib/familyPolicy.ts';
 
 type AppEnv = { Bindings: Env };
 type Envelope<T> = { success: boolean; data?: T; error?: string };
@@ -160,7 +160,9 @@ episodesRoute.get('/:id', async (c) => {
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
     const episode = await queryFirst<Record<string, unknown>>(c.env.DB, `
       SELECT e.id, e.series_id, e.season_id, e.episode_number, e.title_ar,
-        e.description_ar, e.thumbnail_url, e.duration_seconds, e.captions_ar_url,
+        e.description_ar, e.thumbnail_url, e.duration_seconds, e.captions_ar_url, e.dubs,
+        e.intro_start_ms, e.intro_end_ms, e.recap_start_ms, e.recap_end_ms, e.credits_start_ms,
+        e.preview_sprite_url, e.preview_sprite_vtt_url, e.quality_renditions,
         e.age_min, e.age_max, e.new_words, e.skills, e.mastery_criteria,
         e.parent_guide_ar, e.questions, e.linked_game_id, e.linked_book_id,
         e.printable_url, e.family_activity_ar, e.is_free, e.published_at,
@@ -184,6 +186,60 @@ episodesRoute.get('/:id', async (c) => {
       if (typeof value !== 'string') return fallback;
       try { return JSON.parse(value) as T; } catch { return fallback; }
     };
+    // Normalized tracks (real) — no fake EN/FR when absent
+    const audioTracks = await queryAll<Record<string, unknown>>(c.env.DB, `
+      SELECT t.id, t.language, t.label, t.is_default, t.sort_order, t.status,
+        ca.id AS asset_id, ca.r2_key, ca.bucket, ca.mime_type, ca.visibility, ca.status AS asset_status
+      FROM episode_audio_tracks t
+      JOIN content_assets ca ON ca.id = t.asset_id
+      WHERE t.episode_id = ? AND t.status = 'ready' AND ca.status = 'ready'
+      ORDER BY t.sort_order ASC, t.language ASC
+    `, [id]);
+    const subtitleTracks = await queryAll<Record<string, unknown>>(c.env.DB, `
+      SELECT t.id, t.language, t.label, t.format, t.is_default, t.sort_order, t.status,
+        ca.id AS asset_id, ca.r2_key, ca.bucket, ca.mime_type, ca.visibility, ca.status AS asset_status
+      FROM episode_subtitle_tracks t
+      JOIN content_assets ca ON ca.id = t.asset_id
+      WHERE t.episode_id = ? AND t.status = 'ready' AND ca.status = 'ready'
+      ORDER BY t.sort_order ASC, t.language ASC
+    `, [id]);
+
+    // Backward compat: legacy dubs JSON -> audioTracks fallback when normalized empty
+    let effectiveAudio = audioTracks;
+    if (effectiveAudio.length === 0 && episode) {
+      const dubs = parsed<string[]>(episode.dubs, []);
+      const legacy = dubs.filter((v) => ['ar','en','fr'].includes(v)).slice(0, 1);
+      if (legacy.length) {
+        effectiveAudio = legacy.map((lang, idx) => ({
+          id: `legacy-${lang}`,
+          language: lang,
+          label: lang === 'ar' ? 'العربية' : lang === 'en' ? 'English' : 'Français',
+          is_default: idx === 0 ? 1 : 0,
+          sort_order: idx,
+          status: 'ready',
+          asset_id: null,
+          r2_key: null,
+          is_legacy: 1,
+        }));
+      }
+    }
+    // Backward compat: legacy captions_ar_url -> subtitleTracks fallback
+    let effectiveSubs = subtitleTracks;
+    if (effectiveSubs.length === 0 && episode?.captions_ar_url) {
+      effectiveSubs = [{
+        id: 'legacy-ar',
+        language: 'ar',
+        label: 'العربية',
+        format: 'vtt',
+        is_default: 1,
+        sort_order: 0,
+        status: 'ready',
+        asset_id: null,
+        legacy_url: episode.captions_ar_url,
+      }];
+    }
+
+    const qualityRenditions = parsed<unknown[]>(episode?.quality_renditions, []);
     return {
       success: true,
       data: {
@@ -193,6 +249,13 @@ episodesRoute.get('/:id', async (c) => {
         parent_guide: episode?.parent_guide_ar ?? null,
         family_activity: episode?.family_activity_ar ?? null,
         new_words: parsed(episode?.new_words, []),
+        audio_tracks: effectiveAudio,
+        subtitle_tracks: effectiveSubs,
+        quality_renditions: Array.isArray(qualityRenditions) ? qualityRenditions : [],
+        intro_range: episode?.intro_start_ms != null && episode?.intro_end_ms != null ? { start_ms: episode.intro_start_ms, end_ms: episode.intro_end_ms } : null,
+        recap_range: episode?.recap_start_ms != null && episode?.recap_end_ms != null ? { start_ms: episode.recap_start_ms, end_ms: episode.recap_end_ms } : null,
+        credits_start_ms: episode?.credits_start_ms ?? null,
+        preview_sprite: episode?.preview_sprite_url ? { url: episode.preview_sprite_url, vtt_url: episode.preview_sprite_vtt_url ?? null } : null,
       },
     };
   });
@@ -237,10 +300,19 @@ episodesRoute.post('/:id/playback-sessions', async (c) => {
   if (!created.ok || !lease) return forward(created);
 
   const token = await issueMediaToken(c.env, auth.principal, lease.lease_id, catalog.media);
+  // If renditions exist, advertise HLS master. The lease travels in the URL
+  // because the manifest revalidates it: the manifest no longer creates a lease
+  // of its own, so it has to be told which authorised one it belongs to. A client
+  // that follows `stream_url` verbatim needs no change.
+  const hasRenditions = await queryFirst<{ c: number }>(c.env.DB, `SELECT COUNT(*) as c FROM episode_renditions WHERE episode_id=? AND status='ready'`, [c.req.param('id')]);
+  const streamUrl = hasRenditions && hasRenditions.c > 0
+    ? `/api/v1/episodes/${c.req.param('id')}/hls/master.m3u8?lease_id=${encodeURIComponent(lease.lease_id)}`
+    : `/api/v1/media/assets/${catalog.media.asset_id}`;
   return c.json({
     success: true,
     data: {
-      stream_url: `/api/v1/media/assets/${catalog.media.asset_id}`,
+      lease_id: lease.lease_id,
+      stream_url: streamUrl,
       authorization: `Bearer ${token}`,
       expires_at: new Date(lease.expires_at).toISOString(),
       capability_expires_in: 180,
@@ -347,6 +419,112 @@ episodesRoute.post('/:id/progress', async (c) => {
     },
   });
   return forward(result);
+});
+
+/// `GET /api/v1/episodes/:id/hls/master.m3u8?lease_id=…`
+///
+/// ## What was wrong
+///
+/// This handler authenticated the parent and then handed out media capability
+/// tokens for private video with **no entitlement check, no territory check and
+/// no playback lease** — it fabricated `lid: hls-${Date.now()}`, so nothing was
+/// counted against concurrency and nothing tied the tokens to an authorised
+/// session. It also fell back to the primary private asset when no renditions
+/// existed, which meant a free-plan account that could merely sign in could
+/// stream paid video. The correctly gated path is
+/// `POST /:id/playback-sessions` above.
+///
+/// The manifest now **requires an existing lease** rather than inventing one.
+/// `/playback/start` remains the only place a lease is created, and this endpoint
+/// revalidates it through the same DO call the heartbeat uses, so plan and
+/// concurrency are re-checked on every manifest fetch.
+episodesRoute.get('/:id/hls/master.m3u8', async (c) => {
+  if (!mediaIsConfigured(c.env)) return c.text('#EXTM3U\n', 503);
+  const auth = await authenticateParent(c.env, c.req.header('Authorization'));
+  if (!auth.ok) return c.text('#EXTM3U\n', 401);
+
+  // Supplied by `/playback-sessions`, which embeds it in the `stream_url` it
+  // returns, so a client that follows that URL needs no change.
+  const leaseId = c.req.query('lease_id')?.trim() ?? '';
+  if (!leaseId) return c.text('#EXTM3U\n', 400);
+
+  const episodeId = c.req.param('id');
+  const catalog = await catalogMedia(c.env, episodeId);
+  if (!catalog) return c.text('#EXTM3U\n', 404);
+
+  // Territory is enforced here as well as at lease creation: a manifest is
+  // refetched on every quality switch and after every app resume, so a
+  // check made only at session start would expire silently.
+  const context = availabilityContext(c.req.raw, c.env);
+  const decision = await availabilityFor(c.env, 'episode', catalog.media.id, context);
+  if (!decision.available) return c.text('#EXTM3U\n', 451);
+
+  // Revalidating through the heartbeat re-runs the plan and concurrency rules the
+  // Durable Object owns, so entitlement cannot drift between session start and
+  // manifest fetch.
+  const requiredPlan: Plan = catalog.media.is_free ? 'free' : catalog.media.price_tier;
+  const validated = await callDurable<Envelope<{ lease_id: string }>>(
+    familyStub(c.env, auth.principal.parentId),
+    '/playback/heartbeat',
+    {
+      body: {
+        session_id: auth.principal.sessionId,
+        lease_id: leaseId,
+        required_plan: requiredPlan,
+        allowed_tracks: catalog.tracks,
+      },
+    },
+  );
+  const lease = validated.data?.success ? validated.data.data : null;
+  if (!validated.ok || !lease) {
+    // The DO's own refusal status is preserved: 402 for plan, 409 for
+    // concurrency, 404 for an unknown or expired lease.
+    return c.text('#EXTM3U\n', (validated.status || 403) as 400);
+  }
+
+  const rens = await queryAll<{ id: string; label: string; asset_id: string; width: number | null; height: number | null; bitrate_kbps: number | null }>(c.env.DB, `SELECT id, label, asset_id, width, height, bitrate_kbps FROM episode_renditions WHERE episode_id=? AND status='ready' ORDER BY bitrate_kbps DESC`, [episodeId]);
+
+  // No fallback to the primary asset. A manifest is a promise of adaptive
+  // variants; if none is ready the client must use the progressive URL the
+  // playback session already gave it, and receiving an empty manifest is a
+  // clearer failure than silently serving the highest-quality private master.
+  if (!rens.length) return c.text('#EXTM3U\n#EXT-X-VERSION:3\n', 200, { 'Content-Type': 'application/vnd.apple.mpegurl', 'Cache-Control': 'no-store' });
+
+  // One query for every rendition asset rather than one per rendition.
+  const assetIds = [...new Set(rens.map((rendition) => rendition.asset_id))];
+  const assetRows = await queryAll<CatalogMedia>(
+    c.env.DB,
+    `SELECT ca.id AS asset_id, ca.r2_key, ca.bucket, ca.mime_type, ca.original_filename, ca.version, ca.etag
+       FROM content_assets ca
+      WHERE ca.id IN (${assetIds.map(() => '?').join(', ')})`,
+    assetIds,
+  );
+  const assetsById = new Map(assetRows.map((row) => [String(row.asset_id), row]));
+
+  const lines: string[] = ['#EXTM3U', '#EXT-X-VERSION:3'];
+  for (const rendition of rens) {
+    const mediaRow = assetsById.get(rendition.asset_id);
+    if (!mediaRow) continue;
+    const token = await createMediaToken(c.env, {
+      sub: auth.principal.parentId,
+      sid: auth.principal.sessionId,
+      // The verified lease, never a fabricated one: this is what ties the
+      // capability to an authorised, counted playback session.
+      lid: lease.lease_id,
+      aid: mediaRow.asset_id,
+      r2_key: mediaRow.r2_key!,
+      bucket: mediaRow.bucket as 'media' | 'thumbs',
+      mime_type: mediaRow.mime_type,
+      filename: mediaRow.original_filename,
+      asset_version: mediaRow.version,
+      etag: mediaRow.etag,
+    });
+    const bw = rendition.bitrate_kbps ? rendition.bitrate_kbps * 1000 : 800000;
+    const res = rendition.width && rendition.height ? `RESOLUTION=${rendition.width}x${rendition.height},` : '';
+    lines.push(`#EXT-X-STREAM-INF:BANDWIDTH=${bw},${res}CODECS="avc1.42e01e,mp4a.40.2"`);
+    lines.push(`/api/v1/media/assets/${mediaRow.asset_id}?token=${encodeURIComponent(token)}`);
+  }
+  return c.text(lines.join('\n'), 200, { 'Content-Type': 'application/vnd.apple.mpegurl', 'Cache-Control': 'private, max-age=30' });
 });
 
 export default episodesRoute;

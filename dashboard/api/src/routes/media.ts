@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { mediaIsConfigured, verifyMediaToken } from '../lib/parentAuth';
+import type { Env } from '../lib/db.ts';
+import { mediaIsConfigured, verifyMediaToken } from '../lib/parentAuth.ts';
 
 type AppEnv = { Bindings: Env };
 
@@ -16,7 +16,8 @@ function cleanEtag(value: string) {
 
 mediaRoute.get('/assets/:assetId', async (c) => {
   if (!mediaIsConfigured(c.env)) return c.json({ success: false, error: 'Secure media delivery is not configured' }, 503);
-  const claims = await verifyMediaToken(c.env, c.req.header('Authorization'));
+  const authHeader = c.req.header('Authorization') ?? (c.req.query('token') ? `Bearer ${c.req.query('token')}` : undefined);
+  const claims = await verifyMediaToken(c.env, authHeader);
   const assetId = c.req.param('assetId');
   if (!claims || claims.aid !== assetId) return c.json({ success: false, error: 'Unauthorized' }, 401);
 

@@ -77,7 +77,14 @@ export function SeriesDetailPage() {
   if (!series) return <EmptyState title={text.notFound} description="" />
 
   const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar
-  const rights = series as unknown as { rights_owner?: string | null; rights_expiry?: string | null; rights_territories?: string | null }
+  const rights = series as unknown as {
+    rights_owner?: string | null; rights_expiry?: string | null; rights_territories?: string | null
+    source_type?: string | null; source_reference?: string | null
+    verse_surah?: number | null; verse_ayah?: number | null
+    hadith_collection?: string | null; hadith_number?: string | null; hadith_grade?: string | null
+    religious_reviewer_id?: string | null; religious_reviewer_version?: number | null; religious_approved_at?: string | null
+    visual_restrictions?: string | null
+  }
 
   const episodesBySeason = new Map<string, typeof series.episodes>()
   for (const episode of series.episodes) {
@@ -122,6 +129,29 @@ export function SeriesDetailPage() {
                     <div className="field"><span>{text.production}</span><strong>{series.production_level}</strong></div>
                     <div className="field"><span>{text.visualStyle}</span><strong>{series.visual_style || '—'}</strong></div>
                     <div className="field"><span>{text.updated}</span><strong>{formatDate(series.updated_at, locale)}</strong></div>
+                    {(series.planet_id === 'islamic' || series.planet_id === 'iman') && (
+                      <>
+                        <div className="field"><span>المصدر الشرعي</span><strong>{rights.source_type ?? '—'}</strong></div>
+                        <div className="field"><span>المرجع الكامل</span><strong>{rights.source_reference ?? '—'}</strong></div>
+                        {rights.source_type === 'quran' && (
+                          <>
+                            <div className="field"><span>السورة</span><strong>{rights.verse_surah ?? '—'}</strong></div>
+                            <div className="field"><span>الآية</span><strong>{rights.verse_ayah ?? '—'}</strong></div>
+                          </>
+                        )}
+                        {rights.source_type === 'hadith' && (
+                          <>
+                            <div className="field"><span>مصدر الحديث</span><strong>{rights.hadith_collection ?? '—'}</strong></div>
+                            <div className="field"><span>رقم الحديث</span><strong>{rights.hadith_number ?? '—'}</strong></div>
+                            <div className="field"><span>درجة الحديث</span><strong>{rights.hadith_grade ?? '—'}</strong></div>
+                          </>
+                        )}
+                        <div className="field"><span>المراجع الشرعي</span><strong>{rights.religious_reviewer_id ?? '—'}</strong></div>
+                        <div className="field"><span>نسخة المراجعة</span><strong>{rights.religious_reviewer_version ?? '—'}</strong></div>
+                        <div className="field"><span>تاريخ الاعتماد</span><strong>{rights.religious_approved_at ? formatDate(rights.religious_approved_at, locale) : '—'}</strong></div>
+                        <div className="field" style={{ gridColumn: '1 / -1' }}><span>القيود البصرية</span><strong style={{ wordBreak: 'break-all' }}>{rights.visual_restrictions ?? '—'}</strong></div>
+                      </>
+                    )}
                   </div>
                 </article>
               </div>

@@ -1,41 +1,12 @@
 /// Route target for `/game/:gameId`.
 ///
-/// ## What this replaced
-///
-/// The route used to build `game_page.dart`: a memory board with eight emoji
-/// compiled into the app, a `_pairsPerLevel = [3, 4, 6, 8]` difficulty curve, a
-/// deck seeded from an `ExperienceItem.id`, and no pack, no server call and no
-/// attempt reporting. It looked like a game and was really a demo — the same
-/// mechanic `memory_flip` now implements in `engine/wave_one_engines.dart`, except
-/// that nothing a CMS editor could publish had any effect on it.
-///
-/// Deleting the page without replacing the route would have left a dead entry
-/// point: `home_feed.dart` and `home_feed_model.dart` both push `/game/${id}`.
-/// Pointing the route at the pack-driven [GameScreen] keeps those call sites
-/// unchanged and makes the same tap open real content instead of placeholder
-/// content.
-///
-/// ## Why this file is separate from the screen
-///
-/// [GameScreen] takes a pack and a controller as plain arguments so a widget test
-/// can pump it without a `ProviderScope`. This file is the only place that knows
-/// where a child id, a pack, an audio service and an attempt reporter come from,
-/// which is the same split `my_collection_route.dart` uses.
-///
-/// ## Why an unavailable state is the correct outcome, not a fallback game
-///
-/// A game id that the server will not serve — unpublished, outside the child's age
-/// range, or simply not in the CMS yet — renders a calm message. It deliberately
-/// does *not* fall back to a locally generated board. A local fallback is what made
-/// the emoji deck look acceptable for as long as it did: the app appeared to have
-/// content, so the missing content was invisible.
-///
-/// The catalogue's `experiences` list is still local (`LocalCatalog.experiences`),
-/// so its ids are not real `games` rows and will legitimately produce this state
-/// until the catalogue carries server game ids. That is a visible content gap
-/// rather than a hidden one, which is the intended trade.
+/// This is the only layer that knows how a selected child, a server-authored
+/// game, session services and the pack-driven [GameScreen] fit together. A game
+/// the server will not serve remains unavailable; it never falls back to an
+/// invented local board that could hide a publication or entitlement problem.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -47,12 +18,12 @@ import '../../engine/game_pack.dart';
 import '../../engine/game_session_controller.dart';
 import 'game_screen.dart';
 
-/// The highest `pack_version` this build implements.
-///
-/// A pack that declares more is refused with "update the app" rather than run
-/// half-understood: the CMS can publish faster than app stores ship, and a level
-/// shape this build cannot read is not something to guess at.
+/// Highest pack schema this build can parse safely.
 const int kSupportedPackVersion = 1;
+
+/// Highest implementation version supplied by the registered engines in this
+/// build. This is intentionally separate from [kSupportedPackVersion].
+const int kSupportedEngineVersion = 1;
 
 class GameRoute extends ConsumerWidget {
   const GameRoute({required this.gameId, super.key});
@@ -61,11 +32,8 @@ class GameRoute extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final child = ref.watch(childProvider);
-    final childId = child.activeChildId;
+    final childId = ref.watch(childProvider).activeChildId;
 
-    // Resolved from the active selection rather than the path, so a deep link
-    // cannot name another child and cannot report progress against them.
     if (childId == null || childId.isEmpty) {
       return const _GameMessage(
         icon: Icons.face_outlined,
@@ -78,40 +46,46 @@ class GameRoute extends ConsumerWidget {
     final resolved = ref.watch(gamePackProvider(request));
 
     return resolved.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, _) => _GameMessage(
-        icon: error is GamePackParseException
-            ? Icons.extension_off_outlined
-            : Icons.cloud_off_outlined,
-        title: 'لم نتمكّن من فتح هذه اللعبة',
-        body: 'جرّب لعبة أخرى، وسنعيد المحاولة لاحقًا.',
-        // Useful in development, harmless to a child, and never the headline.
-        detail: '$error',
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, _) {
+        final malformed = error is GamePackParseException;
+        return _GameMessage(
+          icon: malformed
+              ? Icons.extension_off_outlined
+              : Icons.cloud_off_outlined,
+          title: 'لم نتمكّن من فتح هذه اللعبة',
+          body: malformed
+              ? 'بيانات اللعبة غير مكتملة الآن. جرّب لعبة أخرى أو أعد المحاولة.'
+              : 'تحقق من الاتصال ثم أعد المحاولة.',
+          detail: kDebugMode ? '$error' : null,
+          actionLabel: 'إعادة المحاولة',
+          onAction: () => ref.invalidate(gamePackProvider(request)),
+        );
+      },
       data: (game) => _GameHost(
+        key: ValueKey(
+          '${game.gameId}:${game.pack.packId}:${game.engineVersion}',
+        ),
         game: game,
         childId: childId,
         isTelevision: ref
             .watch(deviceProfileProvider)
-            .maybeWhen(data: (profile) => profile.isTelevision, orElse: () => false),
+            .maybeWhen(
+              data: (profile) => profile.isTelevision,
+              orElse: () => false,
+            ),
       ),
     );
   }
 }
 
-/// Owns the session for one resolved game.
-///
-/// Stateful because [GameSessionController] is a `ChangeNotifier` with a lifetime:
-/// it must be built once per pack and disposed, or the audio service keeps playing
-/// into a screen that is gone. Building it inside `build` would restart the level
-/// on every rebuild, which a child would see as a board that resets itself.
 class _GameHost extends ConsumerStatefulWidget {
   const _GameHost({
     required this.game,
     required this.childId,
     required this.isTelevision,
+    super.key,
   });
 
   final ResolvedGame game;
@@ -154,61 +128,75 @@ class _GameHostState extends ConsumerState<_GameHost> {
       controller: _controller,
       registry: buildDefaultRegistry(),
       isTelevision: widget.isTelevision,
-      engineVersionSupported: kSupportedPackVersion,
-      // Only drawing levels ever show a save button; the store is passed
-      // unconditionally because the screen already decides that from the level.
+      requiredEngineVersion: widget.game.engineVersion,
+      supportedEngineVersion: kSupportedEngineVersion,
+      supportedPackVersion: kSupportedPackVersion,
       creationStore: ref.watch(localCreationStoreProvider),
     );
   }
 }
 
-/// A calm, honest dead end.
-///
-/// Shaped like `game_screen.dart`'s unavailable view on purpose: a child should not
-/// be able to tell whether the reason was "no child selected", "not published" or
-/// "no network", because none of those are their fault and none of them are errors
-/// they can act on.
+/// A calm, honest dead end with an optional recovery action.
 class _GameMessage extends StatelessWidget {
   const _GameMessage({
     required this.icon,
     required this.title,
     required this.body,
     this.detail,
+    this.actionLabel,
+    this.onAction,
   });
 
   final IconData icon;
   final String title;
   final String body;
   final String? detail;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 64),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                body,
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              if (detail != null) ...[
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 64),
                 const SizedBox(height: 16),
-                Text(detail!, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  body,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                if (detail != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    detail!,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                if (onAction != null && actionLabel != null) ...[
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: onAction,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: Text(actionLabel!),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

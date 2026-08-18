@@ -1,9 +1,10 @@
-import { Suspense } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Suspense, useEffect } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { CommandPalette, useCommandPalette } from './CommandPalette'
 import { usePreferences } from '../context/preferences'
+import { ADMIN_BASE } from '../lib/adminPath'
 
 /**
  * قشرة اللوحة.
@@ -20,6 +21,28 @@ import { usePreferences } from '../context/preferences'
 export function AdminLayout() {
   const { locale, menuOpen, setMenuOpen } = usePreferences()
   const palette = useCommandPalette()
+  const location = useLocation()
+
+  // ضمان أن كل مسار داخل /admin له عنوان تبويب صحيح، لا يبقى على
+  // "تسجيل الدخول" بعد الانتقال. الصفحات الفردية قد تكتب عنوانًا أدق
+  // في useEffect خاص بها وستتفوّق لأنها تُنفّذ بعد هذا التأثير الأب.
+  useEffect(() => {
+    const raw = location.pathname.replace(/\/+$/, '') || '/'
+    const base = ADMIN_BASE
+    const isDashboard = raw === base || raw === `${base}/` || raw === '/' || raw === ''
+    if (isDashboard) {
+      document.title = locale === 'ar' ? 'لوحة التحكم · مجرة' : 'Dashboard · Majarra'
+    } else {
+      const withoutBase = raw.startsWith(base) ? raw.slice(base.length) : raw
+      const segment = withoutBase.split('/').filter(Boolean).pop() ?? ''
+      const pretty = segment ? segment.replace(/-/g, ' ') : ''
+      if (pretty) {
+        document.title = locale === 'ar' ? `${pretty} · لوحة التحكم · مجرة` : `${pretty} · Dashboard · Majarra`
+      } else {
+        document.title = locale === 'ar' ? 'لوحة التحكم · مجرة' : 'Dashboard · Majarra'
+      }
+    }
+  }, [location.pathname, locale])
 
   return (
     <div className="admin-shell">

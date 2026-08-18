@@ -1,14 +1,15 @@
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { cachedPublicJson } from '../lib/publicCache';
-import { contentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { cachedPublicJson } from '../lib/publicCache.ts';
+import { contentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass.ts';
+import { seasonEpisodeCountSelect } from '../lib/episodeCounts.ts';
 import {
   applyArtworkUrl,
   artworkSelect,
   publicAssetBaseUrl,
   SERIES_COVER_ROLES,
-} from '../lib/assetUrls';
+} from '../lib/assetUrls.ts';
 import {
   availabilityContext,
   availabilityFor,
@@ -151,10 +152,19 @@ seriesRoute.get('/:id', async (c) => {
       applyArtworkUrl(series, 'cover_asset', 'cover_url', publicAssetBaseUrl(c.env));
     }
     const [seasons, characters, objectives] = await Promise.all([
+      // Derived counts, not `seasons.episode_count`.
+      //
+      // This was the one place a child-facing payload carried the planning
+      // figure: a season row claiming 8 episodes while holding 0 was served to
+      // the app as `episode_count: 8`. `episodeCounts.ts` explains why the
+      // column is a plan rather than a count; a public catalogue read must
+      // answer "what exists", so the plan is not selected here at all.
       queryAll(c.env.DB, `
-        SELECT id, season_number, title_ar, theme_ar, description_ar, episode_count,
-          watch_order, release_date
-        FROM seasons WHERE series_id = ? AND status = 'published' ORDER BY season_number ASC
+        SELECT se.id, se.season_number, se.title_ar, se.theme_ar, se.description_ar,
+          se.watch_order, se.release_date,
+          ${seasonEpisodeCountSelect('se')}
+        FROM seasons se WHERE se.series_id = ? AND se.status = 'published'
+        ORDER BY se.season_number ASC
       `, [id]),
       queryAll(c.env.DB, `
         SELECT id, name_ar, role, age, description_ar, traits

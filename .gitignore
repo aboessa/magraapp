@@ -101,6 +101,11 @@ dashboard/api/_d1_backup_before_slate/
 dashboard/api/_completion_load.sql
 dashboard/api/_d1_backup_before_migrations/
 dashboard/api/_d1_backup_before_completion/
+# Full production exports are local recovery material and may contain user data.
+dashboard/api/_d1_backup_prod_*/
+
+# Editor/manual replacement scratch files are not source artifacts.
+*.dart.new
 
 # ---------------------------------------------------------------------------
 # Local media masters and safety copies — never committed.
@@ -122,3 +127,11 @@ videos/
 assets/
 audio/
 _backups/
+
+# Generated media-pipeline intermediates and local review reports.
+# Runtime assets live under app_main/assets; these can be regenerated locally.
+tools/playveo/output/
+tools/playveo/archive/
+tools/playveo/contact-sheets/
+.audit/
+semantic-review/

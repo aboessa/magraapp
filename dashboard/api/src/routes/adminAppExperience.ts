@@ -1,11 +1,29 @@
 import { Hono } from 'hono'
-import type { Env } from '../lib/db'
-import { queryAll, queryFirst } from '../lib/db'
-import { callDurable, familyStub } from '../lib/doClient'
-import { auditActor, requireAdmin, requirePermission } from '../lib/adminAuth'
-import { actorId, auditStatement } from '../lib/auditLog'
-import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation'
-import type { AdminSessionUser } from '../lib/adminUsers'
+import type { Env } from '../lib/db.ts'
+import { queryAll, queryFirst } from '../lib/db.ts'
+import { callDurable, familyStub } from '../lib/doClient.ts'
+import { auditActor, requireAdmin, requirePermission } from '../lib/adminAuth.ts'
+import { actorId, auditStatement } from '../lib/auditLog.ts'
+import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation.ts'
+import { pathParam } from '../lib/routeParams.ts'
+import type { AdminSessionUser } from '../lib/adminUsers.ts'
+import {
+  CONFIG_KEYS,
+  HOME_BLOCK_TYPES,
+  SYSTEM_BLOCK_TYPES,
+  TARGETING_DIMENSIONS,
+  homeContextFromQuery,
+  isScheduleOpen,
+  isSystemBlock,
+  parseBlockConfig,
+  parseTargeting,
+  parseVersionEnvelope,
+  resolveHomeBlocks,
+  snapshotFromRow,
+} from '../lib/homeExperience.ts'
+import type {
+  HomeBlockConfig, HomeBlockRow, HomeTargeting, HomeVersionEnvelope, ParseResult,
+} from '../lib/homeExperience.ts'
 
 type AppEnv = { Bindings: Env; Variables: { adminUser?: AdminSessionUser; adminIsLegacyKey?: boolean } }
 const route = new Hono<AppEnv>()
@@ -30,95 +48,521 @@ function parseJson(value: unknown, fallback: unknown) {
   }
 }
 
-// Home Experience Builder - يتحكم في تركيب الصفحة الرئيسية
+/* ==================================================== Home Experience Builder
+ *
+ * The builder controls the logged-in child's Home screen: which rows exist, in
+ * what order, under what titles, targeted at whom, scheduled when.
+ *
+ * ## What was wrong
+ *
+ * Every mutation here accepted whatever it was sent. `PATCH` wrote any
+ * `sort_order`, any targeting shape and any config keys, and did not check that
+ * the block existed — an unknown id returned 200 with `{ id }`, so the screen
+ * reported a successful save of nothing. `POST` derived ids from
+ * `Date.now()`, so two blocks created in the same millisecond collided on the
+ * primary key. Nothing was audited, and "rollback" restored a snapshot that had
+ * only ever captured `{id, block_type, title_ar}` — so it silently erased the
+ * block's targeting and config while reporting success.
+ *
+ * Validation, ordering and resolution now live in `lib/homeExperience.ts`, shared
+ * with the public `/home/resolved` endpoint so the preview below cannot disagree
+ * with what a child actually receives.
+ */
+
+/// The columns every read of a block needs. `SELECT *` is avoided so a later
+/// column cannot leak into a payload unnoticed.
+const BLOCK_COLUMNS = `id, block_type, title_ar, sort_order, is_active, is_draft,
+  scheduled_at, expires_at, version, targeting_json, config_json, created_at, updated_at`
+
+/// Serializes a stored row for the builder, parsing the two JSON columns.
+function blockPayload(row: Record<string, unknown>) {
+  const targeting = parseTargeting(parseStored(row.targeting_json))
+  const config = parseBlockConfig(parseStored(row.config_json))
+  return {
+    ...row,
+    targeting: targeting.ok ? targeting.value : {},
+    config: config.ok ? config.value : {},
+    // Stated per row so the builder can disable the content picker on system
+    // blocks instead of offering a choice the server will not honour.
+    is_system: isSystemBlock(String(row.block_type), (config.ok ? config.value : {}) as Record<string, unknown>),
+    /// True when the stored JSON does not survive validation. The builder shows
+    /// this rather than silently presenting a normalized version of a row it
+    /// would refuse to save back.
+    targeting_invalid: !targeting.ok ? targeting.error : null,
+    config_invalid: !config.ok ? config.error : null,
+  }
+}
+
+function parseStored(raw: unknown): Record<string, unknown> {
+  if (typeof raw !== 'string' || !raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+/// An ISO-8601 instant, or null. Returns undefined when the input is unusable.
+function isoInstant(raw: unknown): string | null | undefined {
+  if (raw === null || raw === '') return null
+  if (typeof raw !== 'string') return undefined
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) return undefined
+  return parsed.toISOString()
+}
+
+/// Loads a block row or returns null.
+async function loadBlock(env: Env, id: string) {
+  return queryFirst<Record<string, unknown>>(
+    env.DB, `SELECT ${BLOCK_COLUMNS} FROM home_experience_blocks WHERE id = ?`, [id],
+  )
+}
+
+/**
+ * A statement recording an immutable version row.
+ *
+ * Returned as a statement rather than executed so it can be batched with the
+ * mutation it describes: a version that is written outside the batch can survive
+ * a failed update, and a history that disagrees with the row is worse than none.
+ */
+function versionStatement(env: Env, envelope: HomeVersionEnvelope) {
+  return env.DB.prepare(
+    'INSERT INTO home_experience_versions (id, snapshot_json) VALUES (?, ?)',
+  ).bind(crypto.randomUUID(), JSON.stringify(envelope))
+}
+
 route.get('/home-experience', async (c) => {
-  const rows = await queryAll<Record<string, unknown>>(c.env.DB, `SELECT * FROM home_experience_blocks ORDER BY sort_order, created_at`)
-  // `queryAll<Record<string, unknown>>` rather than the untyped default: spreading a row of
-  // type `unknown` is not allowed (TS2698), and the previous code worked around the symptom
-  // with `(r as any)` on each field while leaving the spread itself broken.
+  const rows = await queryAll<Record<string, unknown>>(
+    c.env.DB,
+    `SELECT ${BLOCK_COLUMNS} FROM home_experience_blocks ORDER BY sort_order, id`,
+  )
   return c.json({
     success: true,
-    data: rows.map((row) => ({
-      ...row,
-      targeting: JSON.parse(String(row.targeting_json ?? '{}')),
-      config: JSON.parse(String(row.config_json ?? '{}')),
-    })),
+    data: rows.map(blockPayload),
+    meta: {
+      // The builder renders its type picker from this rather than a hardcoded
+      // list of its own, which is how it came to offer `continue_journey` and
+      // `featured_series` — two types the table's CHECK constraint rejects, so
+      // creating either failed with an opaque database error.
+      block_types: HOME_BLOCK_TYPES,
+      system_block_types: SYSTEM_BLOCK_TYPES,
+      targeting_dimensions: TARGETING_DIMENSIONS,
+      config_keys: CONFIG_KEYS,
+    },
   })
 })
 
+/// Validates the writable fields shared by create and update.
+function blockFields(body: Record<string, unknown>): ParseResult<{
+  title_ar?: string | null
+  sort_order?: number
+  is_active?: number
+  is_draft?: number
+  scheduled_at?: string | null
+  expires_at?: string | null
+  targeting?: HomeTargeting
+  config?: HomeBlockConfig
+}> {
+  const value: Record<string, unknown> = {}
+
+  if (body.title_ar !== undefined) {
+    if (body.title_ar === null) value.title_ar = null
+    else if (typeof body.title_ar !== 'string' || body.title_ar.length > 200) {
+      return { ok: false, error: 'title_ar must be a string of at most 200 characters' }
+    } else value.title_ar = body.title_ar.trim()
+  }
+  if (body.sort_order !== undefined) {
+    const order = Number(body.sort_order)
+    if (!Number.isInteger(order) || order < 0 || order > 999) {
+      return { ok: false, error: 'sort_order must be an integer between 0 and 999' }
+    }
+    value.sort_order = order
+  }
+  for (const key of ['is_active', 'is_draft'] as const) {
+    if (body[key] === undefined) continue
+    if (typeof body[key] !== 'boolean' && body[key] !== 0 && body[key] !== 1) {
+      return { ok: false, error: `${key} must be a boolean` }
+    }
+    value[key] = body[key] === true || body[key] === 1 ? 1 : 0
+  }
+  for (const key of ['scheduled_at', 'expires_at'] as const) {
+    if (body[key] === undefined) continue
+    const instant = isoInstant(body[key])
+    if (instant === undefined) return { ok: false, error: `${key} must be an ISO-8601 instant or null` }
+    value[key] = instant
+  }
+  if (body.targeting !== undefined) {
+    const parsed = parseTargeting(body.targeting)
+    if (!parsed.ok) return parsed
+    value.targeting = parsed.value
+  }
+  if (body.config !== undefined) {
+    const parsed = parseBlockConfig(body.config)
+    if (!parsed.ok) return parsed
+    value.config = parsed.value
+  }
+  return { ok: true, value: value as never }
+}
+
 route.post('/home-experience', requirePermission('create'), async (c) => {
-  const body = await c.req.json().catch(() => null) as any
-  if (!body?.block_type) return c.json({ success: false, error: 'block_type required' }, 400)
-  const id = `block-${Date.now()}`
-  await c.env.DB.prepare(`INSERT INTO home_experience_blocks (id, block_type, title_ar, sort_order, is_active, is_draft, scheduled_at, expires_at, version, targeting_json, config_json) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id, body.block_type, body.title_ar || null, body.sort_order ?? 99, body.is_active ?? 1, body.is_draft ? 1 : 0, body.scheduled_at || null, body.expires_at || null, 1, JSON.stringify(body.targeting || {}), JSON.stringify(body.config || {})).run()
-  // snapshot for rollback
-  await c.env.DB.prepare(`INSERT INTO home_experience_versions (id, snapshot_json) VALUES (?,?)`).bind(`ver-${id}-${Date.now()}`, JSON.stringify({ id, block_type: body.block_type, title_ar: body.title_ar })).run().catch(() => {})
-  return c.json({ success: true, data: { id } }, 201)
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
+  if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400)
+
+  const blockType = typeof body.block_type === 'string' ? body.block_type : ''
+  if (!(HOME_BLOCK_TYPES as readonly string[]).includes(blockType)) {
+    // Checked here rather than left to the CHECK constraint so the operator gets
+    // the list of valid types instead of "SQLITE_CONSTRAINT".
+    return c.json({
+      success: false,
+      error: `block_type must be one of: ${HOME_BLOCK_TYPES.join(', ')}`,
+    }, 400)
+  }
+  const fields = blockFields(body)
+  if (!fields.ok) return c.json({ success: false, error: fields.error }, 400)
+
+  const scheduledAt = fields.value.scheduled_at ?? null
+  const expiresAt = fields.value.expires_at ?? null
+  if (scheduledAt && expiresAt && expiresAt <= scheduledAt) {
+    return c.json({ success: false, error: 'expires_at must be after scheduled_at' }, 400)
+  }
+
+  // `crypto.randomUUID()` rather than `block-${Date.now()}`: the timestamp form
+  // collides on the primary key for two blocks created in the same millisecond,
+  // which is reachable from a script or a double-submitted form.
+  const id = crypto.randomUUID()
+  const sortOrder = fields.value.sort_order ?? 99
+  const isActive = fields.value.is_active ?? 1
+  const isDraft = fields.value.is_draft ?? 0
+  const targeting = fields.value.targeting ?? {}
+  const config = fields.value.config ?? {}
+
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      INSERT INTO home_experience_blocks
+        (id, block_type, title_ar, sort_order, is_active, is_draft, scheduled_at, expires_at,
+         version, targeting_json, config_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+    `).bind(
+      id, blockType, fields.value.title_ar ?? null, sortOrder, isActive, isDraft,
+      scheduledAt, expiresAt, JSON.stringify(targeting), JSON.stringify(config),
+    ),
+    versionStatement(c.env, {
+      format: 'home_block_v1',
+      block_id: id,
+      action: 'create',
+      actor_id: actorId(c),
+      before: null,
+      after: {
+        block_id: id, block_type: blockType, title_ar: fields.value.title_ar ?? null,
+        sort_order: sortOrder, is_active: isActive, is_draft: isDraft,
+        scheduled_at: scheduledAt, expires_at: expiresAt, targeting, config,
+      },
+    }),
+    auditStatement(c.env.DB, actorId(c), 'create', 'home_experience_block', id, { block_type: blockType }),
+  ])
+  const created = await loadBlock(c.env, id)
+  return c.json({ success: true, data: created ? blockPayload(created) : { id } }, 201)
 })
 
 route.patch('/home-experience/:id', requirePermission('edit_metadata'), async (c) => {
-  const body = await c.req.json().catch(() => null) as any
+  const id = pathParam(c, 'id')
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
+  if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400)
+
+  // Existence is checked before anything is written. Without this the handler
+  // returned 200 for an id that does not exist, so the builder reported a saved
+  // change that never happened.
+  const existing = await loadBlock(c.env, id)
+  if (!existing) return c.json({ success: false, error: 'Block not found' }, 404)
+
+  if (body.block_type !== undefined) {
+    // The type decides how the client renders the row and which content source
+    // feeds it. Changing it in place turns a saved editorial row into a different
+    // block with the same history, so it is refused: delete and create instead.
+    return c.json({
+      success: false,
+      error: 'block_type cannot be changed after creation; create a new block instead',
+    }, 400)
+  }
+  const fields = blockFields(body)
+  if (!fields.ok) return c.json({ success: false, error: fields.error }, 400)
+
+  const before = snapshotFromRow(existing as unknown as HomeBlockRow)
+  const merged = { ...before, ...fields.value }
+  if (merged.scheduled_at && merged.expires_at && merged.expires_at <= merged.scheduled_at) {
+    return c.json({ success: false, error: 'expires_at must be after scheduled_at' }, 400)
+  }
+
   const sets: string[] = []
   const params: unknown[] = []
-  const add = (col: string, val: unknown) => { sets.push(`${col}=?`); params.push(val) }
-  if (body.title_ar !== undefined) add('title_ar', body.title_ar)
-  if (body.sort_order !== undefined) add('sort_order', body.sort_order)
-  if (body.is_active !== undefined) add('is_active', body.is_active ? 1 : 0)
-  if (body.is_draft !== undefined) add('is_draft', body.is_draft ? 1 : 0)
-  if (body.scheduled_at !== undefined) add('scheduled_at', body.scheduled_at)
-  if (body.expires_at !== undefined) add('expires_at', body.expires_at)
-  if (body.version !== undefined) add('version', body.version)
-  if (body.targeting !== undefined) add('targeting_json', JSON.stringify(body.targeting))
-  if (body.config !== undefined) add('config_json', JSON.stringify(body.config))
-  if (!sets.length) return c.json({ success: false, error: 'No fields' }, 400)
-  await c.env.DB.prepare(`UPDATE home_experience_blocks SET ${sets.join(', ')}, updated_at=datetime('now') WHERE id=?`).bind(...params, c.req.param('id')).run()
-  return c.json({ success: true, data: { id: c.req.param('id') } })
+  const add = (column: string, value: unknown) => { sets.push(`${column} = ?`); params.push(value) }
+  if (fields.value.title_ar !== undefined) add('title_ar', fields.value.title_ar)
+  if (fields.value.sort_order !== undefined) add('sort_order', fields.value.sort_order)
+  if (fields.value.is_active !== undefined) add('is_active', fields.value.is_active)
+  if (fields.value.is_draft !== undefined) add('is_draft', fields.value.is_draft)
+  if (fields.value.scheduled_at !== undefined) add('scheduled_at', fields.value.scheduled_at)
+  if (fields.value.expires_at !== undefined) add('expires_at', fields.value.expires_at)
+  if (fields.value.targeting !== undefined) add('targeting_json', JSON.stringify(fields.value.targeting))
+  if (fields.value.config !== undefined) add('config_json', JSON.stringify(fields.value.config))
+  if (!sets.length) return c.json({ success: false, error: 'No supported fields supplied' }, 400)
+
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      UPDATE home_experience_blocks
+         SET ${sets.join(', ')}, version = version + 1, updated_at = datetime('now')
+       WHERE id = ?
+    `).bind(...params, id),
+    versionStatement(c.env, {
+      format: 'home_block_v1',
+      block_id: id,
+      action: 'update',
+      actor_id: actorId(c),
+      before,
+      after: { ...merged, block_id: id },
+    }),
+    auditStatement(c.env.DB, actorId(c), 'update', 'home_experience_block', id,
+      { fields: Object.keys(fields.value) }),
+  ])
+  const updated = await loadBlock(c.env, id)
+  return c.json({ success: true, data: updated ? blockPayload(updated) : { id } })
 })
 
-route.post('/home-experience/:id/rollback', requirePermission('edit_metadata'), async (c) => {
-  const id = c.req.param('id')
-  const ver = await c.env.DB.prepare(`SELECT snapshot_json FROM home_experience_versions WHERE id LIKE ? ORDER BY created_at DESC LIMIT 1`).bind(`ver-${id}%`).first() as any
-  if (!ver) return c.json({ success: false, error: 'No version found' }, 404)
-  const snap = JSON.parse(ver.snapshot_json)
-  await c.env.DB.prepare(`UPDATE home_experience_blocks SET title_ar=?, targeting_json=?, config_json=?, version=version+1 WHERE id=?`).bind(snap.title_ar, JSON.stringify(snap.targeting || {}), JSON.stringify(snap.config || {}), id).run()
-  return c.json({ success: true, data: { rolled_back: true } })
-})
+/**
+ * `GET /home-experience/:id/versions` — the real history.
+ *
+ * Returns only `home_block_v1` envelopes. Rows written by the previous
+ * implementation held three fields and no actor, so they cannot be presented as
+ * versions or rolled back to; they are counted in `meta.legacy_records` so the
+ * screen can say that older history exists but is not usable, rather than
+ * inventing entries.
+ */
+route.get('/home-experience/:id/versions', async (c) => {
+  const id = pathParam(c, 'id')
+  if (!await loadBlock(c.env, id)) return c.json({ success: false, error: 'Block not found' }, 404)
 
-route.post('/home-experience/reorder', requirePermission('edit_metadata'), async (c) => {
-  const body = await c.req.json().catch(() => null) as any
-  const order: string[] = body?.order
-  if (!Array.isArray(order)) return c.json({ success: false, error: 'order must be array of ids' }, 400)
-  for (let i = 0; i < order.length; i++) {
-    await c.env.DB.prepare(`UPDATE home_experience_blocks SET sort_order=? WHERE id=?`).bind(i, order[i]).run()
+  const rows = await queryAll<{ id: string; snapshot_json: string; created_at: string }>(
+    c.env.DB,
+    `SELECT id, snapshot_json, created_at FROM home_experience_versions
+      ORDER BY created_at DESC, id DESC LIMIT 200`,
+  )
+  let legacy = 0
+  const versions = []
+  for (const row of rows) {
+    const envelope = parseVersionEnvelope(row.snapshot_json)
+    if (!envelope) {
+      // Legacy rows are keyed `ver-<block-id>-<timestamp>`, so they can be
+      // attributed to a block even though their contents are unusable.
+      if (row.id.startsWith(`ver-${id}`)) legacy += 1
+      continue
+    }
+    if (envelope.block_id !== id) continue
+    versions.push({
+      id: row.id,
+      created_at: row.created_at,
+      action: envelope.action,
+      actor_id: envelope.actor_id,
+      /// Present so a screen can show what changed without a second request.
+      before: envelope.before,
+      after: envelope.after,
+      /// A version can be restored only when it records a state to restore to.
+      restorable: envelope.before !== null,
+    })
   }
-  return c.json({ success: true, data: { reordered: true } })
+  return c.json({
+    success: true,
+    data: versions,
+    meta: {
+      total: versions.length,
+      legacy_records: legacy,
+      /// Stated in the payload so a client cannot present history as complete.
+      note: legacy
+        ? 'Older records exist from a previous implementation that did not capture targeting or config; they are not restorable.'
+        : null,
+    },
+  })
+})
+
+/**
+ * `POST /home-experience/:id/rollback` — restores a recorded state.
+ *
+ * Takes an explicit `version_id`. The previous handler took the most recent
+ * snapshot matching a LIKE pattern, which meant an operator could not see or
+ * choose what they were restoring, and the restore itself wrote
+ * `snap.targeting || {}` from a snapshot that never contained targeting — so it
+ * blanked the block.
+ *
+ * The rollback is itself recorded as a version, so it can be undone.
+ */
+route.post('/home-experience/:id/rollback', requirePermission('publish'), async (c) => {
+  const id = pathParam(c, 'id')
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
+  const versionId = typeof body?.version_id === 'string' ? body.version_id : ''
+  if (!versionId) {
+    return c.json({
+      success: false,
+      error: 'version_id is required; call GET /admin/home-experience/:id/versions to choose one',
+    }, 400)
+  }
+
+  const current = await loadBlock(c.env, id)
+  if (!current) return c.json({ success: false, error: 'Block not found' }, 404)
+
+  const row = await queryFirst<{ snapshot_json: string }>(
+    c.env.DB, 'SELECT snapshot_json FROM home_experience_versions WHERE id = ?', [versionId],
+  )
+  if (!row) return c.json({ success: false, error: 'Version not found' }, 404)
+  const envelope = parseVersionEnvelope(row.snapshot_json)
+  if (!envelope || envelope.block_id !== id) {
+    return c.json({ success: false, error: 'That version does not describe this block' }, 400)
+  }
+  const target = envelope.before
+  if (!target) {
+    return c.json({
+      success: false,
+      error: 'That version records the creation of the block, so there is no earlier state to restore',
+    }, 400)
+  }
+
+  const before = snapshotFromRow(current as unknown as HomeBlockRow)
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      UPDATE home_experience_blocks
+         SET title_ar = ?, sort_order = ?, is_active = ?, is_draft = ?,
+             scheduled_at = ?, expires_at = ?, targeting_json = ?, config_json = ?,
+             version = version + 1, updated_at = datetime('now')
+       WHERE id = ?
+    `).bind(
+      target.title_ar, target.sort_order, target.is_active, target.is_draft,
+      target.scheduled_at, target.expires_at,
+      JSON.stringify(target.targeting), JSON.stringify(target.config), id,
+    ),
+    versionStatement(c.env, {
+      format: 'home_block_v1',
+      block_id: id,
+      action: 'rollback',
+      actor_id: actorId(c),
+      before,
+      after: target,
+    }),
+    auditStatement(c.env.DB, actorId(c), 'update', 'home_experience_block', id,
+      { rolled_back_to: versionId }),
+  ])
+  const restored = await loadBlock(c.env, id)
+  return c.json({
+    success: true,
+    data: { block: restored ? blockPayload(restored) : { id }, restored_from: versionId },
+  })
+})
+
+/**
+ * `POST /home-experience/reorder` — sets the order of every block at once.
+ *
+ * The submitted list must be the complete set of block ids. A partial list was
+ * previously accepted, and since it assigned indices from zero it produced
+ * duplicate `sort_order` values against the blocks it omitted — leaving the final
+ * order down to a database tie-break rather than the operator's intent.
+ */
+route.post('/home-experience/reorder', requirePermission('edit_metadata'), async (c) => {
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
+  const order = body?.order
+  if (!Array.isArray(order) || order.some((id) => typeof id !== 'string' || !id)) {
+    return c.json({ success: false, error: 'order must be an array of block ids' }, 400)
+  }
+  const ids = order as string[]
+  if (new Set(ids).size !== ids.length) {
+    return c.json({ success: false, error: 'order contains duplicate ids' }, 400)
+  }
+
+  const existing = await queryAll<{ id: string }>(
+    c.env.DB, 'SELECT id FROM home_experience_blocks',
+  )
+  const known = new Set(existing.map((row) => row.id))
+  const unknown = ids.filter((id) => !known.has(id))
+  if (unknown.length) {
+    return c.json({ success: false, error: `unknown block id(s): ${unknown.join(', ')}` }, 400)
+  }
+  const missing = existing.map((row) => row.id).filter((id) => !ids.includes(id))
+  if (missing.length) {
+    return c.json({
+      success: false,
+      error: `order must list every block; missing: ${missing.join(', ')}`,
+    }, 400)
+  }
+
+  // One batch, so an interrupted reorder cannot leave half the rows renumbered.
+  await c.env.DB.batch([
+    ...ids.map((id, index) => c.env.DB.prepare(
+      `UPDATE home_experience_blocks SET sort_order = ?, updated_at = datetime('now') WHERE id = ?`,
+    ).bind(index, id)),
+    auditStatement(c.env.DB, actorId(c), 'update', 'home_experience_order', 'all',
+      { order: ids }),
+  ])
+  return c.json({ success: true, data: { order: ids } })
 })
 
 route.delete('/home-experience/:id', requirePermission('archive'), async (c) => {
-  await c.env.DB.prepare(`DELETE FROM home_experience_blocks WHERE id=?`).bind(c.req.param('id')).run()
-  return c.json({ success: true, data: { deleted: true } })
+  const id = pathParam(c, 'id')
+  const existing = await loadBlock(c.env, id)
+  if (!existing) return c.json({ success: false, error: 'Block not found' }, 404)
+
+  await c.env.DB.batch([
+    c.env.DB.prepare('DELETE FROM home_experience_blocks WHERE id = ?').bind(id),
+    // The final state is recorded before the row goes, so a deletion is
+    // reviewable and the block's history does not end without explanation.
+    versionStatement(c.env, {
+      format: 'home_block_v1',
+      block_id: id,
+      action: 'delete',
+      actor_id: actorId(c),
+      before: snapshotFromRow(existing as unknown as HomeBlockRow),
+      after: null,
+    }),
+    auditStatement(c.env.DB, actorId(c), 'archive', 'home_experience_block', id,
+      { block_type: existing.block_type }),
+  ])
+  return c.json({ success: true, data: { id, deleted: true } })
 })
 
-// Preview - يبني JSON للصفحة حسب الاستهداف + الجدولة
+/**
+ * `GET /home-experience/preview` — what a given persona would receive.
+ *
+ * Resolved by `resolveHomeBlocks`, the same function `/api/v1/home/resolved`
+ * uses. It previously had its own filter that understood different dimensions, so
+ * the preview and the app could disagree; a preview that does not match
+ * production is worse than no preview.
+ */
 route.get('/home-experience/preview', async (c) => {
-  const track = c.req.query('track') || 'kids'
-  const country = c.req.query('country') || 'EG'
-  const platform = c.req.query('platform') || 'mobile'
-  const plan = c.req.query('plan') || 'family'
-  const isNewUser = c.req.query('is_new_user') === '1'
-  const now = new Date().toISOString()
-  const rows = await queryAll(c.env.DB, `SELECT * FROM home_experience_blocks WHERE is_active=1 AND is_draft=0 AND (scheduled_at IS NULL OR scheduled_at <= ?) AND (expires_at IS NULL OR expires_at > ?) ORDER BY sort_order`, [now, now])
-  const filtered = rows.filter((r: any) => {
-    const t = JSON.parse(r.targeting_json || '{}')
-    if (t.track && t.track !== track) return false
-    if (t.country && t.country !== country) return false
-    if (t.platform && t.platform !== platform) return false
-    if (t.plan && t.plan !== plan) return false
-    if (t.is_new_user !== undefined && Boolean(t.is_new_user) !== isNewUser) return false
-    return true
+  const context = homeContextFromQuery((key) => c.req.query(key))
+  const nowIso = new Date().toISOString()
+  const rows = await queryAll<HomeBlockRow>(
+    c.env.DB, `SELECT ${BLOCK_COLUMNS} FROM home_experience_blocks`,
+  )
+  const blocks = resolveHomeBlocks(rows, context, nowIso)
+  const total = rows.length
+  return c.json({
+    success: true,
+    data: {
+      blocks,
+      meta: {
+        ...context,
+        resolved_at: nowIso,
+        /// Real diagnostics: the screen used to print "Fallback applied: none"
+        /// unconditionally and compute exclusions from a list it had filtered
+        /// itself.
+        total_blocks: total,
+        matched: blocks.length,
+        excluded: total - blocks.length,
+        excluded_inactive: rows.filter((row) => Number(row.is_active) !== 1).length,
+        excluded_draft: rows.filter((row) => Number(row.is_draft) === 1).length,
+        excluded_schedule: rows.filter((row) => Number(row.is_active) === 1
+          && Number(row.is_draft) === 0 && !isScheduleOpen(row, nowIso)).length,
+        resolver: 'lib/homeExperience.ts — identical to /api/v1/home/resolved',
+      },
+    },
   })
-  return c.json({ success: true, data: { blocks: filtered, meta: { track, country, platform, plan, isNewUser } } })
 })
+
 
 // Devices
 //
@@ -246,7 +690,7 @@ route.get('/feature-flags', async (c) => {
 // والأجهزة والاستحقاقات المختصرة لحل المشكلة، لا hashes تثبيت أو شراء ولا
 // معرفات مزوّد أو حقول إسقاطات لا تعرضها الواجهة. لذلك لا تُستخدم SELECT *.
 route.get('/support/family/:id', async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const family = await queryFirst(c.env.DB, `
     SELECT parent_id, plan, status FROM family_projection WHERE parent_id = ?
   `, [id])
@@ -301,7 +745,7 @@ route.get('/support/family/:id', async (c) => {
 /// fingerprint, an operator never needs it to answer a question, and the narrow
 /// field set of the lookup above exists for the same reason.
 route.get('/support/family/:id/devices', async (c) => {
-  const id = c.req.param('id')
+  const id = pathParam(c, 'id')
   const family = await queryFirst<{ parent_id: string }>(c.env.DB, `
     SELECT parent_id FROM family_projection WHERE parent_id = ?
   `, [id])

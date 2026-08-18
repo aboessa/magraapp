@@ -30,7 +30,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get enterEmailAndPassword => 'أدخل البريد وكلمة المرور';
 
   @override
-  String get termsNotice => 'بالدخول توافق على الشروط وسياسة الخصوصية';
+  String get termsNotice =>
+      'يمكنك مراجعة معلومات الخصوصية والبيانات قبل المتابعة';
 
   @override
   String get registerButton => 'إنشاء حساب';
@@ -256,7 +257,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get supportHeadline => 'كيف نساعدك؟';
 
   @override
-  String get supportResponseTime => 'فريق مجرة جاهز للإجابة خلال 24 ساعة';
+  String get supportResponseTime => 'لا توجد مدة استجابة منشورة حاليًا';
 
   @override
   String get supportChannelPending => 'قناة التواصل قيد الإعداد';
@@ -328,4 +329,242 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get enable => 'تفعيل';
+
+  @override
+  String get creativeStudioTitle => 'استوديو الإبداع';
+
+  @override
+  String get myBoards => 'لوحاتي';
+
+  @override
+  String get drawLikeThis => 'ارسم مثلي';
+
+  @override
+  String get coloring => 'التلوين';
+
+  @override
+  String get tracing => 'التتبع';
+
+  @override
+  String get connectDots => 'صل النقاط';
+
+  @override
+  String get completeDrawing => 'أكمل الرسمة';
+
+  @override
+  String get copyPattern => 'انسخ النمط';
+
+  @override
+  String get drawFromPrompt => 'ارسم من الفكرة';
+
+  @override
+  String get newBoard => 'لوحة جديدة';
+
+  @override
+  String get newBlankBoard => 'لوحة بيضاء فارغة';
+
+  @override
+  String get continueDrawing => 'متابعة الرسم';
+
+  @override
+  String get startDrawing => 'ابدأ الرسم';
+
+  @override
+  String get chooseBoardType => 'اختر نوع اللوحة';
+
+  @override
+  String get portrait => 'طولي';
+
+  @override
+  String get landscape => 'عرضي';
+
+  @override
+  String get square => 'مربع';
+
+  @override
+  String get backgroundBlank => 'أبيض';
+
+  @override
+  String get backgroundSpace => 'فضاء';
+
+  @override
+  String get backgroundUnderwater => 'تحت الماء';
+
+  @override
+  String get backgroundGarden => 'حديقة';
+
+  @override
+  String get backgroundSky => 'سماء';
+
+  @override
+  String get backgroundRoom => 'غرفة';
+
+  @override
+  String get backgroundGrid => 'شبكة';
+
+  @override
+  String get brush => 'فرشاة';
+
+  @override
+  String get color => 'لون';
+
+  @override
+  String get brushSize => 'حجم الفرشاة';
+
+  @override
+  String get eraser => 'ممحاة';
+
+  @override
+  String get undo => 'تراجع';
+
+  @override
+  String get redo => 'إعادة';
+
+  @override
+  String get clear => 'مسح';
+
+  @override
+  String get clearConfirmTitle => 'مسح اللوحة؟';
+
+  @override
+  String get clearConfirmBody =>
+      'سيتم مسح كل الرسم. لا يمكن التراجع إلا عبر زر التراجع.';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String get saved => 'محفوظ';
+
+  @override
+  String get saving => 'جاري الحفظ';
+
+  @override
+  String get unsaved => 'غير محفوظ';
+
+  @override
+  String get saveAndExit => 'حفظ وخروج';
+
+  @override
+  String get discard => 'تجاهل';
+
+  @override
+  String get continueDrawingAction => 'متابعة الرسم';
+
+  @override
+  String get referenceShow => 'إظهار المثال';
+
+  @override
+  String get referenceHide => 'إخفاء المثال';
+
+  @override
+  String get referenceEnlarge => 'تكبير المثال';
+
+  @override
+  String get ghostMode => 'خلفية شفافة';
+
+  @override
+  String get ghostOpacity => 'شفافية الخلفية';
+
+  @override
+  String get compareDrawings => 'قارن الرسمتين';
+
+  @override
+  String stepOf(Object current, Object total) {
+    return 'الخطوة $current من $total';
+  }
+
+  @override
+  String get next => 'التالي';
+
+  @override
+  String get previous => 'السابق';
+
+  @override
+  String get tryToDraw => 'حاول ترسمها';
+
+  @override
+  String get awesomeWeSaved => 'رائع! حفظنا رسمتك.';
+
+  @override
+  String get chooseColor => 'اختر لونًا';
+
+  @override
+  String get colorThePicture => 'لوّن الصورة';
+
+  @override
+  String get connectTheDots => 'صل النقاط بالترتيب';
+
+  @override
+  String get drawAsYouLike => 'ارسم كما تحب';
+
+  @override
+  String get tapDoneWhenFinished => 'اضغط تم عندما تنتهي';
+
+  @override
+  String get startHere => 'ابدأ من هنا';
+
+  @override
+  String get traceLine => 'تتبّع الخط';
+
+  @override
+  String get wellDone => 'أحسنت';
+
+  @override
+  String get tryAgain => 'جرّب مرة أخرى';
+
+  @override
+  String get categoryAnimals => 'حيوانات';
+
+  @override
+  String get categorySpace => 'فضاء';
+
+  @override
+  String get categoryNature => 'طبيعة';
+
+  @override
+  String get categoryVehicles => 'مركبات';
+
+  @override
+  String get categoryHome => 'البيت';
+
+  @override
+  String get categoryPatterns => 'زخارف';
+
+  @override
+  String get difficultyEasy => 'سهل';
+
+  @override
+  String get difficultyMedium => 'متوسط';
+
+  @override
+  String get difficultyDetailed => 'مفصل';
+
+  @override
+  String get age45 => '4-5';
+
+  @override
+  String get age67 => '6-7';
+
+  @override
+  String get age89 => '8-9';
+
+  @override
+  String boardTitleDefault(Object number) {
+    return 'لوحتي $number';
+  }
+
+  @override
+  String get boardOrientationPortrait => 'طولي';
+
+  @override
+  String get boardOrientationLandscape => 'عرضي';
+
+  @override
+  String get boardOrientationSquare => 'مربع';
+
+  @override
+  String referenceBadge(Object title) {
+    return 'من: $title';
+  }
 }

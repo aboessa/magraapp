@@ -28,12 +28,12 @@
 /// same reason. Progress is returned only as a count.
 
 import { Hono } from 'hono';
-import type { Env } from '../lib/db';
-import { queryAll, queryFirst } from '../lib/db';
-import { requireAdmin } from '../lib/adminAuth';
-import { actorId, auditStatement } from '../lib/auditLog';
-import { callDurable, familyStub } from '../lib/doClient';
-import { parsePagination } from '../lib/catalogueValidation';
+import type { Env } from '../lib/db.ts';
+import { queryAll, queryFirst } from '../lib/db.ts';
+import { requireAdmin } from '../lib/adminAuth.ts';
+import { actorId, auditStatement } from '../lib/auditLog.ts';
+import { callDurable, familyStub } from '../lib/doClient.ts';
+import { parsePagination } from '../lib/catalogueValidation.ts';
 
 type AppEnv = { Bindings: Env };
 
