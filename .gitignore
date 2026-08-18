@@ -125,6 +125,14 @@ dashboard/api/_d1_backup_prod_*/
 # ---------------------------------------------------------------------------
 videos/
 assets/
+# New runtime artwork belongs in Flutter's bundled asset tree. Keep the broad
+# raw-master exclusion above while allowing reviewed Explore production files.
+!app_main/assets/
+app_main/assets/**
+!app_main/assets/images/
+app_main/assets/images/**
+!app_main/assets/images/explore/
+!app_main/assets/images/explore/*.webp
 audio/
 _backups/
 

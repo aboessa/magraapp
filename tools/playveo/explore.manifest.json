@@ -1,0 +1,62 @@
+{
+  "story": "explore-category-covers",
+  "out_dir": "tools/playveo/output/explore",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "imagen-4",
+  "reference_seed": "manifest-seed-do-not-generate",
+  "reference_instruction": "",
+  "character_lock": "",
+  "style_tail": "Premium original category key art for Majarra, an Arabic educational entertainment platform for children aged 3–12. Sophisticated cinematic stylized 3D illustration with soft 2D polish, clear single focal symbol readable at small size, deep space navy #06091A and midnight navy #0B1026, royal blue #2856D8 and planet purple #6A3DF2, restrained comet cyan #00D6F5 and star yellow #FFD34D accents. Native vertical 3:4 full-bleed composition with the focal object centered in the upper two-thirds and a calm darker lower area for UI labels. Safe, joyful, culturally neutral, no people, no text, no letters, no numbers, no logo, no watermark, no interface, no frame, no mockup, no famous or copyrighted characters, no duplicate objects, no clutter, no blurred side fill, no letterboxing.",
+  "assets": [
+    {
+      "id": "manifest-seed-do-not-generate",
+      "file": "unused.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Unused manifest seed.",
+      "light": ""
+    },
+    {
+      "id": "explore-watch",
+      "file": "explore-watch.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A magical cinematic viewing portal shaped like a rounded play window, opening onto layered safe story scenes, with a small glowing play triangle made of light at the center. Royal blue and cyan lighting, energetic but calm.",
+      "light": "Bright blue focal rim light and deep navy cinematic depth."
+    },
+    {
+      "id": "explore-play",
+      "file": "explore-play.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A friendly game discovery scene built from a rounded controller, colorful geometric puzzle blocks, a safe maze path and floating stars, all original toy-like objects. Emerald green and cyan accents with one warm yellow reward spark.",
+      "light": "Soft emerald focal glow against deep space navy."
+    },
+    {
+      "id": "explore-read",
+      "file": "explore-read.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "An open illustrated storybook floating above a small cosmic library platform, releasing picture-only story cards, stars and a gentle purple ribbon of light. No glyphs or readable marks anywhere on the pages.",
+      "light": "Warm page glow with refined purple and coral accents."
+    },
+    {
+      "id": "explore-listen",
+      "file": "explore-listen.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "Comfortable child-safe headphones surrounding a glowing audio orb, with smooth musical-wave ribbons, tiny stars and calm bedtime moon shapes. No musical notation and no written symbols.",
+      "light": "Soft coral pink and violet audio glow, calm bedtime atmosphere."
+    },
+    {
+      "id": "explore-draw",
+      "file": "explore-draw.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A joyful creative studio still life with a rounded paint palette, chunky safe paintbrush, colored pencils and simple painted geometric shapes rising as magical particles. No hands, no writing and no letters.",
+      "light": "Warm solar orange and star yellow focal lighting with purple depth."
+    },
+    {
+      "id": "explore-planets",
+      "file": "explore-planets.jpg",
+      "aspect_ratio": "3:4",
+      "scene": "A miniature Majarra galaxy with several distinct colorful educational planets orbiting a bright central discovery portal, connected by elegant cyan orbital paths and tiny stars. Each planet has simple unique terrain without symbols or text.",
+      "light": "Royal blue cosmic depth, cyan orbit glow and restrained multicolor planet accents."
+    }
+  ]
+}

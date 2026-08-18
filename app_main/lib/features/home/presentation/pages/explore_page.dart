@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/layout/app_layout.dart';
 import '../../../../core/widgets/cinematic_background.dart';
+import '../../../../core/widgets/cinematic_image.dart';
 import '../../application/home_providers.dart';
 import '../widgets/content_cards.dart';
 import '../widgets/content_rail.dart';
@@ -40,7 +41,7 @@ class ExplorePage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     FilledButton.icon(
-                      onPressed: () => context.go('/'),
+                      onPressed: () => context.push('/search'),
                       icon: const Icon(Icons.search_rounded),
                       label: const Text('ابحث في مجرة'),
                     ),
@@ -51,39 +52,47 @@ class ExplorePage extends ConsumerWidget {
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
-                      childAspectRatio: 1.35,
+                      childAspectRatio: 0.92,
                       children: [
                         _Dest(
+                          assetPath: 'assets/images/explore/explore-watch.webp',
                           icon: Icons.play_circle_fill_rounded,
                           label: 'شاهد',
                           color: const Color(0xFF2580FF),
                           onTap: () => context.push('/watch'),
                         ),
                         _Dest(
+                          assetPath: 'assets/images/explore/explore-play.webp',
                           icon: Icons.sports_esports_rounded,
                           label: 'العب',
                           color: const Color(0xFF5BE7A9),
                           onTap: () => context.push('/play'),
                         ),
                         _Dest(
+                          assetPath: 'assets/images/explore/explore-read.webp',
                           icon: Icons.menu_book_rounded,
                           label: 'اقرأ',
                           color: const Color(0xFF9D68FF),
                           onTap: () => context.push('/read'),
                         ),
                         _Dest(
+                          assetPath:
+                              'assets/images/explore/explore-listen.webp',
                           icon: Icons.headphones_rounded,
                           label: 'استمع',
                           color: const Color(0xFFFF6FAE),
                           onTap: () => context.push('/listen'),
                         ),
                         _Dest(
+                          assetPath: 'assets/images/explore/explore-draw.webp',
                           icon: Icons.brush_rounded,
                           label: 'ارسم',
                           color: const Color(0xFFFFB52E),
                           onTap: () => context.push('/studio'),
                         ),
                         _Dest(
+                          assetPath:
+                              'assets/images/explore/explore-planets.webp',
                           icon: Icons.public_rounded,
                           label: 'الكواكب',
                           color: AppColors.royalBlue,
@@ -151,40 +160,76 @@ class ExplorePage extends ConsumerWidget {
 
 class _Dest extends StatelessWidget {
   const _Dest({
+    required this.assetPath,
     required this.icon,
     required this.label,
     required this.color,
     required this.onTap,
   });
+
+  final String assetPath;
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) => Material(
     color: const Color(0xFF121A38),
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(18),
+    clipBehavior: Clip.antiAlias,
     child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color.withValues(alpha: 0.18),
-            ),
-            child: Icon(icon, color: color),
+          CinematicImage(
+            assetPath: assetPath,
+            semanticLabel: label,
+            fit: BoxFit.cover,
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Color(0x3306091A),
+                  Color(0xF206091A),
+                ],
+                stops: [0.35, 0.62, 1],
+              ),
+            ),
+          ),
+          PositionedDirectional(
+            top: 10,
+            start: 10,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.94),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black26, blurRadius: 10),
+                ],
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+          ),
+          PositionedDirectional(
+            start: 14,
+            end: 14,
+            bottom: 14,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
+              ),
             ),
           ),
         ],
