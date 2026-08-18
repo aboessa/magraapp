@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
+import '../media/bundled_story_assets.dart';
 
 class CinematicImage extends StatelessWidget {
   const CinematicImage({
@@ -38,22 +39,8 @@ class CinematicImage extends StatelessWidget {
         ? null
         : (decodeWidth! * ratio).round();
 
-    // The local catalogue's checked-in act-s1 preview has the same path below
-    // the public catalog prefix. Use that exact bundled file as its fallback;
-    // never hand a https URL to Image.asset (which becomes a bogus web asset
-    // request ending in cover.jpg).
-    const publicCatalogPrefix = '/public/catalog/';
-    final networkUri = Uri.tryParse(networkUrl ?? '');
-    final bundledStoryPreview =
-        networkUri != null &&
-            networkUri.host == 'cdn.majarra.app' &&
-            networkUri.path.startsWith(
-              '${publicCatalogPrefix}assets/images/stories/act-s1-playveo/',
-            )
-        ? networkUri.path.substring(publicCatalogPrefix.length)
-        : null;
     final fallbackAssetPath =
-        bundledStoryPreview ??
+        bundledStoryAssetForUrl(networkUrl) ??
         (assetPath.startsWith('assets/')
             ? assetPath
             : 'assets/brand/majarra-logo.png');

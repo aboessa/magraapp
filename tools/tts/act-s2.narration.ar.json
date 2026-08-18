@@ -1,0 +1,103 @@
+{
+  "story": "act-s2",
+  "story_id": "story-goodnight-toys",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-02-goodnight-toys.md",
+  "language": "ar",
+  "language_code": "ar-EG",
+  "out_dir": "assets/audio/stories/act-s2/ar",
+  "model": "gemini-3.1-flash-tts-preview",
+  "voice": "Leda",
+  "voice_locked_because": "Use the same youthful female narrator identity approved for ACT-S1. Leda matches the calm kind-older-sister bedtime profile and avoids an announcer-like delivery.",
+  "notes": [
+    "Each page is a separate WAV master and a separate future content_asset, so one slide narration can be replaced without regenerating or relinking the other seven.",
+    "Arabic transcript text is copied verbatim from the story specification.",
+    "The output is 24 kHz 16-bit mono WAV. Measure duration from each generated file; planned_duration_ms is not publication truth.",
+    "Do not bake the one-second viewing dwell into the WAV. Pages 1-7 use measured duration plus dwell; page 8 never auto-turns.",
+    "Page 2 is an invitation, never a command. Page 4 is practical and emotionally neutral. Page 8 is the slowest and final line.",
+    "No timing cues are synthesized by this pipeline; preserve the localization timing_cues field when linking narration_asset_id."
+  ],
+  "preamble": "Synthesize speech. Read aloud only the Arabic text under TRANSCRIPT. Everything above it is performance direction and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma\n## The Kind Older Sister\nSalma is a young Arab woman in her early twenties with a light, warm, distinctly feminine voice. She reads to a sleepy child in a quiet bedroom beside one warm lamp.\n\n### DIRECTOR'S NOTES\nStyle: soft, affectionate, reassuring, and natural; never an announcer, never theatrical, never babyish.\nPacing: slow and unhurried at about 53 Arabic words per minute, with a small natural pause at every full stop.\nAccent: clear Modern Standard Arabic articulated naturally by an educated Egyptian speaker.\nLoudness: constant across all eight files. No escalation, command tone, urgency, fear, sadness, or dramatic climax.\nDelivery: speak only the transcript, with no title, page number, instruction, sound effect, or extra words.",
+  "lines": [
+    {
+      "page": 1,
+      "page_id": "page-goodnight-toys-001",
+      "id": "asset-act-s2-vo-ar-001",
+      "file": "page-001-ar.wav",
+      "text": "هذه ريم. تلعب في غرفتها.",
+      "audio_tag": "[warm, calm, steady, unhurried]",
+      "style": "A gentle welcoming introduction at the story's normal pace. Keep ريم clear and natural. No excitement.",
+      "planned_duration_ms": 5300
+    },
+    {
+      "page": 2,
+      "page_id": "page-goodnight-toys-002",
+      "id": "asset-act-s2-vo-ar-002",
+      "file": "page-002-ar.wav",
+      "text": "قالت أمّها: الألعاب تريد أن تنام.",
+      "audio_tag": "[gentle invitation, never a command]",
+      "style": "The sentence الألعاب تريد أن تنام is a warm invitation and shared idea, never an instruction, warning, or firm bedtime order. Keep the colon pause natural.",
+      "planned_duration_ms": 6000
+    },
+    {
+      "page": 3,
+      "page_id": "page-goodnight-toys-003",
+      "id": "asset-act-s2-vo-ar-003",
+      "file": "page-003-ar.wav",
+      "text": "فأخذت ريم الدبّ. ووضعته على الرفّ.",
+      "audio_tag": "[calm, practical, even pace]",
+      "style": "Two familiar routine steps with one small pause between sentences. Clear shadda in الدبّ and الرفّ, without overemphasis.",
+      "planned_duration_ms": 6200
+    },
+    {
+      "page": 4,
+      "page_id": "page-goodnight-toys-004",
+      "id": "asset-act-s2-vo-ar-004",
+      "file": "page-004-ar.wav",
+      "text": "لكن الكرة لم تجد مكانها.",
+      "audio_tag": "[emotionally neutral, calm, matter-of-fact]",
+      "style": "This is only a small practical observation. Absolutely no worry, frustration, suspense, sadness, surprise, or rise in loudness.",
+      "planned_duration_ms": 5200
+    },
+    {
+      "page": 5,
+      "page_id": "page-goodnight-toys-005",
+      "id": "asset-act-s2-vo-ar-005",
+      "file": "page-005-ar.wav",
+      "text": "فوضعتها في السلّة. ونامت الكرة.",
+      "audio_tag": "[soft satisfaction, settled, unhurried]",
+      "style": "A simple solution, not a victory. Let ونامت الكرة settle softly after a natural sentence pause.",
+      "planned_duration_ms": 5800
+    },
+    {
+      "page": 6,
+      "page_id": "page-goodnight-toys-006",
+      "id": "asset-act-s2-vo-ar-006",
+      "file": "page-006-ar.wav",
+      "text": "ثم المكعّبات، واحدًا واحدًا.",
+      "audio_tag": "[slow, regular rhythm]",
+      "style": "Give واحدًا واحدًا an evenly spaced, slow, repetitive rhythm like placing two blocks in sequence. No sing-song performance.",
+      "planned_duration_ms": 5400
+    },
+    {
+      "page": 7,
+      "page_id": "page-goodnight-toys-007",
+      "id": "asset-act-s2-vo-ar-007",
+      "file": "page-007-ar.wav",
+      "text": "صارت الغرفة هادئة. والألعاب نائمة.",
+      "audio_tag": "[sleepy, slower, softly settling]",
+      "style": "Slow gently on هادئة and نائمة. Keep level constant while the energy settles toward stillness.",
+      "planned_duration_ms": 6000
+    },
+    {
+      "page": 8,
+      "page_id": "page-goodnight-toys-008",
+      "id": "asset-act-s2-vo-ar-008",
+      "file": "page-008-ar.wav",
+      "text": "وريم في سريرها. تصبح على خير.",
+      "audio_tag": "[very slow, drowsy, final, one gentle phrase at a time]",
+      "style": "This must be the slowest and final delivery in the story. Pause naturally after سريرها. Make تصبح على خير the slowest phrase, settling into silence as a statement, never a question. No extra goodbye or recommendation.",
+      "planned_duration_ms": 5600
+    }
+  ]
+}

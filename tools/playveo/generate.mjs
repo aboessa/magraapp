@@ -3,9 +3,14 @@
 // Usage (from repo root):
 //   node tools/playveo/generate.mjs --validate            # prompt lengths only. No API call, no credits.
 //   node tools/playveo/generate.mjs --only page-001       # submit one asset (text-to-image if it is the seed)
+//   node tools/playveo/generate.mjs --only page-001,page-008 --out-dir tools/playveo/output/review
 //   node tools/playveo/generate.mjs --reftest             # 1 credit-ish probe: can i2i actually restage the scene?
 //   node tools/playveo/generate.mjs --rest                # every asset except the reference seed
+//   node tools/playveo/generate.mjs --missing             # only assets without an output file
 //   node tools/playveo/generate.mjs --rest --no-ref       # ...without attaching the character reference
+//
+// --out-dir overrides the manifest output directory for isolated review rounds.
+// It must stay inside the workspace; production files are replaced only after review.
 //
 // Key: $env:PLAYVEO_API_KEY, else %USERPROFILE%\.majarra\playveo.key.
 // The key is never printed and never written into this repository.
@@ -48,12 +53,30 @@ function arg(name) {
   return next && !next.startsWith('--') ? next : true;
 }
 
+const concurrencyArg = arg('concurrency');
+const concurrency = concurrencyArg === undefined ? 1 : Number(concurrencyArg);
+if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 10) {
+  throw new Error('--concurrency must be an integer between 1 and 10');
+}
+
+const onlyArg = typeof arg('only') === 'string' ? arg('only') : undefined;
+const onlyIds = onlyArg
+  ? onlyArg.split(',').map((value) => value.trim()).filter(Boolean)
+  : [];
+const outDirArg = typeof arg('out-dir') === 'string' ? arg('out-dir') : undefined;
+if (outDirArg && path.isAbsolute(outDirArg)) {
+  throw new Error('--out-dir must be a workspace-relative path');
+}
+
 const OPT = {
   validate: !!arg('validate'),
   reftest: !!arg('reftest'),
   rest: !!arg('rest'),
-  only: typeof arg('only') === 'string' ? arg('only') : undefined,
+  missing: !!arg('missing'),
+  onlyIds,
+  outDir: outDirArg,
   noRef: !!arg('no-ref'),
+  concurrency,
   manifest: typeof arg('manifest') === 'string' ? arg('manifest') : DEFAULT_MANIFEST,
 };
 
@@ -65,7 +88,12 @@ const MANIFEST = path.isAbsolute(OPT.manifest)
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
 const BASE = manifest.base_url;
-const OUT_DIR = path.join(ROOT, manifest.out_dir);
+const outputRelative = OPT.outDir ?? manifest.out_dir;
+const OUT_DIR = path.resolve(ROOT, outputRelative);
+const rootPrefix = `${ROOT}${path.sep}`;
+if (OUT_DIR !== ROOT && !OUT_DIR.startsWith(rootPrefix)) {
+  throw new Error('--out-dir must resolve inside the workspace');
+}
 
 /// Prompt order: character lock, scene, this page's light, shared style tail.
 ///
@@ -80,8 +108,15 @@ const OUT_DIR = path.join(ROOT, manifest.out_dir);
 /// on the last two pages. A single shared sky clause cannot serve every page — the
 /// first attempt at page-001 proved it by returning a starry night sky for the
 /// brightest page in the story.
+/// `character_lock` is optional, and its absence must not leak into the prompt.
+///
+/// Written as unguarded concatenation this produced the literal string
+/// "undefined " at the head of every prompt for any manifest without a character
+/// to lock — which is every manifest that is not a story: line art, covers,
+/// colouring pages. The provider would have been paid to render the word.
+/// Caught by --validate before the first billed call on coloring.manifest.json.
 const buildPrompt = (asset) =>
-  (manifest.character_lock + ' ' + asset.scene + ' ' + (asset.light ?? '') + manifest.style_tail)
+  ((manifest.character_lock ?? '') + ' ' + asset.scene + ' ' + (asset.light ?? '') + manifest.style_tail)
     .replace(/\s+/g, ' ').trim();
 
 /// Image-to-image prompt: the same thing, prefixed with an explicit identity
@@ -136,7 +171,7 @@ async function api(method, route, body) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
-async function submit(asset, refDataUrl) {
+async function submit(asset, refDataUrl, log = console.log) {
   const usingRef = !!refDataUrl;
   const prompt = usingRef ? buildRefPrompt(asset) : buildPrompt(asset);
   const route = usingRef ? '/v1/images/image-to-image' : '/v1/images/text-to-image';
@@ -144,12 +179,15 @@ async function submit(asset, refDataUrl) {
     prompt,
     aspect_ratio: asset.aspect_ratio,
     count: 1,
+    ...(manifest.model ? { model: manifest.model } : {}),
     ...(usingRef ? { image: refDataUrl } : {}),
   };
-  console.log(`  ${usingRef ? 'i2i' : 't2i'}  ${prompt.length} chars  ${asset.aspect_ratio}`);
+  log(`  ${usingRef ? 'i2i' : 't2i'}  ${prompt.length} chars  ${asset.aspect_ratio}`);
+  // Never retry this POST automatically: an unknown response may already have
+  // created a paid job, and repeating it can bill a duplicate.
   const res = await api('POST', route, payload);
   if (!res.id) throw new Error('no id in response: ' + JSON.stringify(res).slice(0, 300));
-  console.log(`  job ${res.id} [${res.status}] cost=${res.creditCost}${res.strength ? ` strength=${res.strength}` : ''}`);
+  log(`  job ${res.id} [${res.status}] cost=${res.creditCost}${res.strength ? ` strength=${res.strength}` : ''}`);
   return res.id;
 }
 
@@ -157,7 +195,7 @@ async function submit(asset, refDataUrl) {
 ///
 /// `failed` is terminal and reported with the provider's own message; a job that
 /// never leaves processing is surfaced as a timeout rather than hanging forever.
-async function waitFor(id, { timeoutMs = 8 * 60 * 1000, everyMs = 10_000 } = {}) {
+async function waitFor(id, { timeoutMs = 8 * 60 * 1000, everyMs = 10_000, log = console.log } = {}) {
   const started = Date.now();
   let last = '';
   while (Date.now() - started < timeoutMs) {
@@ -165,7 +203,7 @@ async function waitFor(id, { timeoutMs = 8 * 60 * 1000, everyMs = 10_000 } = {})
     const res = await api('GET', `/v1/images/${id}`);
     const img = res.image ?? res;
     if (img.status !== last) {
-      console.log(`  [${Math.round((Date.now() - started) / 1000)}s] ${img.status}`);
+      log(`  [${Math.round((Date.now() - started) / 1000)}s] ${img.status}`);
       last = img.status;
     }
     if (img.status === 'completed') {
@@ -191,15 +229,17 @@ async function download(url, destPath) {
   return buf.length;
 }
 
-function appendLog(entry) {
-  const p = path.join(OUT_DIR, '_run-log.json');
+function writeLogEntries(entries) {
+  if (!entries.length) return;
+  const logPath = path.join(OUT_DIR, '_run-log.json');
   let log = [];
-  if (fs.existsSync(p)) {
-    try { log = JSON.parse(fs.readFileSync(p, 'utf8')); } catch { log = []; }
+  if (fs.existsSync(logPath)) {
+    try { log = JSON.parse(fs.readFileSync(logPath, 'utf8')); } catch { log = []; }
   }
-  log.push(entry);
-  fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, JSON.stringify(log, null, 2));
+  const tempPath = `${logPath}.${process.pid}.tmp`;
+  fs.mkdirSync(path.dirname(logPath), { recursive: true });
+  fs.writeFileSync(tempPath, JSON.stringify([...log, ...entries], null, 2));
+  fs.renameSync(tempPath, logPath);
 }
 
 /// Reads the generated seed image back as a base64 data URL.
@@ -211,7 +251,7 @@ function referenceDataUrl() {
   const seed = manifest.assets.find((a) => a.id.endsWith(manifest.reference_seed));
   const p = path.join(OUT_DIR, seed.file);
   if (!fs.existsSync(p)) {
-    console.log(`  (no reference: ${manifest.out_dir}/${seed.file} not generated yet)`);
+    console.log(`  (no reference: ${outputRelative}/${seed.file} not generated yet)`);
     return undefined;
   }
   const b64 = fs.readFileSync(p).toString('base64');
@@ -220,25 +260,52 @@ function referenceDataUrl() {
 }
 
 async function run(asset, refDataUrl) {
-  console.log(`\n${asset.id}`);
-  const id = await submit(asset, refDataUrl);
-  const img = await waitFor(id);
-  const dest = path.join(OUT_DIR, asset.file);
-  const bytes = await download(img.resultUrls[0], dest);
-  console.log(`  saved ${manifest.out_dir}/${asset.file} (${(bytes / 1024).toFixed(0)} KB)`);
-  appendLog({
-    at: new Date().toISOString(),
-    asset: asset.id,
-    jobId: id,
-    mode: refDataUrl ? 'image-to-image' : 'text-to-image',
-    model: img.model ?? manifest.model,
-    aspectRatio: asset.aspect_ratio,
-    promptChars: (refDataUrl ? buildRefPrompt(asset) : buildPrompt(asset)).length,
-    usedReference: !!refDataUrl,
-    file: `${manifest.out_dir}/${asset.file}`,
-    bytes,
-  });
-  return dest;
+  const lines = [`\n${asset.id}`];
+  const log = (message) => lines.push(message);
+  try {
+    const id = await submit(asset, refDataUrl, log);
+    const img = await waitFor(id, { log });
+    const dest = path.join(OUT_DIR, asset.file);
+    const bytes = await download(img.resultUrls[0], dest);
+    log(`  saved ${outputRelative}/${asset.file} (${(bytes / 1024).toFixed(0)} KB)`);
+    return {
+      ok: true,
+      lines,
+      dest,
+      logEntry: {
+        at: new Date().toISOString(),
+        asset: asset.id,
+        jobId: id,
+        mode: refDataUrl ? 'image-to-image' : 'text-to-image',
+        model: img.model ?? manifest.model,
+        aspectRatio: asset.aspect_ratio,
+        promptChars: (refDataUrl ? buildRefPrompt(asset) : buildPrompt(asset)).length,
+        usedReference: !!refDataUrl,
+        file: `${outputRelative}/${asset.file}`,
+        bytes,
+      },
+    };
+  } catch (error) {
+    lines.push(`  FAILED ${asset.id}: ${String(error.message).slice(0, 300)}`);
+    return { ok: false, lines, error };
+  }
+}
+
+async function runPool(targets, concurrency) {
+  const results = new Array(targets.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (true) {
+      const index = nextIndex++;
+      if (index >= targets.length) return;
+      results[index] = await run(targets[index], undefined);
+    }
+  }
+
+  const workerCount = Math.min(concurrency, targets.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
 }
 
 // ---------------------------------------------------------------- reftest
@@ -285,7 +352,7 @@ async function reftest() {
     console.log(`  job ${res.id} cost=${res.creditCost} strength=${res.strength}`);
     const img = await waitFor(res.id);
     const bytes = await download(img.resultUrls[0], path.join(OUT_DIR, v.file));
-    console.log(`  saved ${manifest.out_dir}/${v.file} (${(bytes / 1024).toFixed(0)} KB)`);
+    console.log(`  saved ${outputRelative}/${v.file} (${(bytes / 1024).toFixed(0)} KB)`);
   }
 
   console.log('\nCompare the two against page-001. What matters:');
@@ -301,34 +368,53 @@ async function main() {
 
   if (OPT.reftest) return reftest();
 
-  const seed = manifest.assets.find((a) => a.id.endsWith(manifest.reference_seed));
+  const seed = manifest.reference_seed
+    ? manifest.assets.find((a) => a.id.endsWith(manifest.reference_seed))
+    : undefined;
+  if (manifest.reference_seed && !seed) {
+    throw new Error(`reference_seed ${manifest.reference_seed} does not match any manifest asset`);
+  }
+
   let targets;
-  if (OPT.only) {
-    targets = manifest.assets.filter((a) => a.id.endsWith(OPT.only));
-    if (!targets.length) throw new Error(`no asset matching --only ${OPT.only}`);
+  if (OPT.onlyIds.length) {
+    targets = manifest.assets.filter((asset) =>
+      OPT.onlyIds.some((id) => asset.id === id || asset.id.endsWith(id))
+    );
+    const unmatched = OPT.onlyIds.filter((id) =>
+      !manifest.assets.some((asset) => asset.id === id || asset.id.endsWith(id))
+    );
+    if (unmatched.length) throw new Error(`no asset matching --only ${unmatched.join(',')}`);
+  } else if (OPT.missing) {
+    targets = manifest.assets.filter((asset) => !fs.existsSync(path.join(OUT_DIR, asset.file)));
   } else if (OPT.rest) {
-    targets = manifest.assets.filter((a) => a.id !== seed.id);
+    // Manifests without a reference seed are pure text-to-image batches, so
+    // "rest" means every asset. Seeded legacy manifests still exclude the seed.
+    targets = seed ? manifest.assets.filter((a) => a.id !== seed.id) : [...manifest.assets];
   } else {
-    console.log('Nothing to do. Pass --validate, --reftest, --only <id> or --rest.');
+    console.log('Nothing to do. Pass --validate, --reftest, --only <id>, --missing or --rest.');
     return;
   }
 
-  console.log(`${targets.length} job(s), about ${(targets.length * 0.1).toFixed(2)} credits.`);
-
-  // Always text-to-image. Attaching a reference would cost 0.15 instead of 0.10 per
-  // job and return a cached clone of the reference rather than the requested scene,
-  // so the reference path is reachable only from --reftest, which exists to
-  // document that behaviour rather than to produce usable pages.
-  const failed = [];
-  for (const asset of targets) {
-    try {
-      await run(asset, undefined);
-    } catch (err) {
-      console.error(`  FAILED ${asset.id}: ${err.message.slice(0, 300)}`);
-      failed.push(asset.id);
-    }
+  if (!targets.length) {
+    console.log('No matching assets need generation.');
+    return;
   }
 
+  console.log(`${targets.length} job(s), concurrency=${Math.min(OPT.concurrency, targets.length)}, about ${(targets.length * 0.1).toFixed(2)} credits.`);
+
+  // The bounded pool follows PlayVeo's documented parallel pattern: each prompt
+  // is its own count:1 job. It never starts more than ten local job lifecycles,
+  // and a failure in one slot does not cancel or retry any other paid POST.
+  const results = await runPool(targets, OPT.concurrency);
+  for (const result of results) console.log(result.lines.join('\n'));
+
+  // Persist successful provenance once and in manifest order. Buffering avoids
+  // concurrent read/modify/write races when jobs finish out of order.
+  writeLogEntries(results.filter((result) => result.ok).map((result) => result.logEntry));
+
+  const failed = results
+    .map((result, index) => result.ok ? null : targets[index].id)
+    .filter(Boolean);
   if (failed.length) {
     console.log(`\n${failed.length} failed: ${failed.join(', ')}`);
     process.exitCode = 1;

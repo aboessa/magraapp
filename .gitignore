@@ -132,6 +132,11 @@ app_main/assets/**
 !app_main/assets/data/
 app_main/assets/data/**
 !app_main/assets/data/prompt_items.json
+# Raster colouring catalogue, written by tools/coloring/publish_coloring.py. Only
+# gate-passing templates ever reach it, so it is reviewed output rather than an
+# intermediate: the raw JPEGs and prepared masks under the repo-root assets/ tree
+# stay excluded by the broad rule above.
+!app_main/assets/data/coloring_raster.json
 !app_main/assets/images/
 app_main/assets/images/**
 !app_main/assets/images/explore/
@@ -154,6 +159,10 @@ app_main/assets/images/drawing/**
 !app_main/assets/images/drawing/covers/
 app_main/assets/images/drawing/covers/**
 !app_main/assets/images/drawing/covers/prompt-*.webp
+!app_main/assets/images/stories/
+app_main/assets/images/stories/**
+!app_main/assets/images/stories/act-s2-playveo/
+!app_main/assets/images/stories/act-s2-playveo/*.webp
 audio/
 _backups/
 

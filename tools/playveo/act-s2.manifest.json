@@ -1,0 +1,132 @@
+{
+  "story": "act-s2",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-02-goodnight-toys.md",
+  "out_dir": "tools/playveo/output/act-s2",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "nano_banana_2",
+  "mode": "text-to-image",
+  "display_spec": {
+    "story_page_aspect_ratio": "16:9",
+    "target_display": "television and landscape mobile/tablet",
+    "production_canvas": "1920x1080 or larger native 16:9; never stretch a non-16:9 result",
+    "action_safe_area": "keep all faces, hands, recurring toys, moon, lamp and story-critical action inside the central 90% of width and height",
+    "title_safe_area": "keep story-critical detail outside the outer 10%; promotional hero title space is authored separately",
+    "fit_policy": "full-bleed 16:9 with no baked letterbox bars; Flutter may scale uniformly but must not crop story-critical content"
+  },
+  "notes": [
+    "Raw provider JPEG files remain in the ignored tools/playveo/output tree. Only reviewed WebP derivatives may enter Flutter assets.",
+    "All eleven assets are independent text-to-image jobs. Character identity is carried by the exact character_lock text because PlayVeo image-to-image previously returned billed composition clones.",
+    "Reem is four and does not wear a headscarf; her mother wears a modest lavender hijab. This resolves the generic catalog rule without changing the story specification that Reem's hair is tied.",
+    "No narration text is rendered in artwork. Text, timing, and audio remain independent story-page fields."
+  ],
+  "style_tail": " Premium soft 2D preschool bedtime storybook illustration, rounded clean shapes, gentle dimensional shading, warm cream, muted teal, lavender and soft gold palette, full-bleed to all four edges, natively composed for the requested aspect ratio with no baked black bars. For every 16:9 story page or hero, use a true landscape television composition: keep all faces, hands, recurring toys, moon, lamp, and story-critical action inside the central 90 percent action-safe area so TV overscan or responsive scaling cannot cut them off; keep the outer 5 percent on every edge free of essential detail; avoid extreme close-ups and edge-cropped characters. Calm low-stimulation composition with only the named main elements, child-safe and emotionally reassuring. No text, no letters, no numbers, no logo, no watermark, no signature, no frame, no border, no speech bubble, no visible teeth, no frightening expression, no clutter, no complete darkness.",
+  "character_lock": "Reem is the same four-year-old Arab girl in every image: warm medium skin, large dark-brown friendly eyes, round cheeks, dark-brown hair tied into two short low pigtails with muted teal bands, lavender long-sleeve pajamas with tiny plain gold dots, and no headscarf. She is always calm or gently smiling, never resistant, sad, afraid, or frustrated, and never shows teeth. Her mother is the same gentle Arab woman in every image: warm medium skin, kind dark eyes, modest dusty-lavender hijab and long muted-teal home dress, calm face, no visible teeth. The same three toy types recur unchanged and never duplicate: exactly one small honey-brown teddy bear whose face contains ONLY two friendly button-like eyes and one tiny plain oval nose; the area below the nose is completely blank fur with absolutely no mouth line, smile, muzzle curve, tongue, or teeth; exactly one muted coral ball with a single cream stripe; and exactly six rounded wooden blocks total in teal, gold, coral and cream. Never add a second ball, second teddy, extra block, or toy-like background duplicate. Whenever blocks are stored, their rounded block box is fully opaque with no window, cutout, transparency, or opening that reveals blocks. The bedroom stays consistent: warm cream walls, low pale-wood shelf, woven toy basket, rounded block box, low bed with lavender blanket, and one window.",
+  "reference_instruction": "Preserve the exact locked characters and recurring objects while replacing the pose, camera, lighting, and scene with the following description.",
+  "assets": [
+    {
+      "id": "asset-act-s2-page-001",
+      "file": "page-001.jpg",
+      "order": 1,
+      "aspect_ratio": "16:9",
+      "brightness": 1.0,
+      "motion": "kenburns_slow",
+      "scene": "Wide bedroom view. Reem sits calmly on the rug playing while her mother stands gently at the doorway, already present and watching warmly. On the rug are exactly these recurring toys and no others: one honey-brown teddy with two dark eyes, one small nose, absolutely no drawn mouth and no teeth; one muted coral ball with one cream stripe; and exactly six separate rounded cube blocks, all fully visible and countable: two muted teal, two soft gold, one coral, one cream. No additional block-shaped furniture or toy. Keep Reem, mother, teddy, ball, and the single six-block group inside the television action-safe area.",
+      "light": "Brightest scene: warm late-afternoon daylight entering through the window, clear pale daytime sky, bright and readable. No stars, no moon, no night."
+    },
+    {
+      "id": "asset-act-s2-page-002",
+      "file": "page-002.jpg",
+      "order": 2,
+      "aspect_ratio": "16:9",
+      "brightness": 0.97,
+      "motion": "kenburns_slow",
+      "scene": "Medium bedroom view. Reem's mother sits beside her at rug level and makes a gentle inviting open-hand gesture toward the toys. Reem listens calmly. The same teddy, coral ball, and blocks are clearly visible together. No pointing, commanding pose, refusal, or conflict.",
+      "light": "Warm late-afternoon daylight, slightly softer than page 1, fully readable. No stars, no moon, no night."
+    },
+    {
+      "id": "asset-act-s2-page-003",
+      "file": "page-003.jpg",
+      "order": 3,
+      "aspect_ratio": "16:9",
+      "brightness": 0.94,
+      "motion": "pan_slow",
+      "scene": "Reem gently places the same honey-brown teddy on the low pale-wood shelf. The teddy rests upright with its two friendly eyes peacefully closed, no mouth. Reem is calm and focused; the shelf and teddy are the clear focal elements.",
+      "light": "Soft golden late-afternoon daylight, still clearly daytime and fully readable. No stars, no moon, no night."
+    },
+    {
+      "id": "asset-act-s2-page-004",
+      "file": "page-004.jpg",
+      "order": 4,
+      "aspect_ratio": "16:9",
+      "brightness": 0.9,
+      "motion": "pan_slow",
+      "scene": "Reem calmly holds the same muted coral ball at chest level and looks around for its place. The low shelf behind her is visibly full with the teddy and a few tidy items. Her expression is neutral and practical, never worried, sad, frustrated, or confused. Three visual groups maximum.",
+      "light": "Gentle early-evening golden light, readable and reassuring. No stars, no moon, no darkness."
+    },
+    {
+      "id": "asset-act-s2-page-005",
+      "file": "page-005.jpg",
+      "order": 5,
+      "aspect_ratio": "16:9",
+      "brightness": 0.86,
+      "motion": "kenburns_slow",
+      "scene": "The same coral ball now rests neatly inside the woven toy basket. Reem kneels beside the basket with a small closed-mouth smile. The ball and basket are the focal point; the practical problem is already solved.",
+      "light": "Warm early-evening room light with a little remaining daylight, gently dimmer but fully readable. No stars, no moon, no darkness."
+    },
+    {
+      "id": "asset-act-s2-page-006",
+      "file": "page-006.jpg",
+      "order": 6,
+      "aspect_ratio": "16:9",
+      "brightness": 0.82,
+      "motion": "kenburns_slow",
+      "scene": "Reem calmly places one final rounded cube block through the opening of an opaque pale-wood toy box. This one block in her hand is the only block visible anywhere in the entire image; all earlier blocks are completely concealed inside the opaque box and cannot be seen. No loose blocks, no blocks in the basket or shelf, no transparent box, and no other toys visible. Reem and the closed-looking storage box are the only foreground focal groups; her mother sits calmly in the background near the bed. The action feels slow and rhythmic, one block at a time.",
+      "light": "Soft warm lamp-and-twilight blend, dimmer than page 5 but every shape and color remains clear. No stars, no moon visible."
+    },
+    {
+      "id": "asset-act-s2-page-007",
+      "file": "page-007.jpg",
+      "order": 7,
+      "aspect_ratio": "16:9",
+      "brightness": 0.76,
+      "motion": "static",
+      "scene": "Static wide view of the tidy quiet bedroom with no action. The teddy sleeps on the low shelf, the coral ball rests in its woven basket, and the blocks rest in their box. Reem stands quietly near the low bed. A small warm bedside lamp is clearly visible. Four visual groups maximum, all toys in their proper places.",
+      "light": "Calm blue twilight balanced by the clearly visible warm bedside lamp. Dim but never dark; all objects remain readable and reassuring."
+    },
+    {
+      "id": "asset-act-s2-page-008",
+      "file": "page-008.jpg",
+      "order": 8,
+      "aspect_ratio": "16:9",
+      "brightness": 0.7,
+      "motion": "static",
+      "scene": "Static final bedtime scene with no event. Reem lies peacefully in her low bed under the lavender blanket while her mother is clearly present beside the bed, gently tucking the blanket around her. A soft crescent moon is clearly visible through the window. Keep only four visual groups: Reem, mother, bed, and moonlit window. All toys, blocks, shelves, baskets, boxes, and extra furniture are outside the frame and not visible. Still and reassuring, with faces and hands inside the television action-safe area.",
+      "light": "Dimmest scene: soft blue moonlight from the clearly visible crescent moon plus a faint warm bedside glow. Never fully dark; mother, Reem, bed and window remain clearly readable."
+    },
+    {
+      "id": "asset-act-s2-cover",
+      "file": "cover.jpg",
+      "order": 9,
+      "aspect_ratio": "1:1",
+      "scene": "Square cover art. Reem sits calmly in the tidy bedroom between the low shelf and woven basket, saying goodnight through a gentle closed-mouth gesture to the same teddy, coral ball and blocks. Her mother is softly present behind her. Centered composition with a calm uncluttered upper area reserved for a title layer outside the image.",
+      "light": "Warm twilight with a subtle lamp glow, readable and inviting, never dark."
+    },
+    {
+      "id": "asset-act-s2-hero",
+      "file": "hero.jpg",
+      "order": 10,
+      "aspect_ratio": "16:9",
+      "scene": "Wide cinematic promotional art. Reem and her mother quietly finish tidying the same teddy, coral ball and blocks in the consistent bedroom. Keep the right forty percent calm, darker and uncluttered for an Arabic title overlay added later. No embedded title.",
+      "light": "Gentle warm-to-blue evening gradient with a soft lamp glow, calm and low contrast, never dark."
+    },
+    {
+      "id": "asset-act-s2-thumb",
+      "file": "thumb.jpg",
+      "order": 11,
+      "aspect_ratio": "3:4",
+      "scene": "Vertical thumbnail art. Reem in lavender pajamas holds the same honey-brown teddy close with a gentle closed-mouth smile; the coral ball in its basket and the block box appear below, while her mother is softly visible near the bed behind. Strong readable silhouettes at small size, with a clean calm upper quarter reserved for a title layer added later.",
+      "light": "Soft warm bedtime lamp against readable blue twilight, comforting and never dark."
+    }
+  ]
+}

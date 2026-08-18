@@ -91,7 +91,13 @@ flutter:
     # build/web/assets/assets/... and can serve as honest offline fallbacks.
     - assets/images/stories/act-s1/
     - assets/images/stories/act-s1-playveo/
+    - assets/images/stories/act-s2-playveo/
     - assets/images/drawing/coloring/
     - assets/images/drawing/templates/
     - assets/images/drawing/covers/
+    # Raster colouring: real line art plus its compiled region map, written by
+    # tools/coloring/publish_coloring.py and only for assets that passed the gate.
+    # Separate from drawing/coloring/ above, which holds the primitive-shape SVG
+    # placeholders the polygon engine still uses.
+    - assets/images/coloring/
     - assets/data/

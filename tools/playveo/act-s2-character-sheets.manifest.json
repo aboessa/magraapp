@@ -1,0 +1,43 @@
+{
+  "story": "act-s2-character-sheets",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-02-goodnight-toys.md",
+  "out_dir": "tools/playveo/output/act-s2-character-sheets",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "nano_banana_2",
+  "mode": "text-to-image",
+  "notes": [
+    "Approval gate only: no story page, cover, hero, or thumbnail may be generated until the user explicitly approves these sheets.",
+    "Raw JPEG sheets remain ignored production references; approved visual facts must be transcribed into the story manifest before limited consistency tests.",
+    "No labels are requested because generated lettering is unreliable. Panel position provides the view order."
+  ],
+  "character_lock": "Premium soft 2D preschool bedtime storybook design with rounded clean shapes, gentle dimensional shading, consistent proportions, warm cream, muted teal, lavender and soft gold palette. Neutral warm-cream studio background, even soft lighting, no environment scene. No text, no letters, no numbers, no logo, no watermark, no signature, no frame, no border, no speech bubble, no visible teeth.",
+  "reference_instruction": "Preserve the exact approved character identity while changing only the requested view or expression.",
+  "style_tail": " Present this as a clean professional animation character model sheet with evenly spaced full-body figures, no overlaps, no cropped body parts, and no decorative clutter. Every repeated view must unmistakably depict the exact same character with identical face geometry, skin tone, hair or hijab, outfit, colors, body proportions, and age.",
+  "assets": [
+    {
+      "id": "asset-act-s2-sheet-reem",
+      "file": "character-sheet-reem.jpg",
+      "order": 1,
+      "aspect_ratio": "16:9",
+      "scene": "Character model sheet for Reem, the same four-year-old Arab girl repeated six times in a strict left-to-right grid: full-body front view, full-body three-quarter view, full-body side view, full-body back view, close face with calm neutral expression, close face with gentle closed-mouth smile. Reem has warm medium skin, large dark-brown friendly eyes, round cheeks, dark-brown hair tied into two short low pigtails with muted teal bands, no headscarf, childlike four-year-old proportions with a relatively large head and short limbs, lavender long-sleeve pajamas with tiny plain gold dots, matching lavender trousers, and simple muted-teal slippers. No pose may look older than four. No resistance, sadness, fear, makeup, jewelry, or visible teeth.",
+      "light": "Flat soft studio lighting that preserves exact colors and makes every view easy to compare."
+    },
+    {
+      "id": "asset-act-s2-sheet-mother",
+      "file": "character-sheet-mother.jpg",
+      "order": 2,
+      "aspect_ratio": "16:9",
+      "scene": "STRICT TURNAROUND MODEL SHEET OF ONE ADULT WOMAN ONLY, repeated as six consistent drawings on a plain warm off-white background. This is not a game screen, not icon art, not cards, and not a scene. Left to right: full-body front, full-body three-quarter, full-body side, full-body back, close neutral face, close gentle closed-mouth smile. The exact same Arab mother in every drawing: warm medium skin, kind dark-brown almond eyes, softly rounded adult face, dusty-lavender hijab wrapped identically around head and neck with absolutely no hair visible, loose ankle-length muted-teal home dress with plain lavender cuffs, plain cream indoor shoes. Identical face, hijab, dress, colors and body proportions in all six views. No child, no toys, no animals, no objects, no symbols, no scenery, no dramatic gesture, no makeup emphasis, no jewelry, no open mouth, no visible teeth.",
+      "light": "Flat soft studio lighting that preserves exact colors and makes every view easy to compare."
+    },
+    {
+      "id": "asset-act-s2-sheet-cast-props",
+      "file": "character-sheet-cast-props.jpg",
+      "order": 3,
+      "aspect_ratio": "16:9",
+      "scene": "STRICT RECURRING TOY PROP MODEL SHEET ONLY on a plain warm off-white background. This is not a family scene and contains no human figures. Show three isolated approved toy designs with generous spacing. Top row: the exact same small honey-brown teddy bear in front, side, and back orthographic views; round ears and limbs, two friendly dark button-like eyes on the front view, absolutely no mouth, no muzzle smile, and no teeth. Middle row: the exact same muted-coral ball in front and side views with one single cream curved stripe. Bottom row: exactly six individual rounded cube-shaped wooden blocks, no more and no fewer: two muted teal, two soft gold, one coral, one cream. Beside them show one empty woven toy basket and one empty rounded pale-wood rectangular block box. No child, no adult, no extra animal, no extra toy, no face on the ball or blocks, no triangular or cylindrical blocks, no duplicated object, no scenery.",
+      "light": "Flat soft studio lighting with clear silhouettes, exact palette comparison, and no cast shadows connecting separate items."
+    }
+  ]
+}

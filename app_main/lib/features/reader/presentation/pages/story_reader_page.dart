@@ -10,6 +10,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/env/app_environment.dart';
+import '../../../../core/media/bundled_story_assets.dart';
 import '../../../child/application/child_provider.dart';
 import '../../../home/application/home_providers.dart';
 import '../../../home/domain/content_models.dart';
@@ -32,16 +33,9 @@ class _CloseReaderIntent extends Intent {
   const _CloseReaderIntent();
 }
 
-// Local fallback for the checked-in act-s1 preview when its development CDN is
-// unavailable. Other stories never substitute unrelated artwork.
-String? _localFallbackFor(String? url) {
-  if (url == null) return null;
-  final match = RegExp(r'page-(\d+)\.jpg').firstMatch(url);
-  if (match != null && url.contains('act-s1')) {
-    return 'assets/images/stories/act-s1-playveo/page-${match.group(1)}.jpg';
-  }
-  return null;
-}
+// Only reviewed Majarra CDN story packs may fall back to their exact bundled
+// counterpart. Unknown stories never substitute unrelated artwork.
+String? _localFallbackFor(String? url) => bundledStoryAssetForUrl(url);
 
 class StoryReaderPage extends ConsumerStatefulWidget {
   const StoryReaderPage({
@@ -257,8 +251,6 @@ class _StoryReaderPageState extends ConsumerState<StoryReaderPage>
     unawaited(narration.pause());
     unawaited(narration.dispose());
   }
-
-
 
   void _precacheAround(int index) {
     if (_pages.isEmpty || !mounted) return;
@@ -491,7 +483,8 @@ class _StoryReaderPageState extends ConsumerState<StoryReaderPage>
   // Named reader constants — never hard-code `+900/+400` magic numbers.
   // Transition duration is UI animation config, shared with the experience
   // estimator; it is never stored on a story page.
-  static const Duration _pageTransitionDuration = StoryExperience.pageTransition;
+  static const Duration _pageTransitionDuration =
+      StoryExperience.pageTransition;
 
   void _goNext() {
     if (_page >= _pages.length - 1 || !_controller.hasClients) return;
