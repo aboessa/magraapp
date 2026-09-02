@@ -101,8 +101,10 @@ const _allowedConstantLists = <String, String>{
   // local-first tools. These lists describe gallery filters, drawing prompts and
   // bundled reference sheets; none is consumed by a game engine or can affect a
   // pack's board, score or progression.
-  'creative_studio_page.dart:_coloringItems':
-      'standalone studio gallery entries, not pack-driven game content',
+  // `creative_studio_page.dart:_coloringItems` كان هنا وحُذف مع القائمة نفسها:
+  // صارت غير مرجَّعة بعد إزالة القسمين اللذين كانا يعرضانها، وهو ما رصده
+  // المحلّل (`unused_element`). الاستوديو يقرأ رسوم التلوين من المزوّد لا من
+  // قائمة مُصرَّفة.
   'creative_studio_page.dart:_traceItems':
       'standalone studio tracing references, not pack-driven game content',
   'creative_studio_page.dart:_letterItems':
@@ -119,16 +121,65 @@ const _allowedConstantLists = <String, String>{
       'standalone studio free-drawing prompts, not pack-driven game content',
   'my_boards_page.dart:_bgOptions':
       'local creation-board appearance options, not gameplay content',
-  'reference_catalogue_page.dart:_categories':
-      'filters for the standalone drawing reference catalogue',
-  'reference_catalogue_page.dart:_ages':
-      'age filters for the standalone drawing reference catalogue',
+  // `reference_catalogue_page.dart:_categories` و`:_ages` كانا هنا وحُذفا مع
+  // الحقلين نفسيهما (`APP-105`): كانا مُسكَتين بـ`ignore: unused_field` بلا قارئ.
+  // وهذا الاختبار هو ما رصد بقاء استثنائهما — والاستثناء الميت يوهم القارئ أنه
+  // ما زال مطلوبًا.
   'reference_catalogue_page.dart:_activities':
       'standalone drawing reference sheets, never consumed by an engine',
-  'reference_drawing_page.dart:cards':
-      'presentation cards for a selected standalone reference sheet',
+  // `reference_drawing_page.dart:cards` كان هنا وحُذف: المعرّف لم يبقَ في الملف،
+  // واختبار «the allowlist has no stale entries» يرفض بقاء استثناء لشيء غير
+  // موجود — استثناء ميت يوهم القارئ أن الاستثناء ما زال مطلوبًا.
+  // `reference_drawing_page.dart:quickColors` كان هنا وحُذف مع `_bottomToolbar2`
+  // الذي يحويه (`APP-105`) — شريطُ أدوات ثانٍ مُسكَت بـ`ignore: unused_element`.
+
+  // شرائح التصنيفات في كتالوجات الاستوديو المستقلة. أسماء فلاتر واجهة، لا محتوى:
+  // ما تعرضه الشريحة يأتي من الكتالوج، والشريحة نفسها لا تحدّد لوحة ولا نتيجة.
+  'complete_catalogue_page.dart:_cats':
+      'filter chips for the standalone completion-sheet catalogue',
+  'connect_dots_catalogue_page.dart:_cats':
+      'filter chips for the standalone connect-the-dots catalogue',
+  'reference_catalogue_page.dart:cats':
+      'filter chips for the standalone drawing reference catalogue',
+  'reference_catalogue_page_live.dart:cats':
+      'filter chips for the live drawing reference catalogue',
+  'reference_catalogue_page.dart:resumeItems':
+      'labels for the four resume slots on the reference catalogue, not sheet content',
+
+  // كتالوجات بديلة مبندلة، وهذه **استثناءات مؤقتة موسومة** لا تصنيف نهائي.
+  //
+  // هي فعلًا محتوى مؤلَّف مُصرَّف في الحزمة — وهو ما تمنعه هذه السياسة — لكنها
+  // ليست محتوى محرّك: لا تُغذّي لوحة ولا نتيجة ولا تقدّمًا، بل تُبقي الاستوديو
+  // قابلًا للاستخدام عند فشل الشبكة. تُتابَع مع البند نفسه الذي يخص الكاتالوج
+  // المبندل في التطبيق (`APP-103` في `AUDIT_FULL_2026.md`): القرار المطلوب هو
+  // إمّا تحويلها إلى حزمة أصول تُحدَّث من R2، أو تقليصها إلى حالة فارغة معلَّمة
+  // للمستخدم. لا يجوز توسيعها قبل ذلك القرار.
+  'coloring_home_v2.dart:_kLocalFallback5':
+      'TEMPORARY: five bundled colouring fallbacks for an offline studio; tracked with APP-103',
+  'reference_catalogue_page_live.dart:_fallbackLocal':
+      'TEMPORARY: bundled reference sheets used only when the catalogue request fails; tracked with APP-103',
+  'creative_remote_assets.dart:_kFallback5':
+      'TEMPORARY: five bundled asset ids used when the remote asset map is unavailable; tracked with APP-103',
   'drawing_asset_map.dart:kDrawingAssetMap':
       'maps stable drawing reference ids to bundled files; no game logic',
+  // Studio V2 presentation scaffolding — excluded from the game engine contract
+  // because it styles local creation flows and does not feed any engine.
+  'coloring_board_v2.dart:kBoardPaletteV2':
+      'brand palette for the local coloring board chrome; any remote drawing can override the line-art',
+  'coloring_home_v2.dart:kColoringCategoriesV2':
+      'featured category scaffolding for the local coloring hub, not engine gameplay',
+  'coloring_home_v2.dart:kFeaturedColoringV2':
+      'featured drawing scaffolding for the local coloring hub, not engine gameplay',
+  'trace_home_v2.dart:kTraceCategoriesV2':
+      'local tracing gallery categories for the studio hub, not engine gameplay',
+  'category_inside_coloring_page.dart:kColoringTutorialSteps':
+      'first-run help copy for the local coloring board, not pack content',
+  'my_boards_v2.dart:_newTypes':
+      'local board template options for creating a new free-draw document',
+  'prompt_draw_page.dart:_prompts':
+      'local drawing prompts for an unscored free-draw creation flow',
+  'success_and_save.dart:_steps':
+      'first-run tutorial copy for the local creation flow, not engine levels',
 
   // Creation document sync in the session controller — schema keys for the
   // editable document, not authored content.

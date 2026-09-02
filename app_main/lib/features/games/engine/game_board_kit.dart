@@ -65,8 +65,11 @@ List<int?> nullableInts(Object? value) {
 }
 
 /// A deterministic shuffle seeded from the level, so a rebuild does not reshuffle
-/// the board under a child's finger.
+/// the board under a child's finger. Returns empty immediately to avoid
+/// Random().nextInt(0) on dart2js (js_primitives.dart:28) when pack data is missing.
 List<T> seededShuffle<T>(List<T> items, int seed) {
+  if (items.isEmpty) return const [];
+  if (items.length == 1) return List<T>.of(items);
   final copy = List<T>.of(items);
   copy.shuffle(math.Random(seed));
   return copy;

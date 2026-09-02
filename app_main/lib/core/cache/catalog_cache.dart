@@ -67,8 +67,23 @@ class CachedCatalog {
 class CatalogCache {
   const CatalogCache();
 
-  static const _payloadKey = 'majarra_catalog_cache_v1';
-  static const _savedAtKey = 'majarra_catalog_cache_saved_at';
+  /// The root every version of this cache has shared, used by [clear] so a
+  /// schema bump cannot orphan the previous version's entries on disk.
+  static const _keyRoot = 'majarra_catalog_cache';
+
+  /// Public so tests manipulate the same key the implementation writes.
+  ///
+  /// They were previously duplicated as literals in `test/catalog_cache_test.dart`,
+  /// and when the keys moved to `_v2` the tests kept backdating
+  /// `majarra_catalog_cache_saved_at` — a key nothing reads. Two tests that exist
+  /// to prove an expired entry and a future timestamp are refused were therefore
+  /// asserting against an untouched, perfectly fresh cache. The TTL logic was
+  /// correct all along; the tests had gone blind.
+  static const payloadKey = '${_keyRoot}_v2';
+  static const savedAtKey = '${_keyRoot}_saved_at_v2';
+
+  static const _payloadKey = payloadKey;
+  static const _savedAtKey = savedAtKey;
 
   /// A stale poster is preferable to an unrelated bundled title, while every
   /// app load still attempts a fresh request before consulting this snapshot.
@@ -123,11 +138,22 @@ class CatalogCache {
     }
   }
 
+  /// Removes the snapshot, **of every schema version**.
+  ///
+  /// Sweeping [_keyRoot] rather than removing the two current keys: an entry
+  /// written by a build that used the `_v1` keys is never read and never expired
+  /// by this class, so removing only the current pair left it on disk for the
+  /// life of the install.
   Future<void> clear() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_payloadKey);
-      await prefs.remove(_savedAtKey);
+      final keys = prefs
+          .getKeys()
+          .where((key) => key.startsWith(_keyRoot))
+          .toList(growable: false);
+      for (final key in keys) {
+        await prefs.remove(key);
+      }
     } catch (_) {
       // Nothing actionable; the TTL bounds any entry that survives.
     }

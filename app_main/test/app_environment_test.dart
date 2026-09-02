@@ -39,7 +39,9 @@ void main() {
       expect(decision.isValid, isFalse);
     });
 
-    test('rejects the staging host in production', () {
+    test('rejects a majarra subdomain that is not the API host', () {
+      // نطاق فرعي يبدو مألوفًا هو أخطر ما يُقبل بالخطأ: قائمة الإنتاج مضيف
+      // واحد بالاسم، لا نمط على النطاق.
       final decision = AppConfig.validateBaseUrl(
         'https://staging-api.majarra.app',
         environment: env,
@@ -91,7 +93,7 @@ void main() {
     });
   });
 
-  group('AppConfig.validateBaseUrl — development / staging allowlist', () {
+  group('AppConfig.validateBaseUrl — development allowlist', () {
     const env = AppEnvironment.development;
 
     test('accepts loopback over http (locally-run worker)', () {
@@ -110,12 +112,15 @@ void main() {
       expect(decision.isValid, isTrue);
     });
 
-    test('accepts the staging host', () {
+    test('rejects the former staging host', () {
+      // كان هذا المضيف مقبولًا في بناء التطوير حين كان التعداد يحمل عضو
+      // `staging`. لا توجد بيئة staging (قرار مالك: كل شيء على الإنتاج في مرحلة
+      // التطوير)، فالمضيف صار مثل أي مضيف غير مُدرَج ويُرفض في كل البيئات.
       final decision = AppConfig.validateBaseUrl(
         'https://staging-api.majarra.app',
         environment: env,
       );
-      expect(decision.isValid, isTrue);
+      expect(decision.isValid, isFalse);
     });
 
     test('still rejects arbitrary remote http', () {

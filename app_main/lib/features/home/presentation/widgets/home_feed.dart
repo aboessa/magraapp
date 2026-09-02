@@ -345,205 +345,7 @@ class _RealContinueSliver extends ConsumerWidget {
   }
 }
 
-/// Explore Majarra — 6 large destination cards (شاهد/العب/اقرأ/استمع/ارسم/الكواكب)
-// Reserved for Phase 2 discovery layout — kept behind hideWhenEmpty until wired
-// ignore: unused_element
-class _ExploreMajarraSection extends StatelessWidget {
-  const _ExploreMajarraSection({
-    required this.catalog,
-    required this.isTelevision,
-  });
-  final HomeCatalog catalog;
-  final bool isTelevision;
-  @override
-  Widget build(BuildContext context) {
-    final destinations = _buildDestinations(context);
-    final isTablet = MediaQuery.sizeOf(context).width >= 600;
-    final cross = isTelevision ? 3 : (isTablet ? 3 : 2);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            const Text(
-              'استكشف مجرة',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_left_rounded,
-              color: Colors.white.withValues(alpha: 0.62),
-              size: 20,
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'شاهد • العب • اقرأ • استمع • ارسم • اكتشف',
-          style: TextStyle(
-            color: AppColors.mutedText.withValues(alpha: 0.62),
-            fontSize: 11.5,
-          ),
-        ),
-        const SizedBox(height: 14),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: cross,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: isTelevision ? 1.4 : 1.35,
-          ),
-          itemCount: destinations.length,
-          itemBuilder: (context, i) => _ExploreCard(dest: destinations[i]),
-        ),
-      ],
-    );
-  }
 
-  List<_ExploreDest> _buildDestinations(BuildContext context) {
-    final hasAudio = catalog.books.any(
-      (b) => b.type == 'audio_story' || b.isPlayable,
-    );
-    return [
-      _ExploreDest(
-        id: 'watch',
-        label: 'شاهد',
-        desc: catalog.series.isEmpty
-            ? 'سلاسل وحلقات'
-            : '${catalog.series.length} سلسلة',
-        icon: Icons.play_circle_fill_rounded,
-        color: const Color(0xFF2580FF),
-        onTap: () => context.push('/watch'),
-      ),
-      _ExploreDest(
-        id: 'play',
-        label: 'العب',
-        desc: 'ألعاب تناسب عمرك',
-        icon: Icons.sports_esports_rounded,
-        color: const Color(0xFF5BE7A9),
-        onTap: () => context.push('/play'),
-      ),
-      _ExploreDest(
-        id: 'read',
-        label: 'اقرأ',
-        desc: 'قصص وكتب',
-        icon: Icons.menu_book_rounded,
-        color: const Color(0xFF9D68FF),
-        onTap: () => context.push('/read'),
-      ),
-      if (hasAudio)
-        _ExploreDest(
-          id: 'listen',
-          label: 'استمع',
-          desc: 'حكايات مسموعة',
-          icon: Icons.headphones_rounded,
-          color: const Color(0xFFFF6FAE),
-          onTap: () => context.push('/listen'),
-        ),
-      _ExploreDest(
-        id: 'draw',
-        label: 'ارسم',
-        desc: 'استوديو الإبداع',
-        icon: Icons.brush_rounded,
-        color: const Color(0xFFFFB52E),
-        onTap: () => context.push('/studio'),
-      ),
-      _ExploreDest(
-        id: 'planets',
-        label: 'الكواكب',
-        desc: '${catalog.planets.length} عوالم',
-        icon: Icons.public_rounded,
-        color: AppColors.royalBlue,
-        onTap: () => context.push('/planets'),
-      ),
-    ];
-  }
-}
-
-class _ExploreDest {
-  const _ExploreDest({
-    required this.id,
-    required this.label,
-    required this.desc,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-  final String id;
-  final String label;
-  final String desc;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-}
-
-class _ExploreCard extends StatelessWidget {
-  const _ExploreCard({required this.dest});
-  final _ExploreDest dest;
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: dest.onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFF121A38).withValues(alpha: 0.96),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [dest.color.withValues(alpha: 0.18), Colors.transparent],
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: dest.color.withValues(alpha: 0.18),
-                ),
-                child: Icon(dest.icon, color: dest.color, size: 24),
-              ),
-              const Spacer(),
-              Text(
-                dest.label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                dest.desc,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: AppColors.mutedText.withValues(alpha: 0.72),
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// Horizontal slider — استكشف مجرة (after planets, compact rail)
 class _ExploreMajarraRail extends StatelessWidget {
@@ -843,91 +645,45 @@ class _ExploreRailCard extends StatelessWidget {
   }
 }
 
-/// Creative Studio first-class Home entry
+/// Creative Studio first-class Home entry — now full banner image homebgaart.png
 class _CreativeStudioEntry extends StatelessWidget {
   const _CreativeStudioEntry({required this.isTelevision});
   final bool isTelevision;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2A1B5A), Color(0xFF1B2550), Color(0xFF0A102A)],
+    return Semantics(
+      button: true,
+      label: 'مرسمي - افتح استوديو الرسم والتلوين',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.push('/studio'),
+            borderRadius: BorderRadius.circular(22),
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: Color(
+                  0xFF1A1040,
+                ), // matches image gradient, no black bleed
+              ),
+              child: Image.asset(
+                'assets/images/studio/homebgaart.webp',
+                fit: BoxFit.contain,
+                width: double.infinity,
+                alignment: Alignment.center,
+                excludeFromSemantics: true,
+                errorBuilder: (_, __, ___) => Image.asset(
+                  'assets/images/studio/homebgaart.png',
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  alignment: Alignment.center,
+                  excludeFromSemantics: true,
+                ),
+              ),
+            ),
+          ),
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.starGold,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'استوديو الإبداع',
-                    style: TextStyle(
-                      color: AppColors.deepSpace,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'ارسم • لوّن • ابتكر',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'لوحاتك وألوانك في مكان واحد',
-                  style: TextStyle(
-                    color: AppColors.mutedText.withValues(alpha: 0.75),
-                    fontSize: 11,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                FilledButton.icon(
-                  onPressed: () => context.push('/studio'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppColors.deepSpace,
-                  ),
-                  icon: const Icon(Icons.brush_rounded, size: 18),
-                  label: const Text('ابدأ الرسم'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: isTelevision ? 96 : 84,
-            height: isTelevision ? 96 : 84,
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-            ),
-            child: Image.asset(
-              'assets/images/explore/creative-studio-promo.webp',
-              fit: BoxFit.cover,
-              excludeFromSemantics: true,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1144,18 +900,30 @@ class _BlockSliver extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (block.type) {
       case BlockType.heroSlider:
+        // Fix: For demo child (ليلى تجريبي), spotlights can be filtered out by ageTrack
+        // if series don't match preschool filter. Fallback to LocalCatalog spotlights
+        // to ensure hero is always visible, especially for demo.
+        final effectiveSpotlights = catalog.spotlights.isEmpty
+            ? catalog.series.isNotEmpty
+                ? [for (final s in catalog.series.take(3)) HomeSpotlight(id: 'fallback-${s.id}', seriesId: s.id, eyebrow: 'مجرة • ${s.planetName}', primaryActionLabel: 'شاهد الآن')]
+                : const <HomeSpotlight>[]
+            : catalog.spotlights;
+        if (effectiveSpotlights.isEmpty || catalog.series.isEmpty) {
+          // Absolute fallback – show welcome card instead of empty space
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(padding, 22, padding, 0),
+              child: _WelcomeJourneyCard(onExplore: () => onOpenPlanets?.call()),
+            ),
+          );
+        }
         return SliverToBoxAdapter(
           child: CinematicHeroSlider(
-            spotlights: catalog.spotlights,
+            spotlights: effectiveSpotlights,
             series: catalog.series,
             isTelevision: isTelevision,
             onOpenSeries: (item) {
-              // H9: the analytics class existed with zero call sites. The
-              // spotlight id, not the series id, is logged because the event is
-              // about which curated slide converted.
-              final spotlight = catalog.spotlights
-                  .where((s) => s.seriesId == item.id)
-                  .firstOrNull;
+              final spotlight = catalog.spotlights.where((s) => s.seriesId == item.id).firstOrNull;
               if (spotlight != null) MajarraAnalytics.heroAction(spotlight.id);
               context.push('/series/${item.id}');
             },
@@ -1214,21 +982,17 @@ class _BlockSliver extends StatelessWidget {
         );
 
       case BlockType.newEpisodes:
-        // Deterministic freshness: the last entries in catalogue order. There is
-        // no publication timestamp on the client, so this is ordering, not a
-        // claim about dates.
         return SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(top: 30),
             child: ContentRail<EpisodeItem>(
               title: block.title ?? 'حلقات جديدة',
               subtitle: block.subtitle ?? 'أضيفت حديثًا',
-              items: catalog.episodes.reversed
-                  .take(block.maxItems ?? 5)
-                  .toList(),
+              items: catalog.episodes.reversed.take(block.maxItems ?? 5).toList(),
               height: isTelevision ? 247 : 208,
               horizontalPadding: padding,
               isTelevision: isTelevision,
+              onSeeAll: () => context.push('/watch'),
               itemBuilder: (context, item, index) => EpisodeCard(
                 item: item,
                 isTelevision: isTelevision,
@@ -1249,6 +1013,7 @@ class _BlockSliver extends StatelessWidget {
               height: isTelevision ? 354 : 282,
               horizontalPadding: padding,
               isTelevision: isTelevision,
+              onSeeAll: () => context.push('/watch'),
               itemBuilder: (context, item, index) => SeriesCard(
                 item: item,
                 isTelevision: isTelevision,
@@ -1273,9 +1038,7 @@ class _BlockSliver extends StatelessWidget {
             padding: const EdgeInsets.only(top: 26),
             child: ContentRail<Planet>(
               title: block.title ?? 'الكواكب',
-              subtitle:
-                  block.subtitle ??
-                  'اختر عالمًا، ثم شاهد سلاسله وحلقاته وأنشطته',
+              subtitle: block.subtitle ?? 'اختر عالمًا، ثم شاهد سلاسله وحلقاته وأنشطته',
               items: catalog.planets,
               height: isTelevision ? 226 : 190,
               horizontalPadding: padding,
@@ -1295,6 +1058,45 @@ class _BlockSliver extends StatelessWidget {
             ),
           ),
         );
+      case BlockType.comingSoon:
+        // «قريباً» صارت **مقيسة**: سلسلةٌ مُعلَنة لا حلقة فيها بعد.
+        //
+        // كان لهذا النوع **تطبيقان** في هذا الـswitch: الأوّل يعرض
+        // `series.reversed.take(n)` والثاني `series.take(5)` — أي **أحدث
+        // السلاسل المتاحة للمشاهدة** تحت عنوان «قريباً». والثاني كان غير قابل
+        // للوصول (`unreachable_switch_case`)، فحُذف هو وصنفُه.
+        //
+        // ووسمُ ما يُفتَح الآن بأنه «قريبًا» هو الكذب الذي أصلحه `CNT-106` على
+        // بطاقة الكوكب، بعينه على الصفّ: طفلٌ ينقر ما يظنّه غير متاح، أو يهمل
+        // ما هو متاح. ولا حقل «قادم» في `SeriesItem` — لكن `episodesCount == 0`
+        // إشارةٌ صادقة موجودة: مجلَّدٌ أُعلن ولم يُملأ.
+        final upcoming = catalog.series
+            .where((series) => series.episodesCount == 0)
+            .take(block.maxItems ?? 4)
+            .toList(growable: false);
+        // وعند غياب ما هو قادم **لا صفّ**، كما تفعل بقيّة الصفوف في هذا الملف.
+        // صفٌّ فارغ بعنوانٍ يَعِد أسوأ من غيابه.
+        if (upcoming.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        return SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 30),
+            child: ContentRail<SeriesItem>(
+              title: block.title ?? 'قريباً',
+              subtitle: block.subtitle ?? 'عناوين جديدة قادمة',
+              items: upcoming,
+              height: isTelevision ? 354 : 282,
+              horizontalPadding: padding,
+              isTelevision: isTelevision,
+              itemBuilder: (context, item, index) => SeriesCard(
+                item: item,
+                isTelevision: isTelevision,
+                onPressed: () => context.push('/series/${item.id}'),
+              ),
+            ),
+          ),
+        );
 
       case BlockType.contentRail:
         final style = block.cardStyle;
@@ -1309,6 +1111,7 @@ class _BlockSliver extends StatelessWidget {
                 height: isTelevision ? 247 : 208,
                 horizontalPadding: padding,
                 isTelevision: isTelevision,
+                onSeeAll: () => context.push('/watch'),
                 itemBuilder: (context, item, index) => EpisodeCard(
                   item: item,
                   isTelevision: isTelevision,
@@ -1341,12 +1144,14 @@ class _BlockSliver extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(top: 30),
               child: ContentRail<BookItem>(
-                title: block.title ?? 'قصص مصورة',
-                subtitle: block.subtitle,
+                title: block.title ?? 'حكايات وقصص',
+                subtitle: block.subtitle ?? 'قصص مصورة وحكايات مسموعة لكل الأعمار',
                 items: books.take(6).toList(),
                 height: isTelevision ? 354 : 282,
                 horizontalPadding: padding,
                 isTelevision: isTelevision,
+                // Title tap now navigates to full list — always show see-all for stories
+                onSeeAll: () => context.push('/read'),
                 itemBuilder: (context, item, index) => BookCard(
                   item: item,
                   isTelevision: isTelevision,
@@ -1374,18 +1179,18 @@ class _BlockSliver extends StatelessWidget {
           );
         }
         if (style == CardStyle.square) {
+          final sqItems = catalog.experiences.where((item) => item.isServerBacked).toList(growable: false);
           return SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(top: 30),
               child: ContentRail<ExperienceItem>(
                 title: block.title ?? 'العب وتعلّم',
-                subtitle: block.subtitle,
-                items: catalog.experiences
-                    .where((item) => item.isServerBacked)
-                    .toList(growable: false),
+                subtitle: block.subtitle ?? 'ألعاب وتحديات تناسب عمرك',
+                items: sqItems,
                 height: isTelevision ? 322 : 266,
                 horizontalPadding: padding,
                 isTelevision: isTelevision,
+                onSeeAll: () => context.push('/play'),
                 itemBuilder: (context, item, index) => ExperienceCard(
                   item: item,
                   isTelevision: isTelevision,
@@ -1395,17 +1200,18 @@ class _BlockSliver extends StatelessWidget {
             ),
           );
         }
-        // default portrait
+        // default portrait – سلاسل مختارة (e.g. حكايات وقصص, مغامرات, etc)
         return SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(top: 30),
             child: ContentRail<SeriesItem>(
               title: block.title ?? 'سلاسل مختارة',
-              subtitle: block.subtitle,
+              subtitle: block.subtitle ?? 'شاهد كل السلاسل',
               items: catalog.series,
               height: isTelevision ? 354 : 282,
               horizontalPadding: padding,
               isTelevision: isTelevision,
+              onSeeAll: () => context.push('/watch'),
               itemBuilder: (context, item, index) => SeriesCard(
                 item: item,
                 isTelevision: isTelevision,
@@ -1434,10 +1240,6 @@ class _BlockSliver extends StatelessWidget {
           ),
         );
 
-      case BlockType.learningJourney:
-        // Disabled: hardcoded 0.34 progress with no endpoint — hide until real journey.
-        return const SliverToBoxAdapter(child: SizedBox.shrink());
-
       case BlockType.audioRail:
         final audioBooks = catalog.books
             .where((book) => book.type == 'audio_story' || book.isPlayable)
@@ -1451,11 +1253,12 @@ class _BlockSliver extends StatelessWidget {
             padding: const EdgeInsets.only(top: 30),
             child: ContentRail<BookItem>(
               title: block.title ?? 'استمع الآن',
-              subtitle: block.subtitle,
+              subtitle: block.subtitle ?? 'حكايات مسموعة لكل الأعمار',
               items: audioBooks,
               height: isTelevision ? 260 : 220,
               horizontalPadding: padding,
               isTelevision: isTelevision,
+              onSeeAll: () => context.push('/listen'),
               itemBuilder: (context, item, index) => InkWell(
                 onTap: () => context.push(
                   Uri(
@@ -1466,20 +1269,6 @@ class _BlockSliver extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 child: _AudioCard(item: item, isTelevision: isTelevision),
               ),
-            ),
-          ),
-        );
-
-      case BlockType.comingSoon:
-        return SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 30),
-            child: _ComingSoonRail(
-              padding: padding,
-              isTelevision: isTelevision,
-              catalog: catalog,
-              title: block.title,
-              subtitle: block.subtitle,
             ),
           ),
         );
@@ -1582,14 +1371,12 @@ class _BlockSliver extends StatelessWidget {
           ),
         );
 
-      case BlockType.mostWatched:
-        // Hidden until trustworthy analytics transport exists — no fake ranking.
-        return const SliverToBoxAdapter(child: SizedBox.shrink());
-
-      case BlockType.becauseYouWatched:
-        // Hidden until rule-based recommendation engine provides truthful candidates.
-        return const SliverToBoxAdapter(child: SizedBox.shrink());
-
+      // `APP-104`: لا حالات لـ`learningJourney` و`mostWatched`
+      // و`becauseYouWatched` — حُذفت من `BlockType` بقرارٍ موثَّق. كانت ثلاث
+      // حالات تُرجِع `SizedBox.shrink()` وتعليقاتها تُقرّ بأنها معطَّلة، أي
+      // نوعٌ في التعداد وصفٌّ يُعرَض في لوحة الإدارة **ولا يظهر للطفل أبدًا**.
+      // ومن يعيدها يعيد الوعد الفارغ معها، فليقرأ سبب الحذف في
+      // `domain/feed_blocks.dart` أوّلًا: لكل نوعٍ من الثلاثة سببٌ مستقلّ.
       case BlockType.characterOrbit:
         return SliverToBoxAdapter(
           child: Padding(
@@ -1885,114 +1672,6 @@ class _FeatureBannerCard extends StatelessWidget {
   }
 }
 
-// ignore: unused_element
-class _LearningJourneyCard extends StatelessWidget {
-  // ignore: unused_element
-  const _LearningJourneyCard({required this.isTelevision});
-  final bool isTelevision;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [const Color(0xFF16204A), const Color(0xFF0B1026)],
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.electricCyan.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(99),
-                ),
-                child: const Text(
-                  'رحلة تعليمية',
-                  style: TextStyle(
-                    color: AppColors.electricCyan,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '3 خطوات • 12 دقيقة',
-                style: TextStyle(
-                  color: AppColors.mutedText.withValues(alpha: 0.7),
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'مغامرة الحروف الأولى',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'اقرأ، استمع، ثم العب - خطوة بخطوة',
-            style: TextStyle(
-              color: AppColors.mutedText.withValues(alpha: 0.75),
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(99),
-            child: LinearProgressIndicator(
-              value: 0.34,
-              backgroundColor: Colors.white.withValues(alpha: 0.10),
-              valueColor: const AlwaysStoppedAnimation(AppColors.starGold),
-              minHeight: 6,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(
-                Icons.play_circle_fill_rounded,
-                color: AppColors.starGold,
-                size: 20,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'الخطوة التالية: استمع للحرف',
-                style: TextStyle(
-                  color: AppColors.mutedText.withValues(alpha: 0.9),
-                  fontSize: 11,
-                ),
-              ),
-              const Spacer(),
-              // "تابع" had an empty callback. This whole card is a mock: the
-              // title, the 0.34 progress and the step copy are all hardcoded,
-              // and there is no learning-journey endpoint to resume from
-              // (`learning_objectives` has zero rows). Disabled until the
-              // journey is real, so the card cannot promise a resume that
-              // silently does nothing.
-              const TextButton(onPressed: null, child: Text('تابع')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _AudioCard extends StatelessWidget {
   const _AudioCard({required this.item, required this.isTelevision});
@@ -2201,296 +1880,6 @@ class _CharacterOrbitRail extends StatelessWidget {
   }
 }
 
-class _ComingSoonRail extends StatelessWidget {
-  const _ComingSoonRail({
-    required this.padding,
-    required this.isTelevision,
-    required this.catalog,
-    this.title,
-    this.subtitle,
-  });
-  final double padding;
-  final bool isTelevision;
-  final HomeCatalog catalog;
-  final String? title;
-  final String? subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final items = catalog.series.take(5).toList();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: EdgeInsetsDirectional.symmetric(horizontal: padding),
-          child: Row(
-            children: [
-              Text(
-                title ?? 'قريباً',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.chevron_left_rounded,
-                color: Colors.white.withValues(alpha: 0.62),
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-        if (subtitle != null) ...[
-          const SizedBox(height: 4),
-          Padding(
-            padding: EdgeInsetsDirectional.symmetric(horizontal: padding),
-            child: Text(
-              subtitle!,
-              style: TextStyle(
-                color: AppColors.mutedText.withValues(alpha: 0.62),
-                fontSize: 11.5,
-              ),
-            ),
-          ),
-        ],
-        const SizedBox(height: 14),
-        SizedBox(
-          height: isTelevision ? 354 : 282,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsetsDirectional.symmetric(horizontal: padding),
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              // No release-date field exists in the catalogue. A hardcoded
-              // list of dates previously implied real scheduling, so only a
-              // neutral badge is shown here.
-              return Stack(
-                children: [
-                  SeriesCard(
-                    item: item,
-                    isTelevision: isTelevision,
-                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          '${item.title} — لم يُعلن موعد العرض بعد',
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.22),
-                            Colors.black.withValues(alpha: 0.55),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  PositionedDirectional(
-                    top: 8,
-                    start: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE5485D),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_rounded,
-                            color: Colors.white,
-                            size: 10,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'قريباً',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  PositionedDirectional(
-                    bottom: 48,
-                    start: 10,
-                    end: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.62),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.12),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.notifications_none_rounded,
-                            color: AppColors.starGold,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'ذكرني',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ignore: unused_element
-class _MostWatchedRail extends StatelessWidget {
-  const _MostWatchedRail({
-    required this.padding,
-    required this.isTelevision,
-    required this.items,
-  });
-  final double padding;
-  final bool isTelevision;
-  final List<SeriesItem> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: EdgeInsetsDirectional.symmetric(horizontal: padding),
-          child: Row(
-            children: [
-              const Text(
-                'الأكثر مشاهدة',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.chevron_left_rounded,
-                color: Colors.white.withValues(alpha: 0.62),
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Padding(
-          padding: EdgeInsetsDirectional.symmetric(horizontal: padding),
-          child: Text(
-            'يتصدر المشاهدات هذا الأسبوع',
-            style: TextStyle(
-              color: AppColors.mutedText.withValues(alpha: 0.62),
-              fontSize: 11.5,
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          height: isTelevision ? 354 : 282,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsetsDirectional.symmetric(horizontal: padding),
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  SeriesCard(
-                    item: item,
-                    isTelevision: isTelevision,
-                    onPressed: () => context.push('/series/${item.id}'),
-                  ),
-                  PositionedDirectional(
-                    top: -6,
-                    start: -6,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: index == 0
-                            ? AppColors.starGold
-                            : index == 1
-                            ? const Color(0xFFAAB5D1)
-                            : index == 2
-                            ? const Color(0xFFD9903D)
-                            : const Color(0xFF1B2550),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.18),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.32),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${index + 1}',
-                          style: TextStyle(
-                            color: index < 3
-                                ? AppColors.deepSpace
-                                : Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 /// A seasonal banner rendered only from complete Home Builder configuration.
 class _SeasonalBannerCard extends StatelessWidget {
@@ -2641,7 +2030,6 @@ class _HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).width < 410;
-    final freeSeries = catalog.series.where((item) => item.isFree).firstOrNull;
 
     return Row(
       children: [
@@ -2657,18 +2045,17 @@ class _HomeHeader extends StatelessWidget {
           Text('مجرة', style: Theme.of(context).textTheme.titleLarge),
         ],
         const Spacer(),
-        _HeaderTextAction(label: 'الكواكب', onPressed: onOpenPlanets),
+        _HeaderTextAction(
+          label: 'الكواكب',
+          onPressed: onOpenPlanets ?? () => context.push('/planets'),
+        ),
         _HeaderTextAction(
           label: 'السلاسل',
-          onPressed: catalog.series.isEmpty
-              ? null
-              : () => context.push('/series/${catalog.series.first.id}'),
+          onPressed: () => context.push('/watch'),
         ),
         const SizedBox(width: 2),
         FilledButton(
-          onPressed: freeSeries == null
-              ? null
-              : () => context.push('/series/${freeSeries.id}'),
+          onPressed: () => context.push('/membership'),
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.starGold,
             foregroundColor: AppColors.deepSpace,
@@ -2677,7 +2064,7 @@ class _HomeHeader extends StatelessWidget {
             visualDensity: VisualDensity.compact,
           ),
           child: Text(
-            compact ? 'مجانًا' : 'جرّب مجانًا',
+            compact ? 'الباقات' : 'عرض الباقات',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

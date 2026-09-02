@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/router/auth_guard.dart';
 import '../../home/application/home_providers.dart';
 
 /// Plan tiers the server recognises.
@@ -74,8 +75,14 @@ class BillingSubscription {
     _ => status.isEmpty ? 'غير معروف' : status,
   };
 
-  String get sourceLabel =>
-      source == 'google_play' ? 'Google Play' : (source.isEmpty ? '—' : source);
+  String get sourceLabel => switch (source) {
+    'google_play' => 'Google Play',
+    'app_store' => 'App Store',
+    'stripe' => 'الدفع الإلكتروني',
+    'payment_gateway' => 'بوابة الدفع',
+    'manual' => 'دفع مباشر',
+    _ => source.isEmpty ? '—' : source,
+  };
 }
 
 /// Plan caps as enforced by the server, plus how much of each is in use.
@@ -104,6 +111,7 @@ class BillingStatus {
     required this.basePlan,
     required this.limits,
     this.subscription,
+    this.isGuestPreview = false,
   });
 
   factory BillingStatus.fromJson(Map<String, Object?> json) {
@@ -137,6 +145,26 @@ class BillingStatus {
     );
   }
 
+  /// Read-only preview for the local guest session.
+  ///
+  /// The guest has no account, so `GET /billing/status` cannot be called. The
+  /// free tier is reported with the same limits the server enforces, and
+  /// [isGuestPreview] keeps the screen from offering a purchase that would need
+  /// a real family account.
+  static const guestPreview = BillingStatus(
+    plan: BillingPlan.free,
+    basePlan: BillingPlan.free,
+    limits: BillingLimits(
+      children: 1,
+      devices: 1,
+      concurrentStreams: 1,
+      downloadDevices: 0,
+      usedChildren: 1,
+      usedDevices: 1,
+    ),
+    isGuestPreview: true,
+  );
+
   /// Plan currently in force, including any paid entitlement.
   final BillingPlan plan;
 
@@ -144,6 +172,9 @@ class BillingStatus {
   final BillingPlan basePlan;
   final BillingLimits limits;
   final BillingSubscription? subscription;
+
+  /// True when this is the guest preview rather than a real account entitlement.
+  final bool isGuestPreview;
 
   bool get hasSubscription => subscription != null;
 }
@@ -154,6 +185,11 @@ class BillingStatus {
 /// source at all. It reports the same plan the server uses to enforce limits, so
 /// the screen cannot advertise a tier the app does not grant.
 final billingStatusProvider = FutureProvider<BillingStatus>((ref) async {
+  // The guest session holds no credentials, so requesting the account ledger
+  // would only produce an authentication error on a screen the guest is
+  // explicitly allowed to preview.
+  if (ref.watch(authGuardProvider).isDemo) return BillingStatus.guestPreview;
+
   final api = ref.watch(majarraApiClientProvider);
   final envelope = await api.getBillingStatus();
   final data = envelope['data'];

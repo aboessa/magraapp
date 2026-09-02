@@ -12,6 +12,7 @@ import '../../data/local_creation_store.dart';
 import '../../engine/game_pack.dart';
 import '../../engine/game_services.dart';
 import '../../engine/game_session_controller.dart';
+import '../studio/studio_app_bar.dart';
 import 'creative_studio_page.dart' show ColoringActivityHost, TraceActivityHost;
 import 'reference_catalogue_page.dart' show ReferenceActivity;
 import 'reference_drawing_page.dart';
@@ -22,7 +23,7 @@ class _DeepLinkScaffold extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(title)),
+    appBar: StudioAppBar(title: title, glyph: Icons.brush_rounded),
     body: child,
   );
 }
@@ -104,7 +105,10 @@ class _ColoringDeepLinkPageState extends ConsumerState<ColoringDeepLinkPage> {
   Widget build(BuildContext context) {
     final store = ref.watch(localCreationStoreProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.template.label)),
+      appBar: StudioAppBar(
+        title: widget.template.label,
+        glyph: Icons.palette_rounded,
+      ),
       body: ColoringActivityHost(
         controller: _controller,
         creationStore: store,

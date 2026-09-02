@@ -289,6 +289,8 @@ class _DownloadRow extends StatelessWidget {
                               networkUrl: item.posterUrl,
                               semanticLabel: 'غلاف ${item.title}',
                               fit: BoxFit.cover,
+                              // حوض 84×58 (`PERF-102`).
+                              decodeWidth: 84,
                             )
                           : Container(color: AppColors.indigoSurface),
                     ),

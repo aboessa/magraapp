@@ -11,11 +11,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/device/device_profile.dart';
+import '../../../../core/env/app_environment.dart';
 import '../../../child/application/child_provider.dart';
 import '../../application/creation_cloud_service.dart';
 import '../../application/game_providers.dart';
 import '../../engine/game_pack.dart';
 import '../../engine/game_session_controller.dart';
+import '../../engine/media_audio_player.dart';
 import 'game_screen.dart';
 
 /// Highest pack schema this build can parse safely.
@@ -102,6 +104,16 @@ class _GameHostState extends ConsumerState<_GameHost> {
   @override
   void initState() {
     super.initState();
+    final tokens = widget.game.assetTokens;
+    final audioService = tokens.isNotEmpty
+        ? CapTokenGameAudioService(
+            player: JustAudioAdapter(),
+            assetTokens: tokens,
+            urlBuilder: (assetId, token) =>
+                '${AppConfig.baseUrl}/api/v1/media/assets/${Uri.encodeComponent(assetId)}?token=${Uri.encodeComponent(token)}',
+          )
+        : ref.read(gameAudioServiceProvider);
+
     _controller = GameSessionController(
       pack: widget.game.pack,
       gameId: widget.game.gameId,
@@ -109,7 +121,7 @@ class _GameHostState extends ConsumerState<_GameHost> {
       objectiveId: widget.game.objectiveId,
       episodeId: widget.game.episodeId,
       ageTrack: widget.game.ageTrack,
-      audio: ref.read(gameAudioServiceProvider),
+      audio: audioService,
       reporter: ref.read(attemptReporterProvider),
       eventIdFactory: newEventId,
     );

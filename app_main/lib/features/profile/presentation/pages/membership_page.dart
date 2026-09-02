@@ -1,11 +1,22 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/device/device_profile.dart';
 import '../../../../core/failures/app_failure.dart';
 import '../../../../core/widgets/cinematic_background.dart';
+import '../../data/billing_catalog.dart';
 import '../../data/billing_status.dart';
+import '../../data/google_play_billing.dart';
+import '../../../home/application/home_providers.dart';
 import '../widgets/profile_page_content.dart';
 
 /// Membership and subscription state.
@@ -15,12 +26,241 @@ import '../widgets/profile_page_content.dart';
 /// price and both actions were disabled. The endpoint now exists and reports the
 /// same effective plan the server uses to enforce limits, so what is shown here
 /// cannot disagree with what the account actually grants.
-class MembershipPage extends ConsumerWidget {
+class MembershipPage extends ConsumerStatefulWidget {
   const MembershipPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MembershipPage> createState() => _MembershipPageState();
+}
+
+class _MembershipPageState extends ConsumerState<MembershipPage> {
+  final InAppPurchase _purchases = InAppPurchase.instance;
+  final Set<String> _knownProductIds = <String>{};
+  final Set<String> _verifyingPurchaseIds = <String>{};
+  StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
+  bool _billingActionInProgress = false;
+  String? _billingMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _purchaseSubscription = _purchases.purchaseStream.listen(
+      _handlePurchaseUpdates,
+      onError: (_, __) =>
+          _setBillingMessage('تعذر إتمام عملية الشراء. أعد المحاولة.'),
+    );
+    _restorePendingPurchases();
+  }
+
+  @override
+  void dispose() {
+    _purchaseSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _setBillingMessage(String? message) {
+    if (!mounted) return;
+    setState(() => _billingMessage = message);
+  }
+
+  Future<void> _restorePendingPurchases() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      final contextData = GooglePlayBillingContext.fromEnvelope(
+        await ref.read(majarraApiClientProvider).getGooglePlayBillingContext(),
+      );
+      _knownProductIds
+        ..clear()
+        ..addAll(contextData.products.keys);
+      if (await _purchases.isAvailable()) {
+        await _purchases.restorePurchases(
+          applicationUserName: contextData.obfuscatedAccountId,
+        );
+      }
+    } catch (_) {
+      // A fresh purchase still loads the same context when the parent opens
+      // plans; restoration must not make the membership screen unusable.
+    }
+  }
+
+  Future<void> _handlePurchaseUpdates(List<PurchaseDetails> purchases) async {
+    for (final purchase in purchases) {
+      if (!_knownProductIds.contains(purchase.productID)) continue;
+      if (purchase.status == PurchaseStatus.pending) {
+        if (mounted) setState(() => _billingActionInProgress = true);
+        continue;
+      }
+      if (purchase.status == PurchaseStatus.error) {
+        _setBillingMessage(
+          'لم يكتمل الشراء. لم يتم خصم أي مبلغ إن ألغيت العملية.',
+        );
+        if (mounted) setState(() => _billingActionInProgress = false);
+        continue;
+      }
+      if (purchase.status == PurchaseStatus.canceled) {
+        if (mounted) setState(() => _billingActionInProgress = false);
+        continue;
+      }
+      if (purchase.status != PurchaseStatus.purchased &&
+          purchase.status != PurchaseStatus.restored) {
+        continue;
+      }
+
+      final token = purchase.verificationData.serverVerificationData;
+      if (token.isEmpty || !_verifyingPurchaseIds.add(token)) continue;
+      try {
+        await ref
+            .read(majarraApiClientProvider)
+            .verifyGooglePlayPurchase(token);
+        if (purchase.pendingCompletePurchase) {
+          await _purchases.completePurchase(purchase);
+        }
+        ref.invalidate(billingStatusProvider);
+        _setBillingMessage('تم تفعيل الباقة بنجاح.');
+      } catch (_) {
+        // Do not acknowledge an unverified purchase. Google Play will send it
+        // again when the app reopens, which lets verification recover safely.
+        _setBillingMessage(
+          'تم استلام الشراء، لكن تعذر التحقق منه الآن. أعد فتح الصفحة لاحقًا.',
+        );
+      } finally {
+        _verifyingPurchaseIds.remove(token);
+        if (mounted) setState(() => _billingActionInProgress = false);
+      }
+    }
+  }
+
+  Future<void> _openPlans() async {
+    final isTelevision =
+        ref.read(deviceProfileProvider).valueOrNull?.isTelevision ?? false;
+    if (isTelevision) {
+      _setBillingMessage('أكمل الاشتراك من هاتف أو متصفح ولي الأمر.');
+      return;
+    }
+    if (kIsWeb) {
+      _setBillingMessage(
+        'سيتم تفعيل الدفع عبر الويب بعد ربط بوابة الدفع والتحقق الآمن من عملياتها.',
+      );
+      return;
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      _setBillingMessage(
+        'سيتم تفعيل App Store بعد ربط منتجات Apple والتحقق الخادمي من الاشتراك.',
+      );
+      return;
+    }
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      _setBillingMessage('الاشتراك غير متاح من هذه المنصة حاليًا.');
+      return;
+    }
+    if (_billingActionInProgress) return;
+    setState(() {
+      _billingActionInProgress = true;
+      _billingMessage = null;
+    });
+
+    try {
+      final contextData = GooglePlayBillingContext.fromEnvelope(
+        await ref.read(majarraApiClientProvider).getGooglePlayBillingContext(),
+      );
+      _knownProductIds
+        ..clear()
+        ..addAll(contextData.products.keys);
+      if (!await _purchases.isAvailable()) {
+        throw StateError('Google Play غير متاح على هذا الجهاز.');
+      }
+      final response = await _purchases.queryProductDetails(_knownProductIds);
+      final available = response.productDetails
+          .where((product) => _knownProductIds.contains(product.id))
+          .toList(growable: false);
+      if (available.isEmpty) {
+        // Distinguish a store/query failure from products that the store does
+        // not serve for this build, account or country. Collapsing both into one
+        // message hid the actual reason a purchase could not start.
+        final storeError = response.error?.message.trim();
+        throw StateError(
+          storeError != null && storeError.isNotEmpty
+              ? 'تعذر قراءة الباقات من Google Play: $storeError'
+              : response.notFoundIDs.isNotEmpty
+              ? 'الباقات غير متاحة لهذا الحساب أو البلد أو إصدار التطبيق الحالي.'
+              : 'لا توجد باقات متاحة في Google Play حاليًا.',
+        );
+      }
+      if (!mounted) return;
+      setState(() => _billingActionInProgress = false);
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: const Color(0xFF0B1026),
+        builder: (sheetContext) => _GooglePlayPlansSheet(
+          products: available,
+          plans: contextData.products,
+          onSelect: (product) async {
+            Navigator.of(sheetContext).pop();
+            await _startPurchase(product, contextData.obfuscatedAccountId);
+          },
+        ),
+      );
+    } catch (error) {
+      _setBillingMessage(
+        error is StateError
+            ? error.message.toString()
+            : 'تعذر تحميل الباقات. حاول مرة أخرى.',
+      );
+      if (mounted) setState(() => _billingActionInProgress = false);
+    }
+  }
+
+  Future<void> _startPurchase(ProductDetails product, String accountId) async {
+    if (_billingActionInProgress) return;
+    setState(() {
+      _billingActionInProgress = true;
+      _billingMessage = null;
+    });
+    final parameter = GooglePlayPurchaseParam(
+      productDetails: product,
+      applicationUserName: accountId,
+      offerToken: product is GooglePlayProductDetails
+          ? product.offerToken
+          : null,
+    );
+    try {
+      final started = await _purchases.buyNonConsumable(
+        purchaseParam: parameter,
+      );
+      if (!started) {
+        _setBillingMessage('تعذر فتح Google Play. حاول مرة أخرى.');
+        if (mounted) setState(() => _billingActionInProgress = false);
+      }
+    } catch (_) {
+      _setBillingMessage('تعذر بدء عملية الشراء. حاول مرة أخرى.');
+      if (mounted) setState(() => _billingActionInProgress = false);
+    }
+  }
+
+  Future<void> _manageSubscription(String? source) async {
+    final uri = switch (source) {
+      'google_play' => Uri.parse(
+        'https://play.google.com/store/account/subscriptions?package=com.majarra.majarra',
+      ),
+      'app_store' => Uri.parse('https://apps.apple.com/account/subscriptions'),
+      _ => null,
+    };
+    if (uri == null) {
+      _setBillingMessage(
+        'تتم إدارة هذا الاشتراك من وسيلة الدفع التي استخدمتها عند الاشتراك.',
+      );
+      return;
+    }
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      _setBillingMessage('تعذر فتح صفحة إدارة الاشتراك.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final status = ref.watch(billingStatusProvider);
+    final catalog = ref.watch(billingCatalogProvider);
 
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
@@ -50,7 +290,10 @@ class MembershipPage extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.refresh_rounded, color: Colors.white),
                   tooltip: 'تحديث',
-                  onPressed: () => ref.invalidate(billingStatusProvider),
+                  onPressed: () {
+                    ref.invalidate(billingStatusProvider);
+                    ref.invalidate(billingCatalogProvider);
+                  },
                 ),
               ],
             ),
@@ -76,48 +319,24 @@ class MembershipPage extends ConsumerWidget {
                       _PlanCard(status: data),
                       if (data.subscription?.inGrace == true) ...[
                         const SizedBox(height: 12),
-                        const _GraceWarning(),
+                        _GraceWarning(
+                          source:
+                              data.subscription?.sourceLabel ?? 'وسيلة الدفع',
+                        ),
                       ],
                       const SizedBox(height: 16),
                       _UsageSection(limits: data.limits),
                       const SizedBox(height: 16),
                       _EntitlementsSection(status: data),
                       const SizedBox(height: 22),
-                      // Purchase and management flows require Google Play
-                      // Billing on the client, which is not integrated. The
-                      // buttons stay disabled rather than opening a dead end.
-                      FilledButton(
-                        onPressed: null,
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(52),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 14,
-                          ),
-                          backgroundColor: AppColors.starGold,
-                          foregroundColor: AppColors.deepSpace,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: Text(
-                          data.plan.isPaid
-                              ? 'إدارة الاشتراك — عبر Google Play'
-                              : 'الترقية — غير متاحة بعد',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'الشراء والإلغاء يتمّان من خلال متجر Google Play. لم '
-                        'تُدمج واجهة الشراء في التطبيق بعد.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.mutedText.withValues(alpha: 0.6),
-                          fontSize: 11,
-                          height: 1.7,
-                        ),
+                      _UpgradeSection(
+                        status: data,
+                        catalog: catalog,
+                        busy: _billingActionInProgress,
+                        message: _billingMessage,
+                        onOpenPlans: _openPlans,
+                        onManageSubscription: () =>
+                            _manageSubscription(data.subscription?.source),
                       ),
                     ],
                   ),
@@ -129,6 +348,626 @@ class MembershipPage extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _UpgradeSection extends StatelessWidget {
+  const _UpgradeSection({
+    required this.status,
+    required this.catalog,
+    required this.busy,
+    required this.message,
+    required this.onOpenPlans,
+    required this.onManageSubscription,
+  });
+
+  final BillingStatus status;
+  final AsyncValue<BillingCatalog> catalog;
+  final bool busy;
+  final String? message;
+  final VoidCallback onOpenPlans;
+  final VoidCallback onManageSubscription;
+
+  @override
+  Widget build(BuildContext context) {
+    final paid = status.plan.isPaid;
+    final catalogData = catalog.valueOrNull;
+    final plans = catalogData?.plans ?? const <BillingCatalogPlan>[];
+    final family = _findPlan(plans, BillingPlan.family);
+    final familyPlus = _findPlan(plans, BillingPlan.familyPlus);
+    final familyOffer = catalogData?.offerFor(BillingPlan.family);
+    final familyPlusOffer = catalogData?.offerFor(BillingPlan.familyPlus);
+    final methods =
+        catalogData?.paymentMethods ?? const <BillingPaymentMethod>[];
+    // A guest can compare plans but cannot buy: a subscription must belong to a
+    // real family account that the server can grant entitlements to.
+    final checkoutAvailable = !status.isGuestPreview && methods.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: AlignmentDirectional.topStart,
+              end: AlignmentDirectional.bottomEnd,
+              colors: [
+                AppColors.royalBlue.withValues(alpha: 0.28),
+                AppColors.cosmicPurple.withValues(alpha: 0.20),
+                AppColors.cardSurface.withValues(alpha: 0.86),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.electricCyan.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  const Text(
+                    'اختر الباقة المناسبة لأسرتك',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  if (catalogData != null)
+                    _CatalogueBadge(country: catalogData.country),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'السعر ووسيلة الدفع يتحددان تلقائيًا حسب بلد الحساب والمنصة. '
+                'لن يتم خصم أي مبلغ قبل عرض السعر النهائي والتجديد بوضوح.',
+                style: TextStyle(
+                  color: AppColors.mutedText.withValues(alpha: 0.9),
+                  fontSize: 11.5,
+                  height: 1.65,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        _PlanOption(
+          title: 'باقة العائلة',
+          subtitle: family == null
+              ? 'حتى 4 أطفال، 4 أجهزة، ومشاهدتان في الوقت نفسه'
+              : 'حتى ${family.children} أطفال، ${family.devices} أجهزة، '
+                    'و${family.concurrentStreams} مشاهدة متزامنة',
+          details: family == null
+              ? 'تنزيل محمي على جهازين'
+              : 'تنزيل محمي على ${family.downloadDevices} أجهزة',
+          price: _offerPrice(context, familyOffer),
+          period: _periodLabel(familyOffer?.period),
+          icon: Icons.family_restroom_rounded,
+        ),
+        const SizedBox(height: 10),
+        _PlanOption(
+          title: 'باقة العائلة بلس',
+          subtitle: familyPlus == null
+              ? 'حتى 4 أطفال، 8 أجهزة، و4 مشاهدات في الوقت نفسه'
+              : 'حتى ${familyPlus.children} أطفال، ${familyPlus.devices} أجهزة، '
+                    'و${familyPlus.concurrentStreams} مشاهدة متزامنة',
+          details: familyPlus == null
+              ? 'تنزيل محمي على 4 أجهزة'
+              : 'تنزيل محمي على ${familyPlus.downloadDevices} أجهزة',
+          price: _offerPrice(context, familyPlusOffer),
+          period: _periodLabel(familyPlusOffer?.period),
+          icon: Icons.workspace_premium_rounded,
+          highlighted: true,
+        ),
+        if (catalog.isLoading) ...[
+          const SizedBox(height: 12),
+          const LinearProgressIndicator(
+            minHeight: 2,
+            color: AppColors.electricCyan,
+            backgroundColor: Colors.white10,
+          ),
+        ] else if (catalog.hasError) ...[
+          const SizedBox(height: 10),
+          Text(
+            'تعذر تحديث الأسعار الإقليمية الآن؛ سيظهر السعر النهائي داخل وسيلة الدفع قبل التأكيد.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.mutedText.withValues(alpha: 0.76),
+              fontSize: 11,
+              height: 1.55,
+            ),
+          ),
+        ],
+        if (methods.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text(
+            'طرق الدفع المتاحة',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: methods
+                .map(
+                  (method) => Chip(
+                    avatar: const Icon(
+                      Icons.verified_user_outlined,
+                      size: 17,
+                      color: AppColors.electricCyan,
+                    ),
+                    label: Text(method.nameAr),
+                    backgroundColor: AppColors.indigoSurface,
+                    side: BorderSide(
+                      color: AppColors.electricCyan.withValues(alpha: 0.2),
+                    ),
+                    labelStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                )
+                .toList(growable: false),
+          ),
+        ],
+        if (status.isGuestPreview) ...[
+          const SizedBox(height: 14),
+          const _BillingNotice(
+            message:
+                'هذه معاينة للباقات في تجربة الضيف. أنشئ حساب أسرة أو سجّل '
+                'الدخول لعرض باقتك الحالية وإتمام الاشتراك.',
+          ),
+        ] else if (!paid && catalogData != null && !checkoutAvailable) ...[
+          const SizedBox(height: 14),
+          const _BillingNotice(
+            message:
+                'لا توجد وسيلة دفع مفعّلة لهذه المنصة حاليًا. يمكنك مراجعة الباقات، وسنُظهر الدفع فور اكتمال ربط المزود الآمن.',
+          ),
+        ],
+        const SizedBox(height: 16),
+        Semantics(
+          button: true,
+          enabled: status.isGuestPreview || paid || checkoutAvailable,
+          label: status.isGuestPreview
+              ? 'تسجيل الدخول لإتمام الاشتراك'
+              : paid
+              ? 'إدارة الاشتراك الحالي'
+              : checkoutAvailable
+              ? 'متابعة اختيار الباقة والدفع'
+              : 'الدفع غير متاح حاليًا',
+          child: FilledButton.icon(
+            onPressed: status.isGuestPreview
+                ? () => context.push('/login')
+                : busy || (!paid && !checkoutAvailable)
+                ? null
+                : (paid ? onManageSubscription : onOpenPlans),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(54),
+              backgroundColor: AppColors.starGold,
+              foregroundColor: AppColors.deepSpace,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            icon: busy
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.deepSpace,
+                    ),
+                  )
+                : Icon(
+                    status.isGuestPreview
+                        ? Icons.login_rounded
+                        : paid
+                        ? Icons.settings_outlined
+                        : Icons.lock_outline_rounded,
+                  ),
+            label: Text(
+              status.isGuestPreview
+                  ? 'تسجيل الدخول أو إنشاء حساب'
+                  : paid
+                  ? 'إدارة الاشتراك'
+                  : checkoutAvailable
+                  ? 'متابعة آمنة للدفع'
+                  : 'الدفع غير متاح حاليًا',
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ),
+        ),
+        const SizedBox(height: 9),
+        Text(
+          _checkoutDisclosure(catalogData?.platform),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppColors.mutedText.withValues(alpha: 0.72),
+            fontSize: 10.8,
+            height: 1.6,
+          ),
+        ),
+        if (message != null) ...[
+          const SizedBox(height: 10),
+          _BillingNotice(message: message!),
+        ],
+      ],
+    );
+  }
+
+  static BillingCatalogPlan? _findPlan(
+    List<BillingCatalogPlan> plans,
+    BillingPlan target,
+  ) {
+    for (final plan in plans) {
+      if (plan.plan == target) return plan;
+    }
+    return null;
+  }
+
+  static String? _offerPrice(BuildContext context, BillingOffer? offer) {
+    if (offer == null || offer.currency.isEmpty) return null;
+    // Native storefront prices must come from ProductDetails/StoreKit. D1 is
+    // catalogue metadata only and may not include taxes or live store changes.
+    if (offer.provider == 'google_play' || offer.provider == 'app_store') {
+      return null;
+    }
+    try {
+      return NumberFormat.simpleCurrency(
+        locale: Localizations.localeOf(context).toLanguageTag(),
+        name: offer.currency,
+        decimalDigits: offer.currencyExponent,
+      ).format(offer.majorAmount);
+    } catch (_) {
+      return '${offer.majorAmount} ${offer.currency}';
+    }
+  }
+
+  static String? _periodLabel(String? value) => switch (value) {
+    'annual' => 'سنويًا',
+    'monthly' => 'شهريًا',
+    'weekly' => 'أسبوعيًا',
+    'lifetime' => 'مرة واحدة',
+    _ => null,
+  };
+
+  static String _checkoutDisclosure(String? platform) => switch (platform) {
+    'ios' =>
+      'تتم مشتريات المحتوى الرقمي على iPhone وiPad من خلال App Store وفق بلد المتجر.',
+    'android' =>
+      'تظهر أسعار Google Play المحلية وشروط التجديد قبل تأكيد عملية الشراء.',
+    'web' =>
+      'تظهر فقط وسائل الدفع المفعّلة لبلدك، ويؤكد الخادم السعر قبل إنشاء عملية الدفع.',
+    _ => 'تظهر الأسعار النهائية وشروط التجديد قبل تأكيد أي عملية دفع.',
+  };
+}
+
+class _CatalogueBadge extends StatelessWidget {
+  const _CatalogueBadge({required this.country});
+
+  final String country;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+    decoration: BoxDecoration(
+      color: AppColors.electricCyan.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(99),
+      border: Border.all(color: AppColors.electricCyan.withValues(alpha: 0.22)),
+    ),
+    child: Text(
+      country == 'GLOBAL' ? 'السعر العالمي' : 'أسعار $country',
+      style: const TextStyle(
+        color: AppColors.electricCyan,
+        fontSize: 10,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+  );
+}
+
+class _PlanOption extends StatelessWidget {
+  const _PlanOption({
+    required this.title,
+    required this.subtitle,
+    required this.details,
+    required this.icon,
+    this.price,
+    this.period,
+    this.highlighted = false,
+  });
+
+  final String title;
+  final String subtitle;
+  final String details;
+  final IconData icon;
+  final String? price;
+  final String? period;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    label: [
+      title,
+      price,
+      period,
+      subtitle,
+      details,
+    ].whereType<String>().join('، '),
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: highlighted
+            ? AppColors.cosmicPurple.withValues(alpha: 0.18)
+            : AppColors.cardSurface.withValues(alpha: 0.84),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: highlighted
+              ? AppColors.starGold.withValues(alpha: 0.48)
+              : Colors.white.withValues(alpha: 0.08),
+        ),
+        boxShadow: highlighted
+            ? [
+                BoxShadow(
+                  color: AppColors.cosmicPurple.withValues(alpha: 0.12),
+                  blurRadius: 20,
+                ),
+              ]
+            : null,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: highlighted
+                  ? AppColors.starGold.withValues(alpha: 0.14)
+                  : Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              icon,
+              color: highlighted ? AppColors.starGold : Colors.white,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    if (highlighted)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.starGold,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: const Text(
+                          'الأفضل للعائلة',
+                          style: TextStyle(
+                            color: AppColors.deepSpace,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                if (price != null) ...[
+                  const SizedBox(height: 7),
+                  Wrap(
+                    spacing: 5,
+                    crossAxisAlignment: WrapCrossAlignment.end,
+                    children: [
+                      Text(
+                        price!,
+                        style: const TextStyle(
+                          color: AppColors.starGold,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      if (period != null)
+                        Text(
+                          period!,
+                          style: TextStyle(
+                            color: AppColors.mutedText.withValues(alpha: 0.75),
+                            fontSize: 10,
+                          ),
+                        ),
+                    ],
+                  ),
+                ] else ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'السعر المحلي يظهر قبل الدفع',
+                    style: TextStyle(
+                      color: AppColors.starGold.withValues(alpha: 0.9),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 7),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: AppColors.mutedText.withValues(alpha: 0.88),
+                    fontSize: 11,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  details,
+                  style: const TextStyle(
+                    color: AppColors.electricCyan,
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _BillingNotice extends StatelessWidget {
+  const _BillingNotice({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: AppColors.electricCyan.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppColors.electricCyan.withValues(alpha: 0.2)),
+    ),
+    child: Text(
+      message,
+      textAlign: TextAlign.center,
+      style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.5),
+    ),
+  );
+}
+
+class _GooglePlayPlansSheet extends StatelessWidget {
+  const _GooglePlayPlansSheet({
+    required this.products,
+    required this.plans,
+    required this.onSelect,
+  });
+
+  final List<ProductDetails> products;
+  final Map<String, BillingPlan> plans;
+  final ValueChanged<ProductDetails> onSelect;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'اختر الباقة',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'يتم الدفع بأمان من خلال Google Play.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.mutedText.withValues(alpha: 0.75),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 18),
+          ...products.map(
+            (product) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: OutlinedButton(
+                onPressed: () => onSelect(product),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                  side: BorderSide(
+                    color: plans[product.id] == BillingPlan.familyPlus
+                        ? AppColors.starGold.withValues(alpha: 0.65)
+                        : Colors.white.withValues(alpha: 0.15),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            plans[product.id]?.label ?? product.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (product.description.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                product.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: AppColors.mutedText.withValues(
+                                    alpha: 0.72,
+                                  ),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      product.price,
+                      style: const TextStyle(
+                        color: AppColors.starGold,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _PlanCard extends StatelessWidget {
@@ -251,7 +1090,9 @@ class _PlanCard extends StatelessWidget {
 
 /// Shown while a payment is failing but access is still granted.
 class _GraceWarning extends StatelessWidget {
-  const _GraceWarning();
+  const _GraceWarning({required this.source});
+
+  final String source;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -272,7 +1113,7 @@ class _GraceWarning extends StatelessWidget {
         Expanded(
           child: Text(
             'هناك مشكلة في الدفع. الوصول ما زال متاحًا خلال مهلة السماح، '
-            'راجع طريقة الدفع في Google Play.',
+            'راجع طريقة الدفع في $source.',
             style: TextStyle(
               color: AppColors.mutedText.withValues(alpha: 0.9),
               fontSize: 11.5,

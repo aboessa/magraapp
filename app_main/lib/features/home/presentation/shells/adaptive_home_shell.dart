@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/layout/app_layout.dart';
 import '../../domain/content_models.dart';
-import '../widgets/home_destinations.dart';
+import '../widgets/home_destination_spec.dart';
 import '../widgets/majarra_bottom_navigation.dart';
 import '../widgets/majarra_portal.dart';
 
@@ -35,13 +35,14 @@ class _AdaptiveHomeShellState extends State<AdaptiveHomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = buildHomeDestinations(
+    final destinationSpecs = buildHomeDestinationSpecs(
       catalog: widget.catalog,
       isTelevision: false,
       onOpenPlanet: _openPlanet,
       onSelectDestination: _select,
       onOpenPortal: _showPortal,
     );
+    final pages = [for (final spec in destinationSpecs) spec.build()];
 
     // This shell is, by construction, the non-television experience: HomePage
     // routes television devices to TvHomeShell instead. A stale `!isTelevision`
@@ -106,27 +107,13 @@ class _AdaptiveHomeShellState extends State<AdaptiveHomeShell> {
                   ],
                 ),
               ),
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home_rounded),
-                  label: Text('الرئيسية'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.play_circle_outline_rounded),
-                  selectedIcon: Icon(Icons.play_circle_rounded),
-                  label: Text('مقاطع'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.search_rounded),
-                  selectedIcon: Icon(Icons.search_rounded),
-                  label: Text('بحث'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person_outline_rounded),
-                  selectedIcon: Icon(Icons.person_rounded),
-                  label: Text('ملفي'),
-                ),
+              destinations: [
+                for (final spec in destinationSpecs)
+                  NavigationRailDestination(
+                    icon: Icon(spec.icon),
+                    selectedIcon: Icon(spec.selectedIcon),
+                    label: Text(spec.label),
+                  ),
               ],
             ),
             const VerticalDivider(width: 1, color: Color(0xFF1B2550)),
@@ -154,6 +141,7 @@ class _AdaptiveHomeShellState extends State<AdaptiveHomeShell> {
         selectedIndex: _selectedIndex,
         onDestinationSelected: _select,
         onPortalPressed: _showPortal,
+        destinations: destinationSpecs,
       ),
     );
   }

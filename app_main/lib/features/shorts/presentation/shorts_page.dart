@@ -275,7 +275,8 @@ class _ReelCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                episode.durationLabel,
+                                // فراغ لِما لم يُقَس، لا وصفٌ مُختلَق.
+                                episode.durationLabel ?? '',
                                 style: const TextStyle(
                                   color: AppColors.deepSpace,
                                   fontSize: 10,

@@ -67,6 +67,10 @@ class DownloadButton extends ConsumerWidget {
       DownloadRejection.storageFull => 'لا توجد مساحة تخزين كافية.',
       DownloadRejection.alreadyExists => 'هذا المحتوى في قائمة التنزيلات بالفعل.',
       DownloadRejection.noSource => 'هذا المحتوى غير متاح للتنزيل بعد.',
+      // ENC-011: سبب صحيح بدل فشل عام. لا يذكر مفتاحًا ولا تشفيرًا: ما يفيد
+      // وليّ الأمر أن المشكلة في الجهاز لا في المحتوى ولا في الشبكة.
+      DownloadRejection.secureStorageUnavailable =>
+        'التخزين الآمن على هذا الجهاز غير متاح، فلا يمكن حفظ المحتوى للاستخدام دون إنترنت.',
       DownloadRejection.none => '',
     };
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));

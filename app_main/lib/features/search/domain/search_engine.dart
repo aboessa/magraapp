@@ -91,7 +91,10 @@ List<SearchResult> searchCatalog(
       id: episode.id,
       title: episode.title,
       fields: [episode.description, episode.seriesTitle],
-      subtitle: '${episode.seriesTitle} • ${episode.durationLabel}',
+      // «سلسلة • » بلا مدة أصدق من «سلسلة • قصيرة» عن حلقةٍ لم تُقَس.
+      subtitle: episode.durationLabel == null
+          ? episode.seriesTitle
+          : '${episode.seriesTitle} • ${episode.durationLabel}',
       route: '/playback/${episode.id}',
       imageAsset: episode.thumbnailAsset,
       imageUrl: episode.thumbnailUrl,

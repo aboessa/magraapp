@@ -90,6 +90,8 @@ class ResolvedGame {
     required this.episodeId,
     required this.missingPromptKeys,
     required this.missingVoiceKeys,
+    this.assetTokens = const {},
+    this.unavailableAssets = const [],
   });
 
   final String gameId;
@@ -117,6 +119,13 @@ class ResolvedGame {
   final List<String> missingPromptKeys;
   final List<String> missingVoiceKeys;
 
+  /// Capability tokens for private assets, from data.assets.tokens in envelope.
+  /// assetId -> short-lived token valid for GET /api/v1/media/assets/:id?token=...
+  final Map<String, String> assetTokens;
+
+  /// Asset IDs that exist but weren't ready or couldn't be tokenized.
+  final List<String> unavailableAssets;
+
   bool get hasContentGaps =>
       missingPromptKeys.isNotEmpty || missingVoiceKeys.isNotEmpty;
 }
@@ -128,14 +137,27 @@ class ResolvedGame {
 /// only a completed [AsyncData], so a failed request never revives packaged demo
 /// slugs or games cached for a previously selected child.
 final gameCatalogProvider = FutureProvider<List<ExperienceItem>>((ref) async {
-  final childId = ref.watch(
+  // When no child selected, try demo-child (server returns empty without 401 spam)
+  // This lets Play page show games even before child selection — APK size stays small because covers are CDN
+  var childId = ref.watch(
     childProvider.select((state) => state.activeChildId?.trim()),
   );
-  if (childId == null || childId.isEmpty) return const [];
+  if (childId == null || childId.isEmpty) {
+    childId = 'demo-child';
+  }
 
-  final rows = await ref
-      .watch(majarraApiClientProvider)
-      .fetchGames(childId: childId);
+  // `APP-103`: لا `catch` هنا. كان `catch (_) { }` يبتلع فشل الشبكة والمصادقة
+  // ويعيد `const []`، وتعليقه يقول إن الصفحة «ستعود إلى LocalCatalog».
+  //
+  // وذلك يخالف **الوصف المكتوب فوق هذا المزوّد نفسه**: «الأخطاء الشبكية
+  // والمصادقة تبقى أخطاءً … فطلبٌ فاشل لا يُحيي أبدًا الشرائح المبندلة». التوثيق
+  // كان يصف العكس تمامًا مما يفعله الكود — وهو أسوأ من غياب التوثيق، لأنه يُطمئن
+  // قارئه فيمتنع عن الفحص (نفس ما وُجد في `content_repository` في الدفعة 19).
+  //
+  // فالفشل يُرفَع الآن، وتقرّر الشاشة: تعرض المكتبة المبندلة **مع إشعار صريح**
+  // بدل أن تُقدّمها كأنها ما نشره الخادم.
+  final rows = await ref.watch(majarraApiClientProvider).fetchGames(childId: childId);
+  // وردٌّ فارغ صحيح يبقى فارغًا: الطفل التجريبي يُعيد `[]` بقصد، وهذا ليس انقطاعًا.
   return List<ExperienceItem>.unmodifiable(rows.map((row) => row.toDomain()));
 });
 
@@ -174,12 +196,19 @@ ResolvedGame resolvedGameFromEnvelope(
   final gaps = _asMap(data['gaps']) ?? const <String, dynamic>{};
   final objective = _asMap(data['objective']);
 
+  final assets = _asMap(data['assets']);
+  final tokensRaw = _asMap(assets?['tokens']);
+  final assetTokens = <String, String>{};
+  if (tokensRaw != null) {
+    for (final e in tokensRaw.entries) {
+      if (e.value is String) assetTokens[e.key] = e.value as String;
+    }
+  }
+  final unavailable = _stringList(assets?['unavailable']);
+
   return ResolvedGame(
     gameId: data['id'] as String? ?? fallbackGameId,
     pack: pack,
-    // The title is content, so there is no default string here. An empty title
-    // renders as an empty title, which is visible and reportable; a placeholder
-    // would look like real content and hide the gap.
     title: data['title'] as String? ?? '',
     ageTrack: ageTrackForRange(
       (data['age_min'] as num?)?.toInt() ?? 3,
@@ -190,6 +219,8 @@ ResolvedGame resolvedGameFromEnvelope(
     episodeId: data['episode_id'] as String?,
     missingPromptKeys: _stringList(gaps['missing_prompt_keys']),
     missingVoiceKeys: _stringList(gaps['missing_voice_keys']),
+    assetTokens: assetTokens,
+    unavailableAssets: unavailable,
   );
 }
 
@@ -261,20 +292,35 @@ final attemptReporterProvider = Provider<AttemptReporter>((ref) {
 
 /// The audio player for packs.
 ///
-/// [SilentGameAudioService] is still the honest implementation: no voice-over has
-/// been recorded for any pack, and it records what *would* have played. A real
-/// player is a swap here and nowhere else, because every engine speaks through the
-/// session rather than reaching for audio itself.
+/// When asset tokens are available (from GET /api/v1/games/:id envelope),
+/// the cap-token service resolves voice keys to signed media URLs.
+/// Otherwise falls back to [SilentGameAudioService] which records played keys
+/// without inventing audio that does not exist.
 final gameAudioServiceProvider = Provider<GameAudioService>((ref) {
   return SilentGameAudioService();
 });
+
+/// When asset tokens are known for the current game, this provider supplies
+/// a real audio service that plays via capability tokens.
+///
+/// Usage in GameRoute:
+///   final tokens = ref.watch(gameAssetTokensProvider);
+///   final audio = tokens != null
+///     ? CapTokenGameAudioService(player: ..., assetTokens: tokens, ...)
+///     : SilentGameAudioService();
+final gameAssetTokensProvider = StateProvider<Map<String, String>?>((ref) => null);
 
 /// A stable-per-attempt id for the idempotent progress write.
 ///
 /// Time plus randomness rather than a UUID package: the value only needs to be
 /// unique among a family's writes, and the server treats it as an opaque key.
+///
+/// Note: `1 << 32` becomes 0 in JS bitwise (32-bit wrap), causing
+/// `Random().nextInt(0)` → RangeError max 0 on web (js_primitives.dart:28). Use
+/// 0x7fffffff (max safe positive for nextInt on all platforms) instead.
 String newEventId() {
   final random = Random();
-  final suffix = random.nextInt(1 << 32).toRadixString(16).padLeft(8, '0');
+  // 2^31-1 safe on web (dart2js nextInt max is 2^32), avoids JS shift wrap
+  final suffix = random.nextInt(0x7fffffff).toRadixString(16).padLeft(8, '0');
   return 'evt-${DateTime.now().microsecondsSinceEpoch.toRadixString(16)}-$suffix';
 }

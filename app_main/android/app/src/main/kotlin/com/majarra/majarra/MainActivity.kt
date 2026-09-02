@@ -34,6 +34,64 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
+    /// SEC-107: root/emulator/debugger signals.
+    ///
+    /// These are hints, not a verdict. Every one of them is defeatable by the
+    /// device they run on, and every one of them has false positives: a
+    /// developer handset, a custom ROM, an emulator our own team uses. The
+    /// policy that consumes them lives on the server and never blocks
+    /// playback — it only shortens offline licence lifetime.
+    ///
+    /// No PII is collected: booleans only. Not the build fingerprint, not the
+    /// model, not the installed package list. `root_manager_app` deliberately
+    /// probes three known paths rather than enumerating packages, because the
+    /// package list is a profile of the user and this is not.
+    private fun deviceIntegrity(): Map<String, Boolean> {
+        val suPaths = listOf(
+            "/system/bin/su", "/system/xbin/su", "/sbin/su", "/su/bin/su",
+            "/system/app/Superuser.apk", "/data/local/bin/su", "/data/local/xbin/su",
+        )
+        val magiskPaths = listOf("/sbin/.magisk", "/data/adb/magisk", "/data/adb/modules")
+        val managerPaths = listOf(
+            "/data/data/com.topjohnwu.magisk",
+            "/data/data/eu.chainfire.supersu",
+            "/data/data/com.noshufou.android.su",
+        )
+        val hookingPaths = listOf(
+            "/data/local/tmp/frida-server",
+            "/data/local/tmp/re.frida.server",
+        )
+
+        // Emulator detection stays coarse on purpose: the goal is "not a real
+        // handset", and finer probes read more device detail for no gain.
+        val fingerprint = android.os.Build.FINGERPRINT
+        val emulator = fingerprint.startsWith("generic") ||
+            fingerprint.contains("vbox") ||
+            fingerprint.contains("emulator") ||
+            android.os.Build.MODEL.contains("sdk_gphone") ||
+            android.os.Build.PRODUCT == "sdk"
+
+        return mapOf(
+            "root_binaries" to (exists(suPaths) || exists(magiskPaths)),
+            "root_manager_app" to exists(managerPaths),
+            "test_keys" to (android.os.Build.TAGS?.contains("test-keys") == true),
+            "hooking" to exists(hookingPaths),
+            "emulator" to emulator,
+            "debugger" to android.os.Debug.isDebuggerConnected(),
+        )
+    }
+
+    /// A missing path and an unreadable path are the same answer: not found.
+    /// A SecurityException on a probe is normal on a locked-down device and
+    /// must not be reported as a positive.
+    private fun exists(paths: List<String>) = paths.any {
+        try {
+            java.io.File(it).exists()
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(
@@ -55,6 +113,8 @@ class MainActivity : FlutterFragmentActivity() {
                     setSecure(enabled)
                     result.success(null)
                 }
+
+                "deviceIntegrity" -> result.success(deviceIntegrity())
 
                 else -> result.notImplemented()
             }

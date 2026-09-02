@@ -21,7 +21,6 @@ dependencies:
   shared_preferences: 2.3.3
   video_player: ^2.9.2
   chewie: ^1.8.3
-  hive_flutter: ^1.1.0
   intl: 0.20.2
   local_auth: ^2.3.0
   connectivity_plus: ^6.1.0
@@ -38,6 +37,8 @@ dependencies:
   # header both compared against a hardcoded '0.1.0' and could never be correct.
   package_info_plus: 9.0.1
   flutter_svg: ^2.3.0
+  just_audio: ^0.10.6
+  audio_session: ^0.2.4
 
 dev_dependencies:
   flutter_test:
@@ -85,19 +86,44 @@ flutter:
     - assets/images/explore/
     - assets/images/seasonal/
     - assets/images/books/
-    - assets/images/stories/
-    # Flutter directory entries are not recursive. These checked-in story
-    # previews must be listed explicitly so their web paths exist under
-    # build/web/assets/assets/... and can serve as honest offline fallbacks.
-    - assets/images/stories/act-s1/
-    - assets/images/stories/act-s1-playveo/
-    - assets/images/stories/act-s2-playveo/
+    # Story artwork is API/R2-only. Never bundle story pages, covers, or audio
+    # in an APK: this keeps the binary small and ensures readers use the
+    # server-authoritative catalogue and access policy.
     - assets/images/drawing/coloring/
     - assets/images/drawing/templates/
     - assets/images/drawing/covers/
-    # Raster colouring: real line art plus its compiled region map, written by
-    # tools/coloring/publish_coloring.py and only for assets that passed the gate.
-    # Separate from drawing/coloring/ above, which holds the primitive-shape SVG
-    # placeholders the polygon engine still uses.
-    - assets/images/coloring/
-    - assets/data/
+    # Creative Studio chrome — R2-first zero-bloat policy:
+    # لا نبندل أي رسومات تلوين/وصل/أكمل/تتبع/حروف/أرقام كبيرة في APK.
+    # كلها تحمل من R2 THUMBS_BUCKET عبر CDN https://cdn.majarra.app/public/studio/{category}/{id}.png
+    # المحتوى الشفاف (transparent PNG) ناتج POST /v1/images/remove-background { url: JPEG } sync → PNG 10 days
+    # فقط bird.png كـ placeholder 8KB fallback offline + studio hero webp fallback.
+    # المهم: لا نعلن - assets/images/coloring/ لأنها ستجر v2/ (12 صورة) → 30MB bloat.
+    # نعلن فقط ملفات محددة صغيرة جداً.
+    - assets/images/coloring/bird.png
+    - assets/images/coloring/v2/
+    - assets/images/connect_dots/
+    - assets/images/draw_like_me/v2/
+    - assets/images/draw_like_me/v2-final/
+    - assets/images/draw_like_me/heroes/
+    # dev fallback فقط: لا يُبندل في release لأننا نحذفه قبل build، يبقى للـ IDE
+    # للإبقاء على المحرر يرى الصور. في CI نستخدم R2-only.
+    #- assets/images/studio/v2/
+    # chrome الاستوديو نفسه (hero + أغلفة الأنشطة + أيقونات الاختصارات) يُبندل:
+    # 13 ملف WebP بمجموع ~150KB، وليس محتوى قابل للتحديث من R2 بل جزء من الواجهة.
+    # إعلان المجلد غير تعاودي في Flutter، فلن يجرّ studio/v2/ إن عاد للظهور.
+    - assets/images/studio/
+    - assets/avatars/characters/
+    - assets/avatars/planets/
+    # Activity metadata remains app chrome. Story reader JSON is deliberately
+    # excluded; it is fetched from /api/v1/stories/:id/pages only.
+    - assets/data/coloring_pages.json
+    - assets/data/coloring_templates.json
+    - assets/data/complete_items.json
+    - assets/data/copy_items.json
+    - assets/data/dots_items.json
+    - assets/data/letter_items.json
+    - assets/data/number_items.json
+    - assets/data/prompt_items.json
+    - assets/data/reference_activities.json
+    - assets/data/reference_steps.json
+    - assets/data/trace_items.json

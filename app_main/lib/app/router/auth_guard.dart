@@ -16,9 +16,17 @@ enum AuthLoadOutcome { ready, expiredWithoutRefresh }
 /// backgrounding.
 class AuthGuard extends ChangeNotifier {
   AuthGuard({FlutterSecureStorage? storage})
-    : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ??
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions(
+              encryptedSharedPreferences: true,
+            ),
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.first_unlock,
+            ),
+          );
 
-  static const parentAccessDuration = Duration(minutes: 5);
+  static const parentAccessDuration = Duration(minutes: 15);
 
   final FlutterSecureStorage _storage;
   Timer? _parentAccessTimer;
@@ -26,6 +34,7 @@ class AuthGuard extends ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isDemo = false;
   bool _hasChild = false;
+  bool _hasCompletedOnboarding = false;
   bool _isLoading = true;
   String? _parentId;
   String? _parentAccessOwner;
@@ -42,6 +51,17 @@ class AuthGuard extends ChangeNotifier {
 
   bool get isRealAuthenticated => _isAuthenticated && !_isDemo;
   bool get hasChild => _hasChild;
+
+  /// Whether ANY child profile in the family carries a non-null
+  /// `onboarding_completed_at` (Requirement 8.1, 8.5, 8.6). Kept in sync by
+  /// `syncAuthGuardWithChildren` (`child_provider.dart`), which watches
+  /// `familyChildrenProvider` — this field never reads a Riverpod provider
+  /// itself, matching how [hasChild] is set by [setHasChild] rather than
+  /// computed here. A family where this is `true` never sees `/onboarding`
+  /// again, even while switching to or creating an additional child that
+  /// has not itself completed onboarding (a second child opens
+  /// `ChildProfileFormPage` alone, never the full journey).
+  bool get hasCompletedOnboarding => _hasCompletedOnboarding;
   String? get parentId => _parentId;
   DateTime? get parentAccessExpiresAt => _parentAccessExpiresAt;
 
@@ -87,15 +107,36 @@ class AuthGuard extends ChangeNotifier {
 
   /// Loads persisted credentials without publishing a terminal logged-out state
   /// until account-scoped data has been wiped by [AuthController].
+  Future<String?> _safeRead(String key) async {
+    try {
+      final v = await _storage.read(key: key);
+      if (v == null) return null;
+      final t = v.trim();
+      return t.isEmpty ? null : t;
+    } catch (e) {
+      // FlutterSecureStorage on debug/web can throw
+      // "Unsupported operation: Cannot send Null" when platform returns null
+      // via MethodChannel. Also can throw MissingPluginException in tests.
+      // Treat as no session – never crash the app bootstrap.
+      debugPrint('[AuthGuard] safeRead $key failed: $e');
+      return null;
+    }
+  }
+
   Future<AuthLoadOutcome> load() async {
-    final values = await Future.wait([
-      _storage.read(key: 'majarra_access_token'),
-      _storage.read(key: 'majarra_parent_id'),
-      _storage.read(key: 'majarra_refresh_token'),
-    ]);
-    final token = values[0];
-    final storedParentId = values[1];
-    final refreshToken = values[2];
+    String? token;
+    String? storedParentId;
+    String? refreshToken;
+    try {
+      token = await _safeRead('majarra_access_token');
+      storedParentId = await _safeRead('majarra_parent_id');
+      refreshToken = await _safeRead('majarra_refresh_token');
+    } catch (e) {
+      debugPrint('[AuthGuard] load failed, treating as logged out: $e');
+      token = null;
+      storedParentId = null;
+      refreshToken = null;
+    }
     var isExpired = false;
     if (token != null && token.isNotEmpty) {
       isExpired = _accessTokenExpired(token);
@@ -153,6 +194,7 @@ class AuthGuard extends ChangeNotifier {
     _isDemo = true;
     _parentId = null;
     _hasChild = false;
+    _hasCompletedOnboarding = false;
     _isLoading = false;
     _clearParentAccess();
     notifyListeners();
@@ -161,6 +203,12 @@ class AuthGuard extends ChangeNotifier {
   void setHasChild(bool value) {
     if (_hasChild == value) return;
     _hasChild = value;
+    notifyListeners();
+  }
+
+  void setHasCompletedOnboarding(bool value) {
+    if (_hasCompletedOnboarding == value) return;
+    _hasCompletedOnboarding = value;
     notifyListeners();
   }
 
@@ -201,6 +249,7 @@ class AuthGuard extends ChangeNotifier {
     _isAuthenticated = false;
     _isDemo = false;
     _hasChild = false;
+    _hasCompletedOnboarding = false;
     _parentId = null;
     _isLoading = false;
     _clearParentAccess();

@@ -146,6 +146,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get biometricUnavailable => 'البصمة / Face ID — غير متاح بعد';
 
   @override
+  String get pinToggleShow => 'إظهار الرمز';
+
+  @override
+  String get pinToggleHide => 'إخفاء الرمز';
+
+  @override
+  String get pinGrantFailedRetry =>
+      'تم التحقق من الرمز، لكن لم يتم حفظ الوصول. أعد المحاولة.';
+
+  @override
+  String get pinServerVerificationFooter =>
+      'يُتحقَّق من الرمز على الخادم، ويُحفظ إثبات الوصول الموقّع في الذاكرة فقط لمدة قصيرة. يُمسح الإثبات عند إغلاق الجلسة أو انتقال التطبيق إلى الخلفية.';
+
+  @override
+  String get pinUnlockingWithBiometric => 'جارٍ التحقق ببصمتك…';
+
+  @override
   String get home => 'الرئيسية';
 
   @override
@@ -567,4 +584,246 @@ class AppLocalizationsAr extends AppLocalizations {
   String referenceBadge(Object title) {
     return 'من: $title';
   }
+
+  @override
+  String get childFormCreateTitle => 'ملف طفل جديد';
+
+  @override
+  String get childFormEditTitle => 'تعديل ملف الطفل';
+
+  @override
+  String get childFormCreateSubtitle => 'اختر شخصية من عالم مجرة';
+
+  @override
+  String get childFormEditSubtitle => 'عدّل بيانات الملف واهتماماته';
+
+  @override
+  String get childFormNicknameLabel => 'اسم الطفل';
+
+  @override
+  String get childFormNicknameHint => 'مثال: ليلى';
+
+  @override
+  String get childFormNicknameEmptyError => 'اكتب اسمًا للملف';
+
+  @override
+  String get childFormBirthMonthLabel => 'شهر الميلاد';
+
+  @override
+  String get childFormBirthYearLabel => 'سنة الميلاد';
+
+  @override
+  String get childFormBirthDateReadOnlyLabel => 'تاريخ الميلاد';
+
+  @override
+  String get childFormBirthDateEditNotice =>
+      'يُعالَج تغيير تاريخ الميلاد لاحقًا عبر مسار الانتقال العمري، لا من هذه الشاشة';
+
+  @override
+  String get childFormAvatarSectionTitle => 'اختر شخصية من عالم مجرة';
+
+  @override
+  String childFormAvatarCount(int count) {
+    return '$count شخصية';
+  }
+
+  @override
+  String get childFormAvatarSectionSubtitle =>
+      'نفس شخصيات الكارتون في المسلسلات';
+
+  @override
+  String get childFormInterestsTitle => 'الاهتمامات';
+
+  @override
+  String get childFormInterestsSubtitle =>
+      'اختر ما يهم طفلك، يمكن اختيار أكثر من واحد';
+
+  @override
+  String get childFormLanguageReadOnlyNotice =>
+      'لغة واحدة متاحة اليوم؛ ستتوسع القائمة عند اكتمال ترجمات أخرى';
+
+  @override
+  String get childFormSaveButtonCreate => 'إنشاء الملف';
+
+  @override
+  String get childFormSaveButtonEdit => 'حفظ التغييرات';
+
+  @override
+  String get childFormCreateErrorGeneric =>
+      'تعذّر إنشاء الملف. تحقّق من الباقة (حد 4 أطفال)';
+
+  @override
+  String get childFormEditErrorGeneric => 'تعذّر حفظ التغييرات';
+
+  @override
+  String get interestAbjad => 'أبجد';
+
+  @override
+  String get interestArqam => 'الأرقام';
+
+  @override
+  String get interestOloom => 'العلوم';
+
+  @override
+  String get interestQiyam => 'القيم';
+
+  @override
+  String get interestQisas => 'القصص';
+
+  @override
+  String get interestMaharat => 'المهارات';
+
+  @override
+  String get interestTarikh => 'التاريخ';
+
+  @override
+  String get interestAlam => 'عالمنا';
+
+  @override
+  String get interestIman => 'الإيمان';
+
+  @override
+  String get ageTransitionReviewTitle => 'مراجعة الانتقال العمري';
+
+  @override
+  String get ageTransitionLoadErrorGeneric =>
+      'تعذّر تحميل حالة الانتقال العمري';
+
+  @override
+  String get ageTransitionNoChangeTitle => 'لا يوجد تغيير حاليًا';
+
+  @override
+  String get ageTransitionNoChangeBody =>
+      'مسار الطفل الحالي لا يزال مطابقًا لعمره المحسوب. لا حاجة لأي إجراء الآن.';
+
+  @override
+  String get ageTransitionCurrentTrackLabel => 'المسار الحالي';
+
+  @override
+  String get ageTransitionComputedTrackLabel => 'المسار المقترح';
+
+  @override
+  String ageTransitionChangeDescription(String from, String to) {
+    return 'سيتم نقل الملف من مسار $from إلى مسار $to. سيتغيّر المحتوى المعروض تلقائيًا ليطابق مسار $to الجديد.';
+  }
+
+  @override
+  String get ageTransitionAcceptButton => 'تأكيد الانتقال';
+
+  @override
+  String get ageTransitionDeferButton => 'تأجيل لاحقًا';
+
+  @override
+  String ageTransitionAcceptSuccessBody(String track) {
+    return 'تم نقل الملف إلى مسار $track بنجاح.';
+  }
+
+  @override
+  String ageTransitionDeferSuccessBody(String date) {
+    return 'تم تأجيل الانتقال حتى $date.';
+  }
+
+  @override
+  String ageTransitionDeferAlreadyActiveBody(String date) {
+    return 'يوجد تأجيل نشط بالفعل حتى $date.';
+  }
+
+  @override
+  String get ageTransitionErrorGeneric => 'تعذّر تنفيذ الإجراء. حاول مجددًا';
+
+  @override
+  String get ageTrackLabelPreschool => 'براعم';
+
+  @override
+  String get ageTrackLabelKids => 'مستكشفون';
+
+  @override
+  String get ageTrackLabelJunior => 'روّاد';
+
+  @override
+  String get ageTrackLabelUnknown => 'غير محدد';
+
+  @override
+  String get consentPageTitle => 'الموافقات';
+
+  @override
+  String get consentPageIntro =>
+      'هذه الموافقات تحدد ما نجمعه ونحفظه عن استخدام طفلك. يمكنك تغيير أي منها في أي وقت.';
+
+  @override
+  String get consentTypeDataCollectionLabel => 'جمع بيانات الاستخدام الأساسية';
+
+  @override
+  String get consentTypeDataCollectionDescription =>
+      'بيانات أساسية لتشغيل الحساب، مثل تسجيل الدخول والتقدم في المحتوى.';
+
+  @override
+  String get consentTypeAnalyticsLabel => 'تحليلات الاستخدام';
+
+  @override
+  String get consentTypeAnalyticsDescription =>
+      'بيانات استخدام مجمَّعة تساعدنا على تحسين التجربة داخل التطبيق.';
+
+  @override
+  String get consentTypeVoiceLabel => 'تسجيلات الصوت';
+
+  @override
+  String get consentTypeVoiceDescription =>
+      'لا توجد ميزة تعتمد على الصوت في التطبيق حاليًا؛ هذه الموافقة مُعدّة لأي ميزة صوتية مستقبلية.';
+
+  @override
+  String get consentTypePersonalizationLabel => 'تخصيص المحتوى المقترح';
+
+  @override
+  String get consentTypePersonalizationDescription =>
+      'اقتراح محتوى بناءً على اهتمامات طفلك المسجَّلة في ملفه.';
+
+  @override
+  String get consentTypeChildCreationsLabel => 'حفظ رسومات الطفل في السحابة';
+
+  @override
+  String get consentTypeChildCreationsDescription =>
+      'حفظ رسومات طفلك في مساحة خاصة بأسرتك على السحابة. لا تُنشر ولا تُشارك مع أي طرف آخر.';
+
+  @override
+  String get consentReasonNeverGranted => 'لم تُمنح هذه الموافقة بعد';
+
+  @override
+  String get consentReasonRevoked => 'تم سحب هذه الموافقة';
+
+  @override
+  String get consentReasonVersionSuperseded =>
+      'تغيّرت سياسة هذه الموافقة، وتحتاج موافقة جديدة';
+
+  @override
+  String get consentStatusGranted => 'ممنوحة';
+
+  @override
+  String get consentLoadErrorGeneric => 'تعذّر تحميل حالة الموافقات';
+
+  @override
+  String get consentWriteErrorGeneric => 'تعذّر حفظ التغيير. حاول مجددًا';
+
+  @override
+  String get consentContinueButton => 'متابعة';
+
+  @override
+  String get onboardingBasicControlsStepTitle => 'الضوابط الأساسية';
+
+  @override
+  String get onboardingBasicControlsStepIntro =>
+      'اضبط حدود الوقت والسماحات لملف طفلك، ويمكنك تعديلها لاحقًا من منطقة ولي الأمر.';
+
+  @override
+  String get onboardingContinueButton => 'متابعة';
+
+  @override
+  String get onboardingFinishTitle => 'كل شيء جاهز!';
+
+  @override
+  String get onboardingFinishBody =>
+      'أنشأت ملف طفلك وضبطت الضوابط الأساسية. يمكنك البدء الآن، وتعديل أي إعداد لاحقًا من منطقة ولي الأمر.';
+
+  @override
+  String get onboardingFinishButton => 'ابدأ الآن';
 }

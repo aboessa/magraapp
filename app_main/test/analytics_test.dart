@@ -36,4 +36,33 @@ void main() {
       }, returnsNormally);
     });
   });
+
+  group('MajarraAnalytics consent gate (Requirement 9.6)', () {
+    // `AppConfig.analyticsEnabled` is false off-production (the default test
+    // environment), so `log`'s actual dispatch line is already unreachable
+    // here regardless of consent — this group instead asserts the gate
+    // *itself* is the live, immediately-effective source of truth `log`
+    // reads, which is the part Requirement 9.6 concerns: no separate cached
+    // flag, and no need to wait for a new session.
+    test('defaults to not granted (safe default before any server read)', () {
+      // A fresh app session (or, here, no prior `setAnalyticsConsent` call)
+      // must never assume consent.
+      expect(MajarraAnalytics.analyticsConsentGranted, isFalse);
+    });
+
+    test('setAnalyticsConsent flips the gate immediately, no restart needed', () {
+      MajarraAnalytics.setAnalyticsConsent(true);
+      expect(MajarraAnalytics.analyticsConsentGranted, isTrue);
+
+      MajarraAnalytics.setAnalyticsConsent(false);
+      expect(MajarraAnalytics.analyticsConsentGranted, isFalse);
+
+      // `log` reads this same gate at its dispatch line; both calls below
+      // must not throw regardless of the gate's value.
+      MajarraAnalytics.setAnalyticsConsent(true);
+      expect(() => MajarraAnalytics.log('content_started'), returnsNormally);
+      MajarraAnalytics.setAnalyticsConsent(false);
+      expect(() => MajarraAnalytics.log('content_started'), returnsNormally);
+    });
+  });
 }

@@ -437,10 +437,12 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
               ),
               Slider(
                 key: const Key('timeline_year_slider'),
-                value: guess.toDouble().clamp(_from.toDouble(), _to.toDouble()),
+                // Guard: when from==to, divisions must be null (continuous) to avoid RangeError max 0 in js_primitives
+                value: guess.toDouble().clamp(
+                    _from.toDouble(), _to == _from ? _from.toDouble() + 1 : _to.toDouble()),
                 min: _from.toDouble(),
-                max: _to.toDouble(),
-                divisions: span < 1 ? null : span.clamp(1, 2000),
+                max: _from == _to ? _from.toDouble() + 1 : _to.toDouble(),
+                divisions: span <= 1 ? null : span.clamp(1, 2000),
                 label: _yearLabel(guess),
                 onChanged: (value) => setState(() => _guessYear = value.round()),
               ),

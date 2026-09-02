@@ -148,6 +148,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Fingerprint / Face ID — not available yet';
 
   @override
+  String get pinToggleShow => 'Show code';
+
+  @override
+  String get pinToggleHide => 'Hide code';
+
+  @override
+  String get pinGrantFailedRetry =>
+      'The code was verified, but access could not be saved. Try again.';
+
+  @override
+  String get pinServerVerificationFooter =>
+      'The code is verified on the server, and the signed access proof is kept in memory only for a short time. The proof is cleared when the session ends or the app moves to the background.';
+
+  @override
+  String get pinUnlockingWithBiometric => 'Verifying with your fingerprint…';
+
+  @override
   String get home => 'Home';
 
   @override
@@ -569,4 +586,253 @@ class AppLocalizationsEn extends AppLocalizations {
   String referenceBadge(Object title) {
     return 'From: $title';
   }
+
+  @override
+  String get childFormCreateTitle => 'New child profile';
+
+  @override
+  String get childFormEditTitle => 'Edit child profile';
+
+  @override
+  String get childFormCreateSubtitle =>
+      'Pick a character from the Majarra universe';
+
+  @override
+  String get childFormEditSubtitle =>
+      'Edit the profile\'s details and interests';
+
+  @override
+  String get childFormNicknameLabel => 'Child\'s name';
+
+  @override
+  String get childFormNicknameHint => 'e.g. Layla';
+
+  @override
+  String get childFormNicknameEmptyError => 'Enter a name for the profile';
+
+  @override
+  String get childFormBirthMonthLabel => 'Birth month';
+
+  @override
+  String get childFormBirthYearLabel => 'Birth year';
+
+  @override
+  String get childFormBirthDateReadOnlyLabel => 'Date of birth';
+
+  @override
+  String get childFormBirthDateEditNotice =>
+      'Changing the birth date is handled later through the age-transition flow, not from this screen';
+
+  @override
+  String get childFormAvatarSectionTitle =>
+      'Pick a character from the Majarra universe';
+
+  @override
+  String childFormAvatarCount(int count) {
+    return '$count characters';
+  }
+
+  @override
+  String get childFormAvatarSectionSubtitle =>
+      'The same cartoon characters from the series';
+
+  @override
+  String get childFormInterestsTitle => 'Interests';
+
+  @override
+  String get childFormInterestsSubtitle =>
+      'Pick what your child enjoys, you can select more than one';
+
+  @override
+  String get childFormLanguageReadOnlyNotice =>
+      'Only one language is available today; the list will grow once other translations are complete';
+
+  @override
+  String get childFormSaveButtonCreate => 'Create profile';
+
+  @override
+  String get childFormSaveButtonEdit => 'Save changes';
+
+  @override
+  String get childFormCreateErrorGeneric =>
+      'Could not create the profile. Check your plan\'s limit (4 children)';
+
+  @override
+  String get childFormEditErrorGeneric => 'Could not save changes';
+
+  @override
+  String get interestAbjad => 'Letters';
+
+  @override
+  String get interestArqam => 'Numbers';
+
+  @override
+  String get interestOloom => 'Science';
+
+  @override
+  String get interestQiyam => 'Values';
+
+  @override
+  String get interestQisas => 'Stories';
+
+  @override
+  String get interestMaharat => 'Skills';
+
+  @override
+  String get interestTarikh => 'History';
+
+  @override
+  String get interestAlam => 'Our world';
+
+  @override
+  String get interestIman => 'Faith';
+
+  @override
+  String get ageTransitionReviewTitle => 'Age transition review';
+
+  @override
+  String get ageTransitionLoadErrorGeneric =>
+      'Could not load the age-transition status';
+
+  @override
+  String get ageTransitionNoChangeTitle => 'No change right now';
+
+  @override
+  String get ageTransitionNoChangeBody =>
+      'The child\'s current track still matches their computed age. No action is needed now.';
+
+  @override
+  String get ageTransitionCurrentTrackLabel => 'Current track';
+
+  @override
+  String get ageTransitionComputedTrackLabel => 'Suggested track';
+
+  @override
+  String ageTransitionChangeDescription(String from, String to) {
+    return 'The profile will move from the $from track to the $to track. The content shown will automatically update to match the new $to track.';
+  }
+
+  @override
+  String get ageTransitionAcceptButton => 'Confirm transition';
+
+  @override
+  String get ageTransitionDeferButton => 'Defer for later';
+
+  @override
+  String ageTransitionAcceptSuccessBody(String track) {
+    return 'The profile was moved to the $track track successfully.';
+  }
+
+  @override
+  String ageTransitionDeferSuccessBody(String date) {
+    return 'The transition was deferred until $date.';
+  }
+
+  @override
+  String ageTransitionDeferAlreadyActiveBody(String date) {
+    return 'A deferral is already active until $date.';
+  }
+
+  @override
+  String get ageTransitionErrorGeneric =>
+      'Could not complete the action. Try again';
+
+  @override
+  String get ageTrackLabelPreschool => 'Sprouts';
+
+  @override
+  String get ageTrackLabelKids => 'Explorers';
+
+  @override
+  String get ageTrackLabelJunior => 'Pioneers';
+
+  @override
+  String get ageTrackLabelUnknown => 'Unspecified';
+
+  @override
+  String get consentPageTitle => 'Consents';
+
+  @override
+  String get consentPageIntro =>
+      'These consents decide what we collect and keep about your child\'s usage. You can change any of them at any time.';
+
+  @override
+  String get consentTypeDataCollectionLabel => 'Basic usage data collection';
+
+  @override
+  String get consentTypeDataCollectionDescription =>
+      'Basic data needed to run the account, such as sign-in and content progress.';
+
+  @override
+  String get consentTypeAnalyticsLabel => 'Usage analytics';
+
+  @override
+  String get consentTypeAnalyticsDescription =>
+      'Aggregated usage data that helps us improve the in-app experience.';
+
+  @override
+  String get consentTypeVoiceLabel => 'Voice recordings';
+
+  @override
+  String get consentTypeVoiceDescription =>
+      'No feature in the app currently uses voice; this consent is prepared for any future voice-based feature.';
+
+  @override
+  String get consentTypePersonalizationLabel =>
+      'Personalized content suggestions';
+
+  @override
+  String get consentTypePersonalizationDescription =>
+      'Suggesting content based on the interests recorded on your child\'s profile.';
+
+  @override
+  String get consentTypeChildCreationsLabel =>
+      'Storing the child\'s drawings in the cloud';
+
+  @override
+  String get consentTypeChildCreationsDescription =>
+      'Storing your child\'s drawings in a space private to your family, in the cloud. Never published or shared with anyone else.';
+
+  @override
+  String get consentReasonNeverGranted =>
+      'This consent has not been granted yet';
+
+  @override
+  String get consentReasonRevoked => 'This consent was withdrawn';
+
+  @override
+  String get consentReasonVersionSuperseded =>
+      'This consent\'s policy changed, and a new consent is needed';
+
+  @override
+  String get consentStatusGranted => 'Granted';
+
+  @override
+  String get consentLoadErrorGeneric => 'Could not load the consent status';
+
+  @override
+  String get consentWriteErrorGeneric => 'Could not save the change. Try again';
+
+  @override
+  String get consentContinueButton => 'Continue';
+
+  @override
+  String get onboardingBasicControlsStepTitle => 'Basic controls';
+
+  @override
+  String get onboardingBasicControlsStepIntro =>
+      'Set screen-time limits and permissions for your child\'s profile. You can change them later from the parent area.';
+
+  @override
+  String get onboardingContinueButton => 'Continue';
+
+  @override
+  String get onboardingFinishTitle => 'All set!';
+
+  @override
+  String get onboardingFinishBody =>
+      'You created your child\'s profile and set the basic controls. You can start now, and change any setting later from the parent area.';
+
+  @override
+  String get onboardingFinishButton => 'Start now';
 }

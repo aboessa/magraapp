@@ -8,6 +8,7 @@ import '../../../../core/failures/app_failure.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../home/application/home_providers.dart';
 import '../../../profile/data/billing_status.dart';
+import '../../application/account_providers.dart';
 import '../widgets/profile_page_content.dart';
 
 /// A device session on the family account.
@@ -64,12 +65,6 @@ class FamilyDevice {
 /// hardcoded three-item array and a fixed `'3 من 4 أجهزة'` count. Both are now
 /// wired; the page requires a signed-in parent, so an unauthenticated visit gets
 /// an explicit sign-in prompt rather than an empty list.
-final familyDevicesProvider = FutureProvider<List<FamilyDevice>>((ref) async {
-  final api = ref.watch(majarraApiClientProvider);
-  final rows = await api.fetchDevices();
-  return rows.map(FamilyDevice.fromJson).toList(growable: false);
-});
-
 class DevicesPage extends ConsumerWidget {
   const DevicesPage({super.key});
 

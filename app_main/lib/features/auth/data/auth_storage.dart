@@ -3,6 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../core/diagnostics/ignored_errors.dart';
+import '../../../core/failures/secure_storage_failure.dart';
+
 class AccountDeletionReceipt {
   const AccountDeletionReceipt({
     required this.parentId,
@@ -33,15 +36,80 @@ class AuthStorage {
   static const _parentId = 'majarra_parent_id';
   static const _deletionReceipt = 'majarra_deletion_receipt_v1';
   static const _pendingChildDeletions = 'majarra_pending_child_deletions_v1';
-  // Read once only to migrate receipts written by pre-v1 builds. Every current
-  // write and read is authoritative from the single JSON record above.
   static const _legacyDeletionParentId = 'majarra_deletion_parent_id';
   static const _legacyDeletionRequestId = 'majarra_deletion_request_id';
   static const _legacyDeletionSecret = 'majarra_deletion_receipt_secret';
 
-  final _store = const FlutterSecureStorage();
+  /// [storage] للاختبار وحده: بلا حقن، مسار الفشل غير قابل للاختبار إلا بجهاز
+  /// مخزنُه مكسور (`APP-106`).
+  AuthStorage({FlutterSecureStorage? storage}) : _store = storage ?? _secureOpts;
+
+  static const _secureOpts = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+  final FlutterSecureStorage _store;
+
+  /// قراءة تُعيد `null` عند الفشل، **وتسجّله** (`APP-106`).
+  ///
+  /// الإرجاع `null` مقصود ولم يتغيّر: مسار الإقلاع يقرأ التوكن ليعرف «هل هناك
+  /// جلسة؟»، ورفع استثناء هناك يمنع فتح التطبيق أصلًا. لكن «لا جلسة» و«المخزن
+  /// الآمن لا يُقرأ» كانا يبدوان سواءً — والثاني يعني خروجًا غامضًا لا يفهمه
+  /// المستخدم ولا نراه نحن. الآن يُسجَّل، ويظهر في `keystoreUnavailable`.
+  Future<String?> _safeRead(String key) async {
+    try {
+      return await _store.read(key: key);
+    } catch (error, stack) {
+      _readFailed = true;
+      reportIgnoredError('auth_storage.read', error, stack);
+      return null;
+    }
+  }
+
+  /// كتابة **ترفع** عند الفشل (`APP-106` + `ENC-011`).
+  ///
+  /// كان الفشل مكتومًا، ومعناه أن الجلسة لن تنجو من إغلاق التطبيق: المستخدم
+  /// يسجّل دخوله بنجاح ظاهر، ثم يجد نفسه خارجًا عند الإقلاع التالي بلا سبب
+  /// معلَن. ورفع الاستثناء هنا يجعل مسار الدخول يفشل **وقتَ حدوثه**، وهو ما
+  /// يُنتج رسالة صحيحة بدل عطل يظهر لاحقًا في موضع آخر.
+  Future<void> _safeWrite(String key, String value) async {
+    try {
+      await _store.write(key: key, value: value);
+    } catch (error) {
+      throw SecureStorageUnavailableException('auth_storage.write', error);
+    }
+  }
+
+  /// حذف يُهمَل فشله ويُسجَّل.
+  ///
+  /// لا يُرفَع: المستدعي إمّا يمسح جلسة (والذاكرة مُسحت أصلًا فالأثر العملي واقع)
+  /// أو ينظّف مفتاحًا قديمًا. و[clear] وحدها ترفع، لأن بقاء توكن على القرص بعد
+  /// «خروج» ليس تنظيفًا فائتًا بل خطأ أمني.
+  Future<void> _safeDelete(String key) async {
+    try {
+      await _store.delete(key: key);
+    } catch (error) {
+      reportIgnoredError('auth_storage.delete', error);
+    }
+  }
+
+  bool _readFailed = false;
+
+  /// هل فشلت قراءة واحدة من المخزن الآمن في هذه الجلسة؟
+  ///
+  /// تُقرأ عند غياب التوكن للتفريق بين «لا جلسة محفوظة» و«المخزن لا يُقرأ»،
+  /// فتُعرَض رسالة صحيحة بدل شاشة دخول بلا تفسير.
+  bool get keystoreUnavailable => _readFailed;
   Future<void> _deletionReceiptMutationTail = Future<void>.value();
   Future<void> _deletionReceiptWorkflowTail = Future<void>.value();
+
+  // In-memory cache – fixes web race where secure_storage read lags behind
+  // save() (IndexedDB/localStorage async). After save, getAccessToken returns
+  // immediately from memory, so /family/children right after login never 401s.
+  String? _memAccess;
+  String? _memRefresh;
+  String? _memParentId;
+  bool _memLoaded = false;
 
   Future<T> _withDeletionReceiptMutation<T>(Future<T> Function() operation) {
     final previous = _deletionReceiptMutationTail;
@@ -81,31 +149,63 @@ class AuthStorage {
     required String parentId,
   }) {
     return _withDeletionReceiptMutation(() async {
-      // A retained capability owns account recovery on this device. Refuse to
-      // install another account beside it; the caller must resolve status first.
       if (await _readDeletionReceiptUnlocked() != null) {
         throw const AccountDeletionRecoveryPending();
       }
-      await _store.write(key: _access, value: accessToken);
-      await _store.write(key: _refresh, value: refreshToken);
-      await _store.write(key: _parentId, value: parentId);
+      _memAccess = accessToken;
+      _memRefresh = refreshToken;
+      _memParentId = parentId;
+      _memLoaded = true;
+      await _safeWrite(_access, accessToken);
+      await _safeWrite(_refresh, refreshToken);
+      await _safeWrite(_parentId, parentId);
     });
   }
 
-  Future<String?> getAccessToken() => _store.read(key: _access);
-  Future<String?> getRefreshToken() => _store.read(key: _refresh);
-  Future<String?> getParentId() => _store.read(key: _parentId);
+  Future<String?> getAccessToken() async {
+    if (_memLoaded && _memAccess != null) return _memAccess;
+    final v = await _safeRead(_access);
+    if (v != null) {
+      _memAccess = v;
+      _memLoaded = true;
+    }
+    return v;
+  }
+
+  Future<String?> getRefreshToken() async {
+    if (_memLoaded && _memRefresh != null) return _memRefresh;
+    final v = await _safeRead(_refresh);
+    if (v != null) {
+      _memRefresh = v;
+    }
+    return v;
+  }
+
+  Future<String?> getParentId() async {
+    if (_memLoaded && _memParentId != null) return _memParentId;
+    final v = await _safeRead(_parentId);
+    if (v != null) {
+      _memParentId = v;
+      _memLoaded = true;
+    }
+    return v;
+  }
 
   Future<void> updateTokens({
     required String accessToken,
     required String refreshToken,
   }) async {
-    await _store.write(key: _access, value: accessToken);
-    await _store.write(key: _refresh, value: refreshToken);
+    _memAccess = accessToken;
+    _memRefresh = refreshToken;
+    _memLoaded = true;
+    await _safeWrite(_access, accessToken);
+    await _safeWrite(_refresh, refreshToken);
   }
 
   Future<void> updateAccessToken(String accessToken) async {
-    await _store.write(key: _access, value: accessToken);
+    _memAccess = accessToken;
+    _memLoaded = true;
+    await _safeWrite(_access, accessToken);
   }
 
   Future<String?> getPendingChildDeletionRequestId(String childId) async {
@@ -125,9 +225,9 @@ class AuthStorage {
     }
     final pending = await _readPendingChildDeletions();
     pending[childId] = requestId;
-    await _store.write(
-      key: _pendingChildDeletions,
-      value: jsonEncode({'version': 1, 'requests': pending}),
+    await _safeWrite(
+      _pendingChildDeletions,
+      jsonEncode({'version': 1, 'requests': pending}),
     );
   }
 
@@ -135,17 +235,17 @@ class AuthStorage {
     final pending = await _readPendingChildDeletions();
     if (pending.remove(childId) == null) return;
     if (pending.isEmpty) {
-      await _store.delete(key: _pendingChildDeletions);
+      await _safeDelete(_pendingChildDeletions);
       return;
     }
-    await _store.write(
-      key: _pendingChildDeletions,
-      value: jsonEncode({'version': 1, 'requests': pending}),
+    await _safeWrite(
+      _pendingChildDeletions,
+      jsonEncode({'version': 1, 'requests': pending}),
     );
   }
 
   Future<Map<String, String>> _readPendingChildDeletions() async {
-    final encoded = await _store.read(key: _pendingChildDeletions);
+    final encoded = await _safeRead(_pendingChildDeletions);
     if (encoded == null) return <String, String>{};
     try {
       final decoded = jsonDecode(encoded);
@@ -195,7 +295,7 @@ class AuthStorage {
   }
 
   Future<AccountDeletionReceipt?> _readDeletionReceiptUnlocked() async {
-    final encoded = await _store.read(key: _deletionReceipt);
+    final encoded = await _safeRead(_deletionReceipt);
     if (encoded != null) {
       final decoded = _decodeDeletionReceipt(encoded);
       if (decoded == null) {
@@ -207,9 +307,9 @@ class AuthStorage {
     // Transitional migration only. A successfully migrated value is committed
     // as one JSON record before the old keys are erased.
     final legacyValues = await Future.wait([
-      _store.read(key: _legacyDeletionParentId),
-      _store.read(key: _legacyDeletionRequestId),
-      _store.read(key: _legacyDeletionSecret),
+      _safeRead(_legacyDeletionParentId),
+      _safeRead(_legacyDeletionRequestId),
+      _safeRead(_legacyDeletionSecret),
     ]);
     final legacy = _validatedDeletionReceipt(
       parentId: legacyValues[0],
@@ -229,9 +329,9 @@ class AuthStorage {
   Future<void> _writeDeletionReceiptUnlocked(
     AccountDeletionReceipt receipt,
   ) async {
-    await _store.write(
-      key: _deletionReceipt,
-      value: jsonEncode({
+    await _safeWrite(
+      _deletionReceipt,
+      jsonEncode({
         'version': 1,
         'parent_id': receipt.parentId,
         'request_id': receipt.requestId,
@@ -286,9 +386,11 @@ class AuthStorage {
     ]) {
       try {
         await _store.delete(key: key);
-      } catch (_) {
+      } catch (error) {
         // The committed v1 record remains authoritative if legacy cleanup is
-        // interrupted by a platform keystore failure.
+        // interrupted by a platform keystore failure. Recorded rather than
+        // dropped: a keystore that refuses deletes will refuse other writes too.
+        reportIgnoredError('auth_storage.legacy_cleanup', error);
       }
     }
   }
@@ -299,7 +401,7 @@ class AuthStorage {
     return _withDeletionReceiptMutation(() async {
       final current = await _readDeletionReceiptUnlocked();
       if (current == null || !current.sameCapability(expected)) return false;
-      await _store.delete(key: _deletionReceipt);
+      await _safeDelete(_deletionReceipt);
       await _clearLegacyDeletionReceipt();
       return true;
     });
@@ -308,6 +410,10 @@ class AuthStorage {
   /// Clears only the active session. A pending deletion receipt is a separate
   /// recovery capability and must survive logout/account revocation.
   Future<void> clear() async {
+    _memAccess = null;
+    _memRefresh = null;
+    _memParentId = null;
+    _memLoaded = false;
     final failures = <Object>[];
     for (final key in const [
       _access,

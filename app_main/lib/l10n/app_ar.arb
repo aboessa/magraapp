@@ -89,6 +89,11 @@
   "sessionExpiredShort": "انتهت الجلسة — سجّل الدخول مجددًا",
   "parentPinDisclosure": "الرمز محفوظ مشفَّرًا على هذا الجهاز وتتم مزامنته مع الخادم عند تسجيل الدخول. التحقق على الخادم هو الحد الحقيقي؛ الحماية المحلية تمنع الطفل من فتح المنطقة دون اتصال.",
   "biometricUnavailable": "البصمة / Face ID — غير متاح بعد",
+  "pinToggleShow": "إظهار الرمز",
+  "pinToggleHide": "إخفاء الرمز",
+  "pinGrantFailedRetry": "تم التحقق من الرمز، لكن لم يتم حفظ الوصول. أعد المحاولة.",
+  "pinServerVerificationFooter": "يُتحقَّق من الرمز على الخادم، ويُحفظ إثبات الوصول الموقّع في الذاكرة فقط لمدة قصيرة. يُمسح الإثبات عند إغلاق الجلسة أو انتقال التطبيق إلى الخلفية.",
+  "pinUnlockingWithBiometric": "جارٍ التحقق ببصمتك…",
   "home": "الرئيسية",
   "search": "بحث",
   "profile": "ملفي",
@@ -225,5 +230,117 @@
   "boardOrientationPortrait": "طولي",
   "boardOrientationLandscape": "عرضي",
   "boardOrientationSquare": "مربع",
-  "referenceBadge": "من: {title}"
+  "referenceBadge": "من: {title}",
+  "childFormCreateTitle": "ملف طفل جديد",
+  "childFormEditTitle": "تعديل ملف الطفل",
+  "childFormCreateSubtitle": "اختر شخصية من عالم مجرة",
+  "childFormEditSubtitle": "عدّل بيانات الملف واهتماماته",
+  "childFormNicknameLabel": "اسم الطفل",
+  "childFormNicknameHint": "مثال: ليلى",
+  "childFormNicknameEmptyError": "اكتب اسمًا للملف",
+  "childFormBirthMonthLabel": "شهر الميلاد",
+  "childFormBirthYearLabel": "سنة الميلاد",
+  "childFormBirthDateReadOnlyLabel": "تاريخ الميلاد",
+  "childFormBirthDateEditNotice": "يُعالَج تغيير تاريخ الميلاد لاحقًا عبر مسار الانتقال العمري، لا من هذه الشاشة",
+  "childFormAvatarSectionTitle": "اختر شخصية من عالم مجرة",
+  "childFormAvatarCount": "{count} شخصية",
+  "@childFormAvatarCount": {
+    "description": "Count of selectable avatar characters shown next to the picker's section title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "childFormAvatarSectionSubtitle": "نفس شخصيات الكارتون في المسلسلات",
+  "childFormInterestsTitle": "الاهتمامات",
+  "childFormInterestsSubtitle": "اختر ما يهم طفلك، يمكن اختيار أكثر من واحد",
+  "childFormLanguageReadOnlyNotice": "لغة واحدة متاحة اليوم؛ ستتوسع القائمة عند اكتمال ترجمات أخرى",
+  "childFormSaveButtonCreate": "إنشاء الملف",
+  "childFormSaveButtonEdit": "حفظ التغييرات",
+  "childFormCreateErrorGeneric": "تعذّر إنشاء الملف. تحقّق من الباقة (حد 4 أطفال)",
+  "childFormEditErrorGeneric": "تعذّر حفظ التغييرات",
+  "interestAbjad": "أبجد",
+  "interestArqam": "الأرقام",
+  "interestOloom": "العلوم",
+  "interestQiyam": "القيم",
+  "interestQisas": "القصص",
+  "interestMaharat": "المهارات",
+  "interestTarikh": "التاريخ",
+  "interestAlam": "عالمنا",
+  "interestIman": "الإيمان",
+  "ageTransitionReviewTitle": "مراجعة الانتقال العمري",
+  "ageTransitionLoadErrorGeneric": "تعذّر تحميل حالة الانتقال العمري",
+  "ageTransitionNoChangeTitle": "لا يوجد تغيير حاليًا",
+  "ageTransitionNoChangeBody": "مسار الطفل الحالي لا يزال مطابقًا لعمره المحسوب. لا حاجة لأي إجراء الآن.",
+  "ageTransitionCurrentTrackLabel": "المسار الحالي",
+  "ageTransitionComputedTrackLabel": "المسار المقترح",
+  "ageTransitionChangeDescription": "سيتم نقل الملف من مسار {from} إلى مسار {to}. سيتغيّر المحتوى المعروض تلقائيًا ليطابق مسار {to} الجديد.",
+  "@ageTransitionChangeDescription": {
+    "description": "Explains what will happen if the parent accepts the age-track transition, before they confirm (Requirement 12.4).",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "ageTransitionAcceptButton": "تأكيد الانتقال",
+  "ageTransitionDeferButton": "تأجيل لاحقًا",
+  "ageTransitionAcceptSuccessBody": "تم نقل الملف إلى مسار {track} بنجاح.",
+  "@ageTransitionAcceptSuccessBody": {
+    "placeholders": {
+      "track": {
+        "type": "String"
+      }
+    }
+  },
+  "ageTransitionDeferSuccessBody": "تم تأجيل الانتقال حتى {date}.",
+  "@ageTransitionDeferSuccessBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ageTransitionDeferAlreadyActiveBody": "يوجد تأجيل نشط بالفعل حتى {date}.",
+  "@ageTransitionDeferAlreadyActiveBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ageTransitionErrorGeneric": "تعذّر تنفيذ الإجراء. حاول مجددًا",
+  "ageTrackLabelPreschool": "براعم",
+  "ageTrackLabelKids": "مستكشفون",
+  "ageTrackLabelJunior": "روّاد",
+  "ageTrackLabelUnknown": "غير محدد",
+  "consentPageTitle": "الموافقات",
+  "consentPageIntro": "هذه الموافقات تحدد ما نجمعه ونحفظه عن استخدام طفلك. يمكنك تغيير أي منها في أي وقت.",
+  "consentTypeDataCollectionLabel": "جمع بيانات الاستخدام الأساسية",
+  "consentTypeDataCollectionDescription": "بيانات أساسية لتشغيل الحساب، مثل تسجيل الدخول والتقدم في المحتوى.",
+  "consentTypeAnalyticsLabel": "تحليلات الاستخدام",
+  "consentTypeAnalyticsDescription": "بيانات استخدام مجمَّعة تساعدنا على تحسين التجربة داخل التطبيق.",
+  "consentTypeVoiceLabel": "تسجيلات الصوت",
+  "consentTypeVoiceDescription": "لا توجد ميزة تعتمد على الصوت في التطبيق حاليًا؛ هذه الموافقة مُعدّة لأي ميزة صوتية مستقبلية.",
+  "consentTypePersonalizationLabel": "تخصيص المحتوى المقترح",
+  "consentTypePersonalizationDescription": "اقتراح محتوى بناءً على اهتمامات طفلك المسجَّلة في ملفه.",
+  "consentTypeChildCreationsLabel": "حفظ رسومات الطفل في السحابة",
+  "consentTypeChildCreationsDescription": "حفظ رسومات طفلك في مساحة خاصة بأسرتك على السحابة. لا تُنشر ولا تُشارك مع أي طرف آخر.",
+  "consentReasonNeverGranted": "لم تُمنح هذه الموافقة بعد",
+  "consentReasonRevoked": "تم سحب هذه الموافقة",
+  "consentReasonVersionSuperseded": "تغيّرت سياسة هذه الموافقة، وتحتاج موافقة جديدة",
+  "consentStatusGranted": "ممنوحة",
+  "consentLoadErrorGeneric": "تعذّر تحميل حالة الموافقات",
+  "consentWriteErrorGeneric": "تعذّر حفظ التغيير. حاول مجددًا",
+  "consentContinueButton": "متابعة",
+  "onboardingBasicControlsStepTitle": "الضوابط الأساسية",
+  "onboardingBasicControlsStepIntro": "اضبط حدود الوقت والسماحات لملف طفلك، ويمكنك تعديلها لاحقًا من منطقة ولي الأمر.",
+  "onboardingContinueButton": "متابعة",
+  "onboardingFinishTitle": "كل شيء جاهز!",
+  "onboardingFinishBody": "أنشأت ملف طفلك وضبطت الضوابط الأساسية. يمكنك البدء الآن، وتعديل أي إعداد لاحقًا من منطقة ولي الأمر.",
+  "onboardingFinishButton": "ابدأ الآن"
 }

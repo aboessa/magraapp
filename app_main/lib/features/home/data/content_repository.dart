@@ -1,4 +1,5 @@
 import '../../../core/cache/catalog_cache.dart';
+import '../../../core/diagnostics/ignored_errors.dart';
 import '../domain/content_models.dart';
 import 'content_dtos.dart';
 import 'local_catalog.dart';
@@ -172,17 +173,7 @@ class ContentRepository {
         ? LocalCatalog.stories
         : storyRows
               .map(StoryDto.fromJson)
-              .map(
-                (dto) => StoryItem(
-                  id: dto.id,
-                  title: dto.title,
-                  description: dto.description,
-                  type: dto.type,
-                  ageMin: dto.ageMin,
-                  ageMax: dto.ageMax,
-                  coverUrl: dto.coverUrl,
-                ),
-              )
+              .map((dto) => dto.toDomain())
               .toList(growable: false);
 
     final source =
@@ -279,10 +270,13 @@ class ContentRepository {
   ) async {
     try {
       return _EndpointRows.success(await request());
-    } catch (e) {
-      // Keep UI child-safe (fallback to cache/bundled) but send technical failure to telemetry
-      // ignore: avoid_print
-      // ignore: no-mirror of crash reporter — logged via analytics for observability
+    } catch (error, stack) {
+      // الشاشة تبقى آمنة للطفل (كاش ثم مبندل)، والفشل **يُسجَّل** (`APP-106`).
+      //
+      // التعليق السابق هنا كان يزعم إرسال الفشل إلى التتبّع، ولم يكن يُرسل
+      // شيئًا: كان يُسقِط `e` ويعود. توثيق ما لا يحدث أسوأ من غياب التوثيق،
+      // لأنه يُطمئن قارئه فيمتنع عن الفحص.
+      reportIgnoredError('content_repository.fetch', error, stack);
       return const _EndpointRows.failure();
     }
   }

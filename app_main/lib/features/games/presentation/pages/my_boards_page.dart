@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../data/creation_document.dart';
 import '../../data/local_creation_store.dart';
+import '../studio/studio_app_bar.dart';
 import 'board_editor_page.dart';
 
 class MyBoardsPage extends StatefulWidget {
@@ -138,7 +139,10 @@ class _MyBoardsPageState extends State<MyBoardsPage> {
 
   @override Widget build(BuildContext context){
     return Scaffold(
-      appBar: AppBar(title: const Text('لوحاتي')),
+      appBar: const StudioAppBar(
+        title: 'لوحاتي',
+        glyph: Icons.dashboard_customize_rounded,
+      ),
       floatingActionButton: FloatingActionButton.extended(onPressed: _createBoard, icon: const Icon(Icons.add), label: const Text('لوحة جديدة')),
       body: _loading ? const Center(child: CircularProgressIndicator()) : _boards.isEmpty ? _EmptyBoards(onCreate: _createBoard) : GridView.builder(
         padding: const EdgeInsets.fromLTRB(16,16,16,80),

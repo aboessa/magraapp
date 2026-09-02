@@ -73,11 +73,16 @@ void main() {
     );
 
     // Backdate the stored timestamp past the TTL.
+    //
+    // Through `CatalogCache.savedAtKey`, not a literal. The literal this test
+    // used (`majarra_catalog_cache_saved_at`) stopped matching when the keys
+    // moved to `_v2`, so the backdating wrote a key nothing reads and the
+    // assertion below ran against an untouched fresh cache.
     final prefs = await SharedPreferences.getInstance();
     final stale = DateTime.now()
         .subtract(CatalogCache.ttl + const Duration(minutes: 1))
         .millisecondsSinceEpoch;
-    await prefs.setInt('majarra_catalog_cache_saved_at', stale);
+    await prefs.setInt(CatalogCache.savedAtKey, stale);
 
     expect(await cache.read(), isNull);
   });
@@ -98,7 +103,7 @@ void main() {
     // Simulates the device clock moving backwards after a write.
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(
-      'majarra_catalog_cache_saved_at',
+      CatalogCache.savedAtKey,
       DateTime.now().add(const Duration(days: 2)).millisecondsSinceEpoch,
     );
 
@@ -107,9 +112,9 @@ void main() {
 
   test('corrupt json is treated as a miss, not an error', () async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('majarra_catalog_cache_v1', '{not json');
+    await prefs.setString(CatalogCache.payloadKey, '{not json');
     await prefs.setInt(
-      'majarra_catalog_cache_saved_at',
+      CatalogCache.savedAtKey,
       DateTime.now().millisecondsSinceEpoch,
     );
 

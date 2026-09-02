@@ -160,6 +160,14 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
   @override
   Widget build(BuildContext context) {
     final target = effectiveTouchTarget(widget.controller.pack.accessibility);
+    // Guard against empty pack data — prevents RangeError on web (js_primitives max 0) and shows honest message
+    if (_deck.isEmpty) {
+      return BoardScaffold(
+        controller: widget.controller,
+        prompt: widget.controller.prompt,
+        child: const Center(child: Text('لا توجد بنود في هذا المستوى')),
+      );
+    }
     return BoardScaffold(
       controller: widget.controller,
       prompt: widget.controller.prompt,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
-import '../media/bundled_story_assets.dart';
+import 'decode_cap.dart';
 
 class CinematicImage extends StatelessWidget {
   const CinematicImage({
@@ -39,11 +39,13 @@ class CinematicImage extends StatelessWidget {
         ? null
         : (decodeWidth! * ratio).round();
 
-    final fallbackAssetPath =
-        bundledStoryAssetForUrl(networkUrl) ??
-        (assetPath.startsWith('assets/')
-            ? assetPath
-            : 'assets/brand/majarra-logo.png');
+    // Story artwork and game covers are CDN-only to keep APK small.
+    // assetPath may be empty when coverUrl CDN is the only source (no local duplicate per user request).
+    final fallbackAssetPath = assetPath.startsWith('assets/')
+        ? assetPath
+        : assetPath.isEmpty
+        ? 'assets/brand/majarra-logo.png'
+        : 'assets/brand/majarra-logo.png';
 
     final fallback = Image.asset(
       fallbackAssetPath,
@@ -242,6 +244,9 @@ class PlanetSymbol extends StatelessWidget {
                   imageAsset!,
                   width: size,
                   height: size,
+                  // `width` تخطيطٌ لا فكّ ترميز: صور الكواكب 768×768 (2.25 MB
+                  // مفكوكة) كانت تُفكّ بكاملها لدائرةٍ بعرض 58 (`PERF-102`).
+                  cacheWidth: decodeCapFor(context, size),
                   fit: BoxFit.cover,
                   filterQuality: FilterQuality.high,
                   errorBuilder: (_, __, ___) =>

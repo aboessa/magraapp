@@ -19,7 +19,6 @@ import '../../features/search/presentation/search_page.dart';
 import '../../features/shorts/presentation/shorts_page.dart';
 import '../../features/home/presentation/pages/listen_page.dart';
 import '../../features/home/presentation/pages/explore_page.dart';
-import '../../features/home/presentation/pages/library_page.dart';
 import '../../features/games/application/creation_cloud_service.dart';
 import '../../features/games/application/game_providers.dart';
 import '../../features/games/data/creation_document.dart';
@@ -40,8 +39,13 @@ import '../../features/auth/presentation/pages/email_verification_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/deletion_status_page.dart';
-import '../../features/auth/presentation/pages/parent_pin_page.dart';
+import '../../features/auth/presentation/pages/pin_setup_page.dart';
+import '../../features/auth/presentation/pages/pin_unlock_page.dart';
+import '../../features/auth/data/parent_pin_store.dart';
+import '../../features/auth/presentation/pages/help_signin_page.dart';
+import '../../features/child/application/family_children_provider.dart';
 import '../../features/child/presentation/pages/child_switcher_page.dart';
+import '../../features/onboarding/presentation/pages/onboarding_flow_page.dart';
 import '../../features/parent/presentation/pages/parent_dashboard_page.dart';
 import '../../features/reader/presentation/pages/story_reader_page.dart';
 import '../../features/audio/presentation/pages/audio_player_page.dart';
@@ -49,6 +53,8 @@ import '../../features/tv/presentation/pages/tv_pairing_page.dart';
 import '../../features/home/domain/content_models.dart';
 import '../../features/child/application/child_provider.dart';
 import 'auth_guard.dart';
+import 'route_access.dart';
+import 'touch_only_surface.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final guard = ref.watch(authGuardProvider);
@@ -56,6 +62,19 @@ final routerProvider = Provider<GoRouter>((ref) {
   // Watch child state to keep the parental/child guards in sync.
   ref.listen(childProvider, (prev, next) {
     syncAuthGuardWithChild(next, guard);
+  });
+  // Watch the family's full child roster to keep `AuthGuard.
+  // hasCompletedOnboarding` in sync (Requirement 8.1, 8.5, 8.6) — mirrors
+  // the `childProvider` listener above exactly, but reads whether ANY child
+  // in the family ever finished onboarding rather than the single active
+  // selection. `_guardRedirect` stays purely synchronous by reading this
+  // pre-computed boolean instead of the async provider directly.
+  ref.listen(familyChildrenProvider, (prev, next) {
+    final children = next.valueOrNull;
+    if (children == null) return;
+    guard.setHasCompletedOnboarding(
+      children.any((child) => child.onboardingCompletedAt != null),
+    );
   });
   return GoRouter(
     initialLocation: '/',
@@ -96,15 +115,14 @@ String? _guardRedirect(
   // of /login on cold start when a valid session exists.
   if (guard.isLoading) return null;
 
-  const public = {
-    '/login',
-    '/register',
-    '/verify-email',
-    '/forgot-password',
-    '/reset-password',
-    '/deletion-status',
-    '/privacy',
-  };
+  // Auth-entry screens: signing in/registering/verifying/resetting a
+  // password while already authenticated should bounce forward instead of
+  // re-showing the form. This set has no `RouteAccess` equivalent — it is
+  // not a protection level, it is a subset of `RouteAccess.public` routes
+  // that additionally redirect *away* when the user already has a session.
+  // The four-category enum only classifies how much access a route
+  // *requires*, not this orthogonal "entry point" behaviour, so it stays a
+  // local constant rather than living in `route_access.dart`.
   const authEntry = {
     '/login',
     '/register',
@@ -112,62 +130,102 @@ String? _guardRedirect(
     '/forgot-password',
     '/reset-password',
   };
-  const parentProtected = {
-    '/parent',
-    '/account',
-    '/devices',
-    '/membership',
-    '/settings',
-  };
-  const childRequired = {
-    '/',
-    '/planets',
-    '/watchlist',
-    '/my-collection',
-    '/studio',
-    '/downloads',
-    '/audio',
-    '/watch',
-    '/play',
-    '/read',
-    '/listen',
-    '/explore',
-    '/library',
-  };
 
-  // Legacy /home-v2 alias now unconditionally redirects to canonical /.
-  if (loc == '/home-v2') return '/';
+  final access = accessFor(loc);
 
-  final isPublic = public.contains(loc);
-  final needsChild =
-      childRequired.contains(loc) ||
-      loc.startsWith('/playback') ||
-      loc.startsWith('/reader') ||
-      loc.startsWith('/game') ||
-      loc.startsWith('/series');
-
-  if (!guard.isAuthenticated && !isPublic) return '/login';
+  if (!guard.isAuthenticated && access != RouteAccess.public) return '/login';
   if (guard.isAuthenticated &&
       authEntry.contains(loc) &&
       loc != '/reset-password') {
+    if (guard.hasChild) return '/';
+    // Requirement 8.1: a family with no active child AND no child anywhere
+    // that ever completed onboarding goes to the first-run journey instead
+    // of straight to the (empty) child switcher. A family that has
+    // completed onboarding once (`hasCompletedOnboarding == true`) always
+    // falls through to `/children` here even with no active child selected
+    // — e.g. adding a second child later — matching Requirement 8.6.
+    return guard.hasCompletedOnboarding ? '/children' : '/onboarding';
+  }
+
+  // Requirement 8.5: `/onboarding` itself must be re-evaluated once
+  // `hasCompletedOnboarding` resolves — not just the routes that redirect
+  // *into* it. Without this, a family whose onboarding status resolves
+  // asynchronously (after `familyChildrenProvider` settles, later than the
+  // synchronous redirect that first sent them here) could get stuck showing
+  // the onboarding flow even though the guard now correctly knows better.
+  if (loc == '/onboarding' && guard.hasCompletedOnboarding) {
     return guard.hasChild ? '/' : '/children';
   }
 
   // Demo is a child-only, memory-only experience. It cannot enrol a PIN or
-  // enter any parent-protected route even when navigated by a deep link.
-  if (guard.isDemo && (parentProtected.contains(loc) || loc == '/parent-pin')) {
-    return '/';
+  // manage a real account, so those routes lead to sign-in rather than bouncing
+  // back to Home, which made every account link look broken.
+  //
+  // `/membership` is the one exception: it is read-only plan information, and
+  // both providers serve a guest preview instead of calling the account API.
+  if (guard.isDemo &&
+      ((access == RouteAccess.parentVerified && loc != '/membership') ||
+          loc == '/parent-pin')) {
+    return '/login';
   }
 
-  if (guard.isAuthenticated && needsChild && !guard.hasChild) {
-    return '/children';
+  if (access == RouteAccess.childSession &&
+      guard.isAuthenticated &&
+      !guard.hasChild) {
+    return guard.hasCompletedOnboarding ? '/children' : '/onboarding';
   }
 
-  if (parentProtected.contains(loc) && !guard.hasParentAccess) {
+  if (access == RouteAccess.parentVerified && !guard.hasParentAccess) {
     return Uri(path: '/parent-pin', queryParameters: {'from': loc}).toString();
   }
   return null;
 }
+
+/* ------------------------------------------- الاتجاه بحسب المسار (`APP-108`) */
+
+/// أنماط المسارات التي يُسمح فيها بالعرض الأفقي.
+///
+/// التطبيق مقفول على portrait في `main.dart` لأن كل شاشة مصمَّمة عموديًّا، ويستثني
+/// المُشغِّل وحده — وهو يفتح الأفقي بنفسه في `initState` ويُعيد القفل في `dispose`.
+///
+/// النمط لا الموقع: `'/playback/:episodeId'` هو ما يُعلنه `GoRoute`، فيُطابَق أيّ
+/// معرّف حلقة بلا تحليل نصّي لعنوان.
+const landscapeCapableRoutes = <String>{'/playback/:episodeId'};
+
+/// هل المسار المعروض الآن يسمح بالأفقي؟
+///
+/// ## ما كان (`APP-108`)
+///
+/// `ModalRoute.of(context)?.settings.name?.contains('playback')` داخل
+/// `MaterialApp.router(builder:)`. وفيه عطلان:
+///
+/// 1. **`builder` فوق الـNavigator**، فلا `ModalRoute` أعلاه — والقيمة `null`
+///    **دائمًا**. أي أن الشرط لم يكن هشًّا فحسب: كان **مكسورًا في اتجاه واحد
+///    ثابت**، فيُغطّى المُشغِّل بشاشة «أدِر الجهاز» في الوضع الأفقي — وهو الوضع
+///    الذي يفتحه المُشغِّل بنفسه لمشاهدة الفيديو.
+/// 2. `contains('playback')` مطابقةٌ نصّية تُصيب أي مسار يحوي الكلمة.
+///
+/// والقرار يُشتقّ الآن من `RouteMatchList.fullPath` — نمطُ المسار الذي طابقه
+/// `go_router` فعلًا، لا نصًّا يُخمَّن.
+bool routeAllowsLandscape(GoRouter router) {
+  final fullPath = router.routerDelegate.currentConfiguration.fullPath;
+  return landscapeCapableRoutes.contains(fullPath);
+}
+
+/// مسارٌ سطحُه لا يُدار بلا مؤشّر: يُغلَّف بـ[TouchOnlySurface] **بالبناء**.
+///
+/// وُجد لأن `/studio` كان يحمل الفحص داخل بانيه وحده، فمرّت ثلاثة روابط عميقة
+/// تفتح الأسطح نفسها بلا فحص (`A11Y-102`). من يضيف مسار استوديو رابعًا عبر هذه
+/// الدالّة لا يستطيع أن ينسى الفحص، ومن يضيفه بـ`GoRoute` عاريًا يُوقعه
+/// `touch_only_routes_test.dart`.
+GoRoute _touchOnlyRoute({
+  required String path,
+  required Widget Function(BuildContext context, GoRouterState state) builder,
+}) => GoRoute(
+  path: path,
+  builder: (context, state) =>
+      TouchOnlySurface(child: (context) => builder(context, state)),
+);
 
 final List<RouteBase> _routes = <RouteBase>[
   GoRoute(
@@ -175,8 +233,6 @@ final List<RouteBase> _routes = <RouteBase>[
     name: 'home',
     builder: (context, state) => const HomePage(),
   ),
-  // Canonical Home is now single V1. Old /home-v2 links redirect via _guardRedirect.
-  GoRoute(path: '/home-v2', name: 'home-v2', redirect: (context, state) => '/'),
   GoRoute(
     path: '/planets',
     name: 'planets',
@@ -230,7 +286,6 @@ final List<RouteBase> _routes = <RouteBase>[
   GoRoute(path: '/read', builder: (context, state) => const ReadPage()),
   GoRoute(path: '/listen', builder: (context, state) => const ListenPage()),
   GoRoute(path: '/explore', builder: (context, state) => const ExplorePage()),
-  GoRoute(path: '/library', builder: (context, state) => const LibraryPage()),
   GoRoute(
     path: '/search',
     builder: (context, state) => Consumer(
@@ -274,7 +329,7 @@ final List<RouteBase> _routes = <RouteBase>[
     path: '/my-collection',
     builder: (context, state) => const MyCollectionRoute(),
   ),
-  GoRoute(
+  _touchOnlyRoute(
     path: '/studio',
     builder: (context, state) => Consumer(
       builder: (context, ref, _) {
@@ -297,68 +352,74 @@ final List<RouteBase> _routes = <RouteBase>[
         final document = creation?.documentJson == null
             ? null
             : CreationDocument.tryParse(creation!.documentJson!);
-        final device = ref.watch(deviceProfileProvider);
-
-        Widget studio() => CreativeStudioPage(
+        // فحص التلفاز كان هنا، وصار في `touchOnlyRoute` فوق: الأمر واحد لهذا
+        // المسار وللروابط العميقة الثلاثة التي كانت تفوته.
+        return CreativeStudioPage(
           childId: childId,
           creationStore: ref.watch(localCreationStoreProvider),
           initialCreation: document == null ? null : creation,
           initialDocument: document,
-        );
-
-        return device.when(
-          loading: () =>
-              const Scaffold(body: Center(child: CircularProgressIndicator())),
-          error: (_, __) => studio(),
-          data: (profile) => profile.isTelevision
-              ? const _RouteMessage(
-                  icon: Icons.touch_app_outlined,
-                  title: 'الاستوديو يحتاج شاشة لمس',
-                  body: 'افتح الاستوديو على الهاتف أو الجهاز اللوحي للرسم.',
-                )
-              : studio(),
+          displayName: ref.watch(childProvider).displayName,
         );
       },
     ),
   ),
   // Deep links — canonical IDs, resolve from provider/cache, not just `extra`.
-  GoRoute(
+  _touchOnlyRoute(
     path: '/studio/coloring/:id',
     builder: (context, state) {
       final id = state.pathParameters['id'] ?? '';
-      return Consumer(builder: (context, ref, _) {
-        final childId = ref.watch(childProvider).activeChildId;
-        if (childId == null || childId.isEmpty) {
-          return const _RouteMessage(icon: Icons.face_outlined, title: 'اختر طفلًا أولًا', body: 'الاستوديو يحفظ الرسومات في مساحة الطفل المحدد.');
-        }
-        return ColoringDeepLinkResolver(childId: childId, templateId: id);
-      });
+      return Consumer(
+        builder: (context, ref, _) {
+          final childId = ref.watch(childProvider).activeChildId;
+          if (childId == null || childId.isEmpty) {
+            return const _RouteMessage(
+              icon: Icons.face_outlined,
+              title: 'اختر طفلًا أولًا',
+              body: 'الاستوديو يحفظ الرسومات في مساحة الطفل المحدد.',
+            );
+          }
+          return ColoringDeepLinkResolver(childId: childId, templateId: id);
+        },
+      );
     },
   ),
-  GoRoute(
+  _touchOnlyRoute(
     path: '/studio/reference/:id',
     builder: (context, state) {
       final id = state.pathParameters['id'] ?? '';
-      return Consumer(builder: (context, ref, _) {
-        final childId = ref.watch(childProvider).activeChildId;
-        if (childId == null || childId.isEmpty) {
-          return const _RouteMessage(icon: Icons.face_outlined, title: 'اختر طفلًا أولًا', body: 'الاستوديو يحفظ الرسومات في مساحة الطفل المحدد.');
-        }
-        return ReferenceDeepLinkResolver(childId: childId, activityId: id);
-      });
+      return Consumer(
+        builder: (context, ref, _) {
+          final childId = ref.watch(childProvider).activeChildId;
+          if (childId == null || childId.isEmpty) {
+            return const _RouteMessage(
+              icon: Icons.face_outlined,
+              title: 'اختر طفلًا أولًا',
+              body: 'الاستوديو يحفظ الرسومات في مساحة الطفل المحدد.',
+            );
+          }
+          return ReferenceDeepLinkResolver(childId: childId, activityId: id);
+        },
+      );
     },
   ),
-  GoRoute(
+  _touchOnlyRoute(
     path: '/studio/trace/:id',
     builder: (context, state) {
       final id = state.pathParameters['id'] ?? '';
-      return Consumer(builder: (context, ref, _) {
-        final childId = ref.watch(childProvider).activeChildId;
-        if (childId == null || childId.isEmpty) {
-          return const _RouteMessage(icon: Icons.face_outlined, title: 'اختر طفلًا أولًا', body: 'الاستوديو يحفظ الرسومات في مساحة الطفل المحدد.');
-        }
-        return TraceDeepLinkResolver(childId: childId, itemId: id);
-      });
+      return Consumer(
+        builder: (context, ref, _) {
+          final childId = ref.watch(childProvider).activeChildId;
+          if (childId == null || childId.isEmpty) {
+            return const _RouteMessage(
+              icon: Icons.face_outlined,
+              title: 'اختر طفلًا أولًا',
+              body: 'الاستوديو يحفظ الرسومات في مساحة الطفل المحدد.',
+            );
+          }
+          return TraceDeepLinkResolver(childId: childId, itemId: id);
+        },
+      );
     },
   ),
   GoRoute(
@@ -395,6 +456,11 @@ final List<RouteBase> _routes = <RouteBase>[
     builder: (context, state) => const DeletionStatusPage(),
   ),
   GoRoute(
+    path: '/help-signin',
+    builder: (context, state) => const HelpSignInPage(),
+  ),
+  GoRoute(path: '/terms', builder: (context, state) => const PrivacyPage()),
+  GoRoute(
     path: '/verify-email',
     builder: (context, state) {
       final extra = state.extra;
@@ -408,11 +474,15 @@ final List<RouteBase> _routes = <RouteBase>[
   GoRoute(
     path: '/parent-pin',
     builder: (context, state) =>
-        ParentPinPage(returnTo: state.uri.queryParameters['from']),
+        _PinGatePage(returnTo: state.uri.queryParameters['from']),
   ),
   GoRoute(
     path: '/children',
     builder: (context, state) => const ChildSwitcherPage(),
+  ),
+  GoRoute(
+    path: '/onboarding',
+    builder: (context, state) => const OnboardingFlowPage(),
   ),
   GoRoute(
     path: '/parent',
@@ -628,6 +698,76 @@ final List<RouteBase> _routes = <RouteBase>[
     },
   ),
 ];
+
+/// Dispatches `/parent-pin?from=<loc>` to [PinSetupPage] or [PinUnlockPage]
+/// (Component 11, Requirement 11.1, 11.2, 11.6).
+///
+/// Keeps a single literal route path (`/parent-pin`) in `_routes`,
+/// `_guardRedirect`, `route_access.dart`, and every external call site
+/// (`devices_page.dart`, `account_data_page.dart`, `playback_page.dart`,
+/// `parent_dashboard_page.dart`, `home_destination_spec.dart`,
+/// `my_collection_route.dart`, `child_switcher_page.dart`) — none of them
+/// need to know which of the two screens actually renders. Acceptance
+/// criteria 11.1/11.2 only require the user see the correct one of the two
+/// screens, not that the URL itself differs between them, so a dispatcher
+/// builder is the least invasive way to satisfy both without touching
+/// `route_guard_matrix_test.dart`'s route-name extraction or any of the
+/// seven external call sites above.
+///
+/// `ParentPinStore.hasPin()` is a local heuristic (a per-device mirror of
+/// whether *this* device ever enrolled a PIN for the current owner), not a
+/// server fact — the server is the only authority on real enrolment state.
+/// Both [PinSetupPage] and [PinUnlockPage] self-heal when this guess turns
+/// out wrong (403 on setup, 404 on unlock) by navigating to the other one,
+/// so a wrong first guess here costs one extra round trip, never a stuck
+/// screen.
+class _PinGatePage extends ConsumerStatefulWidget {
+  const _PinGatePage({this.returnTo});
+
+  final String? returnTo;
+
+  @override
+  ConsumerState<_PinGatePage> createState() => _PinGatePageState();
+}
+
+class _PinGatePageState extends ConsumerState<_PinGatePage> {
+  bool _loading = true;
+  bool _hasPin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _check();
+  }
+
+  Future<void> _check() async {
+    final guard = ref.read(authGuardProvider);
+    bool hasPin;
+    try {
+      hasPin = await ref.read(parentPinStoreProvider).hasPin(ownerId: guard.parentId);
+    } catch (_) {
+      hasPin = false;
+    }
+    if (!mounted) return;
+    setState(() {
+      _hasPin = hasPin;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: AppColors.deepSpace,
+        body: Center(child: CircularProgressIndicator(color: AppColors.starGold)),
+      );
+    }
+    return _hasPin
+        ? PinUnlockPage(returnTo: widget.returnTo)
+        : PinSetupPage(returnTo: widget.returnTo);
+  }
+}
 
 class _RouteLoadError extends StatelessWidget {
   const _RouteLoadError({

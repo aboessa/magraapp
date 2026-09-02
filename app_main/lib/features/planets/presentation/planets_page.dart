@@ -338,6 +338,19 @@ class _NoPlanetsView extends StatelessWidget {
   }
 }
 
+/// حجم خطّ اسم الكوكب و«قريبًا» في شريط الاختيار.
+///
+/// معلَنان هنا لأن ارتفاع الشريط يُحسب منهما: كانا رقمين حرفيّين داخل
+/// `_PlanetChoice` وارتفاع الشريط ثابتًا مستقلًّا في `_PlanetChooser`، فحين رفع
+/// المستخدم حجم الخط إلى 200% نما النصّ ولم ينمُ الشريط، فتجاوز العمود 29 بكسل
+/// (`A11Y-101`). أي تعديلٍ لأحدهما يجب أن يُرى في الحساب.
+const double _choiceLabelFontSize = 12;
+const double _choiceComingSoonFontSize = 10;
+
+/// معامل ارتفاع السطر التقريبي. الدقيق يحتاج `TextPainter` لكل بطاقة في كل مرور،
+/// وهذا التقدير مضبوطٌ على التجاوز المقيس ومحروسٌ باختبار ثلاث نِسَب تكبير.
+const double _choiceLineFactor = 1.35;
+
 class _PlanetChooser extends StatelessWidget {
   const _PlanetChooser({
     required this.planets,
@@ -354,7 +367,15 @@ class _PlanetChooser extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final padding = context.horizontalPagePadding;
-    final height = isTelevision ? 152.0 : 128.0;
+    // الارتفاع الأساسي محفوظ كما هو عند 100%، ويُضاف إليه **نموّ** كتلة النصّ
+    // وحدها. الرمز والحواشي لا تتأثّر بحجم الخط فلا تُضاعَف معه.
+    final scaler = MediaQuery.textScalerOf(context);
+    final labelGrowth =
+        ((scaler.scale(_choiceLabelFontSize) - _choiceLabelFontSize) +
+                (scaler.scale(_choiceComingSoonFontSize) -
+                    _choiceComingSoonFontSize)) *
+            _choiceLineFactor;
+    final height = (isTelevision ? 152.0 : 128.0) + labelGrowth;
 
     return SizedBox(
       height: height,
@@ -395,10 +416,23 @@ class _PlanetChoice extends StatelessWidget {
         ? Duration.zero
         : const Duration(milliseconds: 320);
 
+    // «قريبًا» على البطاقة، لا اكتشافُه بعد النقر (`CNT-106`).
+    //
+    // داخل الكوكب كانت الأقسام الفارغة مُعلَنة بصراحة أصلًا («لا توجد سلاسل
+    // منشورة…»)، فالخلل لم يكن غرفةً بيضاء بل أن **الاختيار كان أعمى**: تسع
+    // بطاقات متشابهة، وثلاث منها لا شيء فيها. فالطفل يدفع ثمن النقر ليعرف.
+    //
+    // ولا تُخفى البطاقة: الإخفاء يمحو خريطة الطريق ويجعل كوكبًا مؤجَّلًا بقرار
+    // يشبه كوكبًا لم يُخطَّط له. والعلامة تظهر عند **صفرٍ مقيس** فقط، فغياب
+    // العدّ (النسخة المحزومة، أو خادم أقدم) لا يُقرأ فراغًا.
+    final comingSoon = planet.isMeasuredEmpty;
+
     return Semantics(
       button: true,
       selected: selected,
-      label: '${planet.name}، ${planet.description}',
+      label: comingSoon
+          ? '${planet.name}، ${planet.description}، قريبًا'
+          : '${planet.name}، ${planet.description}',
       child: AnimatedContainer(
         duration: duration,
         curve: Curves.easeOutCubic,
@@ -460,10 +494,24 @@ class _PlanetChoice extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: selected ? Colors.white : AppColors.mutedText,
-                    fontSize: 12,
+                    fontSize: _choiceLabelFontSize,
                     fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
+                if (comingSoon)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text(
+                      'قريبًا',
+                      textDirection: TextDirection.rtl,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.starGold.withValues(alpha: 0.92),
+                        fontSize: _choiceComingSoonFontSize,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

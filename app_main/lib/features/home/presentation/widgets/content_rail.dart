@@ -41,7 +41,7 @@ class ContentRail<T> extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header - title on right with arrow
+          // Header - title on right with arrow — now tappable to go to full list
           Padding(
             padding: EdgeInsetsDirectional.symmetric(
               horizontal: horizontalPadding,
@@ -50,27 +50,34 @@ class ContentRail<T> extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.2,
-                            height: 1.2,
+                  child: InkWell(
+                    onTap: onSeeAll,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.2,
+                                height: 1.2,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.chevron_left_rounded,
+                            color: Colors.white.withValues(alpha: 0.62),
+                            size: 20,
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        Icons.chevron_left_rounded,
-                        color: Colors.white.withValues(alpha: 0.62),
-                        size: 20,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 if (onSeeAll != null)
@@ -78,22 +85,22 @@ class ContentRail<T> extends StatelessWidget {
                     onTap: onSeeAll,
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: Row(
                         children: [
                           Text(
                             'عرض الكل',
                             style: TextStyle(
-                              color: AppColors.mutedText.withValues(alpha: 0.75),
+                              color: AppColors.mutedText.withValues(alpha: 0.85),
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(width: 2),
                           Icon(
                             Icons.arrow_back_rounded,
                             size: 16,
-                            color: AppColors.mutedText.withValues(alpha: 0.6),
+                            color: AppColors.mutedText.withValues(alpha: 0.7),
                           ),
                         ],
                       ),

@@ -6,7 +6,14 @@ import '../../home/data/local_catalog.dart';
 import '../../home/domain/content_models.dart';
 
 class ChildState {
-  const ChildState({this.activeChildId, this.ageTrack, this.displayName});
+  const ChildState({
+    this.activeChildId,
+    this.ageTrack,
+    this.displayName,
+    this.interests = const [],
+    this.language,
+    this.onboardingCompletedAt,
+  });
   final String? activeChildId;
   final String? ageTrack; // preschool/kids/junior
 
@@ -16,6 +23,18 @@ class ChildState {
   /// instead of keeping its own separate list. The profile source itself is
   /// still the on-device demo list until the family endpoint is wired.
   final String? displayName;
+
+  /// The closed interest list the active child picked in
+  /// `ChildProfileFormPage` (Requirement 10.6) — surfaced here so later
+  /// content-recommendation surfaces can read it without a second fetch.
+  final List<String> interests;
+
+  /// The active child's content language, e.g. `'ar'`.
+  final String? language;
+
+  /// When the onboarding journey (a later task in this spec) was completed
+  /// for this child profile. `null` means it has not been completed yet.
+  final DateTime? onboardingCompletedAt;
 
   bool get hasSelection => activeChildId != null && ageTrack != null;
 
@@ -37,11 +56,17 @@ class ChildNotifier extends StateNotifier<ChildState> {
     required String childId,
     required String ageTrack,
     String? displayName,
+    List<String> interests = const [],
+    String? language,
+    DateTime? onboardingCompletedAt,
   }) {
     state = ChildState(
       activeChildId: childId,
       ageTrack: ageTrack,
       displayName: displayName,
+      interests: interests,
+      language: language,
+      onboardingCompletedAt: onboardingCompletedAt,
     );
   }
 
@@ -76,20 +101,45 @@ final filteredCatalogProvider = Provider<AsyncValue<HomeCatalog>>((ref) {
   return catalogAsync.whenData((catalog) {
     if (child.ageTrack == null) return catalog;
 
+    // Demo child (ليلى تجريبي) should see hero even if age filter is strict.
+    // Preserve hero by keeping spotlights if filtering would empty series.
+    final isDemoPreschool = guard.isDemo && child.activeChildId == 'demo-child';
+
     bool matchesAge(int ageMin, int ageMax) {
+      if (isDemoPreschool) {
+        // Demo: more permissive – show 3-8 for preschool demo to include hero content
+        if (ageMax < 3 || ageMin > 8) return false;
+        return true;
+      }
       if (child.ageTrack == 'preschool' && ageMin > 5) return false;
       if (child.ageTrack == 'kids' && (ageMax < 6 || ageMin > 8)) return false;
       if (child.ageTrack == 'junior' && ageMax < 9) return false;
       return true;
     }
 
-    bool matchesSeries(SeriesItem series) =>
-        matchesAge(series.ageMin, series.ageMax);
+    bool matchesSeries(SeriesItem series) => matchesAge(series.ageMin, series.ageMax);
+
+    final filteredSeries = catalog.series.where(matchesSeries).toList();
+
+    // If filtering would empty hero, keep at least 3 series for hero visibility (demo safeguard)
+    final effectiveSeries = filteredSeries.isEmpty && isDemoPreschool
+        ? catalog.series.take(3).toList()
+        : filteredSeries;
+
+    List<HomeSpotlight> effectiveSpotlights;
+    if (isDemoPreschool && catalog.series.isNotEmpty && filteredSeries.isEmpty) {
+      effectiveSpotlights = catalog.spotlights;
+    } else {
+      final matched = catalog.spotlights
+          .where((sp) => effectiveSeries.any((s) => s.id == sp.seriesId))
+          .toList();
+      effectiveSpotlights = matched.isEmpty ? catalog.spotlights : matched;
+    }
 
     return HomeCatalog(
       planets: catalog.planets,
-      spotlights: catalog.spotlights,
-      series: catalog.series.where(matchesSeries).toList(),
+      spotlights: effectiveSpotlights.isEmpty ? catalog.spotlights : effectiveSpotlights,
+      series: effectiveSeries,
       episodes: catalog.episodes
           .where(
             (episode) => catalog.series.any(

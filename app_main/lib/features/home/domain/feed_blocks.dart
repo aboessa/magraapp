@@ -19,12 +19,23 @@ enum BlockType {
   comingSoon, // قريباً
   watchFree, // شاهد مجاناً
   newReleases, // أعمال جديدة
-  mostWatched, // الأكثر مشاهدة
-  becauseYouWatched, // لأنك شاهدت
+  // `APP-104`: حُذفت `mostWatched` و`becauseYouWatched` و`learningJourney`.
+  //
+  // ثلاثة أنواع كانت مبنيّة بالكامل — قيمة في التعداد، وصفٌّ في التخطيط
+  // الافتراضي، وعنصرُ عرض — ثم **مُعطَّلة بثابت** (`=> false`) لأن مصدرها لا
+  // وجود له. والوضع كان أسوأ الاثنين: كلفةُ صيانةٍ بلا قيمة، ووعدٌ في لوحة
+  // الإدارة بصفٍّ لا يظهر أبدًا.
+  //
+  // والقرار الحذف لا الإكمال: «الأكثر مشاهدة» يحتاج تجميعًا بين الأسر (وقرارًا
+  // في الخصوصية)، و«رحلة التعلّم» لا نقطة نهاية لها، و«لأنك شاهدت» هو **نفس
+  // مصدر** `recommended` العاملة — صفٌّ ثانٍ من مصدر واحد اختيارُ منتج لا فجوة.
+  //
+  // والصفوف المحفوظة في الإنتاج بهذه الأنواع لا تكسر شيئًا: `_blockTypeMap` في
+  // `application/home_layout.dart` يُسقط ما لا يعرفه ويُدرجه في
+  // `HomeLayout.unsupportedTypes`، فالفجوة **مرصودة** لا صامتة.
   worldOrbit,
   contentRail,
   featureBanner,
-  learningJourney,
   audioRail,
   characterOrbit,
   seasonalBanner,
@@ -174,18 +185,6 @@ class HomeFeedContract {
         hideWhenEmpty: true,
       ),
       HomeBlock(
-        id: 'because-you-watched',
-        type: BlockType.becauseYouWatched,
-        title: 'لأنك شاهدت',
-        hideWhenEmpty: true,
-      ),
-      HomeBlock(
-        id: 'learning',
-        type: BlockType.learningJourney,
-        title: 'رحلة التعلّم الحالية',
-        hideWhenEmpty: true,
-      ),
-      HomeBlock(
         id: 'stories-new',
         type: BlockType.contentRail,
         title: 'قصص وكوميكس جديدة',
@@ -204,12 +203,6 @@ class HomeFeedContract {
         type: BlockType.languageRail,
         title: 'محتوى باللغة المناسبة',
         cardStyle: CardStyle.landscape,
-        hideWhenEmpty: true,
-      ),
-      HomeBlock(
-        id: 'most-watched',
-        type: BlockType.mostWatched,
-        title: 'الأكثر مشاهدة',
         hideWhenEmpty: true,
       ),
       HomeBlock(
@@ -258,11 +251,7 @@ class BlockRenderer {
       BlockType.continueJourney => true,
       BlockType.comingSoon => catalog.series.isNotEmpty,
       BlockType.newReleases => catalog.series.isNotEmpty,
-      // Hidden until real analytics/recommendations exist — no fake ranking.
-      BlockType.mostWatched => false,
-      BlockType.becauseYouWatched => false,
       BlockType.featureBanner => catalog.series.isNotEmpty,
-      BlockType.learningJourney => false,
       BlockType.audioRail => catalog.books.any(
         (book) => book.type == 'audio_story' || book.isPlayable,
       ),

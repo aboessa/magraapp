@@ -8,20 +8,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../data/creation_document.dart';
 import '../../data/local_creation_store.dart';
 import '../widgets/drawing_asset.dart';
 import '../../application/creative_catalogue_provider.dart';
+import '../../data/coloring_page.dart';
 import '../../data/creative_catalogue.dart';
+import '../../engine/coloring_board.dart' show ColoringBoard;
 import '../../engine/coloring_regions.dart' show ColorRegion;
 import '../../engine/free_draw_surface.dart';
 import '../../engine/game_pack.dart';
 import '../../engine/game_services.dart';
 import '../../engine/game_session_controller.dart';
 import '../../engine/trace_color_engine.dart' show TraceColorSurface;
-import '../../engine/trace_geometry.dart' show NormalizedPoint;
+import '../studio/studio_app_bar.dart';
+import '../studio/studio_categories.dart';
+import '../studio/studio_design.dart';
+import '../studio/studio_home_view.dart';
+import '../studio/studio_home_widgets.dart';
+import 'coloring/coloring_home_v2.dart' show FeaturedColoringSpec, kFeaturedColoringV2;
+import 'coloring/coloring_board_v2.dart' show ColoringBoardV2Page;
+import 'coloring/coloring_home_v2_live.dart' show ColoringHomeV2LiveWrapper;
 import 'my_boards_page.dart';
-import 'reference_catalogue_page.dart';
+import 'reference_catalogue_page_live.dart';
+import 'complete/complete_catalogue_page.dart';
+import 'connect_dots/connect_dots_catalogue_page.dart';
+import 'studio_v2/my_boards_v2.dart';
+import 'studio_v2/prompt_draw_page.dart';
+import 'studio_v2/trace_home_page.dart';
+import 'studio_v2/category_inside_coloring_page.dart';
 
 class CreativeStudioPage extends StatefulWidget {
   const CreativeStudioPage({
@@ -30,6 +46,7 @@ class CreativeStudioPage extends StatefulWidget {
     this.initialDocument,
     this.initialCreation,
     this.onSaved,
+    this.displayName,
     super.key,
   });
 
@@ -38,6 +55,10 @@ class CreativeStudioPage extends StatefulWidget {
   final CreationDocument? initialDocument;
   final LocalCreation? initialCreation;
   final VoidCallback? onSaved;
+
+  /// Active profile name, shown on the app-bar badge. Optional because the
+  /// studio is also reachable from a deep link that only carries a child id.
+  final String? displayName;
 
   @override
   State<CreativeStudioPage> createState() => _CreativeStudioPageState();
@@ -98,412 +119,92 @@ class _CreativeStudioPageState extends State<CreativeStudioPage> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('الاستوديو الإبداعي')),
-      body: RefreshIndicator(
-        onRefresh: _loadCreations,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildContinueSection(context),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => MyBoardsPage(
-                            childId: widget.childId,
-                            creationStore: widget.creationStore,
-                          ),
-                        ),
-                      ),
-                      icon: const Icon(Icons.dashboard_customize_outlined),
-                      label: const Text('لوحاتي'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.tonalIcon(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => ReferenceCataloguePage(
-                            childId: widget.childId,
-                            creationStore: widget.creationStore,
-                            onSaved: _handleSaved,
-                          ),
-                        ),
-                      ),
-                      icon: const Icon(Icons.content_copy),
-                      label: const Text('ارسم مثلي'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _buildStartSection(context),
-              const SizedBox(height: 20),
-              _CatalogColoringSection(
-                childId: widget.childId,
-                creationStore: widget.creationStore,
-                onSaved: _handleSaved,
-              ),
-              _CatalogGenericSection(
-                title: 'تتبّع',
-                subtitle: 'تتبّع الخطوط والأشكال',
-                provider: traceCatalogueProvider,
-                childId: widget.childId,
-                creationStore: widget.creationStore,
-                onSaved: _handleSaved,
-                kind: _CatalogKind.trace,
-              ),
-              _CatalogGenericSection(
-                title: 'الحروف',
-                subtitle: 'تتبّع الحروف العربية',
-                provider: letterCatalogueProvider,
-                childId: widget.childId,
-                creationStore: widget.creationStore,
-                onSaved: _handleSaved,
-                kind: _CatalogKind.trace,
-              ),
-              _CatalogGenericSection(
-                title: 'الأرقام',
-                subtitle: 'تتبّع الأرقام ١-١٠',
-                provider: numberCatalogueProvider,
-                childId: widget.childId,
-                creationStore: widget.creationStore,
-                onSaved: _handleSaved,
-                kind: _CatalogKind.number,
-              ),
-              _CatalogGenericSection(
-                title: 'صل النقاط',
-                subtitle: 'صل بالترتيب',
-                provider: dotsCatalogueProvider,
-                childId: widget.childId,
-                creationStore: widget.creationStore,
-                onSaved: _handleSaved,
-                kind: _CatalogKind.dots,
-              ),
-              _CatalogGenericSection(
-                title: 'أكمل الرسمة',
-                subtitle: 'أكمل الجزء الناقص',
-                provider: completeCatalogueProvider,
-                childId: widget.childId,
-                creationStore: widget.creationStore,
-                onSaved: _handleSaved,
-                kind: _CatalogKind.complete,
-              ),
-              _CatalogGenericSection(
-                title: 'انسخ النمط',
-                subtitle: 'انسخ التسلسل',
-                provider: copyCatalogueProvider,
-                childId: widget.childId,
-                creationStore: widget.creationStore,
-                onSaved: _handleSaved,
-                kind: _CatalogKind.copy,
-              ),
-              _CatalogGenericSection(
-                title: 'ارسم من الفكرة',
-                subtitle: 'ارسم ما تتخيله',
-                provider: promptCatalogueProvider,
-                childId: widget.childId,
-                creationStore: widget.creationStore,
-                onSaved: _handleSaved,
-                kind: _CatalogKind.prompt,
-              ),
-            ],
-          ),
+    return StudioHomeView(
+      displayName: widget.displayName,
+      savedDrawings: _creations.length,
+      resumable: _resumable(context),
+      loadingCreations: _loadingCreations,
+      creationError: _creationError,
+      onRefresh: _loadCreations,
+      onStartFreeDraw: () => _openFreeDraw(context),
+      onOpenBoards: () => _openBoards(context),
+      onOpenReference: () => _openReference(context),
+      onOpenCategory: (category) => _openCategory(context, category),
+      onOpenAllCategories: () => _openAllCategories(context),
+    );
+  }
+
+  /// Unfinished drawings for the hero carousel.
+  ///
+  /// Only editable saves qualify: a legacy flattened PNG has no replay document,
+  /// so offering to "continue" it would open an empty canvas. Four is the cap
+  /// because the carousel is a prompt to finish something, not a gallery —
+  /// لوحاتي is the gallery.
+  List<StudioHeroResume> _resumable(BuildContext context) {
+    final entries = <StudioHeroResume>[];
+    for (final creation in _creations) {
+      if (entries.length == 4) break;
+      if (!creation.isEditable) continue;
+      final raw = creation.documentJson;
+      if (raw == null) continue;
+      final document = CreationDocument.tryParse(raw);
+      if (document == null) continue;
+      entries.add(
+        StudioHeroResume(
+          title: creation.displayTitle,
+          thumbnail: creation.bytes,
+          onTap: () => _openContinue(context, creation, document),
+        ),
+      );
+    }
+    return entries;
+  }
+
+  void _openBoards(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MyBoardsV2Page(
+          childId: widget.childId,
+          store: widget.creationStore,
         ),
       ),
     );
   }
 
-  Widget _buildContinueSection(BuildContext context) {
-    if (_loadingCreations) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-    if (_creationError != null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              const Icon(Icons.cloud_off_outlined, size: 44),
-              const SizedBox(height: 8),
-              Text(
-                'تعذر تحميل رسوماتك',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'رسوماتك ما زالت محفوظة على هذا الجهاز. حاول فتحها مرة أخرى.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              FilledButton.tonalIcon(
-                onPressed: _loadCreations,
-                icon: const Icon(Icons.refresh),
-                label: const Text('إعادة المحاولة'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final editable = _creations
-        .where((creation) => creation.isEditable)
-        .take(6)
-        .toList();
-    if (editable.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              const Icon(Icons.brush_outlined, size: 48),
-              const SizedBox(height: 8),
-              Text(
-                'ابدأ أول رسمة لك',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'ارسم بحرية أو اختر قالب تلوين للبدء',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: () => _openFreeDraw(context),
-                icon: const Icon(Icons.brush),
-                label: const Text('ارسم الآن'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'متابعة الرسم',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: _loadCreations,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('تحديث'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 140,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: editable.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final creation = editable[index];
-              final raw = creation.documentJson;
-              final document = raw == null
-                  ? null
-                  : CreationDocument.tryParse(raw);
-              return SizedBox(
-                width: 120,
-                child: Card(
-                  clipBehavior: Clip.antiAlias,
-                  margin: EdgeInsets.zero,
-                  child: Semantics(
-                    button: true,
-                    label: 'متابعة ${creation.displayTitle}',
-                    child: InkWell(
-                      onTap: document == null
-                          ? null
-                          : () => _openContinue(context, creation, document),
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: ExcludeSemantics(
-                              child: Image.memory(
-                                creation.bytes,
-                                fit: BoxFit.cover,
-                                width: 120,
-                                errorBuilder: (_, __, ___) => const Center(
-                                  child: Icon(Icons.broken_image_outlined),
-                                ),
-                              ),
-                            ),
-                          ),
-                          ColoredBox(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 5,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  document?.mode ?? creation.drawingMode,
-                                  style: Theme.of(context).textTheme.labelSmall,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStartSection(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: InkWell(
-        onTap: () => _openFreeDraw(context),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'ابدأ الرسم',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    const Text('لوحة بيضاء فارغة — ارسم ما تحب'),
-                  ],
-                ),
-              ),
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: DrawingAsset(
-                    assetIdOrPath: 'asset-free-cover',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward_ios, size: 18),
-            ],
-          ),
+  void _openReference(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ReferenceCataloguePageLiveWrapper(
+          childId: widget.childId,
+          creationStore: widget.creationStore,
+          onSaved: _handleSaved,
         ),
       ),
     );
   }
 
-  // ignore: unused_element — retained as canonical fallback builder (offline safety)
-  Widget _buildSection(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required List<_StudioItem> items,
-    required void Function(BuildContext, _StudioItem) onTap,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+  void _openAllCategories(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => StudioAllCategoriesView(
+          onStartFreeDraw: () => _openFreeDraw(context),
+          onOpenReference: () => _openReference(context),
+          onOpenCategory: (category) => _openCategory(context, category),
         ),
-        const SizedBox(height: 8),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 160,
-            childAspectRatio: 0.95,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: items.length,
-          itemBuilder: (ctx, i) {
-            final it = items[i];
-            return Card(
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () => onTap(context, it),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        color: it.bg,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: it.previewAssetId != null
-                              ? DrawingAsset(
-                                  assetIdOrPath: it.previewAssetId!,
-                                  fit: BoxFit.contain,
-                                )
-                              : Icon(it.icon, size: 36, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      child: Text(
-                        it.label,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelMedium,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+      ),
+    );
+  }
+
+  void _openCategory(BuildContext context, StudioCategory category) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => _StudioCategoryPage(
+          category: category,
+          childId: widget.childId,
+          creationStore: widget.creationStore,
+          onSaved: _handleSaved,
         ),
-        const SizedBox(height: 6),
-      ],
+      ),
     );
   }
 
@@ -540,628 +241,440 @@ class _CreativeStudioPageState extends State<CreativeStudioPage> {
       ),
     );
   }
+}
 
-  // ignore: unused_element — retained as canonical fallback path (offline safety)
-  void _openColoring(BuildContext context, _StudioItem item) {
-    final regions = item.regions ?? [];
-    final pack = GamePack.fromJson({
-      'pack_version': 1,
-      'engine_id': 'trace_color',
-      'pack_id': 'studio-color-${item.id}',
-      'localization': 'language_neutral',
-      'supports_dpad': false,
-      'progression': {'levels_to_finish': 1, 'advance_on': 'manual'},
-      'accessibility': {
-        'simplified_motor': {'tolerance_dp': 40, 'coverage_required': 0.6},
-        'sequential_tap_alternative': true,
-        'min_touch_target_dp': 48,
-      },
-      'assets': {
-        'images': [item.assetId ?? 'asset-color-bird'],
-        'audio': [],
-      },
-      'voice_manifest': {},
-      'levels': [
-        {
-          'level': 1,
-          'mode': 'coloring',
-          'scoring': 'none',
-          'prompt_key': 'game.color.${item.id}.prompt',
-          'completion': {'rule': 'child_taps_done'},
-          'coloring': {
-            'enabled': true,
-            'palette':
-                item.palette ?? ['#FFD34D', '#00D6F5', '#FF6FAE', '#6A3DF2'],
-            'regions': regions.map((r) => r.toJson()).toList(),
-            'template_asset': item.assetId,
-          },
-        },
-      ],
-    });
-    final ctrl = GameSessionController(
-      pack: pack,
-      gameId: 'studio-color-${item.id}',
-      childId: widget.childId,
-      ageTrack: AgeTrack.kids,
-      audio: SilentGameAudioService(),
-      reporter: _NoopReporter(),
-      eventIdFactory: () =>
-          'studio-color-${DateTime.now().microsecondsSinceEpoch}',
-    );
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(item.label)),
-          body: ColoringActivityHost(
-            controller: ctrl,
-            creationStore: widget.creationStore,
-            onSaved: _handleSaved,
+/// Coloring section driven by CMS/bundled JSON, not Dart literals.
+/// Falls back to `_coloringItems` only if the provider is empty (offline first launch safety).
+/// One activity, full screen.
+///
+/// The home shows a card per activity; this is what the card opens. It exists so
+/// the catalogue for an activity can be as long as it needs to be without
+/// pushing every other activity below the fold, which is what the old
+/// single-scroll home did.
+///
+/// The sections it hosts are the same `_Catalog*Section` widgets the home used to
+/// stack, reused rather than reimplemented — they own the `GamePack` construction
+/// and the activity hosts, and duplicating that dispatch is how the two colouring
+/// code paths drifted apart in the first place.
+class _StudioCategoryPage extends StatelessWidget {
+  const _StudioCategoryPage({
+    required this.category,
+    required this.childId,
+    required this.creationStore,
+    this.onSaved,
+  });
+
+  final StudioCategory category;
+  final String childId;
+  final LocalCreationStore creationStore;
+  final VoidCallback? onSaved;
+
+  /// لوّن is the only activity with two catalogues behind it: raster line art
+  /// with a compiled region map, and the older primitive-shape polygon
+  /// templates. They are shown as two labelled groups instead of the two
+  /// near-identically named top-level sections they used to be.
+  List<Widget> _sections() {
+    switch (category.id) {
+      case StudioCategoryId.coloring:
+        // V2 home is a full page with its own Scaffold, so never embed as sections.
+        // The build() below handles this.
+        return const [];
+      case StudioCategoryId.complete:
+        return [
+          _CatalogGenericSection(
+            title: category.title,
+            subtitle: category.subtitle,
+            provider: completeCatalogueProvider,
+            childId: childId,
+            creationStore: creationStore,
+            onSaved: onSaved,
+            kind: _CatalogKind.complete,
+            showHeader: false,
           ),
-        ),
-      ),
-    );
+        ];
+      case StudioCategoryId.copyPattern:
+        return [
+          _CatalogGenericSection(
+            title: category.title,
+            subtitle: category.subtitle,
+            provider: copyCatalogueProvider,
+            childId: childId,
+            creationStore: creationStore,
+            onSaved: onSaved,
+            kind: _CatalogKind.copy,
+            showHeader: false,
+          ),
+        ];
+      case StudioCategoryId.connectDots:
+        // Full page with its own Scaffold, like coloring — not embedded as a
+        // section inside the generic category Scaffold.
+        return const [];
+      case StudioCategoryId.trace:
+        return [
+          _CatalogGenericSection(
+            title: category.title,
+            subtitle: category.subtitle,
+            provider: traceCatalogueProvider,
+            childId: childId,
+            creationStore: creationStore,
+            onSaved: onSaved,
+            kind: _CatalogKind.trace,
+            showHeader: false,
+          ),
+        ];
+      case StudioCategoryId.letters:
+        return [
+          _CatalogGenericSection(
+            title: category.title,
+            subtitle: category.subtitle,
+            provider: letterCatalogueProvider,
+            childId: childId,
+            creationStore: creationStore,
+            onSaved: onSaved,
+            kind: _CatalogKind.letter,
+            showHeader: false,
+          ),
+        ];
+      case StudioCategoryId.numbers:
+        return [
+          _CatalogGenericSection(
+            title: category.title,
+            subtitle: category.subtitle,
+            provider: numberCatalogueProvider,
+            childId: childId,
+            creationStore: creationStore,
+            onSaved: onSaved,
+            kind: _CatalogKind.number,
+            showHeader: false,
+          ),
+        ];
+      case StudioCategoryId.promptDraw:
+        return [
+          _CatalogGenericSection(
+            title: category.title,
+            subtitle: category.subtitle,
+            provider: promptCatalogueProvider,
+            childId: childId,
+            creationStore: creationStore,
+            onSaved: onSaved,
+            kind: _CatalogKind.prompt,
+            showHeader: false,
+          ),
+        ];
+      // ارسم بحرية opens a canvas and ارسم مثلي has its own catalogue page, so
+      // neither is ever routed here. Handled explicitly so adding a category to
+      // the enum is a compile error rather than a blank screen.
+      case StudioCategoryId.freeDraw:
+      case StudioCategoryId.drawLikeMe:
+        return const [];
+    }
   }
 
-  // ignore: unused_element
-  void _openTrace(BuildContext context, _StudioItem item) {
-    final pack = GamePack.fromJson({
-      'pack_version': 1,
-      'engine_id': 'trace_color',
-      'pack_id': 'studio-trace-${item.id}',
-      'localization': 'language_neutral',
-      'supports_dpad': false,
-      'progression': {'levels_to_finish': 1, 'advance_on': 'manual'},
-      'accessibility': {
-        'simplified_motor': {'tolerance_dp': 40, 'coverage_required': 0.6},
-        'sequential_tap_alternative': true,
-        'min_touch_target_dp': 48,
-      },
-      'assets': {
-        'images': [item.assetId ?? 'asset-shape-template-circle'],
-        'audio': [],
-      },
-      'voice_manifest': {},
-      'levels': [
-        {
-          'level': 1,
-          'mode': item.mode ?? 'shape',
-          'scoring': 'geometric',
-          'prompt_key': 'game.trace.${item.id}.prompt',
-          'completion': {'rule': 'all_strokes_complete'},
-          'stroke_paths':
-              item.strokePaths ??
-              [
-                {
-                  'id': 's1',
-                  'order': 1,
-                  'points': [
-                    [0.2, 0.5],
-                    [0.8, 0.5],
-                  ],
-                },
-              ],
-          'tolerance_dp': 24,
-          'coverage_required': 0.8,
-          'background_asset': item.assetId,
+  @override
+  Widget build(BuildContext context) {
+    if (category.id == StudioCategoryId.connectDots) {
+      return ConnectDotsCataloguePage(childId: childId, creationStore: creationStore, onSaved: onSaved);
+    }
+    if (category.id == StudioCategoryId.complete) {
+      return CompleteCataloguePage(childId: childId, creationStore: creationStore, onSaved: onSaved);
+    }
+    if (category.id == StudioCategoryId.trace) {
+      return TraceHomeWrapper(
+        childId: childId,
+        onOpenMyBoards: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => MyBoardsV2Page(
+                childId: childId,
+                store: creationStore,
+              ),
+            ),
+          );
         },
-      ],
-    });
-    final ctrl = GameSessionController(
-      pack: pack,
-      gameId: 'studio-trace-${item.id}',
-      childId: widget.childId,
-      ageTrack: AgeTrack.kids,
-      audio: SilentGameAudioService(),
-      reporter: _NoopReporter(),
-      eventIdFactory: () => 'studio-${DateTime.now().microsecondsSinceEpoch}',
-    );
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => TraceActivityHost(
-          title: item.label,
-          controller: ctrl,
-          creationStore: widget.creationStore,
-          drawingMode: 'trace',
-          onSaved: _handleSaved,
-        ),
+      );
+    }
+    if (category.id == StudioCategoryId.promptDraw) {
+      return PromptDrawPage(
+        childId: childId,
+        store: creationStore,
+        promptText: category.subtitle,
+      );
+    }
+    if (category.id == StudioCategoryId.coloring) {
+      // V2 coloring home — مطابقة 100% للتصميم الجديد (hero + لوحاتي + رسومات مميزة + فئات)
+      final _CatColoringBridge bridge = _CatColoringBridge.convert(childId: childId, creationStore: creationStore);
+      return bridge.buildV2(context);
+    }
+    return Scaffold(
+      backgroundColor: AppColors.deepSpace,
+      appBar: StudioAppBar(
+        title: category.title,
+        glyph: category.icon,
       ),
-    );
-  }
-
-  // ignore: unused_element
-  void _openDots(BuildContext context, _StudioItem item) {
-    final pack = GamePack.fromJson({
-      'pack_version': 1,
-      'engine_id': 'trace_color',
-      'pack_id': 'studio-dots-${item.id}',
-      'localization': 'language_neutral',
-      'supports_dpad': false,
-      'progression': {'levels_to_finish': 1, 'advance_on': 'manual'},
-      'accessibility': {
-        'simplified_motor': {'tolerance_dp': 40, 'coverage_required': 0.6},
-        'sequential_tap_alternative': true,
-        'min_touch_target_dp': 48,
-      },
-      'assets': {
-        'images': [item.assetId ?? 'asset-dots-star'],
-        'audio': [],
-      },
-      'voice_manifest': {},
-      'levels': [
-        {
-          'level': 1,
-          'mode': 'connect_dots',
-          'scoring': 'sequence',
-          'prompt_key': 'game.dots.${item.id}.prompt',
-          'completion': {'rule': 'all_dots_connected'},
-          'dots':
-              item.dots ??
-              [
-                {
-                  'id': 'd1',
-                  'order': 1,
-                  'at': [0.2, 0.2],
-                },
-                {
-                  'id': 'd2',
-                  'order': 2,
-                  'at': [0.8, 0.2],
-                },
-              ],
-        },
-      ],
-    });
-    final ctrl = GameSessionController(
-      pack: pack,
-      gameId: 'studio-dots-${item.id}',
-      childId: widget.childId,
-      ageTrack: AgeTrack.kids,
-      audio: SilentGameAudioService(),
-      reporter: _NoopReporter(),
-      eventIdFactory: () => 'studio-${DateTime.now().microsecondsSinceEpoch}',
-    );
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => TraceActivityHost(
-          title: item.label,
-          controller: ctrl,
-          creationStore: widget.creationStore,
-          drawingMode: 'connect_dots',
-          onSaved: _handleSaved,
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  void _openComplete(BuildContext context, _StudioItem item) {
-    final pack = GamePack.fromJson({
-      'pack_version': 1,
-      'engine_id': 'trace_color',
-      'pack_id': 'studio-complete-${item.id}',
-      'localization': 'language_neutral',
-      'supports_dpad': false,
-      'progression': {'levels_to_finish': 1, 'advance_on': 'manual'},
-      'accessibility': {
-        'simplified_motor': {'tolerance_dp': 40, 'coverage_required': 0.6},
-        'sequential_tap_alternative': true,
-        'min_touch_target_dp': 48,
-      },
-      'assets': {
-        'images': [item.assetId ?? 'asset-complete-half-sun'],
-        'audio': [],
-      },
-      'voice_manifest': {},
-      'levels': [
-        {
-          'level': 1,
-          'mode': 'complete_drawing',
-          'scoring': 'none',
-          'prompt_key': 'game.complete.${item.id}.prompt',
-          'completion': {'rule': 'child_taps_done'},
-          'background_asset': item.assetId,
-          'coloring': {
-            'enabled': false,
-            'palette': ['#FFD34D', '#00D6F5', '#FF6FAE'],
-          },
-        },
-      ],
-    });
-    final ctrl = GameSessionController(
-      pack: pack,
-      gameId: 'studio-complete-${item.id}',
-      childId: widget.childId,
-      ageTrack: AgeTrack.kids,
-      audio: SilentGameAudioService(),
-      reporter: _NoopReporter(),
-      eventIdFactory: () => 'studio-${DateTime.now().microsecondsSinceEpoch}',
-    );
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => TraceActivityHost(
-          title: item.label,
-          controller: ctrl,
-          creationStore: widget.creationStore,
-          drawingMode: 'complete_drawing',
-          onSaved: _handleSaved,
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  void _openCopy(BuildContext context, _StudioItem item) {
-    final pack = GamePack.fromJson({
-      'pack_version': 1,
-      'engine_id': 'trace_color',
-      'pack_id': 'studio-copy-${item.id}',
-      'localization': 'language_neutral',
-      'supports_dpad': false,
-      'progression': {'levels_to_finish': 1, 'advance_on': 'manual'},
-      'accessibility': {
-        'simplified_motor': {'tolerance_dp': 40, 'coverage_required': 0.6},
-        'sequential_tap_alternative': true,
-        'min_touch_target_dp': 48,
-      },
-      'assets': {
-        'images': [item.assetId ?? 'asset-copy-pattern'],
-        'audio': [],
-      },
-      'voice_manifest': {},
-      'levels': [
-        {
-          'level': 1,
-          'mode': 'copy_pattern',
-          'scoring': 'none',
-          'prompt_key': 'game.copy.${item.id}.prompt',
-          'completion': {'rule': 'child_taps_done'},
-          'background_asset': item.assetId,
-          'stroke_paths': [
-            {
-              'id': 's1',
-              'order': 1,
-              'points': [
-                [0.2, 0.5],
-                [0.8, 0.5],
-              ],
-            },
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: StudioGradients.page),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            StudioSpace.gutter,
+            StudioSpace.md,
+            StudioSpace.gutter,
+            StudioSpace.xxl,
+          ),
+          children: [
+            _CategoryBanner(category: category),
+            const SizedBox(height: StudioSpace.lg),
+            ..._sections(),
           ],
-          'tolerance_dp': 28,
-          'coverage_required': 0.7,
-        },
-      ],
-    });
-    final ctrl = GameSessionController(
-      pack: pack,
-      gameId: 'studio-copy-${item.id}',
-      childId: widget.childId,
-      ageTrack: AgeTrack.kids,
-      audio: SilentGameAudioService(),
-      reporter: _NoopReporter(),
-      eventIdFactory: () => 'studio-${DateTime.now().microsecondsSinceEpoch}',
-    );
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => TraceActivityHost(
-          title: item.label,
-          controller: ctrl,
-          creationStore: widget.creationStore,
-          drawingMode: 'copy_pattern',
-          onSaved: _handleSaved,
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  void _openPrompt(BuildContext context, _StudioItem item) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => _FreeDrawHost(
-          childId: widget.childId,
-          creationStore: widget.creationStore,
-          gameId: 'studio-prompt-${item.id}',
-          drawingMode: 'prompt_drawing',
-          promptOverride: item.label,
-          onSaved: _handleSaved,
         ),
       ),
     );
   }
 }
 
-/// Coloring section driven by CMS/bundled JSON, not Dart literals.
-/// Falls back to `_coloringItems` only if the provider is empty (offline first launch safety).
-class _CatalogColoringSection extends ConsumerWidget {
-  const _CatalogColoringSection({
-    required this.childId,
-    required this.creationStore,
-    required this.onSaved,
-  });
-
+/// Bridge لتشغيل صفحة "لوّن" V2 من داخل creative_studio_page القديم.
+///
+/// يحول النقر على رسمة مميزة أو فئة إلى فتح ColoringBoardV2Page مع الحفاظ على
+/// تخزين الطفل وتسجيل التقدم.
+class _CatColoringBridge {
+  _CatColoringBridge._(this.childId, this.creationStore);
   final String childId;
   final LocalCreationStore creationStore;
-  final VoidCallback? onSaved;
 
-  Color _bgOf(ColoringTemplate t) {
-    final h = t.bgHex;
-    if (h == null || h.isEmpty) return const Color(0xFF0F172A);
-    final v = int.tryParse(h, radix: 16);
-    if (v == null) return const Color(0xFF0F172A);
-    return Color(0xFF000000 | v);
-  }
+  static _CatColoringBridge convert({required String childId, required LocalCreationStore creationStore}) => _CatColoringBridge._(childId, creationStore);
 
-  void _openTemplate(BuildContext context, ColoringTemplate tpl) {
-    final pack = GamePack.fromJson({
-      'pack_version': 1,
-      'engine_id': 'trace_color',
-      'pack_id': 'studio-color-${tpl.id}',
-      'localization': 'language_neutral',
-      'supports_dpad': false,
-      'progression': {'levels_to_finish': 1, 'advance_on': 'manual'},
-      'accessibility': {
-        'simplified_motor': {'tolerance_dp': 40, 'coverage_required': 0.6},
-        'sequential_tap_alternative': true,
-        'min_touch_target_dp': 48,
-      },
-      'assets': {
-        'images': [tpl.assetId],
-        'audio': <String>[],
-      },
-      'voice_manifest': <String, Object?>{},
-      'levels': [
-        {
-          'level': 1,
-          'mode': 'coloring',
-          'scoring': 'none',
-          'prompt_key': 'game.color.${tpl.id}.prompt',
-          'completion': {'rule': 'child_taps_done'},
-          'coloring': {
-            'enabled': true,
-            'palette': tpl.palette,
-            'regions': tpl.regions.map((r) => r.toJson()).toList(),
-            'template_asset': tpl.assetId,
+  Widget buildV2(BuildContext outerContext) {
+    return FutureBuilder<List<LocalCreation>>(
+      future: creationStore.list(childId),
+      builder: (context, snap) {
+        final count = snap.data?.length ?? 0;
+        // R2-first live wrapper: يحمل coloring_all + featured من /api/v1/creative-studio/home
+        // fallback تلقائي لـ kFeaturedColoringV2 لو offline
+        return ColoringHomeV2LiveWrapper(
+          childId: childId,
+          creationStore: creationStore,
+          myDrawingsCount: count,
+          displayName: null,
+          resumable: const [],
+          onOpenMyBoards: () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => MyBoardsPage(childId: childId, creationStore: creationStore)));
           },
-        },
-      ],
-    });
-    final ctrl = GameSessionController(
-      pack: pack,
-      gameId: 'studio-color-${tpl.id}',
-      childId: childId,
-      ageTrack: AgeTrack.kids,
-      audio: SilentGameAudioService(),
-      reporter: _NoopReporter(),
-      eventIdFactory: () =>
-          'studio-color-${DateTime.now().microsecondsSinceEpoch}',
-    );
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(tpl.label)),
-          body: ColoringActivityHost(
-            controller: ctrl,
-            creationStore: creationStore,
-            onSaved: onSaved,
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(coloringCatalogueProvider);
-    return async.when(
-      loading: () => const Card(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      ),
-      error: (e, _) => _fallbackSection(context),
-      data: (list) {
-        if (list.isEmpty) return _fallbackSection(context);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('لوّن', style: Theme.of(context).textTheme.titleMedium),
-            Text(
-              'اختر صورة ولوّن كل جزء',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 160,
-                childAspectRatio: 0.95,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemCount: list.length,
-              itemBuilder: (ctx, i) {
-                final tpl = list[i];
-                return Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () => _openTemplate(context, tpl),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            color: _bgOf(tpl),
-                            child: Padding(
-                              padding: const EdgeInsets.all(10),
-                              child: DrawingAsset(
-                                assetIdOrPath: tpl.assetId,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 6,
-                          ),
-                          child: Text(
-                            tpl.label,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.labelMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
+          onOpenCategory: (selection) {
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => CategoryInsideColoringPage(
+                title: selection.category.label,
+                heroUrl: selection.category.bestDisplayUrl,
+                items: selection.items,
+                onOpen: (featured) => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => _CatBoardLauncher(
+                    childId: childId,
+                    creationStore: creationStore,
+                    featured: featured,
+                    thumbSpecs: selection.items,
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 6),
-          ],
+                )),
+              ),
+            ));
+          },
+          onOpenFeatured: (featured) {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => _CatBoardLauncher(childId: childId, creationStore: creationStore, featured: featured, thumbSpecs: kFeaturedColoringV2)));
+          },
         );
       },
     );
   }
+}
 
-  Widget _fallbackSection(BuildContext context) {
-    // Safety: show literal catalogue if provider empty (never primary)
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('لوّن', style: Theme.of(context).textTheme.titleMedium),
-        Text(
-          'اختر صورة ولوّن كل جزء',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+class _CatBoardLauncher extends StatelessWidget {
+  const _CatBoardLauncher({required this.childId, required this.creationStore, required this.featured, required this.thumbSpecs});
+  final String childId;
+  final LocalCreationStore creationStore;
+  final FeaturedColoringSpec featured;
+  final List<FeaturedColoringSpec> thumbSpecs;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoringBoardV2Page(
+      spec: featured,
+      thumbSpecs: thumbSpecs,
+      tutorialStorageKey: 'tutorial_coloring_v2_seen_$childId',
+      onSelectOther: (other) {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => _CatBoardLauncher(childId: childId, creationStore: creationStore, featured: other, thumbSpecs: thumbSpecs)));
+      },
+      onSave: (pngBytes) async {
+        try {
+          // R2-first board لا يعتمد على RenderRepaintBoundary ثان، نحفظ مباشر
+          // عبر saveDocumentDirect المتوافقة مع production api (local-first child isolated)
+          await creationStore.saveDocumentDirect(
+            childId: childId,
+            gameId: 'coloring-v2-${featured.id}',
+            drawingMode: 'coloring-v2',
+            documentJson: '{"source":"${featured.id}","label":"${featured.label}"}',
+            documentVersion: 1,
+            pngBytes: pngBytes,
+            width: 1024,
+            height: 1024,
+          );
+        } catch (_) {}
+      },
+    );
+  }
+}
+
+/// Restates the activity at the top of its page so a child who tapped a card
+/// lands on something recognisable, and so the instruction (the subtitle) is
+/// visible before the grid rather than only on the home tile they just left.
+class _CategoryBanner extends StatelessWidget {
+  const _CategoryBanner({required this.category});
+
+  final StudioCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return StudioSurface(
+      gradient: category.gradient,
+      radius: StudioRadius.card,
+      padding: const EdgeInsets.all(StudioSpace.md),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(StudioRadius.tile),
+            ),
+            child: Icon(category.icon, color: Colors.white, size: 26),
           ),
-        ),
-        const SizedBox(height: 8),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 160,
-            childAspectRatio: 0.95,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: _coloringItems.length,
-          itemBuilder: (ctx, i) {
-            final it = _coloringItems[i];
-            return Card(
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () {
-                  final regions = it.regions ?? [];
-                  final pack = GamePack.fromJson({
-                    'pack_version': 1,
-                    'engine_id': 'trace_color',
-                    'pack_id': 'studio-color-${it.id}',
-                    'localization': 'language_neutral',
-                    'supports_dpad': false,
-                    'progression': {
-                      'levels_to_finish': 1,
-                      'advance_on': 'manual',
-                    },
-                    'accessibility': {
-                      'simplified_motor': {
-                        'tolerance_dp': 40,
-                        'coverage_required': 0.6,
-                      },
-                      'sequential_tap_alternative': true,
-                      'min_touch_target_dp': 48,
-                    },
-                    'assets': {
-                      'images': [it.assetId ?? 'asset-color-bird'],
-                      'audio': [],
-                    },
-                    'voice_manifest': <String, Object?>{},
-                    'levels': [
-                      {
-                        'level': 1,
-                        'mode': 'coloring',
-                        'scoring': 'none',
-                        'prompt_key': 'game.color.${it.id}.prompt',
-                        'completion': {'rule': 'child_taps_done'},
-                        'coloring': {
-                          'enabled': true,
-                          'palette':
-                              it.palette ??
-                              ['#FFD34D', '#00D6F5', '#FF6FAE', '#6A3DF2'],
-                          'regions': regions.map((r) => r.toJson()).toList(),
-                          'template_asset': it.assetId,
-                        },
-                      },
-                    ],
-                  });
-                  final ctrl = GameSessionController(
-                    pack: pack,
-                    gameId: 'studio-color-${it.id}',
-                    childId: childId,
-                    ageTrack: AgeTrack.kids,
-                    audio: SilentGameAudioService(),
-                    reporter: _NoopReporter(),
-                    eventIdFactory: () =>
-                        'studio-color-${DateTime.now().microsecondsSinceEpoch}',
-                  );
-                  Navigator.of(ctx).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => Scaffold(
-                        appBar: AppBar(title: Text(it.label)),
-                        body: ColoringActivityHost(
-                          controller: ctrl,
-                          creationStore: creationStore,
-                          onSaved: onSaved,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        color: it.bg,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: it.previewAssetId != null
-                              ? DrawingAsset(
-                                  assetIdOrPath: it.previewAssetId!,
-                                  fit: BoxFit.contain,
-                                )
-                              : Icon(it.icon, size: 36, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      child: Text(
-                        it.label,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelMedium,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+          const SizedBox(width: StudioSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category.title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  category.subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.80),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The one grid recipe for every studio catalogue.
+///
+/// Before this helper the same `GridView.builder` with the same delegate, the
+/// same header pair and the same trailing spacer appeared six times in this file
+/// with three different spacings. Sections now pass their items and nothing else.
+Widget _studioGridSection({
+  required bool showHeader,
+  required String title,
+  required String subtitle,
+  required int itemCount,
+  required Widget Function(BuildContext context, int index) itemBuilder,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      if (showHeader)
+        StudioSectionHeader(title: title, subtitle: subtitle),
+      GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: studioGridDelegate(),
+        itemCount: itemCount,
+        itemBuilder: itemBuilder,
+      ),
+      const SizedBox(height: StudioSpace.lg),
+    ],
+  );
+}
+
+/// A single catalogue item tile.
+///
+/// مصدران للرسم: معرّف أصل منطقي يحلّه [DrawingAsset]، أو أيقونة حين لا يكون
+/// للعنصر رسم.
+///
+/// ## ما أُزيل ولماذا
+///
+/// كان هناك مصدر ثالث — `imagePath` لصورة مبندلة — ومعه `lightPlate` لعرضها على
+/// خلفية بيضاء (رسوم التلوين خطوط سوداء تختفي على اللوح الداكن). لم يبقَ أي
+/// مستدعٍ يمرّر أيًّا منهما بعد إزالة قسمَي التلوين اللذين كانا يقرآن قائمة
+/// مُصرَّفة، فصار الوضعان غير قابلين للوصول — وهو ما رصده المحلّل
+/// (`unused_element_parameter`).
+///
+/// حين يعود قسم تلوين يقرأ من المزوّد ويحتاج خلفية فاتحة، يُضاف الوضع مع
+/// مستدعٍ فعلي لا قبله؛ خيار بلا مستدعٍ يوهم بمرونة غير مختبَرة.
+class _StudioItemTile extends StatelessWidget {
+  const _StudioItemTile({
+    required this.label,
+    required this.onTap,
+    this.background,
+    this.assetId,
+    this.fallbackIcon,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final Color? background;
+  final String? assetId;
+  final IconData? fallbackIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    final id = assetId;
+
+    final Widget art = id != null
+        ? DrawingAsset(assetIdOrPath: id, fit: BoxFit.contain)
+        : Icon(fallbackIcon ?? Icons.brush_rounded, size: 34, color: Colors.white);
+
+    return StudioSurface(
+      onTap: onTap,
+      color: background ?? AppColors.cardSurface,
+      radius: StudioRadius.tile,
+      semanticLabel: label,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(StudioSpace.sm),
+              child: art,
+            ),
+          ),
+          Container(
+            color: Colors.black.withValues(alpha: 0.28),
+            padding: const EdgeInsets.symmetric(
+              horizontal: StudioSpace.xs,
+              vertical: StudioSpace.xs,
+            ),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
               ),
-            );
-          },
-        ),
-        const SizedBox(height: 6),
-      ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1177,6 +690,7 @@ class _CatalogGenericSection extends ConsumerWidget {
     required this.creationStore,
     required this.kind,
     this.onSaved,
+    this.showHeader = true,
   });
 
   final String title;
@@ -1186,6 +700,11 @@ class _CatalogGenericSection extends ConsumerWidget {
   final LocalCreationStore creationStore;
   final _CatalogKind kind;
   final VoidCallback? onSaved;
+
+  /// False when the hosting page already names the activity in its app bar and
+  /// banner, which is every category page. True on any surface that stacks more
+  /// than one section.
+  final bool showHeader;
 
   IconData _iconForPrompt(String id) => switch (id) {
     'home' => Icons.home_outlined,
@@ -1515,84 +1034,25 @@ class _CatalogGenericSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(provider);
     return async.when(
-      loading: () => const Card(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      ),
+      loading: () => StudioStateCard.loading(),
       error: (e, _) => _fallback(context),
       data: (list) {
         if (list.isEmpty) return _fallback(context);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 160,
-                childAspectRatio: 0.95,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemCount: list.length,
-              itemBuilder: (ctx, i) {
-                final it = list[i];
-                return Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () => _openCatalogItem(context, it),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            color: it.bgColor,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10),
-                              child: it.previewAssetId != null
-                                  ? DrawingAsset(
-                                      assetIdOrPath: it.previewAssetId!,
-                                      fit: BoxFit.contain,
-                                    )
-                                  : Icon(
-                                      _iconForPrompt(it.id),
-                                      size: 36,
-                                      color: Colors.white,
-                                    ),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 6,
-                          ),
-                          child: Text(
-                            it.label,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.labelMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 6),
-          ],
+        return _studioGridSection(
+          showHeader: showHeader,
+          title: title,
+          subtitle: subtitle,
+          itemCount: list.length,
+          itemBuilder: (ctx, i) {
+            final it = list[i];
+            return _StudioItemTile(
+              label: it.label,
+              assetId: it.previewAssetId,
+              fallbackIcon: _iconForPrompt(it.id),
+              background: it.bgColor,
+              onTap: () => _openCatalogItem(context, it),
+            );
+          },
         );
       },
     );
@@ -1600,71 +1060,21 @@ class _CatalogGenericSection extends ConsumerWidget {
 
   Widget _fallback(BuildContext context) {
     final items = _fallbackForKind();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 160,
-            childAspectRatio: 0.95,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: items.length,
-          itemBuilder: (ctx, i) {
-            final it = items[i];
-            return Card(
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () => _openStudioItem(context, it),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        color: it.bg,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: it.previewAssetId != null
-                              ? DrawingAsset(
-                                  assetIdOrPath: it.previewAssetId!,
-                                  fit: BoxFit.contain,
-                                )
-                              : Icon(it.icon, size: 36, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      child: Text(
-                        it.label,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelMedium,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 6),
-      ],
+    return _studioGridSection(
+      showHeader: showHeader,
+      title: title,
+      subtitle: subtitle,
+      itemCount: items.length,
+      itemBuilder: (ctx, i) {
+        final it = items[i];
+        return _StudioItemTile(
+          label: it.label,
+          assetId: it.previewAssetId,
+          fallbackIcon: it.icon,
+          background: it.bg,
+          onTap: () => _openStudioItem(context, it),
+        );
+      },
     );
   }
 }
@@ -1700,986 +1110,6 @@ class _StudioItem {
   String? get previewAssetId => thumbnailAssetId ?? assetId;
 }
 
-final _coloringItems = [
-  _StudioItem(
-    id: 'bird',
-    label: 'عصفور',
-    assetId: 'asset-color-bird',
-    bg: Color(0xFF0B2E13),
-    regions: [
-      ColorRegion(
-        id: 'bird.body',
-        polygon: [
-          NormalizedPoint(0.2, 0.3),
-          NormalizedPoint(0.8, 0.3),
-          NormalizedPoint(0.8, 0.7),
-          NormalizedPoint(0.2, 0.7),
-        ],
-      ),
-      ColorRegion(
-        id: 'bird.wing',
-        polygon: [
-          NormalizedPoint(0.45, 0.35),
-          NormalizedPoint(0.65, 0.45),
-          NormalizedPoint(0.45, 0.65),
-        ],
-      ),
-      ColorRegion(
-        id: 'bird.beak',
-        polygon: [
-          NormalizedPoint(0.8, 0.45),
-          NormalizedPoint(0.9, 0.5),
-          NormalizedPoint(0.8, 0.55),
-        ],
-      ),
-    ],
-    palette: ['#FFD34D', '#00D6F5', '#FF6FAE', '#6A3DF2'],
-  ),
-  _StudioItem(
-    id: 'cat',
-    label: 'قطة',
-    assetId: 'asset-color-cat',
-    bg: Color(0xFF0B1220),
-    regions: [
-      ColorRegion(
-        id: 'cat.body',
-        polygon: [
-          NormalizedPoint(0.18, 0.4),
-          NormalizedPoint(0.82, 0.4),
-          NormalizedPoint(0.82, 0.6),
-          NormalizedPoint(0.18, 0.6),
-        ],
-      ),
-      ColorRegion(
-        id: 'cat.head',
-        polygon: [
-          NormalizedPoint(0.38, 0.22),
-          NormalizedPoint(0.62, 0.22),
-          NormalizedPoint(0.62, 0.35),
-          NormalizedPoint(0.38, 0.35),
-        ],
-      ),
-      ColorRegion(
-        id: 'cat.tail',
-        polygon: [
-          NormalizedPoint(0.75, 0.45),
-          NormalizedPoint(0.88, 0.45),
-          NormalizedPoint(0.88, 0.55),
-          NormalizedPoint(0.75, 0.55),
-        ],
-      ),
-    ],
-    palette: ['#F59E0B', '#6B7280', '#FECACA'],
-  ),
-  _StudioItem(
-    id: 'lion',
-    label: 'أسد',
-    assetId: 'asset-color-lion',
-    bg: Color(0xFF92400E),
-    regions: [
-      ColorRegion(
-        id: 'lion.face',
-        polygon: [
-          NormalizedPoint(0.34, 0.34),
-          NormalizedPoint(0.66, 0.34),
-          NormalizedPoint(0.66, 0.52),
-          NormalizedPoint(0.34, 0.52),
-        ],
-      ),
-      ColorRegion(
-        id: 'lion.mane',
-        polygon: [
-          NormalizedPoint(0.27, 0.27),
-          NormalizedPoint(0.73, 0.27),
-          NormalizedPoint(0.73, 0.52),
-          NormalizedPoint(0.27, 0.52),
-        ],
-      ),
-      ColorRegion(
-        id: 'lion.body',
-        polygon: [
-          NormalizedPoint(0.38, 0.62),
-          NormalizedPoint(0.62, 0.62),
-          NormalizedPoint(0.62, 0.75),
-          NormalizedPoint(0.38, 0.75),
-        ],
-      ),
-    ],
-    palette: ['#F59E0B', '#92400E', '#FEF3C7'],
-  ),
-  _StudioItem(
-    id: 'turtle',
-    label: 'سلحفاة',
-    assetId: 'asset-color-turtle',
-    bg: Color(0xFF14532D),
-    regions: [
-      ColorRegion(
-        id: 'turtle.shell',
-        polygon: [
-          NormalizedPoint(0.27, 0.35),
-          NormalizedPoint(0.73, 0.35),
-          NormalizedPoint(0.73, 0.55),
-          NormalizedPoint(0.27, 0.55),
-        ],
-      ),
-      ColorRegion(
-        id: 'turtle.head',
-        polygon: [
-          NormalizedPoint(0.42, 0.22),
-          NormalizedPoint(0.58, 0.22),
-          NormalizedPoint(0.58, 0.32),
-          NormalizedPoint(0.42, 0.32),
-        ],
-      ),
-    ],
-    palette: ['#22C55E', '#14532D', '#FEF3C7'],
-  ),
-  _StudioItem(
-    id: 'butterfly',
-    label: 'فراشة',
-    assetId: 'asset-color-butterfly',
-    bg: Color(0xFF831843),
-    regions: [
-      ColorRegion(
-        id: 'butterfly.body',
-        polygon: [
-          NormalizedPoint(0.47, 0.32),
-          NormalizedPoint(0.53, 0.32),
-          NormalizedPoint(0.53, 0.6),
-          NormalizedPoint(0.47, 0.6),
-        ],
-      ),
-      ColorRegion(
-        id: 'butterfly.wing_top_left',
-        polygon: [
-          NormalizedPoint(0.18, 0.28),
-          NormalizedPoint(0.46, 0.28),
-          NormalizedPoint(0.46, 0.42),
-          NormalizedPoint(0.18, 0.42),
-        ],
-      ),
-      ColorRegion(
-        id: 'butterfly.wing_top_right',
-        polygon: [
-          NormalizedPoint(0.54, 0.28),
-          NormalizedPoint(0.82, 0.28),
-          NormalizedPoint(0.82, 0.42),
-          NormalizedPoint(0.54, 0.42),
-        ],
-      ),
-    ],
-    palette: ['#EC4899', '#F59E0B', '#22C55E'],
-  ),
-  _StudioItem(
-    id: 'chicken',
-    label: 'دجاجة',
-    assetId: 'asset-color-chicken',
-    bg: Color(0xFFF59E0B),
-    regions: [
-      ColorRegion(
-        id: 'chicken.body',
-        polygon: [
-          NormalizedPoint(0.34, 0.42),
-          NormalizedPoint(0.66, 0.42),
-          NormalizedPoint(0.66, 0.62),
-          NormalizedPoint(0.34, 0.62),
-        ],
-      ),
-      ColorRegion(
-        id: 'chicken.head',
-        polygon: [
-          NormalizedPoint(0.4, 0.26),
-          NormalizedPoint(0.6, 0.26),
-          NormalizedPoint(0.6, 0.38),
-          NormalizedPoint(0.4, 0.38),
-        ],
-      ),
-    ],
-    palette: ['#F59E0B', '#FEF3C7', '#EF4444'],
-  ),
-  _StudioItem(
-    id: 'rabbit',
-    label: 'أرنب',
-    assetId: 'asset-color-rabbit',
-    bg: Color(0xFF6B7280),
-    regions: [
-      ColorRegion(
-        id: 'rabbit.body',
-        polygon: [
-          NormalizedPoint(0.36, 0.45),
-          NormalizedPoint(0.64, 0.45),
-          NormalizedPoint(0.64, 0.65),
-          NormalizedPoint(0.36, 0.65),
-        ],
-      ),
-      ColorRegion(
-        id: 'rabbit.head',
-        polygon: [
-          NormalizedPoint(0.4, 0.32),
-          NormalizedPoint(0.6, 0.32),
-          NormalizedPoint(0.6, 0.42),
-          NormalizedPoint(0.4, 0.42),
-        ],
-      ),
-    ],
-    palette: ['#E5E7EB', '#6B7280', '#FECACA'],
-  ),
-  _StudioItem(
-    id: 'elephant',
-    label: 'فيل',
-    assetId: 'asset-color-elephant',
-    bg: Color(0xFF475569),
-    regions: [
-      ColorRegion(
-        id: 'elephant.body',
-        polygon: [
-          NormalizedPoint(0.28, 0.42),
-          NormalizedPoint(0.72, 0.42),
-          NormalizedPoint(0.72, 0.62),
-          NormalizedPoint(0.28, 0.62),
-        ],
-      ),
-      ColorRegion(
-        id: 'elephant.head',
-        polygon: [
-          NormalizedPoint(0.37, 0.28),
-          NormalizedPoint(0.63, 0.28),
-          NormalizedPoint(0.63, 0.42),
-          NormalizedPoint(0.37, 0.42),
-        ],
-      ),
-    ],
-    palette: ['#94A3B8', '#475569', '#F1F5F9'],
-  ),
-  _StudioItem(
-    id: 'whale',
-    label: 'حوت',
-    assetId: 'asset-color-whale',
-    bg: Color(0xFF0E7490),
-    regions: [
-      ColorRegion(
-        id: 'whale.body',
-        polygon: [
-          NormalizedPoint(0.22, 0.32),
-          NormalizedPoint(0.78, 0.32),
-          NormalizedPoint(0.78, 0.48),
-          NormalizedPoint(0.22, 0.48),
-        ],
-      ),
-      ColorRegion(
-        id: 'whale.tail',
-        polygon: [
-          NormalizedPoint(0.78, 0.4),
-          NormalizedPoint(0.87, 0.4),
-          NormalizedPoint(0.87, 0.52),
-          NormalizedPoint(0.78, 0.52),
-        ],
-      ),
-    ],
-    palette: ['#0891B2', '#0E7490', '#E0F2FE'],
-  ),
-  _StudioItem(
-    id: 'owl',
-    label: 'بومة',
-    assetId: 'asset-color-owl',
-    bg: Color(0xFF7C3AED),
-    regions: [
-      ColorRegion(
-        id: 'owl.body',
-        polygon: [
-          NormalizedPoint(0.32, 0.32),
-          NormalizedPoint(0.68, 0.32),
-          NormalizedPoint(0.68, 0.62),
-          NormalizedPoint(0.32, 0.62),
-        ],
-      ),
-      ColorRegion(
-        id: 'owl.eyes',
-        polygon: [
-          NormalizedPoint(0.37, 0.38),
-          NormalizedPoint(0.63, 0.38),
-          NormalizedPoint(0.63, 0.48),
-          NormalizedPoint(0.37, 0.48),
-        ],
-      ),
-    ],
-    palette: ['#7C3AED', '#F59E0B', '#E9D5FF'],
-  ),
-  _StudioItem(
-    id: 'horse',
-    label: 'حصان',
-    assetId: 'asset-color-horse',
-    bg: Color(0xFF92400E),
-    regions: [
-      ColorRegion(
-        id: 'horse.body',
-        polygon: [
-          NormalizedPoint(0.28, 0.45),
-          NormalizedPoint(0.72, 0.45),
-          NormalizedPoint(0.72, 0.65),
-          NormalizedPoint(0.28, 0.65),
-        ],
-      ),
-      ColorRegion(
-        id: 'horse.head',
-        polygon: [
-          NormalizedPoint(0.48, 0.26),
-          NormalizedPoint(0.62, 0.26),
-          NormalizedPoint(0.62, 0.38),
-          NormalizedPoint(0.48, 0.38),
-        ],
-      ),
-    ],
-    palette: ['#92400E', '#F59E0B', '#FEF3C7'],
-  ),
-  _StudioItem(
-    id: 'house',
-    label: 'منزل',
-    assetId: 'asset-color-house',
-    bg: Color(0xFF1E3A8A),
-    regions: [
-      ColorRegion(
-        id: 'house.wall',
-        polygon: [
-          NormalizedPoint(0.2, 0.5),
-          NormalizedPoint(0.8, 0.5),
-          NormalizedPoint(0.8, 0.85),
-          NormalizedPoint(0.2, 0.85),
-        ],
-      ),
-      ColorRegion(
-        id: 'house.roof',
-        polygon: [
-          NormalizedPoint(0.15, 0.5),
-          NormalizedPoint(0.5, 0.2),
-          NormalizedPoint(0.85, 0.5),
-        ],
-      ),
-      ColorRegion(
-        id: 'house.door',
-        polygon: [
-          NormalizedPoint(0.42, 0.65),
-          NormalizedPoint(0.58, 0.65),
-          NormalizedPoint(0.58, 0.85),
-          NormalizedPoint(0.42, 0.85),
-        ],
-      ),
-    ],
-    palette: ['#FF9F1C', '#2ECC71', '#3498DB'],
-  ),
-  _StudioItem(
-    id: 'rocket',
-    label: 'صاروخ',
-    assetId: 'asset-color-rocket',
-    bg: Color(0xFF1A0B2E),
-    regions: [
-      ColorRegion(
-        id: 'rocket.body',
-        polygon: [
-          NormalizedPoint(0.33, 0.15),
-          NormalizedPoint(0.66, 0.15),
-          NormalizedPoint(0.6, 0.85),
-          NormalizedPoint(0.4, 0.85),
-        ],
-      ),
-      ColorRegion(
-        id: 'rocket.window',
-        polygon: [
-          NormalizedPoint(0.42, 0.45),
-          NormalizedPoint(0.58, 0.45),
-          NormalizedPoint(0.58, 0.55),
-          NormalizedPoint(0.42, 0.55),
-        ],
-      ),
-    ],
-    palette: ['#E74C3C', '#3498DB', '#F1C40F'],
-  ),
-  _StudioItem(
-    id: 'planet',
-    label: 'كوكب',
-    assetId: 'asset-color-planet',
-    bg: Color(0xFF0F172A),
-    regions: [
-      ColorRegion(
-        id: 'planet.body',
-        polygon: [
-          NormalizedPoint(0.22, 0.28),
-          NormalizedPoint(0.78, 0.28),
-          NormalizedPoint(0.78, 0.72),
-          NormalizedPoint(0.22, 0.72),
-        ],
-      ),
-    ],
-    palette: ['#6A3DF2', '#00D6F5', '#FFD34D'],
-  ),
-  _StudioItem(
-    id: 'flower',
-    label: 'زهرة',
-    assetId: 'asset-color-flower',
-    bg: Color(0xFF831843),
-    regions: [
-      ColorRegion(
-        id: 'flower.center',
-        polygon: [
-          NormalizedPoint(0.43, 0.43),
-          NormalizedPoint(0.57, 0.43),
-          NormalizedPoint(0.57, 0.57),
-          NormalizedPoint(0.43, 0.57),
-        ],
-      ),
-      ColorRegion(
-        id: 'flower.petals',
-        polygon: [
-          NormalizedPoint(0.3, 0.3),
-          NormalizedPoint(0.7, 0.3),
-          NormalizedPoint(0.7, 0.45),
-          NormalizedPoint(0.3, 0.45),
-        ],
-      ),
-    ],
-    palette: ['#FF6FAE', '#FFD34D', '#22C55E'],
-  ),
-  _StudioItem(
-    id: 'fish',
-    label: 'سمكة',
-    assetId: 'asset-color-fish',
-    bg: Color(0xFF0E7490),
-    regions: [
-      ColorRegion(
-        id: 'fish.body',
-        polygon: [
-          NormalizedPoint(0.18, 0.35),
-          NormalizedPoint(0.82, 0.35),
-          NormalizedPoint(0.82, 0.65),
-          NormalizedPoint(0.18, 0.65),
-        ],
-      ),
-    ],
-    palette: ['#06B6D4', '#F59E0B', '#EF4444'],
-  ),
-  _StudioItem(
-    id: 'tree',
-    label: 'شجرة',
-    assetId: 'asset-color-tree',
-    bg: Color(0xFF14532D),
-    regions: [
-      ColorRegion(
-        id: 'tree.leaves',
-        polygon: [
-          NormalizedPoint(0.27, 0.2),
-          NormalizedPoint(0.73, 0.2),
-          NormalizedPoint(0.73, 0.5),
-          NormalizedPoint(0.27, 0.5),
-        ],
-      ),
-      ColorRegion(
-        id: 'tree.trunk',
-        polygon: [
-          NormalizedPoint(0.45, 0.5),
-          NormalizedPoint(0.55, 0.5),
-          NormalizedPoint(0.55, 0.8),
-          NormalizedPoint(0.45, 0.8),
-        ],
-      ),
-    ],
-    palette: ['#22C55E', '#92400E', '#86EFAC'],
-  ),
-  _StudioItem(
-    id: 'moon',
-    label: 'قمر',
-    assetId: 'asset-color-moon',
-    bg: Color(0xFF334155),
-    regions: [
-      ColorRegion(
-        id: 'moon.body',
-        polygon: [
-          NormalizedPoint(0.27, 0.27),
-          NormalizedPoint(0.73, 0.27),
-          NormalizedPoint(0.73, 0.73),
-          NormalizedPoint(0.27, 0.73),
-        ],
-      ),
-    ],
-    palette: ['#E5E7EB', '#94A3B8', '#F1F5F9'],
-  ),
-  _StudioItem(
-    id: 'stars',
-    label: 'نجوم',
-    assetId: 'asset-color-stars',
-    bg: Color(0xFF0F172A),
-    regions: [
-      ColorRegion(
-        id: 'stars.big',
-        polygon: [
-          NormalizedPoint(0.28, 0.26),
-          NormalizedPoint(0.38, 0.26),
-          NormalizedPoint(0.38, 0.32),
-          NormalizedPoint(0.28, 0.32),
-        ],
-      ),
-      ColorRegion(
-        id: 'stars.small',
-        polygon: [
-          NormalizedPoint(0.55, 0.62),
-          NormalizedPoint(0.62, 0.62),
-          NormalizedPoint(0.62, 0.68),
-          NormalizedPoint(0.55, 0.68),
-        ],
-      ),
-    ],
-    palette: ['#F59E0B', '#FEF3C7', '#1E1B4B'],
-  ),
-  _StudioItem(
-    id: 'astronaut',
-    label: 'رائد فضاء',
-    assetId: 'asset-color-astronaut',
-    bg: Color(0xFFE5E7EB),
-    regions: [
-      ColorRegion(
-        id: 'astronaut.helmet',
-        polygon: [
-          NormalizedPoint(0.38, 0.22),
-          NormalizedPoint(0.62, 0.22),
-          NormalizedPoint(0.62, 0.38),
-          NormalizedPoint(0.38, 0.38),
-        ],
-      ),
-      ColorRegion(
-        id: 'astronaut.suit',
-        polygon: [
-          NormalizedPoint(0.38, 0.48),
-          NormalizedPoint(0.62, 0.48),
-          NormalizedPoint(0.62, 0.68),
-          NormalizedPoint(0.38, 0.68),
-        ],
-      ),
-    ],
-    palette: ['#E5E7EB', '#0F172A', '#60A5FA'],
-  ),
-  _StudioItem(
-    id: 'telescope',
-    label: 'تلسكوب',
-    assetId: 'asset-color-telescope',
-    bg: Color(0xFF1E3A8A),
-    regions: [
-      ColorRegion(
-        id: 'telescope.tube',
-        polygon: [
-          NormalizedPoint(0.2, 0.42),
-          NormalizedPoint(0.7, 0.42),
-          NormalizedPoint(0.7, 0.52),
-          NormalizedPoint(0.2, 0.52),
-        ],
-      ),
-    ],
-    palette: ['#1E3A8A', '#94A3B8', '#F1F5F9'],
-  ),
-  _StudioItem(
-    id: 'sea',
-    label: 'بحر',
-    assetId: 'asset-color-sea',
-    bg: Color(0xFF0891B2),
-    regions: [
-      ColorRegion(
-        id: 'sea.water',
-        polygon: [
-          NormalizedPoint(0.13, 0.55),
-          NormalizedPoint(0.87, 0.55),
-          NormalizedPoint(0.87, 0.86),
-          NormalizedPoint(0.13, 0.86),
-        ],
-      ),
-      ColorRegion(
-        id: 'sea.boat',
-        polygon: [
-          NormalizedPoint(0.5, 0.42),
-          NormalizedPoint(0.68, 0.42),
-          NormalizedPoint(0.68, 0.52),
-          NormalizedPoint(0.5, 0.52),
-        ],
-      ),
-    ],
-    palette: ['#0891B2', '#06B6D4', '#F59E0B'],
-  ),
-  _StudioItem(
-    id: 'mountain',
-    label: 'جبل',
-    assetId: 'asset-color-mountain',
-    bg: Color(0xFF78716C),
-    regions: [
-      ColorRegion(
-        id: 'mountain.left',
-        polygon: [
-          NormalizedPoint(0.13, 0.33),
-          NormalizedPoint(0.35, 0.33),
-          NormalizedPoint(0.35, 0.8),
-          NormalizedPoint(0.13, 0.8),
-        ],
-      ),
-      ColorRegion(
-        id: 'mountain.right',
-        polygon: [
-          NormalizedPoint(0.55, 0.3),
-          NormalizedPoint(0.87, 0.3),
-          NormalizedPoint(0.87, 0.8),
-          NormalizedPoint(0.55, 0.8),
-        ],
-      ),
-    ],
-    palette: ['#78716C', '#A8A29E', '#F1F5F9'],
-  ),
-  _StudioItem(
-    id: 'rainbow',
-    label: 'قوس قزح',
-    assetId: 'asset-color-rainbow',
-    bg: Color(0xFFEC4899),
-    regions: [
-      ColorRegion(
-        id: 'rainbow.outer',
-        polygon: [
-          NormalizedPoint(0.2, 0.5),
-          NormalizedPoint(0.8, 0.5),
-          NormalizedPoint(0.8, 0.8),
-          NormalizedPoint(0.2, 0.8),
-        ],
-      ),
-      ColorRegion(
-        id: 'rainbow.inner',
-        polygon: [
-          NormalizedPoint(0.3, 0.6),
-          NormalizedPoint(0.7, 0.6),
-          NormalizedPoint(0.7, 0.8),
-          NormalizedPoint(0.3, 0.8),
-        ],
-      ),
-    ],
-    palette: ['#EC4899', '#F59E0B', '#22C55E'],
-  ),
-  _StudioItem(
-    id: 'forest',
-    label: 'غابة',
-    assetId: 'asset-color-forest',
-    bg: Color(0xFF166534),
-    regions: [
-      ColorRegion(
-        id: 'forest.tree1',
-        polygon: [
-          NormalizedPoint(0.13, 0.3),
-          NormalizedPoint(0.33, 0.3),
-          NormalizedPoint(0.33, 0.8),
-          NormalizedPoint(0.13, 0.8),
-        ],
-      ),
-      ColorRegion(
-        id: 'forest.tree2',
-        polygon: [
-          NormalizedPoint(0.36, 0.25),
-          NormalizedPoint(0.58, 0.25),
-          NormalizedPoint(0.58, 0.8),
-          NormalizedPoint(0.36, 0.8),
-        ],
-      ),
-    ],
-    palette: ['#166534', '#22C55E', '#92400E'],
-  ),
-  _StudioItem(
-    id: 'car',
-    label: 'سيارة',
-    assetId: 'asset-color-car',
-    bg: Color(0xFFDC2626),
-    regions: [
-      ColorRegion(
-        id: 'car.body',
-        polygon: [
-          NormalizedPoint(0.23, 0.5),
-          NormalizedPoint(0.77, 0.5),
-          NormalizedPoint(0.77, 0.65),
-          NormalizedPoint(0.23, 0.65),
-        ],
-      ),
-      ColorRegion(
-        id: 'car.wheel_left',
-        polygon: [
-          NormalizedPoint(0.28, 0.62),
-          NormalizedPoint(0.38, 0.62),
-          NormalizedPoint(0.38, 0.73),
-          NormalizedPoint(0.28, 0.73),
-        ],
-      ),
-    ],
-    palette: ['#DC2626', '#0F172A', '#F1F5F9'],
-  ),
-  _StudioItem(
-    id: 'train',
-    label: 'قطار',
-    assetId: 'asset-color-train',
-    bg: Color(0xFF1D4ED8),
-    regions: [
-      ColorRegion(
-        id: 'train.body',
-        polygon: [
-          NormalizedPoint(0.16, 0.5),
-          NormalizedPoint(0.83, 0.5),
-          NormalizedPoint(0.83, 0.65),
-          NormalizedPoint(0.16, 0.65),
-        ],
-      ),
-    ],
-    palette: ['#1D4ED8', '#F59E0B', '#E5E7EB'],
-  ),
-  _StudioItem(
-    id: 'airplane',
-    label: 'طائرة',
-    assetId: 'asset-color-airplane',
-    bg: Color(0xFF0284C7),
-    regions: [
-      ColorRegion(
-        id: 'airplane.body',
-        polygon: [
-          NormalizedPoint(0.2, 0.45),
-          NormalizedPoint(0.77, 0.45),
-          NormalizedPoint(0.77, 0.55),
-          NormalizedPoint(0.2, 0.55),
-        ],
-      ),
-    ],
-    palette: ['#0284C7', '#E5E7EB', '#F59E0B'],
-  ),
-  _StudioItem(
-    id: 'boat',
-    label: 'قارب',
-    assetId: 'asset-color-boat',
-    bg: Color(0xFF0369A1),
-    regions: [
-      ColorRegion(
-        id: 'boat.hull',
-        polygon: [
-          NormalizedPoint(0.2, 0.63),
-          NormalizedPoint(0.8, 0.63),
-          NormalizedPoint(0.8, 0.73),
-          NormalizedPoint(0.2, 0.73),
-        ],
-      ),
-    ],
-    palette: ['#0369A1', '#E5E7EB', '#F59E0B'],
-  ),
-  _StudioItem(
-    id: 'bicycle',
-    label: 'دراجة',
-    assetId: 'asset-color-bicycle',
-    bg: Color(0xFF374151),
-    regions: [
-      ColorRegion(
-        id: 'bicycle.wheel_left',
-        polygon: [
-          NormalizedPoint(0.24, 0.57),
-          NormalizedPoint(0.42, 0.57),
-          NormalizedPoint(0.42, 0.76),
-          NormalizedPoint(0.24, 0.76),
-        ],
-      ),
-    ],
-    palette: ['#374151', '#6B7280', '#F59E0B'],
-  ),
-  _StudioItem(
-    id: 'apple',
-    label: 'تفاحة',
-    assetId: 'asset-color-apple',
-    bg: Color(0xFFDC2626),
-    regions: [
-      ColorRegion(
-        id: 'apple.body',
-        polygon: [
-          NormalizedPoint(0.32, 0.38),
-          NormalizedPoint(0.68, 0.38),
-          NormalizedPoint(0.68, 0.75),
-          NormalizedPoint(0.32, 0.75),
-        ],
-      ),
-    ],
-    palette: ['#DC2626', '#22C55E', '#92400E'],
-  ),
-  _StudioItem(
-    id: 'book',
-    label: 'كتاب',
-    assetId: 'asset-color-book',
-    bg: Color(0xFF7C3AED),
-    regions: [
-      ColorRegion(
-        id: 'book.left',
-        polygon: [
-          NormalizedPoint(0.26, 0.3),
-          NormalizedPoint(0.5, 0.3),
-          NormalizedPoint(0.5, 0.7),
-          NormalizedPoint(0.26, 0.7),
-        ],
-      ),
-      ColorRegion(
-        id: 'book.right',
-        polygon: [
-          NormalizedPoint(0.5, 0.3),
-          NormalizedPoint(0.73, 0.3),
-          NormalizedPoint(0.73, 0.7),
-          NormalizedPoint(0.5, 0.7),
-        ],
-      ),
-    ],
-    palette: ['#7C3AED', '#E9D5FF', '#F1F5F9'],
-  ),
-  _StudioItem(
-    id: 'bag',
-    label: 'حقيبة',
-    assetId: 'asset-color-bag',
-    bg: Color(0xFF1E40AF),
-    regions: [
-      ColorRegion(
-        id: 'bag.body',
-        polygon: [
-          NormalizedPoint(0.3, 0.4),
-          NormalizedPoint(0.7, 0.4),
-          NormalizedPoint(0.7, 0.73),
-          NormalizedPoint(0.3, 0.73),
-        ],
-      ),
-    ],
-    palette: ['#1E40AF', '#60A5FA', '#E5E7EB'],
-  ),
-  _StudioItem(
-    id: 'lamp',
-    label: 'مصباح',
-    assetId: 'asset-color-lamp',
-    bg: Color(0xFFF59E0B),
-    regions: [
-      ColorRegion(
-        id: 'lamp.shade',
-        polygon: [
-          NormalizedPoint(0.36, 0.33),
-          NormalizedPoint(0.63, 0.33),
-          NormalizedPoint(0.63, 0.53),
-          NormalizedPoint(0.36, 0.53),
-        ],
-      ),
-    ],
-    palette: ['#F59E0B', '#FEF3C7', '#92400E'],
-  ),
-  _StudioItem(
-    id: 'mosque',
-    label: 'مسجد',
-    assetId: 'asset-color-mosque',
-    bg: Color(0xFF0F766E),
-    regions: [
-      ColorRegion(
-        id: 'mosque.dome',
-        polygon: [
-          NormalizedPoint(0.33, 0.35),
-          NormalizedPoint(0.67, 0.35),
-          NormalizedPoint(0.67, 0.5),
-          NormalizedPoint(0.33, 0.5),
-        ],
-      ),
-      ColorRegion(
-        id: 'mosque.wall',
-        polygon: [
-          NormalizedPoint(0.33, 0.5),
-          NormalizedPoint(0.67, 0.5),
-          NormalizedPoint(0.67, 0.63),
-          NormalizedPoint(0.33, 0.63),
-        ],
-      ),
-    ],
-    palette: ['#0F766E', '#14B8A6', '#FEF3C7'],
-  ),
-  _StudioItem(
-    id: 'lantern',
-    label: 'فانوس',
-    assetId: 'asset-color-lantern',
-    bg: Color(0xFFB45309),
-    regions: [
-      ColorRegion(
-        id: 'lantern.body',
-        polygon: [
-          NormalizedPoint(0.41, 0.33),
-          NormalizedPoint(0.59, 0.33),
-          NormalizedPoint(0.59, 0.6),
-          NormalizedPoint(0.41, 0.6),
-        ],
-      ),
-    ],
-    palette: ['#B45309', '#F59E0B', '#FEF3C7'],
-  ),
-  _StudioItem(
-    id: 'crescent',
-    label: 'هلال',
-    assetId: 'asset-color-crescent',
-    bg: Color(0xFF312E81),
-    regions: [
-      ColorRegion(
-        id: 'crescent.moon',
-        polygon: [
-          NormalizedPoint(0.36, 0.3),
-          NormalizedPoint(0.65, 0.3),
-          NormalizedPoint(0.65, 0.7),
-          NormalizedPoint(0.36, 0.7),
-        ],
-      ),
-    ],
-    palette: ['#312E81', '#F59E0B', '#E5E7EB'],
-  ),
-  _StudioItem(
-    id: 'arabesque',
-    label: 'زخرفة',
-    assetId: 'asset-color-arabesque',
-    bg: Color(0xFF7C2D12),
-    regions: [
-      ColorRegion(
-        id: 'arabesque.outer',
-        polygon: [
-          NormalizedPoint(0.23, 0.23),
-          NormalizedPoint(0.77, 0.23),
-          NormalizedPoint(0.77, 0.77),
-          NormalizedPoint(0.23, 0.77),
-        ],
-      ),
-    ],
-    palette: ['#7C2D12', '#F59E0B', '#FEF3C7'],
-  ),
-  _StudioItem(
-    id: 'shapes-comp',
-    label: 'أشكال',
-    assetId: 'asset-color-shapes-comp',
-    bg: Color(0xFF334155),
-    regions: [
-      ColorRegion(
-        id: 'comp.circle',
-        polygon: [
-          NormalizedPoint(0.21, 0.37),
-          NormalizedPoint(0.39, 0.37),
-          NormalizedPoint(0.39, 0.56),
-          NormalizedPoint(0.21, 0.56),
-        ],
-      ),
-    ],
-    palette: ['#334155', '#94A3B8', '#F1F5F9'],
-  ),
-  _StudioItem(
-    id: 'stars-planets',
-    label: 'نجوم وكواكب',
-    assetId: 'asset-color-stars-planets',
-    bg: Color(0xFF1E1B4B),
-    regions: [
-      ColorRegion(
-        id: 'stars.planet1',
-        polygon: [
-          NormalizedPoint(0.26, 0.26),
-          NormalizedPoint(0.4, 0.26),
-          NormalizedPoint(0.4, 0.4),
-          NormalizedPoint(0.26, 0.4),
-        ],
-      ),
-    ],
-    palette: ['#1E1B4B', '#F59E0B', '#6A3DF2'],
-  ),
-];
 final _traceItems = [
   _StudioItem(
     id: 'line-h',
@@ -3804,7 +2234,10 @@ class _FreeDrawHostState extends State<_FreeDrawHost> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.promptOverride ?? 'ارسم بحرية')),
+      appBar: StudioAppBar(
+        title: widget.promptOverride ?? 'ارسم بحرية',
+        glyph: Icons.gesture_rounded,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -3909,6 +2342,7 @@ class _FreeDrawHostState extends State<_FreeDrawHost> {
 
 class ColoringActivityHost extends StatefulWidget {
   const ColoringActivityHost({
+    super.key,
     required this.controller,
     required this.creationStore,
     this.disposeController = true,
@@ -4032,6 +2466,7 @@ class ColoringActivityHostState extends State<ColoringActivityHost> {
 /// editable document; free-draw and coloring continue to save real documents.
 class TraceActivityHost extends StatefulWidget {
   const TraceActivityHost({
+    super.key,
     required this.title,
     required this.controller,
     required this.creationStore,
@@ -4065,7 +2500,10 @@ class TraceActivityHostState extends State<TraceActivityHost> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: StudioAppBar(
+        title: widget.title,
+        glyph: Icons.gesture_rounded,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -4139,6 +2577,139 @@ class TraceActivityHostState extends State<TraceActivityHost> {
   }
 }
 
+/// Opens one colouring page and owns its save.
+///
+/// No [GameSessionController] here, unlike every other activity host. The
+/// controller exists to score attempts and track progression against a
+/// [GamePack]; a colouring page has nothing to score and no level to advance, so
+/// wiring one up would mean fabricating a pack to satisfy a type rather than to
+/// describe anything real.
+///
+/// The save is a PNG only, and deliberately so. [ColoringBoard] keeps the child's
+/// work as brush strokes and bucket fills in image-pixel space, which no existing
+/// [CreationDocument] field can express — `fills` is `{regionId, hex}` pairs from
+/// the polygon engine. Writing strokes into a document that cannot replay them
+/// would advertise an editable creation that reopens blank, so this follows
+/// [TraceActivityHost]: keep the visible result honestly, claim nothing more.
+class _ColoringPageHost extends StatefulWidget {
+  // بلا `onSaved`: لم يبقَ مستدعٍ يمرّره بعد إزالة قسم صفحات التلوين المُصرَّف،
+  // والحفظ يمرّ عبر `creationStore` مباشرة.
+  const _ColoringPageHost({
+    required this.page,
+    required this.childId,
+    required this.creationStore,
+  });
+
+  final ColoringPage page;
+  final String childId;
+  final LocalCreationStore creationStore;
+
+  @override
+  State<_ColoringPageHost> createState() => _ColoringPageHostState();
+}
+
+class _ColoringPageHostState extends State<_ColoringPageHost> {
+  final GlobalKey _captureKey = GlobalKey();
+  String? _message;
+  bool _saving = false;
+  bool _painted = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: StudioAppBar(
+        title: 'تلوين ${widget.page.label}',
+        glyph: Icons.palette_rounded,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: FilledButton.icon(
+              // Disabled until something is actually painted, so a child cannot
+              // fill their gallery with untouched copies of the same picture.
+              onPressed: (_saving || !_painted) ? null : _save,
+              icon: _saving
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.save_alt, size: 18),
+              label: Text(_saving ? 'جارٍ الحفظ…' : 'حفظ رسمتي'),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ColoringBoard(
+              page: widget.page,
+              canvasKey: _captureKey,
+              onPaintedChanged: (painted) {
+                if (mounted) setState(() => _painted = painted);
+              },
+            ),
+          ),
+          if (_message != null)
+            Semantics(
+              liveRegion: true,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                child: Text(
+                  _message!,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ),
+          const SafeArea(minimum: EdgeInsets.only(bottom: 4), child: SizedBox()),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    final boundary = _captureKey.currentContext?.findRenderObject();
+    if (boundary is! RenderRepaintBoundary) {
+      setState(() => _message = 'تعذر تجهيز الرسمة للحفظ. حاول مرة أخرى.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _message = null;
+    });
+    try {
+      final result = await widget.creationStore.saveFromBoundary(
+        boundary: boundary,
+        childId: widget.childId,
+        gameId: 'coloring-${widget.page.id}',
+        drawingMode: 'coloring',
+      );
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _message = result.isSuccess
+            ? 'حُفظت في رسوماتي'
+            : 'تعذر الحفظ. حاول مرة أخرى.';
+      });
+      // بلا رد نداء بعد الحفظ: `onSaved` لم يمرّره أي مستدعٍ لهذا المُضيف بعد
+      // إزالة قسم صفحات التلوين المُصرَّف، والرسالة أعلاه هي تأكيد المستخدم.
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _message = 'تعذر الحفظ. حاول مرة أخرى.';
+      });
+    }
+  }
+}
+
+/// Grid of colouring pages read from `assets/data/coloring_pages.json`.
+///
+/// Renders nothing when the list is empty, so the studio simply does not show the
+/// section until a picture is added rather than showing an empty heading.
 class _NoopReporter implements AttemptReporter {
   @override
   Future<void> report(GameAttempt attempt) async {}

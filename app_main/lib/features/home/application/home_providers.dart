@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../app/router/auth_guard.dart';
-import '../../../core/cache/reader_page_cache.dart';
 import '../../../core/env/app_version.dart';
+import '../../../core/network/secure_http_client.dart';
 import '../../../core/errors/crash_reporter.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/data/auth_storage.dart';
@@ -15,8 +15,13 @@ import '../domain/content_models.dart';
 import '../domain/feed_blocks.dart';
 import 'home_layout.dart';
 
+/// العميل المشترك لكل طلبات الـAPI.
+///
+/// SEC-105: كان `http.Client()` مجرّدًا، أي ثقة كاملة بمخزن شهادات الجهاز، فأي
+/// جذر مزروع (أداة تحليل، وكيل مؤسسي) يقرأ التوكن والردود. صار مثبَّتًا على
+/// جذور «مجرة» — انظر `core/network/pinned_certificates.dart`.
 final httpClientProvider = Provider<http.Client>((ref) {
-  final client = http.Client();
+  final client = createAppHttpClient();
   ref.onDispose(client.close);
   return client;
 });
@@ -79,7 +84,6 @@ final storyPagesProvider =
       return _loadReaderPages(
         ref,
         request: request,
-        kind: ReaderPageCacheKind.book,
         fetch: (api) => api.fetchBookPagesEnvelope(
           request.bookId,
           language: request.language,
@@ -99,7 +103,6 @@ final storyStoryPagesProvider =
       return _loadReaderPages(
         ref,
         request: request,
-        kind: ReaderPageCacheKind.story,
         fetch: (api) => api.fetchStoryPagesEnvelope(
           request.bookId,
           language: request.language,
@@ -107,57 +110,48 @@ final storyStoryPagesProvider =
       );
     });
 
-/// Fetches reader pages, persisting the envelope so a later offline open keeps
-/// the full page metadata — narration `duration_ms` and dwell `dwell_ms`
-/// included — and needs no network during playback.
+/// Fetches reader pages exclusively from the API. Story text, images, and
+/// narration are never bundled into the app: they remain under the server's
+/// publication and access policy, which keeps releases small and prevents a
+/// stale local story pack from masquerading as live published content.
+///
+/// A valid empty array is returned to the reader as an unavailable story. A
+/// malformed response or network failure remains an error for the UI to show;
+/// it must never fall back to a bundled or cached copy of protected content.
 Future<ReaderPageCollection> _loadReaderPages(
   Ref ref, {
   required StoryPagesRequest request,
-  required ReaderPageCacheKind kind,
   required Future<Map<String, dynamic>> Function(MajarraApiClient api) fetch,
 }) async {
-  final api = ref.watch(majarraApiClientProvider);
-  const cache = ReaderPageCache();
-  try {
-    final envelope = await fetch(api);
-    await cache.save(
-      kind: kind,
-      contentId: request.bookId,
-      language: request.language,
-      envelope: envelope,
-    );
-    return ReaderPageCollectionDto.fromEnvelope(
-      envelope,
-      requestedLanguage: request.language,
-    ).toDomain();
-  } on Object {
-    final cached = await cache.read(
-      kind: kind,
-      contentId: request.bookId,
-      language: request.language,
-    );
-    // No snapshot means the reader must surface the real error rather than an
-    // empty or substituted story.
-    if (cached == null) rethrow;
-    return ReaderPageCollectionDto.fromEnvelope(
-      cached,
-      requestedLanguage: request.language,
-    ).toDomain();
+  final envelope = await fetch(ref.watch(majarraApiClientProvider));
+  if (envelope['data'] is! List) {
+    throw const FormatException('Reader API returned an invalid page collection');
   }
+  return ReaderPageCollectionDto.fromEnvelope(
+    envelope,
+    requestedLanguage: request.language,
+  ).toDomain();
 }
 
 final recommendationsProvider = FutureProvider.family<List<String>, String>((
   ref,
   childId,
 ) async {
-  final api = ref.watch(majarraApiClientProvider);
-  final res = await api.fetchRecommendations(childId: childId);
-  final data = res['data'];
-  if (data is! List) return const [];
-  return data
-      .map((e) => (e is Map ? e['series_id']?.toString() ?? '' : ''))
-      .where((s) => s.isNotEmpty)
-      .toList();
+  // Demo child has no auth token - return empty to avoid 401 spam
+  if (childId == 'demo-child') return const <String>[];
+  try {
+    final api = ref.watch(majarraApiClientProvider);
+    final res = await api.fetchRecommendations(childId: childId);
+    final data = res['data'];
+    if (data is! List) return const [];
+    return data
+        .map((e) => (e is Map ? e['series_id']?.toString() ?? '' : ''))
+        .where((s) => s.isNotEmpty)
+        .toList();
+  } catch (_) {
+    // Demo or offline - return empty without spamming 401
+    return const <String>[];
+  }
 });
 
 final childSettingsProvider =

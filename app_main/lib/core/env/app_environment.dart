@@ -1,11 +1,23 @@
 import 'package:flutter/foundation.dart';
 
-/// The three deployment targets the app can be built for.
+/// الهدفان اللذان يمكن بناء التطبيق لهما.
 ///
-/// Selected at build time with `--dart-define=MAJARRA_ENV=<name>`. Anything
-/// other than `staging` or `development` resolves to [production] so a typo in
-/// the define can never accidentally relax the production allowlist.
-enum AppEnvironment { development, staging, production }
+/// يُختار وقت البناء بـ`--dart-define=MAJARRA_ENV=<name>`. أي قيمة غير
+/// `development` تُحلّ إلى [production]، فخطأ مطبعي في الـdefine لا يمكن أن
+/// يُرخي قائمة سماح الإنتاج.
+///
+/// ## لا توجد بيئة staging
+///
+/// قرار مالك (2026-08-26): المنتج في مرحلة تطوير وكل شيء يعمل على الإنتاج
+/// مباشرة، ولا نية لتوفير بيئة وسطى. كان هناك عضو `staging` في هذا التعداد
+/// ومضيف خاص به وسكربتا نشر وترحيل — وكلها لم تكن تشير إلى شيء موجود: السكربتان
+/// يطبعان رسالة ويخرجان بخطأ، والمضيف لا يُحلّ في DNS، وافتراضي البيئة كان
+/// يُوجَّه إلى الإنتاج على أي حال. عضو تعداد يعني «شيء لم يُنشأ بعد» يجعل كل
+/// `switch` عليه فرعًا ميتًا وكل قارئ يظن أن هناك تمييزًا.
+///
+/// المتبقي هو ما يعمل فعلًا: [development] لبناء محلي يستطيع تجاوز العنوان إلى
+/// loopback، و[production] لكل ما عدا ذلك.
+enum AppEnvironment { development, production }
 
 /// Result of validating a candidate API base URL against an environment's
 /// allowlist. [reason] is populated only when [isValid] is false and is a
@@ -33,24 +45,16 @@ class ApiUrlDecision {
 /// bearer token. This class makes the override a request to use a host, which is
 /// granted only if the host is on the allowlist for the selected environment.
 ///
-/// Production accepts only approved HTTPS Majarra hosts. Development and staging
-/// additionally accept the staging host and loopback (for a locally-run worker),
-/// but still reject plain-`http` remote hosts, credential-bearing URLs, and
-/// unexpected schemes.
+/// مضيف واحد قانوني بلا انقسام staging: كل بناء يتحدث إلى `api.majarra.app`،
+/// وبناء التطوير يستطيع تجاوزه إلى loopback عبر `API_BASE_URL`.
 abstract final class AppConfig {
   // --- Approved hosts -------------------------------------------------------
 
-  /// The canonical production API host.
+  /// The only production + development API host.
   static const _productionHost = 'api.majarra.app';
 
-  /// The staging host. It currently resolves to the same worker as production
-  /// because no isolated staging backend exists yet (A3 — EXTERNAL BLOCKER,
-  /// infrastructure not code). Kept as a distinct constant so that the day a
-  /// real staging environment is provisioned, only this value changes.
-  static const _stagingHost = 'staging-api.majarra.app';
-
-  /// Superseded workers.dev host, retained on the development/staging allowlist
-  /// only so an internal build can still reach it while it is decommissioned.
+  /// Superseded workers.dev host, retained on the development allowlist only so
+  /// an internal build can still reach it while it is decommissioned.
   static const _legacyWorkersHost = 'majarra-api-prod.aboessa101.workers.dev';
 
   /// Hosts that are always acceptable when *not* building for production, used
@@ -72,16 +76,15 @@ abstract final class AppConfig {
       case 'development':
       case 'dev':
         return AppEnvironment.development;
-      case 'staging':
-        return AppEnvironment.staging;
       default:
-        // Any unrecognised value fails safe to production.
+        // Any unrecognised value fails safe to production. `staging` is one of
+        // those values now: there is no staging environment, so a build asking
+        // for it gets production rather than a half-configured target.
         return AppEnvironment.production;
     }
   }
 
   static bool get isProduction => environment == AppEnvironment.production;
-  static bool get isStaging => environment == AppEnvironment.staging;
   static bool get isDevelopment => environment == AppEnvironment.development;
 
   // --- Feature flags derived from environment -------------------------------
@@ -90,7 +93,7 @@ abstract final class AppConfig {
   static bool get verboseLogging => !isProduction;
 
   /// Whether analytics events are dispatched. Off in development so local runs
-  /// do not pollute product metrics; on for staging and production.
+  /// do not pollute product metrics; on for production.
   static bool get analyticsEnabled => !isDevelopment;
 
   /// Whether to show the small environment banner overlay. Never in production.
@@ -101,8 +104,6 @@ abstract final class AppConfig {
     switch (environment) {
       case AppEnvironment.development:
         return 'DEV';
-      case AppEnvironment.staging:
-        return 'STAGING';
       case AppEnvironment.production:
         return 'PROD';
     }
@@ -110,19 +111,7 @@ abstract final class AppConfig {
 
   // --- Base URL resolution --------------------------------------------------
 
-  static String get _defaultHostForEnvironment {
-    switch (environment) {
-      case AppEnvironment.production:
-        return _productionHost;
-      case AppEnvironment.staging:
-        return _stagingHost;
-      case AppEnvironment.development:
-        // Default a development build to the staging host, not localhost: most
-        // developers run the app against staging and only override when they
-        // have a worker running locally.
-        return _stagingHost;
-    }
-  }
+  static String get _defaultHostForEnvironment => _productionHost;
 
   static const _rawOverride = String.fromEnvironment('API_BASE_URL', defaultValue: '');
 
@@ -147,16 +136,45 @@ abstract final class AppConfig {
     return 'https://$_defaultHostForEnvironment';
   }
 
+  // --- Public asset (CDN) base ----------------------------------------------
+
+  /// مضيف الأصول العامة (الأغلفة والصور المنشورة) عبر الـCDN.
+  ///
+  /// نطاقٌ مستقلّ عن مضيف الـAPI بحكم البنية: الأصول من دلو R2 عامّ أمامه
+  /// `cdn.majarra.app`، والـAPI على `api.majarra.app`.
+  static const String assetHost = 'cdn.majarra.app';
+
+  /// أصل الأصول العامة، مصدرًا واحدًا (`APP-103`).
+  ///
+  /// كان النطاق مُعلَنًا **ثلاث مرّات مستقلّة** — `_cdnBase` في `content_dtos.dart`
+  /// و`kR2Base` في `image_slot.dart` — ومكتوبًا حرفيًّا **إحدى وخمسين مرّة** في
+  /// `local_catalog.dart`، ومقارَنًا كمضيف مسموح في `bundled_story_assets.dart`.
+  ///
+  /// فتغيير النطاق كان يعني أربعة مواضع والاعتماد على أن أحدًا لم ينسَ سطرًا.
+  /// والنسيان هنا لا يظهر كخطأ ترجمة، بل **كصورةٍ مكسورة عند طفل** — أو أسوأ: في
+  /// موضع التحقّق، كأصلٍ صحيح يُرفَض بلا سبب ظاهر.
+  ///
+  /// ولا يُقبَل تجاوزٌ من بيئة التشغيل: عنوان الأصول ليس نقطة تكامل مع مشغّل، وكل
+  /// تجاوزٍ مقبول هنا يفتح بابًا لتوجيه صور الأطفال إلى أصل آخر. النطاق يتغيّر
+  /// بإصدار.
+  /// و`const` لا getter: تُستخدَم داخل خرائط `const` للأغلفة، وgetter كان يُجبر
+  /// على إسقاط `const` عن كاتالوج كامل مكتوب في الكود.
+  static const String assetBaseUrl = 'https://$assetHost';
+
   /// The set of hosts acceptable for [env].
   static Set<String> allowedHosts(AppEnvironment env) {
     switch (env) {
       case AppEnvironment.production:
         return const {_productionHost};
-      case AppEnvironment.staging:
       case AppEnvironment.development:
+        // بناء التطوير يصل إلى الإنتاج (لا توجد بيئة أخرى)، وإلى loopback عبر
+        // تجاوز `API_BASE_URL` لتشغيل wrangler محليًّا، وإلى مضيف workers.dev
+        // القديم حتى يُسحب من الخدمة.
+        //
+        // قائمة الإنتاج أعلاه تبقى مضيفًا واحدًا: بناء إصدار لا يجوز إعادة
+        // توجيهه إلى أي أصل آخر، ولا حتى loopback.
         return {
           _productionHost,
-          _stagingHost,
           _legacyWorkersHost,
           ..._loopbackHosts,
         };

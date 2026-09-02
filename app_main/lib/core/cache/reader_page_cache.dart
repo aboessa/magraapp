@@ -26,7 +26,16 @@ enum ReaderPageCacheKind {
 class ReaderPageCache {
   const ReaderPageCache();
 
-  static const _prefix = 'majarra_reader_pages_v1';
+  /// The root every version of this cache has shared.
+  ///
+  /// Kept separate from [_prefix] so teardown can sweep **all** versions. When
+  /// the schema moved from `_v1` to `_v2` the old entries stopped being read and
+  /// stopped being cleaned: nothing referenced the `_v1` prefix any more, so on
+  /// every device upgraded from that build a family's reading material stayed on
+  /// disk indefinitely and survived sign-out.
+  static const _keyRoot = 'majarra_reader_pages';
+
+  static const _prefix = '${_keyRoot}_v2';
 
   /// Page text and timing change only when an editor publishes a new version,
   /// so a long window is safe; a stale page is far better than a blank reader.
@@ -103,18 +112,23 @@ class ReaderPageCache {
     }
   }
 
-  /// Removes every cached page list.
+  /// Removes every cached page list, **of every schema version**.
   ///
   /// Called from account teardown. Page text is public catalogue data rather
   /// than a child's private record, but a shared device must not carry one
   /// family's reading material into the next family's session, and a stale
   /// snapshot must not outlive the entitlement that allowed it to be fetched.
+  ///
+  /// The sweep matches [_keyRoot], not [_prefix]: matching the current version
+  /// alone left every `_v1` entry on disk forever, because no code path reads,
+  /// expires or deletes an abandoned prefix. A version bump must not become a
+  /// silent retention decision.
   Future<void> clearAll() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs
           .getKeys()
-          .where((key) => key.startsWith(_prefix))
+          .where((key) => key.startsWith(_keyRoot))
           .toList(growable: false);
       for (final key in keys) {
         await prefs.remove(key);

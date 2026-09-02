@@ -224,21 +224,34 @@ void main() {
     expect(BlockRenderer.shouldShowBlock(complete, empty), isTrue);
   });
 
-  test('rows with no truthful data source stay hidden', () {
-    // These are deliberate: there is no analytics or recommendation ranking to
-    // render, and inventing one would be worse than an absent row.
-    final empty = _emptyCatalog();
-    for (final type in [
-      BlockType.mostWatched,
-      BlockType.becauseYouWatched,
-      BlockType.learningJourney,
-    ]) {
-      expect(
-        BlockRenderer.shouldShowBlock(HomeBlock(id: 'x', type: type), empty),
-        isFalse,
-        reason: '$type has no truthful source yet',
-      );
-    }
+  test('a saved block type this client cannot render is skipped and reported', () {
+    // `APP-104`: this used to assert that `most_watched`, `because_you_watched`
+    // and `learning_journey` render as hidden. They are gone: three types were
+    // fully built — enum value, default row, widget — then disabled by a constant
+    // because no source existed, while the admin builder kept offering them. So
+    // an admin could add "الأكثر مشاهدة", publish it, and nothing ever appeared.
+    //
+    // What replaces that assertion is the property that makes their removal safe:
+    // a layout saved in production carrying one of them is **skipped and named**,
+    // not crashed on and not rendered as an empty row.
+    final unsupported = <String>[];
+    final contract = contractFromResolvedBlocks(
+      const [
+        ResolvedHomeBlockConfig(id: 'a', type: 'hero_slider'),
+        ResolvedHomeBlockConfig(id: 'b', type: 'most_watched'),
+        ResolvedHomeBlockConfig(id: 'c', type: 'learning_journey'),
+        ResolvedHomeBlockConfig(id: 'd', type: 'because_you_watched'),
+      ],
+      unsupported: unsupported,
+    );
+
+    expect(contract, isNotNull);
+    expect(contract!.blocks.map((block) => block.id), ['a']);
+    expect(
+      unsupported,
+      containsAll(<String>['most_watched', 'learning_journey', 'because_you_watched']),
+      reason: 'الفجوة تُرصد بالاسم، فلا تُقرأ كصفٍّ فارغ',
+    );
   });
 }
 

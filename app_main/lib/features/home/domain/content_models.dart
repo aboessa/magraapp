@@ -1,4 +1,4 @@
-import 'package:video_player/video_player.dart' show DurationRange;
+﻿import 'package:video_player/video_player.dart' show DurationRange;
 
 enum ContentSource {
   /// Every catalogue endpoint completed successfully, including legitimate
@@ -30,6 +30,8 @@ class Planet {
     required this.colorHex,
     required this.imageAsset,
     this.iconUrl,
+    this.publishedSeries,
+    this.publishedOpenable,
   });
 
   final String id;
@@ -38,6 +40,28 @@ class Planet {
   final String colorHex;
   final String imageAsset;
   final String? iconUrl;
+
+  /// How much published content the server counted for this planet, or `null`
+  /// when nobody counted (`CNT-106`).
+  ///
+  /// **`null` is not zero.** The bundled offline catalogue carries no counts, and
+  /// reading its silence as "empty" would stamp every planet «قريبًا» the moment
+  /// the network drops — announcing an absence that is only an absence of
+  /// knowledge. Same rule as the ops metrics: a dash for unknown, a number for
+  /// measured.
+  final int? publishedSeries;
+
+  /// Published items a child can actually **open** in this planet: episodes,
+  /// stories, games and books.
+  ///
+  /// A series is a folder, so publishing one opens nothing — and episodes alone
+  /// misdescribe the shelf in both directions: on the measured data, an
+  /// episode-only count calls `maharat` and `tarikh` empty when each holds three
+  /// openable items, and calls `qiyam` full when it holds none.
+  final int? publishedOpenable;
+
+  /// True only when the server **measured** that nothing here can be opened.
+  bool get isMeasuredEmpty => publishedOpenable == 0;
 }
 
 /// A deliberately curated item for the cinematic home slider.
@@ -174,9 +198,26 @@ class EpisodeItem {
 
   bool get isPlayable => (videoUrl ?? '').isNotEmpty;
 
-  String get durationLabel {
+  /// The measured length, or `null` when nobody measured it (`CNT-108`).
+  ///
+  /// ## Why this used to lie
+  ///
+  /// It returned «قصيرة» whenever `durationSeconds` was 0 — and every published
+  /// episode has no duration recorded, so **every card asserted the episode was
+  /// short**. That is not an empty field: it is a claim about the content that
+  /// nobody measured, shown to a parent who is choosing something short before bed.
+  ///
+  /// Unknown now reads as unknown: `null`, and each caller omits the label rather
+  /// than inventing one. `home_feed.dart` already did exactly this
+  /// (`durationSeconds != null && durationSeconds > 0 ? … : null`), so the pattern
+  /// was in the codebase and this getter was the outlier.
+  ///
+  /// A duration under a minute **is** measured, so it keeps a label — a precise one
+  /// rather than the vague word that used to double as "I don't know".
+  String? get durationLabel {
+    if (durationSeconds <= 0) return null;
     final minutes = durationSeconds ~/ 60;
-    return minutes <= 0 ? 'قصيرة' : '$minutes د';
+    return minutes <= 0 ? 'أقل من دقيقة' : '$minutes د';
   }
 
   DurationRange? get introRange {
@@ -221,12 +262,16 @@ class ExperienceItem {
     this.isFree = false,
     this.isServerBacked = false,
     this.capabilities = const ExperienceCapabilities(),
+    this.coverUrl,
   });
 
   final String id;
   final String title;
   final String subtitle;
+  /// Local asset path fallback — for Wave4 keep empty to avoid APK bloat, use coverUrl CDN instead
   final String imageAsset;
+  /// CDN cover URL — when set, CinematicImage prefers it over assetPath
+  final String? coverUrl;
   final String? planetId;
   final String? seriesId;
   final String? episodeId;
@@ -453,11 +498,49 @@ class BookItem {
   String get ageLabel => '$ageMin–$ageMax سنوات';
 }
 
+/// One narration track declared for a story, keyed by language.
+///
+/// `assetId` is read verbatim from the API response — today the server
+/// (task 8) always sends it as `null`, but the DTO makes no assumption about
+/// that and simply carries through whatever value is present.
+class StoryNarrator {
+  const StoryNarrator({required this.language, this.assetId});
+
+  final String language;
+  final String? assetId;
+}
+
+/// A minimal reference to a character that appears in a story, used for the
+/// story detail screen's cast list. Not the full character catalogue entry.
+class StoryCharacterRef {
+  const StoryCharacterRef({
+    required this.id,
+    required this.name,
+    this.nameEn,
+    this.avatarUrl,
+  });
+
+  final String id;
+  final String name;
+  final String? nameEn;
+  final String? avatarUrl;
+}
+
+/// A minimal reference to another story shown in a "similar stories" rail.
+class SimilarStoryRef {
+  const SimilarStoryRef({required this.id, required this.title, this.coverUrl});
+
+  final String id;
+  final String title;
+  final String? coverUrl;
+}
+
 /// Canonical story catalogue item. Stories and books are separate entities and
 /// must remain so; this is not a type alias for BookItem.
 class StoryItem {
   const StoryItem({
     required this.id,
+    this.seriesId,
     required this.title,
     required this.description,
     required this.type,
@@ -465,9 +548,18 @@ class StoryItem {
     required this.ageMax,
     this.coverUrl,
     this.pagesCount,
+    this.readingLevel,
+    this.availableLanguages = const [],
+    this.narrators = const [],
+    this.listenDurationMs,
+    this.characters = const [],
+    this.similar = const [],
+    this.chapters = const [],
+    this.activities = const [],
   });
 
   final String id;
+  final String? seriesId;
   final String title;
   final String description;
   final String type;
@@ -475,6 +567,20 @@ class StoryItem {
   final int ageMax;
   final String? coverUrl;
   final int? pagesCount;
+  final String? readingLevel;
+  final List<String> availableLanguages;
+  final List<StoryNarrator> narrators;
+  final int? listenDurationMs;
+  final List<StoryCharacterRef> characters;
+  final List<SimilarStoryRef> similar;
+
+  /// Deliberately opaque until a real structure is designed — the server
+  /// always sends an empty array today.
+  final List<Map<String, Object?>> chapters;
+
+  /// Deliberately opaque until a real structure is designed — the server
+  /// always sends an empty array today.
+  final List<Map<String, Object?>> activities;
 
   String get ageLabel => '$ageMin–$ageMax سنوات';
 }
@@ -599,6 +705,12 @@ class HomeCatalog {
 
   List<EpisodeItem> episodesFor(String seriesId) {
     return episodes.where((item) => item.seriesId == seriesId).toList();
+  }
+
+  List<StoryItem> storiesFor(String seriesId) {
+    return stories
+        .where((item) => item.seriesId == seriesId)
+        .toList(growable: false);
   }
 
   List<EpisodeItem> episodesForPlanet(Planet planet) {

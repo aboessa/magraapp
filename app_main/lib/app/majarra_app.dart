@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -37,11 +38,37 @@ class _MajarraAppState extends ConsumerState<MajarraApp>
     super.dispose();
   }
 
+  /// يُبطل إثبات وليّ الأمر عند مغادرة التطبيق للمقدّمة (`APP-107`).
+  ///
+  /// ## ما كان
+  ///
+  /// الإبطال كان مقصورًا على `detached` وحدها، وتعليقه يقول إن «مؤقّت الخمس دقائق
+  /// يحدّ النافذة أصلًا» — و`AuthGuard.parentAccessDuration` **خمس عشرة دقيقة**.
+  /// أي أن قارئ الكود يُطمَأن بنافذةٍ ثلثِ الحقيقية.
+  ///
+  /// وأثره: وليّ أمر يفتح منطقة الوالدين ثم يضع الجهاز جانبًا أو ينتقل إلى تطبيق
+  /// آخر، فيبقى الوصول الأبوي **حيًّا خمس عشرة دقيقة** — وقد يمسك الطفل الجهاز
+  /// خلالها. والمنطقة تحمل وقت الشاشة، ووقت النوم، وحذف الحساب.
+  ///
+  /// ## القرار: `paused` تُبطل على الجوال، و`detached` في كل مكان
+  ///
+  /// `paused` تعني أن التطبيق لم يبقَ في المقدّمة، وهي بالضبط اللحظة التي ينتقل
+  /// فيها الجهاز إلى يدٍ أخرى. وكلفتها معروفة ومقبولة: وليّ الأمر الذي يعود بعد
+  /// ثوانٍ يُعيد إدخال الرمز — وإعادة إدخال رمزٍ أرخص من نافذةٍ مفتوحة على ضوابط
+  /// طفل.
+  ///
+  /// والويب مستثنًى من `paused` **لسببٍ مقيس لا احتياطًا**: العطل الأصلي كان حلقةً
+  /// في شاشة الرمز (إدخال → تنقّل → فقدان تركيز → إبطال → عودة إلى الشاشة)، ولا
+  /// نملك اليوم بيئة ويب مُختبَرة نتحقّق فيها أن `paused` لا تُطلقها. فيبقى الويب
+  /// على `detached` حتى يُختبَر، والاستثناء مكتوب لا مُستنتَج.
+  ///
+  /// و`inactive` غير مشمولة قصدًا: تُطلقها إشعارات النظام ومركز التحكّم على iOS
+  /// والتطبيق ما زال في يد وليّ الأمر.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
+    final leftForeground = state == AppLifecycleState.detached ||
+        (!kIsWeb && state == AppLifecycleState.paused);
+    if (leftForeground) {
       ref.read(authGuardProvider).revokeParentAccess();
     }
   }
@@ -94,9 +121,40 @@ class _MajarraAppState extends ConsumerState<MajarraApp>
           const SingleActivator(LogicalKeyboardKey.gameButtonA):
               const ActivateIntent(),
         },
-        builder: (context, child) => InputModeTracker(
-          child: _EnvironmentBanner(child: child ?? const SizedBox.shrink()),
-        ),
+        builder: (context, child) {
+          final content = child ?? const SizedBox.shrink();
+          // `APP-108`: قرار الاتجاه من بيانات المسار في `go_router`.
+          //
+          // كان `ModalRoute.of(context)?.settings.name?.contains('playback')`، و
+          // هذا الموضع **فوق الـNavigator** فلا `ModalRoute` أعلاه: القيمة `null`
+          // دائمًا. أي أن الشرط لم يكن هشًّا بل مكسورًا في اتجاهٍ ثابت — تُغطّى
+          // شاشة المُشغِّل بـ«أدِر الجهاز» في الوضع الأفقي، وهو الوضع الذي يفتحه
+          // المُشغِّل بنفسه للفيديو.
+          //
+          // و`ListenableBuilder` على المُفوِّض شرطٌ لا تحسين: القرار يتغيّر
+          // بالتنقّل، وهذا الـ`builder` كان يُعاد بناؤه على تغيّر `MediaQuery`
+          // وحده — فحتى لو صحّ الشرط لكان يتأخّر إلى أوّل دورة إطار أخرى.
+          return InputModeTracker(
+            child: _EnvironmentBanner(
+              child: ListenableBuilder(
+                listenable: router.routerDelegate,
+                builder: (context, _) {
+                  final media = MediaQuery.of(context);
+                  // هاتف مضغوط في الأفقي (مثل 844×390): الشاشة تُكسر، فتُعرَض
+                  // دعوةُ إدارة الجهاز بدل تخطيط مشوَّه. والحدّ 900 يستثني
+                  // الأجهزة اللوحية والتلفاز.
+                  final isLandscapeTooWide =
+                      media.size.width > media.size.height &&
+                      media.size.width < 900;
+                  if (isLandscapeTooWide && !routeAllowsLandscape(router)) {
+                    return const _PortraitRequiredScreen();
+                  }
+                  return content;
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -285,25 +343,65 @@ class _VersionGateState extends ConsumerState<_VersionGate> {
   }
 }
 
-/// Corner ribbon marking non-production builds (STAGING / DEV).
-///
-/// Renders nothing in production, so it can never ship a banner to an end user.
-/// Uses [Directionality] from the surrounding app so it sits in the leading
-/// corner regardless of text direction.
+/// When phone is rotated to landscape (short side < 480), show a
+/// child-friendly "rotate to portrait" screen instead of broken layout.
+/// Video playback is exempt – handled by PlaybackPage itself.
+class _PortraitRequiredScreen extends StatelessWidget {
+  const _PortraitRequiredScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B1026),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.starGold.withValues(alpha: 0.14),
+                    border: Border.all(color: AppColors.starGold.withValues(alpha: 0.24), width: 1.5),
+                  ),
+                  child: const Icon(Icons.screen_rotation_rounded, color: AppColors.starGold, size: 42),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'اقلب الجهاز عمودياً',
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'مجرة مصممة للعرض العمودي فقط على الهاتف.\nالفيديو يدعم العرض الأفقي تلقائياً.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.mutedText, fontSize: 13, height: 1.6),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Corner ribbon marking a non-production build (DEV).
 class _EnvironmentBanner extends StatelessWidget {
   const _EnvironmentBanner({required this.child});
-
   final Widget child;
-
   @override
   Widget build(BuildContext context) {
     if (!AppConfig.showEnvironmentBanner) return child;
     return Banner(
       message: AppConfig.environmentLabel,
       location: BannerLocation.topStart,
-      color: AppConfig.isStaging
-          ? const Color(0xFFB8860B)
-          : const Color(0xFF8B0000),
+      // لون واحد: البيئة غير الإنتاجية الوحيدة هي DEV بعد إزالة staging.
+      color: const Color(0xFF8B0000),
       child: child,
     );
   }

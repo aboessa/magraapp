@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 /// How complete a locale's translation actually is.
 ///

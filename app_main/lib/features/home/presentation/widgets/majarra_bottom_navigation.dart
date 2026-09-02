@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../child/application/child_provider.dart';
+import 'home_destination_spec.dart';
 import 'majarra_portal.dart';
 
 /// Bottom Navigation - cinematic, orb floats centered on bar top edge (not clipped)
@@ -17,12 +18,20 @@ class MajarraBottomNavigation extends ConsumerWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.onPortalPressed,
+    required this.destinations,
     super.key,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onPortalPressed;
+
+  /// The four destinations, in order, sourced from the same
+  /// [HomeDestinationSpec] list every other shell derives its rail from
+  /// (spec app-foundation-family-journey, Requirement 3). This bar no longer
+  /// hardcodes its own labels/icons so it cannot drift from the tablet or
+  /// television navigation again.
+  final List<HomeDestinationSpec> destinations;
 
   /// Shown before a child profile is chosen. A generic word, never a name.
   @visibleForTesting
@@ -34,6 +43,16 @@ class MajarraBottomNavigation extends ConsumerWidget {
     final profileLabel = childName == null || childName.isEmpty
         ? defaultProfileLabel
         : childName;
+    // The profile destination is the only one whose label is dynamic (the
+    // active child's name rather than a fixed word). Keeping that override
+    // here — rather than inside `home_destination_spec.dart` — keeps the
+    // shared spec free of a Riverpod dependency, since the other two shells
+    // (tablet/desktop rail, television rail) have no equivalent per-child
+    // requirement and just use `spec.label` directly.
+    final labels = [
+      for (var i = 0; i < destinations.length; i++)
+        i == HomeDestinationIndex.profile ? profileLabel : destinations[i].label,
+    ];
     const barHeight = 64.0;
     const orbSize = 68.0;
     const orbOverlap = 34.0;
@@ -79,40 +98,48 @@ class MajarraBottomNavigation extends ConsumerWidget {
                         children: [
                           Expanded(
                             child: _NavItem(
-                              selected: selectedIndex == 0,
-                              label: 'الرئيسية',
-                              icon: Icons.home_outlined,
-                              activeIcon: Icons.home_rounded,
-                              onTap: () => onDestinationSelected(0),
+                              selected: selectedIndex == HomeDestinationIndex.home,
+                              label: labels[HomeDestinationIndex.home],
+                              icon: destinations[HomeDestinationIndex.home].icon,
+                              activeIcon:
+                                  destinations[HomeDestinationIndex.home].selectedIcon,
+                              onTap: () =>
+                                  onDestinationSelected(HomeDestinationIndex.home),
                             ),
                           ),
                           Expanded(
                             child: _NavItem(
-                              selected: selectedIndex == 1,
-                              label: 'استكشف',
-                              icon: Icons.explore_outlined,
-                              activeIcon: Icons.explore_rounded,
-                              onTap: () => onDestinationSelected(1),
+                              selected: selectedIndex == HomeDestinationIndex.explore,
+                              label: labels[HomeDestinationIndex.explore],
+                              icon: destinations[HomeDestinationIndex.explore].icon,
+                              activeIcon: destinations[HomeDestinationIndex.explore]
+                                  .selectedIcon,
+                              onTap: () =>
+                                  onDestinationSelected(HomeDestinationIndex.explore),
                             ),
                           ),
                           const SizedBox(width: 72),
                           Expanded(
                             child: _NavItem(
-                              selected: selectedIndex == 2,
-                              label: 'مكتبتي',
-                              icon: Icons.bookmark_outline_rounded,
-                              activeIcon: Icons.bookmarks_rounded,
-                              onTap: () => onDestinationSelected(2),
+                              selected: selectedIndex == HomeDestinationIndex.library,
+                              label: labels[HomeDestinationIndex.library],
+                              icon: destinations[HomeDestinationIndex.library].icon,
+                              activeIcon: destinations[HomeDestinationIndex.library]
+                                  .selectedIcon,
+                              onTap: () =>
+                                  onDestinationSelected(HomeDestinationIndex.library),
                             ),
                           ),
                           Expanded(
                             child: _NavItem(
-                              selected: selectedIndex == 3,
-                              label: profileLabel,
-                              icon: Icons.person_outline_rounded,
-                              activeIcon: Icons.person_rounded,
+                              selected: selectedIndex == HomeDestinationIndex.profile,
+                              label: labels[HomeDestinationIndex.profile],
+                              icon: destinations[HomeDestinationIndex.profile].icon,
+                              activeIcon: destinations[HomeDestinationIndex.profile]
+                                  .selectedIcon,
                               isProfile: true,
-                              onTap: () => onDestinationSelected(3),
+                              onTap: () =>
+                                  onDestinationSelected(HomeDestinationIndex.profile),
                             ),
                           ),
                         ],

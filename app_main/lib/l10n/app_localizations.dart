@@ -346,6 +346,36 @@ abstract class AppLocalizations {
   /// **'البصمة / Face ID — غير متاح بعد'**
   String get biometricUnavailable;
 
+  /// No description provided for @pinToggleShow.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار الرمز'**
+  String get pinToggleShow;
+
+  /// No description provided for @pinToggleHide.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخفاء الرمز'**
+  String get pinToggleHide;
+
+  /// No description provided for @pinGrantFailedRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم التحقق من الرمز، لكن لم يتم حفظ الوصول. أعد المحاولة.'**
+  String get pinGrantFailedRetry;
+
+  /// No description provided for @pinServerVerificationFooter.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُتحقَّق من الرمز على الخادم، ويُحفظ إثبات الوصول الموقّع في الذاكرة فقط لمدة قصيرة. يُمسح الإثبات عند إغلاق الجلسة أو انتقال التطبيق إلى الخلفية.'**
+  String get pinServerVerificationFooter;
+
+  /// No description provided for @pinUnlockingWithBiometric.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ التحقق ببصمتك…'**
+  String get pinUnlockingWithBiometric;
+
   /// No description provided for @home.
   ///
   /// In ar, this message translates to:
@@ -1167,6 +1197,438 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'من: {title}'**
   String referenceBadge(Object title);
+
+  /// No description provided for @childFormCreateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف طفل جديد'**
+  String get childFormCreateTitle;
+
+  /// No description provided for @childFormEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل ملف الطفل'**
+  String get childFormEditTitle;
+
+  /// No description provided for @childFormCreateSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر شخصية من عالم مجرة'**
+  String get childFormCreateSubtitle;
+
+  /// No description provided for @childFormEditSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّل بيانات الملف واهتماماته'**
+  String get childFormEditSubtitle;
+
+  /// No description provided for @childFormNicknameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الطفل'**
+  String get childFormNicknameLabel;
+
+  /// No description provided for @childFormNicknameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: ليلى'**
+  String get childFormNicknameHint;
+
+  /// No description provided for @childFormNicknameEmptyError.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمًا للملف'**
+  String get childFormNicknameEmptyError;
+
+  /// No description provided for @childFormBirthMonthLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'شهر الميلاد'**
+  String get childFormBirthMonthLabel;
+
+  /// No description provided for @childFormBirthYearLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنة الميلاد'**
+  String get childFormBirthYearLabel;
+
+  /// No description provided for @childFormBirthDateReadOnlyLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الميلاد'**
+  String get childFormBirthDateReadOnlyLabel;
+
+  /// No description provided for @childFormBirthDateEditNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُعالَج تغيير تاريخ الميلاد لاحقًا عبر مسار الانتقال العمري، لا من هذه الشاشة'**
+  String get childFormBirthDateEditNotice;
+
+  /// No description provided for @childFormAvatarSectionTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر شخصية من عالم مجرة'**
+  String get childFormAvatarSectionTitle;
+
+  /// Count of selectable avatar characters shown next to the picker's section title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} شخصية'**
+  String childFormAvatarCount(int count);
+
+  /// No description provided for @childFormAvatarSectionSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفس شخصيات الكارتون في المسلسلات'**
+  String get childFormAvatarSectionSubtitle;
+
+  /// No description provided for @childFormInterestsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاهتمامات'**
+  String get childFormInterestsTitle;
+
+  /// No description provided for @childFormInterestsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر ما يهم طفلك، يمكن اختيار أكثر من واحد'**
+  String get childFormInterestsSubtitle;
+
+  /// No description provided for @childFormLanguageReadOnlyNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'لغة واحدة متاحة اليوم؛ ستتوسع القائمة عند اكتمال ترجمات أخرى'**
+  String get childFormLanguageReadOnlyNotice;
+
+  /// No description provided for @childFormSaveButtonCreate.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنشاء الملف'**
+  String get childFormSaveButtonCreate;
+
+  /// No description provided for @childFormSaveButtonEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ التغييرات'**
+  String get childFormSaveButtonEdit;
+
+  /// No description provided for @childFormCreateErrorGeneric.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر إنشاء الملف. تحقّق من الباقة (حد 4 أطفال)'**
+  String get childFormCreateErrorGeneric;
+
+  /// No description provided for @childFormEditErrorGeneric.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حفظ التغييرات'**
+  String get childFormEditErrorGeneric;
+
+  /// No description provided for @interestAbjad.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبجد'**
+  String get interestAbjad;
+
+  /// No description provided for @interestArqam.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام'**
+  String get interestArqam;
+
+  /// No description provided for @interestOloom.
+  ///
+  /// In ar, this message translates to:
+  /// **'العلوم'**
+  String get interestOloom;
+
+  /// No description provided for @interestQiyam.
+  ///
+  /// In ar, this message translates to:
+  /// **'القيم'**
+  String get interestQiyam;
+
+  /// No description provided for @interestQisas.
+  ///
+  /// In ar, this message translates to:
+  /// **'القصص'**
+  String get interestQisas;
+
+  /// No description provided for @interestMaharat.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهارات'**
+  String get interestMaharat;
+
+  /// No description provided for @interestTarikh.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get interestTarikh;
+
+  /// No description provided for @interestAlam.
+  ///
+  /// In ar, this message translates to:
+  /// **'عالمنا'**
+  String get interestAlam;
+
+  /// No description provided for @interestIman.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإيمان'**
+  String get interestIman;
+
+  /// No description provided for @ageTransitionReviewTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مراجعة الانتقال العمري'**
+  String get ageTransitionReviewTitle;
+
+  /// No description provided for @ageTransitionLoadErrorGeneric.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحميل حالة الانتقال العمري'**
+  String get ageTransitionLoadErrorGeneric;
+
+  /// No description provided for @ageTransitionNoChangeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد تغيير حاليًا'**
+  String get ageTransitionNoChangeTitle;
+
+  /// No description provided for @ageTransitionNoChangeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسار الطفل الحالي لا يزال مطابقًا لعمره المحسوب. لا حاجة لأي إجراء الآن.'**
+  String get ageTransitionNoChangeBody;
+
+  /// No description provided for @ageTransitionCurrentTrackLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المسار الحالي'**
+  String get ageTransitionCurrentTrackLabel;
+
+  /// No description provided for @ageTransitionComputedTrackLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المسار المقترح'**
+  String get ageTransitionComputedTrackLabel;
+
+  /// Explains what will happen if the parent accepts the age-track transition, before they confirm (Requirement 12.4).
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم نقل الملف من مسار {from} إلى مسار {to}. سيتغيّر المحتوى المعروض تلقائيًا ليطابق مسار {to} الجديد.'**
+  String ageTransitionChangeDescription(String from, String to);
+
+  /// No description provided for @ageTransitionAcceptButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الانتقال'**
+  String get ageTransitionAcceptButton;
+
+  /// No description provided for @ageTransitionDeferButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأجيل لاحقًا'**
+  String get ageTransitionDeferButton;
+
+  /// No description provided for @ageTransitionAcceptSuccessBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم نقل الملف إلى مسار {track} بنجاح.'**
+  String ageTransitionAcceptSuccessBody(String track);
+
+  /// No description provided for @ageTransitionDeferSuccessBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تأجيل الانتقال حتى {date}.'**
+  String ageTransitionDeferSuccessBody(String date);
+
+  /// No description provided for @ageTransitionDeferAlreadyActiveBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوجد تأجيل نشط بالفعل حتى {date}.'**
+  String ageTransitionDeferAlreadyActiveBody(String date);
+
+  /// No description provided for @ageTransitionErrorGeneric.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تنفيذ الإجراء. حاول مجددًا'**
+  String get ageTransitionErrorGeneric;
+
+  /// No description provided for @ageTrackLabelPreschool.
+  ///
+  /// In ar, this message translates to:
+  /// **'براعم'**
+  String get ageTrackLabelPreschool;
+
+  /// No description provided for @ageTrackLabelKids.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستكشفون'**
+  String get ageTrackLabelKids;
+
+  /// No description provided for @ageTrackLabelJunior.
+  ///
+  /// In ar, this message translates to:
+  /// **'روّاد'**
+  String get ageTrackLabelJunior;
+
+  /// No description provided for @ageTrackLabelUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير محدد'**
+  String get ageTrackLabelUnknown;
+
+  /// No description provided for @consentPageTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموافقات'**
+  String get consentPageTitle;
+
+  /// No description provided for @consentPageIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه الموافقات تحدد ما نجمعه ونحفظه عن استخدام طفلك. يمكنك تغيير أي منها في أي وقت.'**
+  String get consentPageIntro;
+
+  /// No description provided for @consentTypeDataCollectionLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'جمع بيانات الاستخدام الأساسية'**
+  String get consentTypeDataCollectionLabel;
+
+  /// No description provided for @consentTypeDataCollectionDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات أساسية لتشغيل الحساب، مثل تسجيل الدخول والتقدم في المحتوى.'**
+  String get consentTypeDataCollectionDescription;
+
+  /// No description provided for @consentTypeAnalyticsLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليلات الاستخدام'**
+  String get consentTypeAnalyticsLabel;
+
+  /// No description provided for @consentTypeAnalyticsDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات استخدام مجمَّعة تساعدنا على تحسين التجربة داخل التطبيق.'**
+  String get consentTypeAnalyticsDescription;
+
+  /// No description provided for @consentTypeVoiceLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيلات الصوت'**
+  String get consentTypeVoiceLabel;
+
+  /// No description provided for @consentTypeVoiceDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد ميزة تعتمد على الصوت في التطبيق حاليًا؛ هذه الموافقة مُعدّة لأي ميزة صوتية مستقبلية.'**
+  String get consentTypeVoiceDescription;
+
+  /// No description provided for @consentTypePersonalizationLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تخصيص المحتوى المقترح'**
+  String get consentTypePersonalizationLabel;
+
+  /// No description provided for @consentTypePersonalizationDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقتراح محتوى بناءً على اهتمامات طفلك المسجَّلة في ملفه.'**
+  String get consentTypePersonalizationDescription;
+
+  /// No description provided for @consentTypeChildCreationsLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ رسومات الطفل في السحابة'**
+  String get consentTypeChildCreationsLabel;
+
+  /// No description provided for @consentTypeChildCreationsDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ رسومات طفلك في مساحة خاصة بأسرتك على السحابة. لا تُنشر ولا تُشارك مع أي طرف آخر.'**
+  String get consentTypeChildCreationsDescription;
+
+  /// No description provided for @consentReasonNeverGranted.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تُمنح هذه الموافقة بعد'**
+  String get consentReasonNeverGranted;
+
+  /// No description provided for @consentReasonRevoked.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم سحب هذه الموافقة'**
+  String get consentReasonRevoked;
+
+  /// No description provided for @consentReasonVersionSuperseded.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيّرت سياسة هذه الموافقة، وتحتاج موافقة جديدة'**
+  String get consentReasonVersionSuperseded;
+
+  /// No description provided for @consentStatusGranted.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممنوحة'**
+  String get consentStatusGranted;
+
+  /// No description provided for @consentLoadErrorGeneric.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحميل حالة الموافقات'**
+  String get consentLoadErrorGeneric;
+
+  /// No description provided for @consentWriteErrorGeneric.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حفظ التغيير. حاول مجددًا'**
+  String get consentWriteErrorGeneric;
+
+  /// No description provided for @consentContinueButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get consentContinueButton;
+
+  /// No description provided for @onboardingBasicControlsStepTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضوابط الأساسية'**
+  String get onboardingBasicControlsStepTitle;
+
+  /// No description provided for @onboardingBasicControlsStepIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضبط حدود الوقت والسماحات لملف طفلك، ويمكنك تعديلها لاحقًا من منطقة ولي الأمر.'**
+  String get onboardingBasicControlsStepIntro;
+
+  /// No description provided for @onboardingContinueButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get onboardingContinueButton;
+
+  /// No description provided for @onboardingFinishTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل شيء جاهز!'**
+  String get onboardingFinishTitle;
+
+  /// No description provided for @onboardingFinishBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنشأت ملف طفلك وضبطت الضوابط الأساسية. يمكنك البدء الآن، وتعديل أي إعداد لاحقًا من منطقة ولي الأمر.'**
+  String get onboardingFinishBody;
+
+  /// No description provided for @onboardingFinishButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ الآن'**
+  String get onboardingFinishButton;
 }
 
 class _AppLocalizationsDelegate

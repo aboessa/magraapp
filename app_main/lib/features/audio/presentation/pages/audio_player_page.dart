@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -189,11 +188,12 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
   Future<VideoPlayerController> _buildController() async {
     final downloadId = _downloadId;
     if (downloadId != null) {
-      final localPath = await ref
+      // ENC-004: مصدر محلي على `127.0.0.1` يفكّ عند الطلب، لا ملف صريح.
+      final localSource = await ref
           .read(downloadManagerProvider.notifier)
           .preparePlayback(downloadId);
-      if (localPath != null) {
-        return VideoPlayerController.file(File(localPath));
+      if (localSource != null) {
+        return VideoPlayerController.networkUrl(Uri.parse(localSource));
       }
     }
 

@@ -11,26 +11,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/auth_guard.dart';
 import '../../../child/application/child_provider.dart';
-import '../../../home/application/home_providers.dart';
 import '../../application/creation_cloud_service.dart';
+import '../../application/rewards_providers.dart';
 import '../../data/local_creation_store.dart';
+import '../studio/studio_app_bar.dart';
 import 'my_collection_page.dart';
-
-/// Stickers for the active child.
-///
-/// Returns an empty list rather than throwing when there is no child or the
-/// request fails: «مجموعتي» is the child's own space and must open even offline.
-final earnedStickersProvider = FutureProvider<List<EarnedSticker>>((ref) async {
-  final childId = ref.watch(childProvider).activeChildId;
-  if (childId == null || childId.isEmpty) return const [];
-  final api = ref.watch(majarraApiClientProvider);
-  try {
-    final rows = await api.fetchRewards(childId: childId);
-    return rows.map(EarnedSticker.fromJson).toList(growable: false);
-  } catch (_) {
-    return const [];
-  }
-});
 
 /// Route target for `/my-collection`.
 ///
@@ -47,7 +32,10 @@ class MyCollectionRoute extends ConsumerWidget {
 
     if (childId == null || childId.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('مجموعتي')),
+        appBar: const StudioAppBar(
+          title: 'مجموعتي',
+          glyph: Icons.collections_bookmark_rounded,
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),

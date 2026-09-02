@@ -918,11 +918,19 @@ class _WordBuildBoardState extends State<_WordBuildBoard> {
 
   _LetterTile? get _nextCorrectTile {
     final slot = _nextSlot;
-    if (slot == null) return null;
-    return _tray.firstWhere(
-      (tile) => !tile.isDistractor && tile.position == slot + 1,
-      orElse: () => _tray.first,
-    );
+    if (slot == null || _tray.isEmpty) return null;
+    try {
+      return _tray.firstWhere(
+        (tile) => !tile.isDistractor && tile.position == slot + 1,
+      );
+    } catch (_) {
+      // No non-distractor for slot — fallback to first non-distractor or null, never throw StateError
+      try {
+        return _tray.firstWhere((tile) => !tile.isDistractor);
+      } catch (_) {
+        return null;
+      }
+    }
   }
 
   Future<void> _place(int slotIndex, _LetterTile tile) async {

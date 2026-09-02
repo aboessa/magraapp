@@ -7,14 +7,23 @@ import 'package:http/http.dart' as http;
 
 import '../../../core/env/app_environment.dart';
 import '../../../core/env/app_version.dart';
+import '../../../core/failures/app_failure.dart';
 import 'content_dtos.dart';
 
 class MajarraApiException implements Exception {
-  const MajarraApiException(this.message, {this.statusCode, this.code});
+  const MajarraApiException(this.message, {this.statusCode, this.code, this.data});
 
   final String message;
   final int? statusCode;
   final String? code;
+
+  /// The failed response envelope's `data` object, when the server sent one
+  /// alongside `success: false` (for example the `track-transition` defer
+  /// conflict, which carries `{ deferred_until }` on its 409). `null` when
+  /// the body had no `data` field or could not be parsed as JSON — callers
+  /// must not assume this is populated and should fall back to a generic
+  /// message when it is absent.
+  final Map<String, dynamic>? data;
 
   @override
   String toString() => 'MajarraApiException: $message';
@@ -59,7 +68,9 @@ class AccountDeletionCapability {
 /// now validated against a per-environment host allowlist and rejected — falling
 /// back to the environment default — if it uses an unexpected scheme, carries
 /// credentials, is plain `http` to a non-loopback host, or names an unlisted
-/// host. A3 (real staging backend) remains an infrastructure EXTERNAL BLOCKER.
+/// host. ولا توجد بيئة staging: قرار مالك أن كل شيء يعمل على الإنتاج في مرحلة
+/// التطوير هذه، فالبيئتان هما `development` (تستطيع تجاوز العنوان إلى loopback)
+/// و`production`.
 class ApiEnvironment {
   static String get baseUrl => AppConfig.baseUrl;
 }
@@ -76,7 +87,28 @@ class MajarraApiClient {
   });
 
   static Uri get _baseUri => Uri.parse(ApiEnvironment.baseUrl);
+
+  /// مهلة الطلب الذي يقف المستخدم أمامه (`APP-109`).
+  ///
+  /// كانت هذه المهلة الوحيدة في العميل، مطبَّقة على ستّة عشر موضعًا — من جلب
+  /// الكاتالوج إلى **تصدير بيانات الحساب كلّها** و**رفع رسمة الطفل**. وثماني ثوانٍ
+  /// صحيحة للأولى وخاطئة للأخيرتين: عمليةٌ يعرف المستخدم أنها تأخذ وقتًا تُقطع
+  /// عليه، ويُقرأ القطع كفشل.
   static const Duration _timeout = Duration(seconds: 8);
+
+  /// مهلة عملية يعرف المستخدم أنها ليست فورية: تصدير، أو رفع حمولة.
+  ///
+  /// خمس وأربعون لا ثمانٍ، ولا «بلا حدّ»: الحدّ الغائب يُنتج انتظارًا أبديًّا على
+  /// شبكة تقبل الاتصال ولا تُجيب — وهو ما كان في تحميل الترجمة قبل `APP-102`.
+  static const Duration _extendedTimeout = Duration(seconds: 45);
+
+  /// تأخير المحاولة رقم [attempt] (‏١ للأولى) بتراجع أسّي.
+  ///
+  /// دالّة مُعلَنة لا أرقام متفرّقة، وبلا عشوائية: الاختبار يقيسها، والتشويش
+  /// (jitter) يفيد عند تزامن آلاف العملاء على خادم واحد — لا هنا حيث المحاولة
+  /// تخصّ جهازًا واحدًا يعيد قراءةً فشلت نقلًا.
+  static Duration retryBackoff(int attempt) =>
+      Duration(milliseconds: 400 * (1 << (attempt - 1)));
 
   final http.Client _client;
   final Future<String?> Function()? getAccessToken;
@@ -116,15 +148,21 @@ class MajarraApiClient {
 
   /// Book rows.
   ///
-  /// Unlike the other collections this swallows failures and returns an empty
-  /// list: books are an optional shelf, and a missing library must not take the
-  /// whole home screen down with it.
-  Future<List<Map<String, Object?>>> fetchBookRows() async {
-    try {
-      return await _getList('/api/v1/books', query: {'limit': '100'});
-    } catch (_) {
-      return const [];
-    }
+  /// ## `APP-106` — هذه الدالّة كانت تكتم فشلها، والكتمان كان يمحو المكتبة
+  ///
+  /// كانت تُعيد `const []` عند أي فشل «حتى لا يُسقِط رفٌّ اختياريٌّ الشاشة كلّها».
+  /// لكن `ContentRepository._fetchRows` يفرّق أصلًا بين نجاح وفشل، **ويتعامل مع
+  /// النجاح الفارغ كحقيقة**: يخزّنه في الكاش ويعلن المجموعة «متاحة»، وهذا ما
+  /// يمسح رفّ الكتب المحفوظ.
+  ///
+  /// أي أن الكتمان لم يحمِ الشاشة، بل حوّل **انقطاعًا مؤقّتًا في الخادم إلى حذف
+  /// دائم لمكتبة الأسرة من الكاش** — والطفل يرى رفًّا فارغًا لا رفًّا قديمًا.
+  ///
+  /// فالفشل يُرفَع الآن كبقيّة المجموعات، والمستودع هو من يقرّر: يُبقي صفوف
+  /// الكاش، ولا يعلن المجموعة متاحة، ويرفع `ContentSource.mixed` فتعرف الشاشة
+  /// أنها لا تعرض حقيقة كاملة.
+  Future<List<Map<String, Object?>>> fetchBookRows() {
+    return _getList('/api/v1/books', query: {'limit': '100'});
   }
 
   Future<List<PlanetDto>> fetchPlanets() async {
@@ -372,7 +410,9 @@ class MajarraApiClient {
       parentProofToken: proof,
       doRequest: (headers) {
         final uri = _baseUri.replace(path: '/api/v1/account/export');
-        return _client.get(uri, headers: headers).timeout(_timeout);
+        // `APP-109`: تصدير الحساب كلّه ليس طلبًا فوريًّا. ثماني ثوانٍ كانت تقطعه
+        // على وليّ أمر ينتظر، فيُقرأ القطع رفضًا.
+        return _client.get(uri, headers: headers).timeout(_extendedTimeout);
       },
     );
     return response.body;
@@ -601,6 +641,17 @@ class MajarraApiClient {
     String? pageId,
     String? bubbleId,
   }) async {
+    // No fake success for the demo profile. This used to return an empty lease
+    // so the reader could fall back to bundled audio; narration now lives only
+    // behind a capability session, and an empty lease made the reader claim the
+    // page had never been recorded.
+    if (childId == 'demo-child') {
+      throw const MajarraApiException(
+        'اختر ملف طفل مسجَّلًا لتشغيل السرد.',
+        statusCode: 401,
+        code: 'demo_narration_requires_sign_in',
+      );
+    }
     final hasBook = bookId != null && bookId.isNotEmpty;
     final hasStory = storyId != null && storyId.isNotEmpty;
     if (hasBook == hasStory) {
@@ -609,16 +660,23 @@ class MajarraApiClient {
       );
     }
     final segment = hasStory ? 'stories/$storyId' : 'books/$bookId';
-    return _postJson(
-      '/api/v1/$segment/audio-sessions',
-      auth: true,
-      body: {
-        'child_id': childId,
-        'language': language,
-        if (pageId != null) 'page_id': pageId,
-        if (bubbleId != null) 'bubble_id': bubbleId,
-      },
-    );
+    try {
+      return await _postJson(
+        '/api/v1/$segment/audio-sessions',
+        auth: true,
+        body: {
+          'child_id': childId,
+          'language': language,
+          if (pageId != null) 'page_id': pageId,
+          if (bubbleId != null) 'bubble_id': bubbleId,
+        },
+      );
+    } catch (e) {
+      // A 401 is surfaced, not swallowed. Converting it into a successful empty
+      // lease told the reader the narration did not exist, which sent an
+      // authentication problem to the child as "no audio recorded yet".
+      rethrow;
+    }
   }
 
   // --- Family: children ---
@@ -636,6 +694,16 @@ class MajarraApiClient {
   ///
   /// Carries a `manage_children` proof: the server requires it because creating a
   /// profile sets the age band a child is served and consumes a plan slot.
+  ///
+  /// [markOnboardingComplete] is sent as `onboarding_completed: true` on the
+  /// wire when `true` — the server (`FamilyState.addChild`) stamps
+  /// `onboarding_completed_at` with its own clock at insert time when it
+  /// sees that flag, and leaves the column `null` otherwise. Set this only
+  /// on the LAST child creation call of a first-run onboarding journey
+  /// (`OnboardingFlowPage`, Requirement 8.4); every other call site —
+  /// including creating a second or third child from an already-onboarded
+  /// family via `ChildProfileFormPage` opened alone — must leave this at
+  /// its default `false`.
   Future<Map<String, dynamic>> createChild({
     required String nickname,
     required int birthMonth,
@@ -643,6 +711,7 @@ class MajarraApiClient {
     required String avatarId,
     String language = 'ar',
     List<String> interests = const [],
+    bool markOnboardingComplete = false,
   }) async {
     final proof = await authorizeParentAction('manage_children');
     return _postJson(
@@ -656,13 +725,100 @@ class MajarraApiClient {
         'avatar_id': avatarId,
         'language': language,
         'interests': interests,
+        if (markOnboardingComplete) 'onboarding_completed': true,
+      },
+    );
+  }
+
+  /// Updates one child's profile — nickname, avatar, language and/or interests.
+  ///
+  /// Never accepts a birth date or age track: those are exclusive to the
+  /// track-transition flow (a later task), which re-derives the track on the
+  /// server rather than letting a profile edit silently change it. See
+  /// `dashboard/api/src/do/FamilyState.ts` `updateChild`.
+  ///
+  /// Carries a `manage_children` proof — the same purpose `createChild`
+  /// requires, since editing a profile is exactly as sensitive as creating one.
+  /// Every parameter is optional and only sent when non-null, matching the
+  /// server's "only update fields actually present in the body" contract.
+  Future<Map<String, dynamic>> updateChild(
+    String childId, {
+    String? nickname,
+    String? avatarId,
+    String? language,
+    List<String>? interests,
+  }) async {
+    final proof = await authorizeParentAction('manage_children');
+    return _withAuthRetry(
+      auth: true,
+      parentProofToken: proof,
+      doRequest: (headers) {
+        final uri = _baseUri.replace(
+          path: '/api/v1/family/children/${Uri.encodeComponent(childId)}',
+        );
+        return _client
+            .patch(
+              uri,
+              headers: headers,
+              body: jsonEncode({
+                if (nickname != null) 'nickname': nickname,
+                if (avatarId != null) 'avatar_id': avatarId,
+                if (language != null) 'language': language,
+                if (interests != null) 'interests': interests,
+              }),
+            )
+            .timeout(_timeout);
+      },
+    );
+  }
+
+  /// Reviews, accepts, or defers a child's age-track transition.
+  ///
+  /// [action] is `'review'` (compare the stored track against the server's
+  /// freshly recomputed one, no write), `'accept'` (write the recomputed
+  /// track, one-time), or `'defer'` (postpone up to 30 days, once — a second
+  /// `defer` while one is already active fails with a 409 the caller must
+  /// surface, not swallow). The server derives the computed track from
+  /// `birth_month`/`birth_year` via `deriveAgeTrack` — this client never
+  /// recomputes it independently (Requirement 12.6).
+  ///
+  /// Carries a `manage_children` proof — the same purpose `updateChild` and
+  /// `createChild` require, since an age-track change is exactly as
+  /// sensitive as creating or editing a profile.
+  Future<Map<String, dynamic>> trackTransition(
+    String childId, {
+    required String action,
+  }) async {
+    final proof = await authorizeParentAction('manage_children');
+    return _withAuthRetry(
+      auth: true,
+      parentProofToken: proof,
+      doRequest: (headers) {
+        final uri = _baseUri.replace(
+          path:
+              '/api/v1/family/children/${Uri.encodeComponent(childId)}/track-transition',
+        );
+        return _client
+            .post(
+              uri,
+              headers: headers,
+              body: jsonEncode({'action': action}),
+            )
+            .timeout(_timeout);
       },
     );
   }
 
   // --- Family: devices ---
   Future<List<Map<String, Object?>>> fetchDevices() async {
-    return _getList('/api/v1/family/devices', auth: true, parentProof: true);
+    // `APP-109`: قراءةٌ بلا بديل. فشلها يُنتج رسالة خطأ لوليّ أمر يحاول سحب جهاز،
+    // فمحاولةٌ ثانية أرخص من الرسالة. وخلاف مسار الكاتالوج: هناك كاشٌ محفوظ.
+    return _getList(
+      '/api/v1/family/devices',
+      auth: true,
+      parentProof: true,
+      attempts: 2,
+    );
   }
 
   /// Revokes a device using a purpose-bound, one-time parent capability.
@@ -704,14 +860,21 @@ class MajarraApiClient {
   ///
   /// Returns the rows `GET /api/v1/family/progress` produces, newest first. The
   /// route verifies the child belongs to the family and 404s otherwise.
+  /// Demo child returns empty without hitting API to avoid 401 spam.
   Future<List<Map<String, Object?>>> fetchProgress({
     required String childId,
   }) async {
-    return _getList(
-      '/api/v1/family/progress',
-      auth: true,
-      query: {'childId': childId},
-    );
+    if (childId == 'demo-child') return const [];
+    try {
+      return await _getList(
+        '/api/v1/family/progress',
+        auth: true,
+        query: {'childId': childId},
+      );
+    } catch (e) {
+      if (e is MajarraApiException && e.statusCode == 401) return const [];
+      rethrow;
+    }
   }
 
   // --- Games ---
@@ -722,25 +885,32 @@ class MajarraApiClient {
   /// receiving a synthetic id or capability. Transport/auth/envelope failures
   /// still propagate so callers can distinguish failure from a legitimate empty
   /// catalogue and avoid showing stale or bundled game slugs.
+  /// Demo child returns empty without API call to avoid 401 spam.
   Future<List<GameSummaryDto>> fetchGames({
     required String childId,
     String? language,
   }) async {
-    final rows = await _getList(
-      '/api/v1/games',
-      auth: true,
-      query: {
-        'child_id': childId,
-        'limit': '100',
-        if (language != null) 'language': language,
-      },
-    );
-    final byId = <String, GameSummaryDto>{};
-    for (final row in rows) {
-      final game = GameSummaryDto.tryParse(row);
-      if (game != null) byId.putIfAbsent(game.id, () => game);
+    if (childId == 'demo-child') return const [];
+    try {
+      final rows = await _getList(
+        '/api/v1/games',
+        auth: true,
+        query: {
+          'child_id': childId,
+          'limit': '100',
+          if (language != null) 'language': language,
+        },
+      );
+      final byId = <String, GameSummaryDto>{};
+      for (final row in rows) {
+        final game = GameSummaryDto.tryParse(row);
+        if (game != null) byId.putIfAbsent(game.id, () => game);
+      }
+      return List<GameSummaryDto>.unmodifiable(byId.values);
+    } catch (e) {
+      if (e is MajarraApiException && e.statusCode == 401) return const [];
+      rethrow;
     }
-    return List<GameSummaryDto>.unmodifiable(byId.values);
   }
 
   /// The published, localised pack for one game.
@@ -826,13 +996,26 @@ class MajarraApiClient {
   /// Uses a `manage_consents` proof rather than the generic parent-area one: this
   /// writes the legal record of what the account holder permitted for a child, and
   /// the server no longer accepts a token minted for a different purpose.
+  ///
+  /// Exception: the onboarding journey runs the consent step *before* PIN
+  /// setup (Requirement 8.2), so a brand-new family calling this for its
+  /// very first consent has no `parent_area` proof in memory yet to exchange
+  /// — [authorizeParentAction] would fail before the request it is meant to
+  /// authorize even fires. In that case this sends the write unproven; the
+  /// server (`POST /family/consents`) independently checks whether a PIN has
+  /// ever been enrolled and only enforces the `manage_consents` proof once
+  /// one has, so this client-side skip never grants more than the server
+  /// already allows.
   Future<Map<String, dynamic>> setConsent({
     required String consentType,
     required String version,
     String? childId,
     bool revoke = false,
   }) async {
-    final proof = await authorizeParentAction('manage_consents');
+    final ambientProof = getParentProof?.call();
+    final proof = (ambientProof != null && ambientProof.isNotEmpty)
+        ? await authorizeParentAction('manage_consents')
+        : null;
     return _postJson(
       '/api/v1/family/consents',
       auth: true,
@@ -879,7 +1062,9 @@ class MajarraApiClient {
               headers: {...headers, 'Content-Type': mimeType},
               body: bytes,
             )
-            .timeout(_timeout);
+            // `APP-109`: رفعُ حمولة لا قراءةُ صفوف. رسمة الطفل على شبكة جوّال
+            // ضعيفة تتجاوز ثماني ثوانٍ بسهولة، وكل فشلٍ هنا يخسر عملًا رسمه طفل.
+            .timeout(_extendedTimeout);
       },
     );
   }
@@ -933,8 +1118,98 @@ class MajarraApiClient {
   // Reads the effective plan from the same entitlement ledger the server uses to
   // enforce limits, so the membership screen cannot advertise a tier the account
   // does not actually hold.
+  // --- تراخيص الاستخدام دون إنترنت (ENC-001/ENC-005/ENC-008) ---
+  //
+  // التنزيل كان يجري على روابط عامة بلا أي تخويل، والعميل يمنح نفسه صلاحية
+  // ثلاثين يومًا. هذه النقاط تجعل الخادم هو من يقرّر ويعدّ ويوقّع ويبطل.
+
+  /// يفتح جلسة تنزيل: ترخيص موقَّع + قدرة لكل أصل.
+  Future<Map<String, dynamic>> createDownloadSession({
+    required String childId,
+    required String entityType,
+    required String entityId,
+    Map<String, bool>? integrity,
+  }) {
+    return _postJson(
+      '/api/v1/downloads/sessions',
+      auth: true,
+      body: {
+        'child_id': childId,
+        'entity_type': entityType,
+        'entity_id': entityId,
+        // SEC-107: إشارات سلامة الجهاز، والخادم يقرّر أثرها. تُحذف حين لا شيء
+        // لتُرصد بدل إرسال كائن فارغ.
+        if (integrity != null) 'integrity': integrity,
+      },
+    );
+  }
+
+  /// يجدّد قدرات الوسائط وحدها (عمرها ثلاث دقائق) بلا ترخيص جديد.
+  Future<Map<String, dynamic>> refreshDownloadSession(String licenceId) {
+    return _postJson(
+      '/api/v1/downloads/sessions/${Uri.encodeComponent(licenceId)}/refresh',
+      auth: true,
+    );
+  }
+
+  /// يُبلّغ الخادم أن التنزيل اكتمل، فيصير الترخيص نشطًا.
+  Future<Map<String, dynamic>> completeDownloadSession(String licenceId) {
+    return _postJson(
+      '/api/v1/downloads/sessions/${Uri.encodeComponent(licenceId)}/complete',
+      auth: true,
+    );
+  }
+
+  /// يجدّد الترخيص نفسه: سجلّ جديد موقَّع، ولا يُحيي القديم.
+  Future<Map<String, dynamic>> renewOfflineLicence(String licenceId) {
+    return _postJson(
+      '/api/v1/downloads/licences/${Uri.encodeComponent(licenceId)}/renew',
+      auth: true,
+    );
+  }
+
+  /// التراخيص النشطة على هذه الأسرة، للمصالحة عند أول اتصال (`ENC-010`).
+  Future<Map<String, dynamic>> listOfflineLicences() {
+    return _getJson('/api/v1/downloads', auth: true);
+  }
+
   Future<Map<String, dynamic>> getBillingStatus() async {
     return _getJson('/api/v1/billing/status', auth: true);
+  }
+
+  /// Returns the server-filtered plan catalogue for the current edge country.
+  /// Prices are discovery data only; a checkout must resolve them again on the
+  /// server or native store and never trust an amount supplied by the app.
+  Future<Map<String, dynamic>> getBillingCatalog({required String platform}) {
+    return _getJson(
+      '/api/v1/billing/catalog',
+      auth: true,
+      query: {'platform': platform},
+    );
+  }
+
+  /// Gets the Google Play product mapping and the account identifier that must
+  /// be attached to a purchase before it can be verified by the server.
+  Future<Map<String, dynamic>> getGooglePlayBillingContext() async {
+    // `APP-109`: بلا بديل، وتسبق دفعًا. فشلها يوقف الاشتراك عند وليّ أمر قرّر
+    // الشراء، فالمحاولة الثانية هنا أرخص ما يُمكن.
+    return _getJson(
+      '/api/v1/billing/google-play/context',
+      auth: true,
+      attempts: 2,
+    );
+  }
+
+  /// Sends only the Google Play purchase token to the server for verification.
+  /// The server persists a hash of the token and applies the entitlement.
+  Future<Map<String, dynamic>> verifyGooglePlayPurchase(
+    String purchaseToken,
+  ) async {
+    return _postJson(
+      '/api/v1/billing/google-play/verify',
+      auth: true,
+      body: {'purchase_token': purchaseToken},
+    );
   }
 
   Future<Map<String, dynamic>> fetchAppConfig() async {
@@ -967,11 +1242,21 @@ class MajarraApiClient {
   Future<Map<String, dynamic>> fetchRecommendations({
     required String childId,
   }) async {
-    return _getJson(
-      '/api/v1/recommendations',
-      auth: true,
-      query: {'child_id': childId},
-    );
+    if (childId == 'demo-child') {
+      return <String, dynamic>{'success': true, 'data': <dynamic>[]};
+    }
+    try {
+      return await _getJson(
+        '/api/v1/recommendations',
+        auth: true,
+        query: {'child_id': childId},
+      );
+    } catch (e) {
+      if (e is MajarraApiException && e.statusCode == 401) {
+        return <String, dynamic>{'success': true, 'data': <dynamic>[]};
+      }
+      rethrow;
+    }
   }
 
   Future<Map<String, dynamic>> fetchChildSettings(String childId) async {
@@ -1024,6 +1309,26 @@ class MajarraApiClient {
     );
   }
 
+  /// Marks one notification as read.
+  ///
+  /// Matches `POST /api/v1/notifications/:id/read` (`routes/notifications.ts`),
+  /// which requires only `Authorization` — no parent proof.
+  ///
+  /// No notifications screen exists in the app yet to call this: a search of
+  /// `app_main/lib` found no consumer of [fetchNotifications] either, so there
+  /// is nowhere in the UI today that opens a notification. This method makes
+  /// the read-acknowledgement capability available to that future consumer
+  /// rather than leaving the server contract unreachable from the client, but
+  /// it does not itself wire up any screen — building one is outside this
+  /// task's scope.
+  Future<Map<String, dynamic>> markNotificationRead(String id) async {
+    return _postJson(
+      '/api/v1/notifications/${Uri.encodeComponent(id)}/read',
+      auth: true,
+      body: const {},
+    );
+  }
+
   // --- Parent PIN and short-lived server proof ---
   Future<Map<String, dynamic>> setParentPin({required String pin}) async {
     return _postJson(
@@ -1071,15 +1376,20 @@ class MajarraApiClient {
     bool auth = false,
     bool parentProof = false,
     String? parentProofToken,
+    Duration timeout = _timeout,
+    int attempts = 1,
   }) async {
-    final envelope = await _withAuthRetry(
-      auth: auth,
-      parentProof: parentProof,
-      parentProofToken: parentProofToken,
-      doRequest: (headers) {
-        final uri = _baseUri.replace(path: path, queryParameters: query);
-        return _client.get(uri, headers: headers).timeout(_timeout);
-      },
+    final envelope = await _retryTransport(
+      attempts: attempts,
+      () => _withAuthRetry(
+        auth: auth,
+        parentProof: parentProof,
+        parentProofToken: parentProofToken,
+        doRequest: (headers) {
+          final uri = _baseUri.replace(path: path, queryParameters: query);
+          return _client.get(uri, headers: headers).timeout(timeout);
+        },
+      ),
     );
     final data = envelope['data'];
     if (data is! List) {
@@ -1097,16 +1407,70 @@ class MajarraApiClient {
     bool parentProof = false,
     String? parentProofToken,
     Map<String, String>? query,
+    Duration timeout = _timeout,
+    int attempts = 1,
   }) async {
-    return _withAuthRetry(
-      auth: auth,
-      parentProof: parentProof,
-      parentProofToken: parentProofToken,
-      doRequest: (headers) async {
-        final uri = _baseUri.replace(path: path, queryParameters: query);
-        return _client.get(uri, headers: headers).timeout(_timeout);
-      },
+    return _retryTransport(
+      attempts: attempts,
+      () => _withAuthRetry(
+        auth: auth,
+        parentProof: parentProof,
+        parentProofToken: parentProofToken,
+        doRequest: (headers) async {
+          final uri = _baseUri.replace(path: path, queryParameters: query);
+          return _client.get(uri, headers: headers).timeout(timeout);
+        },
+      ),
     );
+  }
+
+  /// يعيد محاولة **قراءة** فشلت نقلًا، بتراجع أسّي.
+  ///
+  /// ## ما يُعاد وما لا يُعاد
+  ///
+  /// تُعاد المحاولة على فشل النقل وحده: `TimeoutException` و
+  /// `http.ClientException`. ولا تُعاد على أي حالة HTTP — لا 4xx (الطلب نفسه
+  /// مرفوض، والتكرار يرفضه ثانيةً) ولا 5xx (خادمٌ يترنّح، وإعادة المحاولة فورًا
+  /// تضاعف الحمل عليه).
+  ///
+  /// ولا تُستخدَم إلا في `GET`: الكتابة ليست جالبةً للنتيجة نفسها، وإعادة إرسالها
+  /// قد تُنشئ طفلًا ثانيًا أو تخصم مرّتين. ومسارات الحذف تحمل مفتاح تكرار لكنها
+  /// **مدمِّرة**، فلا تُعاد آليًّا بحال.
+  ///
+  /// ## ولماذا `attempts: 1` افتراضًا
+  ///
+  /// أي أن السلوك الافتراضي **لا يتغيّر**. مسار الكاتالوج له بديلٌ أرخص من
+  /// الانتظار: `ContentRepository` يقرأ الكاش ثم الحزمة عند الفشل. فإعادة محاولةٍ
+  /// هناك تُجلس الطفل أمام دوّارة ١٧ ثانية بدل أن ترى عينُه رفًّا محفوظًا بعد ثمانٍ.
+  ///
+  /// الإعادة تُطلَب صريحةً حيث **لا بديل**: قائمة الأجهزة، وسياق الفوترة، وحالة
+  /// طلب الحذف. هناك يكون البديل الوحيد رسالةَ خطأ، فمحاولةٌ ثانية أرخص منها.
+  Future<T> _retryTransport<T>(
+    Future<T> Function() run, {
+    required int attempts,
+  }) async {
+    for (var attempt = 1; ; attempt += 1) {
+      try {
+        return await run();
+      } catch (error) {
+        if (attempt >= attempts || !_isTransient(error)) rethrow;
+      }
+      await Future<void>.delayed(retryBackoff(attempt));
+    }
+  }
+
+  /// هل الخطأ فشلُ نقلٍ عابر؟
+  ///
+  /// التصنيف من `AppFailure` — **المرجع الواحد** لمعنى «شبكة» و«مهلة» في التطبيق،
+  /// وهو ما تقرأه الشاشات لتختار رسالتها. وتكرار التصنيف هنا كان سيُنتج عميلًا
+  /// يعيد المحاولة على ما تعرضه الشاشة خطأً دائمًا، أو العكس.
+  ///
+  /// ولا يُستخدَم `SocketException` بنوعه: هو من `dart:io` فلا وجود له على الويب،
+  /// و`http` يغلّفه أصلًا في `ClientException` في معظم المسارات. فالتصنيف بالمعنى
+  /// لا بالنوع يعمل في البيئتين.
+  static bool _isTransient(Object error) {
+    final kind = AppFailure.fromException(error).kind;
+    return kind == FailureKind.network || kind == FailureKind.timeout;
   }
 
   Future<Map<String, dynamic>> _postJson(
@@ -1242,12 +1606,13 @@ class MajarraApiClient {
       if (res.statusCode == 401 && clearAuth != null) {
         _scheduleTerminalClear();
       }
+      final safeBody = utf8.decode(res.bodyBytes);
       throw MajarraApiException(
-        'HTTP ${res.statusCode}: ${res.body}',
+        'HTTP ${res.statusCode}: $safeBody',
         statusCode: res.statusCode,
       );
     }
-    final decoded = jsonDecode(res.body);
+    final decoded = jsonDecode(utf8.decode(res.bodyBytes));
     if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
       throw const MajarraApiException('Refresh failed');
     }
@@ -1300,12 +1665,20 @@ class MajarraApiClient {
       Object? decoded;
       try {
         decoded = jsonDecode(body);
-      } catch (_) {}
+      } catch (_) {
+        // جسم خطأ ليس JSON (صفحة 502 من الحافة مثلًا). لا يُسجَّل ولا يُرفَع
+        // هنا: النصّ الخامّ يمضي في `MajarraApiException` كما هو، فالمعلومة لا
+        // تُفقَد — وهذا هو المطلوب من هذه الكتلة بالضبط.
+      }
       final code = decoded is Map ? decoded['code']?.toString() : null;
+      final errorData = decoded is Map && decoded['data'] is Map
+          ? Map<String, dynamic>.from(decoded['data'] as Map)
+          : null;
       throw MajarraApiException(
         'HTTP ${res.statusCode}: $body',
         statusCode: res.statusCode,
         code: code,
+        data: errorData,
       );
     }
     final decoded = jsonDecode(body);
@@ -1313,8 +1686,13 @@ class MajarraApiClient {
       throw const MajarraApiException('Invalid envelope');
     }
     if (decoded['success'] != true) {
+      final errorData = decoded['data'] is Map
+          ? Map<String, dynamic>.from(decoded['data'] as Map)
+          : null;
       throw MajarraApiException(
         decoded['error']?.toString() ?? 'Request failed',
+        statusCode: res.statusCode,
+        data: errorData,
       );
     }
     return decoded;

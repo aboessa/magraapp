@@ -18,6 +18,7 @@ import '../../../child/application/child_provider.dart';
 import '../../../games/application/creation_cloud_service.dart';
 import '../../../home/application/home_providers.dart';
 import '../../../home/data/majarra_api_client.dart';
+import '../../application/account_providers.dart';
 
 class AccountProfile {
   const AccountProfile({
@@ -47,20 +48,6 @@ class AccountProfile {
     );
   }
 }
-
-final accountProfileProvider = FutureProvider.autoDispose<AccountProfile>((
-  ref,
-) async {
-  final envelope = await ref
-      .watch(majarraApiClientProvider)
-      .getAccountProfile();
-  return AccountProfile.fromEnvelope(envelope);
-});
-
-final accountChildrenProvider =
-    FutureProvider.autoDispose<List<Map<String, Object?>>>((ref) {
-      return ref.watch(majarraApiClientProvider).fetchChildren();
-    });
 
 class AccountDataPage extends ConsumerStatefulWidget {
   const AccountDataPage({super.key});

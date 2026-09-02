@@ -10,7 +10,6 @@ import 'package:video_player/video_player.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/env/app_environment.dart';
-import '../../../../core/media/bundled_story_assets.dart';
 import '../../../child/application/child_provider.dart';
 import '../../../home/application/home_providers.dart';
 import '../../../home/domain/content_models.dart';
@@ -33,9 +32,8 @@ class _CloseReaderIntent extends Intent {
   const _CloseReaderIntent();
 }
 
-// Only reviewed Majarra CDN story packs may fall back to their exact bundled
-// counterpart. Unknown stories never substitute unrelated artwork.
-String? _localFallbackFor(String? url) => bundledStoryAssetForUrl(url);
+// Story artwork is served from the catalogue API only. Nothing is bundled, so
+// there is no local counterpart to substitute for a page image.
 
 class StoryReaderPage extends ConsumerStatefulWidget {
   const StoryReaderPage({
@@ -259,8 +257,6 @@ class _StoryReaderPageState extends ConsumerState<StoryReaderPage>
       if (target < 0 || target >= _pages.length) continue;
       final url = _pages[target].imageUrl;
       if (url == null || url.isEmpty) continue;
-      final local = _localFallbackFor(url);
-
       // DOM-backed network images are used on web below, so byte precaching
       // would only issue a CORS-restricted XMLHttpRequest that cannot warm the
       // HTML element. Native platforms keep adjacent-page warming.
@@ -268,15 +264,6 @@ class _StoryReaderPageState extends ConsumerState<StoryReaderPage>
         unawaited(
           precacheImage(
             NetworkImage(url),
-            context,
-            onError: (error, stackTrace) {},
-          ),
-        );
-      }
-      if (local != null) {
-        unawaited(
-          precacheImage(
-            AssetImage(local),
             context,
             onError: (error, stackTrace) {},
           ),
@@ -1945,20 +1932,6 @@ class _StoryImageState extends State<_StoryImage> {
       return _ImageMissing(isRtl: widget.isRtl);
     }
     if (_failed) {
-      final local = _localFallbackFor(widget.page.imageUrl);
-      if (local != null) {
-        return Image.asset(
-          local,
-          fit: BoxFit.contain,
-          width: double.infinity,
-          height: double.infinity,
-          semanticLabel: _semanticLabel,
-          errorBuilder: (context, error, stackTrace) => _ImageLoadFailed(
-            isRtl: widget.isRtl,
-            onRetry: () => setState(() => _failed = false),
-          ),
-        );
-      }
       return _ImageLoadFailed(
         isRtl: widget.isRtl,
         onRetry: () => setState(() => _failed = false),

@@ -57,10 +57,11 @@ const Map<String, _Mapping> _blockTypeMap = {
   'coming_soon': _Mapping(BlockType.comingSoon),
   'watch_free': _Mapping(BlockType.watchFree),
   'new_releases': _Mapping(BlockType.newReleases),
-  'most_watched': _Mapping(BlockType.mostWatched),
-  'because_you_watched': _Mapping(BlockType.becauseYouWatched),
+  // `APP-104`: `most_watched` و`because_you_watched` و`learning_journey` أُسقطت.
+  // كانت مُخطَّطة إلى أنواع مُعطَّلة بثابت، فتظهر «مدعومة» وهي لا تُعرَض أبدًا.
+  // وإسقاطها من هنا يجعلها تُحتسب في [HomeLayout.unsupportedTypes] — وهو المسار
+  // المصمَّم لجعل الفجوة مرصودة.
   'feature_banner': _Mapping(BlockType.featureBanner),
-  'learning_journey': _Mapping(BlockType.learningJourney),
   'character_orbit': _Mapping(BlockType.characterOrbit),
   'seasonal_banner': _Mapping(BlockType.seasonalBanner),
   'seasonal': _Mapping(BlockType.seasonalBanner),

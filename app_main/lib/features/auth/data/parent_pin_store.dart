@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../core/diagnostics/ignored_errors.dart';
+import '../../../core/failures/secure_storage_failure.dart';
 import 'pin_kdf.dart';
 
 /// Outcome of a parent PIN verification attempt.
@@ -69,7 +71,53 @@ class ParentPinVerification {
 /// logout, refresh failure and PIN change.
 class ParentPinStore {
   ParentPinStore({FlutterSecureStorage? storage})
-    : _store = storage ?? const FlutterSecureStorage();
+    : _store = storage ??
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions(encryptedSharedPreferences: true),
+            iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+          );
+
+  /// قراءة تُعيد `null` عند الفشل وتسجّله (`APP-106`).
+  ///
+  /// `null` هنا يعني «لا رمز مُسجَّل»، وهو ما يفتح مسار **تسجيل رمز جديد**. فشل
+  /// قراءة مكتوم كان يُقرَأ كذلك: أسرة لها رمز تُدعى إلى إنشاء واحد جديد، وهو
+  /// أسوأ من رفض واضح. التسجيل يجعل الحالة مرئية، وعدّاد `keystoreUnavailable`
+  /// يمنع تفسيرها خطأً.
+  Future<String?> _safeRead(String key) async {
+    try {
+      return await _store.read(key: key);
+    } catch (error, stack) {
+      _readFailed = true;
+      reportIgnoredError('parent_pin_store.read', error, stack);
+      return null;
+    }
+  }
+
+  /// كتابة **ترفع** عند الفشل.
+  ///
+  /// كتابة الرمز أو عدّاد الإخفاقات أو وقت القفل: فشلها مكتومًا يعني رمزًا يظنّ
+  /// وليّ الأمر أنه سُجِّل ولم يُسجَّل، أو قفلًا بعد محاولات خاطئة لا يُطبَّق —
+  /// أي إبطال حاجز أمني بصمت.
+  Future<void> _safeWrite(String key, String value) async {
+    try {
+      await _store.write(key: key, value: value);
+    } catch (error) {
+      throw SecureStorageUnavailableException('parent_pin_store.write', error);
+    }
+  }
+
+  Future<void> _safeDelete(String key) async {
+    try {
+      await _store.delete(key: key);
+    } catch (error) {
+      reportIgnoredError('parent_pin_store.delete', error);
+    }
+  }
+
+  bool _readFailed = false;
+
+  /// هل فشلت قراءة من المخزن الآمن في هذه الجلسة؟
+  bool get keystoreUnavailable => _readFailed;
 
   static const _ownerKey = 'majarra_parent_pin_owner';
   static const _saltKey = 'majarra_parent_pin_salt';
@@ -90,9 +138,9 @@ class ParentPinStore {
   static String? validatePin(String pin) => PinKdf.validatePin(pin);
 
   Future<bool> hasPin({String? ownerId}) async {
-    final verifier = await _store.read(key: _verifierKey);
-    final salt = await _store.read(key: _saltKey);
-    final owner = await _store.read(key: _ownerKey);
+    final verifier = await _safeRead(_verifierKey);
+    final salt = await _safeRead(_saltKey);
+    final owner = await _safeRead(_ownerKey);
     final ownerMatches =
         ownerId == null ||
         ownerId.isEmpty ||
@@ -114,17 +162,17 @@ class ParentPinStore {
     final verifier = PinKdf.deriveVerifier(pin, salt);
 
     if (ownerId != null && ownerId.isNotEmpty) {
-      await _store.write(key: _ownerKey, value: ownerId);
+      await _safeWrite(_ownerKey, ownerId);
     }
-    await _store.write(key: _saltKey, value: PinKdf.toHex(salt));
-    await _store.write(key: _verifierKey, value: PinKdf.toHex(verifier));
-    await _store.delete(key: _failuresKey);
-    await _store.delete(key: _lockedUntilKey);
+    await _safeWrite(_saltKey, PinKdf.toHex(salt));
+    await _safeWrite(_verifierKey, PinKdf.toHex(verifier));
+    await _safeDelete(_failuresKey);
+    await _safeDelete(_lockedUntilKey);
   }
 
   Future<ParentPinVerification> verify(String pin, {String? ownerId}) async {
     if (ownerId != null && ownerId.isNotEmpty) {
-      final owner = await _store.read(key: _ownerKey);
+      final owner = await _safeRead(_ownerKey);
       if (owner != ownerId) {
         return const ParentPinVerification(ParentPinResult.notEnrolled);
       }
@@ -137,8 +185,8 @@ class ParentPinStore {
       );
     }
 
-    final saltHex = await _store.read(key: _saltKey);
-    final verifierHex = await _store.read(key: _verifierKey);
+    final saltHex = await _safeRead(_saltKey);
+    final verifierHex = await _safeRead(_verifierKey);
     if (saltHex == null || verifierHex == null) {
       return const ParentPinVerification(ParentPinResult.notEnrolled);
     }
@@ -147,27 +195,24 @@ class ParentPinStore {
     final actual = PinKdf.deriveVerifier(pin, PinKdf.fromHex(saltHex));
 
     if (PinKdf.constantTimeEquals(expected, actual)) {
-      await _store.delete(key: _failuresKey);
-      await _store.delete(key: _lockedUntilKey);
+      await _safeDelete(_failuresKey);
+      await _safeDelete(_lockedUntilKey);
       return const ParentPinVerification(ParentPinResult.success);
     }
 
     final failures =
-        (int.tryParse(await _store.read(key: _failuresKey) ?? '') ?? 0) + 1;
+        (int.tryParse(await _safeRead(_failuresKey) ?? '') ?? 0) + 1;
     if (failures >= maxAttemptsBeforeLockout) {
       final until = DateTime.now().add(lockoutDuration);
-      await _store.write(
-        key: _lockedUntilKey,
-        value: until.millisecondsSinceEpoch.toString(),
-      );
-      await _store.delete(key: _failuresKey);
+      await _safeWrite(_lockedUntilKey, until.millisecondsSinceEpoch.toString());
+      await _safeDelete(_failuresKey);
       return ParentPinVerification(
         ParentPinResult.lockedOut,
         lockedUntil: until,
       );
     }
 
-    await _store.write(key: _failuresKey, value: failures.toString());
+    await _safeWrite(_failuresKey, failures.toString());
     return ParentPinVerification(
       ParentPinResult.wrongPin,
       attemptsRemaining: maxAttemptsBeforeLockout - failures,
@@ -179,41 +224,39 @@ class ParentPinStore {
   /// Opt-in is only offered after a successful PIN verification, so enabling
   /// this can never bypass the initial proof that the parent knows the PIN.
   Future<bool> isBiometricEnabled() async {
-    return (await _store.read(key: _biometricKey)) == 'true';
+    return (await _safeRead(_biometricKey)) == 'true';
   }
 
   Future<void> setBiometricEnabled(bool enabled) async {
     if (enabled) {
-      await _store.write(key: _biometricKey, value: 'true');
+      await _safeWrite(_biometricKey, 'true');
     } else {
-      await _store.delete(key: _biometricKey);
+      await _safeDelete(_biometricKey);
     }
   }
 
   /// Removes the enrolled PIN. Must be called on sign-out so a PIN from one
   /// account can never unlock another account's parent area.
   Future<void> clear() async {
-    await _store.delete(key: _ownerKey);
-    await _store.delete(key: _saltKey);
-    await _store.delete(key: _verifierKey);
-    await _store.delete(key: _failuresKey);
-    await _store.delete(key: _lockedUntilKey);
-    // The biometric opt-in is tied to the enrolled PIN: clearing one must clear
-    // the other, or a new account's PIN could be unlocked by the old opt-in.
-    await _store.delete(key: _biometricKey);
+    await _safeDelete(_ownerKey);
+    await _safeDelete(_saltKey);
+    await _safeDelete(_verifierKey);
+    await _safeDelete(_failuresKey);
+    await _safeDelete(_lockedUntilKey);
+    await _safeDelete(_biometricKey);
   }
 
   Future<DateTime?> _lockedUntil() async {
-    final raw = await _store.read(key: _lockedUntilKey);
+    final raw = await _safeRead(_lockedUntilKey);
     if (raw == null) return null;
     final millis = int.tryParse(raw);
     if (millis == null) {
-      await _store.delete(key: _lockedUntilKey);
+      await _safeDelete(_lockedUntilKey);
       return null;
     }
     final until = DateTime.fromMillisecondsSinceEpoch(millis);
     if (until.isAfter(DateTime.now())) return until;
-    await _store.delete(key: _lockedUntilKey);
+    await _safeDelete(_lockedUntilKey);
     return null;
   }
 }

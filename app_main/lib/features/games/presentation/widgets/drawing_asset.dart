@@ -10,6 +10,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../core/widgets/decode_cap.dart';
 
 import '../../data/drawing_asset_map.dart';
 
@@ -82,6 +83,9 @@ class DrawingAsset extends StatelessWidget {
           fit: fit,
           width: width,
           height: height,
+          // شبكات التلوين و«ارسم مثلي» أصولها 1024×1024 (4 ميغابايت مفكوكة
+          // للواحدة، و200 لخمسين) وتُعرض مصغَّرات (`PERF-102`).
+          cacheWidth: decodeCapFor(context, width),
           errorBuilder: (_, Object error, StackTrace? st) {
             _logFailure(error);
             return _placeholder(context);

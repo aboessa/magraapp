@@ -26,6 +26,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/creation_document.dart';
 import '../../data/local_creation_store.dart';
+import '../studio/studio_app_bar.dart';
 
 /// A sticker the child has earned.
 class EarnedSticker {
@@ -138,9 +139,10 @@ class _MyCollectionPageState extends State<MyCollectionPage> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('مجموعتي'),
-          bottom: const TabBar(
+        appBar: const StudioAppBar(
+          title: 'مجموعتي',
+          glyph: Icons.collections_bookmark_rounded,
+          bottom: TabBar(
             tabs: [
               Tab(text: 'رسوماتي', icon: Icon(Icons.brush_outlined)),
               Tab(text: 'ملصقاتي', icon: Icon(Icons.star_outline)),

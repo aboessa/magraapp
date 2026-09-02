@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:majarra/features/home/data/majarra_api_client.dart';
 import 'package:majarra/features/reader/application/reader_narration.dart';
 
 void main() {
@@ -19,16 +20,23 @@ void main() {
     });
 
     test('missing data object means no narration for this page', () {
-      expect(resolveNarrationSource({'success': true}), isA<NarrationUnavailable>());
+      expect(
+        resolveNarrationSource({'success': true}),
+        isA<NarrationUnavailable>(),
+      );
     });
 
     test('missing stream_url or authorization means unavailable', () {
       expect(
-        resolveNarrationSource({'data': {'stream_url': '/x'}}),
+        resolveNarrationSource({
+          'data': {'stream_url': '/x'},
+        }),
         isA<NarrationUnavailable>(),
       );
       expect(
-        resolveNarrationSource({'data': {'authorization': 'Bearer x'}}),
+        resolveNarrationSource({
+          'data': {'authorization': 'Bearer x'},
+        }),
         isA<NarrationUnavailable>(),
       );
     });
@@ -38,6 +46,36 @@ void main() {
         'data': {'stream_url': '', 'authorization': ''},
       });
       expect(source, isA<NarrationUnavailable>());
+    });
+  });
+
+  group('narrationUnavailableReasonForApiError', () {
+    test('explains that protected narration is unavailable in demo mode', () {
+      const error = MajarraApiException(
+        'demo narration is unavailable',
+        statusCode: 401,
+        code: 'demo_narration_requires_sign_in',
+      );
+
+      expect(
+        narrationUnavailableReasonForApiError(error),
+        'السرد غير متاح في وضع التجربة. سجّل الدخول واختر ملف طفل لتشغيله.',
+      );
+    });
+
+    test('distinguishes expired authentication from subscription access', () {
+      expect(
+        narrationUnavailableReasonForApiError(
+          const MajarraApiException('unauthenticated', statusCode: 401),
+        ),
+        'تعذّر تشغيل الصوت. سجّل الدخول مرة أخرى ثم حاول.',
+      );
+      expect(
+        narrationUnavailableReasonForApiError(
+          const MajarraApiException('subscription required', statusCode: 403),
+        ),
+        'يتطلب تشغيل هذا الصوت اشتراكًا نشطًا.',
+      );
     });
   });
 }

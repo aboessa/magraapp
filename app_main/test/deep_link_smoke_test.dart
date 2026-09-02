@@ -13,6 +13,16 @@ import 'package:majarra/features/games/application/creative_catalogue_provider.d
 /// Determinism: known→same object, unknown/malformed→null, unpublished→null,
 /// offline still resolves via bundled JSON, no wrong fallback.
 
+/// عدد أنشطة «ارسم مثلي» المبندلة في `assets/data/reference_activities.json`.
+///
+/// ثابت واحد بدل ثلاث قيم حرفية متكرّرة. كانت القيمة `30` مكتوبة في ثلاثة
+/// توكيدات، فلمّا أُضيف نشاطان صار على من يضيف محتوى أن يعرف أن هناك ثلاثة
+/// أماكن تنتظره — ولم يعرف، فسقطت ثلاثة اختبارات على شيء ليس عيبًا.
+///
+/// العدد يبقى توكيدًا مقصودًا لا يُحذف: انخفاضه يعني فقدان محتوى مبندل، وهو
+/// خطأ حقيقي. تحديثه إجراء واعٍ يصحبه تحديث المحتوى.
+const _bundledReferenceActivities = 32;
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -43,7 +53,7 @@ void main() {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       final refs = await c.read(referenceCatalogueProvider.future);
-      expect(refs.length, 30);
+      expect(refs.length, _bundledReferenceActivities);
       final act = await c.read(referenceActivityAsync('ref-cat').future);
       expect(act, isNotNull);
       expect(act!.titleAr, 'قطة');
@@ -122,9 +132,9 @@ void main() {
     test('10. unpublished/archived not leaked — draft letter pack stays draft in D1', () async {
       final c = ProviderContainer();
       addTearDown(c.dispose);
-      // Bundled reference catalogue is published (30) — no draft leak
+      // Bundled reference catalogue is published — no draft leak
       final refs = await c.read(referenceCatalogueProvider.future);
-      expect(refs.length, 30);
+      expect(refs.length, _bundledReferenceActivities);
       expect(refs.every((e) => e.id.startsWith('ref-')), isTrue);
       // Letter tracing game is draft in D1 (linguistic gate) — not exposed via reference
       // Ensure reference provider does not accidentally include a game id
@@ -152,7 +162,7 @@ void main() {
       // Provider fell back to bundled JSON, not Dart literals — so counter stays 0
       expect(fallbackActivations, 0, reason: 'fallback must not fire when bundled JSON succeeds');
       final ref = await c.read(referenceCatalogueProvider.future);
-      expect(ref.length, 30);
+      expect(ref.length, _bundledReferenceActivities);
       expect(fallbackActivations, 0);
     });
   });

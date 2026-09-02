@@ -140,6 +140,7 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
           };
 
     final episodes = widget.catalog.episodesFor(widget.series.id);
+    final stories = widget.catalog.storiesFor(widget.series.id);
     final playableEpisodes = episodes
         .where((episode) => episode.isPlayable)
         .toList(growable: false);
@@ -305,12 +306,12 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
                           SizedBox(
                             height: 52,
                             child: FilledButton.icon(
-                              onPressed: firstPlayable == null
-                                  ? null
-                                  : () => _openPlayback(
-                                      context,
-                                      firstPlayable.id,
-                                    ),
+                              onPressed: firstPlayable != null
+                                  ? () =>
+                                        _openPlayback(context, firstPlayable.id)
+                                  : stories.isNotEmpty
+                                  ? () => _openStory(context, stories.first.id)
+                                  : null,
                               style: FilledButton.styleFrom(
                                 backgroundColor: const Color(0xFF2A3447),
                                 foregroundColor: Colors.white,
@@ -322,15 +323,19 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
                                 ),
                               ),
                               icon: Icon(
-                                firstPlayable == null
-                                    ? Icons.videocam_off_outlined
-                                    : Icons.play_arrow_rounded,
+                                firstPlayable != null
+                                    ? Icons.play_arrow_rounded
+                                    : stories.isNotEmpty
+                                    ? Icons.menu_book_rounded
+                                    : Icons.videocam_off_outlined,
                                 size: 26,
                               ),
                               label: Text(
-                                firstPlayable == null
-                                    ? 'لا توجد حلقات متاحة للمشاهدة'
-                                    : 'شاهد الآن • ${firstPlayable.title}',
+                                firstPlayable != null
+                                    ? 'شاهد الآن • ${firstPlayable.title}'
+                                    : stories.isNotEmpty
+                                    ? 'اقرأ الآن • ${stories.first.title}'
+                                    : 'لا توجد حلقات متاحة للمشاهدة',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -344,269 +349,271 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
                       ),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(
-                        padding,
-                        18,
-                        padding,
-                        0,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.indigoSurface,
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.12),
+                  if (episodes.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsetsDirectional.fromSTEB(
+                          padding,
+                          18,
+                          padding,
+                          0,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.indigoSurface,
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.12,
+                                      ),
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.auto_awesome_rounded,
+                                    color: AppColors.starGold,
+                                    size: 18,
                                   ),
                                 ),
-                                child: const Icon(
-                                  Icons.auto_awesome_rounded,
-                                  color: AppColors.starGold,
-                                  size: 18,
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    widget.series.title,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  widget.series.title,
-                                  style: const TextStyle(
+                                IconButton(
+                                  onPressed: () =>
+                                      setState(() => _expanded = !_expanded),
+                                  tooltip: _expanded
+                                      ? 'إخفاء التفاصيل'
+                                      : 'عرض التفاصيل',
+                                  icon: Icon(
+                                    _expanded
+                                        ? Icons.expand_less_rounded
+                                        : Icons.info_outline_rounded,
                                     color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
+                                    size: 24,
                                   ),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () =>
-                                    setState(() => _expanded = !_expanded),
-                                tooltip: _expanded
-                                    ? 'إخفاء التفاصيل'
-                                    : 'عرض التفاصيل',
-                                icon: Icon(
-                                  _expanded
-                                      ? Icons.expand_less_rounded
-                                      : Icons.info_outline_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              const _MetaChip(label: 'مسلسل'),
-                              _dot(),
-                              _MetaChip(label: widget.series.planetName),
-                              if (_episodeCountLabel(episodes.length) !=
-                                  null) ...[
-                                _dot(),
-                                _MetaChip(
-                                  label: _episodeCountLabel(episodes.length)!,
                                 ),
                               ],
-                              _dot(),
-                              _MetaChip(
-                                label: widget.series.isFree
-                                    ? 'مجاني'
-                                    : 'بالاشتراك',
-                              ),
-                              _dot(),
-                              _MetaChip(label: '${widget.series.ageMin}+'),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Semantics(
-                            button: true,
-                            label: _expanded
-                                ? 'إخفاء وصف المسلسل'
-                                : 'عرض وصف المسلسل كاملًا',
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () =>
-                                    setState(() => _expanded = !_expanded),
-                                borderRadius: BorderRadius.circular(12),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 6,
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                const _MetaChip(label: 'مسلسل'),
+                                _dot(),
+                                _MetaChip(label: widget.series.planetName),
+                                if (_episodeCountLabel(episodes.length) !=
+                                    null) ...[
+                                  _dot(),
+                                  _MetaChip(
+                                    label: _episodeCountLabel(episodes.length)!,
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        widget.series.description,
-                                        maxLines: _expanded ? null : 2,
-                                        overflow: _expanded
-                                            ? TextOverflow.visible
-                                            : TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: AppColors.mutedText.withValues(
-                                            alpha: 0.88,
+                                ],
+                                _dot(),
+                                _MetaChip(
+                                  label: widget.series.isFree
+                                      ? 'مجاني'
+                                      : 'بالاشتراك',
+                                ),
+                                _dot(),
+                                _MetaChip(label: '${widget.series.ageMin}+'),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Semantics(
+                              button: true,
+                              label: _expanded
+                                  ? 'إخفاء وصف المسلسل'
+                                  : 'عرض وصف المسلسل كاملًا',
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () =>
+                                      setState(() => _expanded = !_expanded),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 6,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          widget.series.description,
+                                          maxLines: _expanded ? null : 2,
+                                          overflow: _expanded
+                                              ? TextOverflow.visible
+                                              : TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: AppColors.mutedText
+                                                .withValues(alpha: 0.88),
+                                            fontSize: 13,
+                                            height: 1.7,
                                           ),
-                                          fontSize: 13,
-                                          height: 1.7,
                                         ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            _expanded
-                                                ? Icons
-                                                      .keyboard_arrow_up_rounded
-                                                : Icons
-                                                      .keyboard_arrow_down_rounded,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            _expanded ? 'عرض أقل' : 'المزيد',
-                                            style: const TextStyle(
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              _expanded
+                                                  ? Icons
+                                                        .keyboard_arrow_up_rounded
+                                                  : Icons
+                                                        .keyboard_arrow_down_rounded,
                                               color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
+                                              size: 20,
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              _expanded ? 'عرض أقل' : 'المزيد',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          Divider(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            height: 1,
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: _toggleWatchlist,
-                                  icon: Icon(
-                                    _inWatchlist
-                                        ? Icons.check_rounded
-                                        : Icons.add_rounded,
-                                    color: _inWatchlist
-                                        ? AppColors.starGold
-                                        : Colors.white,
-                                    size: 20,
-                                  ),
-                                  label: Text(
-                                    _inWatchlist
-                                        ? 'المسلسل محفوظ'
-                                        : 'احفظ المسلسل',
-                                    style: TextStyle(
+                            const SizedBox(height: 16),
+                            Divider(
+                              color: Colors.white.withValues(alpha: 0.08),
+                              height: 1,
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: _toggleWatchlist,
+                                    icon: Icon(
+                                      _inWatchlist
+                                          ? Icons.check_rounded
+                                          : Icons.add_rounded,
                                       color: _inWatchlist
                                           ? AppColors.starGold
                                           : Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13,
+                                      size: 20,
                                     ),
-                                  ),
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(
-                                      color:
-                                          (_inWatchlist
-                                                  ? AppColors.starGold
-                                                  : Colors.white)
-                                              .withValues(alpha: 0.4),
+                                    label: Text(
+                                      _inWatchlist
+                                          ? 'المسلسل محفوظ'
+                                          : 'احفظ المسلسل',
+                                      style: TextStyle(
+                                        color: _inWatchlist
+                                            ? AppColors.starGold
+                                            : Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                      ),
                                     ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(24),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(
+                                        color:
+                                            (_inWatchlist
+                                                    ? AppColors.starGold
+                                                    : Colors.white)
+                                                .withValues(alpha: 0.4),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Tooltip(
-                                message: 'مشاركة المسلسل',
-                                child: Semantics(
-                                  button: true,
-                                  label: 'مشاركة المسلسل',
-                                  child: Material(
-                                    color: const Color(0xFF111A3A),
-                                    shape: const CircleBorder(),
-                                    child: InkWell(
-                                      customBorder: const CircleBorder(),
-                                      onTap: _share,
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(12),
-                                        child: Icon(
-                                          Icons.share_rounded,
-                                          color: Colors.white,
-                                          size: 20,
+                                const SizedBox(width: 10),
+                                Tooltip(
+                                  message: 'مشاركة المسلسل',
+                                  child: Semantics(
+                                    button: true,
+                                    label: 'مشاركة المسلسل',
+                                    child: Material(
+                                      color: const Color(0xFF111A3A),
+                                      shape: const CircleBorder(),
+                                      child: InkWell(
+                                        customBorder: const CircleBorder(),
+                                        onTap: _share,
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(12),
+                                          child: Icon(
+                                            Icons.share_rounded,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          Divider(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            height: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(
-                        padding,
-                        16,
-                        padding,
-                        0,
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            'الحلقات (${episodes.length})',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
+                              ],
                             ),
-                          ),
-                          if (episodes.isNotEmpty &&
-                              playableEpisodes.length != episodes.length) ...[
-                            const SizedBox(width: 8),
-                            Text(
-                              '${playableEpisodes.length} متاحة',
-                              style: const TextStyle(
-                                color: AppColors.mutedText,
-                                fontSize: 12,
-                              ),
+                            const SizedBox(height: 14),
+                            Divider(
+                              color: Colors.white.withValues(alpha: 0.08),
+                              height: 1,
                             ),
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                  if (episodes.isEmpty)
+                  if (episodes.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsetsDirectional.fromSTEB(
+                          padding,
+                          16,
+                          padding,
+                          0,
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              'الحلقات (${episodes.length})',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            if (playableEpisodes.length != episodes.length) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                '${playableEpisodes.length} متاحة',
+                                style: const TextStyle(
+                                  color: AppColors.mutedText,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (episodes.isEmpty && stories.isEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
@@ -617,8 +624,8 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
                         ),
                         child: const _EmptyEpisodes(),
                       ),
-                    )
-                  else
+                    ),
+                  if (episodes.isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsetsDirectional.fromSTEB(
                         padding,
@@ -642,6 +649,43 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
                         },
                       ),
                     ),
+                  if (stories.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsetsDirectional.fromSTEB(
+                          padding,
+                          episodes.isEmpty ? 20 : 28,
+                          padding,
+                          0,
+                        ),
+                        child: Text(
+                          'القصص (${stories.length})',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: EdgeInsetsDirectional.fromSTEB(
+                        padding,
+                        12,
+                        padding,
+                        0,
+                      ),
+                      sliver: SliverList.separated(
+                        itemCount: stories.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) => _StoryTile(
+                          story: stories[index],
+                          index: index + 1,
+                          onTap: () => _openStory(context, stories[index].id),
+                        ),
+                      ),
+                    ),
+                  ],
                   if (related.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
@@ -715,6 +759,10 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
 
   static void _openPlayback(BuildContext context, String episodeId) {
     context.push('/playback/$episodeId');
+  }
+
+  static void _openStory(BuildContext context, String storyId) {
+    context.push('/reader/$storyId?contentType=story');
   }
 }
 
@@ -805,6 +853,8 @@ class _EpisodeTile extends StatelessWidget {
                             networkUrl: episode.thumbnailUrl,
                             assetPath: episode.thumbnailAsset,
                             semanticLabel: episode.title,
+                            // حوض 120×68 (`PERF-102`).
+                            decodeWidth: 120,
                           ),
                         ),
                       ),
@@ -872,7 +922,10 @@ class _EpisodeTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        playable ? episode.durationLabel : 'غير متاحة للمشاهدة',
+                        // مدةٌ غير مقيسة تُترك فارغة، ولا تُستبدل بوصفٍ لم يقِسه أحد.
+                        playable
+                            ? (episode.durationLabel ?? '')
+                            : 'غير متاحة للمشاهدة',
                         style: TextStyle(
                           color: playable
                               ? AppColors.mutedText.withValues(alpha: 0.72)
@@ -888,6 +941,90 @@ class _EpisodeTile extends StatelessWidget {
                 ),
                 Icon(
                   playable ? Icons.chevron_left_rounded : Icons.block_rounded,
+                  color: AppColors.mutedText,
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StoryTile extends StatelessWidget {
+  const _StoryTile({
+    required this.story,
+    required this.index,
+    required this.onTap,
+  });
+
+  final StoryItem story;
+  final int index;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'اقرأ القصة $index، ${story.title}',
+      child: Material(
+        color: const Color(0xFF111A3A).withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    width: 120,
+                    height: 68,
+                    child: CinematicImage(
+                      networkUrl: story.coverUrl,
+                      assetPath: 'assets/images/explore/explore-read.webp',
+                      semanticLabel: story.title,
+                      // حوض 120×68 (`PERF-102`).
+                      decodeWidth: 120,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$index. ${story.title}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        story.ageLabel,
+                        style: TextStyle(
+                          color: AppColors.mutedText.withValues(alpha: 0.72),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.menu_book_rounded,
                   color: AppColors.mutedText,
                   size: 22,
                 ),

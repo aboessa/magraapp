@@ -1,36 +1,31 @@
 import 'package:flutter/material.dart';
 
-/// A selectable child avatar.
+import '../../../../core/widgets/decode_cap.dart';
+
+/// A selectable child avatar – identity from Majarra's own cartoon characters.
 ///
-/// ## Why avatars are drawn, not photographed
-///
-/// The product deliberately does not let a child upload a photo (that would
-/// create child-image storage and privacy obligations that need a separate
-/// approval). Instead every child picks from a fixed set of friendly "cosmic"
-/// identities. Each is a stable [id] — that is the only thing persisted on the
-/// family record — paired with an icon and a gradient for display. The visuals
-/// are presentation, so a future artwork drop can map the same ids to painted
-/// portraits without a data migration.
+/// No photo upload allowed (privacy). Each child picks a character from the
+/// content universe. The id is what is persisted on family_projection; the
+/// visuals are presentation-only so future artwork can replace icons with
+/// illustrated portraits without migration.
+
 @immutable
 class ChildAvatar {
   const ChildAvatar({
     required this.id,
     required this.label,
-    required this.icon,
+    required this.assetPath,
     required this.colors,
+    this.seriesId,
+    this.isPlanet = false,
   });
 
-  /// The value stored server-side (`avatar_id`). Never change an existing id or
-  /// every child using it would appear to lose their avatar.
   final String id;
-
-  /// Arabic display label, shown under the avatar in the picker.
   final String label;
-
-  final IconData icon;
-
-  /// Two-stop gradient rendered behind the icon.
+  final String assetPath; // real image asset
   final List<Color> colors;
+  final String? seriesId;
+  final bool isPlanet;
 
   Gradient get gradient => LinearGradient(
         colors: colors,
@@ -39,124 +34,285 @@ class ChildAvatar {
       );
 }
 
-/// The canonical avatar catalogue.
-///
-/// The first four ids (`orbit`, `comet`, `nova`, `luna`) match the keys the
-/// create-profile form used before a picker existed, so profiles created then
-/// keep their avatar.
 abstract final class ChildAvatars {
+  // All avatars are real character images – not generic icons.
+  // Images generated from character sheets in majarra_images/assets/images/characters/
   static const all = <ChildAvatar>[
-    ChildAvatar(
-      id: 'orbit',
-      label: 'مدار',
-      icon: Icons.public_rounded,
-      colors: [Color(0xFF00D6F5), Color(0xFF3A7BFF)],
-    ),
-    ChildAvatar(
-      id: 'comet',
-      label: 'مذنّب',
-      icon: Icons.auto_awesome_rounded,
-      colors: [Color(0xFFFF8A3D), Color(0xFFFF3D77)],
-    ),
-    ChildAvatar(
-      id: 'nova',
-      label: 'نجم',
-      icon: Icons.star_rounded,
-      colors: [Color(0xFFFFC93D), Color(0xFFFF7A3D)],
-    ),
+    // ── Luna – أبجد (preschool language)
     ChildAvatar(
       id: 'luna',
-      label: 'قمر',
-      icon: Icons.nightlight_round,
-      colors: [Color(0xFF9B6BFF), Color(0xFF5B3DF2)],
+      label: 'لونا',
+      assetPath: 'assets/avatars/characters/luna-full.png',
+      colors: [Color(0xFFFFC94A), Color(0xFFE67E22)],
+      seriesId: 'series-preschool-luna-words',
     ),
-    ChildAvatar(
-      id: 'astro',
-      label: 'رائد فضاء',
-      icon: Icons.rocket_launch_rounded,
-      colors: [Color(0xFF3DF2C4), Color(0xFF00A6B8)],
-    ),
-    ChildAvatar(
-      id: 'robo',
-      label: 'روبوت',
-      icon: Icons.smart_toy_rounded,
-      colors: [Color(0xFF6EE7B7), Color(0xFF3B82F6)],
-    ),
-    ChildAvatar(
-      id: 'galaxy',
-      label: 'مجرّة',
-      icon: Icons.blur_on_rounded,
-      colors: [Color(0xFFFF6FAE), Color(0xFF9B6BFF)],
-    ),
-    ChildAvatar(
-      id: 'saturn',
-      label: 'زحل',
-      icon: Icons.brightness_7_rounded,
-      colors: [Color(0xFFFFD36E), Color(0xFFFF9F45)],
-    ),
+    ChildAvatar(id: 'luna-happy', label: 'لونا سعيدة', assetPath: 'assets/avatars/characters/luna-happy.png', colors: [Color(0xFFFFC94A), Color(0xFFE67E22)]),
+    ChildAvatar(id: 'luna-excited', label: 'لونا متحمسة', assetPath: 'assets/avatars/characters/luna-excited.png', colors: [Color(0xFFFFC94A), Color(0xFFE67E22)]),
+
+    // ── Nouma – أرقام (kids)
+    ChildAvatar(id: 'nouma', label: 'نوما', assetPath: 'assets/avatars/characters/nouma-full.png', colors: [Color(0xFF4ECDC4), Color(0xFF2A7DE1)]),
+    ChildAvatar(id: 'nouma-happy', label: 'نوما سعيدة', assetPath: 'assets/avatars/characters/nouma-happy.png', colors: [Color(0xFF4ECDC4), Color(0xFF2A7DE1)]),
+    ChildAvatar(id: 'nouma-thinking', label: 'نوما تفكر', assetPath: 'assets/avatars/characters/nouma-thinking.png', colors: [Color(0xFF4ECDC4), Color(0xFF2A7DE1)]),
+
+    // ── Zaina & Yaseen – العالم حولنا / المستكشفون
+    ChildAvatar(id: 'zaina', label: 'زينة', assetPath: 'assets/avatars/characters/zaina-full.png', colors: [Color(0xFF9B59B6), Color(0xFF8E44AD)]),
+    ChildAvatar(id: 'zaina-front', label: 'زينة', assetPath: 'assets/avatars/characters/zaina-front.png', colors: [Color(0xFF9B59B6), Color(0xFF8E44AD)]),
+    ChildAvatar(id: 'zaina-jump', label: 'زينة تقفز', assetPath: 'assets/avatars/characters/zaina-jump.png', colors: [Color(0xFF9B59B6), Color(0xFF8E44AD)]),
+
+    ChildAvatar(id: 'yaseen', label: 'ياسين', assetPath: 'assets/avatars/characters/yaseen-full.png', colors: [Color(0xFF3498DB), Color(0xFF2980B9)]),
+    ChildAvatar(id: 'yaseen-front', label: 'ياسين', assetPath: 'assets/avatars/characters/yaseen-front.png', colors: [Color(0xFF3498DB), Color(0xFF2980B9)]),
+    ChildAvatar(id: 'yaseen-highfive', label: 'ياسين يحتفل', assetPath: 'assets/avatars/characters/yaseen-highfive.png', colors: [Color(0xFF3498DB), Color(0xFF2980B9)]),
+
+    // ── Addaad robot – أرقام / الجمع
+    ChildAvatar(id: 'addaad', label: 'عدّاد', assetPath: 'assets/avatars/characters/addaad-happy.png', colors: [Color(0xFF2C3E50), Color(0xFF1ABC9C)]),
+    ChildAvatar(id: 'addaad-learning', label: 'عدّاد يتعلم', assetPath: 'assets/avatars/characters/addaad-learning.png', colors: [Color(0xFF2C3E50), Color(0xFF1ABC9C)]),
+    ChildAvatar(id: 'addaad-celebrating', label: 'عدّاد يحتفل', assetPath: 'assets/avatars/characters/addaad-celebrating.png', colors: [Color(0xFF2C3E50), Color(0xFF1ABC9C)]),
+
+    // ── Robo junior – مهارات / برمجة
+    ChildAvatar(id: 'robo', label: 'روبو', assetPath: 'assets/avatars/characters/robo-analytical.png', colors: [Color(0xFF2C3E50), Color(0xFF3498DB)]),
+    ChildAvatar(id: 'robo-success', label: 'روبو نجح', assetPath: 'assets/avatars/characters/robo-success.png', colors: [Color(0xFF2C3E50), Color(0xFF3498DB)]),
+
+    // ── Salma – علوم / جرّب في البيت
+    ChildAvatar(id: 'salma', label: 'سلمى', assetPath: 'assets/avatars/characters/salma-full.png', colors: [Color(0xFF1E3A5F), Color(0xFF00BFFF)]),
+
+    // ── Planets – also usable as avatars
+    ChildAvatar(id: 'abjad', label: 'كوكب أبجد', assetPath: 'assets/avatars/planets/abjad.png', colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)], isPlanet: true),
+    ChildAvatar(id: 'arqam', label: 'كوكب أرقام', assetPath: 'assets/avatars/planets/arqam.png', colors: [Color(0xFF4ECDC4), Color(0xFF2A9D8F)], isPlanet: true),
+    ChildAvatar(id: 'oloom', label: 'كوكب علوم', assetPath: 'assets/avatars/planets/oloom.png', colors: [Color(0xFF45B7D1), Color(0xFF6A82FB)], isPlanet: true),
+    ChildAvatar(id: 'qiyam', label: 'كوكب قيم', assetPath: 'assets/avatars/planets/qiyam.png', colors: [Color(0xFF96CEB4), Color(0xFF2FBF8F)], isPlanet: true),
+    ChildAvatar(id: 'qisas', label: 'كوكب قصص', assetPath: 'assets/avatars/planets/qisas.png', colors: [Color(0xFFFECA57), Color(0xFFFF9F45)], isPlanet: true),
+    ChildAvatar(id: 'maharat', label: 'كوكب مهارات', assetPath: 'assets/avatars/planets/maharat.png', colors: [Color(0xFFA29BFE), Color(0xFF6C5CE7)], isPlanet: true),
+
+    // ── Legacy gen id mapping – keep stable
+    ChildAvatar(id: 'orbit', label: 'مدار', assetPath: 'assets/avatars/characters/luna-full.png', colors: [Color(0xFF00D6F5), Color(0xFF3A7BFF)]),
+    ChildAvatar(id: 'comet', label: 'مذنّب', assetPath: 'assets/avatars/characters/yaseen-front.png', colors: [Color(0xFFFF8A3D), Color(0xFFFF3D77)]),
+    ChildAvatar(id: 'nova', label: 'نجم', assetPath: 'assets/avatars/characters/nouma-happy.png', colors: [Color(0xFFFFC93D), Color(0xFFFF7A3D)]),
   ];
 
   static const _fallback = ChildAvatar(
-    id: 'orbit',
-    label: 'مدار',
-    icon: Icons.public_rounded,
-    colors: [Color(0xFF00D6F5), Color(0xFF3A7BFF)],
+    id: 'luna',
+    label: 'لونا',
+    assetPath: 'assets/avatars/characters/luna-full.png',
+    colors: [Color(0xFFFFC94A), Color(0xFFE67E22)],
   );
 
-  /// Resolves an id to its avatar, falling back to the first one for an unknown
-  /// id (e.g. a profile created by a future client with a newer avatar). The
-  /// fallback is visible and consistent, never a broken image.
   static ChildAvatar byId(String? id) {
     if (id == null || id.isEmpty) return _fallback;
     for (final avatar in all) {
       if (avatar.id == id) return avatar;
     }
+    const legacy = {
+      'avatar-girl-1': 'luna',
+      'avatar-boy-1': 'yaseen',
+      'avatar-girl-2': 'zaina',
+      'avatar-boy-2': 'yaseen',
+      'bear': 'luna',
+      'luna': 'luna',
+      'zaina': 'zaina',
+      'yaseen': 'yaseen',
+      'nouma': 'nouma',
+      'robo': 'robo',
+      'salma': 'salma',
+      'addaad': 'addaad',
+    };
+    final mapped = legacy[id];
+    if (mapped != null) return byId(mapped);
     return _fallback;
   }
+
+  // For picker sections
+  static List<ChildAvatar> get characters => all.where((a) => !a.isPlanet).toList();
+  static List<ChildAvatar> get planets => all.where((a) => a.isPlanet).toList();
 }
 
-/// Renders a single avatar as a circular gradient badge with its icon.
+/// PREMIUM AVATAR VIEW
+/// Designed for true 1:1 portrait avatars (70% face) – but also handles
+/// legacy full-body crops from character sheets by auto-focusing on the face region.
+/// Shows a solid premium background + correctly framed face.
 class ChildAvatarView extends StatelessWidget {
   const ChildAvatarView({
     required this.avatarId,
     this.size = 56,
     this.selected = false,
+    this.showBorder = true,
+    this.showShadow = true,
     super.key,
   });
 
   final String avatarId;
   final double size;
   final bool selected;
+  final bool showBorder;
+  final bool showShadow;
 
   @override
   Widget build(BuildContext context) {
     final avatar = ChildAvatars.byId(avatarId);
+    // Per-character alignment hints – where the FACE is in the legacy crops.
+    // New 1:1 avatars are centered already (0,0), legacy full-body need offset.
+    final align = _avatarAlignment[avatar.id] ?? Alignment.center;
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: avatar.gradient,
-        border: selected
-            ? Border.all(color: Colors.white, width: 3)
-            : Border.all(color: Colors.white.withValues(alpha: 0.18)),
-        boxShadow: [
-          BoxShadow(
-            color: avatar.colors.last.withValues(alpha: selected ? 0.5 : 0.25),
-            blurRadius: selected ? 18 : 10,
-          ),
-        ],
+        gradient: LinearGradient(
+          colors: [
+            avatar.colors.first.withValues(alpha: 0.95),
+            avatar.colors.last,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: showBorder
+            ? selected
+                ? Border.all(color: Colors.white, width: 3)
+                : Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1.2)
+            : null,
+        boxShadow: showShadow
+            ? [
+                BoxShadow(
+                  color: avatar.colors.last.withValues(alpha: selected ? 0.50 : 0.28),
+                  blurRadius: selected ? 24 : 14,
+                  offset: const Offset(0, 7),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.32),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
-      child: Icon(avatar.icon, color: Colors.white, size: size * 0.5),
+      child: ClipOval(
+        child: Stack(
+          children: [
+            // Premium solid interior background – ensures white edges never show
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    avatar.colors.first.withValues(alpha: 0.22),
+                    avatar.colors.first.withValues(alpha: 0.08),
+                    const Color(0xFF0B1026).withValues(alpha: 0.92),
+                  ],
+                  center: Alignment.center,
+                  radius: 1.15,
+                ),
+              ),
+            ),
+            // Actual portrait – aligned to face, covers better than before
+            Positioned.fill(
+              child: Image.asset(
+                avatar.assetPath,
+                fit: BoxFit.cover,
+                alignment: align,
+                width: size,
+                height: size,
+                // خمسون أفاتارًا حتى 768×1376 كانت تُفكّ بكامل أبعادها في شبكةٍ
+                // خلاياها 72 بكسلًا: نحو 4 ميغابايت للواحد، و200 لو عاشت كلّها.
+                // و`width` أعلاه تخطيطٌ لا فكّ ترميز (`PERF-102`).
+                cacheWidth: decodeCapFor(context, size),
+                errorBuilder: (context, error, stack) {
+                  return Container(
+                    width: size,
+                    height: size,
+                    decoration: BoxDecoration(gradient: avatar.gradient),
+                    child: Center(
+                      child: Text(
+                        avatar.label.characters.first,
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: size * 0.38),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Subtle inner vignette to make edge clean and premium
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.18),
+                    ],
+                    stops: const [0.0, 0.82, 1.0],
+                    center: Alignment.center,
+                    radius: 1.0,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-/// A child-safe grid picker for choosing an avatar.
-///
-/// Stateless and controlled: it reports selection through [onSelected] and
-/// highlights [selectedId], so the hosting form owns the value. Each cell is a
-/// large touch target with a semantic label for screen readers.
+/// With v3 fixed avatars, faces are already centered – use center for all.
+/// Keeping map for legacy safety but all default to center now.
+const Map<String, Alignment> _avatarAlignment = {
+  'luna': Alignment.center,
+  'luna-happy': Alignment.center,
+  'luna-excited': Alignment.center,
+  'luna-smile': Alignment.center,
+  'luna-curious': Alignment.center,
+  'luna-point': Alignment.center,
+  'luna-calm': Alignment.center,
+  'nouma': Alignment.center,
+  'nouma-happy': Alignment.center,
+  'nouma-thinking': Alignment.center,
+  'nouma-smile': Alignment.center,
+  'nouma-like': Alignment.center,
+  'nouma-angry': Alignment.center,
+  'nouma-surprised': Alignment.center,
+  'zaina': Alignment.center,
+  'zaina-front': Alignment.center,
+  'zaina-full': Alignment.center,
+  'zaina-jump': Alignment.center,
+  'zaina-side': Alignment.center,
+  'zaina-magnify': Alignment.center,
+  'zaina-map': Alignment.center,
+  'yaseen': Alignment.center,
+  'yaseen-front': Alignment.center,
+  'yaseen-full': Alignment.center,
+  'yaseen-highfive': Alignment.center,
+  'yaseen-magnify': Alignment.center,
+  'yaseen-map': Alignment.center,
+  'yaseen-surprised': Alignment.center,
+  'salma': Alignment.center,
+  'addaad': Alignment.center,
+  'addaad-happy': Alignment.center,
+  'addaad-learning': Alignment.center,
+  'addaad-celebrating': Alignment.center,
+  'addaad-thinking': Alignment.center,
+  'addaad-confused': Alignment.center,
+  'addaad-help': Alignment.center,
+  'robo': Alignment.center,
+  'robo-analytical': Alignment.center,
+  'robo-success': Alignment.center,
+  'robo-curious': Alignment.center,
+  'robo-debugging': Alignment.center,
+  'robo-explaining': Alignment.center,
+  'robo-warning': Alignment.center,
+  'abjad': Alignment.center,
+  'arqam': Alignment.center,
+  'oloom': Alignment.center,
+  'qiyam': Alignment.center,
+  'qisas': Alignment.center,
+  'maharat': Alignment.center,
+};
+
 class ChildAvatarPicker extends StatelessWidget {
   const ChildAvatarPicker({
     required this.selectedId,
@@ -171,44 +327,95 @@ class ChildAvatarPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 14,
-      runSpacing: 14,
+    final chars = ChildAvatars.characters;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final avatar in ChildAvatars.all)
-          Semantics(
-            button: true,
-            selected: avatar.id == selectedId,
-            label: avatar.label,
-            child: InkWell(
-              onTap: enabled ? () => onSelected(avatar.id) : null,
-              borderRadius: BorderRadius.circular(40),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(color: const Color(0xFFFFD54F).withValues(alpha: 0.10), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFFFD54F).withValues(alpha: 0.18))),
+          child: const Row(
+            children: [
+              Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFFFFD54F)),
+              SizedBox(width: 6),
+              Text('شخصيات مجرة الحقيقية', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+              SizedBox(width: 6),
+              Expanded(child: Text('لونا، ياسين، زينة، نوما، سلمى، عدّاد، روبو', style: TextStyle(color: Colors.white60, fontSize: 9), overflow: TextOverflow.ellipsis)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        // Use GridView-like Wrap centered, with proper RTL and spacing
+        Wrap(
+          alignment: WrapAlignment.start,
+          spacing: 10,
+          runSpacing: 14,
+          children: [
+            for (final avatar in chars)
+              SizedBox(
+                width: 78,
+                child: _AvatarCell(avatar: avatar, selected: avatar.id == selectedId, enabled: enabled, onTap: () => onSelected(avatar.id)),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AvatarCell extends StatelessWidget {
+  const _AvatarCell({required this.avatar, required this.selected, required this.enabled, required this.onTap});
+  final ChildAvatar avatar;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: avatar.label,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(20),
+        child: SizedBox(
+          width: 72,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  ChildAvatarView(
-                    avatarId: avatar.id,
-                    size: 60,
-                    selected: avatar.id == selectedId,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    avatar.label,
-                    style: TextStyle(
-                      color: avatar.id == selectedId
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.6),
-                      fontSize: 10.5,
-                      fontWeight: avatar.id == selectedId
-                          ? FontWeight.w700
-                          : FontWeight.w500,
+                  ChildAvatarView(avatarId: avatar.id, size: 62, selected: selected),
+                  if (selected)
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Container(
+                        width: 20, height: 20,
+                        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF0B1026), width: 2)),
+                        child: const Icon(Icons.check_rounded, size: 12, color: Color(0xFF0B1026)),
+                      ),
                     ),
-                  ),
                 ],
               ),
-            ),
+              const SizedBox(height: 6),
+              Text(
+                avatar.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: selected ? Colors.white : Colors.white.withValues(alpha: 0.64),
+                  fontSize: 10.5,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-      ],
+        ),
+      ),
     );
   }
 }

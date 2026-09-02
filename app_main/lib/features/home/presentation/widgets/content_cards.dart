@@ -293,7 +293,11 @@ class EpisodeCard extends StatelessWidget {
       height: height,
       child: FocusableScale(
         onPressed: onPressed,
-        semanticLabel: '${item.title}، ${item.durationLabel}',
+        // التسمية الوصفية تذكر المدة إن كانت مقيسة فقط: قارئ الشاشة لا يجوز أن
+        // يسمع وصفًا لم يقِسه أحد.
+        semanticLabel: item.durationLabel == null
+            ? item.title
+            : '${item.title}، ${item.durationLabel}',
         autofocus: autofocus,
         child: Container(
           decoration: CinematicCardDecoration.premiumCard(borderRadius: 14),
@@ -382,7 +386,9 @@ class EpisodeCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    _Pill(label: item.durationLabel),
+                    // لا شارة مدة لِما لم يُقَس: الشارة الفارغة أصدق من رقمٍ مختلق.
+                    if (item.durationLabel != null)
+                      _Pill(label: item.durationLabel!),
                   ],
                 ),
               ),
@@ -598,6 +604,7 @@ class ExperienceCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               CinematicImage(
+                networkUrl: item.coverUrl,
                 assetPath: item.imageAsset,
                 semanticLabel: item.title,
                 decodeWidth: width,

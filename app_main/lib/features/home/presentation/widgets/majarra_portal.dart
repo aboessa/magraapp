@@ -403,6 +403,8 @@ class _PremiumPortalDialogState extends State<_PremiumPortalDialog> {
         autofocus: true,
         child: Semantics(
           scopesRoute: true,
+          // A route-scoping semantics node must own an explicit subtree.
+          explicitChildNodes: true,
           namesRoute: true,
           label: 'بوابة مجرة',
           child: Material(

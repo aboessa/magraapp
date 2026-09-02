@@ -66,13 +66,46 @@ class FreeStroke {
   };
 }
 
-const List<double> kBrushSizes = [8, 16, 28];
-const int kMaxStrokes = 50;
-const int kMaxUndone = 50;
+const List<double> kBrushSizes = [3, 6, 10, 16, 26, 42];
+const int kMaxStrokes = 120;
+const int kMaxUndone = 80;
+
+/// Controller that lets outer pages clear/undo/redo the free-draw canvas
+/// without needing a GlobalKey. GameSessionController remains the source of
+/// truth for document save; this only manipulates the stroke layer.
+class FreeDrawController {
+  FreeDrawController();
+  VoidCallback? reset;
+  VoidCallback? _clearFn;
+  VoidCallback? _clearDirectFn;
+  VoidCallback? _undoFn;
+  VoidCallback? _redoFn;
+  void _attach({VoidCallback? clear, VoidCallback? clearDirect, VoidCallback? undo, VoidCallback? redo}) {
+    _clearFn = clear;
+    _clearDirectFn = clearDirect;
+    _undoFn = undo;
+    _redoFn = redo;
+    reset = clearDirect ?? clear;
+  }
+
+  void _detach() {
+    _clearFn = null;
+    _clearDirectFn = null;
+    _undoFn = null;
+    _redoFn = null;
+    reset = null;
+  }
+
+  void clear() => (_clearDirectFn ?? _clearFn)?.call();
+  void clearDirect() => _clearDirectFn?.call();
+  void undo() => _undoFn?.call();
+  void redo() => _redoFn?.call();
+}
 
 class FreeDrawSurface extends StatefulWidget {
   const FreeDrawSurface({
     required this.controller,
+    this.drawController,
     this.initialDocument,
     this.onInitialStrokesRestored,
     this.onStrokesChanged,
@@ -84,6 +117,9 @@ class FreeDrawSurface extends StatefulWidget {
   });
 
   final GameSessionController controller;
+
+  /// Optional imperative controls for outer screen actions such as reset.
+  final FreeDrawController? drawController;
 
   /// When continuation (متابعة الرسم), strokes/fills/template are restored.
   final CreationDocument? initialDocument;
@@ -121,18 +157,34 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
   Size _canvasSize = const Size.square(320);
 
   static const _fallbackPalette = <String>[
-    '#111827',
+    '#000000',
     '#FFFFFF',
-    '#FFD34D',
+    '#1A1A2E',
+    '#FF3B30',
+    '#FF6B35',
     '#FF9F1C',
-    '#EF4444',
-    '#FF6FAE',
-    '#9D68FF',
-    '#2580FF',
-    '#00D6F5',
+    '#FFD34D',
+    '#FFCC02',
+    '#FFE066',
     '#22C55E',
+    '#00C950',
+    '#00D6F5',
+    '#0EA5E9',
+    '#2580FF',
+    '#3B82F6',
+    '#6366F1',
+    '#9D68FF',
+    '#6A3DF2',
+    '#A855F7',
+    '#EC4899',
+    '#FF6FAE',
+    '#F43F5E',
+    '#EF4444',
+    '#8B4513',
     '#795548',
+    '#A0826D',
     '#6B7280',
+    '#9CA3AF',
   ];
 
   List<String> get _palette {
@@ -149,6 +201,7 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
   void initState() {
     super.initState();
     _color = _parseHex(_palette.first);
+    _attachDrawController();
     // Restore strokes from document if present (normalised 0..1 -> pixel).
     // Defer actual pixel conversion until we know canvas size; keep a pending flag
     // and convert in first layout.
@@ -159,6 +212,24 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
     }
   }
 
+  @override
+  void didUpdateWidget(covariant FreeDrawSurface oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.drawController != widget.drawController) {
+      oldWidget.drawController?._detach();
+      _attachDrawController();
+    }
+  }
+
+  void _attachDrawController() {
+    widget.drawController?._attach(
+      clear: _clear,
+      clearDirect: _clearDirect,
+      undo: _undo,
+      redo: _redo,
+    );
+  }
+
   List<DocStroke>? _restorePending;
 
   bool get _reduceMotion =>
@@ -167,6 +238,7 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
 
   @override
   void dispose() {
+    widget.drawController?._detach();
     _viewTransform.dispose();
     super.dispose();
   }
@@ -319,6 +391,17 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
     _notifyStrokes();
   }
 
+  void _clearDirect() {
+    setState(() {
+      _undone
+        ..clear()
+        ..addAll(_strokes.reversed.take(kMaxUndone));
+      _strokes.clear();
+      _current = [];
+    });
+    _notifyStrokes();
+  }
+
   Future<void> _clear() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -338,21 +421,15 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    setState(() {
-      _undone
-        ..clear()
-        ..addAll(_strokes.reversed.take(kMaxUndone));
-      _strokes.clear();
-      _current = [];
-    });
-    _notifyStrokes();
+    _clearDirect();
   }
 
   @override
   Widget build(BuildContext context) {
     final level = widget.controller.level;
     final target = effectiveTouchTarget(widget.controller.pack.accessibility);
-    final background = Theme.of(context).colorScheme.surface;
+    // لوحة بيضا صافية كما طلب — أبيض نقي مهما كان الثيم غامق
+    const background = Colors.white;
     final doc = widget.initialDocument;
 
     return Column(
@@ -412,9 +489,17 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
                         decoration: BoxDecoration(
                           color: background,
                           border: Border.all(
-                            color: Theme.of(context).colorScheme.outlineVariant,
+                            color: const Color(0x1A000000),
+                            width: 1.2,
                           ),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: Stack(
@@ -499,209 +584,327 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
       DrawBrush.crayon: ('شمع', Icons.brush_outlined),
       DrawBrush.paintBrush: ('فرشاة', Icons.format_paint_outlined),
     };
-    return Material(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-        child: Column(
-          children: [
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
+    return _StudioToolbar(
+      child: Column(
+        children: [
+          SizedBox(
+            height: target,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               children: [
                 for (final entry in labels.entries)
-                  ChoiceChip(
-                    avatar: Icon(entry.value.$2, size: 18),
-                    label: Text(entry.value.$1),
+                  _StudioToolButton(
+                    icon: entry.value.$2,
+                    label: entry.value.$1,
                     selected: !_panMode && !_erasing && _brush == entry.key,
-                    onSelected: (_) => setState(() {
+                    onPressed: () => setState(() {
                       _brush = entry.key;
                       _erasing = false;
                       _panMode = false;
                     }),
                   ),
-                ChoiceChip(
-                  avatar: const Icon(Icons.pan_tool_alt_outlined, size: 18),
-                  label: const Text('تحريك/تكبير'),
+                _StudioToolButton(
+                  icon: Icons.pan_tool_alt_outlined,
+                  label: 'تحريك',
                   selected: _panMode,
-                  onSelected: (selected) => setState(() {
-                    _panMode = selected;
+                  onPressed: () => setState(() {
+                    _panMode = !_panMode;
                     _activePointer = null;
                     _current = [];
                   }),
                 ),
                 if (_panMode)
-                  ActionChip(
-                    avatar: const Icon(Icons.center_focus_strong, size: 18),
-                    label: const Text('إعادة العرض'),
+                  _StudioToolButton(
+                    icon: Icons.center_focus_strong,
+                    label: 'توسيط',
                     onPressed: () => _viewTransform.value = Matrix4.identity(),
                   ),
               ],
             ),
-            Row(
+          ),
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(12, 2, 12, 6),
+            child: Row(
               children: [
-                const Icon(Icons.opacity, size: 20),
-                const SizedBox(width: 8),
-                const Text('الشفافية'),
+                const Icon(Icons.opacity_rounded, size: 17, color: Color(0xFFBFC8FF)),
+                const SizedBox(width: 6),
+                Text('شفافية ${(_opacity * 100).round()}٪', style: const TextStyle(color: Color(0xFFBFC8FF), fontSize: 11, fontWeight: FontWeight.w700)),
                 Expanded(
-                  child: Slider(
-                    value: _opacity,
-                    min: 0.2,
-                    max: 1,
-                    divisions: 8,
-                    label: '${(_opacity * 100).round()}٪',
-                    onChanged: _erasing
-                        ? null
-                        : (value) => setState(() => _opacity = value),
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 3,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                      activeTrackColor: const Color(0xFF00D6F5),
+                      inactiveTrackColor: Colors.white24,
+                      thumbColor: const Color(0xFF00D6F5),
+                    ),
+                    child: Slider(
+                      value: _opacity,
+                      min: 0.2,
+                      max: 1,
+                      divisions: 8,
+                      onChanged: _erasing ? null : (value) => setState(() => _opacity = value),
+                    ),
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildPalette(BuildContext context, double target) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 10,
-        runSpacing: 10,
+    // ألوان أكثر + أحجام فرش أكثر — صفّين منفصلين أوضح للطفل
+    return _StudioToolbar(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          for (final hex in _palette)
-            Semantics(
-              button: true,
-              selected:
-                  !_erasing && _color.toARGB32() == _parseHex(hex).toARGB32(),
-              label: 'اختيار اللون $hex',
-              child: InkResponse(
-                onTap: () => setState(() {
-                  _color = _parseHex(hex);
-                  _erasing = false;
-                }),
-                containedInkWell: true,
-                customBorder: const CircleBorder(),
-                radius: target / 2,
-                child: Container(
-                  width: target,
-                  height: target,
-                  decoration: BoxDecoration(
-                    color: _parseHex(hex),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color:
-                          !_erasing &&
-                              _color.toARGB32() == _parseHex(hex).toARGB32()
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Colors.transparent,
-                      width: 3,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          for (final size in kBrushSizes)
-            Semantics(
-              button: true,
-              selected: _width == size,
-              label: 'حجم القلم ${size.round()}',
-              child: InkResponse(
-                onTap: () => setState(() => _width = size),
-                containedInkWell: true,
-                customBorder: const CircleBorder(),
-                radius: target / 2,
-                child: Container(
-                  width: target,
-                  height: target,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: _width == size
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outlineVariant,
-                      width: _width == size ? 3 : 1,
-                    ),
-                  ),
-                  child: Center(
+          // صف الألوان — 28 لون سكرول أفقي
+          SizedBox(
+            height: target + 14,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              separatorBuilder: (_, __) => const SizedBox(width: 6),
+              itemCount: _palette.length,
+              itemBuilder: (context, i) {
+                final hex = _palette[i];
+                final isSelected = !_erasing && _color.toARGB32() == _parseHex(hex).toARGB32();
+                final isWhite = hex.toUpperCase() == '#FFFFFF';
+                return Semantics(
+                  button: true,
+                  selected: isSelected,
+                  label: 'اختيار اللون $hex',
+                  child: InkResponse(
+                    onTap: () => setState(() {
+                      _color = _parseHex(hex);
+                      _erasing = false;
+                    }),
+                    containedInkWell: true,
+                    customBorder: const CircleBorder(),
+                    radius: target / 2,
                     child: Container(
-                      width: size,
-                      height: size,
+                      width: target,
+                      height: target,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: _parseHex(hex),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFFFFD34D) : (isWhite ? Colors.black26 : Colors.white24),
+                          width: isSelected ? 3 : (isWhite ? 1.5 : 1),
+                        ),
+                        boxShadow: isSelected
+                            ? [BoxShadow(color: const Color(0xFFFFD34D).withValues(alpha: 0.4), blurRadius: 6, spreadRadius: 1)]
+                            : null,
+                      ),
+                      child: isSelected
+                          ? const Icon(Icons.check_rounded, size: 16, color: Color(0xFF11183D))
+                          : null,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Container(height: 1, color: Colors.white10, margin: const EdgeInsets.symmetric(horizontal: 12)),
+          // صف أحجام الفرش — 6 أحجام من رفيع جداً لسميك
+          SizedBox(
+            height: target + 14,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemCount: kBrushSizes.length,
+              itemBuilder: (context, i) {
+                final size = kBrushSizes[i];
+                final selected = _width == size;
+                // خريطة بصرية: 3→6px, 42→26px لتظل داخل الدائرة
+                final dot = (4 + (size / 42) * 20).clamp(4.0, 26.0);
+                final label = switch (i) {
+                  0 => 'رفيع جداً',
+                  1 => 'رفيع',
+                  2 => 'متوسط',
+                  3 => 'عريض',
+                  4 => 'سميك',
+                  5 => 'سميك جداً',
+                  _ => 'حجم ${size.round()}',
+                };
+                return Semantics(
+                  button: true,
+                  selected: selected,
+                  label: label,
+                  child: InkResponse(
+                    onTap: () => setState(() => _width = size),
+                    containedInkWell: true,
+                    customBorder: const CircleBorder(),
+                    radius: target / 2,
+                    child: Container(
+                      width: target,
+                      height: target,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: selected ? const Color(0xFFFFD34D) : Colors.white.withValues(alpha: 0.08),
+                        border: Border.all(
+                          color: selected ? const Color(0xFFFFD34D) : Colors.white24,
+                          width: selected ? 3 : 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: dot,
+                          height: dot,
+                          decoration: BoxDecoration(
+                            color: selected ? const Color(0xFF11183D) : Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildTools(BuildContext context, double target) {
-    final style = ButtonStyle(
-      minimumSize: WidgetStatePropertyAll(Size(target, target)),
-    );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 10,
-        runSpacing: 8,
-        children: [
+    return _StudioToolbar(
+      bottomMargin: 12,
+      child: SizedBox(
+        height: target + 12,
+        child: Row(
+          children: [
+            const SizedBox(width: 8),
           Semantics(
             selected: _erasing,
-            child: OutlinedButton.icon(
+            child: _StudioToolButton(
               key: const Key('free_eraser'),
               onPressed: () => setState(() => _erasing = !_erasing),
-              icon: Icon(
-                _erasing ? Icons.brush : Icons.cleaning_services_outlined,
-              ),
-              label: Text(_erasing ? 'ارسم' : 'ممحاة'),
-              style: style,
+              icon: _erasing ? Icons.brush_rounded : Icons.cleaning_services_outlined,
+              label: _erasing ? 'ارسم' : 'ممحاة',
+              selected: _erasing,
             ),
           ),
-          OutlinedButton.icon(
+          _StudioToolButton(
             key: const Key('free_undo'),
             onPressed: _strokes.isEmpty ? null : _undo,
-            icon: const Icon(Icons.undo),
-            label: const Text('رجوع'),
-            style: style,
+            icon: Icons.undo_rounded,
+            label: 'رجوع',
           ),
-          OutlinedButton.icon(
+          _StudioToolButton(
             key: const Key('free_redo'),
             onPressed: _undone.isEmpty ? null : _redo,
-            icon: const Icon(Icons.redo),
-            label: const Text('إعادة'),
-            style: style,
+            icon: Icons.redo_rounded,
+            label: 'إعادة',
           ),
-          OutlinedButton.icon(
+          _StudioToolButton(
             key: const Key('free_clear'),
             onPressed: _strokes.isEmpty && _current.isEmpty ? null : _clear,
-            icon: const Icon(Icons.refresh),
-            label: const Text('من جديد'),
-            style: style,
+            icon: Icons.refresh_rounded,
+            label: 'من جديد',
           ),
-          OutlinedButton.icon(
+          _StudioToolButton(
             onPressed: widget.controller.repeatInstruction,
-            icon: const Icon(Icons.volume_up_outlined),
-            label: const Text('أعد التعليمة'),
-            style: style,
+            icon: Icons.volume_up_outlined,
+            label: 'تعليمات',
           ),
-          FilledButton.icon(
-            key: const Key('free_done'),
-            onPressed: widget.controller.markDone,
-            icon: const Icon(Icons.check),
-            label: const Text('تم'),
-            style: style,
+          const Spacer(),
+          Semantics(
+            button: true,
+            label: 'تم',
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: FilledButton.icon(
+                key: const Key('free_done'),
+                onPressed: widget.controller.markDone,
+                icon: const Icon(Icons.check_rounded, size: 18),
+                label: const Text('تم'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF6A3DF2),
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(76, target),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
           ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StudioToolbar extends StatelessWidget {
+  const _StudioToolbar({required this.child, this.bottomMargin = 4});
+
+  final Widget child;
+  final double bottomMargin;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: EdgeInsetsDirectional.only(bottom: bottomMargin),
+    color: const Color(0xFF11183D),
+    child: child,
+  );
+}
+
+class _StudioToolButton extends StatelessWidget {
+  const _StudioToolButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.selected = false,
+    super.key,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final foreground = !enabled
+        ? Colors.white24
+        : selected
+            ? const Color(0xFF0C1030)
+            : const Color(0xFFDCE2FF);
+    return Semantics(
+      button: true,
+      label: label,
+      selected: selected,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+        child: Material(
+          color: selected ? const Color(0xFFFFD34D) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 7),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 20, color: foreground),
+                    const SizedBox(height: 1),
+                    Text(label, style: TextStyle(color: foreground, fontSize: 9, fontWeight: FontWeight.w800), overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

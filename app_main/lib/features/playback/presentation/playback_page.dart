@@ -1,12 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 
 import '../../../app/router/auth_guard.dart';
@@ -26,6 +23,7 @@ import '../../home/data/majarra_api_client.dart';
 import '../../home/domain/content_models.dart';
 import '../../profile/data/billing_status.dart';
 import '../../profile/data/progress_store.dart';
+import '../application/playback_providers.dart';
 import '../../profile/data/settings_store.dart';
 
 // =============================================================================
@@ -49,10 +47,11 @@ import '../../profile/data/settings_store.dart';
 // [AC4]  Fullscreen immersiveSticky, portrait->landscape, safe areas
 // [AC5]  Double-tap left/right ±10 with animated feedback (scale+icon)
 // [AC6]  300ms debounce prevents repeated seeking
-// [AC7]  Seek preview: HLS sprite thumbnail if previewSpriteUrl exists else timestamp
-//        Backend requirement: episode must expose preview_sprite_url (VTT sprite
-//        sheet URL) + optional sprite metadata (coords per second). Without it
-//        the player MUST NOT synthesize a thumbnail — show timestamp only.
+// [AC7]  Seek preview: HLS sprite thumbnail if previewSpriteUrl exists else timestamp.
+//        The server ships `preview_sprite_url`/`preview_sprite_vtt_url`
+//        (migration 0047) and the DTO parses both; today no episode has a value,
+//        so the timestamp path is what runs. The player never synthesizes a
+//        thumbnail — an invented frame is worse than a timestamp.
 // [AC8]  Episode drawer: DraggableScrollableSheet phone, 400dp side panel tablet
 // [AC9]  Episode row: thumbnail, number, title, duration, progress, watched,
 //        currently playing, download status, tap to switch
@@ -107,22 +106,30 @@ class SubtitleTrack {
   final String? url;
 }
 
-// Extension that derives extended fields from EpisodeItem WITHOUT mutating
-// the canonical model. Missing fields fall back to safe defaults so the
-// player compiles against the current EpisodeItem shape while remaining
-// forward-compatible when backend adds columns.
+// Extension that derives extended fields from EpisodeItem WITHOUT mutating the
+// canonical model. Missing fields fall back to safe defaults, so an episode that
+// carries none of them still plays.
 //
-// Backend TODO (add to EpisodeDto.fromJson when server ships):
-//   previewSpriteUrl <- json['preview_sprite_url']
-//   introStartMs     <- _integer(json['intro_start_ms'])
-//   introEndMs       <- _integer(json['intro_end_ms'])
-//   audioTracks      <- (json['audio_tracks'] as List).map((e)=>e as String)
-//   subtitleTracks   <- parse subtitle_tracks array
-//   qualityRenditions<- parse quality_renditions array
-//   episodeNumber    <- _integer(json['episode_number'])
-//   isPublished      <- _boolean(json['is_published'] ?? true)
-//   territory        <- json['territory'] etc.
+// ## `APP-110`: كان هنا تعليقٌ يصف عالمًا لم يبقَ
 //
+// كانت هنا قائمة حقول مطلوب إضافتها «عندما يشحنها الخادم»:
+// `preview_sprite_url` و`intro_start_ms` و`audio_tracks` و`quality_renditions`
+// وغيرها. **وقد شُحنت كلّها**: ترحيل `0047_episode_streaming_contract.sql` أضاف
+// الأعمدة، و`0048` أضاف `episode_renditions`، و`routes/episodes.ts` يُرسلها،
+// و`EpisodeDto.fromJson` يحلّلها — ويحرس ذلك `test/streaming_contract_test.dart`.
+//
+// وهذا الملف يستخدمها فعلًا: `introRange` تُظهر «تخطي المقدمة»، و
+// `previewSpriteUrl` تُظهر معاينة التمرير، و`uiSubtitleTracks` تبني قائمة
+// الترجمات، و`uiQualityRenditions` قائمة الجودة.
+//
+// **فما هو مُظلم اليوم هو البيانات لا الكود**: ثلاثة وثلاثون حلقة، وصفرُ صفٍّ في
+// `episode_renditions` و`episode_audio_tracks` و`episode_subtitle_tracks`،
+// وصفرُ حلقةٍ لها `preview_sprite_url` أو `intro_start_ms`. تعبئتها عملُ تحرير
+// (`CNT-101`) لا عملُ عميل.
+//
+// وإبقاء ذلك التعليق كان أسوأ من غيابه: يقرؤه المطوّر فيستنتج أن الميزة غير
+// مُنفَّذة، فيعيد بناء ما هو مبنيّ — أو يشرح لصاحب المنتج أنها «تنتظر الخادم» وهي
+// تنتظر محرّرًا.
 extension EpisodeItemPlaybackX on EpisodeItem {
   List<String> get audioTrackCodes {
     if (audioTracks.isEmpty) {
@@ -171,6 +178,20 @@ enum PlaybackErrorKind {
   concurrentLimit,
   territory,
   offlineUnavailable,
+  /// حدود ولي الأمر: وقت النوم، أو الحدّ اليومي، أو حدّ الجلسة.
+  ///
+  /// منفصلة عن [forbidden] عن قصد: «هذا المحتوى يتطلب اشتراكًا» يدفع ولي الأمر
+  /// إلى صفحة الدفع، وهو جواب خاطئ تمامًا لطفل انتهى وقته. الرمز يأتي من الخادم
+  /// (`screen_time_*`) ولا يُستنتج من رمز الحالة 403 الذي تشترك فيه ثلاث حالات.
+  screenTime,
+
+  /// تسجيل شاشة أو مرآة مرصودة على منصّات Apple (`ENC-014`).
+  ///
+  /// منفصلة عن [forbidden] وعن [screenTime]: ليست حدًّا وضعه ولي الأمر ولا
+  /// نقصًا في الاشتراك، والإجراء الذي يحلّها بيد المستخدم وحده (إيقاف التسجيل
+  /// أو فصل المرآة). ولا يُعاقَب عليها: الإشارة نفسها ترتفع عند عرض مشروع
+  /// تمامًا — أب يعرض حلقة على تلفاز عبر AirPlay.
+  screenCapture,
   unknown,
 }
 
@@ -202,9 +223,25 @@ class _PlaybackError {
     PlaybackErrorKind.territory,
     'هذا المحتوى غير متاح في منطقتك.',
   );
+  static const bedtime = _PlaybackError(
+    PlaybackErrorKind.screenTime,
+    'وقت النوم الآن. نكمل المشاهدة غدًا.',
+  );
+  static const dailyLimit = _PlaybackError(
+    PlaybackErrorKind.screenTime,
+    'انتهى وقت المشاهدة لهذا اليوم.',
+  );
+  static const sessionLimit = _PlaybackError(
+    PlaybackErrorKind.screenTime,
+    'انتهت مدة هذه الجلسة. خُذ راحة قصيرة ثم ابدأ من جديد.',
+  );
   static const offline = _PlaybackError(
     PlaybackErrorKind.offlineUnavailable,
     'هذا المحتوى غير متوفر دون اتصال.',
+  );
+  static const screenCapture = _PlaybackError(
+    PlaybackErrorKind.screenCapture,
+    'تم إيقاف التشغيل لأن الشاشة تُسجَّل أو تُعرض على شاشة أخرى. أوقف التسجيل ثم أكمل.',
   );
   static const unknown = _PlaybackError(
     PlaybackErrorKind.unknown,
@@ -233,6 +270,9 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
   Timer? _nextEpisodeCountdown;
   Timer? _debounceSeek;
 
+  /// اشتراك رصد تسجيل الشاشة على منصّات Apple (`ENC-014`).
+  StreamSubscription<bool>? _captureSubscription;
+
   bool _showControls = true;
   bool _isFullscreen = true; // immersive landscape is default [AC4]
   bool _isLocked = false; // child lock [AC16]
@@ -245,9 +285,10 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
   // Playback state
   String? _boundEpisodeId;
   String? _sessionId;
-  // ignore: unused_field — retained for audit trail (capability token never logged)
-  String? _capabilityToken;
-  // ignore: unused_field — retained for debugging offline vs network source
+  // `APP-105`: حُذف `_capabilityToken` (لا قارئ له، وهو قدرةُ وصول تبقى في
+  // الذاكرة بلا غرض)، وأُسقط إسكاتُ `_offlinePath` — كان **إسكاتًا متقادمًا**:
+  // الحقل يُقرأ فعلًا في `dispose`، فالتعليق يحرس تحذيرًا لم يعد يظهر، ويخفي عن
+  // القارئ ما إذا كان لازمًا.
   String? _offlinePath;
   Duration? _resumeFrom;
   String _watermarkTag = '';
@@ -299,19 +340,31 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
   }
 
   Future<void> _enterImmersive() async {
-    // [AC4] portrait -> landscape on entry. Use immersiveSticky so system
-    // bars auto-hide but remain reachable via edge swipe. SafeArea keeps
-    // controls off notches.
-    await SystemChrome.setPreferredOrientations(const [
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // Allow landscape ONLY for video playback – portrait lock globally in main.dart
+    // This temporarily overrides portrait lock for immersive video.
+    try {
+      await SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } catch (_) {}
+    try {
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    } catch (_) {}
   }
 
   Future<void> _exitImmersive() async {
-    await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // Critical fix: ALWAYS lock back to portrait after video – otherwise
+    // entire app stays landscape after exiting playback, breaking all pages.
+    try {
+      await SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    } catch (_) {}
+    try {
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    } catch (_) {}
   }
 
   @override
@@ -324,9 +377,33 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     }
   }
 
+  /// ENC-014: يوقف المحتوى ما دامت الشاشة مرصودة، ويرفع الحجب حين تتوقف.
+  ///
+  /// الرفع التلقائي مقصود: الحالة ليست عقوبة ولا خطأً، فبقاء الحجب بعد أن
+  /// يوقف المستخدم التسجيل كان سيجعل الإجراء الصحيح بلا نتيجة ظاهرة.
+  /// والتشغيل **لا** يُستأنف من نفسه — الطفل يضغط زرّ التشغيل — فلا يُفاجَأ
+  /// بصوت يعود في غرفة صار فيها أحد آخر.
+  void _watchScreenCapture() {
+    if (!ScreenCaptureGuard.supportsCaptureDetection) return;
+    _captureSubscription?.cancel();
+    _captureSubscription = const ScreenCaptureGuard().captureChanges().listen((
+      captured,
+    ) async {
+      if (!mounted) return;
+      if (captured) {
+        await _controller?.pause();
+        if (!mounted) return;
+        setState(() => _error = _PlaybackError.screenCapture);
+      } else if (_error?.kind == PlaybackErrorKind.screenCapture) {
+        setState(() => _error = null);
+      }
+    });
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _captureSubscription?.cancel();
     _hideTimer?.cancel();
     _heartbeatTimer?.cancel();
     _progressTimer?.cancel();
@@ -428,6 +505,12 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
       ).resolve(streamUrl).toString();
       return (url: resolvedUrl, authorization: authorization, leaseId: leaseId);
     } on MajarraApiException catch (e) {
+      // رمز الخطأ يُقرأ قبل رمز الحالة: ثلاث حالات مختلفة تشترك في 403 (اشتراك
+      // ناقص، وقت نوم، انتهاء وقت اليوم)، وعرض «يتطلب اشتراكًا» لطفل انتهى وقته
+      // يدفع ولي الأمر إلى صفحة دفع لا تحلّ شيئًا.
+      final screenTime = _screenTimeError(e.code);
+      if (screenTime != null) throw screenTime;
+
       final code = e.statusCode;
       if (code == 401) throw _PlaybackError.auth;
       if (code == 403) throw _PlaybackError.forbidden;
@@ -438,21 +521,50 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     }
   }
 
+  /// يحوّل رمز `screen_time_*` من الخادم إلى الرسالة المطابقة.
+  ///
+  /// الرموز عقد مع `lib/parentalControls.ts` و`do/FamilyState.ts`. رمز غير معروف
+  /// يبدأ بـ`screen_time_` يعرض رسالة الحدّ اليومي بدل خطأ عام: إضافة حدّ جديد على
+  /// الخادم يجب أن تظهر كحدّ لا كعُطل.
+  static _PlaybackError? _screenTimeError(String? code) {
+    if (code == null || !code.startsWith('screen_time_')) return null;
+    switch (code) {
+      case 'screen_time_bedtime':
+        return _PlaybackError.bedtime;
+      case 'screen_time_session_limit':
+        return _PlaybackError.sessionLimit;
+      default:
+        return _PlaybackError.dailyLimit;
+    }
+  }
+
   void _startHeartbeat(String episodeId, String sessionId) {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) async {
       try {
-        final envelope = await _api?.playbackHeartbeat(
+        await _api?.playbackHeartbeat(
           episodeId: episodeId,
           sessionId: sessionId,
         );
-        final data = envelope?['data'];
-        if (data is Map && data['authorization'] is String) {
-          // Keep the renewed capability in memory only. The current progressive
-          // request is already authenticated; a future segmented transport can
-          // rebind its request headers from this value.
-          _capabilityToken = data['authorization'] as String;
-        }
+        // `APP-105`: كان الردّ يُخزَّن في `_capabilityToken` «لنقلٍ مُقطَّع مستقبلي».
+        // لا قارئ له، فالمحفوظ **قدرةُ وصول إلى وسائط** تبقى في الذاكرة بلا
+        // غرض — كلفةٌ أمنية صغيرة مقابل صفر قيمة. والنبضة تُجدّد العقد على
+        // الخادم، وهو أثرها المقصود.
+      } on MajarraApiException catch (e) {
+        // النبضة هي اللحظة التي يُسحب فيها عقد التشغيل عند تجاوز حدّ ولي الأمر
+        // (`do/FamilyState.ts`). كانت كل أخطاء النبضة تُكتَم، فيواصل الطفل
+        // المشاهدة حتى تنتهي صلاحية توكن الوسائط — أي أن الحدّ يتأخر دقائق أو لا
+        // يظهر أبدًا في تشغيل تقدّمي.
+        //
+        // يُوقَف التشغيل هنا فورًا مع الرسالة المطابقة. وما عدا حدود وقت الشاشة
+        // يبقى مكتومًا عن قصد: خطأ شبكة عابر في نبضة لا يجوز أن يقطع المشاهدة،
+        // فالعقد باقٍ إلى نبضته التالية.
+        final screenTime = _screenTimeError(e.code);
+        if (screenTime == null) return;
+        _heartbeatTimer?.cancel();
+        await _controller?.pause();
+        if (!mounted) return;
+        setState(() => _error = screenTime);
       } catch (_) {}
     });
   }
@@ -507,7 +619,6 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     String? sessionId;
     _offlinePath = null;
     _sessionId = null;
-    _capabilityToken = null;
 
     if (offline != null) {
       playbackUrl = offline;
@@ -522,7 +633,6 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
           playbackUrl = session.url;
           token = session.authorization;
           sessionId = session.leaseId;
-          _capabilityToken = token;
           _sessionId = sessionId;
         } else {
           throw _PlaybackError.media;
@@ -589,25 +699,17 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
       _controller = null;
     }
 
-    final isFile = offline != null;
-    final VideoPlayerController controller;
-    if (isFile) {
-      // Offline: decrypted temp file [AC25] — via DownloadManager.decryptForPlayback
-      controller = VideoPlayerController.file(
-        File(playbackUrl),
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
-        closedCaptionFile: _captionsLoader(episode),
-      );
-    } else {
-      controller = VideoPlayerController.networkUrl(
-        Uri.parse(playbackUrl),
-        httpHeaders: token != null && token.isNotEmpty
-            ? {'Authorization': token}
-            : const {},
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
-        closedCaptionFile: _captionsLoader(episode),
-      );
-    }
+    // ENC-004: التشغيل من ملف صريح انتهى. المصدر المحلي صار رابطًا على
+    // `127.0.0.1` يفكّ الأجزاء عند الطلب، فالفرع الوحيد الباقي هو ترويسة
+    // التخويل: المصدر المحلي لا يحتاجها، والشبكي يحملها.
+    final controller = VideoPlayerController.networkUrl(
+      Uri.parse(playbackUrl),
+      httpHeaders: offline == null && token != null && token.isNotEmpty
+          ? {'Authorization': token}
+          : const {},
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
+      closedCaptionFile: _captionsLoader(episode),
+    );
 
     try {
       await controller.initialize();
@@ -634,6 +736,9 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
       _scheduleHide();
       _announceResume();
       await const ScreenCaptureGuard().enable();
+      // على Android الحماية منع، فلا حاجة للرصد. على منصّات Apple لا منع
+      // ممكنًا، فالرصد هو كل ما تسمح به الواجهات العامة (`ENC-014`).
+      _watchScreenCapture();
       _api = ref.read(majarraApiClientProvider);
       _reportingChildId = ref.read(childProvider).activeChildId;
       _lastReportedMs = -1;
@@ -684,14 +789,15 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
       url = track?.url;
     }
     if (url == null || url.isEmpty) return null;
+    // `APP-102`: كان هنا `http.get` عاريًا — بلا تثبيت شهادات (فأي جذر مزروع
+    // على الجهاز يُقدّم نصّ ترجمة من عنده يُعرَض على الطفل)، وبلا مهلة، وبفشل
+    // صامت تمامًا. الثلاثة في `data/caption_repository.dart` الآن.
+    final captions = ref.read(captionRepositoryProvider);
     return Future(() async {
-      try {
-        final res = await http.get(Uri.parse(url!));
-        if (res.statusCode != 200) return WebVTTCaptionFile('');
-        return WebVTTCaptionFile(utf8.decode(res.bodyBytes));
-      } catch (_) {
-        return WebVTTCaptionFile('');
-      }
+      final vtt = await captions.load(url!);
+      // الترجمة الفارغة تبقى هي سلوك الفشل: إسقاط المشاهدة لأن ملف ترجمة لم
+      // يُحمَّل مقايضةٌ خاطئة في وجه طفل. والفرق أن الفشل يُسجَّل الآن.
+      return WebVTTCaptionFile(vtt ?? '');
     });
   }
 
@@ -928,14 +1034,26 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     if (_isLocked) return;
     setState(() => _isFullscreen = !_isFullscreen);
     if (_isFullscreen) {
-      await SystemChrome.setPreferredOrientations(const [
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      try {
+        await SystemChrome.setPreferredOrientations(const [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      } catch (_) {}
+      try {
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      } catch (_) {}
     } else {
-      await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      // Exit fullscreen -> lock back to portrait (don't allow free rotate for kids app)
+      try {
+        await SystemChrome.setPreferredOrientations(const [
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ]);
+      } catch (_) {}
+      try {
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      } catch (_) {}
     }
     _revealControls();
   }
@@ -2779,16 +2897,27 @@ class _ErrorView extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    FilledButton.icon(
-                      onPressed: onRetry,
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('إعادة المحاولة'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.deepSpace,
+                    // «إعادة المحاولة» تُخفى عند حدود ولي الأمر.
+                    //
+                    // انتهاء وقت اليوم أو وقت النوم ليس فشلًا يُعاد، وزر إعادة
+                    // المحاولة يعلّم الطفل أن يضغطه حتى يمرّ الحدّ — فيصير الحدّ
+                    // تحديًا لا قاعدة. الرجوع هو الإجراء الوحيد المعقول.
+                    // ولا زرّ إعادة محاولة عند الرصد أيضًا: الإجراء الذي يحلّ
+                    // الحالة عند المستخدم لا عندنا، والزرّ يُوهم بغيره —
+                    // والحجب يُرفَع تلقائيًّا حين يتوقف التسجيل.
+                    if (error.kind != PlaybackErrorKind.screenTime &&
+                        error.kind != PlaybackErrorKind.screenCapture) ...[
+                      FilledButton.icon(
+                        onPressed: onRetry,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('إعادة المحاولة'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.deepSpace,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
+                      const SizedBox(width: 12),
+                    ],
                     OutlinedButton(
                       onPressed: onBack,
                       style: OutlinedButton.styleFrom(
@@ -2816,6 +2945,10 @@ class _ErrorView extends ConsumerWidget {
     PlaybackErrorKind.forbidden => Icons.workspace_premium_rounded,
     PlaybackErrorKind.concurrentLimit => Icons.devices_rounded,
     PlaybackErrorKind.territory => Icons.public_off_rounded,
+    // ساعة لا علامة تعجّب: الحدّ قاعدة اتفق عليها ولي الأمر، لا خطأ في التطبيق.
+    PlaybackErrorKind.screenTime => Icons.bedtime_rounded,
+    // عين لا علامة تعجّب: الحالة رصد لما يجري على الشاشة، لا عُطل في التطبيق.
+    PlaybackErrorKind.screenCapture => Icons.screenshot_monitor_rounded,
     _ => Icons.play_disabled_rounded,
   };
 }
@@ -3081,7 +3214,8 @@ class _EpisodeRow extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          episode.durationLabel,
+                          // فراغ لِما لم يُقَس، لا وصفٌ مُختلَق.
+                          episode.durationLabel ?? '',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.62),
                             fontSize: 11,

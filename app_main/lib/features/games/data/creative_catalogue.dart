@@ -103,6 +103,9 @@ class StudioCatalogItem {
     required this.label,
     this.assetId,
     this.thumbnailAssetId,
+    this.referenceFullAssetId,
+    this.group,
+    this.difficulty,
     this.bgHex,
     this.mode,
     this.palette = const [],
@@ -137,7 +140,16 @@ class StudioCatalogItem {
       assetId: json['assetId'] as String?,
       thumbnailAssetId:
           json['thumbnailAssetId'] as String? ??
-          json['thumbnail_asset_id'] as String?,
+          json['thumbnail_asset_id'] as String? ??
+          // "أكمل الرسمة" ships a `thumbnail` URL; without this the 3-column
+          // grid would fall back to assetId and pull the full ~600KB challenge
+          // image for every card instead of the 512px thumb.
+          json['thumbnail'] as String?,
+      referenceFullAssetId:
+          json['referenceFull'] as String? ??
+          json['reference_full'] as String?,
+      group: json['group'] as String?,
+      difficulty: json['difficulty'] as String?,
       bgHex: json['bg'] as String?,
       mode: json['mode'] as String?,
       palette: (json['palette'] as List<dynamic>? ?? const [])
@@ -154,6 +166,17 @@ class StudioCatalogItem {
   final String label;
   final String? assetId;
   final String? thumbnailAssetId;
+
+  /// "أكمل الرسمة" only: the finished answer key shown beside the canvas.
+  /// Null for trace / letters / numbers / dots, which have no answer image.
+  final String? referenceFullAssetId;
+
+  /// Content grouping (animals / space / nature / ...), used by category chips.
+  final String? group;
+
+  /// Arabic difficulty label (سهل / متوسط / متقدم) as authored in the manifest.
+  final String? difficulty;
+
   final String? bgHex;
   final String? mode;
   final List<String> palette;

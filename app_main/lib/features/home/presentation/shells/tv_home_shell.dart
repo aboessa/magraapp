@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../domain/content_models.dart';
-import '../widgets/home_destinations.dart';
+import '../widgets/home_destination_spec.dart';
 import '../widgets/majarra_portal.dart';
 
 class TvHomeShell extends StatefulWidget {
@@ -34,13 +34,14 @@ class _TvHomeShellState extends State<TvHomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = buildHomeDestinations(
+    final destinationSpecs = buildHomeDestinationSpecs(
       catalog: widget.catalog,
       isTelevision: true,
       onOpenPlanet: (planetId) => context.push('/planets?planetId=$planetId'),
       onSelectDestination: _select,
       onOpenPortal: _showPortal,
     );
+    final pages = [for (final spec in destinationSpecs) spec.build()];
 
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
@@ -105,27 +106,13 @@ class _TvHomeShellState extends State<TvHomeShell> {
                         ],
                       ),
                     ),
-                    destinations: const [
-                      NavigationRailDestination(
-                        icon: Icon(Icons.home_outlined),
-                        selectedIcon: Icon(Icons.home_rounded),
-                        label: Text('الرئيسية'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.play_circle_outline_rounded),
-                        selectedIcon: Icon(Icons.play_circle_rounded),
-                        label: Text('مقاطع الحلقات'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.search_rounded),
-                        selectedIcon: Icon(Icons.search_rounded),
-                        label: Text('بحث'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.face_outlined),
-                        selectedIcon: Icon(Icons.face_rounded),
-                        label: Text('ملفي'),
-                      ),
+                    destinations: [
+                      for (final spec in destinationSpecs)
+                        NavigationRailDestination(
+                          icon: Icon(spec.icon),
+                          selectedIcon: Icon(spec.selectedIcon),
+                          label: Text(spec.label),
+                        ),
                     ],
                   ),
                 ),

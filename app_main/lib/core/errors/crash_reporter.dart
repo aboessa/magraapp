@@ -46,12 +46,13 @@ abstract final class CrashReporter {
     if (recent.length > _maxRetained) recent.removeAt(0);
 
     if (kDebugMode) {
-      // ignore: avoid_print
-      print('[crash]${fatal ? ' FATAL' : ''}${context == null ? '' : ' ($context)'} $error');
-      if (stack != null) {
-        // ignore: avoid_print
-        print(stack);
-      }
+      // `debugPrint` لا `print`: هي قناة Flutter المعتمدة (تُخنَق عند الإغراق
+      // ولا تُطبَع في الإصدار)، فتزول الحاجة إلى إسكات `avoid_print` سطرًا
+      // بسطر — وكل إسكاتٍ زائل هو قاعدةٌ تعمل من جديد (`DEBT-102`).
+      debugPrint(
+        '[crash]${fatal ? ' FATAL' : ''}${context == null ? '' : ' ($context)'} $error',
+      );
+      if (stack != null) debugPrintStack(stackTrace: stack);
     }
 
     // Provider hook. See class docs for why this is intentionally empty.

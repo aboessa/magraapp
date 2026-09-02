@@ -13,12 +13,25 @@ import 'core/widgets/fatal_error_view.dart';
 import 'features/downloads/application/download_providers.dart';
 
 void main() {
-  // Every uncaught error now funnels through CrashReporter (H8). Previously
-  // there were no handlers at all: a framework error printed to a console
-  // nobody reads in release, and an async error killed the isolate silently.
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      // ── Orientation Lock ──
+      // Kids app should NOT rotate on phones – prevents layout breakage in every page.
+      // Only portraitUp + portraitDown allowed globally.
+      // PlaybackPage will temporarily allow landscape for video (and locks back on dispose).
+      // Web is unaffected (browser handles orientation).
+      if (!kIsWeb) {
+        try {
+          await SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+        } catch (_) {
+          // Safe ignore – can fail in tests
+        }
+      }
 
       // Resolve SharedPreferences once at startup so synchronous consumers (the
       // download manager restores its metadata in its constructor) can read it

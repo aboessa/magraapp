@@ -11,6 +11,7 @@ import '../../engine/free_draw_surface.dart';
 import '../../engine/game_pack.dart';
 import '../../engine/game_services.dart';
 import '../../engine/game_session_controller.dart';
+import '../studio/studio_app_bar.dart';
 
 class BoardEditorPage extends StatefulWidget {
   const BoardEditorPage({
@@ -290,8 +291,9 @@ class _BoardEditorPageState extends State<BoardEditorPage>
       child: Scaffold(
         appBar: _fullscreen
             ? null
-            : AppBar(
-                title: Text(_doc.boardTitle ?? 'لوحة'),
+            : StudioAppBar(
+                title: _doc.boardTitle ?? 'لوحة',
+                glyph: Icons.dashboard_customize_rounded,
                 actions: [
                   if (_saving)
                     const Padding(

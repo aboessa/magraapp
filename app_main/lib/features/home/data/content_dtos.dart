@@ -1,5 +1,6 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
+import '../../../core/env/app_environment.dart';
 import '../domain/content_models.dart';
 
 String _text(Object? value, {String fallback = ''}) {
@@ -44,6 +45,20 @@ int _integer(Object? value, {int fallback = 0}) {
   return fallback;
 }
 
+int? _nullableInteger(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+/// Strictly a list of strings — anything else (including a comma-joined
+/// string) falls back to an empty list rather than guessing a split.
+List<String> _stringList(Object? value) {
+  if (value is! List<Object?>) return const [];
+  return value.whereType<String>().toList(growable: false);
+}
+
 bool _boolean(Object? value) {
   if (value is bool) return value;
   if (value is num) return value != 0;
@@ -58,6 +73,8 @@ class PlanetDto {
     required this.description,
     required this.colorHex,
     this.iconUrl,
+    this.publishedSeries,
+    this.publishedOpenable,
   });
 
   /// Short, verified Arabic presentation labels for the catalog's fixed
@@ -90,6 +107,11 @@ class PlanetDto {
       ),
       colorHex: _text(json['color_hex'], fallback: '#2856D8'),
       iconUrl: _nullableText(json['icon_url']),
+      // `CNT-106`: العددان **قابلان للعدم** بقصد. غيابهما (نسخة محزومة، أو خادم
+      // أقدم لا يرسل الحقل) يعني «غير معروف» لا «فارغ» — و`_nullableInteger`
+      // هو ما يحفظ ذلك الفرق. قراءتهما صفرًا تُعلن «قريبًا» على كوكبٍ ممتلئ.
+      publishedSeries: _nullableInteger(json['published_series']),
+      publishedOpenable: _nullableInteger(json['published_openable']),
     );
   }
 
@@ -98,6 +120,8 @@ class PlanetDto {
   final String description;
   final String colorHex;
   final String? iconUrl;
+  final int? publishedSeries;
+  final int? publishedOpenable;
 
   Planet toDomain({required String imageAsset}) {
     return Planet(
@@ -107,6 +131,8 @@ class PlanetDto {
       colorHex: colorHex,
       imageAsset: imageAsset,
       iconUrl: iconUrl,
+      publishedSeries: publishedSeries,
+      publishedOpenable: publishedOpenable,
     );
   }
 }
@@ -277,11 +303,13 @@ class GameSummaryDto {
       'hard' => 'متقدمة',
       _ => 'سهلة',
     };
+    final cdnCover = gameCdnCoverUrl(id);
     return ExperienceItem(
       id: id,
       title: title,
       subtitle: '$difficultyLabel • $ageMin–$ageMax سنوات',
       imageAsset: _gameArtworkAsset(id, engine),
+      coverUrl: cdnCover,
       planetId: planetId,
       seriesId: seriesId,
       episodeId: episodeId,
@@ -296,17 +324,111 @@ class GameSummaryDto {
   }
 }
 
+// CDN for all game covers — no local assets to keep APK small
+//
+// `APP-103`: النطاق من `AppConfig` لا مكتوبًا هنا. كان مُعلَنًا مستقلًّا في هذا
+// الملف، فتغييرُ النطاق مع نسيان هذا السطر لا يظهر كخطأ ترجمة بل كصورةٍ مكسورة
+// عند طفل. و`assetBaseUrl` ثابتٌ `const` تحديدًا لتبقى الخريطة أدناه `const`.
+const _cdnBase = AppConfig.assetBaseUrl;
+
+// Every game gets a unique CDN cover path (generated via PlayVeo). Using same
+// structure for wave1-4 ensures no 3-4 games share one image (bug reported via screenshot).
+const _wave4CdnCover = <String, String>{
+  // Wave4 11 already generated
+  'game-match-nature-3':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/match-nature-3/cover.jpg',
+  'game-count-nature-3':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/count-nature-3/cover.jpg',
+  'game-sort-animals-3':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/sort-animals-3/cover.jpg',
+  'game-memory-shapes-3':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/memory-shapes-3/cover.jpg',
+  'game-shape-trace-3':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/shape-trace-3/cover.jpg',
+  'game-number-trace-3':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/number-trace-3/cover.jpg',
+  'game-logic-colors-3a':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/logic-colors-3a/cover.jpg',
+  'game-block-maze-3':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/block-maze-3/cover.jpg',
+  'game-rhythm-nature-3a':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/rhythm-nature-3a/cover.jpg',
+  'game-sim-plant-3':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/sim-plant-3/cover.jpg',
+  'game-timeline-egypt-3':
+      '$_cdnBase/public/catalog/assets/images/games/wave4/timeline-egypt-3/cover.jpg',
+  // Wave1 unique covers (new PlayVeo batch 29 jobs submitting now)
+  'game-wave1-memory-animals':
+      '$_cdnBase/public/games/game-wave1-memory-animals/cover.jpg',
+  'game-wave1-picture-match':
+      '$_cdnBase/public/games/game-wave1-picture-match/cover.jpg',
+  'game-wave1-color-sort':
+      '$_cdnBase/public/games/game-wave1-color-sort/cover.jpg',
+  'game-wave1-count-place':
+      '$_cdnBase/public/games/game-wave1-count-place/cover.jpg',
+  'game-wave1-sequence-kids':
+      '$_cdnBase/public/games/game-wave1-sequence-kids/cover.jpg',
+  'game-wave1-logic-kids':
+      '$_cdnBase/public/games/game-wave1-logic-kids/cover.jpg',
+  'game-wave1-word-kids':
+      '$_cdnBase/public/games/game-wave1-word-kids/cover.jpg',
+  'game-wave1-block-code':
+      '$_cdnBase/public/games/game-wave1-block-code/cover.jpg',
+  'game-wave1-sim-lab':
+      '$_cdnBase/public/games/game-wave1-sim-lab/cover.jpg',
+  // Wave2-3
+  'game-wave2-memory-2':
+      '$_cdnBase/public/games/game-wave2-memory-2/cover.jpg',
+  'game-wave2-match-2':
+      '$_cdnBase/public/games/game-wave2-match-2/cover.jpg',
+  'game-wave2-sort-junior':
+      '$_cdnBase/public/games/game-wave2-sort-junior/cover.jpg',
+  'game-wave2-count-drag':
+      '$_cdnBase/public/games/game-wave2-count-drag/cover.jpg',
+  'game-wave2-timeline':
+      '$_cdnBase/public/games/game-wave2-timeline/cover.jpg',
+  'game-wave2-rhythm':
+      '$_cdnBase/public/games/game-wave2-rhythm/cover.jpg',
+  'game-wave3-timeline-detail':
+      '$_cdnBase/public/games/game-wave3-timeline-detail/cover.jpg',
+  'game-wave3-block-advanced':
+      '$_cdnBase/public/games/game-wave3-block-advanced/cover.jpg',
+  'game-wave3-sim-saturating':
+      '$_cdnBase/public/games/game-wave3-sim-saturating/cover.jpg',
+  // Wave4 remaining that had duplicated local fallback
+  'game-sequence-story-3a':
+      '$_cdnBase/public/games/game-sequence-story-3a/cover.jpg',
+  'game-sequence-daily-3b':
+      '$_cdnBase/public/games/game-sequence-daily-3b/cover.jpg',
+  'game-logic-sequence-3b':
+      '$_cdnBase/public/games/game-logic-sequence-3b/cover.jpg',
+  'game-rhythm-festive-3b':
+      '$_cdnBase/public/games/game-rhythm-festive-3b/cover.jpg',
+  'game-word-family-3a':
+      '$_cdnBase/public/games/game-word-family-3a/cover.jpg',
+  'game-word-animals-3b':
+      '$_cdnBase/public/games/game-word-animals-3b/cover.jpg',
+  // Legacy demo 5 — keep unique too
+  'game-letter-tracing':
+      '$_cdnBase/public/games/game-letter-tracing/cover.jpg',
+  'game-number-maze':
+      '$_cdnBase/public/games/game-number-maze/cover.jpg',
+  'game-animal-memory':
+      '$_cdnBase/public/games/game-animal-memory/cover.jpg',
+  'game-shape-matching':
+      '$_cdnBase/public/games/game-shape-matching/cover.jpg',
+  'game-butterfly-sequence':
+      '$_cdnBase/public/games/game-butterfly-sequence/cover.jpg',
+  // Wave4 18th (was missing in DTO map, only in local_catalog — caused fallback to engine duplicate)
+  'game-trace-color-advanced-3':
+      '$_cdnBase/public/games/game-trace-color-advanced-3/cover.jpg',
+};
+
 String _gameArtworkAsset(String id, String engine) {
-  const artworkByGame = <String, String>{
-    'game-letter-tracing': 'assets/images/games/game-letter-tracing-cover.webp',
-    'game-number-maze': 'assets/images/games/game-number-maze-cover.webp',
-    'game-shape-matching': 'assets/images/games/game-shape-matching-cover.webp',
-    'game-animal-memory': 'assets/images/games/game-animal-memory-cover.webp',
-    'game-butterfly-sequence':
-        'assets/images/games/game-butterfly-sequence-cover.webp',
-  };
-  final specific = artworkByGame[id];
-  if (specific != null) return specific;
+  // Every game now has a unique CDN cover — return '' so CinematicImage uses coverUrl CDN only, no local duplicate
+  if (_wave4CdnCover.containsKey(id)) {
+    return ''; // CDN only — keeps APK small and guarantees unique per-game cover
+  }
 
   return switch (engine) {
     'match_pairs' ||
@@ -329,6 +451,9 @@ String _gameArtworkAsset(String id, String engine) {
     _ => 'assets/images/explore/explore-play.webp',
   };
 }
+
+/// CDN cover URL — unique per game-id, no sharing across 3-4 games
+String? gameCdnCoverUrl(String id) => _wave4CdnCover[id];
 
 double _decimal(Object? value, {double fallback = 0}) {
   if (value is num) return value.toDouble();
@@ -763,39 +888,171 @@ class BookDto {
   }
 }
 
-/// Canonical story catalogue row. Stories and books are separate entities and
-/// must remain so; this is not a type alias for BookDto.
-class StoryDto {
-  const StoryDto({
+class StoryNarratorDto {
+  const StoryNarratorDto({required this.language, this.assetId});
+
+  factory StoryNarratorDto.fromJson(Map<String, Object?> json) {
+    return StoryNarratorDto(
+      language: _text(json['language'], fallback: 'ar'),
+      // Read verbatim — do not special-case or discard whatever is present.
+      assetId: _nullableText(json['asset_id']),
+    );
+  }
+
+  final String language;
+  final String? assetId;
+
+  StoryNarrator toDomain() =>
+      StoryNarrator(language: language, assetId: assetId);
+}
+
+class StoryCharacterRefDto {
+  const StoryCharacterRefDto({
     required this.id,
-    required this.title,
-    required this.description,
-    required this.type,
-    required this.ageMin,
-    required this.ageMax,
-    this.coverUrl,
+    required this.name,
+    this.nameEn,
+    this.avatarUrl,
   });
 
-  factory StoryDto.fromJson(Map<String, Object?> json) {
+  factory StoryCharacterRefDto.fromJson(Map<String, Object?> json) {
+    return StoryCharacterRefDto(
+      id: _text(json['id'], fallback: 'character'),
+      name: _text(json['name_ar']),
+      nameEn: _nullableText(json['name_en']),
+      avatarUrl: _nullableText(json['avatar_url']),
+    );
+  }
+
+  final String id;
+  final String name;
+  final String? nameEn;
+  final String? avatarUrl;
+
+  StoryCharacterRef toDomain() => StoryCharacterRef(
+    id: id,
+    name: name,
+    nameEn: nameEn,
+    avatarUrl: avatarUrl,
+  );
+}
+
+class SimilarStoryRefDto {
+  const SimilarStoryRefDto({required this.id, required this.title, this.coverUrl});
+
+  factory SimilarStoryRefDto.fromJson(Map<String, Object?> json) {
     final id = _text(json['id'], fallback: 'story');
-    return StoryDto(
+    return SimilarStoryRefDto(
       id: id,
       title: _text(json['title_ar'], fallback: id),
-      description: _text(json['description_ar']),
-      type: _text(json['type'], fallback: 'picture_book'),
-      ageMin: _integer(json['age_min'], fallback: 3).clamp(3, 12),
-      ageMax: _integer(json['age_max'], fallback: 12).clamp(3, 12),
       coverUrl: _nullableText(json['cover_url']),
     );
   }
 
   final String id;
   final String title;
+  final String? coverUrl;
+
+  SimilarStoryRef toDomain() =>
+      SimilarStoryRef(id: id, title: title, coverUrl: coverUrl);
+}
+
+/// Canonical story catalogue row. Stories and books are separate entities and
+/// must remain so; this is not a type alias for BookDto.
+class StoryDto {
+  const StoryDto({
+    required this.id,
+    this.seriesId,
+    required this.title,
+    required this.description,
+    required this.type,
+    required this.ageMin,
+    required this.ageMax,
+    this.coverUrl,
+    this.pagesCount,
+    this.readingLevel,
+    this.availableLanguages = const [],
+    this.narrators = const [],
+    this.listenDurationMs,
+    this.characters = const [],
+    this.similar = const [],
+    this.chapters = const [],
+    this.activities = const [],
+  });
+
+  factory StoryDto.fromJson(Map<String, Object?> json) {
+    final id = _text(json['id'], fallback: 'story');
+    return StoryDto(
+      id: id,
+      seriesId: _nullableText(json['series_id']),
+      title: _text(json['title_ar'], fallback: id),
+      description: _text(json['description_ar']),
+      type: _text(json['type'], fallback: 'picture_book'),
+      ageMin: _integer(json['age_min'], fallback: 3).clamp(3, 12),
+      ageMax: _integer(json['age_max'], fallback: 12).clamp(3, 12),
+      coverUrl: _nullableText(json['cover_url']),
+      pagesCount: _nullableInteger(json['pages_count']),
+      readingLevel: _nullableText(json['reading_level']),
+      availableLanguages: _stringList(json['languages']),
+      narrators: _objectList(
+        json['narrators'],
+      ).map(StoryNarratorDto.fromJson).map((dto) => dto.toDomain()).toList(
+        growable: false,
+      ),
+      listenDurationMs: _nullableInteger(json['listen_duration_ms']),
+      characters: _objectList(
+        json['characters'],
+      ).map(StoryCharacterRefDto.fromJson).map((dto) => dto.toDomain()).toList(
+        growable: false,
+      ),
+      similar: _objectList(
+        json['similar'],
+      ).map(SimilarStoryRefDto.fromJson).map((dto) => dto.toDomain()).toList(
+        growable: false,
+      ),
+      chapters: _objectList(json['chapters']),
+      activities: _objectList(json['activities']),
+    );
+  }
+
+  final String id;
+  final String? seriesId;
+  final String title;
   final String description;
   final String type;
   final int ageMin;
   final int ageMax;
   final String? coverUrl;
+  final int? pagesCount;
+  final String? readingLevel;
+  final List<String> availableLanguages;
+  final List<StoryNarrator> narrators;
+  final int? listenDurationMs;
+  final List<StoryCharacterRef> characters;
+  final List<SimilarStoryRef> similar;
+  final List<Map<String, Object?>> chapters;
+  final List<Map<String, Object?>> activities;
+
+  StoryItem toDomain() {
+    return StoryItem(
+      id: id,
+      seriesId: seriesId,
+      title: title,
+      description: description,
+      type: type,
+      ageMin: ageMin,
+      ageMax: ageMax,
+      coverUrl: coverUrl,
+      pagesCount: pagesCount,
+      readingLevel: readingLevel,
+      availableLanguages: availableLanguages,
+      narrators: narrators,
+      listenDurationMs: listenDurationMs,
+      characters: characters,
+      similar: similar,
+      chapters: chapters,
+      activities: activities,
+    );
+  }
 }
 
 class EpisodeAudioTrackDto {
@@ -902,7 +1159,11 @@ class EpisodeDto {
       if (dubsRaw is String) {
         try {
           dubs = (jsonDecode(dubsRaw) as List).whereType<String>().toList();
-        } catch (_) {}
+        } catch (_) {
+          // حقل `dubs` القديم نصٌّ حرّ في صفوف ما قبل التطبيع، وما ليس JSON فيه
+          // يعني «لا دبلجة معلَنة» — وهو ما تُنتجه `dubs` الفارغة أدناه. لا
+          // يُسجَّل: الحالة متوقّعة في بيانات قديمة، وتسجيلها سطرٌ لكل صفّ.
+        }
       } else if (dubsRaw is List) {
         dubs = dubsRaw.whereType<String>().toList();
       }

@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/crypto/file_crypto.dart';
+import '../../../core/diagnostics/ignored_errors.dart';
+import '../../../core/media/local_media_source.dart';
 import '../domain/download_models.dart';
 
 /// Persists download metadata and the encrypted media files (§3, §31).
@@ -20,15 +22,18 @@ class DownloadRepository {
     required SharedPreferences prefs,
     required FileCrypto crypto,
     required Future<Directory> Function() directory,
+    LocalMediaSource? mediaSource,
   }) : _prefs = prefs,
        _crypto = crypto,
-       _directoryFn = directory;
+       _directoryFn = directory,
+       _mediaSource = mediaSource ?? LocalMediaSource(crypto: crypto);
 
   static const _metadataKey = 'majarra_downloads_v1';
 
   final SharedPreferences _prefs;
   final FileCrypto _crypto;
   final Future<Directory> Function() _directoryFn;
+  final LocalMediaSource _mediaSource;
 
   List<DownloadItem> loadAll() =>
       DownloadItem.decodeList(_prefs.getString(_metadataKey));
@@ -49,26 +54,101 @@ class DownloadRepository {
     return File('${dir.path}/${item.fileName}');
   }
 
-  /// Encrypts and stores [bytes] for [item]. Returns the on-disk size.
-  Future<int> writeEncrypted(DownloadItem item, Uint8List bytes) async {
-    final file = await fileFor(item);
-    await _crypto.encryptBytesToFile(bytes, file);
-    return file.existsSync() ? await file.length() : 0;
+  /// السياق الذي تُربَط به الحزمة تشفيريًّا (`ENC-006`).
+  ///
+  /// نسخ ملف من ملف طفل إلى آخر، أو استخدامه لمحتوى آخر، يفشل بعد هذا الربط
+  /// حتى بالمفتاح الصحيح — والرفض تشفيري لا اعتمادًا على منطق التطبيق.
+  PackageContext contextFor(DownloadItem item) => PackageContext(
+    contentType: item.contentType,
+    contentId: item.id,
+    childId: item.childId,
+  );
+
+  /// يفتح كاتبًا يشفّر أثناء التنزيل مباشرة (`ENC-003`).
+  ///
+  /// الملف الجزئي هو نفسه الحزمة النهائية ناقصةَ أجزائها الأخيرة، فلا نصّ صريح
+  /// على القرص في أي لحظة. [resume] يستأنف من آخر جزء كامل.
+  Future<ChunkedPackageWriter> openEncryptingWriter(
+    DownloadItem item, {
+    required bool resume,
+  }) async {
+    final part = await partFileFor(item);
+    return ChunkedPackageWriter.open(
+      _crypto,
+      part,
+      context: contextFor(item),
+      resume: resume,
+    );
   }
+
+  /// موضع الاستئناف بالنصّ الصريح: طول ما ثُبِّت من أجزاء كاملة.
+  ///
+  /// يُقصّ أي إطار ناقص من انقطاع سابق، فما يُطلَب من الخادم يبدأ من حدّ جزء.
+  Future<int> resumeOffsetFor(DownloadItem item) async {
+    final part = await partFileFor(item);
+    if (!await part.exists()) return 0;
+    final writer = await openEncryptingWriter(item, resume: true);
+    final offset = writer.plainOffset;
+    await writer.close();
+    return offset;
+  }
+
+  /// يرقّي الحزمة الجزئية المكتملة إلى ملف التنزيل النهائي. يُعيد الحجم.
+  ///
+  /// النقل بالاسم لا بإعادة الكتابة: الملف مشفَّر أصلًا، ونسخه مرة أخرى كان
+  /// سيضاعف المساحة المطلوبة لحظيًّا ويعيد كلفة قراءة نصف جيجابايت.
+  Future<int> promoteCompletedPart(DownloadItem item) async {
+    final part = await partFileFor(item);
+    final target = await fileFor(item);
+    if (await target.exists()) await target.delete();
+    await part.rename(target.path);
+    return target.existsSync() ? await target.length() : 0;
+  }
+
+  /// يتحقّق أن مفتاح التشفير متاح فعلًا (`ENC-011`).
+  ///
+  /// يرفع [SecureStorageUnavailableException] إن كان مخزن المنصّة الآمن
+  /// معطّلًا، فيرفض المتصل التنزيل بدل أن يُنتج ملفًا لا يُفَك.
+  Future<void> ensureEncryptionKeyAvailable() => _crypto.ensureKeyAvailable();
 
   Future<bool> hasFile(DownloadItem item) async {
     final file = await fileFor(item);
     return file.exists();
   }
 
-  /// Decrypts [item] to a temporary plaintext file for playback, returning it.
-  /// The caller must delete it when playback finishes.
-  Future<File> decryptForPlayback(DownloadItem item) async {
-    final dir = await _dir();
+  /// يجهّز [item] للتشغيل ويُعيد رابطًا محليًّا يقرأ منه المشغّل.
+  ///
+  /// ## ENC-004 — ما تغيّر
+  ///
+  /// كان يفكّ الحزمة إلى `.play_<id>.mp4` صريح على القرص. مع غياب DRM (قرار
+  /// مالك) صار ذلك أسهل طريق استخراج في المنظومة. الآن تُفَك البايتات في
+  /// الذاكرة جزءًا جزءًا وتُقدَّم على `127.0.0.1` بمسار سرّي — لا بايت صريح
+  /// يلمس القرص. التفصيل في `core/media/local_media_source.dart`.
+  Future<Uri> playbackSourceFor(DownloadItem item) async {
     final source = await fileFor(item);
-    final temp = File('${dir.path}/.play_${item.id}${_extensionFor(item)}');
-    await _crypto.decryptFileToFile(source, temp);
-    return temp;
+    return _mediaSource.serve(
+      package: source,
+      context: contextFor(item),
+      contentType: _contentTypeFor(item),
+    );
+  }
+
+  /// يوقف تقديم رابط تشغيل سُلِّم سابقًا.
+  Future<void> releasePlaybackSource(Uri uri) => _mediaSource.release(uri);
+
+  /// نوع المحتوى كما يحتاجه المشغّل قبل قراءة البايتات.
+  ///
+  /// ExoPlayer يختار الحاوية من الترويسة، و`octet-stream` تجعله يرفض ملفًا
+  /// سليمًا. فالنوع يُشتقّ من نوع المحتوى لا يُترك عامًّا.
+  String _contentTypeFor(DownloadItem item) {
+    switch (item.contentType) {
+      case 'episode':
+        return 'video/mp4';
+      case 'audio_story':
+        return 'audio/mp4';
+      default:
+        return 'application/octet-stream';
+    }
   }
 
   Future<File> partFileFor(DownloadItem item) async {
@@ -177,7 +257,12 @@ class DownloadRepository {
       if (entity is File && name.startsWith('.play_')) {
         try {
           await entity.delete();
-        } catch (_) {}
+        } catch (error) {
+          // ملف تشغيل مؤقّت قد يكون مفتوحًا الآن من مشغّل آخر، وحذفه يفشل على
+          // Windows بذلك. لا يُرفَع: التنظيف يمرّ على البقيّة ويعود في المرّة
+          // القادمة. ويُسجَّل لأن تكراره يعني ملفات مفكوكة تتراكم على القرص.
+          reportIgnoredError('download_repository.playback_cleanup', error);
+        }
       }
     }
   }

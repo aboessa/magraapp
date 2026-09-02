@@ -35,7 +35,45 @@ class _FakeRecognizer implements SpeechRecognizer {
 }
 
 void main() {
+  group('VoiceConsentGate (Requirement 9.6)', () {
+    test('start() is blocked while voice consent is not granted', () async {
+      VoiceConsentGate.setGranted(false);
+      final controller = VoiceSearchController(_FakeRecognizer());
+      final transcripts = <String>[];
+      final ok = await controller.start(transcripts.add);
+      expect(ok, isFalse);
+      expect(controller.state.status, VoiceSearchStatus.unavailable);
+      expect(transcripts, isEmpty);
+    });
+
+    test('revoking mid-session blocks the very next start(), not a restart', () async {
+      VoiceConsentGate.setGranted(true);
+      final controller = VoiceSearchController(_FakeRecognizer());
+      final first = <String>[];
+      expect(await controller.start(first.add), isTrue);
+
+      // A parent revokes consent (mirrors ConsentPage's toggle updating the
+      // same gate). No app restart or new session — just the next call.
+      VoiceConsentGate.setGranted(false);
+
+      final second = <String>[];
+      final ok = await controller.start(second.add);
+      expect(ok, isFalse);
+      expect(second, isEmpty);
+    });
+
+    test('granted again allows start() to proceed as normal', () async {
+      VoiceConsentGate.setGranted(true);
+      final controller = VoiceSearchController(_FakeRecognizer(emit: ['ح']));
+      final transcripts = <String>[];
+      final ok = await controller.start(transcripts.add);
+      expect(ok, isTrue);
+      expect(transcripts, isNotEmpty);
+    });
+  });
+
   test('unavailable recognition returns false and sets unavailable', () async {
+    VoiceConsentGate.setGranted(true);
     final controller = VoiceSearchController(_FakeRecognizer(available: false));
     final transcripts = <String>[];
     final ok = await controller.start(transcripts.add);
@@ -45,6 +83,7 @@ void main() {
   });
 
   test('emits transcripts and finishes idle', () async {
+    VoiceConsentGate.setGranted(true);
     final controller = VoiceSearchController(_FakeRecognizer(emit: ['ح', 'حكايات']));
     final transcripts = <String>[];
     final ok = await controller.start(transcripts.add);

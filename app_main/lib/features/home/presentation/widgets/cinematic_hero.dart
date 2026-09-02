@@ -42,10 +42,15 @@ class _CinematicHeroSliderState extends State<CinematicHeroSlider> {
   void initState() {
     super.initState();
     _items = _resolveSpotlights();
-    if (_items.length > 1) {
+    if (_items.isEmpty) {
+      _activeIndex = 0;
+    } else if (_items.length > 1) {
+      // Guard empty-first: 0 → nextInt(0) throws RangeError max 0 on web (js_primitives.dart:28)
       _activeIndex = Random().nextInt(_items.length);
+    } else {
+      _activeIndex = 0; // exactly 1 item — no randomization needed
     }
-    _pageController = PageController(initialPage: _activeIndex);
+    _pageController = PageController(initialPage: _activeIndex.clamp(0, (_items.length - 1).clamp(0, 999)));
   }
 
   @override

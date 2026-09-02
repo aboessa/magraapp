@@ -26,6 +26,22 @@ class NarrationUnavailable extends NarrationSource {
   final String reason;
 }
 
+String narrationUnavailableReasonForApiError(MajarraApiException error) {
+  if (error.code == 'demo_narration_requires_sign_in') {
+    return 'السرد غير متاح في وضع التجربة. سجّل الدخول واختر ملف طفل لتشغيله.';
+  }
+  if (error.statusCode == 401) {
+    return 'تعذّر تشغيل الصوت. سجّل الدخول مرة أخرى ثم حاول.';
+  }
+  if (error.statusCode == 403) {
+    return 'يتطلب تشغيل هذا الصوت اشتراكًا نشطًا.';
+  }
+  if (error.statusCode == 451) {
+    return 'هذا الصوت غير متاح في منطقتك حاليًا.';
+  }
+  return 'تعذّر تجهيز الصوت. حاول مرة أخرى.';
+}
+
 NarrationSource resolveNarrationSource(Map<String, dynamic> envelope) {
   final data = envelope['data'];
   if (data is! Map) {
@@ -68,14 +84,6 @@ Future<NarrationSource> fetchPageNarration(
     if (error.statusCode == 404) {
       return const NarrationUnavailable('لم يُسجَّل صوت لهذه الصفحة بعد.');
     }
-    if (error.statusCode == 401 || error.statusCode == 403) {
-      return const NarrationUnavailable(
-        'تعذّر تشغيل الصوت. تحقّق من تسجيل الدخول والاشتراك.',
-      );
-    }
-    if (error.statusCode == 451) {
-      return const NarrationUnavailable('هذا الصوت غير متاح في منطقتك حاليًا.');
-    }
-    return const NarrationUnavailable('تعذّر تجهيز الصوت. حاول مرة أخرى.');
+    return NarrationUnavailable(narrationUnavailableReasonForApiError(error));
   }
 }

@@ -1,14 +1,30 @@
-include: package:flutter_lints/flutter.yaml
+﻿include: package:flutter_lints/flutter.yaml
 
 analyzer:
+  # كل استثناء أدناه له سببٌ مكتوب وتاريخ مراجعة (`DEBT-102`، المعيار 2).
+  #
+  # ## ما كان هنا
+  #
+  # ستّة أسطر إسكات بتعليقٍ واحد: «Do not fail CI on style lints until the 58
+  # current infos are fixed (C3 follow-up)». الدين لم يُسدَّد، والرقم لم يُراجَع
+  # منذ كُتب — و**لم يكن 58**: بإعادة تفعيل الأربع الأسلوبية كانت المحصّلة
+  # **مشكلتين** (كلتاهما `use_key_in_widget_constructors` في ملفٍ واحد)، أي أن
+  # الدين سُدِّد ضمنًا في دفعاتٍ سابقة وبقي الإسكات وحده. أُصلحت المشكلتان
+  # وأُعيدت القواعد الأربع.
   errors:
+    # الاثنان الباقيان **ليسا دَينًا أسلوبيًّا**، وهذا هو سبب بقائهما:
+    #
+    # `invalid_annotation_target`: يُطلقه المحلّل على وسوم يولّدها
+    # `freezed`/`json_serializable` على معاملات مصنع، وهو إنذار كاذب في كودٍ
+    # مولَّد لا نملك شكله. مراجعة: عند ترقية `freezed` أو `json_serializable`
+    # التالية.
     invalid_annotation_target: ignore
+    # `dangling_library_doc_comments`: هذا المستودع يستعمل `///` في رأس الملف
+    # قبل `library;` كأسلوبٍ موثَّق ومتّبع في مئات الملفات، والقاعدة تطلب
+    # `library;` صريحة بعد كل رأس. إعادتها تعني تعديلًا آليًّا واسعًا بلا مقابل
+    # سلوكي. مراجعة: مع أوّل تنظيف شامل للرؤوس، أو إن أصبحت `library;` مطلوبة
+    # لغويًّا.
     dangling_library_doc_comments: ignore
-    # Do not fail CI on style lints until the 58 current infos are fixed (C3 follow-up).
-    prefer_const_constructors: ignore
-    prefer_const_declarations: ignore
-    use_key_in_widget_constructors: ignore
-    avoid_print: ignore
   language:
     strict-casts: true
     strict-raw-types: true

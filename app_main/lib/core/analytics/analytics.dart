@@ -13,8 +13,47 @@ import '../env/app_environment.dart';
 ///     result count, never by what the child typed.
 ///
 /// Dispatch is gated on [AppConfig.analyticsEnabled] (off in development), so
-/// local runs never pollute product metrics.
+/// local runs never pollute product metrics, and separately on the parent's
+/// live `analytics` consent decision (Requirement 9.6): see
+/// [MajarraAnalytics.setAnalyticsConsent].
 class MajarraAnalytics {
+  /// In-memory, session-only mirror of the server's last-known decision for
+  /// the `analytics` consent type.
+  ///
+  /// This is deliberately not a `SharedPreferences`-persisted flag. A value
+  /// written to disk could go stale relative to the server (revoked on
+  /// another device, or a write that succeeded server-side while the local
+  /// cache write was missed), and Requirement 9.6 explicitly rules out tying
+  /// behavior to a separate local flag for exactly that reason. Instead this
+  /// evaporates on app restart — a fresh session assumes no consent
+  /// ([_analyticsConsentGranted] defaults to `false`, the safe default) until
+  /// whichever screen reads `/family/consents` (today, `ConsentPage`) calls
+  /// [setAnalyticsConsent] with a real server answer.
+  ///
+  /// [MajarraAnalytics] stays a static class rather than a Riverpod service
+  /// because dozens of call sites across the app invoke `log`/the typed
+  /// helpers directly with no `Ref`/`WidgetRef` threaded through — converting
+  /// every one of them just to gate on consent would be a large, invasive
+  /// refactor disproportionate to what Requirement 9.6 asks for. A single
+  /// static field checked at the one chokepoint every call site already
+  /// funnels through ([log]) satisfies "stops immediately, from the next
+  /// request" with none of that churn.
+  static bool _analyticsConsentGranted = false;
+
+  /// The last-known `analytics` consent decision. Exposed (not just the
+  /// setter) so [log] can read it and so tests can assert the effect of a
+  /// revoke without a contorted seam.
+  static bool get analyticsConsentGranted => _analyticsConsentGranted;
+
+  /// Called by whichever screen last read the parent's consent decisions
+  /// (today, `ConsentPage`'s `_load`/`_toggle`) with the freshly-read
+  /// `analytics` decision's `granted` value. A revoke recorded here blocks
+  /// the very next [log] call anywhere in the app — no new session or app
+  /// restart required.
+  static void setAnalyticsConsent(bool granted) {
+    _analyticsConsentGranted = granted;
+  }
+
   static const _allowedEvents = {
     // Existing home/portal surface.
     'home_feed_loaded',
@@ -72,8 +111,13 @@ class MajarraAnalytics {
       debugPrint('[analytics] $event ${safeParams.isEmpty ? '' : safeParams}');
     }
 
-    // Dispatch only where analytics is enabled (never in development).
+    // Dispatch only where analytics is enabled (never in development)...
     if (!AppConfig.analyticsEnabled) return;
+    // ...and only where the parent's live `analytics` consent is currently
+    // granted (Requirement 9.6). Reading the in-memory gate here — rather
+    // than a value cached at some earlier point per call site — is what
+    // makes a revoke stop dispatch starting with the very next call.
+    if (!_analyticsConsentGranted) return;
     // TODO(backend): queue -> Analytics Engine / R2. Transport is a backend
     // integration; the safe event/param shape above is what will be sent.
   }

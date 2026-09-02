@@ -122,9 +122,11 @@ class GameSessionController extends ChangeNotifier {
 
   bool _reportedForLevel = false;
 
-  GameLevel get level => pack.levels[_levelIndex];
+  GameLevel get level => pack.levels.isEmpty
+      ? throw StateError('Game pack has no levels')
+      : pack.levels[_levelIndex.clamp(0, pack.levels.length - 1)];
   int get levelIndex => _levelIndex;
-  int get levelCount => pack.levels.length;
+  int get levelCount => pack.levels.isEmpty ? 1 : pack.levels.length;
   LevelPhase get phase => _phase;
   TraceSession? get traceSession => _traceSession;
   Map<String, String> get regionColors => Map.unmodifiable(_regionColors);

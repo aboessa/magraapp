@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:majarra/features/child/application/child_provider.dart';
+import 'package:majarra/features/home/domain/content_models.dart';
+import 'package:majarra/features/home/presentation/widgets/home_destination_spec.dart';
 import 'package:majarra/features/home/presentation/widgets/majarra_bottom_navigation.dart';
 
 /// The profile tab used to be labelled with a literal personal name
@@ -42,6 +44,17 @@ void main() {
                 selectedIndex: 0,
                 onDestinationSelected: (_) {},
                 onPortalPressed: () {},
+                destinations: buildHomeDestinationSpecs(
+                  catalog: const HomeCatalog(
+                    planets: [],
+                    spotlights: [],
+                    series: [],
+                    episodes: [],
+                    experiences: [],
+                    source: ContentSource.remote,
+                  ),
+                  isTelevision: false,
+                ),
               ),
             ),
           ),

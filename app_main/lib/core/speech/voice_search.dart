@@ -2,6 +2,37 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+/// In-memory, session-only cache of the server's last-known decision for the
+/// `voice` consent type (Requirement 9.6).
+///
+/// Deliberately not persisted anywhere (no `SharedPreferences`, no disk write):
+/// a value written to disk could go stale relative to the server — revoked on
+/// another device, or a write that succeeded on the server while the local
+/// cache write was missed — and a stale "yes" is exactly what Requirement 9.6
+/// forbids. This is instead a live mirror of the one answer the server has
+/// already given, refreshed by whichever screen last read `/family/consents`
+/// (today, `ConsentPage`), and it evaporates on app restart: a fresh session
+/// starts with no assumed consent ([granted] defaults to `false`) until a real
+/// read populates it again.
+///
+/// [VoiceSearchController.start] consults this immediately before engaging the
+/// microphone, so a revoke recorded here blocks the very next start attempt —
+/// not a mid-session one already listening, but the next *new* request, which
+/// is what "من الطلب التالي" (from the next request) means for a request that
+/// is itself the act of starting to listen.
+abstract final class VoiceConsentGate {
+  static bool _granted = false;
+
+  /// Whether the last server read of the `voice` consent said granted. Safe
+  /// default is `false` — assuming consent before it has ever been confirmed
+  /// would be the worst possible default for a children's app.
+  static bool get granted => _granted;
+
+  static void setGranted(bool granted) {
+    _granted = granted;
+  }
+}
+
 /// Recognition lifecycle for the voice-search control.
 enum VoiceSearchStatus { idle, initializing, listening, unavailable, error }
 
@@ -116,6 +147,13 @@ class VoiceSearchController extends StateNotifier<VoiceSearchState> {
     if (state.isListening) {
       await stop();
       return true;
+    }
+    // Requirement 9.6: a withdrawn `voice` consent blocks the next attempt to
+    // engage the microphone immediately, reading the live gate rather than a
+    // value cached at some earlier point in this controller's lifetime.
+    if (!VoiceConsentGate.granted) {
+      state = state.copyWith(status: VoiceSearchStatus.unavailable);
+      return false;
     }
     state = state.copyWith(status: VoiceSearchStatus.initializing);
     final ok = await _recognizer.initialize();

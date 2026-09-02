@@ -213,7 +213,10 @@ void main() {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       final steps = await c.read(referenceStepsProvider.future);
-      expect(steps.length, 29);
+      // 36، وهو ما يحمله `assets/data/reference_steps.json` اليوم بعد إضافة
+      // أنشطة جديدة. الرقم توكيد مقصود ضد فقدان محتوى مبندل — انخفاضه عيب —
+      // ويُحدَّث عن قصد مع كل إضافة محتوى، لا يُحوَّل إلى `greaterThan`.
+      expect(steps.length, 36);
       final cat = steps.where((s) => s.activityId == 'ref-cat').toList();
       expect(cat.length, 5);
       expect(cat.map((e) => e.order).toList(), orderedEquals([1, 2, 3, 4, 5]));

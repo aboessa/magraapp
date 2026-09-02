@@ -6,11 +6,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/analytics/analytics.dart';
+import '../../../core/crypto/file_crypto.dart';
+import '../../../core/crypto/streaming_digest.dart';
+import '../../../core/diagnostics/ignored_errors.dart';
+import '../../../core/licensing/license_guard.dart';
+import '../../../core/licensing/offline_license.dart';
 import '../data/download_repository.dart';
 import '../domain/download_models.dart';
 
 /// Why a download could not start. Surfaced to the UI so the reason is truthful
 /// ("you are on mobile data") rather than a generic failure.
+/// الخادم رفض التنزيل لأن الباقة لا تسمح به أو المحتوى فوقها.
+class DownloadNotEntitled implements Exception {
+  const DownloadNotEntitled();
+}
+
+/// الخادم رفض التنزيل لأن حدًّا بلغ منتهاه (أجهزة التنزيل أو عدد العناصر).
+class DownloadLimitReached implements Exception {
+  const DownloadLimitReached();
+}
+
 enum DownloadRejection {
   none,
   notEntitled,
@@ -18,6 +33,50 @@ enum DownloadRejection {
   storageFull,
   alreadyExists,
   noSource,
+
+  /// مخزن المنصّة الآمن لا يعمل، فلا مفتاح يمكن الاعتماد عليه (`ENC-011`).
+  ///
+  /// الرفض **قبل** بدء التنزيل مقصود: البديل الذي كان قائمًا هو تنزيل يستهلك
+  /// بيانات الأسرة ثم يُشفَّر بمفتاح لا يُحفَظ، فيظهر «جاهزًا» ولا يُفَك أبدًا
+  /// بعد إعادة تشغيل التطبيق.
+  secureStorageUnavailable,
+}
+
+/// ما يعيده الخادم عند فتح جلسة تنزيل (`ENC-001`/`ENC-008`).
+///
+/// الرابط والقدرة معًا: التنزيل كان يجري على رابط عام بلا أي ترويسة تخويل، أي أن
+/// الطبقة المشفَّرة كانت تحمي ما لا يحتاج حماية بينما المحتوى المدفوع بلا مسار
+/// offline أصلًا.
+class DownloadAuthorization {
+  const DownloadAuthorization({
+    required this.licenceId,
+    required this.licenceToken,
+    required this.url,
+    required this.authorization,
+    this.expiresAt,
+    this.sourceSha256,
+  });
+
+  final String licenceId;
+
+  /// الترخيص الموقَّع كما وصل. يُخزَّن نصًّا لأن التوقيع على بايتاته.
+  final String licenceToken;
+
+  /// رابط الأصل: مسار الـWorker لا رابط R2.
+  final String url;
+
+  /// قدرة الوسائط، عمرها ثلاث دقائق ويجدّدها `refresh`.
+  final String authorization;
+
+  /// انتهاء الترخيص كما قرّره الخادم، لا كما حسبه العميل.
+  final DateTime? expiresAt;
+
+  /// بصمة المصدر كما نشرها الخادم (`ENC-007`).
+  ///
+  /// `null` تعني «لم تُحسب عند الاستيراد» — وهي **مختلفة** عن «لا تطابق»:
+  /// الأولى تُقبل والثانية تُرفض. كثير من الأصول القائمة بلا بصمة، ورفضها كان
+  /// سيمنع تنزيل محتوى سليم منشور.
+  final String? sourceSha256;
 }
 
 /// A request to download one piece of content.
@@ -63,10 +122,20 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
     this.offlineLicenseDuration = const Duration(days: 30),
     this.maxTotalBytes = 2 * 1024 * 1024 * 1024, // 2 GiB device budget.
     this.maxItemBytes = 512 * 1024 * 1024,
+    Future<DownloadAuthorization> Function(DownloadRequest request)? authorize,
+    Future<DownloadAuthorization> Function(String licenceId)? refreshAuthorization,
+    Future<Set<String>> Function()? fetchActiveLicences,
+    Future<void> Function(String licenceId)? onDownloadCompleted,
+    LicenseGuard? licenseGuard,
   }) : _repo = repository,
        _client = client,
        _isEntitled = isEntitled,
        _networkAllows = networkAllowsDownload,
+       _authorize = authorize,
+       _refreshAuthorization = refreshAuthorization,
+       _fetchActiveLicences = fetchActiveLicences,
+       _onDownloadCompleted = onDownloadCompleted,
+       _licenses = licenseGuard,
        super(const []) {
     unawaited(_startOperation<void>(_restore, whenFenced: () {}));
   }
@@ -75,11 +144,43 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
   final http.Client _client;
   final Future<bool> Function() _isEntitled;
   final Future<bool> Function() _networkAllows;
+  /// مدّة الترخيص الاحتياطية حين لا تخويل خادمي (`ENC-005`).
+  ///
+  /// كانت هي السلطة على الصلاحية، وهي الآن **احتياط للمسار غير المخوَّل وحده**:
+  /// المدّة الحقيقية تأتي موقَّعة من الخادم في الترخيص.
   final Duration offlineLicenseDuration;
   final int maxTotalBytes;
   final int maxItemBytes;
 
+  /// يفتح جلسة تنزيل خادمية ويعيد الترخيص والقدرة (`ENC-008`).
+  ///
+  /// اختياري في التركيب لا في الإنتاج: `download_providers.dart` يمرّره دائمًا.
+  /// غيابه يعني المسار القديم — رابط عام بلا تخويل — ويستعمله اختبار المحرّك
+  /// وحده حيث لا خادم.
+  final Future<DownloadAuthorization> Function(DownloadRequest request)? _authorize;
+
+  /// يقرأ التراخيص النشطة من الخادم، للمصالحة عند أول اتصال (`ENC-010`).
+  final Future<Set<String>> Function()? _fetchActiveLicences;
+
+  /// يجدّد قدرة الوسائط وحدها حين تنتهي أثناء تنزيل طويل.
+  final Future<DownloadAuthorization> Function(String licenceId)? _refreshAuthorization;
+
+  /// يُبلّغ الخادم باكتمال التنزيل، فينتقل الترخيص إلى `active`.
+  final Future<void> Function(String licenceId)? _onDownloadCompleted;
+
+  /// حافظ التراخيص: يخزّن الترخيص الموقَّع ويتحقّق منه قبل كل تشغيل.
+  final LicenseGuard? _licenses;
+
+  /// تخويل كل عنصر جارٍ تنزيله، من لحظة الإذن إلى اكتمال التنزيل.
+  final Map<String, DownloadAuthorization> _authorizations = <String, DownloadAuthorization>{};
+
   final Set<Future<void>> _operations = <Future<void>>{};
+
+  /// روابط التشغيل المحلية النشطة، لكل عنصر رابطه (`ENC-004`).
+  ///
+  /// تُحفَظ حتى يستطيع الإغلاق إيقاف تقديمها: رابط يبقى مقدَّمًا بعد انتهاء
+  /// التشغيل يعني منفذًا مفتوحًا ومسارًا صالحًا بلا سبب.
+  final Map<String, Uri> _playbackSources = <String, Uri>{};
   final Map<String, _RunEntry> _runs = <String, _RunEntry>{};
   final Map<String, int> _idGenerations = <String, int>{};
   final Map<String, int> _blockedIds = <String, int>{};
@@ -203,6 +304,50 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
       await _saveSnapshot(generation);
       if (!_isCurrent(generation)) return;
     }
+
+    await _reconcileLicences(generation);
+  }
+
+  /// يصالح التراخيص المحلية مع الخادم عند أول اتصال (`ENC-010`).
+  ///
+  /// ## العلّة
+  ///
+  /// سحب جهاز من اللوحة كان **بلا أي أثر على الجهاز**: العميل لا يسأل الخادم عن
+  /// أي ترخيص قبل التشغيل، فيواصل جهاز مسروق — أو حساب أُلغي اشتراكه — تشغيل كل
+  /// ما نزّله حتى تنتهي الثلاثون يومًا التي منحها العميل لنفسه.
+  ///
+  /// المصالحة تسأل: أي التراخيص ما زالت نشطة؟ وما ليس في الجواب يُنسى محليًّا،
+  /// فيصير الملف غير قابل للفك بلا حذفه (قد يكون الإبطال خطأً يُصحَّح بترخيص
+  /// جديد، وحذف المحتوى يُهدر بيانات الأسرة).
+  ///
+  /// الفشل صامت **عن قصد**: لا اتصال ليس إبطالًا. وما يحمي من البقاء غير متصل
+  /// إلى الأبد هو نافذة إعادة التحقّق في `LicenseGuard.maxOfflineGap`، لا هذه
+  /// الدالة.
+  Future<void> _reconcileLicences(int generation) async {
+    final fetch = _fetchActiveLicences;
+    final licenses = _licenses;
+    if (fetch == null || licenses == null) return;
+
+    final Set<String> active;
+    try {
+      active = await fetch();
+    } catch (_) {
+      return;
+    }
+    if (!_isCurrent(generation)) return;
+    await licenses.recordVerification(DateTime.now());
+    if (!_isCurrent(generation)) return;
+
+    for (final item in state) {
+      final licenceId = await licenses.licenceIdFor(item.id);
+      if (!_isCurrent(generation)) return;
+      // لا ترخيص محليًّا = عنصر من نسخة أقدم من التطبيق؛ تتولّاه بوابة التشغيل.
+      if (licenceId == null || active.contains(licenceId)) continue;
+      await licenses.revokeLocally(item.id);
+      if (!_isCurrent(generation)) return;
+      _update(item.id, (current) => current.copyWith(status: DownloadStatus.expired));
+    }
+    await _saveSnapshot(generation);
   }
 
   DownloadItem? byId(String id) {
@@ -271,13 +416,56 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
       }
       if (used >= maxTotalBytes) return DownloadRejection.storageFull;
 
+      // ENC-011: المفتاح يُتحقَّق منه هنا، قبل أول بايت من الشبكة. فشل المخزن
+      // الآمن كان مكتومًا تمامًا: التنزيل يمضي، والتشفير يجري بمفتاح في الذاكرة
+      // وحدها، ثم يظهر العنصر «جاهزًا» ويفشل عند التشغيل بعد إعادة التشغيل.
+      try {
+        await _repo.ensureEncryptionKeyAvailable();
+      } on SecureStorageUnavailableException {
+        return DownloadRejection.secureStorageUnavailable;
+      }
+      if (!_isIdCurrent(request.id, generation, idGeneration)) {
+        return DownloadRejection.offlineOrMetered;
+      }
+
+      // ENC-001/ENC-008: الإذن من الخادم قبل أي بايت. هو الذي يفحص الاستحقاق
+      // وحدود الأجهزة والعناصر، ويُصدر الترخيص الموقَّع والقدرة. الرفض هنا رفض
+      // الخادم لا تقدير العميل — والعميل لم يكن يسأل أصلًا.
+      final authorizer = _authorize;
+      if (authorizer != null) {
+        final DownloadAuthorization authorization;
+        try {
+          authorization = await authorizer(request);
+        } on DownloadNotEntitled {
+          return DownloadRejection.notEntitled;
+        } on DownloadLimitReached {
+          return DownloadRejection.storageFull;
+        } catch (_) {
+          // خطأ شبكة أو خادم: لا تنزيل بلا ترخيص، والسبب أقرب ما يكون إلى
+          // «لا اتصال» من منظور وليّ الأمر.
+          return DownloadRejection.offlineOrMetered;
+        }
+        if (!_isIdCurrent(request.id, generation, idGeneration)) {
+          return DownloadRejection.offlineOrMetered;
+        }
+        // الترخيص يُحفَظ قبل بدء التنزيل: انقطاع في المنتصف يترك ملفًا جزئيًّا
+        // مع ترخيصه، وهو ما يجعل الاستئناف ممكنًا بلا جلسة جديدة.
+        await _licenses?.store(request.id, authorization.licenceToken);
+        _authorizations[request.id] = authorization;
+        if (!_isIdCurrent(request.id, generation, idGeneration)) {
+          return DownloadRejection.offlineOrMetered;
+        }
+      }
+
       final item = DownloadItem(
         id: request.id,
         childId: request.childId,
         contentType: request.contentType,
         title: request.title,
         subtitle: request.subtitle,
-        sourceUrl: request.sourceUrl,
+        // الرابط المخوَّل يحلّ محلّ الرابط العام حين يوجد: مسار Worker يفحص
+        // القدرة، لا رابط R2 مفتوح.
+        sourceUrl: _authorizations[request.id]?.url ?? request.sourceUrl,
         fileName: '${request.id}.enc',
         status: DownloadStatus.queued,
         receivedBytes: 0,
@@ -344,6 +532,48 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
     return entry.future;
   }
 
+  /// يجدّد قدرة الوسائط لعنصر جارٍ تنزيله، بلا ترخيص جديد.
+  Future<bool> _refreshCapability(String id) async {
+    final current = _authorizations[id];
+    final refresh = _refreshAuthorization;
+    if (current == null || refresh == null) return false;
+    try {
+      final next = await refresh(current.licenceId);
+      _authorizations[id] = next;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// يضمن وجود تخويل قبل بدء الجري.
+  ///
+  /// لازم لمسار «إعادة المحاولة» وبعد إعادة تشغيل التطبيق: التخويل في الذاكرة
+  /// وحدها، فبلا هذا كان الاستئناف يُرسل طلبًا بلا قدرة فيُرفَض. إعادة فتح جلسة
+  /// لنفس المحتوى idempotent على الخادم: يعيد الترخيص نفسه بقدرة جديدة.
+  Future<bool> _ensureAuthorization(DownloadItem item) async {
+    final authorizer = _authorize;
+    if (authorizer == null) return true;
+    if (_authorizations.containsKey(item.id)) return true;
+    try {
+      final authorization = await authorizer(DownloadRequest(
+        id: item.id,
+        childId: item.childId,
+        contentType: item.contentType,
+        title: item.title,
+        subtitle: item.subtitle,
+        sourceUrl: item.sourceUrl,
+        posterUrl: item.posterUrl,
+        quality: item.quality,
+      ));
+      _authorizations[item.id] = authorization;
+      await _licenses?.store(item.id, authorization.licenceToken);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _run(_RunEntry entry) async {
     if (!_isRunCurrent(entry)) return;
     _update(
@@ -353,38 +583,46 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
 
     var item = byId(entry.id);
     if (item == null || !_isRunCurrent(entry)) return;
+    if (!await _ensureAuthorization(item)) {
+      if (!_isRunCurrent(entry)) return;
+      _fail(entry.id, entry.managerGeneration, run: entry);
+      return;
+    }
+    if (!_isRunCurrent(entry)) return;
     http.StreamedResponse? unconsumedResponse;
     try {
       final uri = Uri.parse(item.sourceUrl);
 
-      // Determine resume offset from the persisted part file.
+      // ENC-003: موضع الاستئناف لم يعد طول الملف الجزئي، لأن الملف الجزئي صار
+      // مشفَّرًا: طوله أكبر من النصّ الصريح بمقدار ترويسة ووسم لكل جزء. الموضع
+      // الصحيح هو ما ثُبِّت من أجزاء كاملة بالنصّ الصريح، ويحسبه المستودع
+      // ويقصّ معه أي إطار ناقص من انقطاع سابق.
       var offset = item.receivedBytes;
       final expectedEtag = item.etag;
       try {
         if (!_isRunCurrent(entry)) return;
-        final part = await _repo.partFileFor(item);
+        final resumeAt = await _repo.resumeOffsetFor(item);
         if (!_isRunCurrent(entry)) return;
-        final exists = await part.exists();
-        if (!_isRunCurrent(entry)) return;
-        if (exists) {
-          final length = await part.length();
-          if (!_isRunCurrent(entry)) return;
-          if (length != offset && length > 0) {
-            offset = length;
-            _update(
-              entry.id,
-              (current) => current.copyWith(receivedBytes: offset),
-            );
-          }
-        } else if (offset > 0) {
-          // Persisted offset but no part file — restart.
-          offset = 0;
+        if (resumeAt != offset) {
+          offset = resumeAt;
+          _update(
+            entry.id,
+            (current) => current.copyWith(receivedBytes: offset),
+          );
         }
       } catch (_) {
         if (!_isRunCurrent(entry)) return;
+        // تعذّر قراءة الحزمة الجزئية: نبدأ من الصفر بدل البناء على مجهول.
+        offset = 0;
       }
 
       final headers = <String, String>{};
+      // ENC-008: القدرة في ترويسة لا في سلسلة استعلام، فلا تظهر في سجل ولا في
+      // تحليلات ولا في تاريخ وسيط.
+      final authorization = _authorizations[item.id]?.authorization;
+      if (authorization != null && authorization.isNotEmpty) {
+        headers['Authorization'] = authorization;
+      }
       if (offset > 0) {
         headers['Range'] = 'bytes=$offset-';
         if (expectedEtag != null && expectedEtag.isNotEmpty) {
@@ -437,6 +675,27 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
           0,
           retryResponse.headers['etag'],
         );
+        return;
+      }
+
+      // ENC-008: القدرة عمرها ثلاث دقائق والتنزيل قد يطول. انتهاؤها في المنتصف
+      // يعود 401/403، فتُجدَّد **بلا** ترخيص جديد ويُعاد الطلب من نفس الموضع.
+      // بلا هذا الفرع كان كل تنزيل أطول من ثلاث دقائق يفشل، وهو أكثر التنزيلات.
+      if ((unconsumedResponse.statusCode == 401 || unconsumedResponse.statusCode == 403)
+          && _authorizations.containsKey(entry.id)
+          && !entry.capabilityRefreshed) {
+        await _cancelResponse(unconsumedResponse);
+        unconsumedResponse = null;
+        if (!_isRunCurrent(entry)) return;
+        entry.capabilityRefreshed = true;
+        final refreshed = await _refreshCapability(entry.id);
+        if (!_isRunCurrent(entry)) return;
+        if (!refreshed) {
+          _fail(entry.id, entry.managerGeneration, run: entry);
+          return;
+        }
+        // نفس الجري يُعاد من الموضع المحفوظ، فلا يُعاد تنزيل ما وصل.
+        await _run(entry);
         return;
       }
 
@@ -562,7 +821,10 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
     } catch (_) {
       try {
         await subscription?.cancel();
-      } catch (_) {}
+      } catch (_) {
+        // إلغاء اشتراك أُلغي أو انقطع. الغرض من هذه الدالّة تحرير المقبس، وقد
+        // تحرّر بالانقطاع نفسه. لا شيء يُسجَّل: المسار هو الحالة الطبيعية.
+      }
     }
   }
 
@@ -580,7 +842,8 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
     int offset,
     String? etag,
   ) async {
-    IOSink? sink;
+    ChunkedPackageWriter? writer;
+    StreamingDigest? integrity;
     StreamIterator<List<int>>? iterator;
     if (!_isRunCurrent(entry)) {
       await _cancelResponse(response);
@@ -606,10 +869,34 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
     try {
       final partFile = await _repo.partFileFor(item);
       if (!_isRunCurrent(entry)) return;
-      final openSink = partFile.openWrite(
-        mode: offset > 0 ? FileMode.append : FileMode.write,
+      // ENC-003: يُشفَّر أثناء الوصول. لا نصّ صريح على القرص في أي لحظة.
+      final packageWriter = await _repo.openEncryptingWriter(
+        item,
+        resume: offset > 0,
       );
-      sink = openSink;
+      writer = packageWriter;
+      if (packageWriter.plainOffset != offset) {
+        // الحزمة الجزئية لا تطابق الموضع الذي طُلب به `Range`، فما سيوصل لا
+        // يُلحَق بما هو موجود. البداية من الصفر أسلم من ملف مخيط من نصفين.
+        await packageWriter.close();
+        writer = null;
+        await _deletePartIfPresent(partFile, entry);
+        if (!_isRunCurrent(entry)) return;
+        _fail(entry.id, entry.managerGeneration, run: entry);
+        return;
+      }
+
+      // ENC-007: بصمة ما وصل تُحسب أثناء التدفّق لا بعده.
+      //
+      // حسابها بعد الكتابة كان يعني قراءة الملف كاملًا مرة ثانية — وهو ما أُزيل
+      // في `ENC-006`. وتُحسب **قبل** التشفير لأن البصمة المنشورة بصمة النصّ
+      // الصريح.
+      //
+      // الاستئناف يُلغيها: ما وصل في جلسة سابقة ليس في هذه، فلا يمكن حساب بصمة
+      // الملف كاملًا. التحقّق يجري على التنزيلات المكتملة في جلسة واحدة، وهو
+      // حدّ مذكور لا مُدَّعى عكسه.
+      final expectedSha = offset == 0 ? _authorizations[item.id]?.sourceSha256 : null;
+      if (expectedSha != null) integrity = StreamingDigest();
 
       var received = offset;
       var lastEmit = received;
@@ -625,11 +912,12 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
 
         final chunk = streamIterator.current;
         if (!_isRunCurrent(entry)) return;
-        openSink.add(chunk);
+        await packageWriter.add(chunk);
+        integrity?.add(chunk);
         received += chunk.length;
         if (received > maxItemBytes) {
-          await _safeCloseSink(openSink);
-          sink = null;
+          await packageWriter.close();
+          writer = null;
           if (!_isRunCurrent(entry)) return;
           await entry.control.releaseStream(streamIterator);
           iterator = null;
@@ -659,25 +947,45 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
         }
       }
 
-      await openSink.flush();
-      if (!_isRunCurrent(entry)) return;
-      await openSink.close();
-      sink = null;
+      // ENC-007: لا يُعتمد ما لا تطابق بصمته.
+      //
+      // TLS وETag لا يكفيان: أصل مستبدل على المنشأ، أو استجابة مقطوعة يقبلها
+      // الطرفان كـ200، تُخزَّن مشفَّرة وتُعتبر سليمة — ثم تفشل عند التشغيل بعد
+      // أيام بلا سبب ظاهر.
+      if (integrity != null && expectedSha != null) {
+        final actual = integrity.hex();
+        if (actual != expectedSha.toLowerCase()) {
+          await packageWriter.close();
+          writer = null;
+          if (!_isRunCurrent(entry)) return;
+          // الحزمة الجزئية تُحذف: البناء عليها في محاولة تالية يعني الاستئناف
+          // فوق بايتات خطأ.
+          await _deletePartIfPresent(partFile, entry);
+          if (!_isRunCurrent(entry)) return;
+          _fail(entry.id, entry.managerGeneration, run: entry);
+          return;
+        }
+      }
+
+      // إتمام الحزمة: الجزء الأخير بعلامته، ثم إغلاق.
+      await packageWriter.finish();
+      writer = null;
       if (!_isRunCurrent(entry)) return;
 
-      // Read the completed part and encrypt it into managed storage.
-      final bytes = await partFile.readAsBytes();
-      if (!_isRunCurrent(entry)) return;
       final current = byId(entry.id);
       if (current == null) return;
 
-      final size = await _repo.writeEncrypted(current, bytes);
-      if (!_isRunCurrent(entry)) return;
-      await _deletePartIfPresent(partFile, entry);
+      // الترقية بإعادة التسمية لا بإعادة التشفير: الملف مشفَّر أصلًا.
+      // (سابقًا كان هنا `partFile.readAsBytes()` ثم تشفير الملف كله — نصف
+      // جيجابايت في الذاكرة وملف صريح على القرص حتى تلك اللحظة.)
+      final size = await _repo.promoteCompletedPart(current);
       if (!_isRunCurrent(entry)) return;
 
-      final expiresAt = DateTime.now()
-          .add(offlineLicenseDuration)
+      // ENC-005: الانتهاء من الخادم إن كان مخوَّلًا، ومن الثابت المحلي في مسار
+      // الاختبار وحده. الترخيص الموقَّع هو السلطة على أي حال — هذا الحقل صار
+      // للعرض في القائمة لا للفرض، والفرض في `LicenseGuard.authorize`.
+      final serverExpiry = _authorizations[item.id]?.expiresAt;
+      final expiresAt = (serverExpiry ?? DateTime.now().add(offlineLicenseDuration))
           .millisecondsSinceEpoch;
       _update(
         entry.id,
@@ -696,13 +1004,31 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
         run: entry,
       );
       if (!_isRunCurrent(entry)) return;
+
+      // ENC-001: الخادم يعرف أن التنزيل اكتمل، فيصير الترخيص `active` وتُسجَّل
+      // صفوف ما نُزِّل. فشل الإبلاغ لا يُفشل التنزيل: الملف على الجهاز وترخيصه
+      // صالح، وحالة `pending` تُصحَّح عند أول جلسة تالية.
+      final completed = _authorizations.remove(entry.id);
+      if (completed != null) {
+        try {
+          await _onDownloadCompleted?.call(completed.licenceId);
+        } catch (error) {
+          // لا يُفشِل التنزيل (السبب أعلاه)، لكنه يُسجَّل: تكراره يعني تراخيص
+          // تبقى `pending` على الخادم بينما ملفاتها مكتملة على الجهاز — وهو فرق
+          // يظهر في حدود الباقة لا في شاشة الأسرة.
+          reportIgnoredError('download_manager.completion_report', error);
+        }
+      }
+      if (!_isRunCurrent(entry)) return;
       MajarraAnalytics.downloadSucceeded(current.contentType);
     } catch (_) {
       if (!_isRunCurrent(entry)) return;
       _fail(entry.id, entry.managerGeneration, run: entry);
     } finally {
-      final openSink = sink;
-      if (openSink != null) await _safeCloseSink(openSink);
+      // الإغلاق بلا جزء أخير: ما كُتب يبقى حزمة جزئية قابلة للاستئناف، وما
+      // كان في مخزن الذاكرة (أقل من جزء) يُعاد تنزيله.
+      await writer?.close();
+      integrity?.close();
       final activeIterator = iterator;
       if (activeIterator != null) {
         await entry.control.releaseStream(activeIterator);
@@ -737,12 +1063,6 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
     }
   }
 
-  Future<void> _safeCloseSink(IOSink sink) async {
-    try {
-      await sink.close();
-    } catch (_) {}
-  }
-
   /// Cancels an in-flight download but keeps the row so the user can retry.
   Future<void> pause(String id) => _startOperation<void>(
     (generation) => _pause(id, generation),
@@ -759,7 +1079,11 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
       if (run != null) {
         try {
           await run.future;
-        } catch (_) {}
+        } catch (_) {
+          // انتظارٌ لجولة طُلب إلغاؤها قبل سطرين: فشلها هو **النتيجة المرجوّة**.
+          // وسببها الحقيقي — إن كان عطلًا لا إلغاءً — مُسجَّل في حالة العنصر من
+          // داخل الجولة نفسها، فتسجيله هنا تكرار.
+        }
         if (!_isIdCurrent(id, generation, idGeneration)) return;
       }
       if (byId(id) == null) return;
@@ -815,7 +1139,10 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
       if (run != null) {
         try {
           await run.future;
-        } catch (_) {}
+        } catch (_) {
+          // كما في `_pause`: فشل جولة أُلغيت عن قصد. والحذف يمضي بعده لأن غرضه
+          // إزالة الملف لا إنجاح الجولة.
+        }
         if (!_isIdCurrent(id, generation, idGeneration)) return;
       }
 
@@ -858,7 +1185,10 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
       if (matchingRuns.isNotEmpty) {
         try {
           await Future.wait<void>(matchingRuns);
-        } catch (_) {}
+        } catch (_) {
+          // `Future.wait` ترفع بأوّل فشل، والمطلوب هنا **انتظار الكلّ** لا نجاح
+          // الكلّ: كلّها جولات طُلب إلغاؤها.
+        }
         if (!_isCurrent(generation)) return;
       }
 
@@ -924,12 +1254,40 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
       return null;
     }
 
-    try {
-      final file = await _repo.decryptForPlayback(item);
-      if (!_isIdCurrent(id, generation, idGeneration) || _isBlocked(id)) {
+    // ENC-005: الترخيص الموقَّع يُتحقَّق منه قبل كل تشغيل.
+    //
+    // هذه هي البوابة التي كانت غائبة: `isExpired()` كان يقارن تاريخًا محسوبًا
+    // على الجهاز بـ`DateTime.now()`، فتأخير الساعة أو تحرير الميتاداتا يمدّد
+    // الصلاحية. الآن الانتهاء والملكية والجهاز والعهد كلها موقَّعة من الخادم،
+    // وتحرير أي حقل يُفشل التوقيع.
+    final licenses = _licenses;
+    if (licenses != null) {
+      try {
+        await licenses.authorize(
+          id,
+          expectedEntityType: item.contentType,
+          expectedEntityId: item.id,
+          expectedChildId: item.childId,
+        );
+      } on LicenseException {
+        // الرفض لا يحذف الملف: قد يكون السبب انتهاءً قابلًا للتجديد باتصال
+        // واحد، وحذف المحتوى عقوبةً على ذلك يُهدر بيانات الأسرة.
+        _fail(id, generation, idGeneration: idGeneration);
+        await _saveSnapshot(generation, id: id, idGeneration: idGeneration);
         return null;
       }
-      return file.path;
+      if (!_isIdCurrent(id, generation, idGeneration) || _isBlocked(id)) return null;
+    }
+
+    try {
+      // ENC-004: رابط محلي يفكّ عند الطلب، لا ملف صريح على القرص.
+      final source = await _repo.playbackSourceFor(item);
+      if (!_isIdCurrent(id, generation, idGeneration) || _isBlocked(id)) {
+        await _repo.releasePlaybackSource(source);
+        return null;
+      }
+      _playbackSources[id] = source;
+      return source.toString();
     } catch (_) {
       if (!_isIdCurrent(id, generation, idGeneration) || _isBlocked(id)) {
         return null;
@@ -942,8 +1300,11 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
     }
   }
 
-  /// Removes the temporary plaintext copy created for playback while keeping
-  /// the encrypted offline file and its metadata intact.
+  /// يوقف مصدر التشغيل المحلي، ويحفظ الحزمة المشفَّرة وبياناتها كما هي.
+  ///
+  /// ENC-004: لم يبقَ «ملف صريح مؤقّت» ليُحذَف — يُغلَق الرابط المحلي فيصير
+  /// المسار السرّي بلا معنى. وحذف `.play_*` يبقى مستدعى لأن أجهزة المستخدمين
+  /// قد تحمل ملفًا صريحًا كتبته نسخة أقدم من التطبيق.
   Future<void> cleanupPlaybackFile(String id) => _startOperation<void>(
     (generation) => _cleanupPlaybackFile(id, generation),
     whenFenced: () {},
@@ -951,6 +1312,8 @@ class DownloadManager extends StateNotifier<List<DownloadItem>> {
 
   Future<void> _cleanupPlaybackFile(String id, int generation) async {
     if (!_isCurrent(generation) || _isBlocked(id)) return;
+    final source = _playbackSources.remove(id);
+    if (source != null) await _repo.releasePlaybackSource(source);
     final item = byId(id);
     if (item == null) return;
     final idGeneration = _idGeneration(id);
@@ -1078,6 +1441,13 @@ class _RunEntry {
   final int managerGeneration;
   final int idGeneration;
   final _RunControl control = _RunControl();
+
+  /// هل جُدِّدت قدرة الوسائط في هذا الجري؟ (`ENC-008`)
+  ///
+  /// مرة واحدة لا حلقة: خادم يردّ 401 دائمًا — لأن الترخيص سُحب مثلًا — كان
+  /// سيُنتج تجديدًا لا نهائيًّا لو لم يُحدَّ.
+  bool capabilityRefreshed = false;
+
   final Completer<void> _completion = Completer<void>();
 
   Future<void> get future => _completion.future;
@@ -1126,6 +1496,8 @@ class _RunControl {
   Future<void> _cancelIterator(StreamIterator<List<int>> iterator) async {
     try {
       await iterator.cancel();
-    } catch (_) {}
+    } catch (_) {
+      // نفس المنطق: الإلغاء بعد انقطاع يرفع، والمقبس محرَّر أصلًا.
+    }
   }
 }
