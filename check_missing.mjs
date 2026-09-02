@@ -1,0 +1,12 @@
+import fs from 'fs';
+import {execSync} from 'child_process';
+const manifest = JSON.parse(fs.readFileSync('tools/playveo/complete-drawing.manifest.json','utf8'));
+const ids = manifest.assets.map(a=> 'complete-'+a.id);
+const dbJson = execSync(`npx wrangler d1 execute majarra-db --local --command "SELECT id FROM creative_drawings WHERE category='complete' ORDER BY id;"`, {cwd:'dashboard/api', encoding:'utf8'});
+const m = dbJson.match(/"id": "([^"]+)"/g);
+const dbIds = m ? m.map(s=> s.match(/"id": "([^"]+)"/)[1]) : [];
+console.log('manifest', ids.length, 'db', dbIds.length);
+const missing = ids.filter(id=> !dbIds.includes(id));
+console.log('missing:', missing.join(', '));
+const extra = dbIds.filter(id=> !ids.includes(id));
+console.log('extra db not in manifest:', extra.join(', '));

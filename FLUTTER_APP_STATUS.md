@@ -1,3 +1,8 @@
+<!-- doc-status: historical -->
+> **لقطة منقضية — لا تُعتمد.** كُتب هذا الملف بتاريخ 2026-08-12 ويصف حالةً
+> انقضت. الحالة الحالية في `AUDIT_FULL_2026.md`، والتصنيف الكامل لوثائق
+> الجذر في `DOCS_INDEX.md`.
+
 # Picture Story Reader Completion
 
 > Majarra `app_main` — Flutter 3.35.2 · Dart ^3.9 · Last update: 12 Aug 2026

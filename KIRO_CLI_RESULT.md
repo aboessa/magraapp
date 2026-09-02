@@ -1,3 +1,8 @@
+<!-- doc-status: historical -->
+> **لقطة منقضية — لا تُعتمد.** كُتب هذا الملف بتاريخ 2026-08-11 ويصف حالةً
+> انقضت. الحالة الحالية في `AUDIT_FULL_2026.md`، والتصنيف الكامل لوثائق
+> الجذر في `DOCS_INDEX.md`.
+
 # Majarra Learning Objectives / Mastery / Question Bank / Translation Overhaul
 
 _Date: 11 Aug 2026 · Scope: Complete Product + Information Architecture + UI/UX + Data Model overhaul for Measurable Learning Objectives (/admin/objectives), Mastery & Attempts (/admin/mastery), Question Bank (/admin/quiz), Translation Center (/admin/translation). Preserves Customer 360 overhaul (11 Aug) — not reverted. Do NOT touch Flutter._

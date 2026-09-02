@@ -440,64 +440,74 @@
     ]
   },
   "/campaigns": {
-    "status": "MISSING",
-    "verified_by": "code read 2026-08-09",
-    "evidence": "NotImplementedPage; no campaigns or notifications table in any migration and no API route. The page documents that push tokens must be stored in account_devices first.",
+    "status": "PARTIAL",
+    "verified_by": "code read 2026-08-29",
+    "evidence": "Route registered in AdminRoutes.tsx and CampaignsPage.tsx calls 2 endpoint(s): campaigns, createCampaign. A server route answers each. The previous verdict cited NotImplementedPage as evidence; that component was unused everywhere and has been deleted.",
     "gaps": [
+      "Feature completeness was not audited in this pass: presence of endpoints is not proof of a finished workflow.",
       "Whole marketing operations block absent"
     ]
   },
   "/revenue": {
-    "status": "MISSING",
-    "verified_by": "code read 2026-08-09",
-    "evidence": "NotImplementedPage; no revenue or MRR table exists and no monetary figure is computed. The previous version displayed entirely invented numbers.",
+    "status": "PARTIAL",
+    "verified_by": "code read 2026-08-29",
+    "evidence": "Route registered in AdminRoutes.tsx and RevenuePage.tsx calls 2 endpoint(s): revenueDrilldown, revenueOverview. A server route answers each. The previous verdict cited NotImplementedPage as evidence; that component was unused everywhere and has been deleted.",
     "gaps": [
+      "Feature completeness was not audited in this pass: presence of endpoints is not proof of a finished workflow.",
       "Requires per-plan, per-country pricing that does not exist yet"
     ]
   },
   "/translation": {
-    "status": "MISSING",
-    "verified_by": "code read 2026-08-09",
-    "evidence": "NotImplementedPage; no aggregate translation-status route exists, although story_page_localizations and game_localizations hold the underlying rows.",
+    "status": "PARTIAL",
+    "verified_by": "code read 2026-08-29",
+    "evidence": "Route registered in AdminRoutes.tsx and TranslationCenterPage.tsx calls 4 endpoint(s): createGlossaryTerm, glossary, translationMemory, translationQueue. A server route answers each. The previous verdict cited NotImplementedPage as evidence; that component was unused everywhere and has been deleted.",
     "gaps": [
+      "Feature completeness was not audited in this pass: presence of endpoints is not proof of a finished workflow.",
       "No translator/reviewer assignment, due dates, glossary or stale-translation detection"
     ]
   },
   "/quiz": {
-    "status": "MISSING",
-    "verified_by": "code read 2026-08-09",
-    "evidence": "NotImplementedPage; no quiz, question or answer table in any migration.",
+    "status": "PARTIAL",
+    "verified_by": "code read 2026-08-29",
+    "evidence": "Route registered in AdminRoutes.tsx and QuizBuilderPage.tsx calls 5 endpoint(s): createQuestion, exportQuestions, importQuestions, learningObjectives, questions. A server route answers each. The previous verdict cited NotImplementedPage as evidence; that component was unused everywhere and has been deleted.",
     "gaps": [
+      "Feature completeness was not audited in this pass: presence of endpoints is not proof of a finished workflow.",
       "Architecture decision open: central question bank versus per-game questions"
     ]
   },
   "/recommendations": {
-    "status": "MISSING",
-    "verified_by": "code read 2026-08-09",
-    "evidence": "NotImplementedPage; no recommendation, pin or boost table and no route.",
+    "status": "PARTIAL",
+    "verified_by": "code read 2026-08-29",
+    "evidence": "Route registered in AdminRoutes.tsx and RecommendationsPage.tsx calls 4 endpoint(s): createRecommendation, deleteRecommendation, recommendations, updateRecommendation. A server route answers each. The previous verdict cited NotImplementedPage as evidence; that component was unused everywhere and has been deleted. The eligibility preview still runs on four hard-coded candidates, not on catalogue rows.",
     "gaps": [
+      "Feature completeness was not audited in this pass: presence of endpoints is not proof of a finished workflow.",
       "Architecture decision open: extend home_experience_blocks versus a separate engine"
     ]
   },
   "/school": {
-    "status": "MISSING",
-    "verified_by": "code read 2026-08-09",
-    "evidence": "NotImplementedPage; no schools or classrooms table. The previous version displayed an invented school, invented pupils and invented mastery figures alongside privacy guarantees that were never implemented.",
+    "status": "PARTIAL",
+    "verified_by": "code read 2026-08-29",
+    "evidence": "Route registered in AdminRoutes.tsx and SchoolAccountsPage.tsx calls 6 endpoint(s): assignSchoolTeacher, createClassroom, createSchool, enrollStudent, school, schools. A server route answers each. The previous verdict cited NotImplementedPage as evidence; that component was unused everywhere and has been deleted.",
     "gaps": [
+      "Feature completeness was not audited in this pass: presence of endpoints is not proof of a finished workflow.",
       "Whole B2B block absent"
     ]
   },
   "/finance-advanced": {
-    "status": "MISSING",
-    "verified_by": "code read 2026-08-09",
-    "evidence": "NotImplementedPage; no cost table. The previous version showed invented cost, profitability and LTV, and its export button was an alert().",
-    "gaps": []
+    "status": "PARTIAL",
+    "verified_by": "code read 2026-08-29",
+    "evidence": "Route registered in AdminRoutes.tsx and AdvancedFinancePage.tsx calls 2 endpoint(s): contentCosts, createContentCost. A server route answers each. The previous verdict cited NotImplementedPage as evidence; that component was unused everywhere and has been deleted.",
+    "gaps": [
+      "Feature completeness was not audited in this pass: presence of endpoints is not proof of a finished workflow."
+    ]
   },
   "/ops-sla": {
-    "status": "MISSING",
-    "verified_by": "code read 2026-08-09",
-    "evidence": "NotImplementedPage; no SLA policy table. The previous version showed an invented compliance percentage and progress bar.",
-    "gaps": []
+    "status": "PARTIAL",
+    "verified_by": "code read 2026-08-29",
+    "evidence": "Route registered in AdminRoutes.tsx and OpsSlaPage.tsx calls 4 endpoint(s): createSlaPolicy, slaCommandCenter, slaPolicies, supportFamily. A server route answers each. The previous verdict cited NotImplementedPage as evidence; that component was unused everywhere and has been deleted. The list has no toolbar or pagination; its imports for them were unused and were removed.",
+    "gaps": [
+      "Feature completeness was not audited in this pass: presence of endpoints is not proof of a finished workflow."
+    ]
   },
   "/partnerships": {
     "status": "COMPLETE",

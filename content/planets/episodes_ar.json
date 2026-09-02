@@ -1,0 +1,367 @@
+{
+  "meta": {
+    "project": "Majarra (مجرة)",
+    "character": "لونا",
+    "language": "ar",
+    "style": "3D cartoon for children, bright colors, friendly",
+    "provider": "omini flash",
+    "allowed_durations_sec": [4, 6, 8, 10],
+    "narration_pace": "slow child narration ~1.5 words/sec",
+    "word_budget": { "4": "5-6", "6": "8-9", "8": "11-13", "10": "14-16" },
+    "version": 1
+  },
+  "episodes": [
+    {
+      "id": "ep01_mercury",
+      "order": 1,
+      "planet": "عطارد",
+      "title": "عطارد: الكوكب السريع",
+      "total_sec": 42,
+      "segments": [
+        {
+          "index": 1,
+          "duration_sec": 8,
+          "narration": "أهلاً يا أصدقائي! أنا لونا، واليوم سنسافر معاً إلى كوكب صغير قريب جداً من الشمس.",
+          "word_count": 14,
+          "visual_prompt": "Luna the little space girl waving happily inside a cute rocket cockpit, colorful galaxy and bright sun in the background, 3D cartoon style for kids."
+        },
+        {
+          "index": 2,
+          "duration_sec": 8,
+          "narration": "اسمه عطارد، وهو أصغر كواكب مجموعتنا، ويلمع مثل حجرٍ رماديٍّ صغير قرب الشمس الكبيرة.",
+          "word_count": 13,
+          "visual_prompt": "Zoom on small gray cratered Mercury, huge glowing sun close behind it, sparkle effect, 3D cartoon."
+        },
+        {
+          "index": 3,
+          "duration_sec": 10,
+          "narration": "عطارد هو الأسرع في الدوران حول الشمس، فهو ينهي سنته الكاملة في ثمانيةٍ وثمانين يوماً فقط، تخيّلوا كم هو نشيطٌ وسريع!",
+          "word_count": 16,
+          "visual_prompt": "Mercury zooming fast on a short orbit around the sun, motion speed lines, playful energetic mood, 3D cartoon."
+        },
+        {
+          "index": 4,
+          "duration_sec": 8,
+          "narration": "لكن نهاره حارقٌ جداً، وليله متجمّدٌ بارد، لأنه لا يملك هواءً يحفظ حرارته مثل أرضنا الجميلة.",
+          "word_count": 13,
+          "visual_prompt": "Split view of Mercury: one half burning red hot, the other half icy blue frozen, strong contrast, 3D cartoon."
+        },
+        {
+          "index": 5,
+          "duration_sec": 8,
+          "narration": "والآن لنودّع عطارد الصغير السريع، ونستعدّ معاً لمغامرةٍ جديدةٍ مع كوكبٍ آخر يا أصدقائي.",
+          "word_count": 12,
+          "visual_prompt": "Luna waving goodbye to Mercury as the rocket turns toward a new colorful planet, twinkling stars, 3D cartoon."
+        }
+      ]
+    },
+    {
+      "id": "ep02_venus",
+      "order": 2,
+      "planet": "الزهرة",
+      "title": "الزهرة: الكوكب اللامع",
+      "total_sec": 42,
+      "segments": [
+        {
+          "index": 1,
+          "duration_sec": 8,
+          "narration": "مرحباً من جديد يا أصدقائي! أنا لونا، وسنزور اليوم كوكباً لامعاً وجميلاً اسمه الزهرة.",
+          "word_count": 13,
+          "visual_prompt": "Luna smiling in her rocket pointing at a bright yellowish glowing planet Venus, sparkles, 3D cartoon for kids."
+        },
+        {
+          "index": 2,
+          "duration_sec": 8,
+          "narration": "الزهرة هو ألمعُ كوكبٍ نراه في السماء، ونستطيع رؤيته بسهولةٍ بعد غروب الشمس مباشرةً.",
+          "word_count": 13,
+          "visual_prompt": "Evening sky with a very bright Venus shining like a big star above a horizon, warm colors, 3D cartoon."
+        },
+        {
+          "index": 3,
+          "duration_sec": 10,
+          "narration": "لكن تحت غيومه الجميلة يختبئ سرٌّ عجيب، فالزهرة هو أشدُّ الكواكب حرارةً على الإطلاق، أشدُّ حتى من عطارد القريب من الشمس!",
+          "word_count": 16,
+          "visual_prompt": "Venus covered by thick swirling yellow clouds, hidden hot glowing surface peeking through, dramatic reveal, 3D cartoon."
+        },
+        {
+          "index": 4,
+          "duration_sec": 8,
+          "narration": "وهو يدور حول نفسه ببطءٍ شديدٍ جداً، حتى إن يومه الواحد أطولُ من سنته الكاملة، عجيبٌ حقاً!",
+          "word_count": 15,
+          "visual_prompt": "Venus rotating extremely slowly with a tiny clock spinning backward, surprised Luna face, 3D cartoon."
+        },
+        {
+          "index": 5,
+          "duration_sec": 8,
+          "narration": "ودّعوا معي الزهرة اللامع الجميل، ولنكمل رحلتنا الممتعة نحو كوكبنا الغالي، الأرض.",
+          "word_count": 11,
+          "visual_prompt": "Luna waving to glowing Venus as the rocket turns toward a blue-green Earth in the distance, 3D cartoon."
+        }
+      ]
+    },
+    {
+      "id": "ep03_earth",
+      "order": 3,
+      "planet": "الأرض",
+      "title": "الأرض: كوكب الحياة",
+      "total_sec": 42,
+      "segments": [
+        {
+          "index": 1,
+          "duration_sec": 8,
+          "narration": "أهلاً بكم يا أحبائي! أنا لونا، ووصلنا اليوم إلى كوكبنا الغالي الجميل، كوكب الأرض.",
+          "word_count": 13,
+          "visual_prompt": "Luna in rocket hugging air toward a beautiful blue-green Earth with white clouds, joyful mood, 3D cartoon for kids."
+        },
+        {
+          "index": 2,
+          "duration_sec": 8,
+          "narration": "الأرض هي الكوكب الوحيد الذي نعرف أن الحياة تعيش عليه، فيها ماءٌ وهواءٌ وكائناتٌ كثيرة.",
+          "word_count": 13,
+          "visual_prompt": "Earth showing blue oceans, green forests, animals, trees and happy children, lively colorful, 3D cartoon."
+        },
+        {
+          "index": 3,
+          "duration_sec": 10,
+          "narration": "حولها طبقةٌ من الهواء تحمينا وتمنحنا ما نتنفّسه، وتجعل الطقس دافئاً ولطيفاً لكلّ الكائنات الحيّة عليها.",
+          "word_count": 14,
+          "visual_prompt": "Soft glowing atmosphere layer around Earth, sun rays passing gently, cozy warm feeling, 3D cartoon."
+        },
+        {
+          "index": 4,
+          "duration_sec": 8,
+          "narration": "ولها رفيقٌ جميلٌ يدور حولها في الليل اسمه القمر، ننظر إليه فنحبّه كثيراً.",
+          "word_count": 12,
+          "visual_prompt": "The Moon orbiting Earth at night, big friendly glowing moon, stars twinkling, 3D cartoon."
+        },
+        {
+          "index": 5,
+          "duration_sec": 8,
+          "narration": "فلنحافظ معاً على كوكبنا الجميل نظيفاً، ثم نطير سويّاً إلى الكوكب الأحمر يا أصدقائي.",
+          "word_count": 12,
+          "visual_prompt": "Luna planting a tree on Earth then pointing rocket toward a red planet Mars, hopeful mood, 3D cartoon."
+        }
+      ]
+    },
+    {
+      "id": "ep04_mars",
+      "order": 4,
+      "planet": "المريخ",
+      "title": "المريخ: الكوكب الأحمر",
+      "total_sec": 42,
+      "segments": [
+        {
+          "index": 1,
+          "duration_sec": 8,
+          "narration": "مرحباً يا أصدقائي الصغار! أنا لونا، واليوم هبطنا على كوكبٍ أحمرَ ترابيٍّ اسمه المريخ.",
+          "word_count": 12,
+          "visual_prompt": "Luna standing on dusty red Martian ground next to her rocket, red sky, 3D cartoon for kids."
+        },
+        {
+          "index": 2,
+          "duration_sec": 8,
+          "narration": "يُسمّى المريخ الكوكب الأحمر، لأن تربته مليئةٌ بالحديد الذي يمنحه لونه البرتقاليَّ الجميل.",
+          "word_count": 12,
+          "visual_prompt": "Close up of rusty red-orange Martian soil and rocks, warm dusty light, 3D cartoon."
+        },
+        {
+          "index": 3,
+          "duration_sec": 10,
+          "narration": "وعلى المريخ يوجد أضخمُ بركانٍ في مجموعتنا الشمسية كلها، وهو أعلى بثلاثة أضعافٍ من أعلى جبلٍ عندنا على الأرض!",
+          "word_count": 16,
+          "visual_prompt": "Giant Martian volcano Olympus Mons towering huge, tiny Earth mountain shown beside for comparison, 3D cartoon."
+        },
+        {
+          "index": 4,
+          "duration_sec": 8,
+          "narration": "يعتقد العلماء أن الماء كان يجري عليه قديماً، ولذلك ترسل إليه المركبات لتبحث وتكتشف أسراره.",
+          "word_count": 13,
+          "visual_prompt": "A cute rover exploring dry ancient riverbeds on Mars, curious mood, 3D cartoon."
+        },
+        {
+          "index": 5,
+          "duration_sec": 8,
+          "narration": "لنودّع المريخ الأحمر المثير، ولنطر معاً نحو أضخم كوكبٍ في المجموعة كلها، المشتري.",
+          "word_count": 12,
+          "visual_prompt": "Luna waving to red Mars as rocket heads toward a huge striped planet Jupiter, 3D cartoon."
+        }
+      ]
+    },
+    {
+      "id": "ep05_jupiter",
+      "order": 5,
+      "planet": "المشتري",
+      "title": "المشتري: العملاق الكبير",
+      "total_sec": 44,
+      "segments": [
+        {
+          "index": 1,
+          "duration_sec": 8,
+          "narration": "أهلاً يا أصدقائي الأعزّاء! أنا لونا، واليوم نقترب من عملاقٍ ضخمٍ جداً اسمه المشتري.",
+          "word_count": 12,
+          "visual_prompt": "Luna's tiny rocket next to an enormous striped planet Jupiter, sense of huge scale, 3D cartoon for kids."
+        },
+        {
+          "index": 2,
+          "duration_sec": 8,
+          "narration": "المشتري هو أكبرُ كواكب مجموعتنا الشمسية، فهو ضخمٌ جداً حتى تتّسع بداخله ألفُ كرةٍ أرضية.",
+          "word_count": 13,
+          "visual_prompt": "Jupiter shown huge with many tiny Earth-sized balls fitting inside it, scale comparison, 3D cartoon."
+        },
+        {
+          "index": 3,
+          "duration_sec": 10,
+          "narration": "وعلى وجهه بقعةٌ حمراءُ عملاقة، وهي في الحقيقة عاصفةٌ هائلةٌ تدور منذ مئات السنين، أكبرُ من كوكبنا كلّه!",
+          "word_count": 16,
+          "visual_prompt": "Jupiter's Great Red Spot swirling as a giant storm, Earth shown smaller beside it, 3D cartoon."
+        },
+        {
+          "index": 4,
+          "duration_sec": 10,
+          "narration": "والمشتري ليس صخرياً مثل الأرض، بل مصنوعٌ في معظمه من الغازات، ولذلك لا نستطيع الوقوف على سطحه أبداً.",
+          "word_count": 15,
+          "visual_prompt": "Luna trying to step on Jupiter but sinking gently into swirling gas clouds, playful, 3D cartoon."
+        },
+        {
+          "index": 5,
+          "duration_sec": 8,
+          "narration": "ودّعوا معي العملاق المشتري، ولنكمل سويّاً نحو الكوكب صاحب الحلقات الجميلة، زحل.",
+          "word_count": 11,
+          "visual_prompt": "Luna waving to giant Jupiter as rocket turns toward ringed planet Saturn, 3D cartoon."
+        }
+      ]
+    },
+    {
+      "id": "ep06_saturn",
+      "order": 6,
+      "planet": "زحل",
+      "title": "زحل: صاحب الحلقات",
+      "total_sec": 42,
+      "segments": [
+        {
+          "index": 1,
+          "duration_sec": 8,
+          "narration": "مرحباً بكم يا أصدقائي! أنا لونا، واليوم سنرى كوكباً ساحراً يلبس حلقاتٍ جميلةً اسمه زحل.",
+          "word_count": 13,
+          "visual_prompt": "Luna gazing in wonder at Saturn with its beautiful bright rings, sparkles, 3D cartoon for kids."
+        },
+        {
+          "index": 2,
+          "duration_sec": 8,
+          "narration": "أشهرُ ما يميّز زحل هو حلقاته اللامعة، وهي مكوّنةٌ من ملايين قطع الجليد والصخور الصغيرة.",
+          "word_count": 13,
+          "visual_prompt": "Close up of Saturn's rings made of countless icy sparkling chunks orbiting, 3D cartoon."
+        },
+        {
+          "index": 3,
+          "duration_sec": 10,
+          "narration": "زحل هو ثاني أكبر الكواكب بعد المشتري، وهو خفيفٌ جداً حتى إنه لو وُضع في محيطٍ ضخمٍ لطفا فوق الماء!",
+          "word_count": 16,
+          "visual_prompt": "Saturn floating like a toy on a giant ocean of water, playful surprising idea, 3D cartoon."
+        },
+        {
+          "index": 4,
+          "duration_sec": 8,
+          "narration": "وحول زحل أقمارٌ كثيرةٌ جداً، أشهرها قمرٌ كبيرٌ يلفّه ضبابٌ برتقاليٌّ اسمه تيتان.",
+          "word_count": 12,
+          "visual_prompt": "Saturn surrounded by many moons, large hazy orange moon Titan highlighted, 3D cartoon."
+        },
+        {
+          "index": 5,
+          "duration_sec": 8,
+          "narration": "لنودّع زحل الجميل صاحب الحلقات، ولنطر معاً نحو الكوكب المائل الأزرق، أورانوس.",
+          "word_count": 11,
+          "visual_prompt": "Luna waving to ringed Saturn as rocket heads toward a pale blue tilted planet Uranus, 3D cartoon."
+        }
+      ]
+    },
+    {
+      "id": "ep07_uranus",
+      "order": 7,
+      "planet": "أورانوس",
+      "title": "أورانوس: الكوكب المائل",
+      "total_sec": 42,
+      "segments": [
+        {
+          "index": 1,
+          "duration_sec": 8,
+          "narration": "أهلاً يا أصدقائي الصغار! أنا لونا، واليوم نلتقي بكوكبٍ أزرقَ هادئٍ وغريبٍ اسمه أورانوس.",
+          "word_count": 12,
+          "visual_prompt": "Luna in rocket approaching a calm pale blue-green planet Uranus, soft cool colors, 3D cartoon for kids."
+        },
+        {
+          "index": 2,
+          "duration_sec": 8,
+          "narration": "لون أورانوس أزرقُ مائلٌ إلى الأخضر، بسبب غازٍ لطيفٍ يملأ سماءه اسمه الميثان.",
+          "word_count": 12,
+          "visual_prompt": "Uranus glowing soft cyan-green, gentle gaseous atmosphere, serene mood, 3D cartoon."
+        },
+        {
+          "index": 3,
+          "duration_sec": 10,
+          "narration": "وأعجبُ ما فيه أنه ينام على جنبه أثناء دورانه، وكأنه كرةٌ تتدحرج على مدارها حول الشمس، عجيبٌ حقاً!",
+          "word_count": 16,
+          "visual_prompt": "Uranus tilted fully on its side rolling along its orbit like a ball, playful, 3D cartoon."
+        },
+        {
+          "index": 4,
+          "duration_sec": 8,
+          "narration": "وهو كوكبٌ باردٌ جداً بعيدٌ عن الشمس، ولديه حلقاتٌ خفيفةٌ رفيعةٌ يصعب أن نراها بسهولة.",
+          "word_count": 13,
+          "visual_prompt": "Very cold distant Uranus with faint thin rings, tiny far sun, chilly blue tones, 3D cartoon."
+        },
+        {
+          "index": 5,
+          "duration_sec": 8,
+          "narration": "ودّعوا معي أورانوس المائل الهادئ، ولنصل سويّاً إلى آخر كواكب رحلتنا، نبتون.",
+          "word_count": 11,
+          "visual_prompt": "Luna waving to tilted Uranus as rocket heads toward a deep blue planet Neptune, 3D cartoon."
+        }
+      ]
+    },
+    {
+      "id": "ep08_neptune",
+      "order": 8,
+      "planet": "نبتون",
+      "title": "نبتون: الكوكب الأزرق البعيد",
+      "total_sec": 44,
+      "segments": [
+        {
+          "index": 1,
+          "duration_sec": 8,
+          "narration": "مرحباً يا أحبائي! أنا لونا، ووصلنا اليوم إلى آخرِ كوكبٍ في رحلتنا، إنه نبتون الأزرق.",
+          "word_count": 13,
+          "visual_prompt": "Luna reaching a deep vivid blue planet Neptune far in space, distant tiny sun, 3D cartoon for kids."
+        },
+        {
+          "index": 2,
+          "duration_sec": 8,
+          "narration": "نبتون هو أبعدُ كوكبٍ عن الشمس، ولونه أزرقُ عميقٌ جميلٌ مثل مياه البحار الواسعة.",
+          "word_count": 12,
+          "visual_prompt": "Neptune deep ocean-blue glowing softly, far faint sun, calm cosmic scene, 3D cartoon."
+        },
+        {
+          "index": 3,
+          "duration_sec": 10,
+          "narration": "وعلى نبتون تهبّ أسرعُ الرياح في المجموعة الشمسية كلها، رياحٌ قويةٌ جداً تدور بسرعةٍ مذهلةٍ حول الكوكب!",
+          "word_count": 15,
+          "visual_prompt": "Powerful fast winds and swirling storms across Neptune's surface, dramatic motion, 3D cartoon."
+        },
+        {
+          "index": 4,
+          "duration_sec": 10,
+          "narration": "وهو بعيدٌ جداً حتى إن ضوء الشمس يصله ضعيفاً وخافتاً، لذلك يبدو دائماً باردٌ ومظلمٌ قليلاً وهادئ.",
+          "word_count": 14,
+          "visual_prompt": "Neptune in dim faint sunlight, dark cold quiet atmosphere, tiny distant sun, 3D cartoon."
+        },
+        {
+          "index": 5,
+          "duration_sec": 8,
+          "narration": "وهكذا زرنا كل الكواكب يا أصدقائي! شكراً لرحلتكم الجميلة معي، وإلى لقاءٍ جديدٍ قريباً.",
+          "word_count": 12,
+          "visual_prompt": "Luna waving happily with all eight planets lined up behind her, celebratory ending, 3D cartoon."
+        }
+      ]
+    }
+  ]
+}

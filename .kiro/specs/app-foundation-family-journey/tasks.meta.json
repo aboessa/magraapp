@@ -1,0 +1,478 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. تصنيف المسارات في خريطة واحدة (`RouteAccess`)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635331
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599661088
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787600115013
+      }
+    ],
+    "2. استبدال `_guardRedirect` بمنطق يعتمد على `RouteAccess`": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635388
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787600126725
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787600553741
+      }
+    ],
+    "3. اختبار `route_guard_matrix_test.dart` يفشل على مسار بلا فئة": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635439
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787600568511
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787600839689
+      }
+    ],
+    "4. اختبار قفل fail-closed لـPIN (`parent_pin_fail_closed_test.dart`)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635473
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787600856697
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787601078094
+      }
+    ],
+    "5. حذف المسارات والملفات غير القابلة للوصول": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635505
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787601162622
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787601952031
+      }
+    ],
+    "6. توحيد وجهات التنقل في مصدر واحد (`HomeDestinationSpec`)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635541
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787601965115
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787603615871
+      }
+    ],
+    "7. اختبار تطابق تسمية/جسم الوجهات (`home_destinations_labels_test.dart`)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635606
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787603622387
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787603784244
+      }
+    ],
+    "8. توسعة `GET /stories/:id` بالحقول المُشتقة (خادم)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635639
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787603792814
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787604080378
+      }
+    ],
+    "9. تطبيق نفس التوسعة على `GET /books/:id`": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635673
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787604087097
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787604275191
+      }
+    ],
+    "10. اختبارات عقد الخادم للحقول الموسّعة (`stories.test.ts`, `books.test.ts`)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635704
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787604283706
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787605059609
+      }
+    ],
+    "11. نقل العقد الموسّع إلى `content_dtos.dart` و`content_models.dart`": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635749
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787605067423
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787605609956
+      }
+    ],
+    "12. اختبارات تحويل الحقول الجديدة (`content_dtos_test.dart`)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635805
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787605616953
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787605770345
+      }
+    ],
+    "13. إصلاح مسار الأنشطة المرجعية 404": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635836
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787605778873
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787605947645
+      }
+    ],
+    "14. اختبار عقد باراميتر `fetchProgress`": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635871
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787605954198
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787606345777
+      }
+    ],
+    "15. ربط تعليم الإشعار مقروءًا": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635909
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787606352983
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787606601941
+      }
+    ],
+    "16. مراجعة وتوثيق مصير كل endpoint بلا مستدعٍ": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635948
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787606609849
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787607036162
+      }
+    ],
+    "17. سياسة تعريب الأسطح الجديدة": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599635982
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787607046089
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787607327876
+      }
+    ],
+    "18. إضافة `PATCH /children/:childId` في `FamilyState` (خادم)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636037
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787607336895
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787607520433
+      }
+    ],
+    "19. تعريض `PATCH /family/children/:childId` في `family.ts`": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636072
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787607529813
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787607637881
+      }
+    ],
+    "20. اختبارات Worker لإنشاء/تعديل الطفل بحدود العمر والباقة": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636104
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787607646009
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787608007851
+      }
+    ],
+    "21. `ChildProfileFormPage` — شاشة كاملة بدل `_CreateChildSheet`": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636139
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787608019798
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787609929565
+      }
+    ],
+    "22. اختبار Widget لحدود عمر النموذج والاهتمامات": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636171
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787609971556
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787612060884
+      }
+    ],
+    "23. تقسيم `parent_pin_page.dart` إلى إعداد وفتح": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636204
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787612260209
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787619971002
+      }
+    ],
+    "24. اختبار تدفق PIN الكامل (إعداد → قفل → فتح → تغيير)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636267
+      },
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787619977783
+      }
+    ],
+    "25. إضافة `POST /children/:childId/track-transition` (خادم)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636301
+      }
+    ],
+    "26. اختبار خاصية حفظ سجلات التقدم عبر الانتقال (Property 5)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636335
+      }
+    ],
+    "27. اختبار خاصية حصرية التأجيل (Property 6)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636368
+      }
+    ],
+    "28. `AgeTransitionReviewPage` (عميل)": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636399
+      }
+    ],
+    "29. `OnboardingStep`, `OnboardingController`, واسترجاع الموضع": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636435
+      }
+    ],
+    "30. `ConsentPage` — استهلاك `/family/consents` القائم": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636469
+      }
+    ],
+    "31. ربط سحب الموافقة بإيقاف السلوك المعتمد عليها فورًا": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636502
+      }
+    ],
+    "32. `OnboardingFlowPage` — تجميع الخطوات وحرس الدخول": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636537
+      }
+    ],
+    "33. اختبار تكامل لرحلة التهيئة الكاملة": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636572
+      }
+    ],
+    "34. تحقق نهائي: بناء واختبارات كاملة للـspec": [
+      {
+        "executionId": "19a2dfd5-2693-47c6-9516-c398d83ed441",
+        "chatSessionId": "sess_880246a5-c0c1-46ba-862e-19c24724cb88",
+        "timestamp": 1787599636607
+      }
+    ]
+  }
+}

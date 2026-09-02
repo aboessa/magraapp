@@ -84,6 +84,14 @@ required media in `production_required`.
 - **One new idea per episode.** Vocabulary is introduced in context and not quizzed.
 - **Silence is content.** Preschool scripts use explicit `صمت 4 ثوان` beats for the child to
   act. Include them.
+- **PlayVeo Omni Flash clips are 4/6/8/10 seconds only.** Editorial scenes may remain longer,
+  but the production plan must split them into continuous beats using only those four durations.
+  Prefer 10 seconds for a complete spoken/action thought; use 8/6/4 to land near a question,
+  response window, visual change, or editorial boundary. Never create a new clip merely because
+  one sentence ended. Keep intentional child-response silence and remove filler silence between
+  lines that naturally belong in the same performance. A branded entrance or logo may use at most
+  two seconds inside the first beat; it must not consume a standalone clip. Reclaimed legacy time
+  must either be removed or replaced by explicit meaningful visual action, never an unspecified hold.
 - **Visual prohibitions matter.** The body series bans white skeletons and skulls because
   they read as death to a child. Think about what your subject's equivalent is and write a
   "قاعدة بصرية حاكمة" (governing visual rule) table where one is needed.

@@ -1,3 +1,8 @@
+<!-- doc-status: historical -->
+> **لقطة منقضية — لا تُعتمد.** كُتب هذا الملف بتاريخ 2026-08-15 ويصف حالةً
+> انقضت. الحالة الحالية في `AUDIT_FULL_2026.md`، والتصنيف الكامل لوثائق
+> الجذر في `DOCS_INDEX.md`.
+
 # Majarra Master Audit Backlog
 
 ## How To Use This File

@@ -1,3 +1,8 @@
+<!-- doc-status: historical -->
+> **لقطة منقضية — لا تُعتمد.** كُتب هذا الملف بتاريخ 2026-08-09 ويصف حالةً
+> انقضت. الحالة الحالية في `AUDIT_FULL_2026.md`، والتصنيف الكامل لوثائق
+> الجذر في `DOCS_INDEX.md`.
+
 Proceed with a FULL ADMIN DASHBOARD + BUSINESS OPERATIONS + MARKETING + WEBSITE + BLOG + SEO COMPLETION PROGRAM for Majarra.
 
 This task is APPROVED FOR IMPLEMENTATION.

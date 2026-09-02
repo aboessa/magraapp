@@ -236,3 +236,9 @@ tools/playveo/*.results.json
 tools/playveo/*log*.txt
 tools/playveo/last-run*.log
 tools/*_gen.log
+
+# بيانات دخول بنصٍّ صريح لحساب تجريبي: بريد وكلمة مرور وPIN والدين.
+# `tools/ci/scan-secrets.mjs` لا يرصدها لأنها ليست سرًّا عالي العشوائية، وهذا
+# بالضبط سبب كتابة القاعدة يدويًّا: «تجريبيّ» لا يعني «قابل للنشر»، وحساب الوالد
+# يفتح منطقة أولياء الأمور. تُتبادَل عبر قناة الأسرار لا عبر التاريخ.
+DEMO_FAMILY_ACCOUNT.txt

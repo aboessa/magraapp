@@ -1,3 +1,8 @@
+<!-- doc-status: historical -->
+> **لقطة منقضية — لا تُعتمد.** كُتب هذا الملف بتاريخ 2026-08-08 ويصف حالةً
+> انقضت. الحالة الحالية في `AUDIT_FULL_2026.md`، والتصنيف الكامل لوثائق
+> الجذر في `DOCS_INDEX.md`.
+
 # Majarra — master content plan
 
 **Generated:** 2026-08-08 00:30 · derived from local D1 plus the on-disk content sources.
