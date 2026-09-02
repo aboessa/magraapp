@@ -1,0 +1,34 @@
+-- Existing bundled SVG sources prepared for R2 migration. Records stay draft
+-- until the matching SVG has been uploaded and geometry has passed review.
+INSERT OR IGNORE INTO creative_drawings
+  (id, category, title_ar, age_min, age_max, difficulty, r2_key, thumb_r2_key, geometry_json, status, sort_order, tags)
+VALUES
+  ('trace-line-h','trace','خط أفقي',3,5,'سهل','public/studio/trace/line-h.svg','public/studio/trace/thumbs/line-h.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.15,0.5],[0.85,0.5]]}]}','draft',1,'خطوط,تمهيدي'),
+  ('trace-line-v','trace','خط عمودي',3,5,'سهل','public/studio/trace/line-v.svg','public/studio/trace/thumbs/line-v.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.5,0.15],[0.5,0.85]]}]}','draft',2,'خطوط,تمهيدي'),
+  ('trace-diagonal','trace','مائل',3,5,'سهل','public/studio/trace/diagonal.svg','public/studio/trace/thumbs/diagonal.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.2,0.8],[0.8,0.2]]}]}','draft',3,'خطوط,تمهيدي'),
+  ('trace-zigzag','trace','متعرج',4,6,'سهل','public/studio/trace/zigzag.svg','public/studio/trace/thumbs/zigzag.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.15,0.5],[0.3,0.3],[0.45,0.7],[0.6,0.3],[0.85,0.5]]}]}','draft',4,'مسارات,تمهيدي'),
+  ('trace-wave','trace','موجة',4,6,'سهل','public/studio/trace/wave.svg','public/studio/trace/thumbs/wave.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.15,0.5],[0.3,0.3],[0.5,0.5],[0.7,0.7],[0.85,0.5]]}]}','draft',5,'مسارات,تمهيدي'),
+  ('trace-spiral','trace','حلزون',4,7,'متوسط','public/studio/trace/spiral.svg','public/studio/trace/thumbs/spiral.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.5,0.5],[0.6,0.5],[0.6,0.6],[0.4,0.6],[0.4,0.4],[0.65,0.4]]}]}','draft',6,'مسارات,متوسط'),
+  ('trace-loop','trace','حلقة',4,7,'متوسط','public/studio/trace/loop.svg','public/studio/trace/thumbs/loop.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.5,0.33],[0.63,0.33],[0.63,0.66],[0.36,0.66],[0.36,0.33],[0.5,0.33]]}]}','draft',7,'مسارات,متوسط'),
+  ('trace-arch','trace','قوس',4,7,'متوسط','public/studio/trace/arch.svg','public/studio/trace/thumbs/arch.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.2,0.66],[0.35,0.3],[0.65,0.3],[0.8,0.66]]}]}','draft',8,'مسارات,متوسط'),
+  ('trace-s-curve','trace','حرف S',5,8,'متوسط','public/studio/trace/s-curve.svg','public/studio/trace/thumbs/s-curve.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.2,0.66],[0.33,0.33],[0.66,0.8],[0.8,0.33]]}]}','draft',9,'مسارات,متوسط'),
+  ('trace-road','trace','طريق',5,8,'متوسط','public/studio/trace/road.svg','public/studio/trace/thumbs/road.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.2,0.5],[0.33,0.5],[0.43,0.33],[0.56,0.5],[0.73,0.66],[0.8,0.5]]}]}','draft',10,'مسارات,متوسط'),
+  ('trace-maze','trace','متاهة',5,8,'متوسط','public/studio/trace/maze.svg','public/studio/trace/thumbs/maze.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.2,0.2],[0.8,0.2],[0.8,0.4],[0.33,0.4],[0.33,0.6],[0.8,0.6],[0.8,0.8]]}]}','draft',11,'مسارات,متوسط'),
+  ('trace-mountain-path','trace','مسار جبلي',5,8,'متوسط','public/studio/trace/mountain-path.svg','public/studio/trace/thumbs/mountain-path.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.2,0.8],[0.33,0.33],[0.5,0.58],[0.66,0.3],[0.8,0.8]]}]}','draft',12,'مسارات,متوسط'),
+  ('trace-rocket-trail','trace','ذيل صاروخ',5,8,'متوسط','public/studio/trace/rocket-trail.svg','public/studio/trace/thumbs/rocket-trail.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.5,0.8],[0.46,0.6],[0.53,0.43],[0.5,0.2]]}]}','draft',13,'فضاء,مسارات'),
+  ('trace-bee','trace','مسار نحلة',5,8,'متوسط','public/studio/trace/bee.svg','public/studio/trace/thumbs/bee.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.2,0.5],[0.33,0.33],[0.5,0.66],[0.66,0.33],[0.77,0.4]]}]}','draft',14,'طبيعة,مسارات'),
+  ('trace-fish-path','trace','سباحة سمكة',5,8,'متوسط','public/studio/trace/fish-path.svg','public/studio/trace/thumbs/fish-path.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.2,0.5],[0.33,0.36],[0.56,0.3],[0.8,0.5]]}]}','draft',15,'بحر,مسارات'),
+  ('letter-alif','letters','ا',3,6,'سهل','public/studio/letters/alif.svg','public/studio/letters/thumbs/alif.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.5,0.22],[0.5,0.74]]}]}','draft',1,'حروف,ألف'),
+  ('letter-baa','letters','ب',3,6,'سهل','public/studio/letters/baa.svg','public/studio/letters/thumbs/baa.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.3,0.55],[0.7,0.55]]},{"id":"s2","order":2,"type":"dot","points":[[0.5,0.65]]}]}','draft',2,'حروف,باء'),
+  ('letter-lam','letters','ل',3,6,'سهل','public/studio/letters/lam.svg','public/studio/letters/thumbs/lam.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.55,0.2],[0.55,0.6],[0.4,0.75]]}]}','draft',3,'حروف,لام'),
+  ('letter-noon','letters','ن',3,6,'سهل','public/studio/letters/noon.svg','public/studio/letters/thumbs/noon.webp','{"strokePaths":[{"id":"s1","order":1,"type":"stroke","points":[[0.3,0.5],[0.7,0.5]]},{"id":"s2","order":2,"type":"dot","points":[[0.5,0.35]]}]}','draft',4,'حروف,نون'),
+  ('number-1','numbers','1',3,6,'سهل','public/studio/numbers/1.svg','public/studio/numbers/thumbs/1.webp',NULL,'draft',1,'أرقام,يتطلب تأليف مسار'),
+  ('number-2','numbers','2',3,6,'سهل','public/studio/numbers/2.svg','public/studio/numbers/thumbs/2.webp',NULL,'draft',2,'أرقام,يتطلب تأليف مسار'),
+  ('number-3','numbers','3',3,6,'سهل','public/studio/numbers/3.svg','public/studio/numbers/thumbs/3.webp',NULL,'draft',3,'أرقام,يتطلب تأليف مسار'),
+  ('number-4','numbers','4',3,6,'سهل','public/studio/numbers/4.svg','public/studio/numbers/thumbs/4.webp',NULL,'draft',4,'أرقام,يتطلب تأليف مسار'),
+  ('number-5','numbers','5',3,6,'سهل','public/studio/numbers/5.svg','public/studio/numbers/thumbs/5.webp',NULL,'draft',5,'أرقام,يتطلب تأليف مسار'),
+  ('number-6','numbers','6',3,6,'سهل','public/studio/numbers/6.svg','public/studio/numbers/thumbs/6.webp',NULL,'draft',6,'أرقام,يتطلب تأليف مسار'),
+  ('number-7','numbers','7',3,6,'سهل','public/studio/numbers/7.svg','public/studio/numbers/thumbs/7.webp',NULL,'draft',7,'أرقام,يتطلب تأليف مسار'),
+  ('number-8','numbers','8',3,6,'سهل','public/studio/numbers/8.svg','public/studio/numbers/thumbs/8.webp',NULL,'draft',8,'أرقام,يتطلب تأليف مسار'),
+  ('number-9','numbers','9',3,6,'سهل','public/studio/numbers/9.svg','public/studio/numbers/thumbs/9.webp',NULL,'draft',9,'أرقام,يتطلب تأليف مسار'),
+  ('number-10','numbers','10',4,7,'متوسط','public/studio/numbers/10.svg','public/studio/numbers/thumbs/10.webp',NULL,'draft',10,'أرقام,يتطلب تأليف مسار');
