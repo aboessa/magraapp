@@ -1,0 +1,100 @@
+{
+  "story": "bs-s5",
+  "story_file": "docs/content/planets/05-qisas/bedtime-stories/story-05-old-lantern.md",
+  "language": "fr",
+  "language_code": "fr-FR",
+  "out_dir": "assets/audio/stories/bs-s5/fr",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "notes": [
+    "DRAFT FR translation"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – bedtime\n## \"The Kind Older Sister\" for bs-s5\nSalma is a young Arab woman in her early twenties with a light, bright, distinctly feminine voice. She is reading a bedtime story (bs-s5) for children 6-8. Warm, calm, unhurried, affectionate.\n## THE SCENE\nChild's bedroom late evening, one warm lamp on. Child sleepy under blanket. Salma sits on floor beside bed.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, affectionate, gentle vocal smile. Youthful timbre, never breathy, never babyish, never cartoon. Warm and reassuring.\nPacing: Slow ~90 words/min, small natural pause at every full stop. For pages 11-12 slower ~80 wpm.\nAccent: Clear French.\nLoudness: Constant, no escalation, no drama even on climax pages. Climax quieter not louder for bedtime.",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-bs-s5-vo-fr-001",
+      "file": "page-001-fr.wav",
+      "text": "في مساء هادئ، فتحت سَلْمى صندوقًا مع جدّتها.  كان الصندوق في خزانة البيت القديمة.",
+      "style": "Calm bedtime narration for page 1. Steady, warm, unhurried."
+    },
+    {
+      "page": 2,
+      "id": "asset-bs-s5-vo-fr-002",
+      "file": "page-002-fr.wav",
+      "text": "وجدت صورًا، ومفتاحًا، وفانوسًا صغيرًا.  كان مقبضه باردًا، وزجاجه مغطّى بالغبار.",
+      "style": "Calm bedtime narration for page 2. Steady, warm, unhurried."
+    },
+    {
+      "page": 3,
+      "id": "asset-bs-s5-vo-fr-003",
+      "file": "page-003-fr.wav",
+      "text": "حملت سَلْمى الفانوس إلى الطاولة بحذر.  سألت: هل نستطيع أن نضيئه الليلة؟",
+      "style": "Calm bedtime narration for page 3. Steady, warm, unhurried."
+    },
+    {
+      "page": 4,
+      "id": "asset-bs-s5-vo-fr-004",
+      "file": "page-004-fr.wav",
+      "text": "قالت جدّتها: صار فارغًا منذ سنوات.  مسحتا الغبار، فظهر المعدن البنيّ.",
+      "style": "Calm bedtime narration for page 4. Steady, warm, unhurried."
+    },
+    {
+      "page": 5,
+      "id": "asset-bs-s5-vo-fr-005",
+      "file": "page-005-fr.wav",
+      "text": "كان الفانوس صَدِئًا، وبقي مطفأً.  قالت سَلْمى: إذن لم يعد نافعًا.",
+      "style": "Calm bedtime narration for page 5. Steady, warm, unhurried."
+    },
+    {
+      "page": 6,
+      "id": "asset-bs-s5-vo-fr-006",
+      "file": "page-006-fr.wav",
+      "text": "أمسكت سَلْمى المقبض، لكنه لم يتحرّك.  أعادته بهدوء، وبقي الفانوس مطفأً.",
+      "style": "Calm bedtime narration for page 6. Steady, warm, unhurried."
+    },
+    {
+      "page": 7,
+      "id": "asset-bs-s5-vo-fr-007",
+      "file": "page-007-fr.wav",
+      "text": "فتحت جدّتها صورة قديمة بجانب الصندوق.  ظهر الفانوس قرب عائلة تضحك حول مائدة.",
+      "style": "Calm bedtime narration for page 7. Steady, warm, unhurried."
+    },
+    {
+      "page": 8,
+      "id": "asset-bs-s5-vo-fr-008",
+      "file": "page-008-fr.wav",
+      "text": "قالت: شهد أول ليلة لنا في هذا البيت.  حكينا عنده حتى عاد نور الغرف.",
+      "style": "Calm bedtime narration for page 8. Steady, warm, unhurried."
+    },
+    {
+      "page": 9,
+      "id": "asset-bs-s5-vo-fr-009",
+      "file": "page-009-fr.wav",
+      "text": "نظرت سَلْمى إلى الفانوس ثم إلى الصورة.  لم يكن معدنًا صدئًا.  كان حكاية.",
+      "style": "Calm bedtime narration for page 9. Steady, warm, unhurried."
+    },
+    {
+      "page": 10,
+      "id": "asset-bs-s5-vo-fr-010",
+      "file": "page-010-fr.wav",
+      "text": "كتبت سَلْمى عنوان الذِّكرى على بطاقة صغيرة.  ورسمت تحت التاريخ فانوسًا وعائلة.",
+      "style": "Calm bedtime narration for page 10. Steady, warm, unhurried."
+    },
+    {
+      "page": 11,
+      "id": "asset-bs-s5-vo-fr-011",
+      "file": "page-011-fr.wav",
+      "text": "وضعاه على الرِّفّ بجانب الصورة.  لا ليضيء، بل ليبقى.",
+      "style": "Calm bedtime narration for page 11. Steady, warm, unhurried."
+    },
+    {
+      "page": 12,
+      "id": "asset-bs-s5-vo-fr-012",
+      "file": "page-012-fr.wav",
+      "text": "البيت ساكن، والضوء خافت خلف الستارة.  والفانوس هادئ على الرِّفّ.",
+      "style": "Calm bedtime narration for page 12. Steady, warm, unhurried. Slowest page of story, sleepy, soft ending."
+    }
+  ]
+}

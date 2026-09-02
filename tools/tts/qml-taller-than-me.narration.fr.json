@@ -1,0 +1,156 @@
+{
+  "story": "qml-taller-than-me",
+  "story_file": "docs/content/planets/05-qisas/qisas-min-alhayat/taller-than-me.md",
+  "language": "fr",
+  "language_code": "fr-FR",
+  "out_dir": "assets/audio/stories/qml-taller-than-me/fr",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "notes": [
+    "DRAFT FR translation"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – junior 9-12\n## \"The Kind Older Sister, slightly more mature for 11-year-old\"\nSalma is a young Arab woman early twenties, light bright feminine voice, reading a junior story for 9-12 independent readers. Clear, steady, unhurried, warm but not babyish, slightly more mature than preschool bedtime, but still kind.\n## THE SCENE\nChild's room, afternoon or evening, quiet, child reading independently but with option to listen.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, clear, steady, warm, unhurried, mature enough for 11-year-old, never breathy, never babyish, never cartoon.\nPacing: ~100 words/min, natural pause at full stop.\nAccent: Clear French.\nLoudness: Constant, no escalation, no drama.\nPage is part of a literary story with no explicit moral at end.\n",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-qml-taller-than-me-vo-fr-001",
+      "file": "page-001-fr.wav",
+      "text": "على إطار الباب في بيت كرم خطوط بالقلم الأزرق. خطّان في كل مرة: واحد له وواحد لوسيم. أقدم خطّين من تسع سنوات، وهما قريبان جدًّا. وفوقهما خطوط أخرى، وكلها قريبة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 1 role: من وأين."
+    },
+    {
+      "page": 2,
+      "id": "asset-qml-taller-than-me-vo-fr-002",
+      "file": "page-002-fr.wav",
+      "text": "كل خميس، الساعة الخامسة، ملعب النادي الصغير. فريق واحد، وقميص واحد يتبادلانه إذا نسي أحدهما قميصه. وبعد التدريب، الطريق الطويل إلى البيت. الطريق الطويل أطول من التدريب.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 2 role: ما يملكانه."
+    },
+    {
+      "page": 3,
+      "id": "asset-qml-taller-than-me-vo-fr-003",
+      "file": "page-003-fr.wav",
+      "text": "كانا يلبسان الحذاء رقم ثمانية وثلاثين. وإذا نسي وسيم حذاءه، أخذ حذاء كرم. وإذا نسي كرم، أخذ حذاء وسيم. ولم يكن أحد يعرف أيّ حذاء لأيّهما.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 3 role: العالم قبل التغيّر."
+    },
+    {
+      "page": 4,
+      "id": "asset-qml-taller-than-me-vo-fr-004",
+      "file": "page-004-fr.wav",
+      "text": "في تشرين وقف وسيم على إطار الباب كما في كل مرة. رسم كرم الخطّ فوق رأسه. وكان الخطّ أعلى من خطّه بسنتيمترين. فقال كرم: سنتيمتران. وكتب التاريخ.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 4 role: أول إشارة."
+    },
+    {
+      "page": 5,
+      "id": "asset-qml-taller-than-me-vo-fr-005",
+      "file": "page-005-fr.wav",
+      "text": "في آذار قاسا مرة أخرى. كان الفرق تسعة سنتيمترات. وحذاء وسيم صار رقم واحد وأربعين. وصار قميص واحد لا يكفي اثنين.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 5 role: الإشارة تصير أمرًا واقعًا."
+    },
+    {
+      "page": 6,
+      "id": "asset-qml-taller-than-me-vo-fr-006",
+      "file": "page-006-fr.wav",
+      "text": "في نيسان انتقل وسيم إلى تدريب الناشِئين، الساعة السابعة. القرار من جدول النادي، لا من أحد. والخامسة بقيت للصغار. فصار كرم يذهب الخامسة وحده.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 6 role: ما يجعله ثقيلًا."
+    },
+    {
+      "page": 7,
+      "id": "asset-qml-taller-than-me-vo-fr-007",
+      "file": "page-007-fr.wav",
+      "text": "جرّب كرم أن يذهب السابعة ويقف خارج السلك. وقف أربع مرات، ونظر. كان وسيم يلعب بعيدًا، ولا يراه إلا في النهاية. وكان الطريق إلى البيت في السابعة والنصف مظلمًا وقصيرًا.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 7 role: محاولة تخفيف."
+    },
+    {
+      "page": 8,
+      "id": "asset-qml-taller-than-me-vo-fr-008",
+      "file": "page-008-fr.wav",
+      "text": "في المرة الرابعة لاحظ كرم شيئًا: لم يتكلّم مع أحد ولم يلمس كرة. ساعة كاملة واقفًا عند سلك. فرجع وحده قبل أن ينتهي التدريب. ولم يقل لوسيم إنه كان هناك.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 8 role: المحاولة لا تعمل."
+    },
+    {
+      "page": 9,
+      "id": "asset-qml-taller-than-me-vo-fr-009",
+      "file": "page-009-fr.wav",
+      "text": "ثم طلب منه طلبًا واحدًا: تعال الخامسة مرة واحدة. قال وسيم: أحاول. وجاء في الخميس التالي. وكان أطول من الجميع في الملعب برأس.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 9 role: محاولة ثانية."
+    },
+    {
+      "page": 10,
+      "id": "asset-qml-taller-than-me-vo-fr-010",
+      "file": "page-010-fr.wav",
+      "text": "لعب وسيم بحذر شديد لئلّا يصطدم بأحد. ثم صار يجلس على الحافة أكثر مما يلعب. وقال في النهاية: لم أستطع أن ألعب. ولم يعد في الخميس الذي بعده.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 10 role: الثانية لا تعمل."
+    },
+    {
+      "page": 11,
+      "id": "asset-qml-taller-than-me-vo-fr-011",
+      "file": "page-011-fr.wav",
+      "text": "في تلك الليلة وقف كرم عند إطار الباب. مدّ أصبعه على خطّ وسيم الأخير ليمسحه، فلم يُمحَ لأنه بالقلم. فأخذ القلم وشطب عليه، شطبتين متقاطعتين. ثم أطفأ النور.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 11 role: الذروة."
+    },
+    {
+      "page": 12,
+      "id": "asset-qml-taller-than-me-vo-fr-012",
+      "file": "page-012-fr.wav",
+      "text": "بعد ثلاثة أيام أخرج القلم من جديد. وأعاد رسم خطّ وسيم فوق الشطبتين، في مكانه بالضبط. وكتب التاريخ بجانبه، كما يفعل دائمًا. ولم يمسح الشطبتين.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 12 role: ما فعله بعدها."
+    },
+    {
+      "page": 13,
+      "id": "asset-qml-taller-than-me-vo-fr-013",
+      "file": "page-013-fr.wav",
+      "text": "لم يقل كرم لأحد ما فعله في تلك الليلة. والشطبتان بقيتا ظاهرتين تحت الخطّ الجديد. وكل من يقف عند الباب يراهما إن نظر. ولم ينظر أحد أسبوعين.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 13 role: الثمن يظهر."
+    },
+    {
+      "page": 14,
+      "id": "asset-qml-taller-than-me-vo-fr-014",
+      "file": "page-014-fr.wav",
+      "text": "في خميس من أيار جاء وسيم إلى البيت، ووقف عند الإطار. رأى الشطبتين، ورأى الخطّ فوقهما. ولم يسأل. ثم قال: لم أختر هذا.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 14 role: ردّ الطرف الآخر."
+    },
+    {
+      "page": 15,
+      "id": "asset-qml-taller-than-me-vo-fr-015",
+      "file": "page-015-fr.wav",
+      "text": "قال كرم: أعرف. بقيا واقفين عند الإطار. مرّ أصبع وسيم على الخطّين القديمين في الأسفل، القريبين من الأرض. ولم يقل أحد شيئًا آخر.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 15 role: صفحة الصمت."
+    },
+    {
+      "page": 16,
+      "id": "asset-qml-taller-than-me-vo-fr-016",
+      "file": "page-016-fr.wav",
+      "text": "في المساء اتّفقا على شيء واحد لا يحتاج طولًا. خميس واحد في الشهر، والطريق الطويل إلى البيت، بلا نادٍ. كتب كرم الاتّفاق على ورقة صغيرة وألصقها داخل خزانته. وكتب وسيم التاريخ في هاتفه.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 16 role: شيء صغير يتغيّر."
+    },
+    {
+      "page": 17,
+      "id": "asset-qml-taller-than-me-vo-fr-017",
+      "file": "page-017-fr.wav",
+      "text": "لم يعودا إلى فريق واحد. ولم يعد كرم إلى السابعة، ولم ينتقل وسيم إلى الخامسة. والقميص الواحد لم يعد يكفي اثنين. ومن الخميسات الأربعة الأولى، نسي وسيم اثنين.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 17 role: ما لم يُصلَح."
+    },
+    {
+      "page": 18,
+      "id": "asset-qml-taller-than-me-vo-fr-018",
+      "file": "page-018-fr.wav",
+      "text": "أضاف كرم على إطار الباب عمودًا صغيرًا من التواريخ، بلا أسماء. حتى يعرف متى قاسا، لا كم كان الفرق. وصار يقيس مرة في السنة، لا أربعًا. وفي المرة الأولى قاس وحده.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 18 role: تفصيل عملي."
+    },
+    {
+      "page": 19,
+      "id": "asset-qml-taller-than-me-vo-fr-019",
+      "file": "page-019-fr.wav",
+      "text": "خميس آخر، والطريق الطويل، وكلام قليل. عند الباب حذاءان: واحد رقم ثمانية وثلاثين، وواحد رقم اثنين وأربعين. والبيت هادئ.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 19 role: العودة والهدوء."
+    },
+    {
+      "page": 20,
+      "id": "asset-qml-taller-than-me-vo-fr-020",
+      "file": "page-020-fr.wav",
+      "text": "على إطار الباب خطوط كثيرة قريبة في الأسفل. وفي الأعلى خطّ واحد، وتحته شطبتان متقاطعتان.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 20 role: سكون."
+    }
+  ]
+}

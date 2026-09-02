@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "manifest_id": "majarra-games-wave4-closure-v1",
+  "created_at": "2026-08-22T00:00:00Z",
+  "scope": "Wave 4: 18 new games × 5 levels each to reach 36 games total (12 engines × 3 packs)",
+  "production_rules": {
+    "secret_environment_variable": "PLAYVEO_API_KEY",
+    "secret_must_remain_server_side": true,
+    "provider_urls_forbidden_in_game_packs": true,
+    "generated_text_forbidden": true,
+    "runtime_typography_required_for_arabic_letters_words_and_numbers": true,
+    "generated_assets_default_review": "ART_REVIEW_PENDING",
+    "thumbnail_policy": "Intentional square edit from approved cover, game-specific focal crop",
+    "completion_policy": "Compose approved hero art into game-specific completion treatment",
+    "system_icon_policy": "Retain Flutter system icons for back, close, volume, repeat, retry, accessibility",
+    "background_policy": "Keep boards quiet low-contrast behind interactive pieces; preschool simplest",
+    "visual_status": "VISUAL_ASSETS_PENDING"
+  },
+  "shared_prompt_contract": {
+    "brand": "Majarra child-friendly premium children's game illustration",
+    "style": "polished 2D storybook game art, rounded readable silhouettes, soft dimensional shading, clean edges, coherent line treatment",
+    "purpose": "object immediately recognizable during gameplay and clear at small mobile size",
+    "framing": "single clear focal subject, generous breathing room, no cropped important edges",
+    "camera": "front or gentle three-quarter view, no dramatic perspective distortion",
+    "simplicity": "low visual clutter, no tiny decorative details, strong separation subject and background",
+    "text_rule": "no text, no letters, no numbers, no symbols that resemble writing",
+    "rights_rule": "no logos, no branded characters, no watermark, no signature",
+    "transparency_rule": "standalone objects use plain removable background and preserve complete silhouette"
+  },
+  "output": {
+    "root": "app_main/assets/images/games/wave4",
+    "cover": {"width": 1600, "height": 1200, "format": "webp", "quality": 88},
+    "thumbnail": {"width": 800, "height": 800, "format": "webp", "quality": 86},
+    "background": {"width": 1600, "height": 1200, "format": "webp", "quality": 84},
+    "card": {"width": 1000, "height": 750, "format": "webp", "quality": 88},
+    "transparent_object": {"width": 768, "height": 768, "format": "png"}
+  },
+  "games": [
+    {
+      "game_id": "game-match-nature-3",
+      "title_ar": "طابق الطبيعة",
+      "engine": "match_pairs",
+      "age_group": "3-5",
+      "art_direction": "Sunny nature table with distinct forest animals and fruits, clear pairing concept, preschool warmth.",
+      "palette": ["#4FA9D8", "#F6C85F", "#F58A8A", "#F8F3E8", "#365A73"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 nature matching game cover in bright forest clearing: full-body friendly ginger cat and small blue bird from above paired with framed silhouette targets, joyful discovery, 4:3, title-safe sky, no text."},
+        {"asset":"apple","role":"match object apple","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"One bright red apple with small green leaf, friendly toy-like, front view, complete silhouette, plain background, no text."},
+        {"asset":"bird","role":"match object bird","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"One friendly small blue bird standing, full body, complete silhouette, toy-like, plain background, no text."},
+        {"asset":"cat","role":"match object cat","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"One friendly ginger cat sitting with tail visible, full body, toy-like, plain background, no text."},
+        {"asset":"board-background","role":"gameplay background","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Minimal warm preschool playroom wall pale blue floor two faint empty frame areas top open token area below no toys characters text."}
+      ]
+    },
+    {
+      "game_id": "game-count-nature-3",
+      "title_ar": "عد الطبيعة",
+      "engine": "count_quantity",
+      "age_group": "3-5",
+      "art_direction": "Quiet night-sky counting picnic with identical star tokens, same scale front view, navy to cream board.",
+      "palette": ["#173B59", "#FFD45C", "#79C9C5", "#FFF8E8", "#E97B6E"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 counting cover: three identical golden plush star tokens arc above blank number pebbles, dreamy night-sky picnic, no digits no text, 4:3."},
+        {"asset":"star-token","role":"countable star","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"One golden five-point plush star symmetrical friendly rounded points front view complete silhouette plain background no face no text."},
+        {"asset":"apple-token","role":"countable apple","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"One red apple green leaf front view complete silhouette toy-like plain background no text."},
+        {"asset":"board-background","role":"gameplay background","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Very simple deep blue upper sky fading warm cream counting mat empty central counting area few tiny distant dots only no stars as countable objects no text."}
+      ]
+    },
+    {
+      "game_id": "game-sort-animals-3",
+      "title_ar": "صنف الحيوانات",
+      "engine": "sort_bins",
+      "age_group": "3-5",
+      "art_direction": "Cheerful toy-delivery station with warm red and cool blue baskets, real-world toys, not color alone.",
+      "palette": ["#ED5C5C", "#3D8ED0", "#FFD166", "#F7F1E3", "#35556B"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 sorting cover: red rounded toy basket and blue basket, red cat toy and blue bird toy moving toward matching baskets, clear sorting story simple cream space no text."},
+        {"asset":"bin-red","role":"red basket","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Large open red toy basket warm apple badge front view complete silhouette plain background no text."},
+        {"asset":"bin-blue","role":"blue basket","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Large open blue toy basket gentle wave badge front view complete silhouette plain background no text."},
+        {"asset":"cat-token","role":"sortable cat","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Friendly ginger cat toy full body same toy material scale three-quarter camera complete silhouette."},
+        {"asset":"bird-token","role":"sortable bird","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Friendly blue bird toy full body same toy material scale complete silhouette."}
+      ]
+    },
+    {
+      "game_id": "game-memory-shapes-3",
+      "title_ar": "ذاكرة الأشكال",
+      "engine": "memory_flip",
+      "age_group": "3-5",
+      "art_direction": "Sunrise meadow memory deck with friendly shape characters, identical face scale lighting, rounded cards.",
+      "palette": ["#55BFA6", "#FF8F7A", "#FFD166", "#FFF6E7", "#2C6171"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 shape memory cover: friendly circle ball, apple, tree, flower gathered around two face-down rounded memory cards sunrise meadow joyful discovery 4:3 no text."},
+        {"asset":"ball-card","role":"memory card ball","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"One friendly yellow ball toy round face forward complete silhouette plain background."},
+        {"asset":"card-back","role":"card back","action":"GENERATE","transparent":false,"size":"1000x750","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 3-5 memory card back pattern one simple Majarra star-orbit emblem abstract shapes mint field coral gold accents rounded border centered no letters no text."}
+      ]
+    },
+    {
+      "game_id": "game-shape-trace-3",
+      "title_ar": "تتبع الأشكال",
+      "engine": "trace_color",
+      "age_group": "3-5",
+      "art_direction": "Preschool tracing shapes with generous glow dots, low contrast background, coloring stage after.",
+      "palette": ["#0B1026", "#FFD34D", "#00D6F5", "#FF6FAE", "#F2F6FF"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Preschool shape tracing cover: large glowing dotted circle square triangle outlines on midnight navy background with soft star-yellow guide dots, child-friendly, no text, 4:3."}
+      ]
+    },
+    {
+      "game_id": "game-number-trace-3",
+      "title_ar": "تتبع الأرقام",
+      "engine": "trace_color",
+      "age_group": "3-5",
+      "art_direction": "Number tracing 1-8 with glowing path, warm encouraging, midnight background.",
+      "palette": ["#0B1026", "#FFD34D", "#00D6F5", "#6A3DF2", "#F2F6FF"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Preschool number tracing cover: large glowing dotted numbers 1 2 3 outlines on midnight navy with soft guide, child-friendly, no text, 4:3."}
+      ]
+    },
+    {
+      "game_id": "game-sequence-story-3a",
+      "title_ar": "قصة نمو",
+      "engine": "sequence_order",
+      "age_group": "6-8",
+      "art_direction": "Seed to flower story three cards persistent watering can, terracotta pot, daylight, plant identity.",
+      "palette": ["#4E9F6F", "#D77A45", "#F2C14E", "#EAF4E2", "#365E4B"],
+      "assets": [
+        {"asset":"seed-card","role":"seed in pot","action":"GENERATE","transparent":false,"size":"1000x750","status":"PLANNED","operation":"text-to-image","prompt_subject":"Terracotta pot visible seed soil small red watering can beside it warm daylight storybook illustration no text."},
+        {"asset":"sprout-card","role":"sprout","action":"GENERATE","transparent":false,"size":"1000x750","status":"PLANNED","operation":"text-to-image","prompt_subject":"Same terracotta pot small green sprout same red watering can watering it warm daylight no text."},
+        {"asset":"flower-card","role":"flower","action":"GENERATE","transparent":false,"size":"1000x750","status":"PLANNED","operation":"text-to-image","prompt_subject":"Same terracotta pot area small flower plant with bloom same red watering can beside it warm daylight no text."}
+      ]
+    },
+    {
+      "game_id": "game-logic-colors-3a",
+      "title_ar": "أنماط الألوان",
+      "engine": "logic_pattern",
+      "age_group": "6-8",
+      "art_direction": "Crisp observatory puzzle simple celestial tokens pale grid decoration peripheral.",
+      "palette": ["#234E70", "#F6C85F", "#59B3A8", "#F4F0E6", "#E47D73"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 logic cover clean 2x2 observatory puzzle alternates golden moon teal rocket with glowing empty cell small comet option below puzzle logic dominates no text."},
+        {"asset":"moon-token","role":"moon tile","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Simple golden crescent moon game token no face front view complete silhouette plain background."},
+        {"asset":"rocket-token","role":"rocket tile","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Simple teal toy rocket token no logo front view complete silhouette plain background."}
+      ]
+    },
+    {
+      "game_id": "game-block-maze-3",
+      "title_ar": "متاهة البرمجة",
+      "engine": "block_code",
+      "age_group": "9-12",
+      "art_direction": "Teal workshop robot circuit-garden grid golden crystal goal obstacles rounded safe.",
+      "palette": ["#167D8D", "#F4B942", "#EE6C4D", "#EAF2F2", "#293B4A"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 block coding cover small teal workshop robot clean circuit-garden grid toward golden energy crystal two low obstacles short row blank command tiles no arrows no text."},
+        {"asset":"robot-token","role":"player robot","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Small teal workshop robot round body two short legs one antenna friendly screen face simple non-text eyes three-quarter front view complete silhouette plain background."},
+        {"asset":"goal-crystal","role":"goal crystal","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Golden energy crystal teal charging ring front view complete silhouette plain background no writing."},
+        {"asset":"obstacle-planter","role":"obstacle","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Low rounded planter dense leaves fits one square cell toy-like plain background."}
+      ]
+    },
+    {
+      "game_id": "game-rhythm-nature-3a",
+      "title_ar": "إيقاع الطبيعة",
+      "engine": "rhythm_tap",
+      "age_group": "6-8",
+      "art_direction": "Coral-teal percussion stage oversized tactile drum pads clear beat tokens lightweight Flutter pulses.",
+      "palette": ["#E75B64", "#2EA6A1", "#F4C95D", "#233B5D", "#FFF4E6"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 6-8 rhythm cover two large friendly hand-drum pads coral teal stage three glowing beat tokens descending toward them energetic uncluttered no musical notation no text."},
+        {"asset":"drum-coral","role":"coral drum","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Round coral hand-drum pad blank cream center front view complete silhouette plain background."},
+        {"asset":"beat-coral","role":"beat token","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Small coral pulse token concentric rounded rings no symbol front view complete silhouette plain background."}
+      ]
+    },
+    {
+      "game_id": "game-sim-plant-3",
+      "title_ar": "مختبر النبات",
+      "engine": "sim_lab",
+      "age_group": "9-12",
+      "art_direction": "Clean educational heat experiment readable beaker thermometer controlled steam coded variable.",
+      "palette": ["#2A9D8F", "#E76F51", "#F4A261", "#F3F7F5", "#264653"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 educational simulation cover clean glass beaker water safe electric warming plate beside large readable thermometer prediction choice panel blank shapes bright modern school lab no labels no numbers no fake diagram."},
+        {"asset":"beaker","role":"experiment object","action":"GENERATE","transparent":true,"size":"768x768","status":"PLANNED","operation":"text-to-image+remove-background","prompt_subject":"Clear glass beaker half-filled blue water small safe electric warming plate slight steam scientifically readable silhouette no labels plain background."}
+      ]
+    },
+    {
+      "game_id": "game-timeline-egypt-3",
+      "title_ar": "خط مصر",
+      "engine": "timeline_map",
+      "age_group": "9-12",
+      "art_direction": "Museum discovery table restrained event illustrations gouache-and-ink runtime supplies dates no inscriptions.",
+      "palette": ["#9A633A", "#C9A45D", "#4D7C7A", "#F2E7D3", "#3E4651"],
+      "assets": [
+        {"asset":"cover","role":"catalog cover","action":"GENERATE","transparent":false,"size":"1600x1200","status":"PLANNED","operation":"text-to-image","prompt_subject":"Age 9-12 history timeline cover museum table two unlabeled illustrated event cards ancient pyramid construction respectful distance ancient Mediterranean library scroll shelves connected blank brass timeline no dates no writing."},
+        {"asset":"event-pyramids","role":"pyramids event","action":"GENERATE","transparent":false,"size":"1000x750","status":"PLANNED","operation":"text-to-image","prompt_subject":"Museum gouache-and-ink distant educational scene ancient pyramid construction simple ramps workers respectfully no exact machinery claims no text."},
+        {"asset":"event-library","role":"library event","action":"GENERATE","transparent":false,"size":"1000x750","status":"PLANNED","operation":"text-to-image","prompt_subject":"Ancient Mediterranean library interior wooden shelves rolled scrolls scholars reading tables no identifiable inscriptions museum illustration no text."}
+      ]
+    }
+  ]
+}

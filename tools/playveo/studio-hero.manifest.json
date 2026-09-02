@@ -1,0 +1,49 @@
+{
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "nano_banana_2",
+  "aspect_ratio": "16:9",
+  "concurrency": 3,
+  "out_dir": "assets/images/studio/heroes",
+  "r2_key": "public/studio/heroes/studio-hero.webp",
+  "note": "بنر الاستوديو — التصميم بالكامل داخل الصورة، بما فيه النص العربي. لا نصوص Flutter فوقه.",
+  "arabic_text": {
+    "badge": "استوديو الإبداع",
+    "headline": "ارسم • لوّن • ابتكر",
+    "subtitle": "لوحاتك وألوانك في مكان واحد",
+    "cta": "ابدأ الرسم"
+  },
+  "master_style": "Premium mobile-app hero banner, wide horizontal 16:9 composition, deep navy to indigo gradient background #141A3C to #1E1048 with soft violet glow, rounded corners, vibrant saturated harmonious colors, warm rim light, gentle bokeh sparkles, polished app-store quality, clean flat-vector plus soft 3D hybrid style, generous breathing room, crisp high-contrast typography, perfectly spelled Arabic text rendered as correct connected right-to-left Arabic script with proper letter joining and correct diacritics, no photorealism, no clutter, no watermark, no logo, no English text, no Latin letters.",
+  "negative_prompt": "misspelled Arabic, broken Arabic letters, disconnected Arabic letters, isolated Arabic glyphs, reversed Arabic text, mirrored text, backwards text, garbled text, gibberish text, nonsense letters, random glyphs, Latin letters, English words, Hebrew, Persian-only words, Urdu, duplicated text, overlapping text, cut off text, cropped text, text running off the edge, blurry text, low contrast text, tiny unreadable text, distorted typography, warped letters, extra text blocks, watermark, signature, logo, photorealistic, realistic photography, 3D render noise, clutter, busy background, messy composition, harsh shadows, grayscale, black and white, low resolution, blurry, jpeg artifacts",
+  "variants": [
+    {
+      "id": "studio-hero-v1",
+      "label": "لوح ألوان وفرش — يمين النص",
+      "prompt": "Wide 16:9 mobile app hero banner with rounded corners on a deep navy indigo gradient background. On the LEFT side: a friendly soft-3D illustration of a wooden artist palette with vivid dabs of yellow, orange, teal, pink and purple paint, two paint brushes crossed behind it, a small stack of colorful drawing papers fanned below, and a few floating sparkles, all sitting inside a softly glowing rounded-square badge. On the RIGHT side, right-aligned Arabic typography stacked vertically with generous spacing: at the top a small gold rounded pill containing the Arabic words \"استوديو الإبداع\" in dark navy bold text; below it a large bold white Arabic headline reading exactly \"ارسم • لوّن • ابتكر\" with small bullet separators between the three words; below that a smaller light-lavender Arabic subtitle line reading exactly \"لوحاتك وألوانك في مكان واحد\"; and at the bottom a solid white rounded pill button containing the Arabic words \"ابدأ الرسم\" in dark navy bold text next to a small dark pencil icon. All Arabic must be flawlessly spelled, correctly connected cursive script, right-to-left, crisp and highly legible."
+    },
+    {
+      "id": "studio-hero-v2",
+      "label": "أقلام ملونة وشخصية صغيرة",
+      "prompt": "Wide 16:9 mobile app hero banner with rounded corners on a deep indigo to violet gradient background with soft glowing orbs. On the LEFT side: a cheerful soft-3D cluster of art supplies — a jar holding tall colored pencils in yellow, red, teal and purple, an open sketchbook showing a simple happy sun doodle, a rounded eraser and a tiny cute blue robot mascot peeking beside them, lit by warm golden light with drifting sparkles. On the RIGHT side, right-aligned Arabic typography with clear vertical rhythm: a small gold rounded pill at top holding the Arabic words \"استوديو الإبداع\" in dark navy bold; beneath it a large bold white Arabic headline reading exactly \"ارسم • لوّن • ابتكر\" separated by small dot bullets; beneath that a smaller soft-lavender Arabic line reading exactly \"لوحاتك وألوانك في مكان واحد\"; and at the bottom a crisp white rounded pill button with the Arabic words \"ابدأ الرسم\" in dark navy bold and a small pencil glyph. Every Arabic word must be perfectly spelled with properly joined cursive letterforms, right-to-left, sharp and readable."
+    },
+    {
+      "id": "studio-hero-v3",
+      "label": "دوائر ألوان ونجوم",
+      "prompt": "Wide 16:9 mobile app hero banner, rounded corners, deep navy #141A3C to purple #1E1048 gradient with faint starfield and soft violet aurora glow. On the LEFT side: a bold soft-3D arrangement of five glossy paint blobs in yellow, coral, teal, violet and mint arranged in a gentle arc, a single elegant paintbrush dipping into the teal blob, and a small glowing magic wand sparkle trail curling upward. On the RIGHT side, right-aligned Arabic text laid out cleanly: at top a compact gold rounded pill containing the Arabic phrase \"استوديو الإبداع\" in dark navy bold letters; below a large heavy white Arabic headline reading exactly \"ارسم • لوّن • ابتكر\" with tiny round bullet dividers; below that a smaller pale-lilac Arabic subtitle reading exactly \"لوحاتك وألوانك في مكان واحد\"; at the bottom a pure white rounded pill button reading \"ابدأ الرسم\" in dark navy bold beside a minimal pencil icon. The Arabic script must be impeccably spelled, natural connected calligraphic joining, right-to-left direction, very crisp edges."
+    },
+    {
+      "id": "studio-hero-v4",
+      "label": "لوحة قماش وحامل رسم",
+      "prompt": "Wide 16:9 mobile app hero banner with rounded corners, rich indigo to deep purple gradient background, soft glowing light from the upper left. On the LEFT side: a charming soft-3D wooden easel holding a small canvas painted with a simple colorful rainbow and a smiling cloud, a palette resting against its leg, three brushes in a cup, and gentle floating colour sparkles around it, all framed inside a subtly glowing rounded-square panel. On the RIGHT side, right-aligned Arabic typography in four clear tiers: a small gold rounded badge at the top with the Arabic words \"استوديو الإبداع\" in dark navy bold; a large bold white Arabic headline reading exactly \"ارسم • لوّن • ابتكر\" with small bullet points between words; a smaller light-lavender Arabic descriptive line reading exactly \"لوحاتك وألوانك في مكان واحد\"; and a solid white rounded pill call-to-action button reading \"ابدأ الرسم\" in dark navy bold with a small pencil icon. All Arabic lettering must be flawlessly spelled, properly connected cursive Arabic script, right-to-left, high contrast and easy to read."
+    },
+    {
+      "id": "studio-hero-v5",
+      "label": "أيدي طفل ترسم — تكوين مفتوح",
+      "prompt": "Wide 16:9 mobile app hero banner, rounded corners, deep navy to violet gradient with soft radial glow behind the artwork. On the LEFT side: a warm soft-3D scene of a child's hands holding an orange crayon mid-stroke over a white sheet where a bright simple flower and a yellow star are already drawn, surrounded by scattered crayons in teal, pink and yellow, with light sparkles rising, composed inside a gently glowing rounded square. On the RIGHT side, clean right-aligned Arabic typography with strong hierarchy and generous spacing: at top a small gold rounded pill containing the Arabic words \"استوديو الإبداع\" in dark navy bold text; below it a large bold bright-white Arabic headline reading exactly \"ارسم • لوّن • ابتكر\" with small bullet separators; below that a smaller soft-lavender Arabic subtitle reading exactly \"لوحاتك وألوانك في مكان واحد\"; and at the bottom a crisp white rounded pill button containing the Arabic words \"ابدأ الرسم\" in dark navy bold beside a tiny pencil icon. Arabic must be perfectly spelled with correct cursive connections, right-to-left, razor sharp and legible."
+    },
+    {
+      "id": "studio-hero-v6",
+      "label": "بسيط ونظيف — تركيز على النص",
+      "prompt": "Wide 16:9 mobile app hero banner, rounded corners, elegant deep navy #141A3C to indigo #1E1048 gradient, very clean and uncluttered with a soft violet glow bloom on the left. On the LEFT side: a single refined soft-3D icon cluster — a glossy artist palette with five bright paint dabs in yellow, coral, teal, violet and mint, one slim paintbrush laid diagonally across it, and three small sparkles — centred inside a softly glowing rounded-square tile with a faint light border. On the RIGHT side, generous right-aligned Arabic typography, nothing else competing for attention: a small gold rounded pill at the top holding the Arabic words \"استوديو الإبداع\" in dark navy bold; a large bold white Arabic headline reading exactly \"ارسم • لوّن • ابتكر\" with small round bullet dividers between the three words; a smaller pale-lavender Arabic line reading exactly \"لوحاتك وألوانك في مكان واحد\"; and a solid white rounded pill button reading \"ابدأ الرسم\" in dark navy bold with a small pencil icon beside it. The Arabic script must be absolutely correctly spelled, naturally connected right-to-left cursive, crisp, bold and effortlessly readable."
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "story": "bs-s3",
+  "story_file": "docs/content/planets/05-qisas/bedtime-stories/story-03-new-friend.md",
+  "language": "en",
+  "language_code": "en-US",
+  "out_dir": "assets/audio/stories/bs-s3/en",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "notes": [
+    "DRAFT EN translation - based on AR structure, needs human review"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – bedtime\n## \"The Kind Older Sister\" for bs-s3\nSalma is a young Arab woman in her early twenties with a light, bright, distinctly feminine voice. She is reading a bedtime story (bs-s3) for children 6-8. Warm, calm, unhurried, affectionate.\n## THE SCENE\nChild's bedroom late evening, one warm lamp on. Child sleepy under blanket. Salma sits on floor beside bed.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, affectionate, gentle vocal smile. Youthful timbre, never breathy, never babyish, never cartoon. Warm and reassuring.\nPacing: Slow ~90 words/min, small natural pause at every full stop. For pages 11-12 slower ~80 wpm.\nAccent: Clear American English.\nLoudness: Constant, no escalation, no drama even on climax pages. Climax quieter not louder for bedtime.",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-bs-s3-vo-en-001",
+      "file": "page-001-en.wav",
+      "text": "هذا سامي. يسكن في آخر الشارع.  يجري من الصباح إلى المساء.",
+      "style": "Calm bedtime narration for page 1. Steady, warm, unhurried."
+    },
+    {
+      "page": 2,
+      "id": "asset-bs-s3-vo-en-002",
+      "file": "page-002-en.wav",
+      "text": "وهذا مازن. جاره الجديد.  هادئ ومَرِح، ويحبّ الرسم.",
+      "style": "Calm bedtime narration for page 2. Steady, warm, unhurried. Note: «هادئ ومَرِح» — الكلمتان معًا · **بلا نبرة أسف**"
+    },
+    {
+      "page": 3,
+      "id": "asset-bs-s3-vo-en-003",
+      "file": "page-003-en.wav",
+      "text": "قال سامي: هيا نجري معًا.  قال مازن: أنا أفضّل الجلوس.",
+      "style": "Calm bedtime narration for page 3. Steady, warm, unhurried."
+    },
+    {
+      "page": 4,
+      "id": "asset-bs-s3-vo-en-004",
+      "file": "page-004-en.wav",
+      "text": "قال مازن: هيا نرسم معًا.  قال سامي: لا أحبّ الجلوس طويلًا.",
+      "style": "Calm bedtime narration for page 4. Steady, warm, unhurried."
+    },
+    {
+      "page": 5,
+      "id": "asset-bs-s3-vo-en-005",
+      "file": "page-005-en.wav",
+      "text": "فجلس مازن يرسم وحده.  وجرى سامي وحده.",
+      "style": "Calm bedtime narration for page 5. Steady, warm, unhurried. Note: «وحده» **مرتين بنفس النبرة** · **بلا نبرة وحشة**"
+    },
+    {
+      "page": 6,
+      "id": "asset-bs-s3-vo-en-006",
+      "file": "page-006-en.wav",
+      "text": "جرّب سامي أن يرسم قليلًا. فتعب.  وجرّب مازن أن يجري. فتعب أيضًا.",
+      "style": "Calm bedtime narration for page 6. Steady, warm, unhurried. Note: «فتعب» **مرتين متطابقتين** — التعب متساوٍ"
+    },
+    {
+      "page": 7,
+      "id": "asset-bs-s3-vo-en-007",
+      "file": "page-007-en.wav",
+      "text": "نظر مازن إلى ورقته الكبيرة.  وقال: أنا أرسم، وأنت تجري.",
+      "style": "Calm bedtime narration for page 7. Steady, warm, unhurried. Note: «أنا أرسم، وأنت تجري» —  نبرة **اقتراح** لا حلّ منتصر"
+    },
+    {
+      "page": 8,
+      "id": "asset-bs-s3-vo-en-008",
+      "file": "page-008-en.wav",
+      "text": "فرسم مازن خطوطًا على الأرض.  خطوطًا طويلة تلتفّ وتعود.",
+      "style": "Calm bedtime narration for page 8. Steady, warm, unhurried."
+    },
+    {
+      "page": 9,
+      "id": "asset-bs-s3-vo-en-009",
+      "file": "page-009-en.wav",
+      "text": "صار في الشارع مِضمار للجري.  جرى فيه سامي، ومازن يرسم المزيد.",
+      "style": "Calm bedtime narration for page 9. Steady, warm, unhurried. Note: «مِضمار» بوضوح — كلمة جديدة"
+    },
+    {
+      "page": 10,
+      "id": "asset-bs-s3-vo-en-010",
+      "file": "page-010-en.wav",
+      "text": "لم يتغيّر سامي، ولم يتغيّر مازن.  لكنهما لعبا معًا.",
+      "style": "Calm bedtime narration for page 10. Steady, warm, unhurried. Note: **أهمّ جملة** — «لم يتغيّر... ولم يتغيّر» ببطء وتشديد"
+    },
+    {
+      "page": 11,
+      "id": "asset-bs-s3-vo-en-011",
+      "file": "page-011-en.wav",
+      "text": "جلسا على الدرجة والمساء يهدأ.  والمِضمار ما زال على الأرض.",
+      "style": "Calm bedtime narration for page 11. Steady, warm, unhurried. Note: «والمساء يهدأ» ببطء"
+    },
+    {
+      "page": 12,
+      "id": "asset-bs-s3-vo-en-012",
+      "file": "page-012-en.wav",
+      "text": "والآن ينام كلّ في بيته.",
+      "style": "Calm bedtime narration for page 12. Steady, warm, unhurried. Slowest page of story, sleepy, soft ending. Note: ~80 كلمة/دقيقة · **أبطأ جملة** · وقفة 800ms قبلها"
+    }
+  ]
+}

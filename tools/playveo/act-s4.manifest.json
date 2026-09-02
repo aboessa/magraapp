@@ -1,0 +1,134 @@
+{
+  "story": "act-s4",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-04-warm-hugs.md",
+  "out_dir": "tools/playveo/output/act-s4",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "nano_banana_2",
+  "mode": "text-to-image",
+  "display_spec": {
+    "story_page_aspect_ratio": "16:9",
+    "target_display": "television and landscape mobile/tablet",
+    "production_canvas": "1920x1080 or larger native 16:9; never stretch",
+    "action_safe_area": "keep Nour, grandmother, faces, hands, blanket, cat, window, bed, moon, lamp inside central 90%",
+    "fit_policy": "full-bleed native 16:9 with no baked letterbox bars"
+  },
+  "notes": [
+    "Fourth story in a-calm-tale preschool bedtime anthology, 8 pages + cover/hero/thumb.",
+    "Raw provider JPEG proofs in tools/playveo/output remain ignored; only reviewed WebP derivatives may enter Flutter assets.",
+    "All assets are independent text-to-image jobs, character identity via exact character_lock text; provider image-to-image previously cloned composition and billed duplicate.",
+    "Grandmother present in every single page from 1 to 8, never absent. This is a hard safety rule for age 3-5.",
+    "Color temperature transitions from slightly cooler in page2 to increasingly warm pages5-8; this visual warming carries the story meaning.",
+    "Cat never shows teeth, no sharp eyes, no claws, fully safe. No text, letters, logos, watermarks.",
+    "No full darkness, no strong wind visualization, no open window being knocked, no scary expression. Brightness curve 1.00->0.70 per story file."
+  ],
+  "style_tail": " Premium soft 2D preschool bedtime storybook illustration, rounded clean shapes, gentle dimensional shading, warm cream, muted lavender, soft gold and dusty sage palette, full-bleed to all four edges, natively composed for the requested aspect ratio with no baked black bars. For every 16:9 story page or hero, use a true landscape television composition: keep all faces, hands, blanket, cat, window, moon, lamp and story action inside central 90 percent action-safe area; keep outer 5 percent free of essential detail; avoid extreme close-ups. Calm low-stimulation composition with only the named main elements, child-safe and emotionally reassuring. No text, no letters, no numbers, no logo, no watermark, no signature, no frame, no border, no speech bubble, no visible teeth, no frightening expression, no clutter, no complete darkness, no strong wind streaks.",
+  "character_lock": "Nour is the same four-year-old Arab girl in every image: warm medium skin, large dark-brown friendly eyes, round cheeks, dark-brown hair tied into two short low pigtails with soft cream bands, no headscarf, childlike four-year-old proportions with large head and short limbs. She always wears muted lavender long-sleeve pajamas with tiny cream dots and matching trousers and simple cream slippers. Grandmother is the same gentle Arab woman in her early sixties in every image: warm medium skin, kind dark eyes, softly rounded face, modest light-lavender hijab wrapped identically with no hair visible, long soft sage home dress with lavender cuffs, plain cream indoor shoes, calm closed-mouth expression with no visible teeth. The small cat is the same round fluffy cream cat with soft amber eyes and pink nose, no visible teeth, no sharp eyes, no claws, calm or sleepy expression. Bedroom stays consistent: warm cream walls, low pale-wood child bed with soft bedding, one rounded pale-wood two-pane window, small warm bedside lamp with rounded cream shade clearly visible on every page, no full darkness.",
+  "reference_instruction": "Preserve the exact Nour, grandmother and cat identities while replacing pose, camera, lighting and scene with the description.",
+  "assets": [
+    {
+      "id": "asset-act-s4-page-001",
+      "file": "page-001.jpg",
+      "order": 1,
+      "aspect_ratio": "16:9",
+      "brightness": 1.0,
+      "motion": "kenburns_slow",
+      "scene": "Wide calm bedroom view. Nour sits in center of low bed area, grandmother sits close beside her on the floor cushion. Small warm lamp glows, window closed in background. Four-year-old girl in lavender pajamas with pigtails, grandmother in sage dress and lavender hijab. Exactly three focal groups: Nour and grandmother together, bed, lamp and closed window as one background group. Calm welcoming.",
+      "light": "Brightest scene: warm early-evening daylight plus soft warm lamp glow, brightness 1.00, cool-touch slightly but fully readable, light blue clear sky outside closed window. No stars yet, no darkness, soft moon faint behind window."
+    },
+    {
+      "id": "asset-act-s4-page-002",
+      "file": "page-002.jpg",
+      "order": 2,
+      "aspect_ratio": "16:9",
+      "brightness": 0.97,
+      "motion": "kenburns_slow",
+      "scene": "Medium bedroom view. Closed two-pane rounded window with pale soft moon clearly visible behind glass, proving window is closed. Room lighting slightly cooler than page 1 but still readable. Nour and grandmother both visible near bed, looking toward window. Exactly three focal groups: Nour, grandmother, closed window with moon and lamp. No open window, no wind, no dark.",
+      "light": "Cool-leaning early night with warm lamp balance, slightly cooler palette than page 1 to start cold-to-warm journey, brightness 0.97, fully readable, soft moonlight through closed window."
+    },
+    {
+      "id": "asset-act-s4-page-003",
+      "file": "page-003.jpg",
+      "order": 3,
+      "aspect_ratio": "16:9",
+      "brightness": 0.94,
+      "motion": "pan_slow",
+      "scene": "Close bedroom view. Nour sits in low bed hugging her own arms lightly as if feeling cold, neutral calm face, no crying, no shivering, no distress. Grandmother sits directly beside bed watching her with caring closed-mouth expression. Exactly three focal groups: Nour, grandmother, bed and window. No tears, no fear.",
+      "light": "Cool but gentle evening light, still readable, brightness 0.94, warm lamp still glowing faintly."
+    },
+    {
+      "id": "asset-act-s4-page-004",
+      "file": "page-004.jpg",
+      "order": 4,
+      "aspect_ratio": "16:9",
+      "brightness": 0.9,
+      "motion": "pan_slow",
+      "scene": "Small quiet climax. Low bed without any blanket visible, tidy but empty bedding. Nour looks calmly around, neutral practical expression, no frustration, no crying, no sadness. Grandmother remains clearly present beside her. Exactly three focal groups: Nour, grandmother, bare bed. No open closet chaos, no clutter.",
+      "light": "Soft evening blue with lamp, brightness 0.90, calm practical problem, not fear climax."
+    },
+    {
+      "id": "asset-act-s4-page-005",
+      "file": "page-005.jpg",
+      "order": 5,
+      "aspect_ratio": "16:9",
+      "brightness": 0.86,
+      "motion": "kenburns_slow",
+      "scene": "Solution scene. Grandmother holds a soft folded warm cream blanket with lavender dots, walking toward low bed. Nour watches calmly. Color palette visibly warmer than page 2, carrying meaning through temperature shift. Exactly three focal groups: grandmother with blanket, Nour, bed. No duplicate blankets.",
+      "light": "Warmer golden lamp glow increasing, brightness 0.86, cozy transition beginning."
+    },
+    {
+      "id": "asset-act-s4-page-006",
+      "file": "page-006.jpg",
+      "order": 6,
+      "aspect_ratio": "16:9",
+      "brightness": 0.82,
+      "motion": "kenburns_slow",
+      "scene": "Warm expanding scene. Same small round fluffy cream cat with amber eyes sits calmly at foot of low bed, no teeth, no sharp eyes. Blanket now partially on Nour, grandmother beside bed adjusting it gently. Palette even warmer than page 5. Exactly four focal groups maximum: Nour under blanket, grandmother, cat, bed and lamp.",
+      "light": "Warm cozy lamp light with soft blue twilight, brightness 0.82, inviting and calm, clearly warmer than page2."
+    },
+    {
+      "id": "asset-act-s4-page-007",
+      "file": "page-007.jpg",
+      "order": 7,
+      "aspect_ratio": "16:9",
+      "brightness": 0.76,
+      "motion": "static",
+      "scene": "Static quiet bedroom scene with no action. Nour lies comfortably under warm blanket with eyes softly open, grandmother sits calmly beside bed with hand gently on blanket edge. Same cream cat sleeps curled near foot of bed, eyes closed, no teeth. Four focal groups max: Nour, grandmother, cat, bed and moonlit window and lamp as one background. No movement, no wind.",
+      "light": "Calm dim blue moonlight plus strong warm lamp glow, brightness 0.76, never fully dark, every face and cat readable."
+    },
+    {
+      "id": "asset-act-s4-page-008",
+      "file": "page-008.jpg",
+      "order": 8,
+      "aspect_ratio": "16:9",
+      "brightness": 0.7,
+      "motion": "static",
+      "scene": "Static final still scene dominated by quiet bedroom. Nour sleeps peacefully under blanket in low bed, grandmother seated quietly beside bed still present and watchful with closed-mouth calm face, same cream cat sleeping at foot. Rounded window clearly shows soft glowing moon as light source. Exactly four focal groups: sleeping Nour and bed, grandmother, cat, moonlit window and lamp. No event, no fear, still and reassuring.",
+      "light": "Dimmest scene: gentle natural blue moonlight plus faint warm lamp, brightness 0.70, serene and readable, never complete darkness."
+    },
+    {
+      "id": "asset-act-s4-cover",
+      "file": "cover.jpg",
+      "order": 9,
+      "aspect_ratio": "1:1",
+      "scene": "Square cover art. Nour under warm blanket in low bed, grandmother tucking her gently, same cream cat sleeping nearby, small warm lamp and rounded window with soft moon. Rounded child-safe composition centered, calm upper area reserved for separate title layer.",
+      "light": "Warm cozy bedtime light, inviting, never dark."
+    },
+    {
+      "id": "asset-act-s4-hero",
+      "file": "hero.jpg",
+      "order": 10,
+      "aspect_ratio": "16:9",
+      "scene": "Wide cinematic promotional illustration with NO WRITING ANYWHERE. Nour comfortably under warm blanket while grandmother sits beside bed and cream cat rests at foot. Rounded window with soft glowing moon on left. Right forty percent is only smooth empty dark-blue to warm gradient wall with no marks, symbols, glyphs, letters. All faces, blanket and moon inside safe area. No text in any language.",
+      "light": "Gentle warm blue to gold gradient, low contrast, comforting and never dark."
+    },
+    {
+      "id": "asset-act-s4-thumb",
+      "file": "thumb.jpg",
+      "order": 11,
+      "aspect_ratio": "3:4",
+      "scene": "Vertical wordless thumbnail with NO WRITING ANYWHERE. Nour in lavender pajamas under warm blanket with sleepy closed-mouth expression, grandmother close beside bed, same cream cat at foot. Rounded window with soft moon above. Upper quarter only smooth empty warm wall gradient. No text, no caption, no typography, no letters.",
+      "light": "Soft warm lamp and blue moonlight, comforting readable never dark."
+    }
+  ]
+}

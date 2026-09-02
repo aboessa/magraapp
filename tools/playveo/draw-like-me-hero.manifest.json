@@ -1,0 +1,29 @@
+{
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "nano_banana_2",
+  "aspect_ratio": "16:9",
+  "concurrency": 3,
+  "out_dir": "assets/images/draw_like_me/heroes",
+  "r2_key": "public/studio/heroes/draw-like-me-hero.webp",
+  "d1_id": "hero-draw-like-me",
+  "category": "draw_like_me",
+  "master_style": "Premium cinematic 3D chibi kids-app hero illustration, wide horizontal banner composition, deep navy space background #05081A to #1E1048 with soft purple glow, vibrant saturated harmonious colors, warm rim light, soft volumetric light rays, gentle bokeh sparkles and magic dust, polished mobile app store quality, rounded friendly shapes, clean readable silhouette, generous empty negative space on one side for layout breathing room, no text, no letters, no words, no numbers, no typography, no captions, no labels, no signage, no lettering of any kind, no watermark, no logo, no UI elements, no buttons, no frame, no border, no photorealism.",
+  "negative_prompt": "text, any text, Arabic text, English text, letters, alphabet, words, numbers, digits, typography, caption, subtitle, label, sign, signage, poster text, book title, handwriting, calligraphy, scribbled words, logo, wordmark, watermark, signature, UI elements, buttons, menu, icons with text, frame, border, photorealistic, realistic photography, adult proportions, scary mood, horror, dark gloomy, clutter, noisy background, distorted anatomy, extra limbs, deformed hands, six fingers, messy lines, unfinished sketch, grayscale, black and white, low resolution, blurry, cropped subject, duplicate faces",
+  "variants": [
+    {
+      "id": "hero-draw-like-me-v1",
+      "label": "الولد يرسم عصفور على المكتب",
+      "prompt": "Wide hero banner: a cute 4 year old Arab boy with soft brown hair, wearing a bright yellow hoodie and blue overalls, sitting at a warm wooden desk on the right side of the frame, happily drawing a cheerful yellow and blue bird on an open sketchbook with a blue pencil. A glowing warm desk lamp arcs over him, a cup of colorful pencils and a small friendly blue robot toy sit on the desk, and behind him a large round night window reveals a purple ringed planet and twinkling stars. Floating sparkles and tiny paper airplanes drift through the air. The left third of the frame is calm open deep navy space with soft glow, kept intentionally empty and uncluttered."
+    },
+    {
+      "id": "hero-draw-like-me-v2",
+      "label": "الولد يقلد رسمة معروضة أمامه",
+      "prompt": "Wide hero banner: a cheerful 4 year old Arab boy in a yellow hoodie and blue overalls kneeling on a soft round rug on the right side of the frame, looking up at a large floating glowing illustration panel that shows a simple cute cartoon cat, while he copies it onto a big sheet of paper in front of him with a purple crayon. Soft magical light beams connect the floating panel to his paper, colorful crayons scattered neatly beside him, a small potted plant and a stack of drawing paper nearby. Deep navy starry space background with a soft purple aurora glow, and the left third of the frame left calm and empty."
+    },
+    {
+      "id": "hero-draw-like-me-v3",
+      "label": "مكتب رسم علوي مع رسومات طائرة",
+      "prompt": "Wide hero banner: a joyful 4 year old Arab boy in a yellow hoodie and blue overalls sitting cross legged at a low wooden table positioned on the right side of the frame, mid drawing with a raised orange pencil and a proud smile, while three finished cute cartoon drawings of a bird, a rocket and a flower float up and orbit gently around him in soft glowing bubbles. Warm golden light pools on the table, a jar of brushes and a folded easel stand behind him, deep navy cosmic background with drifting stars, soft purple and teal glow, and generous calm empty space on the left third of the frame."
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "model": "nano_banana_2",
+  "api_key": "pv_WTtKgrViXXsDo8JquF9XpKwUKfUfBumH",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "out_dir": "assets/images/coloring/v2",
+  "hero_out_dir": "assets/images/studio/v2",
+  "aspect_ratio": "1:1",
+  "count": 1,
+  "concurrency": 2,
+  "style_tail_coloring": ", black and white line art, thick bold outlines for kids coloring book, pure white background, CLOSED shapes only, no shading, no gradients, no color, kawaii cute simple, center composition, high contrast",
+  "style_tail_hero": ", cinematic 3d chibi illustration, arab boy 4 years old cute drawing in magic coloring book, space theme rockets planets rainbow, vibrant saturated colors, deep navy background #0B1026, soft glow, storybook style, ultra detailed",
+  "style_tail_category": ", flat vector icon, cute kawaii minimal, bold outline, vibrant gradient background, centered, child-friendly",
+  "remove_background": true,
+  "assets": [
+    {
+      "id": "bird",
+      "label": "عصفور صغير",
+      "kind": "coloring_line",
+      "prompt": "cute little bird sitting on a branch, round body, small beak, child-friendly, simple shapes",
+      "filename": "bird.png",
+      "regions_expected": 5
+    },
+    {
+      "id": "cat",
+      "label": "قطة لطيفة",
+      "kind": "coloring_line",
+      "prompt": "cute kawaii cat sitting, big eyes, simple round shapes, tail visible, child-friendly",
+      "filename": "cat.png",
+      "regions_expected": 4
+    },
+    {
+      "id": "dino",
+      "label": "ديناصور",
+      "kind": "coloring_line",
+      "prompt": "cute friendly baby dinosaur, small spikes, round body, smiling, child-friendly",
+      "filename": "dino.png",
+      "regions_expected": 4
+    },
+    {
+      "id": "fish",
+      "label": "سمكة",
+      "kind": "coloring_line",
+      "prompt": "cute fish swimming, round fins, bubble details, simple kawaii, child-friendly",
+      "filename": "fish.png",
+      "regions_expected": 3
+    },
+    {
+      "id": "animals",
+      "label": "حيوانات",
+      "kind": "coloring_line",
+      "prompt": "cute baby lion and bunny together, simple round bodies, kawaii, jungle leaves minimal",
+      "filename": "animals.png",
+      "regions_expected": 6
+    },
+    {
+      "id": "birds",
+      "label": "طيور",
+      "kind": "coloring_line",
+      "prompt": "two small birds on a branch, simple outlines, kawaii, leaves minimal in background",
+      "filename": "birds.png",
+      "regions_expected": 4
+    },
+    {
+      "id": "vehicles",
+      "label": "مركبات",
+      "kind": "coloring_line",
+      "prompt": "cute cartoon car, big wheels, smiling face, simple shape, child-friendly",
+      "filename": "vehicles.png",
+      "regions_expected": 4
+    },
+    {
+      "id": "space",
+      "label": "الفضاء",
+      "kind": "coloring_line",
+      "prompt": "cute rocket with planets and stars around, simple thick outlines, child-friendly outer space",
+      "filename": "space.png",
+      "regions_expected": 5
+    },
+    {
+      "id": "flowers",
+      "label": "زهور",
+      "kind": "coloring_line",
+      "prompt": "cute bouquet of 3 flowers with leaves, simple petals, kawaii, smiling center",
+      "filename": "flowers.png",
+      "regions_expected": 5
+    },
+    {
+      "id": "sea",
+      "label": "حيوانات بحرية",
+      "kind": "coloring_line",
+      "prompt": "cute octopus with sea star and small fish, underwater minimal, kawaii, simple shapes",
+      "filename": "sea.png",
+      "regions_expected": 5
+    },
+    {
+      "id": "fruits",
+      "label": "فواكه",
+      "kind": "coloring_line",
+      "prompt": "cute apple, banana, strawberry bunch, smiling fruits, simple round shapes, kawaii",
+      "filename": "fruits.png",
+      "regions_expected": 4
+    },
+    {
+      "id": "toys",
+      "label": "ألعاب",
+      "kind": "coloring_line",
+      "prompt": "cute teddy bear with ball and blocks, simple outlines, child toy set, kawaii",
+      "filename": "toys.png",
+      "regions_expected": 4
+    }
+  ],
+  "hero_assets": [
+    {
+      "id": "coloring-hero",
+      "label": "هيا نلوّن hero",
+      "kind": "hero",
+      "aspect": "16:9",
+      "prompt": "arab cute boy 4 years old with brown hair drawing in a giant magical coloring book, rockets and planets and stars floating around him, rainbow arc, sparkling stars, happy expression, 3d chibi pixar style, vibrant colors, deep space navy background #0C1030, magic dust, ultra detailed storybook cover",
+      "filename": "coloring-hero.png"
+    }
+  ]
+}

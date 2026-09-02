@@ -1,0 +1,100 @@
+{
+  "story": "bs-s1",
+  "story_file": "docs/content/planets/05-qisas/bedtime-stories/story-01-ant-journey.md",
+  "language": "en",
+  "language_code": "en-US",
+  "out_dir": "assets/audio/stories/bs-s1/en",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "notes": [
+    "DRAFT EN translation - based on AR structure, needs human review"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – bedtime\n## \"The Kind Older Sister\" for bs-s1\nSalma is a young Arab woman in her early twenties with a light, bright, distinctly feminine voice. She is reading a bedtime story (bs-s1) for children 6-8. Warm, calm, unhurried, affectionate.\n## THE SCENE\nChild's bedroom late evening, one warm lamp on. Child sleepy under blanket. Salma sits on floor beside bed.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, affectionate, gentle vocal smile. Youthful timbre, never breathy, never babyish, never cartoon. Warm and reassuring.\nPacing: Slow ~90 words/min, small natural pause at every full stop. For pages 11-12 slower ~80 wpm.\nAccent: Clear American English.\nLoudness: Constant, no escalation, no drama even on climax pages. Climax quieter not louder for bedtime.",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-bs-s1-vo-en-001",
+      "file": "page-001-en.wav",
+      "text": "هذه نُملة. تعيش قرب شجرة كبيرة.  كل يوم تجمع طعامًا لبيتها.",
+      "style": "Calm bedtime narration for page 1. Steady, warm, unhurried."
+    },
+    {
+      "page": 2,
+      "id": "asset-bs-s1-vo-en-002",
+      "file": "page-002-en.wav",
+      "text": "اليوم وجدت حبّة كبيرة.  أكبر منها ثلاث مرات.",
+      "style": "Calm bedtime narration for page 2. Steady, warm, unhurried."
+    },
+    {
+      "page": 3,
+      "id": "asset-bs-s1-vo-en-003",
+      "file": "page-003-en.wav",
+      "text": "حملتها على ظهرها ومشت.  كانت الأرض مستوية، فسارت بسهولة.",
+      "style": "Calm bedtime narration for page 3. Steady, warm, unhurried."
+    },
+    {
+      "page": 4,
+      "id": "asset-bs-s1-vo-en-004",
+      "file": "page-004-en.wav",
+      "text": "ثم وصلت إلى مُنحَدَر.  الطريق صار مائلًا إلى أعلى.",
+      "style": "Calm bedtime narration for page 4. Steady, warm, unhurried. Note: «مُنحَدَر» بوضوح — كلمة جديدة، **بلا شرح**"
+    },
+    {
+      "page": 5,
+      "id": "asset-bs-s1-vo-en-005",
+      "file": "page-005-en.wav",
+      "text": "دفعت الحبّة صاعدة. فانزلقت الحبّة.  نزلت إلى أسفل المنحدر من جديد.",
+      "style": "Calm bedtime narration for page 5. Steady, warm, unhurried. Note: **الذروة تُنطق أهدأ لا أعلى** · «فانزلقت» بلا نبرة فجيعة"
+    },
+    {
+      "page": 6,
+      "id": "asset-bs-s1-vo-en-006",
+      "file": "page-006-en.wav",
+      "text": "جرّبت مرة ثانية بقوّة أكبر.  فانزلقت الحبّة مرة ثانية.",
+      "style": "Calm bedtime narration for page 6. Steady, warm, unhurried. Note: «مرة ثانية» بنبرة **وصف** — لا إحباط"
+    },
+    {
+      "page": 7,
+      "id": "asset-bs-s1-vo-en-007",
+      "file": "page-007-en.wav",
+      "text": "جلست نُملة ونظرت إلى المنحدر.  فقالت: الحبّة ليست ثقيلة.",
+      "style": "Calm bedtime narration for page 7. Steady, warm, unhurried. Note: «ليست ثقيلة» بتشديد — **إعادة تعريف المشكلة**"
+    },
+    {
+      "page": 8,
+      "id": "asset-bs-s1-vo-en-008",
+      "file": "page-008-en.wav",
+      "text": "لكن الطريق مائل، وأنا وحدي.  فنادت قافِلة النمل القريبة.",
+      "style": "Calm bedtime narration for page 8. Steady, warm, unhurried. Note: «فنادت» بنبرة **قرار** لا استغاثة · «قافِلة» بوضوح"
+    },
+    {
+      "page": 9,
+      "id": "asset-bs-s1-vo-en-009",
+      "file": "page-009-en.wav",
+      "text": "جاءت ثلاث نملات. ودفعن معها.  فصعدت الحبّة المنحدر بهدوء.",
+      "style": "Calm bedtime narration for page 9. Steady, warm, unhurried. Note: «ودفعن معها» — نون جمع المؤنث"
+    },
+    {
+      "page": 10,
+      "id": "asset-bs-s1-vo-en-010",
+      "file": "page-010-en.wav",
+      "text": "وصلت الحبّة إلى البيت.  وشكرت نُملة صاحباتها.",
+      "style": "Calm bedtime narration for page 10. Steady, warm, unhurried. Note: «وشكرت» بدفء عادي —  بلا احتفال"
+    },
+    {
+      "page": 11,
+      "id": "asset-bs-s1-vo-en-011",
+      "file": "page-011-en.wav",
+      "text": "جلسن معًا قرب باب البيت.  والمساء هادئ.",
+      "style": "Calm bedtime narration for page 11. Steady, warm, unhurried. Note: «والمساء هادئ» ببطء"
+    },
+    {
+      "page": 12,
+      "id": "asset-bs-s1-vo-en-012",
+      "file": "page-012-en.wav",
+      "text": "والآن تنام نُملة في بيتها.",
+      "style": "Calm bedtime narration for page 12. Steady, warm, unhurried. Slowest page of story, sleepy, soft ending. Note: ~80 كلمة/دقيقة · **أبطأ جملة** · وقفة 800ms قبلها"
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "story": "qml-the-promised-friday",
+  "story_file": "docs/content/planets/05-qisas/qisas-min-alhayat/the-promised-friday.md",
+  "language": "ar",
+  "out_dir": "assets/audio/stories/qml-the-promised-friday/ar",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "voice_locked_because": "Same youthful voice used for preschool and bedtime for consistency, bright soft clear.",
+  "voice_alternatives": [
+    "Vindemiatrix",
+    "Sulafat",
+    "Aoede",
+    "Kore"
+  ],
+  "language_code": "ar-EG",
+  "notes": [
+    "Arabic verbatim from manifest",
+    "read_myself default is fine, but audio needed for accessibility and read_to_me option"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – junior 9-12\n## \"The Kind Older Sister, slightly more mature for 11-year-old\"\nSalma is a young Arab woman early twenties, light bright feminine voice, reading a junior story for 9-12 independent readers. Clear, steady, unhurried, warm but not babyish, slightly more mature than preschool bedtime, but still kind.\n## THE SCENE\nChild's room, afternoon or evening, quiet, child reading independently but with option to listen.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, clear, steady, warm, unhurried, mature enough for 11-year-old, never breathy, never babyish, never cartoon.\nPacing: ~100 words/min, natural pause at full stop.\nAccent: Clear Modern Standard Arabic.\nLoudness: Constant, no escalation, no drama.\nPage is part of a literary story with no explicit moral at end.\n",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-qml-the-promised-friday-vo-ar-001",
+      "file": "page-001-ar.wav",
+      "text": "في زاوية غرفة نديم طائرة ورقية بذيل أخضر. بناها في كانون من قصب وورق. والذيل قطعته رُبى بنفسها، فخرج مائلًا. وعلى المسمار خلف الباب قَيطان طويل، ملفوف بعناية.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 1 role: من وأين."
+    },
+    {
+      "page": 2,
+      "id": "asset-qml-the-promised-friday-vo-ar-002",
+      "file": "page-002-ar.wav",
+      "text": "قال لها يومها: أول جمعة فيها ريح، نأخذها إلى الأرض الواسعة. وأعلّمك كيف تُطلقينها بنفسك. قالت رُبى: بنفسي؟ قال: بنفسك.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 2 role: ما التزم به."
+    },
+    {
+      "page": 3,
+      "id": "asset-qml-the-promised-friday-vo-ar-003",
+      "file": "page-003-ar.wav",
+      "text": "مرّت أسابيع، والهواء واقف. كل خميس تقف رُبى عند باب الغرفة وتسأل بكلمة واحدة: غدًا؟ وكل خميس يقول نديم: لا ريح. فتعود إلى غرفتها ولا تُلحّ.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 3 role: العالم قبل التغيّر."
+    },
+    {
+      "page": 4,
+      "id": "asset-qml-the-promised-friday-vo-ar-004",
+      "file": "page-004-ar.wav",
+      "text": "يوم الخميس، بعد العصر، تحرّكت الستارة. ثم تحرّكت مرة ثانية، أطول. وقفت رُبى عند النافذة ولم تقل شيئًا. ونظرت إلى القيطان على المسمار.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 4 role: أول إشارة."
+    },
+    {
+      "page": 5,
+      "id": "asset-qml-the-promised-friday-vo-ar-005",
+      "file": "page-005-ar.wav",
+      "text": "في المساء نزل نديم إلى النادي ليأخذ حقيبته. على الباب ورقة جديدة: اختبار الانتقاء للفريق، غدًا، من التاسعة إلى الحادية عشرة. قرأها مرتين. اختبار واحد في السنة، ولا اختبار غيره.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 5 role: الإشارة تصير أمرًا واقعًا."
+    },
+    {
+      "page": 6,
+      "id": "asset-qml-the-promised-friday-vo-ar-006",
+      "file": "page-006-ar.wav",
+      "text": "نديم يتدرّب منذ سنة كاملة. وقال له المدرب الأسبوع الماضي إن اسمه في القائمة إن حضر. والأرض الواسعة في الجهة الأخرى من الحيّ. والريح فيها تخفت بعد الثانية، جرّب ذلك مرتين.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 6 role: ما يجعله ثقيلًا."
+    },
+    {
+      "page": 7,
+      "id": "asset-qml-the-promised-friday-vo-ar-007",
+      "file": "page-007-ar.wav",
+      "text": "جلس على الدرج وحسب. يذهب إلى الاختبار في التاسعة، ويخرج في الحادية عشرة. ثم يعود، ويأخذ رُبى في الثانية عشرة. الطريق أربعون دقيقة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 7 role: محاولة تخفيف."
+    },
+    {
+      "page": 8,
+      "id": "asset-qml-the-promised-friday-vo-ar-008",
+      "file": "page-008-ar.wav",
+      "text": "مسح الأرقام وكتبها من جديد. الوصول الواحدة، والريح تخفت بعد الثانية. ساعة واحدة لا تكفي بنتًا في السابعة تُطلق طائرة بنفسها. وأول جمعة فيها ريح لا تُعاد بوعد.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 8 role: المحاولة لا تعمل."
+    },
+    {
+      "page": 9,
+      "id": "asset-qml-the-promised-friday-vo-ar-009",
+      "file": "page-009-ar.wav",
+      "text": "في السابعة صباحًا كانت رُبى واقفة عند الباب. لبست معطفها، والطائرة في يدها، وذيلها المائل على الأرض. لم تسأل، ولم تقل غدًا. كانت تنتظر فقط.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 9 role: الذروة."
+    },
+    {
+      "page": 10,
+      "id": "asset-qml-the-promised-friday-vo-ar-010",
+      "file": "page-010-ar.wav",
+      "text": "نظر نديم إلى القيطان على المسمار، ثم أخذه. قال: هيّا. ولم يقل شيئًا عن الورقة على باب النادي. وخرجا.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 10 role: ما فعله."
+    },
+    {
+      "page": 11,
+      "id": "asset-qml-the-promised-friday-vo-ar-011",
+      "file": "page-011-ar.wav",
+      "text": "في التاسعة كانا في الأرض الواسعة، والريح تجذب الورق. وفي النادي كانت القائمة تُقرأ. جرت رُبى، فارتفعت الطائرة عن الأرض متعثّرة، ثم ثبتت. وصارت في يدها وحدها.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 11 role: الثمن يظهر."
+    },
+    {
+      "page": 12,
+      "id": "asset-qml-the-promised-friday-vo-ar-012",
+      "file": "page-012-ar.wav",
+      "text": "مرّ سامر عائدًا من النادي، ووقف عند السلك. قال: سألوا عنك. ثم أقفلوا القائمة. ولم يقل غير ذلك، ومشى. نظرت رُبى إلى أخيها وسألت: أيّ قائمة؟",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 12 role: ردّ الطرف الآخر."
+    },
+    {
+      "page": 13,
+      "id": "asset-qml-the-promised-friday-vo-ar-013",
+      "file": "page-013-ar.wav",
+      "text": "قال نديم: لا شيء. بقيت الطائرة عالية سبع دقائق أخرى. ثم خفتت الريح، فنزلت ببطء على الشوك. جمعا القيطان، ولم يتكلّم أحد في الطريق.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 13 role: صفحة الصمت."
+    },
+    {
+      "page": 14,
+      "id": "asset-qml-the-promised-friday-vo-ar-014",
+      "file": "page-014-ar.wav",
+      "text": "في البيت وضعت رُبى الطائرة على الطاولة، وشدّت الذيل المائل. ثم قالت جملة سمعتها من أحد ما: كنتُ أستطيع أن أنتظر جمعة أخرى. قالتها وهي تنظر إلى الذيل، لا إليه. ولم يجب نديم.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 14 role: شيء صغير يتغيّر."
+    },
+    {
+      "page": 15,
+      "id": "asset-qml-the-promised-friday-vo-ar-015",
+      "file": "page-015-ar.wav",
+      "text": "القائمة أُقفلت في الحادية عشرة، والاختبار في السنة القادمة. لم يفتح أحد استثناءً، ولم يسأل نديم عن استثناء. وسنة التدريب بقيت سنة تدريب. هذا لا يُصلَح بجمعة أخرى.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 15 role: ما لم يُصلَح."
+    },
+    {
+      "page": 16,
+      "id": "asset-qml-the-promised-friday-vo-ar-016",
+      "file": "page-016-ar.wav",
+      "text": "في المساء أخرج نديم دفتره وعدّ الأسابيع إلى الاختبار القادم. اثنان وخمسون. كتب الرقم في أعلى الصفحة، وأغلق الدفتر. وسمع رُبى في الغرفة الأخرى تشرح لأمّها كيف تُطلق طائرة بنفسها.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 16 role: تفصيل عملي."
+    },
+    {
+      "page": 17,
+      "id": "asset-qml-the-promised-friday-vo-ar-017",
+      "file": "page-017-ar.wav",
+      "text": "المعطفان على ظهر الكرسي، وفي جيب أحدهما ورقة شوك. الطائرة على الطاولة، وذيلها الأخضر أقصر مما كان. والبيت هادئ.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 17 role: العودة والهدوء."
+    },
+    {
+      "page": 18,
+      "id": "asset-qml-the-promised-friday-vo-ar-018",
+      "file": "page-018-ar.wav",
+      "text": "القيطان ملفوف على المسمار خلف الباب. وطرفه الأخضر يلمس الأرض.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 18 role: سكون."
+    }
+  ]
+}

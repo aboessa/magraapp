@@ -1,0 +1,824 @@
+{
+  "model": "nano_banana_2",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "out_dir": "assets/complete-drawing",
+  "seed_strategy": "same_seed_per_activity",
+  "master_style": "Premium child-friendly \"complete the drawing\" activity artwork for a mobile kids creative app. Clean modern cartoon illustration, bright harmonious colors, simple rounded shapes, thick polished outlines, clear silhouette, minimal background, centered composition, easy for a child to understand and finish. The completed side must be fully colored and polished, while the missing side or missing part must use very light gray dashed construction guides only, clearly separated from the finished artwork. No text, no letters, no numbers, no UI, no buttons, no watermark, no logo, no frame, no photorealism. The background must be plain pure white (#FFFFFF), uniform and identical across the entire square, with no cream tint, no warm tint, no gradient, no vignette and no panel or half of the image shaded differently from the rest. Square 1:1 composition, PNG/JPG ready.",
+  "negative_prompt": "text, letters, numbers, watermark, logo, UI, mobile interface, buttons, frame, border, photorealistic, realistic photography, horror, scary character, complex background, excessive tiny details, clutter, messy sketch, random unfinished lines, broken anatomy, extra limbs, deformed objects, dark image, grayscale finished artwork, rough pencil texture, crosshatching, cropped subject, perspective distortion",
+  "aspect_ratio": "1:1",
+  "count": 1,
+  "concurrency": 2,
+  "assets": [
+    {
+      "id": "butterfly-01",
+      "group": "animals",
+      "order": 1,
+      "titleAr": "الفراشة",
+      "titleEn": "Butterfly",
+      "difficulty": "سهل",
+      "tag": "تناظر",
+      "prompt": "A cute colorful butterfly viewed straight from the front. The left half is completely finished with pink, purple, yellow and turquoise wings, a smiling yellow body and clean bold outlines. The right half is unfinished, showing only very light gray dashed guides matching the missing symmetrical wings and decorative circles.",
+      "r2_dir": "complete-drawing/butterfly-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute colorful butterfly viewed straight from the front, perfectly symmetrical. Both wings are completely finished in pink, purple, yellow and turquoise, with matching decorative circles on each wing, a smiling yellow body and clean bold outlines. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "bird-01",
+      "group": "animals",
+      "order": 2,
+      "titleAr": "عصفور",
+      "titleEn": "Bird",
+      "difficulty": "سهل",
+      "tag": "أكمل الجسم",
+      "prompt": "A cute blue and yellow bird sitting on a brown branch. The head, chest, one wing and front part of the branch are fully colored and finished. The tail, second part of the body and remaining branch leaves are shown as simple light gray dashed construction guides for the child to complete.",
+      "r2_dir": "complete-drawing/bird-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute blue and yellow bird sitting on a brown branch. The head, chest, both wings, the full tail and the complete branch with all of its green leaves are fully colored and finished. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "cat-01",
+      "group": "animals",
+      "order": 3,
+      "titleAr": "قطة",
+      "titleEn": "Cat",
+      "difficulty": "سهل",
+      "tag": "تناظر",
+      "prompt": "A cute orange kitten sitting and facing forward. The left half of the kitten is fully illustrated and colored, including one ear, one eye, half the body and one paw. The right half appears as light gray dashed symmetrical guides.",
+      "r2_dir": "complete-drawing/cat-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute orange kitten sitting and facing forward, perfectly symmetrical. Both ears, both eyes, the whole body and both front paws are fully illustrated and colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "fish-01",
+      "group": "animals",
+      "order": 4,
+      "titleAr": "سمكة",
+      "titleEn": "Fish",
+      "difficulty": "سهل",
+      "prompt": "A cheerful turquoise tropical fish facing sideways. The head, body and one fin are fully colored. The tail fin and lower fin are missing and represented by large simple light gray dashed guides.",
+      "r2_dir": "complete-drawing/fish-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cheerful turquoise tropical fish facing sideways. The head, body, top fin, lower fin and the complete tail fin are all fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "rabbit-01",
+      "group": "animals",
+      "order": 5,
+      "titleAr": "أرنب",
+      "titleEn": "Rabbit",
+      "difficulty": "سهل",
+      "prompt": "A cute white rabbit sitting upright. The head, body, one long ear and one paw are finished and colored. The second ear, second paw and fluffy tail appear as light gray dashed drawing guides.",
+      "r2_dir": "complete-drawing/rabbit-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute white rabbit sitting upright. The head, body, both long ears, both paws and the round fluffy tail are all finished and colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "panda-01",
+      "group": "animals",
+      "order": 6,
+      "titleAr": "باندا",
+      "titleEn": "Panda",
+      "difficulty": "سهل",
+      "prompt": "A friendly panda sitting with a bamboo branch. The panda's head, body and left arm are fully completed. The right arm, one leg and half of the bamboo leaves are unfinished light gray dashed guides.",
+      "r2_dir": "complete-drawing/panda-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A friendly panda sitting with a bamboo branch. The head, body, both arms and both legs are fully completed, and the bamboo branch carries its full set of green leaves. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "lion-01",
+      "group": "animals",
+      "order": 7,
+      "titleAr": "أسد صغير",
+      "titleEn": "Baby Lion",
+      "difficulty": "متوسط",
+      "prompt": "A cheerful baby lion sitting front-facing. Half of the orange mane, face and body are fully colored. The other half of the mane and body are shown using simple symmetrical light gray dashed outlines.",
+      "r2_dir": "complete-drawing/lion-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cheerful baby lion sitting front-facing, perfectly symmetrical. The complete round orange mane, the whole face and the entire body are fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "giraffe-01",
+      "group": "animals",
+      "order": 8,
+      "titleAr": "زرافة",
+      "titleEn": "Giraffe",
+      "difficulty": "متوسط",
+      "prompt": "A cute young giraffe standing sideways. Head, long neck and front legs are fully colored with a few large brown spots. The rear body, back legs and tail appear as light gray dashed guides.",
+      "r2_dir": "complete-drawing/giraffe-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute young giraffe standing sideways. Head, long neck, front legs, rear legs, the whole body and the tail are fully colored, with large brown spots across the entire body. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "turtle-01",
+      "group": "animals",
+      "order": 9,
+      "titleAr": "سلحفاة",
+      "titleEn": "Turtle",
+      "difficulty": "متوسط",
+      "prompt": "A friendly green turtle viewed from the side. The head, legs and left half of the colorful shell are finished. The right half of the shell pattern and rear leg are light gray dashed guides.",
+      "r2_dir": "complete-drawing/turtle-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A friendly green turtle viewed from the side. The head, all four legs and the complete colorful shell with its full repeating pattern are finished. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "dino-01",
+      "group": "animals",
+      "order": 10,
+      "titleAr": "ديناصور",
+      "titleEn": "Dino",
+      "difficulty": "متوسط",
+      "prompt": "A friendly green baby dinosaur viewed from the side. Head, body and front legs are completed with bright colors. Tail, rear leg and several large back spikes are unfinished light gray dashed guides.",
+      "r2_dir": "complete-drawing/dino-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A friendly green baby dinosaur viewed from the side. Head, body, front legs, rear legs, the long tail and the complete row of large back spikes are finished in bright colors. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "rocket-01",
+      "group": "space",
+      "order": 11,
+      "titleAr": "صاروخ",
+      "titleEn": "Rocket",
+      "difficulty": "سهل",
+      "tag": "تناظر",
+      "prompt": "A cute red and white rocket pointing upward. The left half is completely colored with a blue circular window, red fin and orange-yellow flame. The right half is represented using clean light gray dashed symmetrical guides.",
+      "r2_dir": "complete-drawing/rocket-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute red and white rocket pointing upward, perfectly symmetrical. The whole rocket is colored, with a blue circular window, matching red fins on both sides and an orange-yellow flame beneath. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "planet-ring-01",
+      "group": "space",
+      "order": 12,
+      "titleAr": "كوكب بحلقات",
+      "titleEn": "Ring Planet",
+      "difficulty": "سهل",
+      "prompt": "A colorful purple planet with a bright ring. Half of the planet and one side of the ring are fully illustrated. The opposite side of the planet ring is unfinished with light gray dashed curves.",
+      "r2_dir": "complete-drawing/planet-ring-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A colorful purple planet with a bright ring. The whole planet and the complete ring encircling it are fully illustrated. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "moon-star-01",
+      "group": "space",
+      "order": 13,
+      "titleAr": "قمر ونجمة",
+      "titleEn": "Moon and Star",
+      "difficulty": "سهل",
+      "prompt": "A cute yellow crescent moon with a friendly face and one completed star beside it. Two additional stars and part of a small cloud are missing, represented by large light gray dashed guides.",
+      "r2_dir": "complete-drawing/moon-star-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute yellow crescent moon with a friendly smiling face, three finished stars around it and one small white cloud, everything fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "ufo-01",
+      "group": "space",
+      "order": 14,
+      "titleAr": "مركبة فضائية",
+      "titleEn": "UFO",
+      "difficulty": "متوسط",
+      "tag": "تناظر",
+      "prompt": "A friendly purple and blue flying saucer viewed from the front. The left half of the dome, body and landing light is fully colored. The right half is a clean symmetrical light gray dashed drawing guide.",
+      "r2_dir": "complete-drawing/ufo-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A friendly purple and blue flying saucer viewed from the front, perfectly symmetrical. The whole glass dome, the entire body and the landing lights on both sides are fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "astronaut-01",
+      "group": "space",
+      "order": 15,
+      "titleAr": "رائد فضاء",
+      "titleEn": "Astronaut",
+      "difficulty": "متوسط",
+      "prompt": "A cute child astronaut floating in space. Helmet, torso, left arm and left leg are fully colored. Right arm, right leg and backpack section are unfinished light gray dashed guides.",
+      "r2_dir": "complete-drawing/astronaut-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute child astronaut floating in space. Helmet, torso, both arms, both legs and the backpack are fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "rover-01",
+      "group": "space",
+      "order": 16,
+      "titleAr": "مركبة قمرية",
+      "titleEn": "Rover",
+      "difficulty": "متوسط",
+      "prompt": "A cute orange and white moon rover. Cabin, front wheels and body are finished. Rear wheels, antenna and small equipment box appear as simplified light gray dashed guides.",
+      "r2_dir": "complete-drawing/rover-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute orange and white moon rover. Cabin, body, front wheels, rear wheels, the antenna and the small equipment box are all finished. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "station-01",
+      "group": "space",
+      "order": 17,
+      "titleAr": "محطة فضائية",
+      "titleEn": "Space Station",
+      "difficulty": "مفصل",
+      "prompt": "A simplified colorful space station. Central module and left solar panel are completely illustrated. The matching right solar panel, antenna and small docking module are unfinished in light gray dashed guides.",
+      "r2_dir": "complete-drawing/station-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A simplified colorful space station. The central module, both matching solar panels, the antenna and the small docking module are completely illustrated. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "alien-planet-01",
+      "group": "space",
+      "order": 18,
+      "titleAr": "كوكب خيالي",
+      "titleEn": "Alien Planet",
+      "difficulty": "مفصل",
+      "prompt": "A colorful alien planet landscape with one finished purple hill, three strange plants and one moon. The second half of the landscape, additional plants and a curved ring in the sky appear as light gray dashed construction guides.",
+      "r2_dir": "complete-drawing/alien-planet-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A colorful alien planet landscape with purple hills across the whole scene, six strange plants, one moon and a curved ring in the sky, everything fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "flower-01",
+      "group": "nature",
+      "order": 19,
+      "titleAr": "زهرة",
+      "titleEn": "Flower",
+      "difficulty": "سهل",
+      "tag": "تناظر",
+      "prompt": "A large beautiful pink flower viewed from the front. Three petals, yellow center and left leaf are fully colored. The remaining three petals and right leaf appear as simple light gray dashed symmetrical guides.",
+      "r2_dir": "complete-drawing/flower-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A large beautiful pink flower viewed from the front, perfectly symmetrical. All six petals, the yellow center and both green leaves are fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "tree-01",
+      "group": "nature",
+      "order": 20,
+      "titleAr": "شجرة",
+      "titleEn": "Tree",
+      "difficulty": "سهل",
+      "prompt": "A cheerful green tree with a brown trunk. The trunk and left half of the rounded canopy are fully colored with three red apples. The right half of the canopy, branches and two apples are light gray dashed guides.",
+      "r2_dir": "complete-drawing/tree-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cheerful green tree with a brown trunk. The trunk, the branches and the complete rounded canopy are fully colored, with five red apples. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "rainbow-01",
+      "group": "nature",
+      "order": 21,
+      "titleAr": "قوس قزح",
+      "titleEn": "Rainbow",
+      "difficulty": "سهل",
+      "prompt": "A bright five-band rainbow coming out of one finished fluffy cloud. The left half of the rainbow is completely colored while the continuation toward the second cloud is shown using broad light gray dashed arcs.",
+      "r2_dir": "complete-drawing/rainbow-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A bright five-band rainbow arcing between two finished fluffy white clouds, every band fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "sun-cloud-01",
+      "group": "nature",
+      "order": 22,
+      "titleAr": "شمس وسحابة",
+      "titleEn": "Sun and Cloud",
+      "difficulty": "سهل",
+      "prompt": "A cheerful yellow sun with half of its rays fully drawn and colored. The remaining rays and a nearby cloud appear as large light gray dashed guides.",
+      "r2_dir": "complete-drawing/sun-cloud-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cheerful yellow sun with the complete ring of rays all around it fully drawn and colored, and one white cloud beside it. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "palm-01",
+      "group": "nature",
+      "order": 23,
+      "titleAr": "نخلة",
+      "titleEn": "Palm",
+      "difficulty": "متوسط",
+      "prompt": "A tropical palm tree with brown trunk and several green leaves. The trunk and three leaves are fully finished. The missing half of the crown and two coconuts appear as light gray dashed guides.",
+      "r2_dir": "complete-drawing/palm-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A tropical palm tree with a brown trunk and a full crown of green leaves spreading all around, plus two brown coconuts, everything fully finished. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "mountain-01",
+      "group": "nature",
+      "order": 24,
+      "titleAr": "منظر جبلي",
+      "titleEn": "Mountain",
+      "difficulty": "متوسط",
+      "prompt": "A simple colorful landscape with one completed mountain, sun and pine tree on the left. A second mountain, small lake edge and another tree on the right are unfinished light gray dashed guides.",
+      "r2_dir": "complete-drawing/mountain-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A simple colorful landscape with two completed mountains, the sun, two pine trees and a small lake edge, all fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "waterfall-01",
+      "group": "nature",
+      "order": 25,
+      "titleAr": "شلال",
+      "titleEn": "Waterfall",
+      "difficulty": "مفصل",
+      "prompt": "A stylized waterfall scene with one green cliff, blue water and rocks fully colored on the left. The opposite cliff, plants and remaining pool edge appear as clean light gray dashed construction guides.",
+      "r2_dir": "complete-drawing/waterfall-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A stylized waterfall scene with green cliffs on both sides, blue falling water, rocks, plants and the complete pool edge, all fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "garden-01",
+      "group": "nature",
+      "order": 26,
+      "titleAr": "حديقة",
+      "titleEn": "Garden",
+      "difficulty": "مفصل",
+      "prompt": "A cheerful garden scene with two finished colorful flowers, one small fence section and a butterfly. Three additional flowers, remaining fence and watering can are shown as simplified light gray dashed guides.",
+      "r2_dir": "complete-drawing/garden-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cheerful garden scene with five finished colorful flowers, a complete fence running across the scene, a butterfly and a watering can, everything fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "car-01",
+      "group": "vehicles",
+      "order": 27,
+      "titleAr": "سيارة",
+      "titleEn": "Car",
+      "difficulty": "سهل",
+      "prompt": "A cute red cartoon car viewed from the side. Front half including hood, front wheel, windshield and headlight is fully colored. Rear door, rear wheel and trunk are light gray dashed guides.",
+      "r2_dir": "complete-drawing/car-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute red cartoon car viewed from the side. The complete body including hood, windshield, both doors, trunk, headlight and both wheels is fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "sailboat-01",
+      "group": "vehicles",
+      "order": 28,
+      "titleAr": "قارب شراعي",
+      "titleEn": "Sailboat",
+      "difficulty": "سهل",
+      "prompt": "A colorful small sailboat on blue waves. Boat hull and left triangular sail are fully finished. The second sail and remaining wave shapes appear as light gray dashed drawing guides.",
+      "r2_dir": "complete-drawing/sailboat-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A colorful small sailboat on blue waves. The boat hull, both triangular sails and the complete row of waves are fully finished. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "balloon-01",
+      "group": "vehicles",
+      "order": 29,
+      "titleAr": "منطاد",
+      "titleEn": "Balloon",
+      "difficulty": "سهل",
+      "tag": "تناظر",
+      "prompt": "A cheerful hot air balloon with the left half colored in orange, yellow and turquoise bands. The right half of the balloon is light gray dashed symmetrical guides, while the basket is complete.",
+      "r2_dir": "complete-drawing/balloon-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cheerful hot air balloon, perfectly symmetrical, with the whole balloon colored in orange, yellow and turquoise bands and the basket complete. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "plane-01",
+      "group": "vehicles",
+      "order": 30,
+      "titleAr": "طائرة",
+      "titleEn": "Plane",
+      "difficulty": "متوسط",
+      "prompt": "A friendly blue passenger airplane flying sideways. Nose, cockpit, front wing and part of the body are finished. Tail, second wing and rear body are represented with light gray dashed guides.",
+      "r2_dir": "complete-drawing/plane-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A friendly blue passenger airplane flying sideways. Nose, cockpit, the whole body, both wings and the tail are fully finished. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "train-01",
+      "group": "vehicles",
+      "order": 31,
+      "titleAr": "قطار",
+      "titleEn": "Train",
+      "difficulty": "متوسط",
+      "prompt": "A colorful toy-like train engine with one completed carriage. The engine is fully colored, while the second carriage, wheels and connecting section appear as large light gray dashed guides.",
+      "r2_dir": "complete-drawing/train-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A colorful toy-like train engine pulling two completed carriages, with every wheel and both connecting sections fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "firetruck-01",
+      "group": "vehicles",
+      "order": 32,
+      "titleAr": "شاحنة إطفاء",
+      "titleEn": "Firetruck",
+      "difficulty": "متوسط",
+      "prompt": "A bright red cartoon fire truck. Cab, front wheel and main body are completed. Rear wheel, ladder and hose section are unfinished light gray dashed guides.",
+      "r2_dir": "complete-drawing/firetruck-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A bright red cartoon fire truck. Cab, main body, both wheels, the ladder and the hose section are completed. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "excavator-01",
+      "group": "vehicles",
+      "order": 33,
+      "titleAr": "حفار",
+      "titleEn": "Excavator",
+      "difficulty": "مفصل",
+      "prompt": "A yellow construction excavator. Cabin, tracks and first half of the mechanical arm are fully colored. Remaining arm section and large digging bucket are light gray dashed drawing guides.",
+      "r2_dir": "complete-drawing/excavator-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A yellow construction excavator. Cabin, tracks, the complete mechanical arm and the large digging bucket are fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "submarine-01",
+      "group": "vehicles",
+      "order": 34,
+      "titleAr": "غواصة",
+      "titleEn": "Submarine",
+      "difficulty": "مفصل",
+      "prompt": "A cheerful yellow submarine underwater. Front body, two circular windows and top periscope are fully colored. Rear body, propeller, fin and several bubbles appear as light gray dashed guides.",
+      "r2_dir": "complete-drawing/submarine-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cheerful yellow submarine underwater. Front body, rear body, two circular windows, top periscope, tail fin, propeller and several bubbles are fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "house-01",
+      "group": "home",
+      "order": 35,
+      "titleAr": "بيت صغير",
+      "titleEn": "Small House",
+      "difficulty": "سهل",
+      "tag": "تناظر",
+      "prompt": "A cute small house viewed from the front. Left half including roof, window, wall and flowers is fully colored. Right half of roof, second window, wall and garden are represented with light gray dashed symmetrical guides.",
+      "r2_dir": "complete-drawing/house-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute small house viewed from the front, perfectly symmetrical. The complete roof, both windows, the whole wall, the door and flowers on both sides are fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "cupcake-01",
+      "group": "home",
+      "order": 36,
+      "titleAr": "كوب كيك",
+      "titleEn": "Cupcake",
+      "difficulty": "سهل",
+      "prompt": "A colorful pink cupcake. Wrapper and left half of frosting are completely finished. Right half of frosting, cherry and several large decorations appear as light gray dashed guides.",
+      "r2_dir": "complete-drawing/cupcake-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A colorful pink cupcake. The wrapper, the complete swirl of frosting, a red cherry on top and colorful sprinkle decorations are all completely finished. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "teddy-01",
+      "group": "home",
+      "order": 37,
+      "titleAr": "دبدوب",
+      "titleEn": "Teddy Bear",
+      "difficulty": "سهل",
+      "tag": "تناظر",
+      "prompt": "A friendly brown teddy bear sitting front-facing. Left ear, eye, arm, leg and half the belly are fully colored. The right half appears as clean light gray dashed symmetrical guides.",
+      "r2_dir": "complete-drawing/teddy-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A friendly brown teddy bear sitting front-facing, perfectly symmetrical. Both ears, both eyes, both arms, both legs and the whole belly are fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "backpack-01",
+      "group": "home",
+      "order": 38,
+      "titleAr": "حقيبة مدرسية",
+      "titleEn": "Backpack",
+      "difficulty": "سهل",
+      "prompt": "A colorful turquoise and purple child backpack. Main bag body and one strap are fully illustrated. Second strap, side pocket and zipper decoration appear as light gray dashed guides.",
+      "r2_dir": "complete-drawing/backpack-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A colorful turquoise and purple child backpack. The main bag body, both straps, the side pocket and the zipper decoration are fully illustrated. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "art-table-01",
+      "group": "home",
+      "order": 39,
+      "titleAr": "طاولة رسم",
+      "titleEn": "Art Table",
+      "difficulty": "متوسط",
+      "prompt": "A simple child art table with a finished sketchbook, cup of colored pencils and left half of the desk. A small lamp, paint palette and remaining desk edge appear as light gray dashed guides.",
+      "r2_dir": "complete-drawing/art-table-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A simple child art table with a finished sketchbook, a cup of colored pencils, a small lamp, a paint palette and the complete desk, all fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "kids-room-01",
+      "group": "home",
+      "order": 40,
+      "titleAr": "غرفة طفل",
+      "titleEn": "Kids Room",
+      "difficulty": "مفصل",
+      "prompt": "A cozy colorful child bedroom. Bed, pillow and small bedside table are fully finished on the left. Window, lamp, rug and toy box on the right are light gray dashed construction guides.",
+      "r2_dir": "complete-drawing/kids-room-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cozy colorful child bedroom with bed, pillow, bedside table, window, lamp, rug and toy box, everything fully finished. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "playground-01",
+      "group": "home",
+      "order": 41,
+      "titleAr": "ملعب",
+      "titleEn": "Playground",
+      "difficulty": "مفصل",
+      "prompt": "A cheerful playground with a completed colorful slide and tree. A swing set, small climbing structure and remaining grass details appear as simplified light gray dashed guides.",
+      "r2_dir": "complete-drawing/playground-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cheerful playground with a completed colorful slide, a tree, a swing set, a small climbing structure and green grass, all fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "apple-01",
+      "group": "food",
+      "order": 42,
+      "titleAr": "تفاحة",
+      "titleEn": "Apple",
+      "difficulty": "سهل",
+      "tag": "تناظر",
+      "prompt": "A large shiny red apple with left half completely colored, including leaf and stem. Right half of the apple is a clean light gray dashed symmetrical guide.",
+      "r2_dir": "complete-drawing/apple-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A large shiny red apple, perfectly symmetrical and completely colored, with a green leaf and a brown stem on top. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "icecream-01",
+      "group": "food",
+      "order": 43,
+      "titleAr": "آيس كريم",
+      "titleEn": "Ice Cream",
+      "difficulty": "سهل",
+      "prompt": "A cheerful ice cream cone with cone and two colorful scoops completed. A third scoop, cherry and small decorative shapes appear as light gray dashed guides.",
+      "r2_dir": "complete-drawing/icecream-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cheerful ice cream cone with the cone and three colorful scoops completed, topped with a red cherry and small colorful decorations. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "fruit-basket-01",
+      "group": "food",
+      "order": 44,
+      "titleAr": "سلة فاكهة",
+      "titleEn": "Fruit Basket",
+      "difficulty": "متوسط",
+      "prompt": "A colorful fruit basket containing a finished apple, banana and orange. Pear, grapes and remaining basket handle are represented by simple light gray dashed guides.",
+      "r2_dir": "complete-drawing/fruit-basket-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A colorful fruit basket holding a finished apple, banana, orange, pear and a bunch of grapes, with the complete basket and its handle fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "pizza-01",
+      "group": "food",
+      "order": 45,
+      "titleAr": "بيتزا",
+      "titleEn": "Pizza",
+      "difficulty": "متوسط",
+      "prompt": "A round cheerful pizza with the left half fully colored and containing simple tomato, mushroom and pepper toppings. The right half of the pizza and missing toppings appear as light gray dashed guides.",
+      "r2_dir": "complete-drawing/pizza-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A round cheerful pizza, whole and complete, fully colored with simple tomato, mushroom and pepper toppings spread evenly across the entire pizza. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "unicorn-01",
+      "group": "fantasy",
+      "order": 46,
+      "titleAr": "وحيد القرن",
+      "titleEn": "Unicorn",
+      "difficulty": "متوسط",
+      "prompt": "A cute magical white unicorn. Head, body, front legs and colorful mane are fully finished. Rear legs, flowing tail and several small stars are shown using light gray dashed guides.",
+      "r2_dir": "complete-drawing/unicorn-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A cute magical white unicorn. Head, body, front legs, rear legs, the colorful flowing mane, the long flowing tail and several small stars are fully finished. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "dragon-01",
+      "group": "fantasy",
+      "order": 47,
+      "titleAr": "تنين صغير",
+      "titleEn": "Baby Dragon",
+      "difficulty": "متوسط",
+      "prompt": "A friendly green baby dragon sitting. Head, body, one wing and front legs are fully colored. Second wing, tail and back spikes are unfinished light gray dashed guides.",
+      "r2_dir": "complete-drawing/dragon-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A friendly green baby dragon sitting. Head, body, both wings, front legs, the curled tail and the complete row of back spikes are fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "castle-01",
+      "group": "fantasy",
+      "order": 48,
+      "titleAr": "قلعة",
+      "titleEn": "Castle",
+      "difficulty": "مفصل",
+      "tag": "تناظر",
+      "prompt": "A colorful fantasy castle with central tower and left tower fully illustrated in purple, blue and gold. The right tower, right wall and several clouds are light gray dashed symmetrical guides.",
+      "r2_dir": "complete-drawing/castle-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A colorful fantasy castle, perfectly symmetrical, with the central tower, both side towers, both walls and several white clouds fully illustrated in purple, blue and gold. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "cloud-house-01",
+      "group": "fantasy",
+      "order": 49,
+      "titleAr": "بيت فوق السحاب",
+      "titleEn": "Cloud House",
+      "difficulty": "مفصل",
+      "prompt": "A whimsical tiny house resting on a fluffy cloud. House, door, one window and left side of cloud are fully colored. Roof extension, second window, remaining cloud and floating stars are light gray dashed guides.",
+      "r2_dir": "complete-drawing/cloud-house-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A whimsical tiny house resting on a fluffy cloud. The house, door, both windows, the complete roof, the whole cloud and floating stars are fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    },
+    {
+      "id": "floating-island-01",
+      "group": "fantasy",
+      "order": 50,
+      "titleAr": "جزيرة طائرة",
+      "titleEn": "Floating Island",
+      "difficulty": "مفصل",
+      "prompt": "A magical floating island with green grass, one tree and left rocky underside completely colored. A small waterfall, remaining rock formations, cloud and second tree are represented with light gray dashed construction guides.",
+      "r2_dir": "complete-drawing/floating-island-01",
+      "files": {
+        "reference_full": "reference_full.png",
+        "challenge": "challenge.png",
+        "thumbnail": "thumbnail.jpg"
+      },
+      "prompt_full": "A magical floating island with green grass, two trees, a small waterfall, the complete rocky underside, rock formations and a cloud, everything fully colored. This is the finished answer-key reference: the subject is whole and complete, fully colored and polished on every side, symmetrical and balanced where the subject is symmetrical. Every part is drawn and filled with color. No dashed lines, no gray guides, no construction lines, no faint outlines, no unfinished or missing parts."
+    }
+  ]
+}

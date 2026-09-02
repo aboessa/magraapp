@@ -1,0 +1,150 @@
+{
+  "story": "qml-the-extra-page",
+  "story_file": "docs/content/planets/05-qisas/qisas-min-alhayat/the-extra-page.md",
+  "language": "ar",
+  "out_dir": "assets/audio/stories/qml-the-extra-page/ar",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "voice_locked_because": "Same youthful voice used for preschool and bedtime for consistency, bright soft clear.",
+  "voice_alternatives": [
+    "Vindemiatrix",
+    "Sulafat",
+    "Aoede",
+    "Kore"
+  ],
+  "language_code": "ar-EG",
+  "notes": [
+    "Arabic verbatim from manifest",
+    "read_myself default is fine, but audio needed for accessibility and read_to_me option"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – junior 9-12\n## \"The Kind Older Sister, slightly more mature for 11-year-old\"\nSalma is a young Arab woman early twenties, light bright feminine voice, reading a junior story for 9-12 independent readers. Clear, steady, unhurried, warm but not babyish, slightly more mature than preschool bedtime, but still kind.\n## THE SCENE\nChild's room, afternoon or evening, quiet, child reading independently but with option to listen.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, clear, steady, warm, unhurried, mature enough for 11-year-old, never breathy, never babyish, never cartoon.\nPacing: ~100 words/min, natural pause at full stop.\nAccent: Clear Modern Standard Arabic.\nLoudness: Constant, no escalation, no drama.\nPage is part of a literary story with no explicit moral at end.\n",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-qml-the-extra-page-vo-ar-001",
+      "file": "page-001-ar.wav",
+      "text": "يرسم فارس بالفَحم، لا بالألوان. أصابعه سوداء دائمًا، وفي جيبه منديل لمسحها. وفي مجلّده الأزرق ثماني ورقات، اختارها من سبعة عشر. أحسنها رسم يد تحمل كوبًا، تعب عليه أربعة أيام.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 1 role: من وأين."
+    },
+    {
+      "page": 2,
+      "id": "asset-qml-the-extra-page-vo-ar-002",
+      "file": "page-002-ar.wav",
+      "text": "مسابقة الحَصيلة في المدرسة مرة في السنة. كل مشارك يسلّم مجلّدًا، وتُقرأ الأعمال ورقة ورقة. والأول يُطبَع رسمه على غلاف مجلّة المدرسة. وفارس يريد الغلاف.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 2 role: ما يريده."
+    },
+    {
+      "page": 3,
+      "id": "asset-qml-the-extra-page-vo-ar-003",
+      "file": "page-003-ar.wav",
+      "text": "يوم التسليم عدّ فارس ورقاته مرتين. ثمانية، وثمانية. ثم أغلق المجلّد وسلّمه، ولم يكتب على الغلاف شيئًا. ولم يكن أحد يكتب.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 3 role: العالم قبل التغيّر."
+    },
+    {
+      "page": 4,
+      "id": "asset-qml-the-extra-page-vo-ar-004",
+      "file": "page-004-ar.wav",
+      "text": "بعد أسبوع عُلّقت النتائج على حائط الممرّ. اسم فارس في الأول، ورغد في الثاني بفرق نقطتين. وبجانب الأسماء ورقة التحكيم، وفيها أعمدة. وفي عمود «عدد الأعمال» أمام اسمه: تسعة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 4 role: أول إشارة."
+    },
+    {
+      "page": 5,
+      "id": "asset-qml-the-extra-page-vo-ar-005",
+      "file": "page-005-ar.wav",
+      "text": "رجع فارس إلى البيت وفتح المجلّد المُعاد. عدّ: تسع ورقات. التاسعة رسم كرسيّ بالفحم، ليس رسمه. وفي زاويتها السفلى حرف باهت: ن.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 5 role: الإشارة تصير أمرًا واقعًا."
+    },
+    {
+      "page": 6,
+      "id": "asset-qml-the-extra-page-vo-ar-006",
+      "file": "page-006-ar.wav",
+      "text": "في ورقة التحكيم درجة لكل عمل. وأعلى درجة في مجلّده كانت لرسم الكرسيّ. والفرق بينه وبين رغد نقطتان. وبدون الكرسيّ يصير الفرق لغير صالحه.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 6 role: ما يجعله ثقيلًا."
+    },
+    {
+      "page": 7,
+      "id": "asset-qml-the-extra-page-vo-ar-007",
+      "file": "page-007-ar.wav",
+      "text": "المجلّدات أُعيدت كلها، ولا أحد سيعدّ من جديد. ونادية في المركز الرابع. وحسب فارس درجاتها: بورقة أو بلا ورقة، هي رابعة. فالورقة لا تنقص أحدًا شيئًا.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 7 role: ما يجعله ثقيلًا أكثر."
+    },
+    {
+      "page": 8,
+      "id": "asset-qml-the-extra-page-vo-ar-008",
+      "file": "page-008-ar.wav",
+      "text": "فكّر أن يعيد الورقة إلى نادية بلا كلام. يضعها في حقيبتها، أو يقول: وجدتُها في الممرّ. ولا يعرف أحد، ولا يتغيّر شيء. وتعود الورقة إلى صاحبتها، وهذا صحيح.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 8 role: محاولة تخفيف."
+    },
+    {
+      "page": 9,
+      "id": "asset-qml-the-extra-page-vo-ar-009",
+      "file": "page-009-ar.wav",
+      "text": "لكن الدرجة تبقى محسوبة في الورقة على الحائط. والغلاف يُطبَع الأسبوع القادم. ورغد ثانية بنقطتين، جمعتهما من ثماني ورقات كلها لها. وإعادة الورقة ليست إعادة النقطتين.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 9 role: المحاولة لا تعمل."
+    },
+    {
+      "page": 10,
+      "id": "asset-qml-the-extra-page-vo-ar-010",
+      "file": "page-010-ar.wav",
+      "text": "في الصباح وقف فارس أمام الحائط دقيقة. قرأ اسمه في الأول، وقرأ الرقم تسعة. ثم أخذ المجلّد والورقة، وطرق باب غرفة التحكيم. ودخل وهو يعرف ما سيخرج به.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 10 role: الذروة."
+    },
+    {
+      "page": 11,
+      "id": "asset-qml-the-extra-page-vo-ar-011",
+      "file": "page-011-ar.wav",
+      "text": "قال ثلاث جمل. سلّمتُ ثماني ورقات، والتاسعة ليست لي، وعليها حرف نادية. ثم قال: أنا لا أريد أن أخسر المركز. وأريد أن يُحسَب على ثمانية.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 11 role: ما فعله."
+    },
+    {
+      "page": 12,
+      "id": "asset-qml-the-extra-page-vo-ar-012",
+      "file": "page-012-ar.wav",
+      "text": "أُعيد الحساب في اليوم نفسه. صارت رغد أولى بنقطة واحدة. وصار فارس ثانيًا. والغلاف طُبِع برسم رغد.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 12 role: الثمن يظهر."
+    },
+    {
+      "page": 13,
+      "id": "asset-qml-the-extra-page-vo-ar-013",
+      "file": "page-013-ar.wav",
+      "text": "أخذت نادية ورقتها من يده في الممرّ. نظرت إليها وقالت: كنتُ أبحث عنها. ثم وضعتها في مجلّدها ومشت. ومركزها الرابع لم يتغيّر.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 13 role: ردّ الطرف الآخر."
+    },
+    {
+      "page": 14,
+      "id": "asset-qml-the-extra-page-vo-ar-014",
+      "file": "page-014-ar.wav",
+      "text": "في المساء كانت البطاقة على الحائط قد تغيّرت. ملصق أبيض صغير فوق اسم فارس، واسم رغد مكتوب فوقه بقلم آخر. ويظهر تحت الملصق طرف حرف من اسمه القديم. ووقف فارس ينظر، ولم يقل شيئًا.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 14 role: صفحة الصمت."
+    },
+    {
+      "page": 15,
+      "id": "asset-qml-the-extra-page-vo-ar-015",
+      "file": "page-015-ar.wav",
+      "text": "لم يعرف أحد لماذا تغيّرت البطاقة. قال بعضهم إن خطأً إداريًّا حدث، ومشى الكلام. ولم يشرح فارس، ولم يسأله أحد. فلم ينل المركز، ولم ينل ما يُقال لمن يقول الحقيقة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 15 role: ما لم يُصلَح."
+    },
+    {
+      "page": 16,
+      "id": "asset-qml-the-extra-page-vo-ar-016",
+      "file": "page-016-ar.wav",
+      "text": "في تلك الليلة أخرج فارس ورقاته الثماني، وكتب على ظهر كل واحدة حرفه. حرف واحد بالقلم الرصاص، في الزاوية نفسها في كل ورقة. ثم فتح الغلاف الأزرق وكتب في أعلاه رقمًا. واستغرق ذلك عشرين دقيقة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 16 role: تفصيل عملي."
+    },
+    {
+      "page": 17,
+      "id": "asset-qml-the-extra-page-vo-ar-017",
+      "file": "page-017-ar.wav",
+      "text": "على الطاولة مجلّد أزرق ومنديل أسود من الفحم. وبجانبه رسم يد تحمل كوبًا، وهو أحسن ما فيه. والبيت هادئ.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 17 role: العودة والهدوء."
+    },
+    {
+      "page": 18,
+      "id": "asset-qml-the-extra-page-vo-ar-018",
+      "file": "page-018-ar.wav",
+      "text": "على غلاف المجلّد الأزرق رقم مكتوب بالقلم الرصاص. ثمانية.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 18 role: سكون."
+    }
+  ]
+}

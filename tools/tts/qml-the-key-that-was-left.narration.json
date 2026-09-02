@@ -1,0 +1,136 @@
+{
+  "story": "qml-the-key-that-was-left",
+  "story_file": "docs/content/planets/05-qisas/qisas-min-alhayat/the-key-that-was-left.md",
+  "language": "ar",
+  "out_dir": "assets/audio/stories/qml-the-key-that-was-left/ar",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "voice_locked_because": "Same youthful voice used for preschool and bedtime for consistency, bright soft clear.",
+  "voice_alternatives": [
+    "Vindemiatrix",
+    "Sulafat",
+    "Aoede",
+    "Kore"
+  ],
+  "language_code": "ar-EG",
+  "notes": [
+    "Arabic verbatim from manifest",
+    "read_myself default is fine, but audio needed for accessibility and read_to_me option"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – junior 9-12\n## \"The Kind Older Sister, slightly more mature for 11-year-old\"\nSalma is a young Arab woman early twenties, light bright feminine voice, reading a junior story for 9-12 independent readers. Clear, steady, unhurried, warm but not babyish, slightly more mature than preschool bedtime, but still kind.\n## THE SCENE\nChild's room, afternoon or evening, quiet, child reading independently but with option to listen.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, clear, steady, warm, unhurried, mature enough for 11-year-old, never breathy, never babyish, never cartoon.\nPacing: ~100 words/min, natural pause at full stop.\nAccent: Clear Modern Standard Arabic.\nLoudness: Constant, no escalation, no drama.\nPage is part of a literary story with no explicit moral at end.\n",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-001",
+      "file": "page-001-ar.wav",
+      "text": "تحت درج المدرسة باب أزرق ضيّق، وخلفه مخزن نادي المسرح. فيه رفوف من الخشب، وصناديق فوق بعضها، وأشياء لا يعرف أحد أماكنها. ومفتاح الباب في علبة معدنية على الرفّ الأول. والعلبة ليس عليها شيء مكتوب.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 1 role: من وأين."
+    },
+    {
+      "page": 2,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-002",
+      "file": "page-002-ar.wav",
+      "text": "في النادي قاعدة قديمة: من يحمل المفتاح لا يمثّل. كُتبت قبل سنوات، بعد ليلة عرض نسي أحدهم أن يفتح الباب. فوقف الممثّلون خمس عشرة دقيقة بلا أزياء. والقاعدة لم تُغيَّر منذ ذلك اليوم.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 2 role: القاعدة."
+    },
+    {
+      "page": 3,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-003",
+      "file": "page-003-ar.wav",
+      "text": "كان ريّان قد جرّب دور الجندي الثاني في التصفيات. ودوره أربع جمل، حفظها كلها في ليلة واحدة. وكان يقولها في الطريق إلى البيت. وفي القائمة الأولى كان اسمه مكتوبًا بجانب الدور.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 3 role: العالم قبل التغيّر."
+    },
+    {
+      "page": 4,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-004",
+      "file": "page-004-ar.wav",
+      "text": "في اجتماع أيلول قرأوا ورقة المهامّ سطرًا سطرًا. الإضاءة، والأزياء، والموسيقى، والدعوات. وفي الأسفل سطر واحد فارغ: أمين المخزن. مرّوا عليه، ثم عادوا إليه.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 4 role: أول إشارة."
+    },
+    {
+      "page": 5,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-005",
+      "file": "page-005-ar.wav",
+      "text": "قال الأول: عندي الإضاءة. وقال الثاني: أنا في المسرحية. وقالت سمر بصراحة: المخزن لا أحد يراه. ولم يجب أحد على سمر، لأنها كانت محقّة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 5 role: الإشارة تصير أمرًا واقعًا."
+    },
+    {
+      "page": 6,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-006",
+      "file": "page-006-ar.wav",
+      "text": "بلا أمين لا يُفتَح المخزن، وبلا مخزن لا أزياء ولا أدوات. وبلا أزياء وأدوات لا مسرحية. بقي السطر فارغًا حتى نهاية الاجتماع. ثم قال أحدهم: نكمل الأسبوع القادم.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 6 role: ما يجعله ثقيلًا."
+    },
+    {
+      "page": 7,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-007",
+      "file": "page-007-ar.wav",
+      "text": "اقترح ريّان أن يتقاسم المفتاح اثنان، كل واحد نصف الأسبوع. فقال ثلاثة: من يفتح ليلة العرض؟ القاعدة تقول واحد، لأن الليلة التي نُسي فيها الباب كان فيه اثنان. فسحب ريّان اقتراحه.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 7 role: محاولة تخفيف."
+    },
+    {
+      "page": 8,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-008",
+      "file": "page-008-ar.wav",
+      "text": "في الأسبوع القادم أخذ ريّان القلم قبل أن يتكلّم أحد. كتب اسمه في السطر الفارغ. ثم فتح القائمة الأولى، ومحا اسمه من بجانب الجندي الثاني. وأعاد القلم إلى الطاولة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 8 role: الذروة."
+    },
+    {
+      "page": 9,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-009",
+      "file": "page-009-ar.wav",
+      "text": "فتح الباب الأزرق في اليوم التالي وأحصى ما فيه. ستّون شيئًا: أردية، وتيجان من كرتون، وسيوف مكسورة، ومصابيح بلا أسلاك. بلا ترتيب، وبلا قائمة، وبلا أسماء على الصناديق. وأربع جمل ما زالت في رأسه، ولا مكان يقولها فيه.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 9 role: الثمن يظهر."
+    },
+    {
+      "page": 10,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-010",
+      "file": "page-010-ar.wav",
+      "text": "في الأسبوع الأول أعطى رداءً لغير صاحبه، فتأخّرت التجربة نصف ساعة. وضاع تاج من كرتون، فبحثوا عنه يومين. ثم وجدوه في حقيبة أحد الممثّلين، وقد نسيه فيها. ولم يعتذر أحد لريّان، ولم يعتذر ريّان لأحد.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 10 role: المحاولة الأولى تفشل."
+    },
+    {
+      "page": 11,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-011",
+      "file": "page-011-ar.wav",
+      "text": "أخذ ورقة كبيرة ورسم عليها المخزن من الأعلى. رقّم الرفوف من واحد إلى تسعة، وكتب لكل شيء سطرًا: ماذا هو، وأيّ رفّ. علّق الورقة على الباب من الداخل، ونسخها في دفتر. واستغرق ذلك ثلاثة أسابيع.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 11 role: ما فعله بعدها."
+    },
+    {
+      "page": 12,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-012",
+      "file": "page-012-ar.wav",
+      "text": "ليلة العرض جلس ريّان على صندوق داخل المخزن، والباب مفتوح قليلًا. كان يسمع الكلام على المسرح بعيدًا وغير واضح. ثم سمع التصفيق، وعرف من طوله أن المسرحية انتهت. ولم يقف.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 12 role: صفحة الصمت."
+    },
+    {
+      "page": 13,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-013",
+      "file": "page-013-ar.wav",
+      "text": "بعد العرض جاءت سمر تحمل الرداء الأزرق. سألت: أين أضعه؟ قال ريّان: رفّ ثلاثة. فوضعته على رفّ ثلاثة، ومشت.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 13 role: ردّ الطرف الآخر."
+    },
+    {
+      "page": 14,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-014",
+      "file": "page-014-ar.wav",
+      "text": "في كلمة الختام ذُكرت الإضاءة والأزياء والموسيقى. ولم يُذكَر المخزن. واسم ريّان ليس في برنامج العرض، لأن البرنامج للأدوار. والأربع جمل قالها ولد آخر، وقالها جيدًا.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 14 role: ما لم يُصلَح."
+    },
+    {
+      "page": 15,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-015",
+      "file": "page-015-ar.wav",
+      "text": "في أيلول القادم قرأوا ورقة المهامّ، وبقي سطر أمين المخزن فارغًا من جديد. ولم يرفع أحد يده، كما في كل سنة. لكن الخريطة كانت على الباب من الداخل، فأنهى الأمين الجديد الجَرد في ساعتين لا في يومين. وريّان لم يكن في الاجتماع، فقد ذهب إلى تصفيات الأدوار.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 15 role: تفصيل عملي والعودة."
+    },
+    {
+      "page": 16,
+      "id": "asset-qml-the-key-that-was-left-vo-ar-016",
+      "file": "page-016-ar.wav",
+      "text": "المفتاح في العلبة المعدنية على الرفّ الأول. وعلى العلبة بطاقة صغيرة مكتوب عليها: ستّون.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 16 role: سكون."
+    }
+  ]
+}

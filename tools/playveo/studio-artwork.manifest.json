@@ -1,0 +1,134 @@
+{
+  "story": "studio-artwork",
+  "surface": "app_main Creative Studio — hero banner and activity card covers",
+  "out_dir": "tools/playveo/output/studio-artwork",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "nano_banana_2",
+  "mode": "text-to-image",
+  "notes": [
+    "BLOCKED until tools/playveo/studio-character-sheets.manifest.json produces an approved Luna sheet. The character_lock below is a transcription of approved sheet facts, not an independent description; if the sheet changes, this lock must be updated in the same commit or the batch will drift.",
+    "Luna is the platform's Preschool 3-5 character. The studio is a cross-track surface: reference_activities.json carries 12 activities at age 4-5, 12 at 6-7 and 6 at 8-9, and feed_blocks.dart marks the studio always-available for every track. Using a track character here was raised as a mismatch against the catalogue's own rule that a track character is not a general guide; the product owner reviewed that and approved Luna for this surface. Recorded so the decision is not rediscovered as a bug.",
+    "Luna appears in four assets only: the hero and the three cards for activities she can demonstrate with her hands. The remaining seven cards are object-only, because a mascot on a card competes with the thing the card is actually offering.",
+    "image-to-image is unusable on this provider (six probes, byte-identical output, prompt ignored — probe-i2i.mjs and ACT-S1_PRODUCTION_HANDOFF.md section 8). Identity is held by the text character_lock repeated verbatim in every Luna prompt.",
+    "Object counts stay low on purpose. The single 12-object props sheet failed twice with 'Timeout waiting for image tiles' while a 6-figure sheet succeeded, so no prompt here asks for more than about six distinct rendered items.",
+    "Cards are 1:1 because the studio grid tile is nearly square (childAspectRatio 0.86) and a square source crops cleanly at any column count. The hero is 16:9 and is only ever cropped from the start edge, where the illustration sits.",
+    "The composition rule for every card is the same: the subject sits centred with clear headroom at the bottom, because StudioCategoryCard draws a translucent label strip across the lower edge. Anything important placed low will be covered.",
+    "HERO COMPOSITION IS RTL-DEPENDENT. The app renders right-to-left, so the headline sits on the RIGHT and the illustration must occupy the LEFT third with the right two thirds left as an almost empty dark field. The first hero generation had this backwards, with Luna on the right and the empty space on the left, which put the Arabic title directly on top of her. It was regenerated rather than mirrored in Flutter: a horizontal flip would have moved her crescent pin to the opposite side and broken the identity lock that every other asset holds.",
+    "No text of any kind inside artwork. Labels are Flutter Text widgets over the image; generated lettering is unreliable and the shared Negative Prompt forbids it.",
+    "Cost at the last observed rate: 0.1 credit per image. 11 assets is about 1.10 credits. Generate two Luna shots first as a limited consistency probe before committing the rest.",
+    "CONSISTENCY PROBE RESULT (2026-08-19, tools/playveo/output/studio-consistency-test, hero + card-free-draw). Identity held: same face geometry, skin tone, eye colour, hijab colour, tunic, teal leggings and teal shoes across two completely different scenes. The text character_lock is therefore sufficient and no reference image is needed, which is the only option anyway on this provider. Style also improved over the character sheet, with soft shading and varied outline weight that sits correctly beside the existing act-s story art.",
+    "PROBE DEFECT 1, fixed. card-free-draw rendered a dark caption bar across the bottom containing the word 'Majarra'. The no-text rule was present but buried about 1000 characters into style_tail, where it was evidently diluted. It is now front-loaded as the first clause of character_lock, names the specific failure modes (caption bar, title plate, label strip, footer band) and forbids the brand name explicitly. This mattered doubly here: StudioCategoryCard draws its own translucent label strip over the lower edge, so a baked-in bar would have been covered by a second bar.",
+    "BATCH REVIEW (2026-08-19). Ten of eleven assets passed a shot-by-shot check against this manifest and the shared Negative Prompt: no text anywhere, Luna's identity held across all four of her appearances, counting groups came back at exactly 2, 3 and 4 with no numerals, and the letters card produced an abstract stroke with no readable character. card-trace was rejected and regenerated: asking for 'a single wide flowing S-curve' made the model render a large readable Latin letter S, which the no-letters rule forbids outright and which is doubly wrong on an Arabic-first surface. The prompt now describes the shape geometrically as an undulating left-to-right wave path and states explicitly that it must not resemble any letter. Lesson worth keeping: never name a shape after a letter in a prompt for a no-text asset.",
+    "PROBE DEFECT 2, accepted rather than fixed. Both probe shots rendered a narrow teal band along the forehead hairline where the approved sheet has the hijab meeting skin directly. It is teal fabric matching her leggings, reads as a normal under-cap, exposes no hair and appeared identically in both shots. Fighting it risks losing the good style; instead it is now transcribed into the lock as an approved fact so it stays deliberate and consistent. The crescent pin also settled above one ear rather than a named side, so the lock now specifies 'the same side in every asset' instead of naming left."
+  ],
+  "character_lock": "ABSOLUTE RULE, HIGHEST PRIORITY, APPLIES BEFORE EVERYTHING ELSE: this image must contain ZERO text. No word, no letter, no number, no caption, no title, no label, no name, no signature, no logo and no watermark anywhere in the frame. Do NOT add a caption bar, a title plate, a label strip, a footer band, a header band, a coloured bar along any edge, or any panel containing writing. The artwork is one single full-bleed illustration that reaches all four edges with nothing overlaid on it. Never write the word Majarra or any brand name. APPROVED CHARACTER, render exactly and identically in every asset: Luna, an original curious four-year-old Arab girl. Warm medium-brown skin, large warm brown friendly eyes, round soft cheeks, small closed-mouth expressions with no visible teeth. A neatly wrapped age-appropriate sunflower-yellow hijab fully covers her hair and neck, worn over a plain teal under-cap whose narrow band shows as a clean teal strip along her forehead hairline; that band is fabric, and absolutely no hair of any kind is visible at the hairline, temples, ears or back of the head. One small soft-gold crescent-moon pin sits on the hijab just above one ear, on the same side in every asset. A modest long-sleeve sunflower-yellow tunic reaching mid-thigh, teal leggings, simple slip-on teal shoes. Preschool proportions: relatively large head, short limbs, small body; she must never read as older than four. Never change her hijab colour, under-cap colour, outfit, skin tone, eye colour or proportions between assets.",
+  "reference_instruction": "Preserve the exact approved character identity while changing only the scene.",
+  "style_tail": " Premium original Majarra visual identity, soft rounded 2D animation with gentle dimensional shading, soft volumes and thin restrained outlines that vary in weight; never flat clip-art vector, never heavy uniform black outlines. Preschool-to-early-kids visual density: large readable shapes, few objects, calm composition, no overstimulation. Brand palette: deep space #06091A and midnight navy #0B1026 as the dominant dark ground, royal blue #2856D8, planet purple #6A3DF2 and comet cyan #00D6F5 for form and light, star yellow #FFD34D as a focused accent only. Authentic Arab facial features and culturally grounded age-appropriate modest clothing; every girl and woman without exception wears an age-appropriate modest hijab fully covering the hair and neck with no female hair visible. CRITICAL CANVAS RULE: render natively in the configured aspect ratio as one coherent edge-to-edge full-bleed composition that fills all four edges. No letterboxing, pillarboxing, duplicate side panels, mirrored or blurred edge fill, top or bottom bands, inset artwork, outer frame, border, presentation mat or poster mockup. No text, no letters, no numbers, no Arabic or English writing, no logo, no watermark, no interface element, no button, no famous or copyrighted character, no distorted anatomy, no extra fingers, no clutter.",
+  "assets": [
+    {
+      "id": "asset-studio-hero-start-drawing",
+      "file": "hero-start-drawing.jpg",
+      "order": 1,
+      "aspect_ratio": "16:9",
+      "scene": "Wide hero banner for a children's drawing studio. Luna stands in the LEFT third of the frame, turned slightly toward the viewer, holding one plain wooden-handled paintbrush with a soft cyan-tipped bristle head raised gently, with a calm delighted closed-mouth smile. From the brush tip a single soft ribbon of colour arcs up and toward the upper left corner in royal blue, cyan, purple and star yellow, dissolving into a few small glowing stars. Behind her a deep midnight-navy cosmic sky with one simple small ringed planet low in the left third. The RIGHT two thirds of the frame must stay almost completely empty: deep even midnight-navy sky with at most three tiny stars, no character, no object, no colour ribbon and no bright area, because Arabic headline text is composited over that side. Only Luna, no second child, no adult, no animal.",
+      "light": "Soft warm key light on Luna from the upper left, cool royal-blue ambient fill, and a deliberately flat unlit deep-navy field across the right two thirds so overlaid text stays legible."
+    },
+    {
+      "id": "asset-studio-icon-new-canvas",
+      "file": "icon-new-canvas.jpg",
+      "order": 12,
+      "aspect_ratio": "1:1",
+      "scene": "Square app icon tile, object-only with no character. Fill the entire square edge to edge with a smooth royal-blue gradient running from a brighter blue in the top left to a deeper blue in the bottom right, matching hex 2E86FF to 1442C9. Centred on it, one single bold chunky object: a plain blank white rounded rectangular drawing canvas standing almost upright and tilted very slightly, with a completely empty white surface, crossed diagonally in front of it by one thick chunky paintbrush with a warm wooden handle and a bright cyan-tipped head. Only these two forms. Draw them large, simple and heavy, filling roughly two thirds of the square with a clear even margin of plain gradient all around, thick soft outlines and strong contrast against the blue so the whole thing stays readable when shrunk to a 44 pixel button icon. No fine detail, no thin lines, no small elements, no shadow spill to the edges, no paint splatter, no second object, no character, no hand.",
+      "light": "Single soft light from the upper left giving the canvas and brush gentle rounded volume, flat even gradient behind with no vignette."
+    },
+    {
+      "id": "asset-studio-icon-draw-like-me",
+      "file": "icon-draw-like-me.jpg",
+      "order": 13,
+      "aspect_ratio": "1:1",
+      "scene": "Square app icon tile, object-only with no character. Fill the entire square edge to edge with a smooth purple gradient running from a brighter violet in the top left to a deeper purple in the bottom right, matching hex 8B4DF5 to 5B27D6. Centred on it, one single bold chunky motif: two plain white rounded rectangular cards stacked with a clear offset, the back one peeking out behind the upper left corner of the front one. The back card carries one small bold solid black outline of a simple five-pointed star. The front card carries the same star with only its left half drawn as a thick solid black outline and its right half as a few chunky dotted marks, so the pair reads as copying a model. Only these two cards. Draw them large, simple and heavy, filling roughly two thirds of the square with a clear even margin of plain gradient all around, thick soft outlines and strong contrast against the purple so the whole thing stays readable when shrunk to a 44 pixel button icon. No fine detail, no thin lines, no text, no extra card, no pencil, no character, no hand.",
+      "light": "Single soft light from the upper left giving the cards gentle rounded volume and a soft separation shadow between them, flat even gradient behind with no vignette."
+    },
+    {
+      "id": "asset-studio-card-coloring",
+      "file": "card-coloring.jpg",
+      "order": 2,
+      "aspect_ratio": "1:1",
+      "scene": "Square activity card for a colouring activity, object-only with no character. Centred on a deep midnight-navy ground, show one simple friendly bird outline drawing on a plain white rounded page. The left half of the bird is fully and neatly coloured in warm star yellow and coral; the right half is still clean black outline on white, so the card reads as colouring in progress. One small rounded paint bucket in royal blue rests beside the page, slightly behind it. Keep the lower fifth of the frame clear and uncluttered for a label strip. No brush, no hand, no extra object, no paint splatter.",
+      "light": "Soft even light on the white page so the outline stays crisp, cool royal-blue ambient on the dark ground behind it."
+    },
+    {
+      "id": "asset-studio-card-free-draw",
+      "file": "card-free-draw.jpg",
+      "order": 3,
+      "aspect_ratio": "1:1",
+      "scene": "Square activity card for free drawing on a blank canvas. Luna is centred, seen from the chest up and slightly angled, resting one hand on the top edge of a plain blank white rectangular drawing board with softly rounded corners that fills the lower middle of the frame; its surface is completely empty white with nothing drawn on it. Her other hand holds one plain wooden-handled paintbrush with a soft cyan-tipped bristle head, held low and relaxed. Calm curious closed-mouth expression. Deep midnight-navy ground behind her with two or three small glowing stars only. Keep the lower fifth of the frame clear for a label strip. No second character, no other object.",
+      "light": "Soft warm key light from the upper left on Luna and the board, cool royal-blue ambient fill behind."
+    },
+    {
+      "id": "asset-studio-card-draw-like-me",
+      "file": "card-draw-like-me.jpg",
+      "order": 4,
+      "aspect_ratio": "1:1",
+      "scene": "Square activity card for copying a reference drawing step by step. Luna is centred and slightly angled, looking toward a small plain white reference card that floats upright to her left showing one simple black outline of a cat, while in front of her a second plain white page shows the same cat outline only half finished. She holds one chunky rounded graphite pencil with a soft cream eraser tip. Calm focused closed-mouth expression. Deep midnight-navy ground with a very few small glowing stars. Exactly two white pages and no more. Keep the lower fifth of the frame clear for a label strip. No real cat, no animal, no second character.",
+      "light": "Soft warm key light from the upper right on Luna, even light on both white pages so the outlines stay readable, cool royal-blue ambient behind."
+    },
+    {
+      "id": "asset-studio-card-complete",
+      "file": "card-complete.jpg",
+      "order": 5,
+      "aspect_ratio": "1:1",
+      "scene": "Square activity card for completing a half-finished drawing, object-only with no character. Centred on a deep midnight-navy ground, show one plain white rounded page carrying a simple house drawing whose left half is a solid confident black outline and whose right half is a soft dotted guide line waiting to be traced. One chunky rounded graphite pencil with a soft cream eraser tip lies diagonally beside the page. Keep the lower fifth of the frame clear for a label strip. Exactly one page and one pencil, no extra object, no hand, no character.",
+      "light": "Soft even light on the white page so both the solid and dotted lines stay crisp, cool royal-blue ambient on the dark ground."
+    },
+    {
+      "id": "asset-studio-card-copy-pattern",
+      "file": "card-copy-pattern.jpg",
+      "order": 6,
+      "aspect_ratio": "1:1",
+      "scene": "Square activity card for copying a repeating pattern, object-only with no character. Centred on a deep midnight-navy ground, show one plain white rounded page with two horizontal rows of simple geometric shapes. The upper row is a complete repeating sequence of exactly six shapes in the order circle, square, triangle, circle, square, triangle, coloured in royal blue, star yellow and comet cyan. The lower row repeats the same sequence but stops after three shapes, leaving three empty soft dotted outlines to be filled. Keep the lower fifth of the frame clear for a label strip. No character, no hand, no tool, no extra shape.",
+      "light": "Soft even light on the white page for maximum shape clarity, cool royal-blue ambient on the dark ground."
+    },
+    {
+      "id": "asset-studio-card-connect-dots",
+      "file": "card-connect-dots.jpg",
+      "order": 7,
+      "aspect_ratio": "1:1",
+      "scene": "Square activity card for a connect-the-dots activity. Luna is centred at slightly smaller scale in the upper middle, leaning forward with a delighted closed-mouth smile and one extended index finger touching a glowing dot. In front of and below her, a plain white rounded page shows a simple five-pointed star formed by evenly spaced round dots; roughly half the dots are already joined by a clean royal-blue line while the rest are still unconnected. The dots carry no printed numbers. Deep midnight-navy ground with a very few small glowing stars. Keep the lower fifth of the frame clear for a label strip. No second character, no tool.",
+      "light": "Soft warm key light from the upper left on Luna, a gentle cyan glow on the connected line, cool royal-blue ambient behind."
+    },
+    {
+      "id": "asset-studio-card-trace",
+      "file": "card-trace.jpg",
+      "order": 8,
+      "aspect_ratio": "1:1",
+      "scene": "Square activity card for tracing a winding path, object-only with no character. Centred on a deep midnight-navy ground, show one plain white rounded page carrying a single wide gently undulating horizontal wave path that runs from the left edge of the page to the right edge with three soft rounded hills and two soft rounded valleys, like a smooth winding road seen flat on. Draw the whole path as a soft grey dotted guide, with the leftmost third already traced over in a confident comet-cyan stroke ending in a small rounded cap. The path must run left to right across the page and must never curl back on itself or close into a loop. One plain wooden-handled paintbrush with a soft cyan-tipped bristle head lies diagonally beside the page. Keep the lower fifth of the frame clear for a label strip. Exactly one page and one brush, no character, no hand, no extra line. CRITICAL: this shape is a wavy path, not a letter. It must not resemble the letter S or any other letter, digit or character in any alphabet.",
+      "light": "Soft even light on the white page so the dotted guide and the traced stroke read as clearly different, cool royal-blue ambient on the dark ground."
+    },
+    {
+      "id": "asset-studio-card-letters",
+      "file": "card-letters.jpg",
+      "order": 9,
+      "aspect_ratio": "1:1",
+      "scene": "Square activity card for an Arabic letter tracing activity, object-only and completely free of readable writing. Centred on a deep midnight-navy ground, show one plain white rounded page carrying a single large abstract flowing calligraphic stroke shape that suggests handwriting practice without forming any real letter, word, or recognisable character in any alphabet. Render it as a soft grey dotted guide with roughly the first half traced over in a confident planet-purple stroke. One chunky rounded graphite pencil with a soft cream eraser tip lies diagonally beside the page. Keep the lower fifth of the frame clear for a label strip. This must not contain any actual letter, any Arabic or Latin character, any word, any religious inscription and any calligraphy that could be read as text.",
+      "light": "Soft even light on the white page, cool royal-blue ambient on the dark ground, a gentle purple glow along the traced stroke."
+    },
+    {
+      "id": "asset-studio-card-numbers",
+      "file": "card-numbers.jpg",
+      "order": 10,
+      "aspect_ratio": "1:1",
+      "scene": "Square activity card for a counting activity, object-only and completely free of written numerals. Centred on a deep midnight-navy ground, show three neat evenly spaced horizontal groups of small rounded glowing counting blocks resting on a plain white rounded page: the top group holds exactly two blocks in royal blue, the middle group exactly three blocks in comet cyan, the bottom group exactly four blocks in star yellow. Quantity is shown by the blocks alone; there is no written number, no digit, no numeral and no tally mark anywhere. Keep the lower fifth of the frame clear for a label strip. No character, no hand, no tool, no extra block.",
+      "light": "Soft even light on the white page, a gentle glow on each block group, cool royal-blue ambient on the dark ground."
+    },
+    {
+      "id": "asset-studio-card-prompt-draw",
+      "file": "card-prompt-draw.jpg",
+      "order": 11,
+      "aspect_ratio": "1:1",
+      "scene": "Square activity card for drawing from an imagined idea, object-only with no character. Centred on a deep midnight-navy ground, show one plain white rounded page on which a simple ringed planet with one small orbiting moon is half drawn: the planet is a finished confident black outline lightly coloured in planet purple, while the ring and the moon are still soft grey dotted guides. Above the page float three or four small glowing star-yellow sparks suggesting an idea. One short chunky rounded star-yellow crayon lies diagonally beside the page. Keep the lower fifth of the frame clear for a label strip. No lightbulb, no thought bubble, no character, no hand.",
+      "light": "Soft even light on the white page, warm star-yellow glow on the floating sparks, cool royal-blue ambient on the dark ground."
+    }
+  ]
+}

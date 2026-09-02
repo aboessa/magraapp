@@ -1,0 +1,21 @@
+{
+  "story": "games-sort-bins",
+  "language": "ar",
+  "out_dir": "assets/audio/games/sort-bins/ar",
+  "model": "gemini-3.1-flash-tts-preview",
+  "voice": "Kore",
+  "global_style": "صوت دافئ تعليمي للأطفال 3-8، واضح وثابت.",
+  "preamble": "Synthesize speech. Read aloud only TRANSCRIPT in Arabic calm warm voice children 3-8.",
+  "lines": [
+    {"page":1,"id":"asset-vo-sb-intro","file":"vo-intro-ar.wav","text":"هيا نصنف الأشياء في مكانها الصحيح.","style":"Warm welcome","planned_duration_ms":2600},
+    {"page":2,"id":"asset-vo-sb-instruction","file":"vo-instruction-ar.wav","text":"ضع كل شيء في سلّته.","style":"Clear","planned_duration_ms":1800},
+    {"page":3,"id":"asset-vo-sb-instruction-repeat","file":"vo-instruction-repeat-ar.wav","text":"ضع كل شيء في سلّته. المس الشيء ثم المس السلة المناسبة.","style":"Slower","planned_duration_ms":3800},
+    {"page":4,"id":"asset-vo-sb-level-complete","file":"vo-level-complete-ar.wav","text":"أحسنت! صنفت كل شيء صحيحًا.","style":"Praise","planned_duration_ms":2200},
+    {"page":5,"id":"asset-vo-sb-game-complete","file":"vo-game-complete-ar.wav","text":"رائع! أنت تعرف كيف تصنف الأشياء.","style":"Game complete","planned_duration_ms":2600},
+    {"page":6,"id":"asset-vo-sb-exit-confirm","file":"vo-exit-confirm-ar.wav","text":"هل تريد الخروج؟","style":"Confirm","planned_duration_ms":1500},
+    {"page":7,"id":"asset-vo-sb-correct","file":"vo-correct-ar.wav","text":"صحيح! في مكانه.","style":"Praise","planned_duration_ms":1300},
+    {"page":8,"id":"asset-vo-sb-retry","file":"vo-retry-ar.wav","text":"فكر، أين ينتمي هذا؟","style":"Retry","planned_duration_ms":1800},
+    {"page":9,"id":"asset-vo-sb-hint","file":"vo-hint-ar.wav","text":"انظر للّون أو الشكل.","style":"Hint","planned_duration_ms":1700},
+    {"page":10,"id":"asset-vo-sb-explain-correct","file":"vo-explain-correct-ar.wav","text":"لأنها من نفس النوع.","style":"Explain correct","planned_duration_ms":1500}
+  ]
+}

@@ -62,6 +62,20 @@ function parseAdminRoutes() {
       imports.set(name, `${match[2]}.tsx`);
     }
   }
+  // The lazy form, which is how 123 of 123 routes are declared today:
+  //
+  //   const StoriesPage = lazy(() => import('./pages/StoriesPage').then(...))
+  //
+  // The parser understood only the static form. When the dashboard moved every
+  // page behind `lazy`, this map went empty and every route resolved to
+  // `file: null` — so `page` was null, `calls` was `[]`, and the derived half of
+  // FEATURE_MATRIX.md became blank while still reading like evidence. Worse, it
+  // turned the COMPLETE guard into a lie in the other direction: "recorded
+  // COMPLETE but the page calls no API function" fired for pages that call
+  // plenty. Nobody saw it because `--check` was never wired into CI.
+  for (const match of source.matchAll(/const\s+([A-Za-z0-9_]+)\s*=\s*lazy\(\s*\(\)\s*=>\s*import\('\.\/pages\/([A-Za-z0-9_]+)'/g)) {
+    imports.set(match[1], `${match[2]}.tsx`);
+  }
   const routes = [];
   for (const match of source.matchAll(/<Route\s+(index|path="([^"]*)")\s+element=\{<([A-Za-z0-9_]+)\s*\/>\}/g)) {
     const component = match[3];
@@ -139,7 +153,15 @@ function parseApiClient() {
     const name = match[2];
     const body = match[3];
     const path = extract(body);
-    if (!path) continue;
+    if (!path) {
+      // The client defines it, but its path is not in the source: the event row
+      // carries the route (`rescheduleCalendarEvent` reads `event.reschedule.route`
+      // and refuses when absent). Dropping it made the checker report "the API
+      // client does not define it" — an accusation that sends a reader to the wrong
+      // file. Recorded as dynamic: known to exist, unresolvable statically.
+      functions.set(name, { method: methodOf(body), path: null, dynamic: true });
+      continue;
+    }
     functions.set(name, { method: methodOf(body), path: stripQueryInterpolation(path) });
   }
 
@@ -188,7 +210,13 @@ function parseMounts() {
     const path = file === 'index.ts' ? join(API, 'index.ts') : join(dir, file);
     const source = read(path);
     const byVar = new Map();
-    for (const match of source.matchAll(/import\s+([A-Za-z0-9_]+)\s+from\s+'(?:\.\/routes\/|\.\/)([A-Za-z0-9_]+)(?:\.ts)?'/g)) {
+    // `import X from '…'` **and** `import X, { a, b } from '…'`. The named clause
+    // was not optional before, so three mounted routers were invisible —
+    // `adminPublishGate`, `publicSite`, `publicRender` — and every endpoint they
+    // serve counted as unmounted. That is how `publishReadiness` came out as
+    // "resolves to no mounted server route" while `GET
+    // /admin/publish-readiness/:type/:id` was answering it all along.
+    for (const match of source.matchAll(/import\s+([A-Za-z0-9_]+)\s*(?:,\s*\{[^}]*\}\s*)?from\s+'(?:\.\/routes\/|\.\/)([A-Za-z0-9_]+)(?:\.ts)?'/g)) {
       byVar.set(match[1], `${match[2]}.ts`);
     }
     const list = [];
@@ -305,6 +333,10 @@ function build() {
     // would not compile, or the name is built dynamically, and either way a
     // reviewer must look.
     const undefinedCalls = (page?.calls ?? []).filter((name) => !client.has(name));
+    // Defined, but the path comes from the payload rather than the source. Not a
+    // problem — and not hidden either: an endpoint the matrix cannot resolve must
+    // still be visible, or the tool quietly under-reports the surface it audits.
+    const dynamicCalls = (page?.calls ?? []).filter((name) => client.get(name)?.dynamic);
     const matched = endpoints.map((endpoint) => {
       // The client's paths are relative to API_ROOT, which is `/api/v1`; the
       // server's are absolute once the mount prefix is applied. Comparing the two
@@ -322,7 +354,7 @@ function build() {
         || matched.some((entry) => entry.server && source.includes(entry.server.path)))
       .map(({ name }) => name);
     const verdict = verdicts[route.path];
-    return { route, page, matched, permissions, audited, unmatched, undefinedCalls, tests, verdict };
+    return { route, page, matched, permissions, audited, unmatched, undefinedCalls, dynamicCalls, tests, verdict };
   });
 
   return { rows, server, client };
@@ -341,7 +373,6 @@ function tick(value) {
 }
 
 function render({ rows, server, client }) {
-  const now = new Date().toISOString().slice(0, 10);
   const counts = {};
   for (const row of rows) {
     const status = statusOf(row);
@@ -353,7 +384,11 @@ function render({ rows, server, client }) {
   lines.push('');
   lines.push('> GENERATED FILE. Do not edit by hand.');
   lines.push('> `node tools/dashboard-audit/feature-matrix.mjs`');
-  lines.push(`> Last generated: ${now}`);
+  // No generation date. It made the output differ by the clock, so a CI step that
+  // asserts "the committed matrix is what the generator produces" would fail on
+  // every unrelated change the next day — a guard that cries wolf gets switched off.
+  // `git log -1 -- docs/FEATURE_MATRIX.md` answers "when" more honestly anyway.
+  lines.push('> Generated by `node tools/dashboard-audit/feature-matrix.mjs`. Do not edit by hand; edit `docs/FEATURE_MATRIX_VERDICTS.json` and regenerate.');
   lines.push('');
   lines.push('Evidence columns (page, endpoints, permission, audit, tests, UX affordances) are');
   lines.push('read from the source on every run. The **Status** column comes from');
@@ -515,7 +550,13 @@ const model = build();
 if (process.argv.includes('--check')) {
   const problems = check(model);
   const unverified = model.rows.filter((row) => statusOf(row) === 'UNVERIFIED').length;
-  console.log(`routes=${model.rows.length} unverified=${unverified} problems=${problems.length}`);
+  const dynamic = model.rows.flatMap((row) => (row.dynamicCalls ?? []).map((name) => `${row.route.path}:${name}`));
+  const resolved = model.rows.filter((row) => row.route.file).length;
+  // `resolved` is reported because it is the number that silently went to zero:
+  // the parser understood only static page imports, so when every page became
+  // `lazy` the evidence half of the matrix emptied while still reading as evidence.
+  console.log(`routes=${model.rows.length} pagesResolved=${resolved} unverified=${unverified} dynamicPaths=${dynamic.length} problems=${problems.length}`);
+  for (const entry of dynamic) console.log(`  ~ dynamic path (declared by the payload): ${entry}`);
   for (const problem of problems) console.log(`  - ${problem}`);
   process.exit(problems.length ? 1 : 0);
 } else {

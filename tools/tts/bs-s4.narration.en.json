@@ -1,0 +1,100 @@
+{
+  "story": "bs-s4",
+  "story_file": "docs/content/planets/05-qisas/bedtime-stories/story-04-rainy-night.md",
+  "language": "en",
+  "language_code": "en-US",
+  "out_dir": "assets/audio/stories/bs-s4/en",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "notes": [
+    "DRAFT EN translation - based on AR structure, needs human review"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – bedtime\n## \"The Kind Older Sister\" for bs-s4\nSalma is a young Arab woman in her early twenties with a light, bright, distinctly feminine voice. She is reading a bedtime story (bs-s4) for children 6-8. Warm, calm, unhurried, affectionate.\n## THE SCENE\nChild's bedroom late evening, one warm lamp on. Child sleepy under blanket. Salma sits on floor beside bed.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, affectionate, gentle vocal smile. Youthful timbre, never breathy, never babyish, never cartoon. Warm and reassuring.\nPacing: Slow ~90 words/min, small natural pause at every full stop. For pages 11-12 slower ~80 wpm.\nAccent: Clear American English.\nLoudness: Constant, no escalation, no drama even on climax pages. Climax quieter not louder for bedtime.",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-bs-s4-vo-en-001",
+      "file": "page-001-en.wav",
+      "text": "هذه لَمى. نامت مبكّرًا الليلة.  والمطر يبدأ خارج النافذة.",
+      "style": "Calm bedtime narration for page 1. Steady, warm, unhurried."
+    },
+    {
+      "page": 2,
+      "id": "asset-bs-s4-vo-en-002",
+      "file": "page-002-en.wav",
+      "text": "صوت المطر خفيف على الزجاج.  تُحبّ لمى هذا الصوت.",
+      "style": "Calm bedtime narration for page 2. Steady, warm, unhurried. Note: «تُحبّ لمى هذا الصوت» —  يؤسّس أن المطر **صديق** قبل أن يُخاف منه"
+    },
+    {
+      "page": 3,
+      "id": "asset-bs-s4-vo-en-003",
+      "file": "page-003-en.wav",
+      "text": "ثم صار المطر أقوى قليلًا.  وسمعت صوتًا بعيدًا يشبه الطبل.",
+      "style": "Calm bedtime narration for page 3. Steady, warm, unhurried. Note: «يشبه الطبل» — تشبيه مألوف يخفض الغرابة · **بلا نبرة تهديد**"
+    },
+    {
+      "page": 4,
+      "id": "asset-bs-s4-vo-en-004",
+      "file": "page-004-en.wav",
+      "text": "جلست لمى في سريرها.  فجاءت أمّها وجلست بجانبها.",
+      "style": "Calm bedtime narration for page 4. Steady, warm, unhurried."
+    },
+    {
+      "page": 5,
+      "id": "asset-bs-s4-vo-en-005",
+      "file": "page-005-en.wav",
+      "text": "ظهر وَميض خفيف على السقف.  ثم جاء الصوت. فخافت لمى.",
+      "style": "Calm bedtime narration for page 5. Steady, warm, unhurried. Note: **الذروة تُنطق أهدأ لا أعلى** · «فخافت لمى» بنبرة **وصف** لا تعاطف مبالغ"
+    },
+    {
+      "page": 6,
+      "id": "asset-bs-s4-vo-en-006",
+      "file": "page-006-en.wav",
+      "text": "قالت أمّها: أنا هنا.  لكن لمى ما زالت تنظر إلى السقف.",
+      "style": "Calm bedtime narration for page 6. Steady, warm, unhurried. Note: «أنا هنا» بدفء · و«ما زالت تنظر» بنبرة **تقرير** — الحضور وحده لم يكفِ"
+    },
+    {
+      "page": 7,
+      "id": "asset-bs-s4-vo-en-007",
+      "file": "page-007-en.wav",
+      "text": "قالت أمّها: هذا الصوت بعيد.  وسأعلّمك كيف تعرفين كم هو بعيد.",
+      "style": "Calm bedtime narration for page 7. Steady, warm, unhurried. Note: «بعيد» بتشديد · «سأعلّمك» بنبرة **دعوة**"
+    },
+    {
+      "page": 8,
+      "id": "asset-bs-s4-vo-en-008",
+      "file": "page-008-en.wav",
+      "text": "عندما ترين الوميض، ابدئي العدّ.  وتوقّفي عندما يأتي الصوت.",
+      "style": "Calm bedtime narration for page 8. Steady, warm, unhurried. Note: **التعليمة ببطء ووضوح** — يجب أن تُحفَظ"
+    },
+    {
+      "page": 9,
+      "id": "asset-bs-s4-vo-en-009",
+      "file": "page-009-en.wav",
+      "text": "ظهر وميض. فعدّت لمى: واحد، اثنان، ثلاثة.  ثم جاء الصوت. فقالت: بعيد.",
+      "style": "Calm bedtime narration for page 9. Steady, warm, unhurried. Note: «بعيد» من لمى — نبرة **إدراك هادئ** لا فرح"
+    },
+    {
+      "page": 10,
+      "id": "asset-bs-s4-vo-en-010",
+      "file": "page-010-en.wav",
+      "text": "وفي المرة التالية عدّت أكثر.  وسمعت إيقاع المطر على الزجاج.",
+      "style": "Calm bedtime narration for page 10. Steady, warm, unhurried. Note: «إيقاع» بوضوح — كلمة جديدة"
+    },
+    {
+      "page": 11,
+      "id": "asset-bs-s4-vo-en-011",
+      "file": "page-011-en.wav",
+      "text": "استلقت لمى وأمّها تغطّيها.  والمطر يهدأ ببطء.",
+      "style": "Calm bedtime narration for page 11. Steady, warm, unhurried. Note: «يهدأ ببطء» ببطء"
+    },
+    {
+      "page": 12,
+      "id": "asset-bs-s4-vo-en-012",
+      "file": "page-012-en.wav",
+      "text": "والآن تنام لمى، والمطر يغنّي بعيدًا.",
+      "style": "Calm bedtime narration for page 12. Steady, warm, unhurried. Slowest page of story, sleepy, soft ending. Note: ~80 كلمة/دقيقة · **أبطأ جملة** · وقفة 800ms قبلها"
+    }
+  ]
+}

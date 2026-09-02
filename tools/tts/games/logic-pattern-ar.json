@@ -1,0 +1,22 @@
+{
+  "story": "games-logic-pattern",
+  "language": "ar",
+  "out_dir": "assets/audio/games/logic-pattern/ar",
+  "model": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "global_style": "صوت تعليمي واضح للأطفال 9-12، تفكير استنتاجي هادئ.",
+  "preamble": "Synthesize speech. Read TRANSCRIPT in Arabic clear educational steady voice 9-12, logical thinking calm.",
+  "lines": [
+    {"page":1,"id":"asset-vo-lp-intro","file":"vo-intro-ar.wav","text":"استنتج القاعدة وأكمل النمط.","style":"Welcome","planned_duration_ms":2300},
+    {"page":2,"id":"asset-vo-lp-instruction","file":"vo-instruction-ar.wav","text":"انظر للصفوف واكتشف القاعدة.","style":"Instruction","planned_duration_ms":2500},
+    {"page":3,"id":"asset-vo-lp-instruction-repeat","file":"vo-instruction-repeat-ar.wav","text":"انظر كيف يتكرر اللون والشكل. ما الذي يأتي بعد؟","style":"Slower repeat","planned_duration_ms":4000},
+    {"page":4,"id":"asset-vo-lp-level-complete","file":"vo-level-complete-ar.wav","text":"استنتاج صحيح! وجدت القاعدة.","style":"Level complete","planned_duration_ms":2300},
+    {"page":5,"id":"asset-vo-lp-game-complete","file":"vo-game-complete-ar.wav","text":"تفكير منطقي ممتاز!","style":"Game complete","planned_duration_ms":1800},
+    {"page":6,"id":"asset-vo-lp-exit-confirm","file":"vo-exit-confirm-ar.wav","text":"هل تريد الخروج؟","style":"Confirm","planned_duration_ms":1200},
+    {"page":7,"id":"asset-vo-lp-correct","file":"vo-correct-ar.wav","text":"هذا هو! نفس القاعدة.","style":"Praise naming","planned_duration_ms":1600},
+    {"page":8,"id":"asset-vo-lp-retry","file":"vo-retry-ar.wav","text":"انظر مرة أخرى للنمط.","style":"Retry","planned_duration_ms":1600},
+    {"page":9,"id":"asset-vo-lp-hint-1","file":"vo-hint-1-ar.wav","text":"انظر إلى الألوان.","style":"Hint 1 dimension","planned_duration_ms":1400},
+    {"page":10,"id":"asset-vo-lp-hint-2","file":"vo-hint-2-ar.wav","text":"الآن انظر إلى الأشكال أيضًا.","style":"Hint 2 dimension","planned_duration_ms":1800},
+    {"page":11,"id":"asset-vo-lp-explain-rule","file":"vo-explain-rule-ar.wav","text":"القاعدة هي تكرار اللون ثم الشكل.","style":"Explain rule","planned_duration_ms":2600}
+  ]
+}

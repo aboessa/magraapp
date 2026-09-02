@@ -30,8 +30,42 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze --fatal-warnings
       # `|| flutter test` used to mask a failure of the first invocation.
-      - run: flutter test --no-pub
+      - run: flutter test --no-pub --coverage
+
+      # A coverage number nobody guards is read once and forgotten, and drifts down
+      # change by change. The floor is what makes it a decision (`QA-103`).
+      #
+      # It is measured, not chosen: a floor above reality fails every run and gets
+      # switched off — the lesson this audit keeps relearning. The step also guards
+      # the *file count*, because lcov omits files no test loads, so the percentage
+      # can rise while real coverage falls.
+      - name: Coverage did not fall below the declared floor
+        working-directory: .
+        # The self-test runs first, for the same reason `scan-secrets` does: a
+        # checker whose own arithmetic is wrong reports a comfortable number.
+        run: |
+          node tools/ci/coverage-floor.mjs --self-test
+          node tools/ci/coverage-floor.mjs app_main/coverage/lcov.info flutter
+
+      # `PERF-101`: حِمل الأصول المُبندَلة مقيسٌ ومحروس. الشجرة تحمل 358 MB
+      # بينما المُبندَل فعلًا 116 MB — الفارق أصول إنتاج غير مُعلَنة. والخطر
+      # ليس الحجم الحالي بل **إعلان مجلد بالخطأ**: سطرٌ واحد يضيف مئات
+      # الميغابايتات إلى ما يُنزِّله الأهل. الحدّ مقيسٌ بهامش صغير مقصود.
+      #
+      # ويفشل أيضًا على إعلانٍ لا يقابله ملف، وهو ما يُعطّل بناء Flutter نفسه.
+      - name: Bundled asset payload stayed under the measured ceiling
+        working-directory: .
+        run: node tools/ci/assets-declared.mjs --check
+
       - run: flutter build appbundle --release
+
+      # الحدّ 200 MB عتبةُ Google Play التي يرى فوقها المستخدم على بيانات
+      # الجوّال تحذيرًا بحجم التطبيق عند التثبيت — قيدٌ خارجيّ لا رقمٌ مُختار.
+      # وغيابُ ملف الحزمة فشلٌ: خطوةٌ تقيس ما لا وجود له وتُبلّغ نجاحًا أسوأ من
+      # غيابها.
+      - name: Release bundle size
+        working-directory: .
+        run: node tools/ci/aab-size.mjs
 
   worker:
     runs-on: ubuntu-latest
@@ -70,6 +104,44 @@ jobs:
       - run: npx vitest run
       - run: npm run build
 
+  # Builds the database schema from zero, which nothing had ever done.
+  #
+  # `DB-104`: applying the 89 migration files to an empty D1 stopped at
+  # `0074_wave4_closure_36_games.sql` with a foreign-key violation — 71 applied, 18
+  # never reached. Every environment that worked had been built incrementally over
+  # months, so the break was invisible: no developer could create a new local
+  # database, and a rebuild of production from the repository was not possible.
+  #
+  # A runner starts with no state, so this job is the clean build by construction.
+  # `--require-applied` is what makes it a gate: `wrangler` reports a failed file and
+  # stops, and the ledger then refuses to pass while any file remains unapplied.
+  migrations:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: dashboard/api/package-lock.json
+      - run: npm ci
+      - name: Apply every migration to an empty database
+        run: npm run migrate:local
+      - name: Every file applied, no row without a file
+        run: node tools/ops/migration-ledger.mjs --local --require-applied
+
+      # `DB-103`: فحص سلامة مرجعية على قاعدةٍ بُنيت من الصفر في هذه الوظيفة.
+      #
+      # موضعه مقصود: القاعدة هنا **نتاج الترحيلات وحدها**، فأي صفٍّ يتيم أو
+      # إنفاذٍ مُطفأ مصدره الترحيلات لا بياناتُ بيئةٍ قديمة — أي أن العطل يُنسَب
+      # إلى ما يمكن إصلاحه. والفحص يقبل `--remote` لقياس الإنتاج، وذاك فعلُ مالك
+      # يحتاج اعتمادًا (`§12`).
+      - name: Foreign keys enforced and no orphan rows
+        run: node tools/ops/referential-integrity.mjs
+
   # Guards story specs against stating a narration pace that their own per-page
   # durations contradict. All 15 existing specs failed this when it was first run:
   # each stated a words-per-minute rule carried over from English guidance, and each
@@ -86,6 +158,49 @@ jobs:
         with:
           node-version: 20
       - run: node tools/content/audit-narration-pacing.mjs --check
+
+  # The dashboard feature matrix must not contradict the code it describes.
+  #
+  # `feature-matrix.mjs` was written as a generator precisely because every
+  # hand-written audit of this dashboard drifted within a session, and it already
+  # shipped a `--check` mode. It was never wired into CI — so the drift it exists to
+  # prevent happened to the generator itself: the page parser understood only static
+  # imports, and once every route moved behind `lazy` it resolved **zero** of 123
+  # pages. The evidence half of the matrix went blank while still reading as
+  # evidence, and eight routes stayed recorded as MISSING on the strength of a
+  # component that no page used any more.
+  #
+  # Running it here is the whole remedy: a checker nobody runs is a comment.
+  feature-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # `DOCS-101`: وثيقةٌ جديدة في الجذر بلا تصنيف، أو لقطةٌ منقضية بلا وسم في
+      # رأسها، تفشل هنا. الأثر الذي يحميه: قارئٌ يصدّق تقريرًا يقول «الكود لا
+      # يُبنى» على مستودعٍ فحوصه خضراء.
+      - name: Every root document is classified
+        run: node tools/ci/docs-classified.mjs --check
+
+      # نصٌّ عربي مُشوَّه الترميز في **بيانات** — أي في شيءٍ يراه طفل أو مشغّل.
+      # الدَّين القائم مُجمَّد بخطّ أساسٍ مقيس لأن التشويه مزدوج فلا يُفكّ بجولةٍ
+      # موثوقة؛ والبوابة تمنع نموّه، وتفشل أيضًا على تحسّنٍ غير مُسجَّل حتى لا
+      # يبقى خطّ الأساس أكبر من الواقع بصمت.
+      - name: No new mojibake in data or user-visible strings
+        run: node tools/ci/mojibake-scan.mjs --check
+
+      - name: Verdicts and evidence agree with the source
+        run: node tools/dashboard-audit/feature-matrix.mjs --check
+      - name: The committed matrix is the one the generator produces
+        run: |
+          node tools/dashboard-audit/feature-matrix.mjs
+          if ! git diff --quiet -- docs/FEATURE_MATRIX.md; then
+            echo "docs/FEATURE_MATRIX.md is stale — run: node tools/dashboard-audit/feature-matrix.mjs" >&2
+            git diff --stat -- docs/FEATURE_MATRIX.md >&2
+            exit 1
+          fi
 
   # Credential-shaped strings in tracked files.
   #
@@ -151,25 +266,47 @@ jobs:
         working-directory: app_main
         run: flutter pub outdated || true
 
-  # The release gate.
+  # The release. `OPS-105`.
   #
-  # Deployment was manual and undocumented, so nothing tied a deploy to a verified
-  # build. This job cannot start until every suite above is green, and it refuses to
-  # run on anything but `master`.
+  # Deployment used to be manual and undocumented: nothing tied a running Worker to a
+  # verified build, and "which version is live?" had no answer. This job cannot start
+  # until every suite above is green and refuses to run on anything but `master`.
   #
-  # It performs a **dry run only**. A real `wrangler deploy` needs an API token this
-  # repository does not hold, and enabling one is an infrastructure decision for the
-  # owner rather than something a pipeline change should assume. What this does
-  # deliver is the guarantee the task asks for: the deploy path is exercised on every
-  # push to master and cannot succeed on a red pipeline.
+  # ## It deploys for real the moment a token exists
   #
-  # To make it a real deploy: add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
-  # as repository secrets and drop `--dry-run`. Note that the Durable Object
-  # migration tag `v4` (RateLimiter) applies on first deploy.
-  deploy-gate:
-    needs: [flutter, worker, admin, content-pacing, secrets, dependencies]
+  # The previous version was hard-wired to `--dry-run` with a comment explaining that
+  # a token would be needed. That is a change request disguised as a pipeline: the
+  # owner adds the secrets and *still* nothing deploys until someone remembers to
+  # edit this file. Here the token is a **runtime condition**, so adding the two
+  # secrets is the whole of the switch-on. Without them the job still exercises the
+  # deploy path as a dry run rather than passing vacuously.
+  #
+  # `secrets` cannot be read in an `if:` expression, so presence is resolved in a step
+  # that maps them through `env` and never prints them.
+  #
+  # ## What it does not do
+  #
+  # It does not apply D1 migrations. A bad deploy is undone by `wrangler rollback` in
+  # seconds; a bad migration is not undone by anything this pipeline could run, and
+  # coupling the two would mean a schema change riding along with a routine text fix.
+  # Migrations stay a deliberate act — `npm run migrate:remote`, with the ledger tool
+  # to check first. See `SETUP_SECRETS.md` section 8.
+  #
+  # Note that the Durable Object migration tag `v4` (RateLimiter) applies on the first
+  # real deploy.
+  deploy:
+    needs: [flutter, worker, admin, migrations, content-pacing, secrets, dependencies]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      # The release tag is the durable version-to-commit record.
+      contents: write
+    defaults:
+      run:
+        working-directory: dashboard/api
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -178,12 +315,96 @@ jobs:
           cache: npm
           cache-dependency-path: dashboard/api/package-lock.json
       - name: Install
-        working-directory: dashboard/api
         run: npm ci
-      - name: Verify the production bundle builds
-        working-directory: dashboard/api
-        run: npx wrangler deploy --dry-run --outdir .wrangler-ci --env production
-      - name: Record what would be released
+
+      # Bakes the commit into the bundle so the Worker can answer for itself at
+      # `/version`. Runs before both paths, so the dry run builds what would ship.
+      - name: Stamp the build identity
+        run: node tools/ci/write-release.mjs --commit "$GITHUB_SHA" --run "$GITHUB_RUN_ID"
+
+      - name: Are the deploy credentials configured?
+        id: creds
         run: |
-          echo "commit=${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "All test jobs passed; the production bundle builds." >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify the production bundle builds (no credentials configured)
+        if: steps.creds.outputs.present == 'false'
+        run: |
+          npx wrangler deploy --dry-run --outdir .wrangler-ci --env production
+          {
+            echo "### Not deployed"
+            echo ""
+            echo "\`CLOUDFLARE_API_TOKEN\` and \`CLOUDFLARE_ACCOUNT_ID\` are not set, so this"
+            echo "run built the production bundle and stopped. Adding both secrets is the"
+            echo "only step needed to make this job deploy — no file change."
+            echo ""
+            echo "commit: \`$GITHUB_SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy
+        id: deploy
+        if: steps.creds.outputs.present == 'true'
+        run: |
+          set -o pipefail
+          npx wrangler deploy --env production 2>&1 | tee deploy.log
+          # `wrangler` prints the version it created; the versions API is the fallback
+          # so a wording change upstream degrades the record rather than the deploy.
+          version="$(grep -oiE 'version id:[[:space:]]*[0-9a-f-]{36}' deploy.log | tail -1 | grep -oiE '[0-9a-f-]{36}' || true)"
+          if [ -z "$version" ]; then
+            version="$(npx wrangler versions list --env production --json \
+              | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s);console.log(v?.[0]?.id ?? "")})' || true)"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # A deploy that reported success while an older bundle still serves traffic is
+      # the failure mode this closes. The Worker is asked what it is running.
+      - name: Verify production is serving this commit
+        if: steps.creds.outputs.present == 'true'
+        run: |
+          expected="$(echo "$GITHUB_SHA" | cut -c1-12)"
+          for attempt in 1 2 3 4 5 6; do
+            live="$(curl -fsS --max-time 15 https://api.majarra.app/version \
+              | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).commit ?? "")}catch{console.log("")}})' || true)"
+            if [ "$live" = "$expected" ]; then
+              echo "production is serving $live"
+              exit 0
+            fi
+            echo "attempt $attempt: production reports '${live:-no answer}', expected '$expected'"
+            sleep 10
+          done
+          echo "::error::production did not report commit $expected after the deploy"
+          exit 1
+
+      # The version-to-commit record, in the repository rather than in a log that
+      # expires. Idempotent: redeploying the same commit does not fail the job.
+      - name: Tag the release
+        if: steps.creds.outputs.present == 'true'
+        working-directory: .
+        run: |
+          tag="release/$(date -u +%Y-%m-%d)-$(echo "$GITHUB_SHA" | cut -c1-7)"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "$tag already exists; leaving it alone"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$tag" -m "cloudflare version: ${{ steps.deploy.outputs.version }}" \
+              -m "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            git push origin "$tag"
+          fi
+          {
+            echo "### Deployed"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| commit | \`$GITHUB_SHA\` |"
+            echo "| cloudflare version | \`${{ steps.deploy.outputs.version }}\` |"
+            echo "| tag | \`$tag\` |"
+            echo "| verified at | https://api.majarra.app/version |"
+            echo ""
+            echo "Rollback: \`npx wrangler rollback <version-id> --env production -m \"<reason>\"\`"
+            echo "(previous version ids: \`npx wrangler versions list --env production\`)"
+          } >> "$GITHUB_STEP_SUMMARY"

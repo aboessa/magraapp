@@ -1,0 +1,192 @@
+{
+  "story": "majarra-avatars",
+  "story_file": "docs/content/planets/CHARACTER_REFERENCE.md",
+  "out_dir": "app_main/assets/avatars/characters",
+  "r2_dir": "public/avatars/characters",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "nano_banana_2",
+  "mode": "text-to-image",
+  "concurrency": 2,
+  "notes": [
+    "Premium circular avatar portraits for Majarra child profiles. ALL assets are 1:1 square, 1024x1024, centered head+shoulders only, 70% face framing, safe for circular crop.",
+    "These are TRUE avatar designs, not crops from character sheets. Each prompt describes the character's face, expression, and modest attire, inspired by Majarra story universe.",
+    "Background is always solid deep-navy #0B1026 with subtle royal-blue rim light, to match app's cinematic background and make circular avatar pop.",
+    "Prompts in English (model parses visual English better). No Arabic text inside image. Luma, Nouma, Zaina, Yaseen, Salma, Addaad, Robo are original Majarra IP.",
+    "Critical canvas rule: edge-to-edge 1:1 native, no letterboxing, no duplicate side panels, no frame.",
+    "Generation command: node tools/playveo/generate.mjs --manifest majarra-avatars.manifest.json --validate (dry) then --rest"
+  ],
+  "style_tail": " Premium square avatar portrait, 1:1 aspect, centered head and shoulders only, close-up face filling 70 percent of frame, clean solid deep-navy background #0B1026 with subtle royal-blue rim light and soft cyan glow, soft stylized 3D animation Pixar style, highly detailed expressive eyes, warm lighting, centered composition safe for circular crop, ultra sharp, no full body, no legs, no waist below chest, no background characters, no text, no logo, no watermark, no letters, no frame, edge-to-edge full-bleed. Authentic Arab facial features, warm skin tones. CRITICAL CANVAS RULE: Render natively 1:1 as one coherent full-bleed composition, no letterboxing, no pillarboxing, no duplicate side panels, no blurred mirrored edges.",
+  "negative_prompt": "full body, legs, feet, waist below shoulders, distant shot, tiny face, multiple people, crowd, background characters, text, letters, Arabic letters, watermark, logo, frame, border, blurry, low quality, photorealistic, realistic photo, scary, angry face, teeth visible, open mouth teeth, sad crying, hair visible when hijab required, uncovered hair for hijab characters, western generic, no eyeglasses glare",
+  "character_lock_note": "Each asset has its own character lock inline, because they are distinct characters. Do not share.",
+  "assets": [
+    {
+      "id": "avatar-luna",
+      "file": "luna-full.png",
+      "order": 1,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Luna, a cheerful 5-year-old Arab girl, warm light brown skin, big round expressive dark brown eyes, short dark brown wavy bob hair with a small yellow star clip on side, wearing bright yellow t-shirt with small white star, joyful innocent smile with closed mouth, rosy cheeks, centered head and shoulders"
+    },
+    {
+      "id": "avatar-luna-happy",
+      "file": "luna-happy.png",
+      "order": 2,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Luna, 5-year-old Arab girl, warm light brown skin, big round dark brown eyes sparkling, short dark wavy hair with yellow star clip, yellow shirt, very happy cheerful smile closed mouth, glowing confident expression"
+    },
+    {
+      "id": "avatar-luna-excited",
+      "file": "luna-excited.png",
+      "order": 3,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Luna, 5-year-old Arab girl, warm skin, big brown eyes wide with excitement, short dark wavy hair with yellow star clip, wearing yellow shirt, excited curious open smile closed teeth, energetic joyful face"
+    },
+    {
+      "id": "avatar-luna-smile",
+      "file": "luna-smile.png",
+      "order": 4,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Luna, 5-year-old Arab girl, warm skin, big brown eyes, short dark wavy hair, yellow shirt, gentle warm smile, calm kind expression, head and shoulders"
+    },
+    {
+      "id": "avatar-luna-curious",
+      "file": "luna-curious.png",
+      "order": 5,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Luna, 5-year-old Arab girl, warm skin, big curious brown eyes looking slightly to side, short dark wavy hair with yellow clip, yellow shirt, thoughtful curious expression, slight head tilt"
+    },
+    {
+      "id": "avatar-luna-point",
+      "file": "luna-point.png",
+      "order": 6,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Luna, 5-year-old Arab girl, warm skin, big brown eyes, short dark wavy hair, yellow shirt, pointing gesture near face, playful teaching expression, bright eyes"
+    },
+    {
+      "id": "avatar-nouma",
+      "file": "nouma-full.png",
+      "order": 7,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Nouma, smart 7-year-old Arab girl, warm olive skin, wearing age-appropriate modest sky-blue hijab fully covering hair and neck neatly wrapped, big dark intelligent eyes with glasses? No glasses, wearing teal top with small white collar, confident friendly smile closed mouth"
+    },
+    {
+      "id": "avatar-nouma-happy",
+      "file": "nouma-happy.png",
+      "order": 8,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Nouma, 7-year-old Arab girl, olive skin, sky-blue modern hijab fully covering hair and neck, teal top, bright happy smile closed mouth, sparkling smart eyes, warm friendly"
+    },
+    {
+      "id": "avatar-nouma-thinking",
+      "file": "nouma-thinking.png",
+      "order": 9,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Nouma, 7-year-old Arab girl, olive skin, sky-blue hijab fully covering hair and neck, teal top, thoughtful thinking expression, finger near chin, curious intelligent eyes looking up"
+    },
+    {
+      "id": "avatar-nouma-smile",
+      "file": "nouma-smile.png",
+      "order": 10,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Nouma, 7-year-old Arab girl, olive skin, sky-blue hijab fully covering hair and neck, teal top, gentle warm smile, calm eyes"
+    },
+    {
+      "id": "avatar-zaina-front",
+      "file": "zaina-front.png",
+      "order": 11,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Zaina, adventurous 8-year-old Arab girl, warm medium skin, wearing age-appropriate modest lavender hijab fully covering hair and neck, purple cardigan with white trim, big expressive dark eyes, confident front-facing smile"
+    },
+    {
+      "id": "avatar-zaina-full",
+      "file": "zaina-full.png",
+      "order": 12,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Zaina, 8-year-old Arab girl, warm medium skin, lavender hijab fully covering hair and neck, purple top, joyful energetic smile closed mouth, adventurous eyes"
+    },
+    {
+      "id": "avatar-zaina-jump",
+      "file": "zaina-jump.png",
+      "order": 13,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Zaina, 8-year-old Arab girl, medium skin, lavender hijab covering hair neck, purple top, excited jumping joy expression, big smile closed mouth, sparkling eyes, dynamic happy"
+    },
+    {
+      "id": "avatar-yaseen-front",
+      "file": "yaseen-front.png",
+      "order": 14,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Yaseen, curious 8-year-old Arab boy, warm brown skin, short dark curly hair neatly trimmed, big dark friendly eyes, wearing royal blue hoodie with yellow accent, confident forward smile"
+    },
+    {
+      "id": "avatar-yaseen-full",
+      "file": "yaseen-full.png",
+      "order": 15,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Yaseen, 8-year-old Arab boy, warm brown skin, short dark curly hair, royal blue hoodie, warm gentle smile, curious kind eyes"
+    },
+    {
+      "id": "avatar-yaseen-highfive",
+      "file": "yaseen-highfive.png",
+      "order": 16,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Yaseen, 8-year-old Arab boy, brown skin, short dark curly hair, royal blue hoodie, very happy celebrating smile closed mouth, bright eyes, cheerful high-energy"
+    },
+    {
+      "id": "avatar-salma",
+      "file": "salma-full.png",
+      "order": 17,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra character Salma, young Arab woman presenter teacher early 20s, warm olive skin, wearing modest dark navy hijab fully covering hair and neck elegantly wrapped, wearing navy blue abaya with light blue scarf accent, big kind intelligent eyes, warm professional gentle smile, inspirational teacher"
+    },
+    {
+      "id": "avatar-addaad-happy",
+      "file": "addaad-happy.png",
+      "order": 18,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra robot character Addaad, friendly cute round educational robot for kids, teal and navy body with soft rounded shapes, large expressive glowing cyan eyes with happy shape, small antenna with yellow star, joyful friendly robot face, head and shoulders"
+    },
+    {
+      "id": "avatar-addaad-thinking",
+      "file": "addaad-thinking.png",
+      "order": 19,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra robot Addaad, cute round teal navy educational robot, large cyan eyes showing thinking expression with one eye slightly squinted, small antenna, thoughtful curious robot face"
+    },
+    {
+      "id": "avatar-addaad-learning",
+      "file": "addaad-learning.png",
+      "order": 20,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra robot Addaad, cute round teal navy robot, large glowing cyan eyes attentive, small open mouth showing learning, bright focused expression, educational robot"
+    },
+    {
+      "id": "avatar-addaad-celebrating",
+      "file": "addaad-celebrating.png",
+      "order": 21,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra robot Addaad, cute round teal navy robot, large cyan eyes sparkling with celebration, big happy robot smile, arms slightly raised implied, joyful celebrating"
+    },
+    {
+      "id": "avatar-robo-analytical",
+      "file": "robo-analytical.png",
+      "order": 22,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra robot Robo, small modern AI junior robot for programming skills, dark navy and bright blue body, large round glowing blue eyes, sleek friendly high-tech design, analytical focused expression, head and shoulders"
+    },
+    {
+      "id": "avatar-robo-success",
+      "file": "robo-success.png",
+      "order": 23,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra robot Robo, junior AI robot, navy and blue, large blue glowing eyes happy, smiling screen face, victorious success expression with small sparkles around head"
+    },
+    {
+      "id": "avatar-robo-curious",
+      "file": "robo-curious.png",
+      "order": 24,
+      "aspect_ratio": "1:1",
+      "scene": "Original Majarra robot Robo, junior AI robot, navy blue, large blue eyes wide curious, head tilted slightly, inquisitive friendly robot face"
+    }
+  ]
+}

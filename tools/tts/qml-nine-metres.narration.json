@@ -1,0 +1,150 @@
+{
+  "story": "qml-nine-metres",
+  "story_file": "docs/content/planets/05-qisas/qisas-min-alhayat/nine-metres.md",
+  "language": "ar",
+  "out_dir": "assets/audio/stories/qml-nine-metres/ar",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "voice_locked_because": "Same youthful voice used for preschool and bedtime for consistency, bright soft clear.",
+  "voice_alternatives": [
+    "Vindemiatrix",
+    "Sulafat",
+    "Aoede",
+    "Kore"
+  ],
+  "language_code": "ar-EG",
+  "notes": [
+    "Arabic verbatim from manifest",
+    "read_myself default is fine, but audio needed for accessibility and read_to_me option"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – junior 9-12\n## \"The Kind Older Sister, slightly more mature for 11-year-old\"\nSalma is a young Arab woman early twenties, light bright feminine voice, reading a junior story for 9-12 independent readers. Clear, steady, unhurried, warm but not babyish, slightly more mature than preschool bedtime, but still kind.\n## THE SCENE\nChild's room, afternoon or evening, quiet, child reading independently but with option to listen.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, clear, steady, warm, unhurried, mature enough for 11-year-old, never breathy, never babyish, never cartoon.\nPacing: ~100 words/min, natural pause at full stop.\nAccent: Clear Modern Standard Arabic.\nLoudness: Constant, no escalation, no drama.\nPage is part of a literary story with no explicit moral at end.\n",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-qml-nine-metres-vo-ar-001",
+      "file": "page-001-ar.wav",
+      "text": "في دفتر هالة عمود أرقام وعمود ملاحظات. هي التي يسألونها كم طول الرفّ، وكم يبقى من الحصّة. وتحسب في رأسها ثم تقول الرقم بصوت واثق. وعادةً تكون قريبة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 1 role: من وأين."
+    },
+    {
+      "page": 2,
+      "id": "asset-qml-nine-metres-vo-ar-002",
+      "file": "page-002-ar.wav",
+      "text": "يوم النشاط المفتوح، سارِية العلم في الساحة تحتاج حبلًا جديدًا. وكل صفّ يقدّم تقديرًا لطول الحبل، ثم يُقاس أمام الجميع. التقدير الأقرب يأخذ نقطة. وصفّ هالة اختارها لتقول رقمه.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 2 role: ما التزمت به."
+    },
+    {
+      "page": 3,
+      "id": "asset-qml-nine-metres-vo-ar-003",
+      "file": "page-003-ar.wav",
+      "text": "في السنة الماضية قدّرت طول الممرّ فأصابت. وقدّرت عدد كراسي القاعة فأصابت. فصار الصفّ يكتب رقمها ولا يراجعه. وكانت تعرف ذلك.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 3 role: العالم قبل التغيّر."
+    },
+    {
+      "page": 4,
+      "id": "asset-qml-nine-metres-vo-ar-004",
+      "file": "page-004-ar.wav",
+      "text": "قبل التقدير عدّت هالة البلاطات، وضربت في عرض البلاطة كما قدّرته. فخرج اثنا عشر. قال مُهنّد من الصفّ الخلفي بصوت منخفض: تسعة. قال الرقم ولم يشرح.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 4 role: أول إشارة."
+    },
+    {
+      "page": 5,
+      "id": "asset-qml-nine-metres-vo-ar-005",
+      "file": "page-005-ar.wav",
+      "text": "قالت هالة أمام الصفّين: اثنا عشر مترًا. ثم شرحت كيف عدّت البلاطات. ثم نظرت إلى مُهنّد وقالت: أنت عددتَ بالعين. فسكت مُهنّد.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 5 role: الإشارة تصير أمرًا واقعًا."
+    },
+    {
+      "page": 6,
+      "id": "asset-qml-nine-metres-vo-ar-006",
+      "file": "page-006-ar.wav",
+      "text": "كتبت المعلّمة على السبورة: صفّ هالة، اثنا عشر مترًا. وكتبت أرقام الصفوف الأخرى تحته. والأرقام لا تُغيَّر بعد أن تُكتب، هذه قاعدة النشاط. وكان الصفّان يقفان في الساحة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 6 role: ما يجعله ثقيلًا."
+    },
+    {
+      "page": 7,
+      "id": "asset-qml-nine-metres-vo-ar-007",
+      "file": "page-007-ar.wav",
+      "text": "بينما كانوا يفرشون الحبل، عدّت هالة البلاطات مرة ثانية. وكانت أكبر مما قدّرتها بقليل. فأعادت الحساب: تسعة وستّون بالمئة تقريبًا من رقمها. تسعة وشيء.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 7 role: محاولة تخفيف."
+    },
+    {
+      "page": 8,
+      "id": "asset-qml-nine-metres-vo-ar-008",
+      "file": "page-008-ar.wav",
+      "text": "فكّرت أن تقول: رقمي كان تقريبيًّا. وفكّرت أن تسكت، فالشريط سيتكلّم بعد دقيقتين. لا أحد سيتّهمها بشيء، ولن يكذب أحد. لكن الرقم سيقول عنها ما لم تقله هي.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 8 role: المحاولة لا تعمل."
+    },
+    {
+      "page": 9,
+      "id": "asset-qml-nine-metres-vo-ar-009",
+      "file": "page-009-ar.wav",
+      "text": "مدّوا الحبل، وقرأت المعلّمة الشريط بصوت واضح: تسعة أمتار وعشرون سنتيمترًا. سكت الصفّان لحظة. ثم بدأ الكلام في الخلف. ونظر مُهنّد إلى الأرض، لا إلى هالة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 9 role: الذروة."
+    },
+    {
+      "page": 10,
+      "id": "asset-qml-nine-metres-vo-ar-010",
+      "file": "page-010-ar.wav",
+      "text": "وقفت هالة في المكان نفسه الذي قالت فيه رقمها. قالت بصوت مسموع: تقديري كان خطأً. تسعة أقرب. ومُهنّد قال تسعة قبل أن أقيس.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 10 role: ما فعلته."
+    },
+    {
+      "page": 11,
+      "id": "asset-qml-nine-metres-vo-ar-011",
+      "file": "page-011-ar.wav",
+      "text": "لم يصفّق أحد. قالت واحدة من الصفّ الآخر: نحن نصدّقك دائمًا. قالتها بلا قصد، ومشت. وبقيت الجملة في الساحة أطول من الكلام كله.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 11 role: الثمن يظهر."
+    },
+    {
+      "page": 12,
+      "id": "asset-qml-nine-metres-vo-ar-012",
+      "file": "page-012-ar.wav",
+      "text": "لم يفرح مُهنّد. اقترب وقال جملة واحدة: كنتُ سأسكت. ثم أضاف: ولستُ متأكّدًا كيف عرفت. ولم يقل لا بأس.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 12 role: ردّ الطرف الآخر."
+    },
+    {
+      "page": 13,
+      "id": "asset-qml-nine-metres-vo-ar-013",
+      "file": "page-013-ar.wav",
+      "text": "لفّت هالة الشريط على بكرته حتى النهاية. ورجع الصفّان إلى الداخل. بقي الحبل الجديد ممدودًا على البلاط، تسعة أمتار وعشرين. ولم يتكلّم أحد.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 13 role: صفحة الصمت."
+    },
+    {
+      "page": 14,
+      "id": "asset-qml-nine-metres-vo-ar-014",
+      "file": "page-014-ar.wav",
+      "text": "في الأسبوعين التاليين قالت هالة أرقامًا أقلّ. وحين سُئلت عن طول شيء، قالت أولًا: لم أقس. فقال أحدهم: قدّري فقط. فقالت رقمًا، وأضافت: هذا تقدير.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 14 role: شيء صغير يتغيّر."
+    },
+    {
+      "page": 15,
+      "id": "asset-qml-nine-metres-vo-ar-015",
+      "file": "page-015-ar.wav",
+      "text": "الرقم بقي على السبورة حتى مُسِحت في آخر اليوم. ولوحة النتائج تقول إن صفّها رابع من أربعة. ولم يُعَد التقدير، ولم تُلغَ النقطة. ونقطة مُهنّد لم تُحسَب لأحد، لأنه لم يكتب رقمه.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 15 role: ما لم يُصلَح."
+    },
+    {
+      "page": 16,
+      "id": "asset-qml-nine-metres-vo-ar-016",
+      "file": "page-016-ar.wav",
+      "text": "في المساء رسمت هالة في دفترها عمودًا جديدًا. عمود قديم اسمه «قدّرتُ»، وعمود جديد اسمه «قستُ». ونقلت أرقام السنة الماضية إلى العمودين. وكان العمود الجديد فيه ثلاثة أرقام فقط.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 16 role: تفصيل عملي."
+    },
+    {
+      "page": 17,
+      "id": "asset-qml-nine-metres-vo-ar-017",
+      "file": "page-017-ar.wav",
+      "text": "الساحة فارغة، والسارية عالية، والحبل الجديد مربوط. الصفّ فارغ، والسبورة ممسوحة، وفيها أثر طباشير باهت. والمدرسة هادئة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 17 role: العودة والهدوء."
+    },
+    {
+      "page": 18,
+      "id": "asset-qml-nine-metres-vo-ar-018",
+      "file": "page-018-ar.wav",
+      "text": "الشريط ملفوف على الطاولة، وطرفه خارج قليلًا. وعلى الطرف الخارج رقم تسعة.",
+      "style": "Junior 9-12 independent reading narration, clear, steady, unhurried, slightly mature tone for 11-year-old, no drama, no babyish voice, constant loudness. Page 18 role: سكون."
+    }
+  ]
+}

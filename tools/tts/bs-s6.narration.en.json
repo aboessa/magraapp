@@ -1,0 +1,100 @@
+{
+  "story": "bs-s6",
+  "story_file": "docs/content/planets/05-qisas/bedtime-stories/story-06-lost-star.md",
+  "language": "en",
+  "language_code": "en-US",
+  "out_dir": "assets/audio/stories/bs-s6/en",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "notes": [
+    "DRAFT EN translation - based on AR structure, needs human review"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – bedtime\n## \"The Kind Older Sister\" for bs-s6\nSalma is a young Arab woman in her early twenties with a light, bright, distinctly feminine voice. She is reading a bedtime story (bs-s6) for children 6-8. Warm, calm, unhurried, affectionate.\n## THE SCENE\nChild's bedroom late evening, one warm lamp on. Child sleepy under blanket. Salma sits on floor beside bed.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, affectionate, gentle vocal smile. Youthful timbre, never breathy, never babyish, never cartoon. Warm and reassuring.\nPacing: Slow ~90 words/min, small natural pause at every full stop. For pages 11-12 slower ~80 wpm.\nAccent: Clear American English.\nLoudness: Constant, no escalation, no drama even on climax pages. Climax quieter not louder for bedtime.",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-bs-s6-vo-en-001",
+      "file": "page-001-en.wav",
+      "text": "هذه نُور، تنظر إلى السماء قبل نومها.  كان مصباح غرفتها دافئًا وخافتًا.",
+      "style": "Calm bedtime narration for page 1. Steady, warm, unhurried."
+    },
+    {
+      "page": 2,
+      "id": "asset-bs-s6-vo-en-002",
+      "file": "page-002-en.wav",
+      "text": "لمعت نجوم بعيدة خلف زجاج النافذة.  اختارت نُور نجمة صغيرة لتراقبها.",
+      "style": "Calm bedtime narration for page 2. Steady, warm, unhurried."
+    },
+    {
+      "page": 3,
+      "id": "asset-bs-s6-vo-en-003",
+      "file": "page-003-en.wav",
+      "text": "وفي الحديقة، لمحت ضوءًا داخل بَرْكة ماء.  بدا كأنّ نجمة تاهت بين الحصى.",
+      "style": "Calm bedtime narration for page 3. Steady, warm, unhurried."
+    },
+    {
+      "page": 4,
+      "id": "asset-bs-s6-vo-en-004",
+      "file": "page-004-en.wav",
+      "text": "نادت أباها، وأشارت إلى الضوء أسفل النافذة.  قالت: كيف نعيد النجمة إلى السماء؟",
+      "style": "Calm bedtime narration for page 4. Steady, warm, unhurried."
+    },
+    {
+      "page": 5,
+      "id": "asset-bs-s6-vo-en-005",
+      "file": "page-005-en.wav",
+      "text": "حرّكت الريح الماء، فتكسّر الضوء إلى قطع.  اختفت صورة النجمة، فحزنت نُور قليلًا.",
+      "style": "Calm bedtime narration for page 5. Steady, warm, unhurried."
+    },
+    {
+      "page": 6,
+      "id": "asset-bs-s6-vo-en-006",
+      "file": "page-006-en.wav",
+      "text": "اقتربا من النافذة، لكن الضوء لم يظهر.  بحثت نُور بعينيها بين الحصى دون أن تخرج.",
+      "style": "Calm bedtime narration for page 6. Steady, warm, unhurried."
+    },
+    {
+      "page": 7,
+      "id": "asset-bs-s6-vo-en-007",
+      "file": "page-007-en.wav",
+      "text": "أشار أبوها إلى النجمة نفسها في السماء.  قال: ما تحتنا انعكاس ضوئها على الماء.",
+      "style": "Calm bedtime narration for page 7. Steady, warm, unhurried."
+    },
+    {
+      "page": 8,
+      "id": "asset-bs-s6-vo-en-008",
+      "file": "page-008-en.wav",
+      "text": "هدأت الريح، وسكن تموّج البَرْكة.  فعادت صورة النجمة واضحة في الماء.",
+      "style": "Calm bedtime narration for page 8. Steady, warm, unhurried."
+    },
+    {
+      "page": 9,
+      "id": "asset-bs-s6-vo-en-009",
+      "file": "page-009-en.wav",
+      "text": "حرّكت نُور رأسها، فتحرّكت الصورة معها.  فهمت أن النجمة لم تترك مكانها.",
+      "style": "Calm bedtime narration for page 9. Steady, warm, unhurried."
+    },
+    {
+      "page": 10,
+      "id": "asset-bs-s6-vo-en-010",
+      "file": "page-010-en.wav",
+      "text": "قالت: لم تكن ضائعة، بل كان ضوؤها يزور الماء.  أغلق أبوها الستارة قليلًا.",
+      "style": "Calm bedtime narration for page 10. Steady, warm, unhurried."
+    },
+    {
+      "page": 11,
+      "id": "asset-bs-s6-vo-en-011",
+      "file": "page-011-en.wav",
+      "text": "استلقت نُور، والنجمة ظاهرة من طرف الستارة.  بقي المصباح خافتًا قرب سريرها.",
+      "style": "Calm bedtime narration for page 11. Steady, warm, unhurried."
+    },
+    {
+      "page": 12,
+      "id": "asset-bs-s6-vo-en-012",
+      "file": "page-012-en.wav",
+      "text": "نُور نائمة بهدوء.  وفي السماء، تبدو النجمة بعيدة وساكنة.",
+      "style": "Calm bedtime narration for page 12. Steady, warm, unhurried. Slowest page of story, sleepy, soft ending."
+    }
+  ]
+}

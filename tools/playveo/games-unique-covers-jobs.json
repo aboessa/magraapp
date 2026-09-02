@@ -1,0 +1,297 @@
+{
+  "game-wave1-memory-animals": {
+    "id": "4799d7f8-b673-4a61-b6ac-b6a83035fb6a",
+    "status": "completed",
+    "prompt": "Friendly preschool memory game cover: 2x2 rounded flip cards with distinct animal faces ginger cat blue bird from above soft sunrise meadow, warm discovery, 4:3 child-friendly premium, no text.",
+    "submittedAt": "2026-08-26T00:17:03.794Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/4799d7f8-b673-4a61-b6ac-b6a83035fb6a-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave1-memory-animals\\cover.jpg"
+  },
+  "game-wave1-picture-match": {
+    "id": "78811732-128c-41ef-826e-788e3c18017e",
+    "status": "completed",
+    "prompt": "Preschool picture matching game cover: bright table with cat photo and framed silhouette target on top shelf bird matching, cozy playroom, clear pairing concept 4:3, no text.",
+    "submittedAt": "2026-08-25T04:54:03.661Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/78811732-128c-41ef-826e-788e3c18017e-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave1-picture-match\\cover.jpg"
+  },
+  "game-wave1-color-sort": {
+    "id": "ce234e45-55e6-4ad8-bd3f-098ef9ea752b",
+    "status": "completed",
+    "prompt": "Sorting colors game cover: red bucket blue bucket with color-coordinated toys red apple blue block moving to correct basket, simple cream classroom 4:3 no text.",
+    "submittedAt": "2026-08-26T00:17:05.149Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/ce234e45-55e6-4ad8-bd3f-098ef9ea752b-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave1-color-sort\\cover.jpg"
+  },
+  "game-wave1-count-place": {
+    "id": "68612432-d3d3-4f12-a7cf-72feb84e34f5",
+    "status": "completed",
+    "prompt": "Counting game cover: 3 golden star tokens arc above numbered pebble slots, soft night-sky picnic, gentle counting story, 4:3 no digits no text.",
+    "submittedAt": "2026-08-25T04:54:08.033Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/68612432-d3d3-4f12-a7cf-72feb84e34f5-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave1-count-place\\cover.jpg"
+  },
+  "game-wave1-sequence-kids": {
+    "id": "2f8b21f0-6cea-41e3-af1a-5b4962653e94",
+    "status": "completed",
+    "prompt": "Sequence order game cover: terracotta pot lifecycle seed sprout flower 3 cards in row, watering can persistent, sunny garden storybook 4:3 no text.",
+    "submittedAt": "2026-08-25T04:54:10.196Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/2f8b21f0-6cea-41e3-af1a-5b4962653e94-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave1-sequence-kids\\cover.jpg"
+  },
+  "game-wave1-logic-kids": {
+    "id": "424f21d7-f6cd-434b-b57d-b864537e43f5",
+    "status": "completed",
+    "prompt": "Logic pattern game cover: clean 2x2 grid alternating golden moon teal rocket puzzle with empty glowing cell, observatory clean logic 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:17.037Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/424f21d7-f6cd-434b-b57d-b864537e43f5-0.jpg",
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/424f21d7-f6cd-434b-b57d-b864537e43f5-1.jpg",
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/424f21d7-f6cd-434b-b57d-b864537e43f5-2.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave1-logic-kids\\cover.jpg"
+  },
+  "game-wave1-word-kids": {
+    "id": "4f84b728-7e26-43a4-9a64-2a643fd6f387",
+    "status": "completed",
+    "prompt": "Word building Arabic game cover: preschool tray with soft 3D Arabic letter blocks أ ب forming بيت, gentle glow, warm wooden classroom, 4:3 no text (letters as objects not typography).",
+    "submittedAt": "2026-08-25T04:54:12.367Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/4f84b728-7e26-43a4-9a64-2a643fd6f387-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave1-word-kids\\cover.jpg"
+  },
+  "game-wave1-block-code": {
+    "id": "0f660b62-9a70-4b48-b203-1ab707aa13e6",
+    "status": "completed",
+    "prompt": "Block coding robot maze cover: friendly robot on teal circuit garden grid 4x4 with golden crystal goal, rounded obstacles safe, junior workshop 4:3 no text.",
+    "submittedAt": "2026-08-25T04:54:14.533Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/0f660b62-9a70-4b48-b203-1ab707aa13e6-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave1-block-code\\cover.jpg"
+  },
+  "game-wave1-sim-lab": {
+    "id": "3a6b4754-329e-4516-b742-a913999a8023",
+    "status": "completed",
+    "prompt": "Science sim lab game cover: child-friendly plant lab with sunlight water sliders watering can thermometer, tiny plant growing, 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:22.037Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/3a6b4754-329e-4516-b742-a913999a8023-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave1-sim-lab\\cover.jpg"
+  },
+  "game-wave2-memory-2": {
+    "id": "8cd02cdd-8f36-4c12-8f2b-3a46beff968d",
+    "status": "completed",
+    "prompt": "Memory game level 2 cover: 3x4 grid preview lion turtle faces upside down cards sunrise savanna, slightly more challenging, 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:23.706Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/8cd02cdd-8f36-4c12-8f2b-3a46beff968d-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave2-memory-2\\cover.jpg"
+  },
+  "game-wave2-match-2": {
+    "id": "c61977cc-2c2b-4718-969c-2a3772c07109",
+    "status": "completed",
+    "prompt": "Matching game level 2 cover: crescent moon and star paired silhouettes on night table with constellation frame targets, 6-8 age magical 4:3 no text.",
+    "submittedAt": "2026-08-25T04:54:16.701Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/c61977cc-2c2b-4718-969c-2a3772c07109-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave2-match-2\\cover.jpg"
+  },
+  "game-wave2-sort-junior": {
+    "id": "c1e9a7d6-c9d5-434f-8231-ae6a59edefba",
+    "status": "completed",
+    "prompt": "Advanced sorting cover: circle star hexagon shapes sorting into labelled baskets primary colors geometric classroom, 9-12 clean 4:3 no text.",
+    "submittedAt": "2026-08-26T00:17:06.511Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/c1e9a7d6-c9d5-434f-8231-ae6a59edefba-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave2-sort-junior\\cover.jpg"
+  },
+  "game-wave2-count-drag": {
+    "id": "382a9d97-f3e5-4b22-b8f4-d13d6fe9a7b0",
+    "status": "completed",
+    "prompt": "Count and drag game cover: child hand dragging 4 red apples into basket with number pebbles, warm kitchen counter, interactive dragging concept 4:3 no digits no text.",
+    "submittedAt": "2026-08-25T04:54:21.070Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/382a9d97-f3e5-4b22-b8f4-d13d6fe9a7b0-0.jpg",
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/382a9d97-f3e5-4b22-b8f4-d13d6fe9a7b0-1.jpg",
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/382a9d97-f3e5-4b22-b8f4-d13d6fe9a7b0-2.jpg",
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/382a9d97-f3e5-4b22-b8f4-d13d6fe9a7b0-3.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave2-count-drag\\cover.jpg"
+  },
+  "game-wave2-timeline": {
+    "id": "05959fb9-73df-461e-8217-4abc02a1516e",
+    "status": "completed",
+    "prompt": "Timeline map cover: ancient Egyptian timeline pyramid -2600 next to Egyptian temple map with Nile, desert sand papyrus texture educational 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:30.356Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/05959fb9-73df-461e-8217-4abc02a1516e-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave2-timeline\\cover.jpg"
+  },
+  "game-wave2-rhythm": {
+    "id": "6d22483a-75ec-4f19-b850-8ad66c09f040",
+    "status": "completed",
+    "prompt": "Rhythm tap game cover: colorful music lanes 2 lanes with falling musical notes tap glowing buttons nature soundtrack, fun 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:32.022Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/6d22483a-75ec-4f19-b850-8ad66c09f040-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave2-rhythm\\cover.jpg"
+  },
+  "game-wave3-timeline-detail": {
+    "id": "ac3ad3b7-fa40-4ff3-914b-1ab4979d1c0f",
+    "status": "completed",
+    "prompt": "Detailed timeline cover: Egypt through time pyramid pharaoh temple detailed chronological path with map markers, 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:33.683Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/ac3ad3b7-fa40-4ff3-914b-1ab4979d1c0f-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave3-timeline-detail\\cover.jpg"
+  },
+  "game-wave3-block-advanced": {
+    "id": "b1e9994f-9339-421b-89c5-67331f3d5894",
+    "status": "completed",
+    "prompt": "Advanced coding cover: 5x5 maze with function blocks loop blocks robot path optimizer 8 steps, junior coder workshop darker teal 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:35.375Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/b1e9994f-9339-421b-89c5-67331f3d5894-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave3-block-advanced\\cover.jpg"
+  },
+  "game-wave3-sim-saturating": {
+    "id": "cf33b7b3-b963-492e-a235-6d9858a0b506",
+    "status": "completed",
+    "prompt": "Water balancing lab cover: beaker with water level saturation concept overflow plant experiment supervision badge, science classroom 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:37.037Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/cf33b7b3-b963-492e-a235-6d9858a0b506-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-wave3-sim-saturating\\cover.jpg"
+  },
+  "game-sequence-story-3a": {
+    "id": "16afbce7-6d82-481f-bc88-001ee9c8a6f4",
+    "status": "completed",
+    "prompt": "Sequence story growth cover: seed sprout flower story cards terracotta pot watering can same across 3 cards bright garden, 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:38.706Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/16afbce7-6d82-481f-bc88-001ee9c8a6f4-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-sequence-story-3a\\cover.jpg"
+  },
+  "game-sequence-daily-3b": {
+    "id": "63201efb-2873-48c5-9c0c-f9e3113319bd",
+    "status": "completed",
+    "prompt": "Daily routine sequence cover: child morning routine cards bed toothbrush school bag in order warm bedroom, 4:3 no text.",
+    "submittedAt": "2026-08-25T04:54:23.233Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/63201efb-2873-48c5-9c0c-f9e3113319bd-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-sequence-daily-3b\\cover.jpg"
+  },
+  "game-logic-sequence-3b": {
+    "id": "bc178456-ffa2-445e-9df0-d967b8d2f0bc",
+    "status": "completed",
+    "prompt": "Logic sequence checkerboard cover: red blue checkerboard pattern with missing tile glow logical reasoning 9-12, 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:42.053Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/bc178456-ffa2-445e-9df0-d967b8d2f0bc-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-logic-sequence-3b\\cover.jpg"
+  },
+  "game-rhythm-festive-3b": {
+    "id": "d406bdb8-7c23-479f-9af5-50d7886ef98a",
+    "status": "completed",
+    "prompt": "Festive rhythm cover: celebration drums confetti musical notes lanes 3 lanes happy party rhythm 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:43.712Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/d406bdb8-7c23-479f-9af5-50d7886ef98a-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-rhythm-festive-3b\\cover.jpg"
+  },
+  "game-word-family-3a": {
+    "id": "5da2a82c-3a4d-4d1c-b4f1-626d227dbece",
+    "status": "completed",
+    "prompt": "Word family cover: cozy home scene with Arabic word family أب أم بيت soft 3D letter toys on shelf father mother house icons, 6-8 warm 4:3 no text (letters as objects).",
+    "submittedAt": "2026-08-25T04:24:45.369Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/5da2a82c-3a4d-4d1c-b4f1-626d227dbece-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-word-family-3a\\cover.jpg"
+  },
+  "game-word-animals-3b": {
+    "id": "24668d3d-a9a2-49f6-985b-84eace932ec3",
+    "status": "completed",
+    "prompt": "Animal words Arabic cover: forest animals cat bird with Arabic letter blocks forming animal names child-friendly, 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:47.024Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/24668d3d-a9a2-49f6-985b-84eace932ec3-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-word-animals-3b\\cover.jpg"
+  },
+  "game-letter-tracing": {
+    "id": "ec23a463-51a4-4fcb-9eea-635116237248",
+    "status": "completed",
+    "prompt": "Arabic letter tracing cover: large dotted Arabic letter in moonlight with glowing dots child hand tracing luminous path, 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:48.732Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/ec23a463-51a4-4fcb-9eea-635116237248-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-letter-tracing\\cover.jpg"
+  },
+  "game-number-maze": {
+    "id": "6ad7bf30-4a82-45f5-aa48-95c46f2a7b0a",
+    "status": "completed",
+    "prompt": "Number maze cover: friendly maze with numbers pathway 1 to 5 stars collect, playful 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:50.389Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/6ad7bf30-4a82-45f5-aa48-95c46f2a7b0a-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-number-maze\\cover.jpg"
+  },
+  "game-animal-memory": {
+    "id": "570920ec-1860-4035-ac16-42df338f9cce",
+    "status": "completed",
+    "prompt": "Animal memory cover: original animal faces memory cards savanna, 4:3 no text.",
+    "submittedAt": "2026-08-25T04:24:52.046Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/570920ec-1860-4035-ac16-42df338f9cce-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-animal-memory\\cover.jpg"
+  },
+  "game-shape-matching": {
+    "id": "1739da57-25a0-4f83-be65-877d9c768a4b",
+    "status": "completed",
+    "prompt": "Shape matching cover: bright shapes circle square triangle matching their silhouette frames, preschool table 4:3 no text.",
+    "submittedAt": "2026-08-25T04:54:25.396Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/1739da57-25a0-4f83-be65-877d9c768a4b-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-shape-matching\\cover.jpg"
+  },
+  "game-butterfly-sequence": {
+    "id": "50a9c648-73dc-4761-8c6b-ffff4081eb47",
+    "status": "completed",
+    "prompt": "Butterfly lifecycle sequence cover: egg caterpillar chrysalis butterfly 4 stages cards garden, 4:3 no text.",
+    "submittedAt": "2026-08-25T04:54:27.558Z",
+    "resultUrls": [
+      "https://playveo-api.aboessa101.workers.dev/worker/serve-image/50a9c648-73dc-4761-8c6b-ffff4081eb47-0.jpg"
+    ],
+    "localPath": "F:\\Projects\\cartoonapp\\majarra_images\\assets\\games\\game-butterfly-sequence\\cover.jpg"
+  }
+}

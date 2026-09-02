@@ -1,0 +1,321 @@
+{
+  "model": "nano_banana_2",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "out_dir": "assets/images/studio/v2",
+  "coloring_out_dir": "assets/images/coloring/v2",
+  "tracing_out_dir": "assets/images/tracing/v2",
+  "boards_out_dir": "assets/images/boards/v2",
+  "bulk_limit": 5,
+  "aspect_ratio_default": "1:1",
+  "count": 1,
+  "remove_background_coloring": true,
+  "remove_background_icons": false,
+  "style_tail_line": ", black and white line art, thick bold outlines for kids coloring book, pure white background, CLOSED shapes only, no shading, no gradients, no color, kawaii cute simple, center composition, high contrast",
+  "style_tail_hero": ", cinematic 3d chibi illustration, arab boy 4 years old cute drawing in magic coloring book, space theme rockets planets rainbow, vibrant saturated colors, deep navy background #0B1026, soft glow, storybook style, ultra detailed",
+  "style_tail_icon": ", flat vector icon, cute kawaii minimal, bold outline, vibrant gradient background, centered, child-friendly, soft glow",
+  "style_tail_success": ", cinematic 3d chibi celebration, confetti, gift box glowing, stars fireworks, vibrant saturated colors, deep navy background #0B1026, soft glow, storybook style, ultra detailed",
+  "style_tail_prompt": ", cute kawaii 3d chibi illustration, vibrant colors, soft pastel background, storybook style, ultra detailed, child-friendly, magic sparkles",
+  "style_tail_board_bg": ", cute kawaii background illustration for kids drawing board, soft pastel colors, simple patterns, minimal details, storybook style, low noise, empty center for drawing",
+  "assets": [
+    {
+      "id": "trace-hero",
+      "kind": "hero",
+      "aspect": "16:9",
+      "category": "tracing",
+      "filename": "trace-hero.png",
+      "transparent": false,
+      "prompt": "arab cute boy 4 years old with brown hair drawing a glowing star in a big magical book, rockets planets around, tracing lines floating, 3d chibi",
+      "tail": "hero"
+    },
+    {
+      "id": "trace-line-straight",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "tracing",
+      "filename": "trace-line-straight.png",
+      "transparent": false,
+      "prompt": "straight dotted line with arrow tracing pattern, kids educational, bold outline, star start point",
+      "tail": "line"
+    },
+    {
+      "id": "trace-line-wavy",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "tracing",
+      "filename": "trace-line-wavy.png",
+      "transparent": false,
+      "prompt": "wavy curly dotted line tracing for kids, rainbow gradient, fun movement",
+      "tail": "line"
+    },
+    {
+      "id": "trace-shapes",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "tracing",
+      "filename": "trace-shapes.png",
+      "transparent": false,
+      "prompt": "dotted outline shapes circle triangle square for tracing, cute kawaii, bold dots, purple blue gradient",
+      "tail": "icon"
+    },
+    {
+      "id": "trace-numbers",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "tracing",
+      "filename": "trace-numbers.png",
+      "transparent": false,
+      "prompt": "numbers 1 2 3 dotted tracing for kids, colorful kawaii numbers with arrow stroke order",
+      "tail": "line"
+    },
+    {
+      "id": "trace-letters-ar",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "tracing",
+      "filename": "trace-letters-ar.png",
+      "transparent": false,
+      "prompt": "arabic letter Alef Arabic أ dotted tracing big bold outline, arrow showing stroke order, cute for kids",
+      "tail": "line"
+    },
+    {
+      "id": "trace-maze",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "tracing",
+      "filename": "trace-maze.png",
+      "transparent": false,
+      "prompt": "simple maze labyrinth tracing for kids, entry exit stars, cute kawaii path, bold lines",
+      "tail": "line"
+    },
+    {
+      "id": "trace-letter-a-big",
+      "kind": "coloring_line",
+      "aspect": "1:1",
+      "category": "tracing",
+      "filename": "trace-letter-a-big.png",
+      "transparent": true,
+      "prompt": "arabic letter Alef أ huge outline bold thick lines for tracing practice, start dot green end dot red arrow stroke order numbers 1 2",
+      "tail": "line"
+    },
+    {
+      "id": "trace-number-7-big",
+      "kind": "coloring_line",
+      "aspect": "1:1",
+      "category": "tracing",
+      "filename": "trace-number-7-big.png",
+      "transparent": true,
+      "prompt": "number 7 huge dotted outline bold thick lines for kids tracing, start point star green arrow direction",
+      "tail": "line"
+    },
+    {
+      "id": "prompt-draw-hero",
+      "kind": "hero",
+      "aspect": "16:9",
+      "category": "prompt_draw",
+      "filename": "prompt-draw-hero.png",
+      "transparent": false,
+      "prompt": "cute astronaut boy floating in starry garden with rockets flowers stars, idea lightbulb glowing, magical sky park with planets, 3d chibi",
+      "tail": "hero"
+    },
+    {
+      "id": "prompt-idea-space",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "prompt_draw",
+      "filename": "prompt-idea-space.png",
+      "transparent": false,
+      "prompt": "rocket in starry garden with flowers and stars, cute space vehicle in flower garden, creative idea illustration",
+      "tail": "prompt"
+    },
+    {
+      "id": "prompt-idea-castle",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "prompt_draw",
+      "filename": "prompt-idea-castle.png",
+      "transparent": false,
+      "prompt": "cute castle in clouds with rainbow, kids imagination drawing idea, kawaii castle",
+      "tail": "prompt"
+    },
+    {
+      "id": "prompt-idea-dino",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "prompt_draw",
+      "filename": "prompt-idea-dino.png",
+      "transparent": false,
+      "prompt": "friendly baby dinosaur in jungle reading book, cute dino idea for kids drawing",
+      "tail": "prompt"
+    },
+    {
+      "id": "prompt-idea-underwater",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "prompt_draw",
+      "filename": "prompt-idea-underwater.png",
+      "transparent": false,
+      "prompt": "cute whale and fish underwater kingdom castle, kids imagination underwater city",
+      "tail": "prompt"
+    },
+    {
+      "id": "free-draw-hero",
+      "kind": "hero",
+      "aspect": "16:9",
+      "category": "free_draw",
+      "filename": "free-draw-hero.png",
+      "transparent": false,
+      "prompt": "blank magical canvas floating in deep space with paint brushes palette around, brushes markers glowing, cute art supplies, dark navy background purple glow",
+      "tail": "hero"
+    },
+    {
+      "id": "board-bg-space",
+      "kind": "board_bg",
+      "aspect": "1:1",
+      "category": "boards",
+      "filename": "board-bg-space.png",
+      "transparent": false,
+      "prompt": "space background with stars planets comets minimal empty center, cute kawaii space pattern",
+      "tail": "board_bg"
+    },
+    {
+      "id": "board-bg-sea",
+      "kind": "board_bg",
+      "aspect": "1:1",
+      "category": "boards",
+      "filename": "board-bg-sea.png",
+      "transparent": false,
+      "prompt": "underwater sea background with bubbles small fish coral minimal empty center, cute ocean",
+      "tail": "board_bg"
+    },
+    {
+      "id": "board-bg-garden",
+      "kind": "board_bg",
+      "aspect": "1:1",
+      "category": "boards",
+      "filename": "board-bg-garden.png",
+      "transparent": false,
+      "prompt": "garden background with flowers grass minimal empty center, cute spring meadow",
+      "tail": "board_bg"
+    },
+    {
+      "id": "board-bg-sky",
+      "kind": "board_bg",
+      "aspect": "1:1",
+      "category": "boards",
+      "filename": "board-bg-sky.png",
+      "transparent": false,
+      "prompt": "sky background with clouds rainbow sun minimal empty center, cute sky pattern",
+      "tail": "board_bg"
+    },
+    {
+      "id": "board-bg-room",
+      "kind": "board_bg",
+      "aspect": "1:1",
+      "category": "boards",
+      "filename": "board-bg-room.png",
+      "transparent": false,
+      "prompt": "cozy kids room background with toys shelf minimal empty center, soft pastel",
+      "tail": "board_bg"
+    },
+    {
+      "id": "success-celebration",
+      "kind": "hero",
+      "aspect": "16:9",
+      "category": "success",
+      "filename": "success-celebration.png",
+      "transparent": false,
+      "prompt": "celebration party with confetti fireworks stars gift box glowing, rائعة text arabic celebration, cute kids achievement, gold sparkles, magic dust",
+      "tail": "success"
+    },
+    {
+      "id": "success-gift-120",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "success",
+      "filename": "success-gift-120.png",
+      "transparent": false,
+      "prompt": "cute gift box with 120 points gold coins stars, reward badge kawaii 3d, purple ribbon",
+      "tail": "icon"
+    },
+    {
+      "id": "tutorial-tap",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "tutorial",
+      "filename": "tutorial-tap.png",
+      "transparent": false,
+      "prompt": "finger tapping colorful region tap gesture cute kawaii illustration, kids tutorial",
+      "tail": "icon"
+    },
+    {
+      "id": "tutorial-palette",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "tutorial",
+      "filename": "tutorial-palette.png",
+      "transparent": false,
+      "prompt": "color palette with bright colors brush selection, cute painting tutorial icon",
+      "tail": "icon"
+    },
+    {
+      "id": "my-boards-empty",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "my_boards",
+      "filename": "my-boards-empty.png",
+      "transparent": false,
+      "prompt": "empty sketchbook with pencil kawaii cute, no drawings yet, soft pastel",
+      "tail": "icon"
+    },
+    {
+      "id": "copy-pattern-star-moon",
+      "kind": "coloring_line",
+      "aspect": "1:1",
+      "category": "copy_pattern",
+      "filename": "copy-pattern-star-moon.png",
+      "transparent": true,
+      "prompt": "star and moon pattern sequence for kids copy, simple shapes alternating, dotted grid",
+      "tail": "line"
+    },
+    {
+      "id": "complete-butterfly-half",
+      "kind": "coloring_line",
+      "aspect": "1:1",
+      "category": "complete",
+      "filename": "complete-butterfly-half.png",
+      "transparent": true,
+      "prompt": "butterfly half drawing one wing complete other wing dashed outline for complete the drawing, cute kawaii butterfly",
+      "tail": "line"
+    },
+    {
+      "id": "category-animals-hero",
+      "kind": "hero",
+      "aspect": "16:9",
+      "category": "category",
+      "filename": "category-animals-hero.png",
+      "transparent": false,
+      "prompt": "cute jungle animals lion elephant giraffe kawaii group in circle frame, vibrant green forest background, storybook",
+      "tail": "hero"
+    },
+    {
+      "id": "in-progress-preview",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "in_progress",
+      "filename": "in-progress-preview.png",
+      "transparent": false,
+      "prompt": "half colored drawing progress circle chart, cute coloring progress illustration, 60 percent filled",
+      "tail": "icon"
+    },
+    {
+      "id": "draw-like-me-owl",
+      "kind": "icon",
+      "aspect": "1:1",
+      "category": "draw_like_me",
+      "filename": "draw-like-me-owl.png",
+      "transparent": false,
+      "prompt": "cute owl drawing step by step reference, kawaii owl simple shapes, how to draw tutorial",
+      "tail": "icon"
+    }
+  ]
+}

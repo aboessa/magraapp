@@ -1,0 +1,100 @@
+{
+  "story": "bs-s2",
+  "story_file": "docs/content/planets/05-qisas/bedtime-stories/story-02-garden-secret.md",
+  "language": "fr",
+  "language_code": "fr-FR",
+  "out_dir": "assets/audio/stories/bs-s2/fr",
+  "model": "gemini-2.5-flash-preview-tts",
+  "voice": "Leda",
+  "notes": [
+    "DRAFT FR translation"
+  ],
+  "preamble": "Synthesize speech. Read aloud only the text under TRANSCRIPT. Everything above it is direction for how to perform, and must never be spoken.",
+  "global_style": "# AUDIO PROFILE: Salma – bedtime\n## \"The Kind Older Sister\" for bs-s2\nSalma is a young Arab woman in her early twenties with a light, bright, distinctly feminine voice. She is reading a bedtime story (bs-s2) for children 6-8. Warm, calm, unhurried, affectionate.\n## THE SCENE\nChild's bedroom late evening, one warm lamp on. Child sleepy under blanket. Salma sits on floor beside bed.\n### DIRECTOR'S NOTES\nStyle: Bright, soft, affectionate, gentle vocal smile. Youthful timbre, never breathy, never babyish, never cartoon. Warm and reassuring.\nPacing: Slow ~90 words/min, small natural pause at every full stop. For pages 11-12 slower ~80 wpm.\nAccent: Clear French.\nLoudness: Constant, no escalation, no drama even on climax pages. Climax quieter not louder for bedtime.",
+  "lines": [
+    {
+      "page": 1,
+      "id": "asset-bs-s2-vo-fr-001",
+      "file": "page-001-fr.wav",
+      "text": "هذا بشير. يجلس في حديقة جدّه.  يحبّ أن ينظر إلى الأشياء طويلًا.",
+      "style": "Calm bedtime narration for page 1. Steady, warm, unhurried."
+    },
+    {
+      "page": 2,
+      "id": "asset-bs-s2-vo-fr-002",
+      "file": "page-002-fr.wav",
+      "text": "في الحديقة جدار حجري قديم.  مرّ بجانبه مئة مرة.",
+      "style": "Calm bedtime narration for page 2. Steady, warm, unhurried. Note: «مرّ بجانبه مئة مرة» — نبرة **تقرير** · تُبرز أن الملاحظة جديدة لا الشيء"
+    },
+    {
+      "page": 3,
+      "id": "asset-bs-s2-vo-fr-003",
+      "file": "page-003-fr.wav",
+      "text": "اليوم رأى شيئًا أخضر في شَقّ.  نبتة صغيرة تخرج من الحجر.",
+      "style": "Calm bedtime narration for page 3. Steady, warm, unhurried. Note: «شَقّ» بوضوح — كلمة جديدة **بلا شرح**"
+    },
+    {
+      "page": 4,
+      "id": "asset-bs-s2-vo-fr-004",
+      "file": "page-004-fr.wav",
+      "text": "قال بشير: لا تراب هنا.  فكيف نمت نبتة في حجر؟",
+      "style": "Calm bedtime narration for page 4. Steady, warm, unhurried. Note: نبرة **سؤال حقيقي** — لا حيرة قلقة"
+    },
+    {
+      "page": 5,
+      "id": "asset-bs-s2-vo-fr-005",
+      "file": "page-005-fr.wav",
+      "text": "سأل جدّه، فلم يُجب.  قال: راقبها ثلاثة أيام.",
+      "style": "Calm bedtime narration for page 5. Steady, warm, unhurried. Note: «فلم يُجب» بنبرة **عادية** — لا رفض ولا تشويق · «راقبها» بوضوح"
+    },
+    {
+      "page": 6,
+      "id": "asset-bs-s2-vo-fr-006",
+      "file": "page-006-fr.wav",
+      "text": "في اليوم الأول لم يرَ شيئًا.  وفي الثاني كذلك.",
+      "style": "Calm bedtime narration for page 6. Steady, warm, unhurried. Note: «لم يرَ شيئًا» **بلا إحباط** — يوم بلا نتيجة عادي"
+    },
+    {
+      "page": 7,
+      "id": "asset-bs-s2-vo-fr-007",
+      "file": "page-007-fr.wav",
+      "text": "وفي الثالث هبّت ريح خفيفة.  فرأى بشير شيئًا صغيرًا يطير.",
+      "style": "Calm bedtime narration for page 7. Steady, warm, unhurried. Note: **الذروة تنحلّ هنا** — نبرة **ملاحظة** لا اكتشاف صاخب"
+    },
+    {
+      "page": 8,
+      "id": "asset-bs-s2-vo-fr-008",
+      "file": "page-008-fr.wav",
+      "text": "كانت بذورًا. تحملها الريح بعيدًا.  فبعضها يقع في الشقوق.",
+      "style": "Calm bedtime narration for page 8. Steady, warm, unhurried. Note: نبرة **إدراك هادئ**"
+    },
+    {
+      "page": 9,
+      "id": "asset-bs-s2-vo-fr-009",
+      "file": "page-009-fr.wav",
+      "text": "عاد إلى النبتة، فوجد بُرعُمًا جديدًا.  ووجد بذرة أخرى في شقّ قريب.",
+      "style": "Calm bedtime narration for page 9. Steady, warm, unhurried. Note: «بُرعُمًا» بوضوح — كلمة جديدة"
+    },
+    {
+      "page": 10,
+      "id": "asset-bs-s2-vo-fr-010",
+      "file": "page-010-fr.wav",
+      "text": "قال جدّه: الآن تعرف السرّ.  قال بشير: لم تقل لي، فعرفتُ وحدي.",
+      "style": "Calm bedtime narration for page 10. Steady, warm, unhurried. Note: «فعرفتُ وحدي» بضمّ التاء · نبرة **رضى هادئ** لا فخر"
+    },
+    {
+      "page": 11,
+      "id": "asset-bs-s2-vo-fr-011",
+      "file": "page-011-fr.wav",
+      "text": "جلسا في الشرفة والمساء يهدأ.  والجدار الحجري ساكن.",
+      "style": "Calm bedtime narration for page 11. Steady, warm, unhurried. Note: «والمساء يهدأ» ببطء"
+    },
+    {
+      "page": 12,
+      "id": "asset-bs-s2-vo-fr-012",
+      "file": "page-012-fr.wav",
+      "text": "والآن ينام بشير، والبذور في أماكنها.",
+      "style": "Calm bedtime narration for page 12. Steady, warm, unhurried. Slowest page of story, sleepy, soft ending. Note: ~80 كلمة/دقيقة · **أبطأ جملة** · وقفة 800ms قبلها"
+    }
+  ]
+}

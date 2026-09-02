@@ -1,0 +1,103 @@
+{
+  "story": "act-s3",
+  "story_id": "story-moon-sleeps",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-03-moon-sleeps.md",
+  "language": "ar",
+  "language_code": "ar-EG",
+  "out_dir": "assets/audio/stories/act-s3/ar",
+  "model": "gemini-3.1-flash-tts-preview",
+  "voice": "Leda",
+  "voice_locked_because": "Use the same youthful female narrator identity approved for ACT-S1 and ACT-S2. Leda matches the calm kind-older-sister bedtime profile and avoids an announcer-like delivery.",
+  "notes": [
+    "Each page is a separate WAV master and content asset so one slide can be replaced independently.",
+    "Arabic transcript text is copied verbatim from the approved story specification.",
+    "The output is 24 kHz 16-bit mono WAV; measured duration, not planned duration, is publication truth.",
+    "Page 6 must clearly pronounce كأنّ as a comparison and must never imply that the moon literally sleeps.",
+    "No cloud, wind, moon, page-turn, music, character voice, or other sound effect is synthesized.",
+    "Page 8 is the slowest line and never auto-turns."
+  ],
+  "preamble": "Synthesize speech. Read aloud only the Arabic text under TRANSCRIPT. Everything above it is performance direction and must never be spoken. Produce narrator voice only: no music and no sound effects.",
+  "global_style": "# AUDIO PROFILE: Salma\n## The Kind Older Sister\nSalma is a young Arab woman in her early twenties with a light, warm, distinctly feminine voice. She reads to a sleepy child in a quiet bedroom beside one warm lamp.\n\n### DIRECTOR'S NOTES\nStyle: soft, affectionate, reassuring, natural, and low-stimulation; never an announcer, never theatrical, never babyish.\nPacing: slow and unhurried at about 53 Arabic words per minute, with a small natural pause at every full stop.\nAccent: clear Modern Standard Arabic articulated naturally by an educated Egyptian speaker.\nLoudness: constant across all eight files. No escalation, command tone, urgency, fear, sadness, suspense, or dramatic climax.\nDelivery: speak only the transcript, with no title, page number, instruction, recommendation, character acting, sound effect, music, or extra words.",
+  "lines": [
+    {
+      "page": 1,
+      "page_id": "page-moon-sleeps-001",
+      "id": "asset-act-s3-vo-ar-001",
+      "file": "page-001-ar.wav",
+      "text": "هذا آدم. لا يريد أن ينام.",
+      "audio_tag": "[warm, calm, descriptive, no complaint]",
+      "style": "Introduce Adam gently. The second sentence is a neutral observation, never blame, complaint, refusal, or conflict.",
+      "planned_duration_ms": 5400
+    },
+    {
+      "page": 2,
+      "page_id": "page-moon-sleeps-002",
+      "id": "asset-act-s3-vo-ar-002",
+      "file": "page-002-ar.wav",
+      "text": "جلس أبوه معه عند النافذة.",
+      "audio_tag": "[soft reassurance, steady, unhurried]",
+      "style": "A calm settling action. Keep أبوه and النافذة clear without emphasis or character acting.",
+      "planned_duration_ms": 5300
+    },
+    {
+      "page": 3,
+      "page_id": "page-moon-sleeps-003",
+      "id": "asset-act-s3-vo-ar-003",
+      "file": "page-003-ar.wav",
+      "text": "قال آدم: القمر مستيقظ أيضًا.",
+      "audio_tag": "[gentle childlike observation, narrated voice, no protest]",
+      "style": "Narrate Adam's observation warmly but do not switch to a child character voice. It is curiosity, never protest or insistence. Keep the colon pause natural.",
+      "planned_duration_ms": 5600
+    },
+    {
+      "page": 4,
+      "page_id": "page-moon-sleeps-004",
+      "id": "asset-act-s3-vo-ar-004",
+      "file": "page-004-ar.wav",
+      "text": "مرّت سحابة. فغطّت القمر قليلًا.",
+      "audio_tag": "[calm, matter-of-fact, absolutely no suspense]",
+      "style": "Two quiet visual observations with one natural pause. Pronounce قليلًا clearly. No worry, surprise, wind sound, cloud sound, suspense, or rise in loudness.",
+      "planned_duration_ms": 5500
+    },
+    {
+      "page": 5,
+      "page_id": "page-moon-sleeps-005",
+      "id": "asset-act-s3-vo-ar-005",
+      "file": "page-005-ar.wav",
+      "text": "ثم مضت. والقمر ما زال هناك.",
+      "audio_tag": "[quiet reassurance, settled, softly resolving]",
+      "style": "Let ما زال هناك land as calm reassurance that the moon remains. No relief climax, surprise, or celebratory tone.",
+      "planned_duration_ms": 5400
+    },
+    {
+      "page": 6,
+      "page_id": "page-moon-sleeps-006",
+      "id": "asset-act-s3-vo-ar-006",
+      "file": "page-006-ar.wav",
+      "text": "قال أبوه: كأنّ القمر ينام.",
+      "audio_tag": "[gentle explicit comparison, clear shadda, never literal]",
+      "style": "CRITICAL: pronounce كأنّ fully and clearly with the doubled noon. It is an explicit comparison meaning as if, not a factual claim. Never omit, weaken, or rush كأنّ. Keep the father's line in the same narrator voice, not character acting.",
+      "planned_duration_ms": 5200
+    },
+    {
+      "page": 7,
+      "page_id": "page-moon-sleeps-007",
+      "id": "asset-act-s3-vo-ar-007",
+      "file": "page-007-ar.wav",
+      "text": "فأغمض آدم عينيه. والغرفة هادئة.",
+      "audio_tag": "[sleepy, slower, softly settling]",
+      "style": "Slow gently on هادئة and allow the second sentence to settle. No whisper effect and no added silence beyond natural pacing.",
+      "planned_duration_ms": 5800
+    },
+    {
+      "page": 8,
+      "page_id": "page-moon-sleeps-008",
+      "id": "asset-act-s3-vo-ar-008",
+      "file": "page-008-ar.wav",
+      "text": "والقمر يبدو ساكنًا في السماء.",
+      "audio_tag": "[very slow, drowsy, final, still, one gentle phrase]",
+      "style": "This is the slowest final line, approximately 83 percent of the normal narrator pace. Make يبدو ساكنًا especially clear and slow so it describes appearance, not a scientific claim. Settle into silence as a statement. No goodbye or extra words.",
+      "planned_duration_ms": 5200
+    }
+  ]
+}

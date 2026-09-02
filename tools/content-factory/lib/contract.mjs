@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import { approvedVisualIdentityPack } from './visual-identity-registry.mjs';
+import { isOmniFlashDuration } from './omni-flash-durations.mjs';
 
 export const SCHEMA_VERSION = 'content-factory.production-manifest/v1';
 export const PIPELINE_PROFILES = Object.freeze([
@@ -599,6 +600,12 @@ export function validateManifest(manifest, { verifyIntegrity = true } = {}) {
       if (job.kind === 'video' && job.provider === 'flux'
         && (!Number.isInteger(job.duration_seconds) || job.duration_seconds < 5 || job.duration_seconds > 20)) {
         pushError(errors, `${path}.duration_seconds`, 'INVALID_FLUX_DURATION', 'FLUX video clips must be 5-20 seconds');
+      }
+      if (job.kind === 'video'
+        && (job.provider === 'omni-flash' || job.operation?.includes('omni-flash'))
+        && !isOmniFlashDuration(job.duration_seconds)) {
+        pushError(errors, `${path}.duration_seconds`, 'INVALID_OMNI_FLASH_DURATION',
+          'PlayVeo Omni Flash clips must be exactly 4, 6, 8, or 10 seconds');
       }
       if (!isPlainObject(job.cost)) {
         pushError(errors, `${path}.cost`, 'INVALID_JOB_COST', 'Every job requires an explicit priced, unpriced, or excluded cost');

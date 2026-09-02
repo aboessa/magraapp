@@ -1,0 +1,44 @@
+{
+  "story": "act-s3-character-sheets",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-03-moon-sleeps.md",
+  "out_dir": "tools/playveo/output/act-s3-character-sheets",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "nano_banana_2",
+  "mode": "text-to-image",
+  "notes": [
+    "Approval gate only: no story page, cover, hero, or thumbnail may be generated until the user explicitly approves these sheets.",
+    "Raw JPEG sheets remain workflow references and must not be copied into production assets.",
+    "The moon is a natural celestial object and must never have a face, eyes, mouth, clothing, or human gesture.",
+    "No labels are requested because generated lettering is unreliable. Panel position provides the view order."
+  ],
+  "character_lock": "Premium soft 2D preschool bedtime storybook design with rounded clean shapes, gentle dimensional shading, consistent proportions, warm cream, muted blue, dusty teal and soft gold palette. Calm, reassuring, culturally respectful Arab family design. Neutral warm-cream studio background, even soft lighting, no story scene unless explicitly requested. No text, no letters, no numbers, no logo, no watermark, no signature, no frame, no border, no speech bubble, no visible teeth.",
+  "reference_instruction": "Preserve the exact approved character identity while changing only the requested view, expression, or pose.",
+  "style_tail": " Present this as a clean professional animation model sheet composed for a true 16:9 television frame, with generous safe margins, evenly spaced figures or objects, no overlaps, no cropped body parts, and no decorative clutter. Repeated views of a person must have identical face geometry, skin tone, hair, outfit, colors, body proportions, and age.",
+  "assets": [
+    {
+      "id": "asset-act-s3-sheet-adam",
+      "file": "character-sheet-adam.jpg",
+      "order": 1,
+      "aspect_ratio": "16:9",
+      "scene": "STRICT CHARACTER TURNAROUND MODEL SHEET OF ONE CHILD ONLY, the same four-year-old Arab boy Adam repeated six times in a precise left-to-right grid: full-body front view, full-body three-quarter view, full-body side view, full-body back view, close face with calm neutral expression, close face with sleepy closed-mouth expression and gently lowered eyelids. Adam has warm medium skin, large dark-brown eyes, softly rounded cheeks, short dark-brown softly wavy hair with one consistent small curl resting toward his forehead, childlike four-year-old proportions with a relatively large head and short limbs. He always wears muted bedtime-blue long-sleeve pajamas printed with a sparse pattern of tiny plain cream stars, matching muted-blue pajama trousers, and simple cream indoor slippers. Identical hair silhouette, curl, pajamas, star placement style, slippers, proportions, and colors in every view. He must never look older than four. No adult, no other child, no moon, no cloud, no furniture, no fear, no crying, no makeup, no jewelry, no open mouth, and no visible teeth.",
+      "light": "Flat soft studio lighting that preserves exact colors and makes every view easy to compare."
+    },
+    {
+      "id": "asset-act-s3-sheet-father",
+      "file": "character-sheet-father.jpg",
+      "order": 2,
+      "aspect_ratio": "16:9",
+      "scene": "STRICT CHARACTER TURNAROUND MODEL SHEET OF ONE ADULT MAN ONLY, the same Arab father in his early thirties repeated six times in a precise left-to-right grid: full-body front view, full-body three-quarter view, full-body side view, full-body back view, close face with calm neutral expression, close face with a warm gentle closed-mouth smile. He has warm medium skin, kind dark-brown almond eyes, a softly angular adult face, short neat dark-brown hair with the same subtle side part in every view, and a short neatly trimmed dark-brown beard and mustache with a clean consistent outline. He always wears a plain dusty-teal long-sleeve collarless home shirt, relaxed warm-cream trousers, and simple muted-brown indoor slippers. His body language is calm and reassuring. Identical face, hairline, beard outline, outfit, colors, and adult proportions in all six views. No child, no woman, no moon, no cloud, no furniture, no dramatic gesture, no jewelry, no open mouth, and no visible teeth.",
+      "light": "Flat soft studio lighting that preserves exact colors and makes every view easy to compare."
+    },
+    {
+      "id": "asset-act-s3-sheet-cast-environment",
+      "file": "character-sheet-cast-environment.jpg",
+      "order": 3,
+      "aspect_ratio": "16:9",
+      "scene": "UNLABELED VISUAL LINEUP on a plain warm off-white studio background, arranged in two clean rows with no story action and ABSOLUTELY NO WRITTEN WORDS OR CAPTIONS anywhere. Top left: one full-body front-view four-year-old Arab boy Adam with warm medium skin, large dark-brown eyes, rounded cheeks, short softly wavy dark-brown hair and one forehead curl, wearing muted bedtime-blue long-sleeve star pajamas, matching trousers, and cream slippers. Directly beside him: one full-body front-view Arab father in his early thirties with warm medium skin, short neat side-parted dark-brown hair, and short trimmed beard, wearing ONLY a dusty-teal collarless long-sleeve home shirt, warm-cream trousers, and muted-brown slippers. The father has NO robe, NO thobe, NO head covering, NO scarf, and NO hat. Adam reaches approximately the father's upper thigh to hip. Top right: one natural pale warm-cream waxing gibbous moon disk with subtle crater marks, absolutely no face, eyes, mouth, limbs, clothing, or personality; beside it one thin translucent blue-gray cloud. Bottom row: one rounded pale-wood two-pane bedroom window showing deep muted-blue night sky; one low pale-wood child bed with muted-blue bedding and tiny cream stars; one small pale-wood bedside table; and one warm soft-gold bedside lamp with a rounded cream shade. Exactly two humans, one moon, one cloud, one window, one bed, one table, and one lamp, all visually separated. No names under items, no labels, no letters, no typography, no extra person, no duplicate furniture, no toy, and no furnished room scene.",
+      "light": "Flat soft studio lighting for exact scale and palette comparison; the lamp may have a subtle warm glow while every silhouette remains clear."
+    }
+  ]
+}

@@ -147,6 +147,37 @@ test('manifest fingerprints source, plan, and each job idempotently', () => {
   assert.ok(result.errors.some((error) => error.code === 'PLAN_HASH_MISMATCH'));
 });
 
+test('PlayVeo Omni Flash jobs accept only 4, 6, 8, or 10 seconds', () => {
+  const source = readyManifest();
+  const refingerprint = (manifest) => {
+    manifest.jobs[0].idempotency_key = buildIdempotencyKey({
+      manifestId: manifest.manifest_id,
+      revision: manifest.revision,
+      sourceHash: manifest.source.sha256,
+      pipelineProfile: manifest.pipeline.profile,
+      visualIdentityPackSha256: manifest.visual_identity.reference_pack_sha256,
+      job: manifest.jobs[0],
+    });
+    manifest.integrity.plan_sha256 = computePlanSha256(manifest);
+  };
+  for (const duration of [4, 6, 8, 10]) {
+    const manifest = structuredClone(source);
+    manifest.jobs[0].provider = 'omni-flash';
+    manifest.jobs[0].operation = 'text-to-video-omni-flash';
+    manifest.jobs[0].duration_seconds = duration;
+    refingerprint(manifest);
+    assert.equal(validateManifest(manifest).valid, true);
+  }
+  const invalid = structuredClone(source);
+  invalid.jobs[0].provider = 'omni-flash';
+  invalid.jobs[0].operation = 'text-to-video-omni-flash';
+  invalid.jobs[0].duration_seconds = 12;
+  refingerprint(invalid);
+  const result = validateManifest(invalid);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((error) => error.code === 'INVALID_OMNI_FLASH_DURATION'));
+});
+
 test('visual identity pack is required, approved, series-bound, and internally fingerprinted', () => {
   const manifest = readyManifest();
   assert.equal(validateManifest(manifest).valid, true);

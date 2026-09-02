@@ -1,0 +1,29 @@
+{
+  "story": "games-block-code",
+  "language": "ar",
+  "out_dir": "assets/audio/games/block-code/ar",
+  "model": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "global_style": "صوت تعليمي واضح للبرمجة للأطفال 9-12، حماسي لكن دقيق وهادئ.",
+  "preamble": "Synthesize speech. Read TRANSCRIPT in Arabic clear educational voice for coding children 9-12, steady encouraging.",
+  "lines": [
+    {"page":1,"id":"asset-vo-bc-intro","file":"vo-intro-ar.wav","text":"برمج الروبوت ليصل إلى هدفه.","style":"Welcome","planned_duration_ms":2300},
+    {"page":2,"id":"asset-vo-bc-instruction","file":"vo-instruction-ar.wav","text":"رتب الأوامر لتحريك الروبوت إلى النجمة.","style":"Instruction clear","planned_duration_ms":3500},
+    {"page":3,"id":"asset-vo-bc-instruction-repeat","file":"vo-instruction-repeat-ar.wav","text":"ضع أوامر التقدّم والدوران بالترتيب، ثم اضغط تشغيل. استخدم التكرار لتوفير الأوامر.","style":"Slower extended","planned_duration_ms":6000},
+    {"page":4,"id":"asset-vo-bc-level-complete","file":"vo-level-complete-ar.wav","text":"وصل! برمجتك صحيحة.","style":"Level complete","planned_duration_ms":1900},
+    {"page":5,"id":"asset-vo-bc-game-complete","file":"vo-game-complete-ar.wav","text":"مبرمج رائع! أنهيت كل المتاهات.","style":"Game complete","planned_duration_ms":2500},
+    {"page":6,"id":"asset-vo-bc-exit-confirm","file":"vo-exit-confirm-ar.wav","text":"هل تريد الخروج؟ برنامجك سيُحفظ.","style":"Confirm","planned_duration_ms":2300},
+    {"page":7,"id":"asset-vo-bc-correct","file":"vo-correct-ar.wav","text":"تنفيذ صحيح!","style":"Correct","planned_duration_ms":1300},
+    {"page":8,"id":"asset-vo-bc-retry","file":"vo-retry-ar.wav","text":"الروبوت اصطدم. جرب ترتيبًا آخر.","style":"Retry gentle","planned_duration_ms":2600},
+    {"page":9,"id":"asset-vo-bc-hint","file":"vo-hint-ar.wav","text":"فكر بالخطوة الأولى: أين تتجه؟","style":"Hint","planned_duration_ms":2200},
+    {"page":10,"id":"asset-vo-bc-block-move","file":"vo-block-move-ar.wav","text":"تقدّم.","style":"Block move icon label","planned_duration_ms":800},
+    {"page":11,"id":"asset-vo-bc-block-turn-left","file":"vo-block-turn-left-ar.wav","text":"انعطف يسارًا.","style":"Block turn left","planned_duration_ms":1200},
+    {"page":12,"id":"asset-vo-bc-block-turn-right","file":"vo-block-turn-right-ar.wav","text":"انعطف يمينًا.","style":"Block turn right","planned_duration_ms":1200},
+    {"page":13,"id":"asset-vo-bc-block-repeat","file":"vo-block-repeat-ar.wav","text":"كرّر.","style":"Block repeat","planned_duration_ms":800},
+    {"page":14,"id":"asset-vo-bc-block-if-path","file":"vo-block-if-path-ar.wav","text":"إذا كان الطريق مفتوحًا.","style":"Block if_path","planned_duration_ms":1900},
+    {"page":15,"id":"asset-vo-bc-block-collect","file":"vo-block-collect-ar.wav","text":"اجمع.","style":"Block collect","planned_duration_ms":700},
+    {"page":16,"id":"asset-vo-bc-block-function","file":"vo-block-function-ar.wav","text":"الدالة.","style":"Block function","planned_duration_ms":800},
+    {"page":17,"id":"asset-vo-bc-collision","file":"vo-collision-ar.wav","text":"توقف! هنا جدار. كيف تتجاوزه؟","style":"Collision question not blame","planned_duration_ms":2700},
+    {"page":18,"id":"asset-vo-bc-star-optimal","file":"vo-star-optimal-ar.wav","text":"حل ذكي بأوامر قليلة! نجمة إضافية.","style":"Star optimal praise","planned_duration_ms":2800}
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "story": "majarra-login-backgrounds",
+  "out_dir": "tools/playveo/output/login-backgrounds",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "imagen-4",
+  "reference_seed": "manifest-seed-do-not-generate",
+  "reference_instruction": "",
+  "character_lock": "",
+  "style_tail": "Premium original key art for Majarra, an Arabic educational entertainment platform for children aged 3-12. Sophisticated cinematic stylized 3D illustration with soft hand-painted 2D texture, deep midnight navy and royal-blue atmosphere, restrained violet, cyan, coral, and star-gold accents. Calm, welcoming, secure feeling for a parent sign-in screen. Full-bleed composition matching the requested aspect ratio; reserve calm, dark, uncluttered central space for a real sign-in form placed over the artwork. No text, no Arabic letters, no numbers, no logo, no watermark, no interface, no buttons, no device frame, no mockup, no title panel, no plaque, no famous or copyrighted characters, no frightening imagery, no weapons, no clutter, no malformed anatomy, no blur, no letterboxing.",
+  "assets": [
+    {
+      "id": "manifest-seed-do-not-generate",
+      "file": "unused.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "Unused manifest seed.",
+      "light": ""
+    },
+    {
+      "id": "login-phone",
+      "file": "login-phone.jpg",
+      "aspect_ratio": "9:16",
+      "scene": "Portrait mobile composition: a serene floating Majarra learning world at the very top and bottom edges, with a small glowing crescent planet, subtle orbit lines, tiny stars, a friendly abstract telescope and book silhouettes. Keep the middle two thirds dark, simple and visually quiet for a centered login form; no people.",
+      "light": "Soft top star-glow, deep navy center, and a warm subtle gold horizon glow near the bottom."
+    },
+    {
+      "id": "login-tablet",
+      "file": "login-tablet.jpg",
+      "aspect_ratio": "4:3",
+      "scene": "Tablet landscape composition: a tranquil cinematic space-library world with a warm reading nook and a small observatory on the far right, soft celestial planets and learning objects on the far left. Leave a dark, spacious, uncluttered central zone for a sign-in form; no people.",
+      "light": "Deep royal-blue ambient light, restrained violet nebula haze, warm star-gold pool of light at the edges."
+    },
+    {
+      "id": "login-tv",
+      "file": "login-tv.jpg",
+      "aspect_ratio": "16:9",
+      "scene": "Wide television composition: an expansive cinematic Majarra universe, with a child-safe storybook observatory world and floating educational planets arranged near the far left and right edges. Preserve a broad dark, low-detail center for a television sign-in panel, with generous negative space and no people.",
+      "light": "Premium midnight-blue cinematic lighting, subtle cyan rim light, restrained purple cosmic fog and gentle star-gold highlights at the outer edges."
+    }
+  ]
+}

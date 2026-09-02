@@ -225,3 +225,14 @@ dashboard/front/devfront.log
 
 # مخلَّفات محرِّر: نسخة ثانية من ملف بجانب الأصل. تُعالج بحذفها لا بحفظها.
 *.tsx.new
+
+# مخرجات تشغيل خط إنتاج الأصول، لا مصادر.
+# حالة الاستئناف النقطية (`.qisas-bulk-state.json` وأمثالها) **يكتبها** السكربت
+# أثناء الدفعة ويقرأها ليُكمل، فحفظها في التاريخ يجمّد حالة دفعةٍ بعينها.
+# و`*.results.json` **لا يقرأها شيء** — مُقيس بالبحث في `tools/`.
+# والسجلات نصٌّ مطبوع من جولةٍ انقضت.
+tools/playveo/.*.json
+tools/playveo/*.results.json
+tools/playveo/*log*.txt
+tools/playveo/last-run*.log
+tools/*_gen.log

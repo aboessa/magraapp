@@ -1,0 +1,98 @@
+{
+  "story": "creative-studio-ui-artwork",
+  "out_dir": "assets/images/studio/raw",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "nano_banana_2",
+  "mode_note": "Text-to-image only. The provider's image-to-image endpoint returns a byte-identical result for a given source image regardless of prompt (six live jobs, documented in act-s1.manifest.json), so it cannot carry style between these tiles. Consistency here comes from style_tail alone, which is why the tail fixes palette, rendering and framing so tightly.",
+  "reference_seed": "manifest-seed-do-not-generate",
+  "reference_instruction": "",
+  "character_lock": "",
+  "style_tail": " Premium original UI artwork for Majarra, an Arabic educational app for children aged 3-12. Polished stylized 3D illustration with soft hand-painted texture, rounded friendly shapes, thick clean silhouettes, one single clear subject readable at small thumbnail size. Deep navy background (#0B1026) with royal blue depth and restrained cyan, violet, coral and star-yellow accents. Subject centred with comfortable margin on all four sides, full-bleed native composition, no cropping of the subject. Absolutely no text, no Arabic or Latin letters, no numerals, no logo, no watermark, no user interface elements, no buttons, no frame, no border, no device mockup, no drop shadow box, no checkerboard, no famous or copyrighted characters, no frightening imagery, no weapons, no malformed anatomy, no extra limbs, no extra fingers, no clutter.",
+  "assets": [
+    {
+      "id": "manifest-seed-do-not-generate",
+      "file": "unused.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "Unused manifest seed.",
+      "light": ""
+    },
+    {
+      "id": "studio-hero",
+      "file": "studio-hero.jpg",
+      "aspect_ratio": "16:9",
+      "scene": "A cheerful young boy with warm brown skin and dark curly hair joyfully holding up an oversized paintbrush loaded with bright paint, mid-swing so a wide luminous rainbow arc of colour sweeps out behind him across the sky. A large friendly ringed planet floats behind his shoulder among a few soft sparkling stars. He is laughing and looking up. Leave calmer darker space on the left of the frame so Arabic interface copy can sit beside him, and keep the boy and rainbow on the right half.",
+      "light": "Warm star-yellow glow on his face from the paint, cyan and violet rim light, deep navy sky."
+    },
+    {
+      "id": "card-color",
+      "file": "card-color.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A chubby friendly cartoon dinosaur in bright leaf green, sitting upright and smiling warmly, holding a rounded wooden artist palette dotted with thick blobs of red, yellow, blue and violet paint. One small paintbrush tucked in its other claw. Half of the dinosaur's body is playfully already coloured in while the rest reads as flatter and paler, suggesting a picture being coloured in.",
+      "light": "Soft warm key light from the upper left with cyan fill, deep navy backdrop."
+    },
+    {
+      "id": "card-free-draw",
+      "file": "card-free-draw.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A delighted young child in a rounded white and cyan space suit with a clear bubble helmet, riding astride an enormous yellow pencil that flies like a rocket, with a soft plume of colourful sparkles trailing from its base. A few small stars scattered around. The child holds on with both hands and grins.",
+      "light": "Cyan engine glow from below, warm highlight on the helmet, violet space depth."
+    },
+    {
+      "id": "card-draw-like-me",
+      "file": "card-draw-like-me.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A soft round friendly giant panda sitting beside a small wooden easel that holds a partly finished painting of a simple flower. The panda holds a paintbrush up in one paw and gestures at the easel with the other as if inviting someone to copy it, with a warm encouraging expression.",
+      "light": "Warm gallery key light on the easel, gentle cyan rim on the panda, deep navy backdrop."
+    },
+    {
+      "id": "card-complete",
+      "file": "card-complete.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A cheerful rounded cartoon red car shown so its front half is finished as a solid painted toy car while its rear half fades into clean unfinished pencil outline, as if a drawing is half done. A single friendly yellow pencil floats beside the unfinished half, tip pointed at the outline, ready to complete it.",
+      "light": "Warm coral highlight on the finished half, cool cyan light on the outlined half, deep navy backdrop."
+    },
+    {
+      "id": "card-copy-pattern",
+      "file": "card-copy-pattern.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A single decorative Islamic geometric arabesque tile as a chunky rounded three dimensional object, with an eight pointed star motif at its centre and interlacing bands in turquoise, gold and violet. One corner of the pattern is left as pale unfinished outline so it reads as a pattern waiting to be copied and continued.",
+      "light": "Soft warm gold glow from the centre outward, cyan edge light, deep navy backdrop."
+    },
+    {
+      "id": "card-connect-dots",
+      "file": "card-connect-dots.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A plump friendly five pointed golden star character with big happy eyes and rosy cheeks, winking cheerfully. Around it, a loose ring of small glowing round dots connected in sequence by a thin dashed line that traces partway around, as if a dot to dot puzzle is being joined up. The dots must be plain glowing circles with no numerals or markings on them.",
+      "light": "Warm star-yellow inner glow, cyan sparkle accents, deep navy backdrop."
+    },
+    {
+      "id": "promo-draw-like-me",
+      "file": "promo-draw-like-me.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A happy young girl with warm skin and dark hair in a ponytail, standing and proudly holding up a small square blank canvas in front of her chest with both hands, a single bright five pointed star glowing at the centre of the canvas. She smiles directly forward. Rounded violet and blue clothing.",
+      "light": "Violet key light with warm face fill and a cyan rim, deep navy backdrop."
+    },
+    {
+      "id": "promo-new-board",
+      "file": "promo-new-board.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A clean empty rounded white drawing board floating at a gentle angle, completely blank, with one chunky friendly yellow pencil resting diagonally across its lower corner and a soft burst of cyan sparkles rising from the board surface to suggest a fresh start. No marks or lines on the board.",
+      "light": "Cool cyan glow from the board surface, warm highlight along the pencil, deep navy backdrop."
+    },
+    {
+      "id": "reward-trophy",
+      "file": "reward-trophy.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A single chunky rounded golden trophy cup with two curved handles on a small round base, gleaming and celebratory, with a few small sparkles around its rim. Centred, seen straight on, nothing else in the frame.",
+      "light": "Warm gold specular highlights with soft violet ambient, deep navy backdrop so the object reads on a dark surface."
+    },
+    {
+      "id": "reward-gift",
+      "file": "reward-gift.jpg",
+      "aspect_ratio": "1:1",
+      "scene": "A single cheerful rounded gift box with a soft coral pink body and a wide star-yellow ribbon tied in a generous bow on top, lid slightly ajar with a warm glow and a couple of sparkles escaping from inside. Centred, seen straight on, nothing else in the frame.",
+      "light": "Warm glow spilling from under the lid, gentle cyan rim light, deep navy backdrop."
+    }
+  ]
+}

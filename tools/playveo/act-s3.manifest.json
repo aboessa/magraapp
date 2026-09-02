@@ -1,0 +1,132 @@
+{
+  "story": "act-s3",
+  "story_file": "docs/content/planets/05-qisas/a-calm-tale/story-03-moon-sleeps.md",
+  "out_dir": "tools/playveo/output/act-s3",
+  "provider": "playveo",
+  "base_url": "https://playveo-api.aboessa101.workers.dev",
+  "model": "nano_banana_2",
+  "mode": "text-to-image",
+  "display_spec": {
+    "story_page_aspect_ratio": "16:9",
+    "target_display": "television and landscape mobile/tablet",
+    "production_canvas": "1920x1080 or larger native 16:9; never stretch a non-16:9 result",
+    "action_safe_area": "keep Adam, father, faces, hands, moon, cloud, window, bed, and lamp inside the central 90% of width and height",
+    "fit_policy": "full-bleed native composition with no baked letterbox bars; Flutter may scale uniformly but must not crop story-critical content"
+  },
+  "notes": [
+    "The user explicitly approved Adam and father character sheets before this production manifest was created.",
+    "Raw provider JPEG files remain in the ignored tools/playveo/output tree. Only reviewed WebP derivatives may enter Flutter assets.",
+    "All assets are independent text-to-image jobs. Identity is carried by the exact character_lock because the provider reference path previously cloned composition.",
+    "The moon is always a natural celestial object, never a speaking or anthropomorphic character.",
+    "No narration text is rendered in artwork. Text, timing, and audio remain independent story-page fields."
+  ],
+  "style_tail": " Premium soft 2D preschool bedtime storybook illustration matching the approved character sheets, rounded clean shapes, gentle dimensional shading, warm cream, muted bedtime blue, dusty teal and soft gold palette, full-bleed to all four edges, natively composed for the requested aspect ratio with no black bars. Every 16:9 page and hero uses a true landscape television composition; all faces, hands, moon and story action stay inside the central 90 percent action-safe area, and the outer 5 percent has no essential detail. Calm low-stimulation scene with only the named elements, child-safe and emotionally reassuring. No text, no labels, no letters, no numbers, no logo, no watermark, no signature, no frame, no border, no speech bubble, no visible teeth, no fear, no clutter, no complete darkness.",
+  "character_lock": "Adam is the exact same four-year-old Arab boy in every image: warm medium skin, large dark-brown eyes, softly rounded cheeks, short dark-brown softly wavy hair with one distinct curl resting at the center of his forehead, childlike four-year-old proportions with a relatively large head and short limbs. He always wears the exact same muted bedtime-blue long-sleeve pajamas covered with sparse tiny plain cream stars, matching muted-blue trousers, and simple cream indoor slippers. His pajama top is a plain crew-neck pullover with no buttons, placket, collar, pocket or trim. His face, forehead curl, apparent age, pajamas and colors never change. Adam is calm, observant or sleepy, never distressed, angry or afraid, and never shows teeth. His father is the exact same Arab man in his early thirties in every image: warm medium skin, kind dark-brown almond eyes, softly angular face, short neat dark-brown hair with a subtle side part, and a short neatly trimmed dark-brown beard and mustache with the same clean outline. He always wears the exact same plain dusty-teal long-sleeve collarless home shirt, relaxed warm-cream trousers, and muted-brown indoor slippers. The father never wears a thobe, robe, head covering, scarf or hat; his hair and beard remain visible. Adam reaches approximately the father's upper thigh to hip when standing. The bedroom stays consistent: warm cream walls, one low pale-wood child bed with muted-blue star bedding, one rounded pale-wood window, one small pale-wood bedside table, and one clearly visible warm soft-gold lamp with a rounded cream shade. The moon is always a natural pale warm-cream waxing gibbous disk with subtle crater marks and absolutely no face, eyes, mouth, nose, limbs, clothing, sleeping cap or personality. Never add another child, adult, moon, bed, window or lamp.",
+  "reference_instruction": "Preserve the exact approved Adam and father identities and recurring environment while replacing the pose, camera, lighting, and scene with the following description.",
+  "assets": [
+    {
+      "id": "asset-act-s3-page-001",
+      "file": "page-001.jpg",
+      "order": 1,
+      "aspect_ratio": "16:9",
+      "brightness": 1.0,
+      "motion": "kenburns_slow",
+      "scene": "Wide calm bedroom view. Adam sits upright in the middle of his low bed, eyes peacefully open, not yet wanting to sleep. His hands rest loosely on the muted-blue star blanket. The rounded window is visible but shows only a clear early-evening blue sky; the moon is not required on this first page. One small warm bedside lamp glows gently. Exactly three focal groups: Adam and bed, window, lamp. No father on this first page and no resistance gesture, frown, crying, toy or play action.",
+      "light": "Brightest scene: soft readable early-evening blue daylight balanced with a light warm lamp glow, brightness 1.00, no darkness."
+    },
+    {
+      "id": "asset-act-s3-page-002",
+      "file": "page-002.jpg",
+      "order": 2,
+      "aspect_ratio": "16:9",
+      "brightness": 0.97,
+      "motion": "kenburns_slow",
+      "scene": "A single wide landscape camera shot of the bedroom. Exactly one Adam and one father sit side by side on the left edge of one low bed, both fully visible in three-quarter profile. Adam wears his plain buttonless blue star pajama pullover. Father wears his plain dusty-teal collarless shirt and cream trousers. They calmly look toward one large rounded window on the right. The window glass is filled edge to edge with one smooth unbroken solid deep-navy color. One small natural pale warm-cream waxing gibbous moon is centered in the upper-right area of the glass, with generous solid navy space surrounding its complete circular disk. One warm bedside lamp is visible. Balanced uncluttered television-safe composition.",
+      "light": "Soft blue early night balanced by the warm bedside lamp, slightly dimmer than page 1 at brightness 0.97, every face and object fully readable."
+    },
+    {
+      "id": "asset-act-s3-page-003",
+      "file": "page-003.jpg",
+      "order": 3,
+      "aspect_ratio": "16:9",
+      "brightness": 0.94,
+      "motion": "pan_slow",
+      "scene": "A single wide landscape camera shot of the bedroom. Exactly one Adam and one father sit side by side on the left edge of one low bed, both fully visible in three-quarter profile. Adam wears his plain buttonless blue star pajama pullover and gently lifts one open hand toward the view. Father wears his plain dusty-teal collarless shirt and cream trousers and watches with a warm closed-mouth expression. They look toward one large rounded window on the right. The window glass is filled edge to edge with one smooth unbroken solid deep-navy color. One small natural pale warm-cream waxing gibbous moon is centered in the upper-right area of the glass, with generous solid navy space surrounding its complete circular disk. Balanced uncluttered television-safe composition.",
+      "light": "Readable soft blue moonlight and gentle warm lamp spill, brightness 0.94, calm and low contrast."
+    },
+    {
+      "id": "asset-act-s3-page-004",
+      "file": "page-004.jpg",
+      "order": 4,
+      "aspect_ratio": "16:9",
+      "brightness": 0.9,
+      "motion": "pan_slow",
+      "scene": "Small calm visual climax. Adam and father remain seated together on the bed in side profile, watching the rounded window. Outside, one thin softly translucent blue-gray cloud passes across only the lower third of the natural waxing gibbous moon. At least two thirds of the moon disk remains clearly visible through and above the cloud at all times. The moon has no face, eyes, mouth or clothing. Adam is calmly attentive, father reassuring; no surprise, pointing, fear or tension. Exactly three focal groups: Adam and father, bed, partially veiled moonlit window. No second cloud and no fully hidden moon.",
+      "light": "Soft moonlit blue with warm lamp balance, brightness 0.90; the translucent cloud and moon disk remain distinct and fully readable, never dark."
+    },
+    {
+      "id": "asset-act-s3-page-005",
+      "file": "page-005.jpg",
+      "order": 5,
+      "aspect_ratio": "16:9",
+      "brightness": 0.86,
+      "motion": "kenburns_slow",
+      "scene": "The cloud has COMPLETELY LEFT THE SKY AND IS NOT VISIBLE ANYWHERE. The natural waxing gibbous moon is fully unobstructed and clearly visible in the rounded window, unchanged and with no face. Adam relaxes back against his pillow while his father remains seated directly beside him, both fully visible and calmly seeing that the moon is still there. Exactly three focal groups: Adam and father, bed, clear unobstructed moonlit window. EMPTY CLEAR SKY around the moon: absolutely no cloud, mist, haze or overlapping shape; no celebratory gesture.",
+      "light": "Quiet readable blue moonlight with a softer warm bedside glow, brightness 0.86, settled and reassuring."
+    },
+    {
+      "id": "asset-act-s3-page-006",
+      "file": "page-006.jpg",
+      "order": 6,
+      "aspect_ratio": "16:9",
+      "brightness": 0.82,
+      "motion": "kenburns_slow",
+      "scene": "Father remains clearly visible seated at the bedside and looks gently toward the FULLY UNOBSTRUCTED natural waxing gibbous moon in the window while sharing a quiet thought with Adam. Adam lies comfortably under the muted-blue star blanket, eyes softly open and listening. Father's lips are gently CLOSED with absolutely no visible teeth; the narration text is external and the illustration must not depict an open speaking mouth. Father makes a small relaxed open-hand gesture, never pointing as if the moon were a person. The moon has no face or human feature. Four focal groups maximum: Adam, father, bed, clear moonlit window and lamp as one background group. EMPTY CLEAR SKY around the moon: absolutely no cloud, mist, haze or overlapping shape.",
+      "light": "Dimmer soft blue moonlight with a clear warm lamp glow, brightness 0.82, faces and moon fully readable."
+    },
+    {
+      "id": "asset-act-s3-page-007",
+      "file": "page-007.jpg",
+      "order": 7,
+      "aspect_ratio": "16:9",
+      "brightness": 0.76,
+      "motion": "static",
+      "scene": "Static quiet bedtime scene with no action. Adam lies peacefully in bed with both eyes fully closed while his father remains clearly present beside the bed, gently resting one hand on top of the blanket near Adam's shoulder. The natural waxing gibbous moon remains clearly visible in the rounded window with no face. The lamp gives a faint warm glow. Four focal groups maximum: sleeping Adam, father, bed, moonlit window and lamp as one background group. No movement, no speech gesture and no cloud.",
+      "light": "Calm dim blue moonlight balanced by a faint warm lamp, brightness 0.76, never fully dark and every important silhouette readable."
+    },
+    {
+      "id": "asset-act-s3-page-008",
+      "file": "page-008.jpg",
+      "order": 8,
+      "aspect_ratio": "16:9",
+      "brightness": 0.7,
+      "motion": "static",
+      "scene": "Static final still composition dominated by the rounded two-pane window and the FULLY UNOBSTRUCTED natural waxing gibbous moon, which appears quiet only through still framing and has no face, eyes, mouth or human feature. Adam sleeps peacefully in the bed at the lower side of the composition, fully inside television safe area. His father remains quietly and clearly present in a chair immediately beside the bed, still and watchful, with no gesture. Exactly three focal groups: clear moonlit window, sleeping Adam and bed, seated father. EMPTY CLEAR SKY around the moon: absolutely no cloud, mist, haze or overlapping shape; no event and no implied moon movement.",
+      "light": "Dimmest scene: gentle natural blue moonlight, brightness 0.70, with the faintest residual warm lamp glow; serene and readable, never complete darkness."
+    },
+    {
+      "id": "asset-act-s3-cover",
+      "file": "cover.jpg",
+      "order": 9,
+      "aspect_ratio": "1:1",
+      "scene": "Square cover art. Adam lies peacefully in his low bed while his father sits reassuringly beside him; both are framed near the rounded window containing the natural waxing gibbous moon with no face. Keep the calm upper quarter uncluttered for a separate title overlay added later. No embedded title, no cloud and no extra person.",
+      "light": "Inviting blue bedtime light with a soft warm lamp glow, calm, readable and never dark."
+    },
+    {
+      "id": "asset-act-s3-hero",
+      "file": "hero.jpg",
+      "order": 10,
+      "aspect_ratio": "16:9",
+      "scene": "Wide cinematic promotional illustration with NO WRITING ANYWHERE. Adam rests in bed while his father sits beside him, both sharing a calm view of the natural fully unobstructed waxing gibbous moon through the rounded window. The entire right forty percent is only a smooth empty dark-blue wall gradient with no marks, symbols, glyphs, letters or title. All faces and the moon remain inside television safe area. Absolutely no text in any language, no typography, no pseudo-Arabic glyphs, no cloud and no extra person.",
+      "light": "Gentle blue night gradient with a warm lamp accent, low contrast, comforting and never dark."
+    },
+    {
+      "id": "asset-act-s3-thumb",
+      "file": "thumb.jpg",
+      "order": 11,
+      "aspect_ratio": "3:4",
+      "scene": "Vertical wordless thumbnail illustration with NO WRITING ANYWHERE and strong readable silhouettes at small size. Adam in blue star pajamas rests against his pillow with a sleepy closed-mouth expression while his father sits close beside the bed. Above and behind them, the rounded window clearly shows the natural fully unobstructed waxing gibbous moon with no face. The upper quarter contains only a smooth empty blue wall gradient. Absolutely no text, caption, typography, letters, words, title, symbols or glyphs in any language, no white banner, no cloud and no extra person.",
+      "light": "Soft blue moonlight and warm lamp glow, comforting, readable and never dark."
+    }
+  ]
+}

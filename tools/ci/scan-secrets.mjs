@@ -27,6 +27,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 /// One rule per credential shape. `allow` narrows a rule that would otherwise fire
 /// on documentation or a placeholder.
@@ -241,4 +242,10 @@ function main() {
   process.exit(1);
 }
 
-main();
+// Only when run as a command. `ciGates.test.mjs` imports `scanText` from here to
+// verify the rules, and an unguarded `main()` made that import scan the whole
+// repository and `process.exit(1)` on its own fixtures — the gate's test could
+// never pass, whatever the rules did.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}
