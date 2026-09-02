@@ -191,6 +191,26 @@ jobs:
       - name: No new mojibake in data or user-visible strings
         run: node tools/ci/mojibake-scan.mjs --check
 
+      # `I18N-101`: التطبيق يُعلن ثلاث لغات ومعظم نصوصه المعروضة مكتوبة في الكود.
+      # وما يجعل البند غير قابل للإغلاق أنه **ينمو**: قيس الأودت رقمًا في
+      # 2026-08-26 وصار أكبر بعد ستة أيام، أي أن الاستخراج يسابق كتابةً جديدة
+      # ويخسر. فالبوابة تُجمّد الدَّين ليصير الاستخراج تقدُّمًا لا لحاقًا.
+      #
+      # self-test أوّلًا لنفس سبب `scan-secrets`: بوابةٌ لا تُثبِت قدرتها على
+      # الفشل تُقرأ خضرتها دليلًا وهي لا تقيس شيئًا.
+      - run: node tools/ci/dart-literal-strings.mjs --self-test
+      - name: No new hardcoded Arabic strings in Dart
+        run: node tools/ci/dart-literal-strings.mjs --check
+
+      # `ADM-106`: `value ?? 0` يجعل «صفر» و«لا بيانات» و«تعذّرت القراءة» شكلًا
+      # واحدًا، فيقرأ المشغّل الثلاثة «لا مشاكل» — وقد وقع فعلًا في
+      # `/admin/ops/overview`. وأكثر المواضع القائمة صادقة، فالبوابة تُجمّد العدد
+      # ولا تمنعه: الرقم نما من 85 إلى 102، وكل موضعٍ جديد يجب أن يُجيب سؤالًا
+      # واحدًا — هل الصفر هنا صادق؟
+      - run: node tools/ci/zero-fallback-scan.mjs --self-test
+      - name: No new zero-fallback metrics in dashboard pages
+        run: node tools/ci/zero-fallback-scan.mjs --check
+
       - name: Verdicts and evidence agree with the source
         run: node tools/dashboard-audit/feature-matrix.mjs --check
       - name: The committed matrix is the one the generator produces
