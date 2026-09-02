@@ -285,12 +285,30 @@ export function gamePublishError(contentPack: unknown): string | null {
   return null;
 }
 
-export function bookPublishError(pages: unknown): string | null {
-  const parsed = typeof pages === 'string' ? parseJson(pages, null) : pages;
-  if (!Array.isArray(parsed) || !parsed.length) {
-    return 'A book needs at least one page before release';
-  }
-  return null;
+/// `API-107`: عدد صفحات الكتاب الحقيقي من `story_pages`.
+///
+/// ## ما كان
+///
+/// `bookPublishError(pages)` كان يقرأ العمود القديم `books.pages` — نصَّ JSON.
+/// والمقيس: العمود `'[]'` في الاثنين والعشرين كتابًا، ولا قارئ له في مسار
+/// القراءة العامّ (`books.ts` يقول ذلك صريحًا)، وصفحاتُ الكتب في `story_pages`
+/// بمفتاح `story_id = book.id`.
+///
+/// فكان الحكم خاطئًا في الاتجاهين: **لا كتاب يُنشَر** وإن كانت له صفحات حقيقية،
+/// وكتابٌ كُتبت في عموده مصفوفةٌ يُنشَر و**لا صفحة له**.
+///
+/// والدالّة صارت `async` وتأخذ القاعدة: عدُّ صفحةٍ سؤالٌ عن حالة لا عن شكل قيمة.
+export async function bookPagesReleaseError(
+  db: D1Database,
+  bookId: string,
+): Promise<string | null> {
+  const row = await db
+    .prepare('SELECT COUNT(*) AS total FROM story_pages WHERE story_id = ?')
+    .bind(bookId)
+    .first<{ total: number }>();
+  return Number(row?.total ?? 0) > 0
+    ? null
+    : 'A book needs at least one page in story_pages before release';
 }
 
 /// books.languages and books.default_language carry no CHECK constraint, so

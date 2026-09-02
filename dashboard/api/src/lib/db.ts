@@ -31,6 +31,25 @@ export interface Env {
   ADMIN_API_KEY?: string;
   AUTH_TOKEN_SECRET?: string;
   MEDIA_TOKEN_SECRET?: string;
+
+  /// OPS-106: بريد يستقبل تنبيهات العمليات.
+  ///
+  /// منفصل عن `EMAIL_FROM` ومن أي رابط منتج: التنبيه يذهب إلى من يشغّل النظام لا
+  /// إلى مستخدم. وغيابه يُسجَّل في `ops_alerts.notify_outcome = 'unconfigured'`
+  /// بدل أن يُفترض وصولٌ لم يحدث.
+  OPS_ALERT_EMAIL?: string;
+
+  /// SEC-109: السرّ السابق، مقبول للتحقّق ولا يُوقَّع به.
+  ///
+  /// وجوده اختياري بطبيعته: يُضاف عند بدء الدوران ويُحذف بعد انقضاء عمر أطول
+  /// توكن. وغيابه هو الحالة العادية بين دورتين.
+  AUTH_TOKEN_SECRET_PREVIOUS?: string;
+  MEDIA_TOKEN_SECRET_PREVIOUS?: string;
+  /// ENC-001: مفتاح Ed25519 خاص (PKCS8 بترميز base64) لتوقيع تراخيص الاستخدام
+  /// دون إنترنت. لامتناظر لا HMAC لأن المتحقّق هو العميل وهو غير متصل: مفتاح
+  /// مشترك كان سيعني أن كل جهاز يستطيع كتابة ترخيص لنفسه. غيابه يرفض الإصدار
+  /// (503) ولا يُصدر ترخيصًا بلا توقيع.
+  OFFLINE_LICENSE_SIGNING_KEY?: string;
   EMAIL?: any; // Cloudflare Email Sending binding (send_email)
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
@@ -69,6 +88,24 @@ export interface Env {
   /// synthesize call sends it as `x-goog-user-project` for quota attribution.
   GOOGLE_TTS_PROJECT_ID?: string;
 
+  // --- AI provider registry (text authoring, structured generation) ---
+  //
+  // The registry in D1 (`ai_providers`, migration 0063) stores only the *name* of the
+  // secret backing each vendor, never the secret. `lib/aiRegistry.ts` keeps the
+  // allow-list of names that may be referenced; anything outside it makes the provider
+  // unusable rather than letting an operator aim a provider at an unrelated secret such
+  // as AUTH_TOKEN_SECRET and use it as a presence oracle.
+  //
+  // Kept separate from GOOGLE_TTS_API_KEY on purpose even though both reach
+  // generativelanguage.googleapis.com: sharing one key would merge the daily quota and
+  // the invoice for narration and for text authoring, so exhausting one would silently
+  // stop the other.
+  GOOGLE_AI_API_KEY?: string;
+  OPENAI_API_KEY?: string;
+  /// Meta Model API (Muse Spark). Reached through the OpenAI-compatible surface at
+  /// api.meta.ai/v1, so it needs no adapter of its own — only a key and a provider row.
+  META_MODEL_API_KEY?: string;
+
   // --- Content factory / PlayVeo ---
   // Credentials are Worker secrets and are read only by the paid queue consumer
   // after immutable-plan, approval, idempotency and budget checks pass.
@@ -78,6 +115,14 @@ export interface Env {
   PLAYVEO_DOWNLOAD_HOSTS?: string;
   /// Comma-separated origins allowed via CORS (e.g. "https://custom.majarra.app,https://preview.example.com").
   ALLOWED_ORIGINS?: string;
+
+  /// `PRIV-101`: مدّة الاحتفاظ بصفوف `analytics_events`، بالأيام.
+  ///
+  /// كانت ثابتًا في `scheduled/cleanup.ts` مع تعليقٍ يقرّ بأنها تنتظر مراجعة
+  /// خصوصية الطفل. صارت إعدادًا حتى يُنفَّذ قرار المراجعة بلا نشر كود.
+  /// غيابها يعني **180 يومًا** — وهو ما ينفّذه النظام اليوم، لا رقمًا جديدًا.
+  /// وقيمةٌ مشوّهة تُسجَّل وتُستبدل بالافتراض ولا تُعطّل الحذف.
+  ANALYTICS_RETENTION_DAYS?: string;
 }
 
 export async function queryAll<T>(db: D1Database, sql: string, params: unknown[] = []): Promise<T[]> {

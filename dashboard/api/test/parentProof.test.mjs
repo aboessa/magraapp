@@ -109,7 +109,7 @@ test('creating a child profile requires manage_children', () => {
   // The proof is checked before the request body is even parsed, so a refusal
   // cannot depend on the payload.
   assert.ok(
-    body.indexOf("'manage_children'") < body.indexOf('await body(c)'),
+    body.indexOf("'manage_children'") < body.indexOf('await schemaBody(c'),
     'the gate must precede the handler work',
   );
   assert.match(body, /parentProofDenied\(proof\.reason\)/);

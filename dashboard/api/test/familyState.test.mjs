@@ -115,6 +115,12 @@ const post = (path, body) => new Request(`https://do.local${path}`, {
 
 const get = (path) => new Request(`https://do.local${path}`, { method: 'GET' });
 
+const patch = (path, body) => new Request(`https://do.local${path}`, {
+  method: 'PATCH',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
+
 async function call(object, request) {
   const response = await object.fetch(request);
   const body = await response.json().catch(() => null);
@@ -388,6 +394,42 @@ test('adding a child requires an active session', async () => {
   assert.equal(result.status, 400);
 });
 
+test('onboarding_completed: true stamps onboarding_completed_at at creation time', async () => {
+  const { object, db, session } = await seeded();
+  const before = Date.now();
+  const result = await call(object, post('/children', {
+    session_id: session.session_id,
+    nickname: 'سعاد',
+    birth_month: 5,
+    birth_year: new Date().getUTCFullYear() - 7,
+    avatar_id: 'avatar-1',
+    onboarding_completed: true,
+  }));
+  assert.equal(result.status, 201);
+
+  const stored = rows(db, `SELECT onboarding_completed_at FROM children`)[0];
+  assert.ok(stored.onboarding_completed_at, 'onboarding_completed_at was not stamped');
+  assert.ok(stored.onboarding_completed_at >= before);
+
+  const listed = await call(object, get('/children'));
+  assert.ok(listed.body.data[0].onboarding_completed_at, 'GET /children must surface the stamp');
+});
+
+test('omitting onboarding_completed leaves onboarding_completed_at null', async () => {
+  const { object, db, session } = await seeded();
+  const result = await call(object, post('/children', {
+    session_id: session.session_id,
+    nickname: 'سعاد',
+    birth_month: 5,
+    birth_year: new Date().getUTCFullYear() - 7,
+    avatar_id: 'avatar-1',
+  }));
+  assert.equal(result.status, 201);
+
+  const stored = rows(db, `SELECT onboarding_completed_at FROM children`)[0];
+  assert.equal(stored.onboarding_completed_at, null);
+});
+
 test('a child creation emits an event carrying no birth date', async () => {
   // The projection stores a nickname and track; birth month and year are PII
   // that the event bus does not need to carry.
@@ -431,6 +473,264 @@ test('archived children do not count against the limit or the listing', async ()
     avatar_id: 'avatar-2',
   }));
   assert.equal(second.status, 201);
+});
+
+/* --------------------------------------------------------- child profile updates */
+
+test('updateChild renames the child and emits child.updated', async () => {
+  const context = await seededWithChild();
+  const result = await call(context.object, patch('/children', {
+    session_id: context.session.session_id,
+    child_id: context.child.id,
+    nickname: 'سعاد الجديدة',
+  }));
+  assert.equal(result.status, 200);
+  assert.equal(result.body.data.nickname, 'سعاد الجديدة');
+  assert.ok(rows(context.db, `SELECT event_id FROM outbox WHERE event_type = 'child.updated'`).length);
+});
+
+test('updateChild stores nickname, interests, language and avatar together', async () => {
+  const context = await seededWithChild();
+  const result = await call(context.object, patch('/children', {
+    session_id: context.session.session_id,
+    child_id: context.child.id,
+    interests: ['space', 'animals'],
+    language: 'en',
+    avatar_id: 'avatar-9',
+  }));
+
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body.data.interests, ['space', 'animals']);
+  assert.equal(result.body.data.language, 'en');
+  assert.equal(result.body.data.avatar_id, 'avatar-9');
+
+  // Only one child exists in this fixture, so a table-wide read is unambiguous.
+  const stored = rows(context.db, `SELECT language, avatar_id, interests_json FROM children`)[0];
+  assert.equal(stored.language, 'en');
+  assert.equal(stored.avatar_id, 'avatar-9');
+  assert.deepEqual(JSON.parse(stored.interests_json), ['space', 'animals']);
+});
+
+test('re-sending a child\'s own current nickname is not treated as a conflict', async () => {
+  const context = await seededWithChild();
+  const result = await call(context.object, patch('/children', {
+    session_id: context.session.session_id,
+    child_id: context.child.id,
+    nickname: context.child.nickname,
+  }));
+  assert.equal(result.status, 200);
+});
+
+test('renaming a child to another child\'s nickname is a conflict', async () => {
+  const context = await seededWithChild();
+  // The free plan allows only one active child — raise the ceiling via an
+  // entitlement (same pattern as "a paid plan raises the device ceiling") so
+  // both children stay active and can actually collide on nickname.
+  const now = Date.now();
+  context.db.prepare(`
+    INSERT INTO entitlements (id, source, plan, status, starts_at, expires_at, updated_at)
+    VALUES ('ent-1', 'google_play', 'family', 'active', ?, ?, ?)
+  `).run(now - 1000, now + 86_400_000, now);
+
+  const second = await call(context.object, post('/children', {
+    session_id: context.session.session_id,
+    nickname: 'زيد',
+    birth_month: 5,
+    birth_year: new Date().getUTCFullYear() - 8,
+    avatar_id: 'avatar-2',
+  }));
+  assert.equal(second.status, 201);
+
+  const result = await call(context.object, patch('/children', {
+    session_id: context.session.session_id,
+    child_id: second.body.data.id,
+    nickname: context.child.nickname,
+  }));
+  assert.equal(result.status, 409);
+});
+
+test('birth_month, birth_year and age_track are silently ignored by updateChild', async () => {
+  const context = await seededWithChild();
+  const originalTrack = context.child.age_track;
+  assert.equal(originalTrack, 'kids');
+  // Only one child exists in this fixture, so a table-wide read is unambiguous.
+  const storedBefore = rows(context.db, `SELECT birth_year FROM children`)[0];
+
+  const result = await call(context.object, patch('/children', {
+    session_id: context.session.session_id,
+    child_id: context.child.id,
+    nickname: 'سعاد المحدَّثة',
+    birth_year: 1999,
+    age_track: 'junior',
+  }));
+
+  assert.equal(result.status, 200);
+  assert.equal(result.body.data.age_track, originalTrack);
+  const storedAfter = rows(context.db, `SELECT birth_year FROM children`)[0];
+  assert.equal(storedAfter.birth_year, storedBefore.birth_year);
+  assert.notEqual(storedAfter.birth_year, 1999);
+});
+
+test('updateChild rejects an empty nickname', async () => {
+  const context = await seededWithChild();
+  const result = await call(context.object, patch('/children', {
+    session_id: context.session.session_id,
+    child_id: context.child.id,
+    nickname: '',
+  }));
+  assert.equal(result.status, 400);
+});
+
+test('updateChild rejects interests that is not an array', async () => {
+  const context = await seededWithChild();
+  const result = await call(context.object, patch('/children', {
+    session_id: context.session.session_id,
+    child_id: context.child.id,
+    interests: 'not-array',
+  }));
+  assert.equal(result.status, 400);
+});
+
+test('updateChild rejects a body with no updatable fields', async () => {
+  const context = await seededWithChild();
+  const result = await call(context.object, patch('/children', {
+    session_id: context.session.session_id,
+    child_id: context.child.id,
+  }));
+  assert.equal(result.status, 400);
+});
+
+test('updateChild requires an active session', async () => {
+  const context = await seededWithChild();
+  const result = await call(context.object, patch('/children', {
+    session_id: 'not-a-session',
+    child_id: context.child.id,
+    nickname: 'اسم جديد',
+  }));
+  assert.equal(result.status, 401);
+});
+
+test('updateChild refuses an unknown or archived child', async () => {
+  const context = await seededWithChild();
+  const missing = await call(context.object, patch('/children', {
+    session_id: context.session.session_id,
+    child_id: 'not-a-child',
+    nickname: 'اسم جديد',
+  }));
+  assert.equal(missing.status, 404);
+
+  context.db.exec(`UPDATE children SET status = 'archived'`);
+  const archived = await call(context.object, patch('/children', {
+    session_id: context.session.session_id,
+    child_id: context.child.id,
+    nickname: 'اسم آخر',
+  }));
+  assert.equal(archived.status, 404);
+});
+
+/// Correctness Property 7 (design.md): updating one child's `interests`,
+/// `language` or `avatar_id` via `PATCH /children/:childId` must never touch
+/// another child's row in the same family, no matter how many times the call
+/// is repeated or whether it runs concurrently with another child's update.
+///
+/// This DO simulation is single-threaded (SQLite transactions run one at a
+/// time), so `Promise.all` cannot reproduce a true data race. What it does
+/// prove — the same thing the property is actually about — is that neither
+/// handler invocation ever reads or writes the other child's row, whether the
+/// two calls are interleaved by the event loop or run strictly in sequence.
+test('concurrent PATCH /children/:childId on two siblings never cross-writes fields', async () => {
+  const context = await seededWithChild();
+
+  // The free plan allows only one active child — raise the ceiling via an
+  // entitlement (same pattern used by "renaming a child to another child's
+  // nickname is a conflict") so a second child can exist alongside the first.
+  const now = Date.now();
+  context.db.prepare(`
+    INSERT INTO entitlements (id, source, plan, status, starts_at, expires_at, updated_at)
+    VALUES ('ent-1', 'google_play', 'family', 'active', ?, ?, ?)
+  `).run(now - 1000, now + 86_400_000, now);
+
+  const second = await call(context.object, post('/children', {
+    session_id: context.session.session_id,
+    nickname: 'زيد',
+    birth_month: 5,
+    birth_year: new Date().getUTCFullYear() - 8,
+    avatar_id: 'avatar-2',
+  }));
+  assert.equal(second.status, 201);
+
+  const firstId = context.child.id;
+  const secondId = second.body.data.id;
+
+  const [firstResult, secondResult] = await Promise.all([
+    call(context.object, patch('/children', {
+      session_id: context.session.session_id,
+      child_id: firstId,
+      interests: ['space'],
+      language: 'en',
+      avatar_id: 'avatar-first-updated',
+    })),
+    call(context.object, patch('/children', {
+      session_id: context.session.session_id,
+      child_id: secondId,
+      interests: ['animals', 'music'],
+      language: 'fr',
+      avatar_id: 'avatar-second-updated',
+    })),
+  ]);
+
+  assert.equal(firstResult.status, 200);
+  assert.equal(secondResult.status, 200);
+
+  // Response bodies reflect only the child that was targeted.
+  assert.deepEqual(firstResult.body.data.interests, ['space']);
+  assert.equal(firstResult.body.data.language, 'en');
+  assert.equal(firstResult.body.data.avatar_id, 'avatar-first-updated');
+
+  assert.deepEqual(secondResult.body.data.interests, ['animals', 'music']);
+  assert.equal(secondResult.body.data.language, 'fr');
+  assert.equal(secondResult.body.data.avatar_id, 'avatar-second-updated');
+
+  // Stored rows: each child's own fields, and zero cross-contamination.
+  const first = context.db.prepare(`SELECT language, avatar_id, interests_json FROM children WHERE id = ?`).get(firstId);
+  const secondRow = context.db.prepare(`SELECT language, avatar_id, interests_json FROM children WHERE id = ?`).get(secondId);
+
+  assert.equal(first.language, 'en');
+  assert.equal(first.avatar_id, 'avatar-first-updated');
+  assert.deepEqual(JSON.parse(first.interests_json), ['space']);
+
+  assert.equal(secondRow.language, 'fr');
+  assert.equal(secondRow.avatar_id, 'avatar-second-updated');
+  assert.deepEqual(JSON.parse(secondRow.interests_json), ['animals', 'music']);
+});
+
+
+test('birth years at the exact age-track boundaries are accepted with the correct track', async () => {
+  const { object, db, session } = await seeded();
+  const year = new Date().getUTCFullYear();
+  const cases = [
+    { age: 3, track: 'preschool' }, { age: 5, track: 'preschool' },
+    { age: 6, track: 'kids' }, { age: 8, track: 'kids' },
+    { age: 9, track: 'junior' }, { age: 12, track: 'junior' },
+  ];
+  let previousChildId = null;
+  for (const [index, { age, track }] of cases.entries()) {
+    if (previousChildId) {
+      // The free plan allows exactly one active child — archive the previous
+      // one so each boundary case gets its own creation slot.
+      db.prepare(`UPDATE children SET status = 'archived' WHERE id = ?`).run(previousChildId);
+    }
+    const result = await call(object, post('/children', {
+      session_id: session.session_id,
+      nickname: `طفل-${index}`,
+      birth_month: 6,
+      birth_year: year - age,
+      avatar_id: 'avatar-1',
+    }));
+    assert.equal(result.status, 201, `age ${age} should be accepted`);
+    assert.equal(result.body.data.age_track, track, `age ${age} should map to ${track}`);
+    previousChildId = result.body.data.id;
+  }
 });
 
 /* ------------------------------------------------------------------ sessions */
@@ -818,4 +1118,151 @@ test('the device listing excludes nothing and reports status', async () => {
   // revoked.
   assert.equal(result.body.data.length, 1);
   assert.equal(result.body.data[0].status, 'revoked');
+});
+
+/* -------------------------------------------------------- track transition */
+
+/// Property 5 (Requirement 12.2): an `accept` must change `age_track` and
+/// nothing else. Progress, mastery, rewards and favorites are exactly the
+/// four tables a transition could plausibly touch by mistake — a projection
+/// rebuild, a badge re-grant, a favourites reset — so each is seeded through
+/// its real endpoint and checked both by count and by value after the call.
+test('accept preserves progress, mastery, rewards and favorites exactly, changing only age_track', async () => {
+  const context = await seededWithChild();
+  const childId = context.child.id;
+  const originalTrack = context.child.age_track;
+  assert.equal(originalTrack, 'kids');
+
+  // The child was created with the correct track. To give `accept` something
+  // to actually change, force a stale value that does not match what
+  // `deriveAgeTrack` computes for this child's birth_month/birth_year — the
+  // CHECK constraint only validates the enum member, not age consistency.
+  context.db.prepare(`UPDATE children SET age_track = 'junior' WHERE id = ?`).run(childId);
+
+  // Seed content_progress and mastery together: `recordAttempt` only runs when
+  // the progress body carries `answers`, and it writes both tables in one call.
+  await call(context.object, post('/progress', progressBody(context, {
+    answers: [{ question: 1, correct: true }],
+    score: 8,
+    max_score: 10,
+    objective_id: 'obj-1',
+  })));
+  await call(context.object, post('/favorites', {
+    session_id: context.session.session_id,
+    child_id: childId,
+    entity_type: 'episode',
+    entity_id: 'ep-1',
+    action: 'add',
+  }));
+  await call(context.object, post('/rewards', {
+    session_id: context.session.session_id,
+    child_id: childId,
+    reward_key: 'sticker-1',
+    source_type: 'episode',
+    source_id: 'ep-1',
+  }));
+
+  const countFor = (table) => context.db
+    .prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE child_id = ?`)
+    .get(childId).n;
+  const countsBefore = {
+    content_progress: countFor('content_progress'),
+    mastery: countFor('mastery'),
+    rewards: countFor('rewards'),
+    favorites: countFor('favorites'),
+  };
+  assert.deepEqual(countsBefore, { content_progress: 1, mastery: 1, rewards: 1, favorites: 1 });
+
+  const progressBefore = context.db.prepare(`SELECT position_ms FROM content_progress WHERE child_id = ?`).get(childId);
+  const masteryBefore = context.db.prepare(`SELECT level FROM mastery WHERE child_id = ?`).get(childId);
+  const rewardsBefore = context.db.prepare(`SELECT reward_key FROM rewards WHERE child_id = ?`).get(childId);
+  const favoritesBefore = context.db.prepare(`SELECT entity_id FROM favorites WHERE child_id = ?`).get(childId);
+
+  const result = await call(context.object, post('/children/track-transition', {
+    session_id: context.session.session_id,
+    child_id: childId,
+    action: 'accept',
+  }));
+
+  assert.equal(result.status, 200);
+  assert.equal(result.body.success, true);
+  assert.equal(result.body.data.previous_track, 'junior');
+  assert.equal(result.body.data.age_track, originalTrack);
+
+  const countsAfter = {
+    content_progress: countFor('content_progress'),
+    mastery: countFor('mastery'),
+    rewards: countFor('rewards'),
+    favorites: countFor('favorites'),
+  };
+  assert.deepEqual(countsAfter, countsBefore, 'row counts must be identical before and after accept');
+
+  assert.deepEqual(
+    context.db.prepare(`SELECT position_ms FROM content_progress WHERE child_id = ?`).get(childId),
+    progressBefore,
+  );
+  assert.deepEqual(
+    context.db.prepare(`SELECT level FROM mastery WHERE child_id = ?`).get(childId),
+    masteryBefore,
+  );
+  assert.deepEqual(
+    context.db.prepare(`SELECT reward_key FROM rewards WHERE child_id = ?`).get(childId),
+    rewardsBefore,
+  );
+  assert.deepEqual(
+    context.db.prepare(`SELECT entity_id FROM favorites WHERE child_id = ?`).get(childId),
+    favoritesBefore,
+  );
+
+  // The only thing that changed is the stored age_track.
+  assert.equal(
+    context.db.prepare(`SELECT age_track FROM children WHERE id = ?`).get(childId).age_track,
+    originalTrack,
+  );
+  assert.ok(
+    rows(context.db, `SELECT event_id FROM outbox WHERE event_type = 'child.track_transitioned'`).length,
+    'child.track_transitioned was not emitted',
+  );
+});
+
+/// Property 6 (Requirement 12.3): a deferral is exclusive for its 30-day
+/// window, and expiry re-opens the ability to defer again.
+test('a track transition deferral is exclusive until it expires', async () => {
+  const context = await seededWithChild();
+  const childId = context.child.id;
+
+  const first = await call(context.object, post('/children/track-transition', {
+    session_id: context.session.session_id,
+    child_id: childId,
+    action: 'defer',
+  }));
+  assert.equal(first.status, 200);
+  const deferredUntil = first.body.data.deferred_until;
+  const expected = Date.now() + 30 * 24 * 60 * 60 * 1000;
+  // A few milliseconds always separate the two computations, so this checks a
+  // tolerance window rather than exact equality.
+  assert.ok(
+    Math.abs(deferredUntil - expected) < 5000,
+    `deferred_until ${deferredUntil} is not close to ${expected}`,
+  );
+
+  const second = await call(context.object, post('/children/track-transition', {
+    session_id: context.session.session_id,
+    child_id: childId,
+    action: 'defer',
+  }));
+  assert.equal(second.status, 409);
+  assert.equal(second.body.success, false);
+
+  // Simulate the first deferral's 30-day window having already elapsed.
+  context.db.prepare(`UPDATE children SET track_transition_deferred_until = ? WHERE id = ?`)
+    .run(Date.now() - 1000, childId);
+
+  const third = await call(context.object, post('/children/track-transition', {
+    session_id: context.session.session_id,
+    child_id: childId,
+    action: 'defer',
+  }));
+  assert.equal(third.status, 200);
+  assert.equal(third.body.success, true);
 });

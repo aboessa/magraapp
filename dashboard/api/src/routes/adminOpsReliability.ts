@@ -45,11 +45,21 @@ route.get('/ops/services/:id', async (c) => {
 // --- Monitoring overview (system vs business health) ---
 route.get('/ops/overview', async (c) => {
   // System health: probe via simple queries, not per-card fan-out
+  //
+  // ## ADM-106: صفرٌ يعني «لا يوجد»، و`null` يعني «لا نعرف»
+  //
+  // كانت العدّادات تبدأ من `0` وكل استعلام محاطًا بـ`catch {}` فارغة. فقراءةٌ
+  // فاشلة تُبقي الصفر ويُشحَن **كأنه قياس**: «صفر تنبيهات نشطة» بينما الحقيقة أن
+  // الجدول لم يُقرأ. وأسوأ منه أن `overall` يبقى `'healthy'`، فتُعلن الشاشة سلامةً
+  // مبنيّة على فشلٍ صامت — وهي الحالة التي يُفتح فيها مركز العمليات أصلًا.
+  //
+  // الآن: تبدأ `null`، ولا تصير رقمًا إلا بقراءة ناجحة. و`business` أدناه كانت
+  // تفعل هذا الصحيح من قبل (`.catch(()=> null)`)، فالنمطان كانا في الملف نفسه.
   const probes = []
   let overall: 'healthy'|'degraded'|'partial_outage'|'outage'|'unknown' = 'healthy'
-  let criticalIncidents = 0
-  let activeAlerts = 0
-  let failedEvents = 0
+  let criticalIncidents: number | null = null
+  let activeAlerts: number | null = null
+  let failedEvents: number | null = null
   let queueBacklog: number | null = null
   let apiError: string | null = null
   let dbError: string | null = null
@@ -64,23 +74,32 @@ route.get('/ops/overview', async (c) => {
     const r = await queryFirst<{cnt:number}>(c.env.DB, `SELECT COUNT(*) as cnt FROM failed_family_events WHERE status='pending'`)
     failedEvents = Number(r?.cnt ?? 0)
     if (failedEvents > 0) overall = overall === 'healthy' ? 'degraded' : overall
-  } catch {}
+  } catch (e) { probes.push({ probe: 'failed_family_events', error: String(e) }) }
 
   try {
     const r = await queryFirst<{cnt:number}>(c.env.DB, `SELECT COUNT(*) as cnt FROM ops_alerts WHERE status IN ('open','acknowledged')`)
     activeAlerts = Number(r?.cnt ?? 0)
-  } catch {}
+  } catch (e) { probes.push({ probe: 'ops_alerts', error: String(e) }) }
 
   try {
     const r = await queryFirst<{cnt:number}>(c.env.DB, `SELECT COUNT(*) as cnt FROM ops_incidents WHERE status IN ('open','investigating','identified','monitoring') AND severity='critical'`)
     criticalIncidents = Number(r?.cnt ?? 0)
     if (criticalIncidents > 0) overall = 'partial_outage'
-  } catch {}
+  } catch (e) { probes.push({ probe: 'ops_incidents', error: String(e) }) }
 
   try {
     const r = await queryFirst<{pending:number}>(c.env.DB, `SELECT pending FROM queue_health WHERE queue_name='family_events'`)
     queueBacklog = r?.pending ?? null
-  } catch { queueBacklog = null }
+  } catch (e) { queueBacklog = null; probes.push({ probe: 'queue_health', error: String(e) }) }
+
+  // سلامةٌ لا يمكن إعلانها: إن فشل أي مسبار فالحالة **غير معروفة** لا سليمة.
+  // ترتيب الشدّة يُحفظ — `degraded` أو أسوأ لا يُخفَّف إلى `unknown` — لأن ما
+  // قِيس وظهر سيّئًا أقوى دليلًا من قراءةٍ لم تنجح.
+  if (probes.length > 0 && overall === 'healthy') overall = 'unknown'
+
+  // OPS-106: آخر فحص صحة مكتوب لكل خدمة تُعرَض في البطاقات العليا.
+  const api = await queryFirst(c.env.DB, `SELECT status, latency_ms, checked_at, details FROM ops_health_checks WHERE service_id='admin_api' ORDER BY checked_at DESC LIMIT 1`).catch(()=> null)
+  const d1Check = await queryFirst(c.env.DB, `SELECT status, latency_ms, checked_at FROM ops_health_checks WHERE service_id='d1' ORDER BY checked_at DESC LIMIT 1`).catch(()=> null)
 
   // Telemetry capability: report what's available
   const telemetry = await queryAll(c.env.DB, `SELECT * FROM telemetry_sources ORDER BY status, signal`)
@@ -98,8 +117,18 @@ route.get('/ops/overview', async (c) => {
     active_alerts: activeAlerts,
     failed_queue_events: failedEvents,
     queue_backlog: queueBacklog,
-    api: apiError ? { status: 'unknown', error: apiError } : { status: 'healthy', checked_at: new Date().toISOString() },
-    d1: dbError ? { status: 'outage', error: dbError } : { status: 'healthy' },
+    // المسابر التي فشلت، باسمها وسببها. بلا هذا تعرض الشاشة شرطةً بلا تفسير،
+    // فيقرؤها المشغّل «لا شيء» — وهو الخلل نفسه بشكل آخر.
+    unavailable_probes: probes,
+    // OPS-106: الحالة من آخر فحص مكتوب، لا `'healthy'` مثبَّتة في الكود.
+    //
+    // كانت هذه السطر يعلن أن الـAPI سليمة **دائمًا** — بلا أي قياس، ومع
+    // `checked_at` من لحظة قراءة الشاشة لا من لحظة فحص. أي أنها كانت تختلق
+    // الشيء الوحيد الذي جاء المشغّل يسأل عنه.
+    api: api ?? { status: 'unknown', checked_at: null, note: 'no health check recorded yet' },
+    // الاستعلام أعلاه فحصٌ حقيقي لهذه اللحظة، فيفوز على آخر صفّ مكتوب؛ ويكمله
+    // زمن آخر فحص مجدول لأن «سليمة الآن» لا تقول شيئًا عن الدقائق الماضية.
+    d1: dbError ? { status: 'outage', error: dbError } : { status: 'healthy', last_check: d1Check },
     telemetry,
     business,
     generated_at: new Date().toISOString(),

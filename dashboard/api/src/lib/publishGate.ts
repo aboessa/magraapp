@@ -238,9 +238,21 @@ export interface StoryFacts extends CommonFacts {
   series_status: string | null;
 }
 
+/// `API-107`: صفحات الكتاب تُقاس من `story_pages` كصفحات القصة.
+///
+/// كان `pages: unknown` — نصَّ JSON من العمود القديم `books.pages` — فيُقرأ
+/// بـ`parseJson` ويُحكَم على طوله. والمقيس: العمود `'[]'` في الاثنين والعشرين
+/// كتابًا، ولا قارئ له في مسار القراءة العامّ. فكان الحكم على **مصدرٍ خطأ**:
+/// يحجب كتابًا له صفحات حقيقية، ويُجيز كتابًا كُتب في عموده مصفوفةٌ ولا صفحة له.
 export interface BookFacts extends CommonFacts {
   entity_type: 'book';
-  pages: unknown;
+  pages: StoryPageFacts[];
+  /// العمود القديم، **للتشخيص لا للحكم**.
+  ///
+  /// يُعرَض في نتيجة البوابة حين يحمل قيمةً غير فارغة بينما `story_pages` فارغة:
+  /// ذلك اختلافُ مصدرَين، ومحرّرٌ كتب صفحاته في المكان الخطأ يستحق أن يُقال له
+  /// أين هي بدل «الكتاب بلا صفحات».
+  legacy_pages_column?: unknown;
   languages: unknown;
   default_language: unknown;
 }
@@ -745,11 +757,52 @@ function evaluateStory(facts: StoryFacts): GateFinding[] {
 
 function evaluateBook(facts: BookFacts): GateFinding[] {
   const findings: GateFinding[] = [testFixtureCheck(facts), archivedCheck(facts)];
-  const pages = typeof facts.pages === 'string' ? parseJson(facts.pages, null) : facts.pages;
-  findings.push(Array.isArray(pages) && pages.length
-    ? pass('pages', 'الصفحات', `${pages.length} صفحة.`)
-    : block('pages', 'الصفحات', 'الكتاب بلا صفحات.', 'editor',
-        'أضف صفحات الكتاب قبل النشر.'));
+  const language = text(facts.default_language) ?? 'ar';
+  const label = (page: StoryPageFacts) => page.page_number == null
+    ? 'صفحة بلا رقم'
+    : `صفحة ${page.page_number}`;
+
+  // `API-107`: العدّ من `story_pages` — نفس ما يقرأه `GET /books/:id/pages`.
+  if (!facts.pages.length) {
+    // وإن كان العمود القديم غير فارغ فالسبب **اختلاف مصدرَين** لا غياب عمل:
+    // محرّرٌ كتب صفحاته في `books.pages` يستحق أن يُقال له أين هي.
+    const legacy = typeof facts.legacy_pages_column === 'string'
+      ? parseJson(facts.legacy_pages_column, null)
+      : facts.legacy_pages_column;
+    findings.push(Array.isArray(legacy) && legacy.length
+      ? block('pages', 'الصفحات',
+          `لا صفحات في \`story_pages\`، مع أن العمود القديم \`books.pages\` يحمل ${legacy.length} عنصرًا.`,
+          'editor',
+          'صفحات الكتاب تُقرأ من `story_pages` (وهو ما يعرضه التطبيق). انقل الصفحات إليه؛ العمود القديم لا يُقرأ.')
+      : block('pages', 'الصفحات', 'الكتاب بلا صفحات.', 'editor',
+          'أضف صفحات الكتاب قبل النشر.'));
+  } else {
+    findings.push(pass('pages', 'الصفحات', `${facts.pages.length} صفحة.`));
+
+    // ورسمُ الصفحة ونصُّها يُقاسان كما في القصة: كتابٌ مصوَّر بصفحةٍ بلا رسم
+    // ينشر صفحةً بيضاء، وهذا ما كان يمرّ لأن المصدر لم يُقرأ أصلًا.
+    const missingImage = facts.pages.filter((page) => !page.image_asset_id);
+    const unreadyImage = facts.pages.filter(
+      (page) => page.image_asset_id && page.image_status !== 'ready',
+    );
+    findings.push(missingImage.length || unreadyImage.length
+      ? block('page_images', 'رسوم الصفحات',
+          `${missingImage.length + unreadyImage.length} من ${facts.pages.length} صفحة بلا رسم جاهز.`,
+          'production',
+          'اربط رسمًا جاهزًا بكل صفحة قبل النشر.',
+          [...missingImage, ...unreadyImage].map(label))
+      : pass('page_images', 'رسوم الصفحات', 'كل الصفحات لها رسم جاهز.'));
+
+    const missingText = facts.pages.filter((page) => {
+      const localized = page.localizations.find((entry) => entry.language === language);
+      return !text(localized?.body_text ?? null);
+    });
+    findings.push(missingText.length
+      ? block('page_text', 'نصّ الصفحات',
+          `${missingText.length} من ${facts.pages.length} صفحة بلا نصّ باللغة ${language}.`,
+          'editor', 'اكتب نصّ كل صفحة باللغة الافتراضية.', missingText.map(label))
+      : pass('page_text', 'نصّ الصفحات', `كل الصفحات مكتوبة باللغة ${language}.`));
+  }
 
   // `books.languages` is TEXT holding a JSON array (migration 0012), while
   // `bookLanguagesError` expects a real array — it is also called from the write

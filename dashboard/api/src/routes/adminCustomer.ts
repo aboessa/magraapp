@@ -61,10 +61,21 @@ route.get('/customers', requireAdmin, async (c) => {
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
   const total = await queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM family_projection f ${where}`, params);
+  // `DB-102`: لا عمود `device_count` هنا.
+  //
+  // كان `(SELECT COUNT(*) FROM account_devices …)`، و`account_devices` جدولٌ
+  // **بلا كاتب واحد** في المستودع كلّه (صفر `INSERT`/`UPDATE` في `src` و
+  // `scripts` و`migrations`؛ ملكيّته انتقلت إلى `FamilyState` وأعلن ذلك
+  // `0010_cleanup_dead_d1_tables.sql`). فكان العمود يُعيد **صفرًا لكل أسرة**،
+  // واللوحة تعرضه رقمًا — أي «صفر أجهزة» على منصّةٍ أجهزتها تعمل.
+  //
+  // والسلطة لكل أسرة في كائنها الدائم، ولا مصدر مُجمَّع عبر الأسر. فالصحيح
+  // **ألّا يُرسَل الحقل**: عدَدٌ مُختلَق أسوأ من غيابه، و`null` يجعل اللوحة
+  // تعرض «—» بسببٍ مكتوب بدل رقم يُصدَّق.
   const rows = await queryAll(c.env.DB, `
     SELECT f.parent_id, f.plan, f.status,
            (SELECT COUNT(*) FROM child_projection cp WHERE cp.parent_id = f.parent_id) AS child_count,
-           (SELECT COUNT(*) FROM account_devices ad WHERE ad.parent_id = f.parent_id) AS device_count,
+           NULL AS device_count,
            (SELECT COUNT(*) FROM support_tickets st WHERE st.family_id = f.parent_id
               AND st.status NOT IN ('resolved', 'closed')) AS open_tickets
       FROM family_projection f
@@ -73,7 +84,20 @@ route.get('/customers', requireAdmin, async (c) => {
      LIMIT ? OFFSET ?
   `, [...params, limit, offset]);
 
-  return c.json({ success: true, data: rows, meta: { total: Number(total?.total ?? 0), limit, offset } });
+  return c.json({
+    success: true,
+    data: rows,
+    meta: {
+      total: Number(total?.total ?? 0),
+      limit,
+      offset,
+      // سببٌ يُقرأ في اللوحة، لا حقلٌ ناقص بلا تفسير.
+      unavailable: {
+        device_count:
+          'عدّ الأجهزة لكل أسرة غير متوفّر: `account_devices` في D1 بلا كاتب، والسلطة في FamilyState لكل أسرة على حدة فلا تجميع عبر الأسر.',
+      },
+    },
+  });
 });
 
 /// `GET /admin/customers/:id` — the full workspace payload.
@@ -100,29 +124,45 @@ route.get('/customers/:id', requireAdmin, async (c) => {
     familyStub(c.env, parentId), '/consents', { method: 'GET' },
   );
 
-  const [children, devices, billing, purchases, tickets, audit] = await Promise.all([
+  const [children, devices, billing, purchases, tickets, audit, familyAudit] = await Promise.all([
     queryAll(c.env.DB, `
       SELECT child_id, nickname, age_track, status, last_event_at_ms
         FROM child_projection WHERE parent_id = ? ORDER BY last_event_at_ms DESC
     `, [parentId]),
-    // The projection list is kept alongside the live one: it carries app version and
-    // registration history the authority read does not, and an operator comparing them
-    // can see when the projection is behind.
-    queryAll(c.env.DB, `
-      SELECT id, display_name, platform, status, last_seen_at
-        FROM account_devices WHERE parent_id = ? ORDER BY last_seen_at DESC
-    `, [parentId]),
+    // `DB-102`: لا قراءة من `account_devices`.
+    //
+    // كان هنا استعلامٌ عليه، وتعليقٌ يبرّره بأن «الإسقاط يُحفظ بجانب الحيّ ليرى
+    // المشغّل متى يتأخّر الإسقاط». والمقيس: الجدول **بلا كاتب واحد**، فالقائمة
+    // فارغة **دائمًا** — أي أن المقارنة تقول «الإسقاط متأخّر إلى الأبد»، وهي
+    // ليست معلومة بل ضجيج يُقرأ «لا أجهزة».
+    //
+    // والأجهزة تأتي أصلًا من قراءة السلطة (`/admin/inspect` أعلاه)، فالقائمة
+    // الثانية كانت زائدة قبل أن تكون خاطئة.
+    Promise.resolve<Unavailable>({
+      available: false,
+      source: 'account_devices (إسقاط D1 بلا كاتب)',
+      reason:
+        'ملكية الأجهزة انتقلت إلى FamilyState (`0010_cleanup_dead_d1_tables.sql`). القائمة الحيّة في `authority.devices`.',
+    }),
     queryAll(c.env.DB, `
       SELECT product_id, plan, entitlement_status, expires_at_ms, created_at
         FROM billing_audit WHERE parent_id = ? ORDER BY created_at DESC LIMIT 25
     `, [parentId]),
-    // No purchase tokens or hashes: `purchase_token_hash` and `raw_response_hash` are
-    // credentials for the store API, and an operator needs the product, the state and
-    // the dates, not the key.
-    queryAll(c.env.DB, `
-      SELECT product_id, purchase_state, purchased_at, expires_at, last_verified_at, created_at
-        FROM google_play_purchases WHERE parent_id = ? ORDER BY created_at DESC LIMIT 25
-    `, [parentId]),
+    // `DB-102`: `google_play_purchases` أيضًا **بلا كاتب** (صفر `INSERT` في
+    // المستودع)، فقائمة الشراءات كانت فارغة دائمًا. والفراغ هنا يبدو صادقًا
+    // بالحادث — لا شراء لأن مسار الشراء نفسه غير موصول (`API-104`) — لكن سببه
+    // ليس «لا شراءات» بل «لا كاتب». والفرق يهمّ يوم يُوصَل المسار: مشغّلٌ رأى
+    // «لا شراءات» طويلًا لا يشكّ في القائمة عندما تبقى فارغة خطأً.
+    //
+    // (والملاحظة الأصلية تبقى صحيحة لمَن يوصّلها: لا رموز شراء ولا بصماتها في
+    // هذا المخرَج — هي أوراق اعتماد لواجهة المتجر، والمشغّل يحتاج المنتج
+    // والحالة والتواريخ لا المفتاح.)
+    Promise.resolve<Unavailable>({
+      available: false,
+      source: 'google_play_purchases (جدول D1 بلا كاتب)',
+      reason:
+        'مسار التحقّق من الشراء غير موصول (`API-104` / `BILLING-001`)، فلا شيء يكتب هذا الجدول. الفراغ ليس «لا شراءات».',
+    }),
     queryAll(c.env.DB, `
       SELECT id, reference, subject, category, priority, status, assignee_id,
              first_response_at, resolution_due_at, created_at
@@ -139,6 +179,16 @@ route.get('/customers/:id', requireAdmin, async (c) => {
           OR (entity_type = 'family_device' AND details LIKE ?)
        ORDER BY created_at DESC LIMIT 30
     `, [parentId, `%${parentId}%`]),
+    // PRIV-102: أثر مسار العميل نفسه — الجلسات والأجهزة ومنح التشغيل ودورة حياة
+    // الحساب. جدول منفصل عن `audit_logs` عن قصد: ذاك سجل أفعال المسؤولين، وهذا
+    // سجل أفعال الأسرة، ودمجهما كان يعني أن كل من يملك `view_audit_log` يقرأ
+    // حركة الأسر. لا يُعطَّل القسم الصفحة إن غاب الجدول قبل تطبيق الترحيل.
+    queryAll(c.env.DB, `
+      SELECT action, actor_kind, actor_id, entity_type, entity_id, details, occurred_at_ms
+        FROM family_audit_logs
+       WHERE parent_id = ?
+       ORDER BY occurred_at_ms DESC LIMIT 50
+    `, [parentId]).catch(() => []),
   ]);
 
   // Reading a family is a sensitive act and is audited, as the narrower support lookup
@@ -159,6 +209,7 @@ route.get('/customers/:id', requireAdmin, async (c) => {
       purchases,
       tickets,
       audit,
+      family_audit: familyAudit,
       consents: consentsResult.ok && consentsResult.data?.success
         ? consentsResult.data.data ?? []
         : { available: false, source: 'family_state', reason: 'تعذّر قراءة الموافقات من مصدر السلطة.' },
@@ -193,6 +244,9 @@ route.get('/customers/:id', requireAdmin, async (c) => {
         purchases: 'd1_history',
         tickets: 'd1_admin',
         audit: 'd1_admin',
+        // سجل تاريخي لا إسقاط: يكتبه مستهلك الطابور من أحداث حدثت فعلًا،
+        // ولا يُعاد بناؤه من حالة حاضرة، فلا يمكن أن «يتأخّر» عن مصدر السلطة.
+        family_audit: 'd1_history',
         consents: 'family_state',
         progress_summary: 'family_state',
       },

@@ -1,4 +1,5 @@
 import type { Env } from '../lib/db.ts'
+import { raiseAlert } from '../lib/opsAlerts.ts'
 
 /**
  * family-events-dlq: آخر محطة لحدث فشل كل محاولاته.
@@ -104,6 +105,26 @@ export async function handleFamilyEventsDlq(batch: MessageBatch<unknown>, env: E
 
       // الحدث محفوظ الآن، فالـack لا يعني فقدانه
       msg.ack()
+
+      // OPS-106: التنبيه **بعد** الـack لا قبله.
+      //
+      // فشل إرسال بريد لا يجوز أن يُعيد رسالةً حُفظت إلى الطابور: الحفظ هو
+      // الالتزام، والإشعار خدمة عليه. ولو كان قبله لصار مزوّد بريد ساقط سببًا
+      // في تدوير أحداث فاشلة إلى ما لا نهاية.
+      //
+      // ورفعه هنا لا في دورة الفحص وحدها: الدورة تكتشف التراكم بعد دقائق،
+      // وهذا يكتشف **أوّل** حدث في ثانيته. والبصمة واحدة في الموضعين، فالفهرس
+      // الفريد الجزئي يمنع رسالتين عن نفس الحالة.
+      try {
+        await raiseAlert(env, {
+          fingerprint: 'dlq:pending',
+          serviceId: 'queue_dlq',
+          severity: 'high',
+          condition: `حدث عائلة فاشل وصل إلى الـDLQ (${eventType ?? 'نوع غير معروف'})`,
+        })
+      } catch (error) {
+        console.error('dlq_alert_failed', error)
+      }
     } catch (error) {
       // الكتابة فشلت: تُترك الرسالة في الطابور لتُحاول مرة أخرى بدل أن تُحذف.
       // هذا هو الفرق الجوهري عن السلوك السابق الذي كان يـack مهما حدث.

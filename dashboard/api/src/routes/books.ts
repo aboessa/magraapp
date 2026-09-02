@@ -12,6 +12,7 @@ import { authenticateParent, createMediaToken, mediaIsConfigured } from '../lib/
 import { availabilityContext, availabilityFor, availabilityRefusal } from '../lib/requestGeo.ts';
 import { optionalContentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass.ts';
 import type { Plan } from '../lib/familyPolicy.ts';
+import { bodyOr400, text, type BodySchema } from '../lib/requestSchema.ts';
 
 type AppEnv = { Bindings: Env };
 type Envelope<T> = { success: boolean; data?: T; error?: string };
@@ -36,6 +37,19 @@ const PAGE_IMAGE_ROLES = ['page', 'illustration', 'cover'] as const;
 /// narration itself is reached through `POST /books/:id/audio-sessions`.
 const BOOK_AUDIO_ROLES = ['narration', 'audio'] as const;
 const LANGUAGE_TAG = /^[a-z]{2}(-[a-z]{2})?$/;
+
+/// SEC-110: جسم جلسة سرد.
+///
+/// `bubble_id` مُعلَن ولا يُستخدَم هنا: العميل يبني جسمًا واحدًا لجلسات الكتب
+/// والقصص معًا (`majarra_api_client.dart:612`)، فيرسله حين يكون مضبوطًا. وإعلانه
+/// مقبولًا-مُهمَلًا أصدق من رفضٍ يقطع سردًا لأجل حقلٍ لا يضرّ — والقرار مكتوب
+/// هنا بدل أن يكون سهوًا.
+const NARRATION_SESSION: BodySchema = {
+  child_id: text({ max: 128 }),
+  page_id: text({ max: 128, optional: true }),
+  language: text({ max: 16, optional: true }),
+  bubble_id: text({ max: 128, optional: true }),
+};
 
 function parseObjectArray(value: unknown): Array<Record<string, unknown>> {
   let parsed: unknown = value;
@@ -68,6 +82,25 @@ function parseLanguages(value: unknown, fallback: string): string[] {
       .filter((item) => LANGUAGE_TAG.test(item))
     : [];
   return [...new Set([fallback, ...languages])];
+}
+
+// `characters.reference_images` stores a JSON array of image references and
+// the schema has no dedicated avatar column. The first entry (if any) is the
+// closest equivalent to a character "avatar" and is surfaced as such here.
+// Mirrors the identical helper in routes/stories.ts; kept local rather than
+// shared because the two route modules do not currently share a utils module.
+function firstReferenceImage(value: unknown): string | null {
+  let parsed: unknown = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) return null;
+  const first = parsed[0];
+  return typeof first === 'string' ? first : null;
 }
 
 /// A private narration asset, resolved for capability-token issuance.
@@ -285,23 +318,103 @@ booksRoute.get('/:id', async (c) => {
   }
 
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
-    const book = await queryFirst<Record<string, unknown>>(
-      c.env.DB,
-      `SELECT b.id, b.series_id, b.title_ar, b.type, b.age_min, b.age_max,
-          b.reading_level, b.interaction_mode, b.supervision_level, b.is_free,
-          b.safety_notes, s.title_ar AS series_title,
-          (SELECT COUNT(*) FROM story_pages sp WHERE sp.story_id = b.id) AS pages_count,
-          ${assetSelect('cover_asset', 'book', 'b.id', BOOK_COVER_ROLES, ['image'])},
-          ${assetSelect('audio_asset', 'book', 'b.id', BOOK_AUDIO_ROLES, ['audio'])}
-        FROM books b
-        LEFT JOIN series s ON s.id = b.series_id
-        WHERE b.id = ? AND b.status = 'published'`,
-      [id],
-    );
+    const [book, narratorRows, listenDuration, characterRows, similarRows] = await Promise.all([
+      queryFirst<Record<string, unknown>>(
+        c.env.DB,
+        `SELECT b.id, b.series_id, b.title_ar, b.type, b.age_min, b.age_max,
+            b.reading_level, b.interaction_mode, b.supervision_level, b.is_free,
+            b.safety_notes, b.default_language, b.languages, s.title_ar AS series_title,
+            (SELECT COUNT(*) FROM story_pages sp WHERE sp.story_id = b.id) AS pages_count,
+            ${assetSelect('cover_asset', 'book', 'b.id', BOOK_COVER_ROLES, ['image'])},
+            ${assetSelect('audio_asset', 'book', 'b.id', BOOK_AUDIO_ROLES, ['audio'])}
+          FROM books b
+          LEFT JOIN series s ON s.id = b.series_id
+          WHERE b.id = ? AND b.status = 'published'`,
+        [id],
+      ),
+      // Book pages live in `story_pages` keyed by `story_id = book.id` (see the
+      // comment above `/:id/pages`), so narrator languages are derived through
+      // that same join. `asset_id` is always null here on purpose: the real
+      // audio reference is a protected asset resolved through
+      // POST /books/:id/audio-sessions, not a direct link.
+      queryAll<{ language: string }>(
+        c.env.DB,
+        `SELECT DISTINCT spl.language
+           FROM story_page_localizations spl
+           JOIN story_pages sp ON sp.id = spl.page_id
+          WHERE sp.story_id = ? AND spl.narration_asset_id IS NOT NULL`,
+        [id],
+      ),
+      // SQL SUM() returns NULL when no matching row exists, which is exactly
+      // the "no known duration" signal we want to forward as-is (not 0).
+      queryFirst<{ total: number | null }>(
+        c.env.DB,
+        `SELECT SUM(duration_ms) AS total FROM story_pages WHERE story_id = ? AND duration_ms IS NOT NULL`,
+        [id],
+      ),
+      // `story_bubbles.page_id` points at `story_pages.id`, and those pages are
+      // keyed by `story_id = book.id` for books, so this is the same
+      // characters-via-bubbles join stories.ts uses, scoped to this book's id.
+      queryAll<{ id: string; name_ar: string; reference_images: unknown }>(
+        c.env.DB,
+        `SELECT DISTINCT ch.id, ch.name_ar, ch.reference_images
+           FROM story_bubbles sb
+           JOIN story_pages sp ON sp.id = sb.page_id
+           JOIN characters ch ON ch.id = sb.character_id
+          WHERE sp.story_id = ? AND sb.character_id IS NOT NULL`,
+        [id],
+      ),
+      queryAll<Record<string, unknown>>(
+        c.env.DB,
+        `SELECT b2.id, b2.title_ar,
+            ${assetSelect('cover_asset', 'book', 'b2.id', BOOK_COVER_ROLES, ['image'])}
+          FROM books b2
+          LEFT JOIN series ser ON ser.id = b2.series_id
+         WHERE b2.status = 'published' AND b2.id != ?
+           AND (
+             (b2.series_id IS NOT NULL AND b2.series_id = (SELECT series_id FROM books WHERE id = ?))
+             OR (
+               ser.planet_id IS NOT NULL
+               AND ser.planet_id = (
+                 SELECT curseries.planet_id FROM books cur
+                   JOIN series curseries ON curseries.id = cur.series_id
+                  WHERE cur.id = ?
+               )
+             )
+           )
+         LIMIT 6`,
+        [id, id, id],
+      ),
+    ]);
+
     if (book) {
       const base = publicAssetBaseUrl(c.env);
       applyAssetUrl(book, 'cover_asset', 'cover_url', base);
       applyAssetUrl(book, 'audio_asset', 'audio_url', base);
+      const defaultLanguage = typeof book.default_language === 'string'
+        ? book.default_language.toLowerCase()
+        : 'ar';
+      book.languages = parseLanguages(book.languages, defaultLanguage);
+
+      book.narrators = narratorRows.map((row) => ({ language: row.language, asset_id: null }));
+      book.listen_duration_ms = listenDuration?.total ?? null;
+      book.characters = characterRows.map((row) => ({
+        id: row.id,
+        name_ar: row.name_ar,
+        name_en: null,
+        avatar_url: firstReferenceImage(row.reference_images),
+      }));
+
+      book.similar = similarRows.map((row) => {
+        applyAssetUrl(row, 'cover_asset', 'cover_url', base);
+        return { id: row.id, title_ar: row.title_ar, cover_url: row.cover_url };
+      });
+
+      // No chapter or post-story activity concept exists in the current
+      // schema; these stay explicitly empty until Planet of Stories defines
+      // real aggregation/activity structures (see design.md Component 4).
+      book.chapters = [];
+      book.activities = [];
     }
     return { success: true, data: book };
   });
@@ -488,12 +601,18 @@ booksRoute.post('/:id/audio-sessions', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return unauthorized(auth.reason);
 
-  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null;
-  const childId = typeof body?.child_id === 'string' ? body.child_id : '';
-  if (!childId) return c.json({ success: false, error: 'child_id required' }, 400);
+  // SEC-110: مخطَّط جلسة السرد. `LANGUAGE_TAG` يبقى بعده: المخطَّط يفحص الشكل
+  // والسقف، والوسم اللغوي دلالة يعرفها هذا الملف.
+  const parsed = await bodyOr400<{
+    child_id: string;
+    page_id?: string;
+    language?: string;
+  }>(c, NARRATION_SESSION);
+  if (!parsed.ok) return parsed.response;
+  const childId = parsed.value.child_id;
   // Optional: a per-page narration rather than a whole-book track.
-  const pageId = typeof body?.page_id === 'string' && body.page_id ? body.page_id : null;
-  const language = typeof body?.language === 'string' ? body.language.trim().toLowerCase() : 'ar';
+  const pageId = parsed.value.page_id || null;
+  const language = (parsed.value.language ?? 'ar').trim().toLowerCase();
   if (!LANGUAGE_TAG.test(language)) {
     return c.json({ success: false, error: 'Invalid language tag' }, 400);
   }

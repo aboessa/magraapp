@@ -5,6 +5,7 @@ import { requireAdmin, requirePermission, type AdminVariables } from '../lib/adm
 import { auditStatement, actorId } from '../lib/auditLog.ts'
 import { evaluateFor, gateRefusal } from './adminPublishGate.ts'
 import { summarizeGate } from '../lib/publishGate.ts'
+import { pathParam } from '../lib/routeParams.ts'
 
 type AppEnv = { Bindings: Env; Variables: AdminVariables }
 
@@ -44,19 +45,43 @@ route.use('*', requireAdmin)
 /// `status` and `updated_at` only. Writing a column that does not exist fails the
 /// whole statement, so the shape is declared rather than assumed.
 const PUBLISHABLE = {
-  story: { table: 'stories', type: 'story', label: 'Story', hasPublishedAt: true },
-  book: { table: 'books', type: 'book', label: 'Book', hasPublishedAt: false },
-  game: { table: 'games', type: 'game', label: 'Game', hasPublishedAt: false },
-  project: { table: 'projects', type: 'project', label: 'Project', hasPublishedAt: false },
+  story: { table: 'stories', type: 'story', label: 'Story', hasPublishedAt: true, hasIsPublished: false },
+  book: { table: 'books', type: 'book', label: 'Book', hasPublishedAt: false, hasIsPublished: false },
+  game: { table: 'games', type: 'game', label: 'Game', hasPublishedAt: false, hasIsPublished: false },
+  project: { table: 'projects', type: 'project', label: 'Project', hasPublishedAt: false, hasIsPublished: false },
+
+  // API-106: السلسلة والحلقة انضمّتا إلى نفس المسار.
+  //
+  // كان لهما معالجان مستقلّان في `routes/admin.ts` يتعاملان مع نتيجة بوابة
+  // فارغة كـ«غير مُقيَّمة» **وينشران على أي حال** — والتعليق هناك كان يقرّ بذلك
+  // ويسجّله متابعةً لم تُنفَّذ. والأثر مقيس: عشرون حلقة منشورة بلا أصل فيديو
+  // واحد وبمدّة فارغة. أي أن المسار الذي نُشرت به لم يمنع نشر محتوى **لا يمكن
+  // تشغيله** على جهاز طفل.
+  //
+  // و`is_published` عمود على `episodes` وحدها: القراءة العامة تفحصه مع `status`،
+  // فنشرٌ يضبط الأوّل ولا يضبط الثاني يُنتج حلقةً «منشورة» لا تظهر لأحد.
+  series: { table: 'series', type: 'series', label: 'Series', hasPublishedAt: true, hasIsPublished: false },
+  episode: { table: 'episodes', type: 'episode', label: 'Episode', hasPublishedAt: true, hasIsPublished: true },
 } as const
 
-type PublishableKey = keyof typeof PUBLISHABLE
+export type PublishableKey = keyof typeof PUBLISHABLE
+
+/// النشر لكل الأنواع الستة: نفس البوابة، ونفس الفشل المُغلَق، ونفس صفوف التدقيق.
+///
+/// مُصدَّرة ليستدعيها معالجا السلسلة والحلقة في `routes/admin.ts` بدل نسختيهما:
+/// مسارُهما مُسجَّل هناك، ونقلُ التسجيل كان يعني تغيير ترتيب التركيب في ملف يخدم
+/// مئة مسار. والمشترك هو **الدالّة** لا موضع التسجيل.
+export async function publishEntity(c: Context<AppEnv>, key: PublishableKey) {
+  return publish(c, key)
+}
 
 async function publish(c: Context<AppEnv>, key: PublishableKey) {
   const spec = PUBLISHABLE[key]
   const db = c.env.DB
-  const id = c.req.param('id') ?? ''
-  if (!id) return c.json({ success: false, error: 'id required' }, 400)
+  // API-106: `pathParam` لا `?? ''`. الفرق ليس تجميليًّا: مسارٌ فقد مقطعه بعد
+  // تعديل توجيه يُنتج هنا خطأً مُعلَنًا يسمّي المقطع الناقص، بدل 400 «id required»
+  // تُقرأ خطأً في الطلب فيبحث المشغّل في المكان الخطأ.
+  const id = pathParam(c, 'id')
 
   // The table name comes from the literal map above, never from request input.
   const existing = await queryFirst<{ status: string }>(
@@ -77,14 +102,14 @@ async function publish(c: Context<AppEnv>, key: PublishableKey) {
   // Readiness, server-side. The endpoint is reachable with curl, so a gate the
   // client can skip is decoration. Every blocker is returned at once.
   //
-  // This **fails closed**, which is a deliberate divergence from the series and
-  // episode handlers: those treat a null gate result as `'not evaluated'` and
-  // publish anyway. `evaluateFor` returns null only when it cannot gather facts
-  // for the entity — and existence has already been established above — so a null
-  // here means the gate did not run. Publishing content the gate could not
-  // evaluate is the exact failure the gate exists to prevent. The two older
-  // handlers should be aligned to this (recorded as a follow-up, not changed here,
-  // because loosening or tightening a live publish path deserves its own change).
+  // This **fails closed**. `evaluateFor` returns null only when it cannot gather
+  // facts for the entity — and existence has already been established above — so a
+  // null here means the gate did not run. Publishing content the gate could not
+  // evaluate is the exact failure the gate exists to prevent.
+  //
+  // API-106: the series and episode handlers used to treat that null as
+  // `'not evaluated'` and publish anyway. They now call this function, so all six
+  // types share one gate and one refusal.
   const gate = await evaluateFor(c.env, spec.type, id)
   if (!gate) {
     await auditStatement(db, actorId(c), 'publish_blocked', spec.type, id, {
@@ -107,13 +132,19 @@ async function publish(c: Context<AppEnv>, key: PublishableKey) {
   }
 
   const now = new Date().toISOString()
-  const update = spec.hasPublishedAt
-    ? db.prepare(
-      `UPDATE ${spec.table} SET status = 'published', published_at = COALESCE(published_at, ?), updated_at = datetime('now') WHERE id = ?`,
-    ).bind(now, id)
-    : db.prepare(
-      `UPDATE ${spec.table} SET status = 'published', updated_at = datetime('now') WHERE id = ?`,
-    ).bind(id)
+  // الأعمدة تُبنى من الخريطة الحرفية أعلاه لا من الطلب. و`is_published` يُضبط مع
+  // `status` في نفس البيان: ضبط أحدهما وحده يُنتج حلقةً «منشورة» لا يراها أحد.
+  const columns = [`status = 'published'`]
+  const params: unknown[] = []
+  if (spec.hasIsPublished) columns.push('is_published = 1')
+  if (spec.hasPublishedAt) {
+    columns.push('published_at = COALESCE(published_at, ?)')
+    params.push(now)
+  }
+  columns.push(`updated_at = datetime('now')`)
+  const update = db.prepare(
+    `UPDATE ${spec.table} SET ${columns.join(', ')} WHERE id = ?`,
+  ).bind(...params, id)
 
   await db.batch([
     update,

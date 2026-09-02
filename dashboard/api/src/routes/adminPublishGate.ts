@@ -44,6 +44,7 @@ import {
   type PublishableType,
   type ReviewFact,
   type RightsFact,
+  type StoryPageFacts,
 } from '../lib/publishGate.ts';
 import { gameReadinessFor, loadGameRow } from './adminGames.ts';
 import { workflowFor } from './adminWorkflow.ts';
@@ -59,6 +60,58 @@ const route = new Hono<AppEnv>();
 const REVIEWABLE: PublishableType[] = ['series', 'episode', 'story', 'book', 'game', 'project'];
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+/// صفحات كيانٍ من `story_pages` مع حالة رسمها وكل توطيناتها.
+///
+/// ## لماذا صارت دالّةً مشتركة (`API-107`)
+///
+/// كانت هذه القراءة داخل فرع القصص وحده، وفرعُ الكتب يقرأ **العمود القديم**
+/// `books.pages` — نصَّ JSON. والمقيس: العمود `'[]'` في كل الكتب الاثنين
+/// والعشرين، ولا شيء في مسار القراءة العامّ يقرأه (`books.ts` يقول ذلك صريحًا:
+/// «legacy JSON blob … deliberately not selected»)، وصفحاتُ الكتب الحقيقية في
+/// `story_pages` بمفتاح `story_id = book.id`.
+///
+/// فكانت البوابة تحكم على مصدرٍ خطأ في الاتجاهين: تحجب كتابًا **له صفحات
+/// حقيقية**، وتُجيز كتابًا كُتب في عموده مصفوفةٌ و**لا صفحة له**.
+///
+/// واستعلامان لا واحدٌ لكل صفحة: كتابٌ من أربعين صفحة كان سيكلّف أربعين رحلة
+/// لجوابٍ واحد.
+async function loadPageFacts(db: D1Database, entityId: string): Promise<StoryPageFacts[]> {
+  const pages = await queryAll<{
+    id: string; page_number: number | null; image_asset_id: string | null; image_status: string | null;
+  }>(db, `
+    SELECT p.id, p.page_number, p.image_asset_id, ca.status AS image_status
+      FROM story_pages p LEFT JOIN content_assets ca ON ca.id = p.image_asset_id
+     WHERE p.story_id = ?
+     ORDER BY p.page_number
+  `, [entityId]);
+
+  const localizations = pages.length
+    ? await queryAll<{
+        page_id: string; language: string; body_text: string | null;
+        narration_asset_id: string | null; narration_status: string | null;
+      }>(db, `
+        SELECT l.page_id, l.language, l.body_text, l.narration_asset_id, ca.status AS narration_status
+          FROM story_page_localizations l
+          LEFT JOIN content_assets ca ON ca.id = l.narration_asset_id
+         WHERE l.page_id IN (${pages.map(() => '?').join(', ')})
+      `, pages.map((page) => page.id))
+    : [];
+
+  return pages.map((page) => ({
+    page_number: page.page_number,
+    image_asset_id: page.image_asset_id,
+    image_status: page.image_status,
+    localizations: localizations
+      .filter((entry) => entry.page_id === page.id)
+      .map((entry) => ({
+        language: entry.language,
+        body_text: entry.body_text,
+        narration_asset_id: entry.narration_asset_id,
+        narration_status: entry.narration_status,
+      })),
+  }));
+}
 
 function stringArray(raw: unknown): string[] {
   const parsed = typeof raw === 'string' ? parseJson(raw, []) : raw;
@@ -270,28 +323,7 @@ export async function gatherPublishGateFacts(
     `, [id]);
     if (!row) return null;
 
-    // Pages with their illustration status and every localisation in one pass. Two
-    // queries rather than one per page: a forty-page story would otherwise cost
-    // forty round trips to answer one question.
-    const pages = await queryAll<{
-      id: string; page_number: number | null; image_asset_id: string | null; image_status: string | null;
-    }>(db, `
-      SELECT p.id, p.page_number, p.image_asset_id, ca.status AS image_status
-        FROM story_pages p LEFT JOIN content_assets ca ON ca.id = p.image_asset_id
-       WHERE p.story_id = ?
-       ORDER BY p.page_number
-    `, [id]);
-    const localizations = pages.length
-      ? await queryAll<{
-          page_id: string; language: string; body_text: string | null;
-          narration_asset_id: string | null; narration_status: string | null;
-        }>(db, `
-          SELECT l.page_id, l.language, l.body_text, l.narration_asset_id, ca.status AS narration_status
-            FROM story_page_localizations l
-            LEFT JOIN content_assets ca ON ca.id = l.narration_asset_id
-           WHERE l.page_id IN (${pages.map(() => '?').join(', ')})
-        `, pages.map((page) => page.id))
-      : [];
+    const pages = await loadPageFacts(db, id);
 
     return {
       entity_type: 'story',
@@ -311,19 +343,7 @@ export async function gatherPublishGateFacts(
       visual_style_id: row.visual_style_id,
       series_id: row.series_id,
       series_status: row.series_status,
-      pages: pages.map((page) => ({
-        page_number: page.page_number,
-        image_asset_id: page.image_asset_id,
-        image_status: page.image_status,
-        localizations: localizations
-          .filter((entry) => entry.page_id === page.id)
-          .map((entry) => ({
-            language: entry.language,
-            body_text: entry.body_text,
-            narration_asset_id: entry.narration_asset_id,
-            narration_status: entry.narration_status,
-          })),
-      })),
+      pages,
     };
   }
 
@@ -350,7 +370,11 @@ export async function gatherPublishGateFacts(
       assets: await loadLinkedAssets(db, 'book', id),
       today: day,
       workflow: await loadWorkflowFacts(env, 'book', id),
-      pages: row.pages,
+      // `API-107`: الصفحات من `story_pages` لا من العمود القديم `b.pages`.
+      // نفس المصدر الذي يقرأه `GET /books/:id/pages`، فما تقيسه البوابة هو ما
+      // يراه الطفل.
+      pages: await loadPageFacts(db, id),
+      legacy_pages_column: row.pages,
       languages: row.languages,
       default_language: row.default_language,
     };
@@ -456,6 +480,139 @@ route.get('/publish-readiness/:type/:id', requireAdmin, async (c) => {
   const result = await evaluateFor(c.env, type, id);
   if (!result) return c.json({ success: false, error: 'Content not found' }, 404);
   return c.json({ success: true, data: result });
+});
+
+/// The table each publishable type lives in. Explicit, because a generic guess
+/// (`${type}s`) would silently produce `storys` and report a clean sheet for a type
+/// it never queried — a checker that finds nothing because it looked nowhere.
+const TABLE_FOR: Record<PublishableType, string> = {
+  series: 'series',
+  episode: 'episodes',
+  story: 'stories',
+  book: 'books',
+  game: 'games',
+  project: 'projects',
+};
+
+/// The statuses worth sweeping, and the reason each is a distinct question.
+///
+/// Whitelisted rather than interpolated: the status reaches a `WHERE` clause, and an
+/// open parameter there is an injection with extra steps.
+const SWEEPABLE_STATUS = ['published', 'ready', 'scheduled', 'review'] as const;
+type SweepStatus = typeof SWEEPABLE_STATUS[number];
+const isSweepStatus = (value: string): value is SweepStatus =>
+  (SWEEPABLE_STATUS as readonly string[]).includes(value);
+
+/// `GET /admin/publish-readiness/sweep?status=published|ready|scheduled|review`
+///
+/// ## Two questions, one gate (`CNT-101`, `CNT-102`)
+///
+/// The gate runs **at the moment of publishing** and never again, and the only other
+/// endpoint evaluates one item (`/publish-readiness/:type/:id`). So two operational
+/// questions had no answer without one request per row and a human keeping score:
+///
+///  * `status=published` — *what is live right now that would fail if we published it
+///    today?* Rows published before a check existed, or whose asset was unlinked
+///    afterwards, stay live and broken. Worst for episodes: a child presses "watch"
+///    on a shelf and gets an error, which is worse than the row not being there.
+///  * `status=ready` — *what is waiting to be published, and what exactly does each
+///    one lack?* This is the editor's queue. Without it, "twelve stories sit at ready"
+///    is a number with no next action attached.
+///
+/// It is one endpoint because it is one question with a filter, and two endpoints
+/// would be two copies of the same loop drifting apart.
+///
+/// ## Why it re-runs the gate instead of a SQL predicate
+///
+/// A query mirroring "has a video" would be a **second copy of the rule** and would
+/// drift from `evaluatePublishGate` exactly as every hand-maintained mirror in this
+/// audit has. This calls `evaluateFor` per row: slower, and correct by construction —
+/// whatever the gate blocks on today is what this reports.
+///
+/// `limit` is capped because this is O(rows x queries-per-row); the caller pages.
+route.get('/publish-readiness/sweep', requireAdmin, async (c) => {
+  const requested = c.req.query('type');
+  const types = requested
+    ? (isPublishableType(requested) ? [requested] : null)
+    : (Object.keys(TABLE_FOR) as PublishableType[]);
+  if (!types) return c.json({ success: false, error: 'Unsupported content type for publish readiness' }, 400);
+
+  const requestedStatus = c.req.query('status') ?? 'published';
+  if (!isSweepStatus(requestedStatus)) {
+    return c.json({
+      success: false,
+      error: `Unsupported status: expected one of ${SWEEPABLE_STATUS.join(', ')}`,
+    }, 400);
+  }
+
+  const limit = Math.min(Math.max(Number(c.req.query('limit') ?? 100), 1), 500);
+  const blocked: Array<{
+    entity_type: PublishableType; entity_id: string; blockers: PublishGateResult['blockers'];
+  }> = [];
+  /// Rows that pass but carry warnings (`CNT-107`).
+  ///
+  /// The sweep reported blockers only, and that hid the exact class of problem the
+  /// audit raised: `content_reviews` has 43 rows, **all** pending, and the gate
+  /// treats a pending or absent review as a **warning** — deliberately, because
+  /// turning absence into a blocker would mark the whole library unpublishable and
+  /// train people to bypass the gate. The consequence is that a published item
+  /// whose every review is still pending came back from this endpoint as clean.
+  ///
+  /// So warnings are reported, and reported **separately**: folding them into
+  /// `blocked` would call a warning a refusal, and dropping them makes the ignored
+  /// warning invisible. Neither is the truth.
+  const warned: Array<{
+    entity_type: PublishableType; entity_id: string; warnings: PublishGateResult['warnings'];
+  }> = [];
+  const checked: Record<string, number> = {};
+  // A type whose read fails must not be reported as "nothing wrong": that is the
+  // zero-for-unknown mistake. It is named instead.
+  const unavailable: Array<{ entity_type: PublishableType; error: string }> = [];
+
+  for (const type of types) {
+    let rows: Array<{ id: string }> = [];
+    try {
+      rows = await queryAll<{ id: string }>(
+        c.env.DB,
+        `SELECT id FROM ${TABLE_FOR[type]} WHERE status = ? ORDER BY id LIMIT ?`,
+        [requestedStatus, limit],
+      );
+    } catch (error) {
+      unavailable.push({ entity_type: type, error: String(error) });
+      continue;
+    }
+    checked[type] = rows.length;
+    for (const row of rows) {
+      const result = await evaluateFor(c.env, type, row.id).catch(() => null);
+      // A row that cannot be evaluated is not a clean row.
+      if (!result) {
+        unavailable.push({ entity_type: type, error: `could not evaluate ${row.id}` });
+        continue;
+      }
+      if (result.blockers.length > 0) {
+        blocked.push({ entity_type: type, entity_id: row.id, blockers: result.blockers });
+      }
+      // A blocked row is already reported with the stronger finding; listing it
+      // twice would inflate both counts for one problem.
+      else if (result.warnings.length > 0) {
+        warned.push({ entity_type: type, entity_id: row.id, warnings: result.warnings });
+      }
+    }
+  }
+
+  return c.json({
+    success: true,
+    data: {
+      status: requestedStatus,
+      checked,
+      blocked_count: blocked.length,
+      blocked,
+      warned_count: warned.length,
+      warned,
+      unavailable,
+      limit,
+    },
+  });
 });
 
 export default route;

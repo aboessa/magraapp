@@ -54,6 +54,34 @@ export function resolveLanguage(
   return { language: found, requested, chain, fell_back: found !== requested };
 }
 
+/// Which text fields are served in the base language although the payload
+/// declares another one (`CNT-105`).
+///
+/// ## The gap
+///
+/// [resolveLanguage] chooses a localization by whether a **row** exists, not by
+/// whether that row has text in it. A French row with a null `title` was therefore
+/// served as `language: 'fr'`, `fell_back: false`, and the **Arabic** title: a
+/// language mix presented as a resolved language. The child sees one field in a
+/// script they may not read, and nothing in the payload says so.
+///
+/// The precedent is two fields away: `missing_prompt_keys` and `missing_voice_keys`
+/// exist so a gap is visible rather than silent. Title and instructions were the
+/// two left out of that rule, and they are the two a child reads first.
+///
+/// Arabic is the base language, so serving `title_ar` under `language: 'ar'` is not
+/// a fallback and is not reported.
+export function textFallbacks(
+  resolution: LanguageResolution | null,
+  localization: { title: string | null; instructions: string | null } | null,
+): string[] {
+  if (!resolution || resolution.language === 'ar') return [];
+  const out: string[] = [];
+  if (!localization?.title) out.push('title');
+  if (!localization?.instructions) out.push('instructions');
+  return out;
+}
+
 /// Keys inside a pack that exist for editors and must never reach a child's
 /// device.
 ///

@@ -53,23 +53,33 @@ route.get('/analytics/overview', async (c) => {
 route.get('/analytics/children/:childId', async (c) => {
   const childId = c.req.param('childId')
 
+  // API-105: يُقرأ من الإسقاط الذي يكتبه الطابور، لا من `children_profiles`.
+  //
+  // ذلك الجدول **صفر صفًّا ولا كاتب له**: سلطة الحقيقة في الكائن الدائم، فكان
+  // هذا المسار يُعيد 404 لكل طفل قائم فعلًا — «طفل غير موجود» عن طفلٍ يشاهد.
   const child = await queryFirst<Record<string, unknown>>(
     c.env.DB,
-    'SELECT id, nickname, age_track, language, status, parent_id FROM children_profiles WHERE id = ?',
+    `SELECT child_id AS id, nickname, age_track, language, status, parent_id
+       FROM child_projection WHERE child_id = ?`,
     [childId],
   )
   // 404 حالة قائمة بذاتها: طفل غير موجود ليس طفلًا بلا تقدّم
   if (!child) return c.json({ success: false, error: 'Child not found' }, 404)
 
+  // API-105: التقدّم من `child_progress_projection`.
+  //
+  // و`content_type` معروض لأن المفتاح صار ثلاثيًّا: الكتب والقصص والألعاب لها
+  // تقدّم أيضًا، و`watch_progress` القديم لم يكن يقبل إلا الحلقات.
   const watch = await queryAll<Record<string, unknown>>(c.env.DB, `
-    SELECT wp.episode_id, e.title_ar AS episode_title, s.title_ar AS series_title,
-           wp.progress_seconds, wp.is_completed, wp.watch_count,
-           wp.completed_at, wp.updated_at
-      FROM watch_progress wp
-      LEFT JOIN episodes e ON e.id = wp.episode_id
+    SELECT p.content_type, p.content_id, p.content_id AS episode_id,
+           e.title_ar AS episode_title, s.title_ar AS series_title,
+           p.position_ms, p.duration_ms, p.completed AS is_completed,
+           p.completions AS watch_count, p.completed_at_ms, p.updated_at
+      FROM child_progress_projection p
+      LEFT JOIN episodes e ON e.id = p.content_id AND p.content_type = 'episode'
       LEFT JOIN series s ON s.id = e.series_id
-     WHERE wp.child_id = ?
-     ORDER BY wp.updated_at DESC
+     WHERE p.child_id = ?
+     ORDER BY p.last_event_at_ms DESC
      LIMIT 50
   `, [childId])
 
@@ -107,7 +117,13 @@ route.get('/analytics/children/:childId', async (c) => {
         ...row,
         is_completed: Number(row.is_completed) === 1,
         watch_count: Number(row.watch_count ?? 0),
-        progress_seconds: Number(row.progress_seconds ?? 0),
+        // الثواني تبقى في العقد لأن اللوحة تعرضها، وتُشتقّ من المللي بدل أن
+        // تُخزَّن: التخزين بدقّة أقل من المصدر يُفقد ما يحتاجه الاستكمال.
+        progress_seconds: Math.floor(Number(row.position_ms ?? 0) / 1000),
+        duration_seconds: Math.floor(Number(row.duration_ms ?? 0) / 1000),
+        completed_at: row.completed_at_ms === null || row.completed_at_ms === undefined
+          ? null
+          : new Date(Number(row.completed_at_ms)).toISOString(),
       })),
       mastery: mastery.map((row) => {
         const total = Number(row.attempts ?? 0)

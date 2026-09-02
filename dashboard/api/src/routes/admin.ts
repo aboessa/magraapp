@@ -1,9 +1,9 @@
-import { Hono } from 'hono'
+﻿import { Hono } from 'hono'
 import type { Context } from 'hono'
 import type { Env } from '../lib/db.ts'
 import { pathParam } from '../lib/routeParams.ts'
 import { queryAll, queryFirst } from '../lib/db.ts'
-import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, SERIES_COVER_ROLES, EPISODE_THUMBNAIL_ROLES } from '../lib/assetUrls.ts'
+import { applyArtworkUrl, artworkSelect, publicAssetBaseUrl, SERIES_COVER_ROLES, SERIES_BANNER_ROLES, EPISODE_THUMBNAIL_ROLES } from '../lib/assetUrls.ts'
 import { bumpPublicContentCacheVersion } from '../lib/publicCache.ts'
 import adminAssetsRoute from './adminAssets.ts'
 import adminCatalogueRoute from './adminCatalogue.ts'
@@ -20,6 +20,7 @@ import adminBackupRoute from './adminBackup.ts'
 import adminMasteryRoute from './adminMastery.ts'
 import adminTtsRoute from './adminTts.ts'
 import adminPublishGateRoute, { evaluateFor, gateRefusal } from './adminPublishGate.ts'
+import { publishEntity } from './adminPublish.ts'
 import adminAvailabilityRoute from './adminAvailability.ts'
 import adminWorkflowRoute from './adminWorkflow.ts'
 import adminSupportRoute from './adminSupport.ts'
@@ -60,11 +61,11 @@ const PLANS = ['free', 'family', 'family_plus']
 /// tested. It previously compared planet_id against 'iman' while the seeded ID
 /// is 'islamic', which silently disabled the gate for all real Islamic content.
 
-/// الحرس نفسه المستخدم في كل مسارات الإدارة، من lib/adminAuth.ts.
+/// Ø§Ù„Ø­Ø±Ø³ Ù†ÙØ³Ù‡ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… ÙÙŠ ÙƒÙ„ Ù…Ø³Ø§Ø±Ø§Øª Ø§Ù„Ø¥Ø¯Ø§Ø±Ø©ØŒ Ù…Ù† lib/adminAuth.ts.
 ///
-/// كان هذا الملف يكرّر منطق التحقق من المفتاح المشترك بدل استيراده، فوُجدت
-/// نسختان من فحص المصادقة. الآن نسخة واحدة تقبل جلسة مستخدم حقيقية وتُسقط
-/// المفتاح المشترك بعد بذر أول مستخدم.
+/// ÙƒØ§Ù† Ù‡Ø°Ø§ Ø§Ù„Ù…Ù„Ù ÙŠÙƒØ±Ù‘Ø± Ù…Ù†Ø·Ù‚ Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ù…ÙØªØ§Ø­ Ø§Ù„Ù…Ø´ØªØ±Ùƒ Ø¨Ø¯Ù„ Ø§Ø³ØªÙŠØ±Ø§Ø¯Ù‡ØŒ ÙÙˆÙØ¬Ø¯Øª
+/// Ù†Ø³Ø®ØªØ§Ù† Ù…Ù† ÙØ­Øµ Ø§Ù„Ù…ØµØ§Ø¯Ù‚Ø©. Ø§Ù„Ø¢Ù† Ù†Ø³Ø®Ø© ÙˆØ§Ø­Ø¯Ø© ØªÙ‚Ø¨Ù„ Ø¬Ù„Ø³Ø© Ù…Ø³ØªØ®Ø¯Ù… Ø­Ù‚ÙŠÙ‚ÙŠØ© ÙˆØªÙØ³Ù‚Ø·
+/// Ø§Ù„Ù…ÙØªØ§Ø­ Ø§Ù„Ù…Ø´ØªØ±Ùƒ Ø¨Ø¹Ø¯ Ø¨Ø°Ø± Ø£ÙˆÙ„ Ù…Ø³ØªØ®Ø¯Ù….
 adminRoute.use('*', requireAdmin)
 
 adminRoute.use('*', async (c, next) => {
@@ -81,12 +82,24 @@ adminRoute.use('*', async (c, next) => {
 // authentication middleware. Projection routes are registered before the
 // legacy D1 family handlers below and therefore remain the authoritative admin
 // read path while mutations fail closed.
-adminRoute.route('/', adminContentRoute)
-// الكواكب: القائمة بمؤشّراتها الحقيقية، تجميعة مساحة العمل، شجرة المحتوى،
- // والكتابات الثلاث. مركّبة بعد adminContent الذي لم يبقَ فيه أي مسار كوكب، فلا
- // تظليل. مسار `/planets/:id/workspace` أخصّ من `/planets/:id` ولا يتقاطع معه.
-adminRoute.route('/', adminPlanetsRoute)
+// Ø§Ù„Ù‚ØµØµ **Ù‚Ø¨Ù„** adminContentØŒ Ù„Ø§ Ø¨Ø¹Ø¯Ù‡.
+//
+// Ù…Ø±ÙƒÙ‘Ø¨Ù‹Ø§ Ø¨Ø¹Ø¯Ù‡ ÙƒØ§Ù† `GET /admin/stories/library` ÙŠÙÙ„ØªÙ‚ÙŽØ· Ø¨Ù€`route.get('/stories/:id')`
+// ÙÙŠ adminContent.ts: Ù…Ù‚Ø·Ø¹ ÙˆØ§Ø­Ø¯ Ø¨Ø¹Ø¯ `/stories`ØŒ ÙÙŠÙÙ‚ÙŠÙŽÙ‘Ø¯ Ø§Ù„Ø­Ø±Ù `library` ÙƒÙ…Ø¹Ø±Ù‘Ù
+// ÙˆØªÙƒÙˆÙ† Ø§Ù„Ø¥Ø¬Ø§Ø¨Ø© 404 Â«Story not foundÂ» Ù‚Ø¨Ù„ Ø£Ù† ÙŠÙØ´ØºÙŽÙ‘Ù„ Ù…Ø¹Ø§Ù„Ø¬ Ø§Ù„Ù…ÙƒØªØ¨Ø© Ø£ØµÙ„Ù‹Ø§. ÙØµÙØ­Ø©
+// Ù…ÙƒØªØ¨Ø© Ø§Ù„Ù‚ØµØµ Ø§Ù„Ù…ØµÙˆÙ‘Ø±Ø© Ù„Ù… ØªØ¹Ù…Ù„ Ù‚Ø·ØŒ ÙˆÙ„Ù… ÙŠÙƒØ´Ù Ø°Ù„Ùƒ Ø£ÙŠ Ø§Ø®ØªØ¨Ø§Ø± ÙˆØ­Ø¯Ø© Ù„Ø£Ù† ØªÙ„Ùƒ
+// Ø§Ù„Ø§Ø®ØªØ¨Ø§Ø±Ø§Øª ØªÙ†Ø§Ø¯ÙŠ ÙˆØ­Ø¯Ø© Ø§Ù„Ù…Ø³Ø§Ø± Ù…Ø¨Ø§Ø´Ø±Ø©Ù‹ ÙÙ„Ø§ ÙŠØ¸Ù‡Ø± Ø§Ù„ØªØ¸Ù„ÙŠÙ„ Ø¥Ù„Ø§ Ø¨Ø¹Ø¯ ØªØ±ÙƒÙŠØ¨ Ø§Ù„Ø§Ø«Ù†ÙŠÙ†
+// Ø¹Ù„Ù‰ ØªØ·Ø¨ÙŠÙ‚ ÙˆØ§Ø­Ø¯.
+//
+// Ù†ÙØ³ ØµÙ†Ù Ø§Ù„Ø®Ø·Ø£ Ø§Ù„Ù…ÙˆØ«ÙŽÙ‘Ù‚ ÙÙŠ index.ts Ù…Ø¹ `/admin/games/ops`.
+// Ø§Ù„Ù…Ø³Ø§Ø±Ø§Øª Ø§Ù„Ø£Ø®ØµÙ‘ Ù‡Ù†Ø§ (`/stories/:id/workspace`, `/stories/:id/pages/reorder`)
+// Ù„Ø§ ØªØ­Ø¬Ø¨ Ø´ÙŠØ¦Ù‹Ø§ ÙÙŠ adminContent: Ù‡ÙŠ Ø£Ø·ÙˆÙ„ Ù…Ù‚Ø§Ø·Ø¹ÙŽ ÙˆØªØ®ØªÙ„Ù Ø£ÙØ¹Ø§Ù„Ù‹Ø§ ÙˆØ­Ø±ÙˆÙÙ‹Ø§.
 adminRoute.route('/', adminStoriesRoute)
+adminRoute.route('/', adminContentRoute)
+// Ø§Ù„ÙƒÙˆØ§ÙƒØ¨: Ø§Ù„Ù‚Ø§Ø¦Ù…Ø© Ø¨Ù…Ø¤Ø´Ù‘Ø±Ø§ØªÙ‡Ø§ Ø§Ù„Ø­Ù‚ÙŠÙ‚ÙŠØ©ØŒ ØªØ¬Ù…ÙŠØ¹Ø© Ù…Ø³Ø§Ø­Ø© Ø§Ù„Ø¹Ù…Ù„ØŒ Ø´Ø¬Ø±Ø© Ø§Ù„Ù…Ø­ØªÙˆÙ‰ØŒ
+ // ÙˆØ§Ù„ÙƒØªØ§Ø¨Ø§Øª Ø§Ù„Ø«Ù„Ø§Ø«. Ù…Ø±ÙƒÙ‘Ø¨Ø© Ø¨Ø¹Ø¯ adminContent Ø§Ù„Ø°ÙŠ Ù„Ù… ÙŠØ¨Ù‚ÙŽ ÙÙŠÙ‡ Ø£ÙŠ Ù…Ø³Ø§Ø± ÙƒÙˆÙƒØ¨ØŒ ÙÙ„Ø§
+ // ØªØ¸Ù„ÙŠÙ„. Ù…Ø³Ø§Ø± `/planets/:id/workspace` Ø£Ø®ØµÙ‘ Ù…Ù† `/planets/:id` ÙˆÙ„Ø§ ÙŠØªÙ‚Ø§Ø·Ø¹ Ù…Ø¹Ù‡.
+adminRoute.route('/', adminPlanetsRoute)
 // Catalogue rows that had no HTTP surface at all: learning objectives and their
 // track rows, skills, content reviews, story-page reads and the cascading story
 // purge. Mounted after adminContent so nothing here shadows an existing handler.
@@ -97,47 +110,47 @@ adminRoute.route('/', adminTeamsRoute)
 adminRoute.route('/', adminAppExperienceRoute)
 adminRoute.route('/', adminPlansRoute)
 adminRoute.route('/', adminBackupRoute)
-// الإتقان والمحاولات: mastery و attempts كانا بلا أي مسار مخصَّص، والقراءة
-// الوحيدة لهما كانت تجميعًا واحدًا داخل /analytics/overview.
+// Ø§Ù„Ø¥ØªÙ‚Ø§Ù† ÙˆØ§Ù„Ù…Ø­Ø§ÙˆÙ„Ø§Øª: mastery Ùˆ attempts ÙƒØ§Ù†Ø§ Ø¨Ù„Ø§ Ø£ÙŠ Ù…Ø³Ø§Ø± Ù…Ø®ØµÙŽÙ‘ØµØŒ ÙˆØ§Ù„Ù‚Ø±Ø§Ø¡Ø©
+// Ø§Ù„ÙˆØ­ÙŠØ¯Ø© Ù„Ù‡Ù…Ø§ ÙƒØ§Ù†Øª ØªØ¬Ù…ÙŠØ¹Ù‹Ø§ ÙˆØ§Ø­Ø¯Ù‹Ø§ Ø¯Ø§Ø®Ù„ /analytics/overview.
 adminRoute.route('/', adminMasteryRoute)
 // Narration generation. Mounted last so it cannot shadow any existing handler.
 adminRoute.route('/', adminTtsRoute)
-// جاهزية النشر الموحّدة: مسار قراءة واحد لكل الأنواع القابلة للنشر، تستدعيه
-// الواجهة قبل زرّ النشر، وتستدعيه عمليات النشر نفسها عبر evaluateFor.
+// Ø¬Ø§Ù‡Ø²ÙŠØ© Ø§Ù„Ù†Ø´Ø± Ø§Ù„Ù…ÙˆØ­Ù‘Ø¯Ø©: Ù…Ø³Ø§Ø± Ù‚Ø±Ø§Ø¡Ø© ÙˆØ§Ø­Ø¯ Ù„ÙƒÙ„ Ø§Ù„Ø£Ù†ÙˆØ§Ø¹ Ø§Ù„Ù‚Ø§Ø¨Ù„Ø© Ù„Ù„Ù†Ø´Ø±ØŒ ØªØ³ØªØ¯Ø¹ÙŠÙ‡
+// Ø§Ù„ÙˆØ§Ø¬Ù‡Ø© Ù‚Ø¨Ù„ Ø²Ø±Ù‘ Ø§Ù„Ù†Ø´Ø±ØŒ ÙˆØªØ³ØªØ¯Ø¹ÙŠÙ‡ Ø¹Ù…Ù„ÙŠØ§Øª Ø§Ù„Ù†Ø´Ø± Ù†ÙØ³Ù‡Ø§ Ø¹Ø¨Ø± evaluateFor.
 adminRoute.route('/', adminPublishGateRoute)
-// سياسة الإتاحة الجغرافية: قراءة السلسلة الكاملة (موروثة أم مُلغاة) وكتابتها.
+// Ø³ÙŠØ§Ø³Ø© Ø§Ù„Ø¥ØªØ§Ø­Ø© Ø§Ù„Ø¬ØºØ±Ø§ÙÙŠØ©: Ù‚Ø±Ø§Ø¡Ø© Ø§Ù„Ø³Ù„Ø³Ù„Ø© Ø§Ù„ÙƒØ§Ù…Ù„Ø© (Ù…ÙˆØ±ÙˆØ«Ø© Ø£Ù… Ù…ÙÙ„ØºØ§Ø©) ÙˆÙƒØªØ§Ø¨ØªÙ‡Ø§.
 adminRoute.route('/', adminAvailabilityRoute)
-// محرك سير العمل: مراحل وتعيينات وقرارات وSLA.
+// Ù…Ø­Ø±Ùƒ Ø³ÙŠØ± Ø§Ù„Ø¹Ù…Ù„: Ù…Ø±Ø§Ø­Ù„ ÙˆØªØ¹ÙŠÙŠÙ†Ø§Øª ÙˆÙ‚Ø±Ø§Ø±Ø§Øª ÙˆSLA.
 //
-// مركّب بعد adminTeams الذي يحمل `GET /workflows/runs` (القائمة) و
-// `POST /workflows/runs/:id/review` (سجل القرار القديم). لا تعارض: مسارات هذا
-// المحرك أخصّ (templates/overdue/my-stages و/stages/:key/decision)، وسجل
-// القرارات القديم يبقى عاملًا بلا كسر.
+// Ù…Ø±ÙƒÙ‘Ø¨ Ø¨Ø¹Ø¯ adminTeams Ø§Ù„Ø°ÙŠ ÙŠØ­Ù…Ù„ `GET /workflows/runs` (Ø§Ù„Ù‚Ø§Ø¦Ù…Ø©) Ùˆ
+// `POST /workflows/runs/:id/review` (Ø³Ø¬Ù„ Ø§Ù„Ù‚Ø±Ø§Ø± Ø§Ù„Ù‚Ø¯ÙŠÙ…). Ù„Ø§ ØªØ¹Ø§Ø±Ø¶: Ù…Ø³Ø§Ø±Ø§Øª Ù‡Ø°Ø§
+// Ø§Ù„Ù…Ø­Ø±Ùƒ Ø£Ø®ØµÙ‘ (templates/overdue/my-stages Ùˆ/stages/:key/decision)ØŒ ÙˆØ³Ø¬Ù„
+// Ø§Ù„Ù‚Ø±Ø§Ø±Ø§Øª Ø§Ù„Ù‚Ø¯ÙŠÙ… ÙŠØ¨Ù‚Ù‰ Ø¹Ø§Ù…Ù„Ù‹Ø§ Ø¨Ù„Ø§ ÙƒØ³Ø±.
 adminRoute.route('/', adminWorkflowRoute)
-// مركز الدعم: التذاكر وخطها الزمني وSLA والوسوم والعروض المحفوظة. مركّب بعد
-// adminAppExperience الذي يحمل `/support/family/:id`، ومساراته لا تتقاطع معه.
+// Ù…Ø±ÙƒØ² Ø§Ù„Ø¯Ø¹Ù…: Ø§Ù„ØªØ°Ø§ÙƒØ± ÙˆØ®Ø·Ù‡Ø§ Ø§Ù„Ø²Ù…Ù†ÙŠ ÙˆSLA ÙˆØ§Ù„ÙˆØ³ÙˆÙ… ÙˆØ§Ù„Ø¹Ø±ÙˆØ¶ Ø§Ù„Ù…Ø­ÙÙˆØ¸Ø©. Ù…Ø±ÙƒÙ‘Ø¨ Ø¨Ø¹Ø¯
+// adminAppExperience Ø§Ù„Ø°ÙŠ ÙŠØ­Ù…Ù„ `/support/family/:id`ØŒ ÙˆÙ…Ø³Ø§Ø±Ø§ØªÙ‡ Ù„Ø§ ØªØªÙ‚Ø§Ø·Ø¹ Ù…Ø¹Ù‡.
 adminRoute.route('/', adminSupportRoute)
-// مصنع المحتوى: مسارات /production/factory أخصّ من /production/:type/:id،
-// لذلك يجب تركيبه قبل مركز الإنتاج حتى لا يُفسَّر "factory" كنوع محتوى.
-// التخطيط/الاستيراد منفصلان عن approve-spend وعن dispatch المدفوع.
+// Ù…ØµÙ†Ø¹ Ø§Ù„Ù…Ø­ØªÙˆÙ‰: Ù…Ø³Ø§Ø±Ø§Øª /production/factory Ø£Ø®ØµÙ‘ Ù…Ù† /production/:type/:idØŒ
+// Ù„Ø°Ù„Ùƒ ÙŠØ¬Ø¨ ØªØ±ÙƒÙŠØ¨Ù‡ Ù‚Ø¨Ù„ Ù…Ø±ÙƒØ² Ø§Ù„Ø¥Ù†ØªØ§Ø¬ Ø­ØªÙ‰ Ù„Ø§ ÙŠÙÙØ³ÙŽÙ‘Ø± "factory" ÙƒÙ†ÙˆØ¹ Ù…Ø­ØªÙˆÙ‰.
+// Ø§Ù„ØªØ®Ø·ÙŠØ·/Ø§Ù„Ø§Ø³ØªÙŠØ±Ø§Ø¯ Ù…Ù†ÙØµÙ„Ø§Ù† Ø¹Ù† approve-spend ÙˆØ¹Ù† dispatch Ø§Ù„Ù…Ø¯ÙÙˆØ¹.
 adminRoute.route('/', adminContentFactoryRoute)
-// مركز الإنتاج: مصفوفة متطلبات لكل عنصر، مشتقّة من الأصول نفسها، وطبقة إسناد
-// بشرية مخزَّنة. مركّب بعد بوابة النشر لأنه يستدعي تقييمها لصفّ «النشر».
+// Ù…Ø±ÙƒØ² Ø§Ù„Ø¥Ù†ØªØ§Ø¬: Ù…ØµÙÙˆÙØ© Ù…ØªØ·Ù„Ø¨Ø§Øª Ù„ÙƒÙ„ Ø¹Ù†ØµØ±ØŒ Ù…Ø´ØªÙ‚Ù‘Ø© Ù…Ù† Ø§Ù„Ø£ØµÙˆÙ„ Ù†ÙØ³Ù‡Ø§ØŒ ÙˆØ·Ø¨Ù‚Ø© Ø¥Ø³Ù†Ø§Ø¯
+// Ø¨Ø´Ø±ÙŠØ© Ù…Ø®Ø²ÙŽÙ‘Ù†Ø©. Ù…Ø±ÙƒÙ‘Ø¨ Ø¨Ø¹Ø¯ Ø¨ÙˆØ§Ø¨Ø© Ø§Ù„Ù†Ø´Ø± Ù„Ø£Ù†Ù‡ ÙŠØ³ØªØ¯Ø¹ÙŠ ØªÙ‚ÙŠÙŠÙ…Ù‡Ø§ Ù„ØµÙÙ‘ Â«Ø§Ù„Ù†Ø´Ø±Â».
 adminRoute.route('/', adminProductionRoute)
-// عمليات الأجهزة الإدارية: المسار المشغِّل إلى سلطة FamilyState. مسارات هذا
-// المُوجِّه تحت /families/:id فلا تتقاطع مع /devices للقراءة من الإسقاط.
+// Ø¹Ù…Ù„ÙŠØ§Øª Ø§Ù„Ø£Ø¬Ù‡Ø²Ø© Ø§Ù„Ø¥Ø¯Ø§Ø±ÙŠØ©: Ø§Ù„Ù…Ø³Ø§Ø± Ø§Ù„Ù…Ø´ØºÙÙ‘Ù„ Ø¥Ù„Ù‰ Ø³Ù„Ø·Ø© FamilyState. Ù…Ø³Ø§Ø±Ø§Øª Ù‡Ø°Ø§
+// Ø§Ù„Ù…ÙÙˆØ¬ÙÙ‘Ù‡ ØªØ­Øª /families/:id ÙÙ„Ø§ ØªØªÙ‚Ø§Ø·Ø¹ Ù…Ø¹ /devices Ù„Ù„Ù‚Ø±Ø§Ø¡Ø© Ù…Ù† Ø§Ù„Ø¥Ø³Ù‚Ø§Ø·.
 adminRoute.route('/', adminDevicesRoute)
-// Customer 360: مساحة عمل العائلة. تُركِّب قراءة السلطة مع الإسقاطات وجداول
-// الإدارة، ولا تنقل سلطة العائلة إلى D1.
+// Customer 360: Ù…Ø³Ø§Ø­Ø© Ø¹Ù…Ù„ Ø§Ù„Ø¹Ø§Ø¦Ù„Ø©. ØªÙØ±ÙƒÙÙ‘Ø¨ Ù‚Ø±Ø§Ø¡Ø© Ø§Ù„Ø³Ù„Ø·Ø© Ù…Ø¹ Ø§Ù„Ø¥Ø³Ù‚Ø§Ø·Ø§Øª ÙˆØ¬Ø¯Ø§ÙˆÙ„
+// Ø§Ù„Ø¥Ø¯Ø§Ø±Ø©ØŒ ÙˆÙ„Ø§ ØªÙ†Ù‚Ù„ Ø³Ù„Ø·Ø© Ø§Ù„Ø¹Ø§Ø¦Ù„Ø© Ø¥Ù„Ù‰ D1.
 adminRoute.route('/', adminCustomerRoute)
-// CMS الموقع العام: صفحات وأقسام ومراجعات وجدولة ونشر. تغييرات التسويق الروتينية
-// لا تحتاج نشر كود.
+// CMS Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ø¹Ø§Ù…: ØµÙØ­Ø§Øª ÙˆØ£Ù‚Ø³Ø§Ù… ÙˆÙ…Ø±Ø§Ø¬Ø¹Ø§Øª ÙˆØ¬Ø¯ÙˆÙ„Ø© ÙˆÙ†Ø´Ø±. ØªØºÙŠÙŠØ±Ø§Øª Ø§Ù„ØªØ³ÙˆÙŠÙ‚ Ø§Ù„Ø±ÙˆØªÙŠÙ†ÙŠØ©
+// Ù„Ø§ ØªØ­ØªØ§Ø¬ Ù†Ø´Ø± ÙƒÙˆØ¯.
 adminRoute.route('/', adminWebsiteRoute)
-// المدونة وSEO. مركّبان بعد الموقع لأن كليهما يشترك معه في seo_meta والتحويلات.
+// Ø§Ù„Ù…Ø¯ÙˆÙ†Ø© ÙˆSEO. Ù…Ø±ÙƒÙ‘Ø¨Ø§Ù† Ø¨Ø¹Ø¯ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ù„Ø£Ù† ÙƒÙ„ÙŠÙ‡Ù…Ø§ ÙŠØ´ØªØ±Ùƒ Ù…Ø¹Ù‡ ÙÙŠ seo_meta ÙˆØ§Ù„ØªØ­ÙˆÙŠÙ„Ø§Øª.
 adminRoute.route('/', adminBlogRoute)
 adminRoute.route('/', adminSeoRoute)
-// اللوحة التنفيذية: تجميعة واحدة على الجداول التشغيلية. مركّبة بعدها كلها لأنها
-// تقرأ من جداولها جميعًا ولا تملك جدولًا خاصًّا بها.
+// Ø§Ù„Ù„ÙˆØ­Ø© Ø§Ù„ØªÙ†ÙÙŠØ°ÙŠØ©: ØªØ¬Ù…ÙŠØ¹Ø© ÙˆØ§Ø­Ø¯Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø¬Ø¯Ø§ÙˆÙ„ Ø§Ù„ØªØ´ØºÙŠÙ„ÙŠØ©. Ù…Ø±ÙƒÙ‘Ø¨Ø© Ø¨Ø¹Ø¯Ù‡Ø§ ÙƒÙ„Ù‡Ø§ Ù„Ø£Ù†Ù‡Ø§
+// ØªÙ‚Ø±Ø£ Ù…Ù† Ø¬Ø¯Ø§ÙˆÙ„Ù‡Ø§ Ø¬Ù…ÙŠØ¹Ù‹Ø§ ÙˆÙ„Ø§ ØªÙ…Ù„Ùƒ Ø¬Ø¯ÙˆÙ„Ù‹Ø§ Ø®Ø§ØµÙ‹Ù‘Ø§ Ø¨Ù‡Ø§.
 adminRoute.route('/', adminExecutiveRoute)
 adminRoute.route('/', adminQuestionsRoute)
 adminRoute.route('/', adminTranslationRoute)
@@ -410,7 +423,8 @@ adminRoute.get('/series/:id', async (c) => {
     SELECT s.*, p.name_ar AS planet_name,
       (SELECT GROUP_CONCAT(track_id) FROM series_tracks WHERE series_id = s.id) AS track_ids,
       (SELECT COUNT(*) FROM episodes WHERE series_id = s.id AND status <> 'archived') AS episodes_count,
-      ${artworkSelect('cover_asset', 'series', 's.id', SERIES_COVER_ROLES)}
+      ${artworkSelect('cover_asset', 'series', 's.id', SERIES_COVER_ROLES)},
+      ${artworkSelect('banner_asset', 'series', 's.id', SERIES_BANNER_ROLES)}
     FROM series s
     LEFT JOIN planets p ON p.id = s.planet_id
     WHERE s.id = ?
@@ -418,6 +432,7 @@ adminRoute.get('/series/:id', async (c) => {
 
   if (!row) return c.json({ success: false, error: 'Series not found' }, 404)
   applyArtworkUrl(row, 'cover_asset', 'cover_url', baseUrl)
+  applyArtworkUrl(row, 'banner_asset', 'banner_url', baseUrl)
 
   const [seasons, characters] = await Promise.all([
     queryAll<DbRow>(db, 'SELECT * FROM seasons WHERE series_id = ? ORDER BY season_number', [id]),
@@ -634,7 +649,7 @@ adminRoute.patch('/series/:id', requirePermission('edit_metadata'), async (c) =>
   }
   if (body.is_free !== undefined) add('is_free', asBooleanInteger(body.is_free))
 
-  // Islamic conditional fields (migration 0011) — PATCH allows clearing with null
+  // Islamic conditional fields (migration 0011) â€” PATCH allows clearing with null
   const islamicAllowed = new Set(['source_type', 'source_reference', 'verse_surah', 'verse_ayah', 'hadith_collection', 'hadith_number', 'hadith_grade', 'religious_reviewer_id', 'religious_reviewer_version', 'religious_approved_at', 'visual_restrictions'])
   const hasIslamic = Object.keys(body).some((k) => islamicAllowed.has(k))
   if (body.source_type !== undefined) {
@@ -723,39 +738,14 @@ adminRoute.post('/series/:id/publish', requirePermission('publish'), async (c) =
   if (existing.status === 'archived') return c.json({ success: false, error: 'Archived series cannot be published' }, 409)
   if (existing.status === 'published') return c.json({ success: true, data: { id, status: 'published', published: false } })
 
-  // The readiness gate, server-side.
+  // API-106: نفس دالّة النشر التي تخدم القصص والكتب والألعاب والمشروعات.
   //
-  // Publish authority separation answered *who* may publish. This answers whether
-  // the content is finished, and it has to live here rather than in the UI: the
-  // endpoint is reachable with curl, and a gate the client can skip is decoration.
-  // Every blocker is returned at once — see lib/publishGate.ts for why one refusal
-  // at a time is the behaviour this replaces.
-  const gate = await evaluateFor(c.env, 'series', id)
-  if (gate && !gate.publishable) {
-    await auditStatement(db, actorId(c), 'publish_blocked', 'series', id, {
-      previous_status: existing.status,
-      blockers: gate.blockers.map((blocker) => blocker.id),
-      summary: summarizeGate(gate),
-    }).run()
-    return c.json(gateRefusal(gate), 409)
-  }
-
-  await db.batch([
-    db.prepare(`UPDATE series SET status = 'published', published_at = COALESCE(published_at, ?), updated_at = datetime('now') WHERE id = ?`)
-      .bind(new Date().toISOString(), id),
-    // The warnings are recorded with the publish, not discarded. Six months later
-    // "was this published knowing the French translation was missing?" is a real
-    // question, and only the audit row can answer it.
-    auditStatement(db, actorId(c), 'publish', 'series', id, {
-      previous_status: existing.status,
-      readiness: gate ? summarizeGate(gate) : 'not evaluated',
-      warnings: gate?.warnings.map((warning) => warning.id) ?? [],
-    }),
-  ])
-  return c.json({
-    success: true,
-    data: { id, status: 'published', published: true, warnings: gate?.warnings ?? [] },
-  })
+  // كان هنا معالج مستقلّ يتعامل مع نتيجة بوابة **فارغة** كـ«غير مُقيَّمة» وينشر
+  // على أي حال — أي أنه يتجاوز البوابة بالضبط في الحالة التي لم تستطع فيها
+  // البوابة أن تقول شيئًا. والفحوص الوجودية أعلاه بقيت لأن رسائلها مُختبَرة،
+  // والباقي — البوابة، والفشل المُغلَق، وصفوف التدقيق، وأعمدة النشر — صار
+  // مشتركًا. نسختان من مسار نشر تعنيان تشدّدًا في واحدة وتساهلًا في الأخرى.
+  return publishEntity(c, 'series')
 })
 
 adminRoute.delete('/series/:id', requirePermission('archive'), async (c) => {
@@ -1027,32 +1017,10 @@ adminRoute.post('/episodes/:id/publish', requirePermission('publish'), async (c)
   if (existing.status === 'archived') return c.json({ success: false, error: 'Archived episode cannot be published' }, 409)
   if (existing.status === 'published') return c.json({ success: true, data: { id, status: 'published', published: false } })
 
-  // Same gate as series, and for episodes it carries the checks that matter most:
-  // an episode with no video file or no thumbnail is not a lesser episode, it is a
-  // dead tile in a child's library.
-  const gate = await evaluateFor(c.env, 'episode', id)
-  if (gate && !gate.publishable) {
-    await auditStatement(db, actorId(c), 'publish_blocked', 'episode', id, {
-      previous_status: existing.status,
-      blockers: gate.blockers.map((blocker) => blocker.id),
-      summary: summarizeGate(gate),
-    }).run()
-    return c.json(gateRefusal(gate), 409)
-  }
-
-  await db.batch([
-    db.prepare(`UPDATE episodes SET status = 'published', is_published = 1, published_at = COALESCE(published_at, ?), updated_at = datetime('now') WHERE id = ?`)
-      .bind(new Date().toISOString(), id),
-    auditStatement(db, actorId(c), 'publish', 'episode', id, {
-      previous_status: existing.status,
-      readiness: gate ? summarizeGate(gate) : 'not evaluated',
-      warnings: gate?.warnings.map((warning) => warning.id) ?? [],
-    }),
-  ])
-  return c.json({
-    success: true,
-    data: { id, status: 'published', published: true, warnings: gate?.warnings ?? [] },
-  })
+  // API-106: نفس الدالّة المشتركة. وللحلقة تحمل البوابة أهمّ فحوصها: حلقةٌ بلا
+  // ملف فيديو أو بلا صورة مصغّرة ليست حلقةً أقلّ — هي **بلاطة ميتة** في مكتبة
+  // طفل. وعشرون حلقة منشورة اليوم بلا أصل فيديو واحد هي أثر السماح بذلك.
+  return publishEntity(c, 'episode')
 })
 
 adminRoute.delete('/episodes/:id', requirePermission('archive'), async (c) => {
@@ -1074,3 +1042,5 @@ adminRoute.delete('/episodes/:id', requirePermission('archive'), async (c) => {
 // Keeping this file as no-op to avoid breaking wrangler bundling while migrations 0006/0007 tables remain as dead tables documented in 0010_cleanup.
 
 export default adminRoute
+
+

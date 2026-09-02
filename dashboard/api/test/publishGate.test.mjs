@@ -274,17 +274,95 @@ test('an empty story reports only that, without cascading page noise', () => {
 
 // --- Books and projects ----------------------------------------------------
 
+/// `API-107`: صفحات الكتاب تُقاس من `story_pages` لا من العمود القديم.
+///
+/// كان هذا الاختبار يمرّر `pages: '[]'` — نصَّ JSON من `books.pages` — فيُثبّت
+/// المصدر الخطأ. والمقيس: العمود `'[]'` في الاثنين والعشرين كتابًا، ولا قارئ له
+/// في مسار القراءة العامّ (`books.ts`: «legacy JSON blob … deliberately not
+/// selected»)، وصفحاتُ الكتب في `story_pages` بمفتاح `story_id = book.id`.
+const bookPage = (number, overrides = {}) => ({
+  page_number: number,
+  image_asset_id: `asset-page-${number}`,
+  image_status: 'ready',
+  localizations: [{
+    language: 'ar',
+    body_text: `نصّ الصفحة ${number}`,
+    narration_asset_id: null,
+    narration_status: null,
+  }],
+  ...overrides,
+});
+
 test('a book with no pages and an incoherent language set reports both', () => {
   const result = evaluatePublishGate({
     entity_type: 'book',
     entity_id: 'book-1',
     ...common(),
-    pages: '[]',
+    pages: [],
     languages: '["ar"]',
     default_language: 'fr',
   });
   assert.deepEqual(ids(result.blockers), ['languages', 'pages']);
   assert.match(find(result, 'languages').detail, /default_language/);
+});
+
+test('صفحاتٌ في العمود القديم وحده: يُقال أين هي، لا «الكتاب بلا صفحات»', () => {
+  // هذا هو العطل الذي كان يعمل في الاتجاه المعاكس: البوابة تقرأ العمود فتُجيز
+  // كتابًا **لا صفحة له**. صارت تقرأ المصدر الحقيقي، وتشرح الاختلاف بدل أن
+  // تتركه لغزًا.
+  const result = evaluatePublishGate({
+    entity_type: 'book',
+    entity_id: 'book-legacy',
+    ...common(),
+    pages: [],
+    legacy_pages_column: '[{"page":1},{"page":2}]',
+    languages: '["ar"]',
+    default_language: 'ar',
+  });
+  const pages = find(result, 'pages');
+  assert.equal(pages.severity, 'blocker');
+  assert.match(pages.detail, /story_pages/);
+  assert.match(pages.detail, /2/);
+});
+
+test('كتابٌ له صفحات حقيقية لا يُحجَب على «بلا صفحات»', () => {
+  // والاتجاه الآخر من العطل: كتابٌ صفحاته في `story_pages` كان يُحجَب لأن
+  // العمود القديم فارغ — وهو فارغ في كل كتاب.
+  const result = evaluatePublishGate({
+    entity_type: 'book',
+    entity_id: 'book-real',
+    ...common(),
+    pages: [bookPage(1), bookPage(2)],
+    languages: '["ar"]',
+    default_language: 'ar',
+  });
+  // `status` هو ما يقول «مرّ»؛ و`severity` تبقى `none` لأن لا شيء يُنبَّه عليه.
+  assert.equal(find(result, 'pages').status, 'pass');
+  assert.equal(find(result, 'page_images').status, 'pass');
+  assert.equal(find(result, 'page_text').status, 'pass');
+  assert.deepEqual(ids(result.blockers), []);
+});
+
+test('صفحةٌ بلا رسم جاهز أو بلا نصّ تُحجَب وتُسمّى', () => {
+  // كتابٌ مصوَّر بصفحةٍ بيضاء ينشر فراغًا. وهذا ما كان يمرّ لأن المصدر لم يُقرأ.
+  const result = evaluatePublishGate({
+    entity_type: 'book',
+    entity_id: 'book-gaps',
+    ...common(),
+    pages: [
+      bookPage(1),
+      bookPage(2, { image_asset_id: null }),
+      bookPage(3, { localizations: [] }),
+    ],
+    languages: '["ar"]',
+    default_language: 'ar',
+  });
+  const images = find(result, 'page_images');
+  const bodyText = find(result, 'page_text');
+  assert.equal(images.severity, 'blocker');
+  assert.deepEqual(images.items, ['صفحة 2']);
+  assert.equal(bodyText.severity, 'blocker');
+  assert.deepEqual(bodyText.items, ['صفحة 3']);
 });
 
 test('a project needing supervision must say what the risk is', () => {
@@ -367,23 +445,52 @@ const publishHandler = (entity) => {
   return code.slice(start, end === -1 ? undefined : end);
 };
 
-for (const entity of ['series', 'episodes']) {
-  test(`the ${entity} publish operation consults the gate and refuses on blockers`, () => {
+// API-106: the six types now share one publisher, so the gate is pinned once on
+// the shared function and each route is pinned to delegate to it. Two copies of a
+// publish path meant one strict and one lax — which is exactly what happened:
+// the series and episode copies published when the gate returned nothing.
+for (const [entity, key] of [['series', 'series'], ['episodes', 'episode']]) {
+  test(`the ${entity} publish operation delegates to the shared publisher`, () => {
     const handler = publishHandler(entity);
-    assert.match(handler, /await evaluateFor\(/, 'publish does not evaluate readiness');
-    assert.match(handler, /gate\.publishable/, 'publish does not branch on the verdict');
-    assert.match(handler, /gateRefusal\(gate\)/, 'publish does not return the blocker list');
-    assert.match(handler, /409/, 'refusal is not a 409');
-    // The refusal itself is audited: an attempt that was blocked is operational
-    // information, and losing it means nobody can see that someone tried.
-    assert.match(handler, /'publish_blocked'/, 'a blocked publish is not audited');
-    // The blocker branch must come before the UPDATE.
-    assert.ok(
-      handler.indexOf('gateRefusal(gate)') < handler.indexOf('UPDATE'),
-      'the gate is evaluated after the write',
+    assert.match(
+      handler,
+      new RegExp(`return publishEntity\\(c, '${key}'\\)`),
+      `${entity} must publish through the shared function, not its own copy`,
     );
+    // And it must not keep a private gate branch that could drift from the shared one.
+    assert.doesNotMatch(handler, /not evaluated/, 'the null-gate escape hatch must be gone');
   });
 }
+
+test('the shared publisher gates every type and fails closed', () => {
+  const shared = stripComments(readFileSync(`${routesDir}adminPublish.ts`, 'utf8'));
+
+  assert.match(shared, /await evaluateFor\(c\.env, spec\.type, id\)/, 'publish does not evaluate readiness');
+  assert.match(shared, /gate\.publishable/, 'publish does not branch on the verdict');
+  assert.match(shared, /gateRefusal\(gate\)/, 'publish does not return the blocker list');
+  assert.match(shared, /'publish_blocked'/, 'a blocked publish is not audited');
+
+  // Fail closed: a gate that could not run refuses. `evaluateFor` returns null
+  // only when it cannot gather facts, and existence is already established — so a
+  // null means the gate did not run, which is the exact case it exists to catch.
+  assert.match(shared, /readiness_not_evaluable/, 'an unevaluable entity must be refused');
+  assert.ok(
+    shared.indexOf('readiness_not_evaluable') < shared.indexOf('UPDATE'),
+    'the unevaluable branch must precede the write',
+  );
+  assert.ok(
+    shared.indexOf('gateRefusal(gate)') < shared.indexOf('UPDATE'),
+    'the gate is evaluated after the write',
+  );
+
+  // All six types, one map.
+  for (const type of ['story', 'book', 'game', 'project', 'series', 'episode']) {
+    assert.match(shared, new RegExp(`${type}: \\{ table:`), `${type} must be publishable through the shared map`);
+  }
+  // `is_published` is an episodes-only column, and setting `status` without it
+  // produces an episode that is "published" and invisible.
+  assert.match(shared, /episode: \{ table: 'episodes'[^}]*hasIsPublished: true/);
+});
 
 test('the readiness endpoint is mounted and needs no publish permission to read', () => {
   const gateSource = readFileSync(`${routesDir}adminPublishGate.ts`, 'utf8');

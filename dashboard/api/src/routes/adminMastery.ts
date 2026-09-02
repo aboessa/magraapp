@@ -5,6 +5,7 @@ import type { Env } from '../lib/db.ts'
 // بلا الامتداد لا يمكن استيراد هذا المُوجِّه في اختبار إطلاقًا.
 import { queryAll, queryFirst } from '../lib/db.ts'
 import { requireAdmin } from '../lib/adminAuth.ts'
+import { ENGINES_WITHOUT_MASTERY } from '../lib/engineContracts.ts'
 import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation.ts'
 import type { AdminSessionUser } from '../lib/adminUsers.ts'
 
@@ -90,9 +91,31 @@ route.get('/mastery/by-objective', async (c) => {
     params,
   )
 
+  // ## لماذا تُقاس «لماذا لا دليل» ولا تُوصَف (`CNT-109`)
+  //
+  // تبويب التشخيص في `MasteryPage` كان يكتب **عناوين أعمدته مكان قيمها**: ثلاث
+  // عبارات ثابتة («محتوى مرتبط»، «ألعاب قادرة على توليد دليل»، «حالة التشغيل»)
+  // تتكرّر في كل صفّ من السبعة والخمسين. أي أن التبويب الذي يوجد ليجيب «لماذا لا
+  // دليل لهذا الهدف؟» كان يجيب بما **يشبه** الجواب ولا يقيس شيئًا — وأسوأ من
+  // الخلية الفارغة، لأن المسؤول يقرأ منه أن لكل هدفٍ محتوى مرتبطًا وألعابًا قادرة،
+  // وهو عكس ما يوجد التبويب لكشفه.
+  //
+  // و«قادرة على توليد دليل» ليست عدد الألعاب المرتبطة: محرّكٌ لا يكتب إتقانًا
+  // (`memory_flip`, `rhythm_tap`) لا يُنتج دليلًا أبدًا، فلعبةٌ عليه مرتبطةٌ بهدف
+  // هي **خطأ ربط** لا مصدر قياس — وهو ما تحجبه بوابة النشر أصلًا.
+  const withoutMastery = ENGINES_WITHOUT_MASTERY.length > 0 ? ENGINES_WITHOUT_MASTERY : ['__none__']
+  const withoutMasteryPlaceholders = withoutMastery.map(() => '?').join(', ')
+
   const rows = await queryAll<Record<string, unknown>>(c.env.DB, `
     SELECT lo.id, lo.code, lo.title_ar, lo.skill_id,
            sk.name_ar AS skill_name,
+           (SELECT COUNT(*) FROM episodes e WHERE e.learning_objective_id = lo.id) AS linked_episodes,
+           (SELECT COUNT(*) FROM games g WHERE g.learning_objective_id = lo.id) AS linked_games,
+           (SELECT COUNT(*) FROM questions q WHERE q.learning_objective_id = lo.id) AS questions_count,
+           (SELECT COUNT(*) FROM games g2
+              WHERE g2.learning_objective_id = lo.id
+                AND g2.status = 'published'
+                AND g2.engine_id NOT IN (${withoutMasteryPlaceholders})) AS evidence_capable_games,
            COUNT(m.child_id) AS children_count,
            SUM(CASE WHEN m.level = 'independent' THEN 1 ELSE 0 END) AS independent_count,
            SUM(CASE WHEN m.level = 'needs_review' THEN 1 ELSE 0 END) AS needs_review_count,
@@ -107,7 +130,10 @@ route.get('/mastery/by-objective', async (c) => {
      GROUP BY lo.id
      ORDER BY needs_review_count DESC, lo.code
      LIMIT ? OFFSET ?
-  `, [...params, limit, offset])
+  `,
+  // المَعلَمات بترتيب ظهور `?` في النصّ: قائمة المحرّكات في `SELECT` فتأتي قبل
+  // مَعلَمات `WHERE`. خلطُ الترتيب هنا لا يُنتج خطأً بل **أرقامًا خاطئة**.
+  [...withoutMastery, ...params, limit, offset])
 
   return c.json({
     success: true,
@@ -116,6 +142,10 @@ route.get('/mastery/by-objective', async (c) => {
       const correct = Number(row.correct_attempts ?? 0)
       return {
         ...row,
+        linked_episodes: Number(row.linked_episodes ?? 0),
+        linked_games: Number(row.linked_games ?? 0),
+        questions_count: Number(row.questions_count ?? 0),
+        evidence_capable_games: Number(row.evidence_capable_games ?? 0),
         children_count: Number(row.children_count ?? 0),
         independent_count: Number(row.independent_count ?? 0),
         needs_review_count: Number(row.needs_review_count ?? 0),
@@ -156,22 +186,24 @@ route.get('/mastery/by-child', async (c) => {
 
   const total = await queryFirst<{ total: number }>(
     c.env.DB,
-    `SELECT COUNT(*) AS total FROM children_profiles cp ${where}`,
+    // API-105: `child_projection` لا `children_profiles`. الثاني صفر صفًّا ولا
+    // كاتب له، فكانت هذه الشاشة تعرض «صفر طفل» على منصّة فيها أطفال.
+    `SELECT COUNT(*) AS total FROM child_projection cp ${where}`,
     params,
   )
 
   const rows = await queryAll<Record<string, unknown>>(c.env.DB, `
-    SELECT cp.id AS child_id, cp.nickname, cp.age_track, cp.parent_id,
+    SELECT cp.child_id AS child_id, cp.nickname, cp.age_track, cp.parent_id,
            COUNT(m.objective_id) AS objectives_count,
            SUM(CASE WHEN m.level = 'independent' THEN 1 ELSE 0 END) AS independent_count,
            SUM(CASE WHEN m.level = 'needs_review' THEN 1 ELSE 0 END) AS needs_review_count,
            COALESCE(SUM(m.attempts), 0) AS attempts,
            COALESCE(SUM(m.correct_attempts), 0) AS correct_attempts,
            MAX(m.last_attempt_at) AS last_attempt_at
-      FROM children_profiles cp
-      LEFT JOIN mastery m ON m.child_id = cp.id
+      FROM child_projection cp
+      LEFT JOIN mastery m ON m.child_id = cp.child_id
       ${where}
-     GROUP BY cp.id
+     GROUP BY cp.child_id
      ORDER BY needs_review_count DESC, cp.nickname
      LIMIT ? OFFSET ?
   `, [...params, limit, offset])
@@ -230,7 +262,7 @@ route.get('/attempts', async (c) => {
            a.score, a.max_score, a.time_spent_seconds, a.help_used, a.created_at,
            g.title_ar AS game_title, e.title_ar AS episode_title
       FROM attempts a
-      LEFT JOIN children_profiles cp ON cp.id = a.child_id
+      LEFT JOIN child_projection cp ON cp.child_id = a.child_id
       LEFT JOIN games g ON g.id = a.game_id
       LEFT JOIN episodes e ON e.id = a.episode_id
       ${where}

@@ -1074,7 +1074,11 @@ route.get('/planets/:id/workspace', async (c) => {
         ],
       },
       analytics: {
-        unavailable: 'لا مقاييس مشاهدة أو تشغيل لكوكب في D1: جداول watch_progress و attempts و mastery'
+        // API-105: صار `child_progress_projection` يُكتب فعلًا، فالنسبة إلى كوكب
+        // صارت **ممكنة** (وصلة `content_id` → `episodes.series_id` → `planet_id`).
+        // ولم تُنفَّذ هنا: هي استعلام تحليلي جديد بشكل استجابة جديد، ولوحةٌ تعرض
+        // رقمًا بلا مراجعة أسوأ من رسالةٍ تقول «غير متاح».
+        unavailable: 'لا مقاييس مشاهدة أو تشغيل لكوكب بعد: جداول attempts و mastery'
           + ' بلا كاتب (حالة الطفل في FamilyState Durable Object)، و processed_family_events لا يحمل'
           + ' معرّف محتوى، فلا يمكن نسبة أي نشاط إلى كوكب. أي رقم هنا سيكون مُختلقًا.',
         source: 'FamilyState (سلطة نشاط الطفل) — لا إسقاط لكوكب في D1',

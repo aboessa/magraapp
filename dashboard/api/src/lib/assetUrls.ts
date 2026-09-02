@@ -1,4 +1,4 @@
-import type { Env } from './db.ts';
+﻿import type { Env } from './db.ts';
 
 /// Public URL policy for catalogue artwork.
 ///
@@ -18,20 +18,21 @@ import type { Env } from './db.ts';
 /// ## Why URLs are built here rather than stored
 ///
 /// Storing a resolved URL in a second place means two rows to keep in sync, and
-/// it bakes the CDN hostname into the database — so moving domains would require
+/// it bakes the CDN hostname into the database â€” so moving domains would require
 /// a data migration. Building it at read time keeps one writer
 /// (`asset_links`) and makes the hostname a deployment concern.
 ///
 /// ## Safety rule
 ///
 /// Only assets that are explicitly `visibility = 'public'` are ever turned into
-/// a URL. Private assets — notably video streams — must continue to flow
+/// a URL. Private assets â€” notably video streams â€” must continue to flow
 /// exclusively through `POST /episodes/:id/playback-sessions`, which issues a
 /// short-lived capability token. A private asset resolves to `null` here, never
 /// to a guessable public URL.
 
 /// Roles that may act as the primary artwork for an entity, in priority order.
 export const SERIES_COVER_ROLES = ['poster', 'cover'] as const;
+export const SERIES_BANNER_ROLES = ['banner'] as const;
 export const EPISODE_THUMBNAIL_ROLES = ['thumbnail', 'still', 'cover'] as const;
 export const PLANET_ICON_ROLES = ['icon'] as const;
 export const PLANET_COVER_ROLES = ['cover', 'banner'] as const;
@@ -66,8 +67,8 @@ export function publicAssetBaseUrl(env: Pick<Env, 'PUBLIC_ASSET_BASE_URL'>): str
 /// Guards against the key prefix disagreeing with the asset's visibility.
 ///
 /// R2 object keys are minted as `{public|private}/...`, so the prefix and the
-/// `visibility` column must agree. If they drift — for example an asset imported
-/// as private is later flipped to public without re-keying the object — emitting
+/// `visibility` column must agree. If they drift â€” for example an asset imported
+/// as private is later flipped to public without re-keying the object â€” emitting
 /// a URL would either 404 or advertise a `private/` path on an anonymous CDN.
 /// Both are worse than returning null, so this fails closed.
 export function keyPrefixMatchesVisibility(asset: AssetUrlCandidate): boolean {
@@ -183,3 +184,4 @@ export function applyArtworkUrl(
   stripArtworkColumns(prefix, row);
   return row;
 }
+

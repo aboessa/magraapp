@@ -35,6 +35,12 @@ const routesDir = fileURLToPath(new URL('../src/routes/', import.meta.url));
 
 const read = (file) => readFileSync(routesDir + file, 'utf8');
 
+/// SEC-103 moved the privilege comparison into a shared lib, so the sweep needs
+/// to read outside `src/routes/` too.
+const readLib = (file) => readFileSync(
+  fileURLToPath(new URL(`../src/lib/${file}`, import.meta.url)), 'utf8',
+);
+
 /// Comments are removed before asserting on code, because prose *about* a fixed
 /// defect otherwise reads as the defect itself. This is not hypothetical: the
 /// doc comment on the workflow-review handler quotes the old
@@ -294,28 +300,79 @@ test('granting a role cannot exceed the actor\u2019s own privilege', () => {
   // any holder of manage_permissions could mint an `owner` grant and escalate
   // past their own level. The rule is the standard one: you cannot give away a
   // permission you do not hold.
-  const source = stripComments(read('adminUsers.ts'));
-
-  assert.match(source, /async function permissionsBeyondActor\(/, 'the privilege comparison must exist');
+  // SEC-103 moved the comparison into lib/privilegeGuard.ts. It used to live in
+  // adminUsers.ts and was called from one handler, which is exactly how five
+  // other paths ended up bypassing it: create-user, POST /grants, POST /roles,
+  // PATCH /roles/:id and team membership.
+  const guard = stripComments(readLib('privilegeGuard.ts'));
+  assert.match(guard, /export function permissionsBeyondActor\(/, 'the privilege comparison must exist');
   assert.match(
-    source,
+    guard,
     /SELECT permission_id FROM role_permissions WHERE role_id = \?/,
     'the comparison must read the granted role\u2019s actual permissions',
   );
-  assert.match(source, /isSuperuser\(user\)/, 'owner/system_admin already hold everything');
+  assert.match(guard, /isSuperuser\(actor\)/, 'owner/system_admin already hold everything');
 
-  // And it must be applied on the grant path, before the insert.
-  const grantHandler = source.slice(
-    source.indexOf("adminUsersRoute.post('/users/:id/grants'"),
-    source.indexOf("adminUsersRoute.delete('/users/:id/grants/:grantId'"),
-  );
-  assert.ok(grantHandler.length > 0, 'the grant handler must exist');
-  assert.match(grantHandler, /await permissionsBeyondActor\(/, 'the grant handler must run the comparison');
+  // Every path that writes a grant, or writes the permissions a role carries,
+  // must run the comparison before it writes.
+  const paths = [
+    ['adminUsers.ts', "adminUsersRoute.post('/users'", "adminUsersRoute.patch('/users/:id'", /INSERT INTO admin_users/],
+    ['adminUsers.ts', "adminUsersRoute.post('/users/:id/grants'", "adminUsersRoute.delete('/users/:id/grants/:grantId'", /INSERT INTO access_grants/],
+    ['adminTeams.ts', "route.post('/grants'", "route.delete('/grants/:id'", /INSERT INTO access_grants/],
+    ['adminTeams.ts', "route.post('/roles'", "route.patch('/roles/:id'", /INSERT INTO roles/],
+    ['adminTeams.ts', "route.patch('/roles/:id'", 'route.get(\'/permissions\'', /DELETE FROM role_permissions/],
+  ];
+
+  for (const [file, start, end, write] of paths) {
+    const source = stripComments(read(file));
+    const from = source.indexOf(start);
+    assert.ok(from > 0, `handler not found: ${start}`);
+    const handler = source.slice(from, source.indexOf(end, from + 1));
+    assert.ok(handler.length > 0, `empty handler slice: ${start}`);
+
+    assert.match(handler, /BeyondActor\(/, `${start} must run the privilege comparison`);
+    assert.match(handler, /403/, `${start} must refuse, not downgrade`);
+    assert.ok(
+      handler.search(/BeyondActor\(/) < handler.search(write),
+      `${start}: the comparison must run before the write`,
+    );
+  }
+});
+
+test('granted_by is verified against admin_users, never taken from a header', () => {
+  // The column declares REFERENCES admin_users(id) and D1 does not enforce it,
+  // so 'legacy-admin-key' and even a caller-supplied X-Admin-Actor header used
+  // to land in it: the record of who granted a privilege was forgeable from the
+  // request. NULL is honest where an id is not; a fabricated id is not.
+  const guard = stripComments(readLib('privilegeGuard.ts'));
+  assert.match(guard, /SELECT id FROM admin_users WHERE id = \?/);
+
+  for (const file of ['adminUsers.ts', 'adminTeams.ts']) {
+    const source = stripComments(read(file));
+    // A fixed window after each INSERT rather than a balanced-paren match: the
+    // bind list spans lines and contains nested calls, and a non-greedy `\)`
+    // stops at the first inner one.
+    const inserts = [...source.matchAll(/INSERT INTO access_grants/g)]
+      .map((match) => source.slice(match.index, match.index + 800));
+    assert.ok(inserts.length > 0, `${file} must still write grants`);
+    for (const insert of inserts) {
+      assert.match(insert, /verifiedGrantedBy\(/, `${file}: granted_by must be verified`);
+      assert.equal(/auditActor\(c\)/.test(insert), false, `${file}: auditActor trusts a header`);
+    }
+  }
+});
+
+test('the team grant router protects the last owner like the user router does', () => {
+  // DELETE /grants/:id deleted by id with no checks at all, while its twin in
+  // adminUsers.ts refused to remove the last owner — a back door that empties
+  // the platform of its owner in one request, after which nobody can restore it.
+  const source = stripComments(read('adminTeams.ts'));
+  const handler = source.slice(source.indexOf("route.delete('/grants/:id'"));
+  assert.match(handler, /isLastOwnerGrant\(/);
   assert.ok(
-    grantHandler.indexOf('permissionsBeyondActor') < grantHandler.indexOf('INSERT INTO access_grants'),
-    'the comparison must run before the grant is written',
+    handler.search(/isLastOwnerGrant\(/) < handler.search(/DELETE FROM access_grants/),
+    'the check must run before the delete',
   );
-  assert.match(grantHandler, /403/, 'an over-privileged grant must be refused, not downgraded');
 });
 
 test('an actor cannot remove their own last permission-management grant', () => {
@@ -380,6 +437,11 @@ const CRITICAL_GUARDS = [
   ['adminCatalogue.ts', 'PATCH', '/content-reviews/:id', 'review'],
   // Narration preview spends real money on a paid Google API per call.
   ['adminTts.ts', 'POST', '/tts/preview', 'upload_audio'],
+  // A model probe spends real money too, and provider routing decides which third party
+  // receives platform credentials — so it gets its own verb rather than borrowing
+  // `publish` the way the older platform-settings writers had to.
+  ['adminAiProviders.ts', 'POST', '/ai/models/:id/probe', 'manage_ai_providers'],
+  ['adminAiProviders.ts', 'PUT', '/ai/tasks/:taskId/routes', 'manage_ai_providers'],
   // Content-factory spend approval and paid execution are distinct privilege boundaries.
   ['adminContentFactory.ts', 'POST', '/production/factory/:runId/approve-spend', 'approve'],
   ['adminContentFactory.ts', 'POST', '/production/factory/:runId/dispatch', 'publish'],
@@ -462,6 +524,7 @@ const INDEPENDENTLY_MOUNTED = [
   'adminPartnerships.ts',
   'adminSiteMode.ts',
   'adminUsers.ts',
+  'adminAiProviders.ts',
 ];
 
 test('independently mounted admin routers authenticate themselves', () => {
@@ -580,8 +643,17 @@ test('support lookup emits only allow-listed family data and records access', ()
   assert.ok(start >= 0, 'support lookup route must exist');
   assert.match(handler, /SELECT\s+parent_id, plan, status\s+FROM family_projection/);
   assert.match(handler, /SELECT\s+child_id, nickname, age_track, status\s+FROM child_projection/);
-  assert.match(handler, /SELECT\s+id, display_name, platform, status\s+FROM account_devices/);
   assert.match(handler, /SELECT\s+product_id, plan, entitlement_status, expires_at_ms\s+FROM billing_audit/);
+  // `DB-102`: كان هنا تأكيدٌ **يشترط** استعلام `account_devices` بأعمدةٍ محدَّدة.
+  // غرضه سليم (منع `SELECT *` وتسريب أعمدة)، لكنه ثبّت العطل: الجدول بلا كاتب
+  // في المستودع كلّه، فالقائمة كانت فارغة دائمًا وتُقرأ «لا أجهزة». فصار
+  // التأكيد على **غيابه**، والخاصّية الأمنية محفوظة في `doesNotMatch(SELECT *)`
+  // أدناه وفي تأكيدات الأعمدة الباقية.
+  assert.doesNotMatch(
+    handler,
+    /FROM account_devices/,
+    'الجدول ميت (0010_cleanup_dead_d1_tables.sql): لا يُقرأ، وتُعلن الحالة صراحةً',
+  );
   assert.doesNotMatch(handler, /SELECT \* FROM/);
   assert.match(handler, /auditStatement\(/, 'successful support lookups must be attributed');
   assert.match(handler, /actorId\(c\)/, 'support lookup must use the verified session actor');
@@ -610,6 +682,28 @@ test('plans catalogue is authenticated, policy-derived, and read-only', () => {
   assert.match(source, /source:\s*'family_policy'/);
   assert.match(source, /pricing_available:\s*false/);
   assert.doesNotMatch(source, /\.post\(|\.put\(|\.patch\(|\.delete\(/);
+});
+
+test('Google Play regional pricing keeps live prices provider-owned and publishes only with authority', () => {
+  const source = stripComments(read('adminCommerce.ts'));
+  const createStart = source.indexOf("route.post('/google-play/price-drafts'");
+  const publishStart = source.indexOf("route.post('/google-play/price-drafts/:id/publish'");
+  const publishEnd = source.indexOf("route.post('/pricing'", publishStart);
+  const create = source.slice(createStart, publishStart);
+  const publish = source.slice(publishStart, publishEnd);
+
+  assert.ok(createStart >= 0, 'a reviewable Google Play price draft route must exist');
+  assert.ok(publishStart >= 0, 'a Google Play price publish route must exist');
+  assert.match(create, /requirePermission\('edit_metadata'\)/);
+  assert.match(create, /getGooglePlaySubscription\(/, 'drafts must be based on a live provider read');
+  assert.match(create, /observed_regions_version/);
+  assert.match(create, /auditStatement\(/);
+  assert.match(publish, /requirePermission\('publish'\)/);
+  assert.match(publish, /body\?\.confirmation !== id/, 'publication must require explicit draft-id confirmation');
+  assert.match(publish, /getGooglePlaySubscription\(/, 'publication must re-read Google Play before mutating');
+  assert.match(publish, /status='superseded'/, 'a stale draft must not overwrite a newer provider price');
+  assert.match(publish, /updateGooglePlayRegionalBasePlanPrice\(/);
+  assert.match(publish, /auditStatement\(/);
 });
 
 
@@ -665,6 +759,13 @@ test('series and episodes publish only through publish-authorized operations', (
   assert.match(source, /Create the episode in a non-published state, then use the publish operation/);
   assert.match(source, /Use the publish operation to publish a series/);
   assert.match(source, /Use the publish operation to publish an episode/);
-  assert.match(source, /auditStatement\(db, actorId\(c\), 'publish', 'series'/);
-  assert.match(source, /auditStatement\(db, actorId\(c\), 'publish', 'episode'/);
+  // API-106: the audit row is now written by the shared publisher, so it is
+  // pinned there rather than in each copy. What stays pinned here is that these
+  // two routes carry the permission and delegate — a private copy is how they
+  // drifted into publishing past the gate in the first place.
+  assert.match(source, /return publishEntity\(c, 'series'\)/);
+  assert.match(source, /return publishEntity\(c, 'episode'\)/);
+  const shared = stripComments(read('adminPublish.ts'));
+  assert.match(shared, /auditStatement\(db, actorId\(c\), 'publish', spec\.type, id/);
+  assert.match(shared, /auditStatement\(db, actorId\(c\), 'publish_blocked', spec\.type, id/);
 });

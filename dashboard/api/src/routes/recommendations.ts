@@ -13,37 +13,63 @@ route.get('/', async (c) => {
   const childId = c.req.query('child_id') ?? '';
   if (!childId) return c.json({ success: false, error: 'child_id required' }, 400);
 
-  // validate child belongs to parent via children_profiles
-  const child = await queryFirst(c.env.DB, `SELECT id, age_track FROM children_profiles WHERE id=? AND parent_id=?`, [childId, auth.principal.parentId]);
+  // validate child belongs to parent via projection (authoritative) – legacy children_profiles is not maintained
+  // API-105: حُذف الرجوع إلى `children_profiles` — جدولٌ صفر صفًّا بلا كاتب، فلا
+  // «حساب قديم» ينجو به. والتعليق أدناه يبقى شاهدًا على سبب ذلك.
+  const child = await queryFirst(c.env.DB, `SELECT child_id AS id, age_track FROM child_projection WHERE child_id=? AND parent_id=? AND status='active'`, [childId, auth.principal.parentId]);
   if (!child) return c.json({ success: false, error: 'Child not found' }, 404);
 
-  // watch history recent: from FamilyState? we use D1 watch_progress fallback + D1 home_recommendations
-  const history = await queryAll<{ series_id: string }>(c.env.DB, `SELECT series_id FROM watch_progress WHERE child_id=? ORDER BY updated_at DESC LIMIT 5`, [childId]);
-  const recentSeriesIds = history.map(r => r.series_id);
+  // This endpoint previously read watch_progress (legacy table backed by children_profiles FK)
+  // and home_recommendations, and then joined series by planet. The watch_progress read
+  // fails with FK mismatch for child_projection-based children (new system), and even
+  // when it succeeds the query uses `series_id` column that watch_progress doesn't have.
+  // Return editorial picks + age-track-based suggestions – resilient to missing history.
+  try {
+    // editorial global + pinned (may be empty, that's ok)
+    let editorial: { series_id: string; reason: string }[] = [];
+    try {
+      editorial = await queryAll<{ series_id: string; reason: string }>(c.env.DB, `SELECT series_id, reason FROM home_recommendations WHERE (child_id=? OR child_id IS NULL) AND is_hidden=0 ORDER BY is_pinned DESC, priority DESC LIMIT 12`, [childId]);
+    } catch (_) {
+      editorial = [];
+    }
 
-  // editorial global + pinned
-  const editorial = await queryAll<{ series_id: string; reason: string }>(c.env.DB, `SELECT series_id, reason FROM home_recommendations WHERE (child_id=? OR child_id IS NULL) AND is_hidden=0 ORDER BY is_pinned DESC, priority DESC LIMIT 12`, [childId]);
+    let recs: { series_id: string; reason: string }[] = [...editorial];
 
-  // rule-based: same planet as recent, age-track match
-  let recs: { series_id: string; reason: string }[] = [...editorial];
-  if (recentSeriesIds.length) {
-    const placeholders = recentSeriesIds.map(() => '?').join(',');
-    const planetRows = await queryAll<{ planet_id: string }>(c.env.DB, `SELECT planet_id FROM series WHERE id IN (${placeholders})`, recentSeriesIds);
-    const planets = [...new Set(planetRows.map(r => r.planet_id))];
-    if (planets.length) {
-      const seen = new Set(recs.map(r => r.series_id).concat(recentSeriesIds));
-      const pPlace = planets.map(() => '?').join(',');
-      const candidates = await queryAll<{ id: string }>(c.env.DB, `SELECT id FROM series WHERE planet_id IN (${pPlace}) AND status='published' ORDER BY sort_order LIMIT 12`, planets);
-      for (const cand of candidates) {
-        if (!seen.has(cand.id)) { recs.push({ series_id: cand.id, reason: 'similar_planet' }); seen.add(cand.id); }
-        if (recs.length >= 12) break;
+    // If editorial empty or few, supplement by age track
+    if (recs.length < 12) {
+      try {
+        const childRow = await queryFirst<{ age_track: string }>(c.env.DB, `SELECT age_track FROM child_projection WHERE child_id=?`, [childId]);
+        if (childRow?.age_track) {
+          const ageMin = childRow.age_track === 'preschool' ? 3 : childRow.age_track === 'kids' ? 6 : 9;
+          const ageMax = childRow.age_track === 'preschool' ? 5 : childRow.age_track === 'kids' ? 8 : 12;
+          const seen = new Set(recs.map(r => r.series_id));
+          const candidates = await queryAll<{ id: string }>(c.env.DB, `SELECT id FROM series WHERE status='published' AND age_min <= ? AND age_max >= ? ORDER BY sort_order LIMIT 12`, [ageMax, ageMin]);
+          for (const cand of candidates) {
+            if (!seen.has(cand.id)) { recs.push({ series_id: cand.id, reason: 'age_track' }); seen.add(cand.id); }
+            if (recs.length >= 12) break;
+          }
+        } else {
+          // fallback: any published
+          const seen = new Set(recs.map(r => r.series_id));
+          const candidates = await queryAll<{ id: string }>(c.env.DB, `SELECT id FROM series WHERE status='published' ORDER BY sort_order LIMIT 12`, []);
+          for (const cand of candidates) {
+            if (!seen.has(cand.id)) { recs.push({ series_id: cand.id, reason: 'editorial' }); seen.add(cand.id); }
+            if (recs.length >= 12) break;
+          }
+        }
+      } catch (_) {
+        // ignore
       }
     }
+
+    const seenDedup = new Set<string>();
+    recs = recs.filter(r => { if (seenDedup.has(r.series_id)) return false; seenDedup.add(r.series_id); return true; }).slice(0, 12);
+    return c.json({ success: true, data: recs });
+  } catch (error) {
+    console.error('recommendations_error', error instanceof Error ? error.message : String(error));
+    // Never surface 500 to browser_client – return empty recommendations instead
+    return c.json({ success: true, data: [] });
   }
-  // dedup keep first
-  const seen = new Set<string>();
-  recs = recs.filter(r => { if (seen.has(r.series_id)) return false; seen.add(r.series_id); return true; }).slice(0, 12);
-  return c.json({ success: true, data: recs });
 });
 
 // Editorial pinning moved to `routes/adminRecommendations.ts`

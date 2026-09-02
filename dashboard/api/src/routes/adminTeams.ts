@@ -6,7 +6,14 @@ import { auditActor, requireAdmin, requirePermission } from '../lib/adminAuth.ts
 import { actorId, auditStatement } from '../lib/auditLog.ts'
 import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation.ts'
 import { checkSelfApproval, SELF_APPROVAL_ERROR } from '../lib/separationOfDuties.ts'
-import type { AdminSessionUser } from '../lib/adminUsers.ts'
+import { SCOPE_TYPES, type AdminSessionUser } from '../lib/adminUsers.ts'
+import {
+  escalationRefusal,
+  isLastOwnerGrant,
+  permissionsBeyondActor,
+  roleBeyondActor,
+  verifiedGrantedBy,
+} from '../lib/privilegeGuard.ts'
 
 type AppEnv = { Bindings: Env; Variables: { adminUser?: AdminSessionUser; adminIsLegacyKey?: boolean } }
 const route = new Hono<AppEnv>()
@@ -52,6 +59,18 @@ route.post('/teams', requirePermission('manage_team'), async (c) => {
   await c.env.DB.prepare(`INSERT INTO teams (id, name_ar, description_ar, planet_id, section) VALUES (?,?,?,?,?)`).bind(id, body.name_ar, body.description_ar || null, body.planet_id || null, body.section || null).run()
   if (Array.isArray(body.member_ids)) {
     for (const uid of body.member_ids) {
+      // SEC-103: العضوية تُؤكَّد على مستخدم قائم.
+      //
+      // `loadUserAccess` يضمّ منح الفرق، فعضويةُ فريقٍ **تمنح صلاحياته**. وكانت
+      // تُكتب لأي معرّف بلا فحص، فيبقى الصفّ في انتظار من يُنشئ حسابًا بذلك
+      // المعرّف — أو يُشوّش خريطة «من يملك ماذا» إلى الأبد.
+      //
+      // وفريقٌ يُنشأ الآن بلا منح، فلا تصعيد في هذا المسار: التصعيد يقع عند
+      // `POST /grants` على الفريق، وهو محروس بالمقارنة أعلاه.
+      const member = await queryFirst<{ id: string }>(
+        c.env.DB, 'SELECT id FROM admin_users WHERE id = ?', [String(uid)],
+      )
+      if (!member) return c.json({ success: false, error: `Unknown member: ${String(uid).slice(0, 64)}` }, 400)
       await c.env.DB.prepare(`INSERT OR IGNORE INTO team_members (team_id, user_id) VALUES (?,?)`).bind(id, uid).run()
     }
   }
@@ -94,6 +113,73 @@ route.get('/roles', async (c) => {
   })
 })
 
+route.post('/roles', requirePermission('manage_permissions'), async (c) => {
+  const body = await c.req.json().catch(() => null) as any
+  if (!body?.id || !body?.name_ar) return c.json({ success: false, error: 'id and name_ar required' }, 400)
+  const id = String(body.id).trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_')
+  if (!id || id.length < 2 || id.length > 32) return c.json({ success: false, error: 'id 2-32 chars a-z0-9_-' }, 400)
+  const name_ar = String(body.name_ar).trim()
+  if (!name_ar || name_ar.length > 80) return c.json({ success: false, error: 'name_ar 1-80 chars' }, 400)
+  const description_ar = body.description_ar ? String(body.description_ar).trim().slice(0, 200) : null
+  const permissions: string[] = Array.isArray(body.permissions) ? body.permissions.filter((p:any)=> typeof p==='string') : []
+
+  // SEC-103: دورٌ جديد لا يحمل صلاحية لا يملكها مُنشئه.
+  //
+  // بلا هذا كان الطريق: أنشئ دورًا يحمل `manage_billing`، ثم امنحه لنفسك. وحرسُ
+  // المنح وحده لم يكن يكفي لأن المقارنة تُجرى على صلاحيات الدور — ودورٌ خُلق
+  // بصلاحيات مرتفعة يصير هو نفسه المرجع الذي تُقارَن به.
+  const beyond = permissionsBeyondActor(c.get('adminUser'), permissions)
+  if (beyond) return c.json(escalationRefusal(beyond), 403)
+
+  try {
+    await c.env.DB.prepare(`INSERT INTO roles (id, name_ar, description_ar, is_system) VALUES (?,?,?,0)`).bind(id, name_ar, description_ar).run()
+    if (permissions.length) {
+      const stmts = permissions.map((perm) => c.env.DB.prepare(`INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?,?)`).bind(id, perm))
+      await c.env.DB.batch(stmts)
+    }
+    return c.json({ success: true, data: { id, name_ar } }, 201)
+  } catch (e:any) {
+    if (String(e?.message||'').includes('UNIQUE') || String(e?.message||'').includes('constraint')) {
+      return c.json({ success: false, error: 'Role id or name already exists' }, 409)
+    }
+    return c.json({ success: false, error: 'Unable to create role' }, 500)
+  }
+})
+
+route.patch('/roles/:id', requirePermission('manage_permissions'), async (c) => {
+  const id = c.req.param('id')
+  const existing = await queryFirst<any>(c.env.DB, `SELECT * FROM roles WHERE id=?`, [id])
+  if (!existing) return c.json({ success: false, error: 'Role not found' }, 404)
+  if (existing.is_system) return c.json({ success: false, error: 'System roles cannot be modified' }, 403)
+  const body = await c.req.json().catch(() => null) as any
+  if (!body) return c.json({ success: false, error: 'JSON body required' }, 400)
+  const updates: string[] = []
+  const params: any[] = []
+  if (body.name_ar !== undefined) { const v=String(body.name_ar).trim(); if(v) { updates.push('name_ar=?'); params.push(v) } }
+  if (body.description_ar !== undefined) { updates.push('description_ar=?'); params.push(body.description_ar ? String(body.description_ar).trim().slice(0,200) : null) }
+  if (updates.length) {
+    params.push(id)
+    await c.env.DB.prepare(`UPDATE roles SET ${updates.join(', ')} WHERE id=?`).bind(...params).run()
+  }
+  if (Array.isArray(body.permissions)) {
+    const perms = body.permissions.filter((p:any)=> typeof p==='string')
+    // SEC-103: إعادة كتابة صلاحيات دور هي منحٌ بصيغة أخرى.
+    //
+    // كان هذا المسار يمسح `role_permissions` ويُدرج ما يُطلَب بلا مقارنة: امنح
+    // نفسك دورًا مخصَّصًا، ثم ارفع صلاحياته من هنا. والفحص على **ما يُطلَب** لا
+    // على الفرق: دورٌ يحمل صلاحية لا يملكها الفاعل لا يجوز أن يُثبّتها أيضًا.
+    const beyond = permissionsBeyondActor(c.get('adminUser'), perms)
+    if (beyond) return c.json(escalationRefusal(beyond), 403)
+
+    await c.env.DB.prepare(`DELETE FROM role_permissions WHERE role_id=?`).bind(id).run()
+    if (perms.length) {
+      const stmts = perms.map((perm:any) => c.env.DB.prepare(`INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?,?)`).bind(id, perm))
+      await c.env.DB.batch(stmts)
+    }
+  }
+  return c.json({ success: true, data: { id } })
+})
+
 // Permissions
 //
 // Ø¨Ù„Ø§ ØªØ±Ù‚ÙŠÙ… Ø¹Ù† Ù‚ØµØ¯: Ø§Ù„ØµÙÙˆÙ Ù…Ø¨Ø°ÙˆØ±Ø© ÙÙŠ Ø§Ù„Ù…Ù‡Ø§Ø¬Ø±Ø© 0014 ÙˆØ¹Ø¯Ø¯Ù‡Ø§ 22ØŒ ÙˆÙ„Ø§ Ù…Ø³Ø§Ø± ÙŠÙÙ†Ø´Ø¦
@@ -127,19 +213,80 @@ route.get('/grants', requirePermission('manage_permissions'), async (c) => {
 route.post('/grants', requirePermission('manage_permissions'), async (c) => {
   const body = await c.req.json().catch(() => null) as any
   if (!body?.grantee_id || !body?.role_id) return c.json({ success: false, error: 'grantee_id and role_id required' }, 400)
-  const id = `grant-${Date.now()}`
+  // SEC-103: تحقّق من وجود الدور والمستفيد وصحّة النطاق. D1 لا يفرض `CHECK` ولا
+  // المفاتيح الأجنبية، فكان الصفّ يُكتب بقيَم لا تقابل شيئًا — ومنحٌ لمعرّف لا
+  // يقابل أحدًا صفٌّ ميت يُشوّش خريطة «من يملك ماذا» عند التحقيق في حادثة.
+  const roleId = String(body.role_id)
+  const role = await queryFirst<{ id: string }>(c.env.DB, 'SELECT id FROM roles WHERE id = ?', [roleId])
+  if (!role) return c.json({ success: false, error: 'Unknown role' }, 400)
+
+  const granteeType = body.grantee_type === 'team' ? 'team' : 'user'
+  const granteeId = String(body.grantee_id)
+  const grantee = granteeType === 'team'
+    ? await queryFirst<{ id: string }>(c.env.DB, 'SELECT id FROM teams WHERE id = ?', [granteeId])
+    : await queryFirst<{ id: string }>(c.env.DB, 'SELECT id FROM admin_users WHERE id = ?', [granteeId])
+  if (!grantee) return c.json({ success: false, error: 'Unknown grantee' }, 400)
+
+  const scopeType = typeof body.scope_type === 'string' ? body.scope_type : 'platform'
+  if (!(SCOPE_TYPES as readonly string[]).includes(scopeType)) {
+    return c.json({ success: false, error: 'Unknown scope type' }, 400)
+  }
+
+  // حرس التصعيد: `manage_permissions` وحدها كانت تكفي لمنح `owner`. والسؤال
+  // الصحيح ليس «هل تستطيع منح الأدوار؟» بل «هل تستطيع منح **هذا** الدور؟».
+  const beyond = await roleBeyondActor(c.env.DB, c.get('adminUser'), roleId)
+  if (beyond) return c.json(escalationRefusal(beyond), 403)
+
+  // `Date.now()` كان يتصادم لطلبين في نفس المليّة.
+  const id = crypto.randomUUID()
   await c.env.DB.prepare(`INSERT INTO access_grants (id, grantee_type, grantee_id, role_id, scope_type, scope_id, content_type, language, valid_until, granted_by) VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(
     // granted_by ÙƒØ§Ù† Ø§Ù„Ù†Øµ Ø§Ù„Ø­Ø±ÙÙŠ 'admin-api-key'ØŒ ÙˆÙ‡Ùˆ Ù„ÙŠØ³ Ù…Ø¹Ø±Ù‘ÙÙ‹Ø§ ØµØ§Ù„Ø­Ù‹Ø§ ÙÙŠ
     // admin_users. Ø§Ù„Ù…ÙØªØ§Ø­ Ø§Ù„Ø£Ø¬Ù†Ø¨ÙŠ Ù„Ù… ÙŠÙ…Ù†Ø¹Ù‡ Ù„Ø£Ù† D1 Ù„Ø§ ÙŠÙØ±Ø¶ Ø§Ù„Ù‚ÙŠÙˆØ¯ Ø¨Ù„Ø§
     // PRAGMA foreign_keys Ù„ÙƒÙ„ Ø§ØªØµØ§Ù„ØŒ ÙÙƒØ§Ù† Ø³Ø¬Ù„ Â«Ù…Ù† Ù…Ù†Ø­ Ù‡Ø°Ù‡ Ø§Ù„ØµÙ„Ø§Ø­ÙŠØ©Â» Ø¨Ù„Ø§ Ù‚ÙŠÙ…Ø©.
     // Ø§Ù„Ø¢Ù† Ù‡ÙˆÙŠØ© Ø§Ù„Ø¬Ù„Ø³Ø© Ø§Ù„Ù…ÙØµØ§Ø¯ÙŽÙ‚Ø©.
-    id, body.grantee_type || 'user', body.grantee_id, body.role_id, body.scope_type || 'platform', body.scope_id || null, body.content_type || null, body.language || null, body.valid_until || null, auditActor(c)
+    // `DB-103`: تصحيح للتعليق أعلاه (ونصُّه العربي مُشوَّه الترميز في هذا
+    // الملف، فلم يُحرَّر مكانه). كان يقول إن «المفتاح الأجنبي لم يمنعه لأن D1
+    // لا يفرض القيود بلا PRAGMA foreign_keys لكل اتصال». والمقيس على القاعدة
+    // المحلية: `PRAGMA foreign_keys` = **1**، وإدراجُ مرجعٍ غير موجود يُرفض
+    // بـ`SQLITE_CONSTRAINT_FOREIGNKEY`، و`PRAGMA foreign_keys=OFF` **لا يُطاع**
+    // أصلًا. أي أن الإنفاذ قائم وغير قابل للتعطيل من SQL.
+    //
+    // فسببُ مرور القيمة القديمة ليس غياب الإنفاذ: العمود
+    // `granted_by TEXT REFERENCES admin_users(id)` **قابل للعدم**، والقيد لا
+    // يُفحَص على `NULL`. و`verifiedGrantedBy` هو الحرس الصحيح لأنه يختار بين
+    // هويةٍ موجودة و`NULL` صريحة، فلا يكتب معرّفًا لا يقابله صفّ.
+    id, granteeType, granteeId, roleId, scopeType, body.scope_id || null, body.content_type || null, body.language || null, body.valid_until || null,
+    // SEC-103: `auditActor` كان يقبل ترويسة `X-Admin-Actor` يكتبها المتصل، فسجلّ
+    // «من منح هذه الصلاحية» كان قابلًا للتلفيق من الطلب نفسه. الآن هوية مُتحقَّق
+    // من وجودها في `admin_users`، أو `NULL` — و«غير منسوب» أصدق من «منسوب إلى
+    // كائن غير موجود».
+    await verifiedGrantedBy(c.env.DB, c.get('adminUser')),
   ).run()
+  // كان هذا المسار **بلا صفّ تدقيق**: أخطر عملية في المنصّة تحدث بلا أثر.
+  await c.env.DB.batch([
+    auditStatement(c.env.DB, actorId(c), 'create', 'access_grant', id, {
+      grantee_type: granteeType, grantee_id: granteeId, role_id: roleId, scope_type: scopeType,
+    }),
+  ])
   return c.json({ success: true, data: { id } }, 201)
 })
 
+/// SEC-103: كان يحذف بالمعرّف بلا أي فحص، بينما نظيره في `adminUsers.ts` يحمي
+/// آخر مالك — أي بابٌ خلفيّ يُفرغ المنصّة من مالكها بطلب واحد، ثم لا يبقى من
+/// يستطيع إعادة منح الملكية.
 route.delete('/grants/:id', requirePermission('manage_permissions'), async (c) => {
-  await c.env.DB.prepare(`DELETE FROM access_grants WHERE id=?`).bind(pathParam(c, 'id')).run()
+  const grantId = pathParam(c, 'id')
+  const grant = await queryFirst<{ id: string; role_id: string }>(
+    c.env.DB, 'SELECT id, role_id FROM access_grants WHERE id = ?', [grantId],
+  )
+  if (!grant) return c.json({ success: false, error: 'Grant not found' }, 404)
+  if (await isLastOwnerGrant(c.env.DB, grant.role_id)) {
+    return c.json({ success: false, error: 'لا يمكن إزالة آخر مالك للمنصّة' }, 400)
+  }
+  await c.env.DB.batch([
+    c.env.DB.prepare(`DELETE FROM access_grants WHERE id=?`).bind(grantId),
+    auditStatement(c.env.DB, actorId(c), 'archive', 'access_grant', grantId, { role_id: grant.role_id }),
+  ])
   return c.json({ success: true, data: { deleted: true } })
 })
 

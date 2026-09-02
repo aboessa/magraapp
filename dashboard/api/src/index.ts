@@ -14,7 +14,9 @@ import creationsRoute from './routes/creations.ts';
 import adminGamesRoute from './routes/adminGames.ts';
 import adminRecommendationsRoute from './routes/adminRecommendations.ts';
 import adminPublishRoute from './routes/adminPublish.ts';
+import adminAiProvidersRoute from './routes/adminAiProviders.ts';
 import familyRoute from './routes/family.ts';
+import downloadsRoute from './routes/downloads.ts';
 import mediaRoute from './routes/media.ts';
 import planetsRoute from './routes/planets.ts';
 import seriesRoute from './routes/series.ts';
@@ -35,10 +37,13 @@ import appConfigRoute from './routes/appConfig.ts';
 import adminEpisodeStreamingRoute from './routes/adminEpisodeStreaming.ts';
 import recommendationsRoute from './routes/recommendations.ts';
 import childSettingsRoute from './routes/childSettings.ts';
+import adminSchoolsRoute from './routes/adminSchools.ts';
 import analyticsIngestRoute from './routes/analyticsIngest.ts';
 import notificationsRoute from './routes/notifications.ts';
 import homeResolvedRoute from './routes/homeResolved.ts';
 import creativeRoute from './routes/creative.ts';
+import publicCreativeStudioRoute from './routes/publicCreativeStudio.ts';
+import adminCreativeStudioRoute from './routes/adminCreativeStudio.ts';
 import { handleFamilyEvents } from './queue/familyEvents.ts';
 import { handleFamilyEventsDlq } from './queue/dlq.ts';
 import {
@@ -46,7 +51,9 @@ import {
   handleContentFactoryJobs,
   isContentFactoryQueue,
 } from './queue/contentFactory.ts';
-import { handleScheduled } from './scheduled/cleanup.ts';
+import { CLEANUP_CRON, handleScheduled } from './scheduled/cleanup.ts';
+import { HEALTH_CHECK_CRON, runHealthChecks } from './scheduled/healthChecks.ts';
+import { RELEASE } from './lib/release.ts';
 import {
   adminLimit,
   analyticsLimit,
@@ -56,14 +63,43 @@ import {
   parentWriteLimit,
   strictAuthLimit,
 } from './lib/rateLimit.ts';
+import { baseSecurityHeaders } from './lib/securityHeaders.ts';
 
 type AppEnv = { Bindings: Env };
 
 const app = new Hono<AppEnv>();
 
+// SEC-108: HSTS و`nosniff` على **كل** استجابة، لا على المستندات وحدها.
+//
+// HSTS ترويسة على مستوى المضيف لا على مستوى المسار: المتصفّح يخزّنها للنطاق
+// كلّه، فوضعها على صفحات HTML وحدها يعني أن أول اتصال بالـAPI لا يثبّت السياسة.
+// و`nosniff` رخيصة ولا تكسر شيئًا.
+//
+// `set` لا `append`، لكن بعد `next()` وبشرط الغياب في حالة `Referrer-Policy`
+// وحدها: `routes/media.ts` يضبط `no-referrer` وهي أصرم مما نضعه هنا، فالكتابة
+// فوقها كانت ستُرخيها. أي أن هذا الوسيط يرفع الأرضية ولا يخفض سقفًا.
+app.use('*', async (c, next) => {
+  await next();
+  for (const [name, value] of Object.entries(baseSecurityHeaders())) {
+    if (name === 'Referrer-Policy' && c.res.headers.has(name)) continue;
+    c.res.headers.set(name, value);
+  }
+});
+
 // عقد CORS في وحدة واحدة (`lib/corsOptions.ts`) لأن الاختبار كان ينسخ الإعداد
 // إلى تطبيق خاص به، فبقي أخضر بينما كان حجب ترويسة يكسر العميل فعليًا.
 app.use('/api/*', cors(corsOptions));
+
+// ضمان ترميز UTF-8 صريح لكل استجابة JSON — يمنع Mojibake للعربية
+// حتى لو Hono افتراضياً يضيف charset، نضمنه هنا لأن بعض العملاء (Dart http)
+// يفسرون body كـ Latin1 عند غياب charset.
+app.use('/api/*', async (c, next) => {
+  await next();
+  const ct = c.res.headers.get('Content-Type');
+  if (ct && ct.includes('application/json') && !ct.includes('charset')) {
+    c.res.headers.set('Content-Type', 'application/json; charset=utf-8');
+  }
+});
 
 // حماية الحافة - يمنع الإساءة قبل وصولها للـ DO/D1
 app.use('/api/v1/auth/*', strictAuthLimit);
@@ -91,6 +127,10 @@ app.use('/api/v1/stories/*', mediaSessionLimit);
 // is still an egress amplifier.
 app.use('/api/v1/media/*', mediaSessionLimit);
 
+// جلسات التنزيل: كل نداء يُصدر قدرات وسائط، فحدّه حدّ مسار الوسائط.
+app.use('/api/v1/downloads', mediaSessionLimit);
+app.use('/api/v1/downloads/*', mediaSessionLimit);
+
 // Parental-control writes, counted per parent rather than per address.
 app.use('/api/v1/child-settings/*', parentWriteLimit);
 app.use('/api/v1/notifications/*', parentWriteLimit);
@@ -112,8 +152,28 @@ app.get('/', (c) => c.json({
   version: c.env.API_VERSION,
   environment: c.env.ENVIRONMENT,
   status: 'ok',
+  release: RELEASE.commit,
 }));
 app.get('/health', (c) => c.json({ status: 'ok' }));
+
+// أيّ إصدارٍ يعمل الآن؟ (`OPS-105`)
+//
+// السؤال لم يكن له جواب: النشر كان يدويًّا وغير موثَّق، و`API_VERSION` قيمتها `v1`
+// دائمًا لأنها عقد الـAPI لا هوية البناء. والجواب يُؤخَذ من **الإنتاج نفسه** لا من
+// سجلٍّ يُكتب بجانبه، لأن السجل يفترق عن الواقع أوّل مرّة يُنشر بيدٍ.
+//
+// وهي أيضًا ما يجعل النشر مُتحقَّقًا منه: مسار النشر يقرأ هذه النقطة بعد النشر
+// ويوازن البصمة بالـcommit الذي بناه، فلا «نشرٌ نجح» ونسخةٌ قديمة تعمل.
+//
+// عامّة بلا مصادقة، وبصمة مقتطعة إلى ١٢ محرفًا: يُحتاج إليها في حادثةٍ ليلًا بلا
+// مفتاح، والاثنا عشر تكفي للمطابقة. والكاملة في وسم الإصدار في git.
+app.get('/version', (c) => c.json({
+  commit: RELEASE.commit,
+  built_at: RELEASE.builtAt,
+  run: RELEASE.run,
+  environment: c.env.ENVIRONMENT,
+  api_version: c.env.API_VERSION,
+}));
 
 // مصادقة اللوحة قبل adminRoute: مسارات الدخول لا يمكن أن تتطلّب جلسة لأنها
 // هي التي تُنشئها، وترتيب التركيب يجعل حرس adminRoute لا يمسّها.
@@ -141,10 +201,20 @@ app.route('/api/v1/admin', adminGamesRoute);
 // routers above are: a two-segment literal must not bind as an `:id` on a
 // generic admin route.
 app.route('/api/v1/admin', adminRecommendationsRoute);
+// B2B Schools — must be before adminRoute otherwise /:id swallows
+app.route('/api/v1/admin', adminSchoolsRoute);
 // Publishing for stories, books, games and projects. Mounted before adminRoute
 // because it declares three-segment literals (`/stories/:id/publish`) that must
 // not be reached through a generic two-segment route first.
 app.route('/api/v1/admin', adminPublishRoute);
+// سجل مزوّدي الذكاء الاصطناعي. قبل adminRoute لأن مساراته متعدّدة المقاطع
+// (`/ai/models/:id/probe`, `/ai/tasks/:taskId/routes`)، وهي نفس العلّة التي
+// أصابت `/admin/games/ops` و`/admin/billing/*` من قبل. ويحرس نفسه بـrequireAdmin
+// لأن التركيب المباشر لا يورّث حرس adminRoute.
+app.route('/api/v1/admin', adminAiProvidersRoute);
+// استوديو المبدعين admin — قبل adminRoute نفس علة billing/ops: لو بعده، /games/:id يبتلعها
+// كان في السطر الأخير وفشل لوحة الإدارة بالوصول لها. R2-first كامل.
+app.route('/api/v1/admin', adminCreativeStudioRoute);
 app.route('/api/v1/admin', adminRoute);
 app.route('/api/v1/auth', authRoute);
 app.route('/api/v1/account', accountRoute);
@@ -158,6 +228,9 @@ app.route('/api/v1/creations', creationsRoute);
 app.route('/api/v1/books', booksRoute);
 app.route('/api/v1/stories', storiesRoute);
 app.route('/api/v1/family', familyRoute);
+// ENC-001: جلسة التنزيل تُصدر قدرات وسائط وترخيصًا موقَّعًا، فحصّتها حصّة مسار
+// الوسائط لا حصّة الكتابة الأبوية: كل جلسة تُصدر توكنات، وهي أغلى ما يُمنَح.
+app.route('/api/v1/downloads', downloadsRoute);
 app.route('/api/v1/partnerships', partnershipsRoute);
 // حالة الموقع عامة بلا مصادقة: صفحة الهبوط تستعلم عنها قبل أن تعرض أي شيء
 app.route('/api/v1/site-mode', siteModeRoute);
@@ -189,6 +262,9 @@ app.route('/api/v1/admin/site-mode', adminSiteModeRoute);
 // تُطابق أولًا. مركّبة صراحةً لا داخل adminRoute حتى لا تعتمد على ترتيب
 // التركيب هناك.
 app.route('/api/v1/admin', adminUsersRoute);
+// public creative studio — قبل publicRenderRoute و publicSite حتى لا يعترضها
+// مقاطع اللغة العامة. كان ناقصاً تماماً سابقاً!
+app.route('/api/v1', publicCreativeStudioRoute);
 // Drawing-game readiness and preview are mounted above, before adminRoute.
 
 // عارض الصفحات العامة كـHTML كامل في المستند الأول (SEO).
@@ -227,8 +303,25 @@ const worker: ExportedHandler<Env, unknown> = {
     }
     return handleFamilyEvents(batch as MessageBatch<unknown>, env)
   },
+  /// OPS-106: جدولان لا واحد.
+  ///
+  /// التنظيف يوميّ (`0 3 * * *`) والفحص كل خمس دقائق (`*/5 * * * *`). والتوزيع
+  /// هنا **صريح**: لو أُضيف تعبير في `wrangler.jsonc` بلا فرع هنا، لصار الجدول
+  /// يعمل ولا يفعل شيئًا — عطلٌ صامت لا يُنتج خطأً في أي سجلّ.
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(handleScheduled(event as ScheduledEvent, env))
+    const cron = (event as ScheduledEvent).cron
+    if (cron === HEALTH_CHECK_CRON) {
+      ctx.waitUntil(runHealthChecks(env).then(
+        (result) => console.log('health_checks', result.written, 'raised', result.raised),
+        (error) => console.error('health_checks_failed', error),
+      ))
+      return
+    }
+    if (cron === CLEANUP_CRON) {
+      ctx.waitUntil(handleScheduled(event as ScheduledEvent, env))
+      return
+    }
+    console.error('unhandled_cron', cron)
   },
 };
 

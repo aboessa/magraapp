@@ -188,8 +188,18 @@ test('customer 360 queries no table that does not exist', () => {
   const known = new Set([
     'family_projection', 'child_projection', 'account_devices', 'billing_audit',
     'google_play_purchases', 'support_tickets', 'audit_logs',
+    // PRIV-102: سجل تدقيق مسار العميل، جدول منفصل عن audit_logs. الترحيل 0081.
+    'family_audit_logs',
   ]);
   for (const table of tables) {
     assert.ok(known.has(table), `unknown table in customer 360: ${table}`);
   }
+
+  // القسم الجديد وراء .catch() أيضًا، فالتأكّد من وجود الجدول في ترحيل هو ما
+  // يمنع تحوّله إلى «لا سجلّ» دائمًا.
+  const migration = readFileSync(
+    fileURLToPath(new URL('../migrations/0081_family_audit_logs.sql', import.meta.url)),
+    'utf8',
+  );
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS family_audit_logs/);
 });

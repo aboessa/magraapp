@@ -16,6 +16,17 @@ import {
   parseConsentWrite,
   type ConsentRow,
 } from '../lib/consent.ts';
+import {
+  boolean,
+  integer,
+  list,
+  oneOf,
+  opaque,
+  parseBody,
+  text,
+  validationFailure,
+  type BodySchema,
+} from '../lib/requestSchema.ts';
 
 type AppEnv = { Bindings: Env };
 type JsonBody = Record<string, unknown>;
@@ -70,9 +81,108 @@ async function requireParentProof(
   });
 }
 
-async function body(c: { req: { json(): Promise<unknown> } }): Promise<JsonBody | null> {
-  const value = await c.req.json().catch(() => null);
-  return value && typeof value === 'object' && !Array.isArray(value) ? value as JsonBody : null;
+/// SEC-110: مخطَّطات أجسام الطلبات لكل نقطة كتابة في هذا الموجّه.
+///
+/// ## لماذا مجموعة في مكان واحد
+///
+/// «ما يقبله هذا الموجّه» صار **مقروءًا في شاشة واحدة** بدل أن يُستخرَج من أحد
+/// عشر معالجًا. وقراءته شرط مراجعته: لا يُلاحظ حقلٌ فائض ما لم يُرَ بجانب أشباهه.
+///
+/// ## والمعرّفات نصوص مقيَّدة لا نصوص حرّة
+///
+/// كل معرّف هنا يُولَّد خادميًّا (`crypto.randomUUID` أو ما شابه)، فحدّه المعلَن
+/// أكثر من كافٍ. وسقف الطول ليس تجميلًا: حقل بلا سقف هو طلب واحد يمرّر ميغابايت
+/// إلى الكائن الدائم.
+const ID = { min: 1, max: 128 } as const;
+
+const SCHEMAS = {
+  createChild: {
+    nickname: text({ max: 40 }),
+    birth_month: integer({ min: 1, max: 12 }),
+    birth_year: integer({ min: 1900, max: 2200 }),
+    avatar_id: text({ max: 100 }),
+    language: text({ max: 10, optional: true }),
+    interests: list(text({ max: 60 }), { max: 30, optional: true }),
+    // الخادم يكتب الوقت بساعته. العميل يقول «انتهى» لا «انتهى في اللحظة س».
+    onboarding_completed: boolean({ optional: true }),
+  },
+  updateChild: {
+    nickname: text({ max: 40, optional: true }),
+    avatar_id: text({ max: 100, optional: true }),
+    language: text({ max: 10, optional: true }),
+    interests: list(text({ max: 60 }), { max: 30, optional: true }),
+  },
+  trackTransition: { action: oneOf(['accept', 'defer', 'review']) },
+  progress: {
+    child_id: text({ ...ID, optional: true }),
+    childId: text({ ...ID, optional: true }),
+    device_id: text({ ...ID, optional: true }),
+    deviceId: text({ ...ID, optional: true }),
+    contentId: text({ ...ID, optional: true }),
+    // الأسماء المزدوجة عقد قائم يستهلكه عميلان بصيغتين مختلفتين. إعلانهما معًا
+    // يوثّق التكرار بدل أن يُخفيه: ما يُعلَن يمكن أن يُنظَّف يومًا.
+    content_id: text({ ...ID, optional: true }),
+    episode_id: text({ ...ID, optional: true }),
+    content_type: oneOf(['episode', 'game', 'story', 'book'], { optional: true }),
+    event_id: text({ ...ID, optional: true }),
+    eventId: text({ ...ID, optional: true }),
+    position_ms: integer({ min: 0, optional: true }),
+    positionMs: integer({ min: 0, optional: true }),
+    duration_ms: integer({ min: 0, optional: true }),
+    durationMs: integer({ min: 0, optional: true }),
+    progress_seconds: integer({ min: 0, optional: true }),
+    duration_seconds: integer({ min: 0, optional: true }),
+    sequence: integer({ min: 0, optional: true }),
+    game_id: text({ ...ID, optional: true }),
+
+    // حمولة محاولة لعبة (`game_services.dart:206`). كانت تمرّ كلّها بلا إعلان،
+    // فصار إعلانها هو أوّل توثيق لعقدها: مقاييس محاولة، بلا إحداثيات ولا نصّ حرّ.
+    objective_id: text({ ...ID, optional: true }),
+    completed: boolean({ optional: true }),
+    score: integer({ min: 0, optional: true }),
+    max_score: integer({ min: 0, optional: true }),
+    time_spent: integer({ min: 0, optional: true }),
+    help_used: boolean({ optional: true }),
+    // العناصر تفحصها اللعبة نفسها: شكلها يختلف بنوع اللعبة، والسقف هو الحماية.
+    answers: list(opaque(), { max: 200, optional: true }),
+  },
+  consent: {
+    consent_type: text({ max: 64 }),
+    version: text({ max: 32, optional: true }),
+    child_id: text({ ...ID, optional: true, nullable: true }),
+    revoke: boolean({ optional: true }),
+  },
+  reward: {
+    child_id: text(ID),
+    reward_key: text({ max: 64 }),
+    source_type: oneOf(['game', 'episode', 'project']),
+    source_id: text(ID),
+  },
+  favorite: {
+    child_id: text(ID),
+    entity_type: text({ max: 32 }),
+    entity_id: text(ID),
+    action: oneOf(['add', 'remove'], { optional: true }),
+  },
+  revokeDevice: { device_id: text(ID) },
+  // الرمز أرقام فقط وطوله محدَّد: المخطَّط يرفض «رمزًا» طوله ألف حرف قبل أن يصل
+  // إلى دالّة التقطيع، فلا تُستهلك دورة معالجة في تقطيع ما لا يُقبل.
+  parentPin: { pin: text({ min: 4, max: 12, pattern: /^\d+$/ }) },
+  verifyPin: {
+    pin: text({ min: 4, max: 12, pattern: /^\d+$/ }),
+    purpose: text({ max: 64, optional: true }),
+  },
+  authorizeProof: { purpose: text({ max: 64 }) },
+} satisfies Record<string, BodySchema>;
+
+/// يقرأ الجسم مقابل مخطَّط، ويعيد ردَّ الرفض الموحَّد جاهزًا عند الفشل.
+async function schemaBody<T extends JsonBody>(
+  c: { req: { json(): Promise<unknown> } },
+  schema: BodySchema,
+): Promise<{ ok: true; value: T } | { ok: false; response: Response }> {
+  const parsed = await parseBody<T>(c, schema);
+  if (parsed.ok) return { ok: true, value: parsed.value };
+  return { ok: false, response: Response.json(validationFailure(parsed), { status: 400 }) };
 }
 
 function forward(result: { status: number; data: unknown }) {
@@ -114,18 +224,74 @@ familyRoute.post('/children', async (c) => {
     'manage_children',
   );
   if (!proof.ok) return parentProofDenied(proof.reason);
-  const value = await body(c);
-  if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400);
+  // SEC-110: الجسم كان يُمرَّر إلى الكائن الدائم كما جاء (`...value`)، فأي حقل
+  // زائد يعبر الحدّ. الآن لا يعبر إلا ما أُعلن.
+  const parsed = await schemaBody(c, SCHEMAS.createChild);
+  if (!parsed.ok) return parsed.response;
   return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/children', {
-    body: { ...value, session_id: auth.principal.sessionId },
+    body: { ...parsed.value, session_id: auth.principal.sessionId },
+  }));
+});
+
+/// `PATCH /family/children/:childId` — updates one child's profile (nickname,
+/// avatar, language, interests). Never accepts birth_month/birth_year/age_track:
+/// those are exclusive to the track-transition endpoint (task 25), which
+/// re-derives the track through `deriveAgeTrack` and emits its own event rather
+/// than letting a profile edit silently change which library a child is served.
+///
+/// Carries a `manage_children` proof — the same purpose `POST /children`
+/// requires, since editing a profile is exactly as sensitive as creating one.
+familyRoute.patch('/children/:childId', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const proof = await requireParentProof(
+    c.env,
+    auth.principal,
+    c.req.header('X-Parent-Proof'),
+    'manage_children',
+  );
+  if (!proof.ok) return parentProofDenied(proof.reason);
+  // المخطَّط هو ما يفرض التعليق أعلاه: `birth_month`/`birth_year`/`age_track`
+  // غير معلَنة هنا، فإرسالها يُرفض بدل أن يُهمَل صامتًا.
+  const parsed = await schemaBody(c, SCHEMAS.updateChild);
+  if (!parsed.ok) return parsed.response;
+  const childId = c.req.param('childId');
+  return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/children', {
+    method: 'PATCH',
+    body: { ...parsed.value, session_id: auth.principal.sessionId, child_id: childId },
+  }));
+});
+
+/// `POST /family/children/:childId/track-transition` — إعادة حساب المسار العمري
+/// وتطبيق أحد الأفعال الثلاثة: `accept` (يكتب المسار الجديد ويُصدر
+/// `child.track_transitioned`)، `defer` (يؤجّل حتى 30 يومًا، مرة واحدة)، أو
+/// `review` (يعرض المقارنة بلا كتابة). يحمل إثبات `manage_children` نفسه الذي
+/// تحمله `POST /children` و`PATCH /children/:childId`، لأن تغيير المسار العمري
+/// حساس بنفس درجة إنشاء أو تعديل ملف الطفل.
+familyRoute.post('/children/:childId/track-transition', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const proof = await requireParentProof(
+    c.env,
+    auth.principal,
+    c.req.header('X-Parent-Proof'),
+    'manage_children',
+  );
+  if (!proof.ok) return parentProofDenied(proof.reason);
+  const parsed = await schemaBody(c, SCHEMAS.trackTransition);
+  if (!parsed.ok) return parsed.response;
+  const childId = c.req.param('childId');
+  return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/children/track-transition', {
+    body: { action: parsed.value.action, session_id: auth.principal.sessionId, child_id: childId },
   }));
 });
 
 familyRoute.post('/progress', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
-  const value = await body(c);
-  if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400);
+  const parsed = await schemaBody(c, SCHEMAS.progress);
+  if (!parsed.ok) return parsed.response;
+  const value = parsed.value;
 
   const progressSeconds = typeof value.progress_seconds === 'number' ? value.progress_seconds : null;
   const durationSeconds = typeof value.duration_seconds === 'number' ? value.duration_seconds : null;
@@ -134,7 +300,15 @@ familyRoute.post('/progress', async (c) => {
       ...value,
       session_id: auth.principal.sessionId,
       event_id: value.event_id ?? value.eventId ?? crypto.randomUUID(),
-      content_id: value.content_id ?? value.episode_id,
+      // SEC-110 كشف هذا: التطبيق يرسل `childId` و`contentId` بصيغة camelCase
+      // (`majarra_api_client.dart:542`)، والكائن الدائم يقرأ `child_id` وحده —
+      // فكان **كل حفظ تقدّم من المشغّل يُرفض** بـ400. والنداء «أطلق وانسَ» مع
+      // كتم الفشل («must never interrupt playback») هو ما جعل العطل صامتًا.
+      //
+      // الترجمة هنا لا في العميل: نسخة التطبيق المنشورة لا تُصلَح بنشر خادم.
+      child_id: value.child_id ?? value.childId,
+      device_id: value.device_id ?? value.deviceId,
+      content_id: value.content_id ?? value.contentId ?? value.episode_id,
       content_type: value.content_type ?? 'episode',
       position_ms: value.position_ms ?? value.positionMs ?? (progressSeconds === null ? undefined : Math.floor(progressSeconds * 1000)),
       duration_ms: value.duration_ms ?? value.durationMs ?? (durationSeconds === null ? 0 : Math.floor(durationSeconds * 1000)),
@@ -219,17 +393,36 @@ familyRoute.post('/consents', async (c) => {
   // broad parent-area proof meant any screen behind the PIN could change it with
   // a token minted for something else, and it left `manage_consents` as a purpose
   // that could be issued but was never checked.
-  const proof = await requireParentProof(
-    c.env,
-    auth.principal,
-    c.req.header('X-Parent-Proof'),
-    'manage_consents',
+  //
+  // Exception: a brand-new family with no PIN enrolled yet cannot hold any
+  // proof at all — every purpose besides `parent_area` is exchanged from a
+  // `parent_area` proof, and `parent_area` is only minted by `POST
+  // /parent-pin` or `/parent-pin/verify`, both of which the onboarding
+  // journey runs *after* the consent step (Requirement 8.2). Without this
+  // carve-out the very first consent a new family grants would be
+  // unwritable by construction, not merely PIN-gated. Once a PIN exists,
+  // the exception closes and `manage_consents` is required as before.
+  const pinStatus = await callDurable<Envelope<{ enrolled: boolean }>>(
+    familyStub(c.env, auth.principal.parentId), '/parent-pin/status', {},
   );
-  if (!proof.ok) return parentProofDenied(proof.reason);
-  const value = await body(c);
-  if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400);
+  const pinEnrolled = pinStatus.ok && pinStatus.data?.success
+    ? pinStatus.data.data?.enrolled !== false
+    : true; // fail closed: an unreadable status still requires proof.
+  if (pinEnrolled) {
+    const proof = await requireParentProof(
+      c.env,
+      auth.principal,
+      c.req.header('X-Parent-Proof'),
+      'manage_consents',
+    );
+    if (!proof.ok) return parentProofDenied(proof.reason);
+  }
+  const validated = await schemaBody(c, SCHEMAS.consent);
+  if (!validated.ok) return validated.response;
 
-  const parsed = parseConsentWrite(value);
+  // المخطَّط يفحص الشكل، و`parseConsentWrite` يبقى: هو من يعرف أي نوع موافقة
+  // يتطلّب طفلًا وأي إصدار مقبول لكل نوع — وهذه دلالة لا شكل.
+  const parsed = parseConsentWrite(validated.value);
   if ('error' in parsed) return c.json({ success: false, error: parsed.error }, 400);
   const { type, childId, version, revoke } = parsed.write;
 
@@ -279,20 +472,20 @@ familyRoute.get('/rewards', async (c) => {
 familyRoute.post('/rewards', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
-  const value = await body(c);
-  if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400);
+  const parsed = await schemaBody(c, SCHEMAS.reward);
+  if (!parsed.ok) return parsed.response;
   return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/rewards', {
-    body: { ...value, session_id: auth.principal.sessionId },
+    body: { ...parsed.value, session_id: auth.principal.sessionId },
   }));
 });
 
 familyRoute.post('/favorites', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
-  const value = await body(c);
-  if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400);
+  const parsed = await schemaBody(c, SCHEMAS.favorite);
+  if (!parsed.ok) return parsed.response;
   return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/favorites', {
-    body: { ...value, session_id: auth.principal.sessionId },
+    body: { ...parsed.value, session_id: auth.principal.sessionId },
   }));
 });
 
@@ -320,18 +513,19 @@ familyRoute.post('/devices/revoke', async (c) => {
     true,
   );
   if (!proof.ok) return parentProofDenied(proof.reason);
-  const value = await body(c);
-  if (!value || typeof value.device_id !== 'string') return c.json({ success: false, error: 'device_id is required' }, 400);
+  const parsed = await schemaBody(c, SCHEMAS.revokeDevice);
+  if (!parsed.ok) return parsed.response;
   return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/devices/revoke', {
-    body: { device_id: value.device_id, session_id: auth.principal.sessionId },
+    body: { device_id: parsed.value.device_id, session_id: auth.principal.sessionId },
   }));
 });
 
 familyRoute.post('/parent-pin', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
-  const value = await body(c);
-  if (!value || typeof value.pin !== 'string') return c.json({ success: false, error: 'pin is required' }, 400);
+  const parsed = await schemaBody(c, SCHEMAS.parentPin);
+  if (!parsed.ok) return parsed.response;
+  const value = parsed.value;
 
   // Initial enrolment is allowed with the authenticated parent session. Once a
   // PIN exists, FamilyState refuses the write unless this route supplies the
@@ -384,8 +578,9 @@ familyRoute.post('/parent-pin', async (c) => {
 familyRoute.post('/parent-pin/verify', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
-  const value = await body(c);
-  if (!value || typeof value.pin !== 'string') return c.json({ success: false, error: 'pin is required' }, 400);
+  const parsed = await schemaBody(c, SCHEMAS.verifyPin);
+  if (!parsed.ok) return parsed.response;
+  const value = parsed.value;
   const purpose = value.purpose === undefined
     ? 'parent_area'
     : parseParentProofPurpose(value.purpose);
@@ -422,8 +617,11 @@ familyRoute.post('/parent-pin/verify', async (c) => {
 familyRoute.post('/parent-proof/authorize', async (c) => {
   const auth = await principal(c);
   if (!auth.ok) return unauthorized(auth.reason);
-  const value = await body(c);
-  const purpose = parseParentProofPurpose(value?.purpose);
+  const parsed = await schemaBody(c, SCHEMAS.authorizeProof);
+  if (!parsed.ok) return parsed.response;
+  // القائمة المغلقة تبقى في `parseParentProofPurpose`: هي مصدرها الوحيد، ونسخها
+  // في المخطَّط كان سيصنع قائمتين تفترقان.
+  const purpose = parseParentProofPurpose(parsed.value.purpose);
   if (!purpose || !exchangeableParentPurposes.has(purpose)) {
     return c.json({ success: false, error: 'A valid action purpose is required' }, 400);
   }

@@ -17,10 +17,13 @@
 ///     before the command is sent, so an operator action that fails mid-flight still
 ///     leaves evidence that it was attempted. Recording only successes is how a
 ///     partially-applied revocation becomes invisible.
-///  2. **No D1 write.** Device and entitlement state stays in FamilyState. D1's
-///     `account_devices` is a projection and is updated by the event the command emits,
-///     not by this router — writing both would create two truths that disagree the
-///     first time the queue is slow.
+///  2. **No D1 write.** Device and entitlement state stays in FamilyState.
+///
+///     `DB-102`: تصحيح. كان مكتوبًا هنا أن `account_devices` «إسقاط يُحدَّث
+///     بالحدث الذي يبعثه هذا الأمر». وهذا **غير صحيح**: لا كاتب لهذا الجدول في
+///     المستودع كلّه (صفر `INSERT`/`UPDATE` في `src` و`scripts` و`migrations`)،
+///     فهو ميتٌ لا إسقاط متأخّر. والقرار «لا كتابة في D1» يبقى صحيحًا لسببٍ
+///     أقوى: لا مرآة ثانية تُكتب أصلًا.
 ///  3. **No session is minted.** Nothing here lets an operator act *as* a family.
 ///
 /// ## Why `manage_permissions` guards the writes

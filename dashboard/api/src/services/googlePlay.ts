@@ -7,7 +7,7 @@ const PUBLISHER_SCOPE = 'https://www.googleapis.com/auth/androidpublisher';
 const PUBLISHER_AUDIENCE = TOKEN_ENDPOINT;
 
 type PaidPlan = Exclude<Plan, 'free'>;
-type ProductMap = Record<string, PaidPlan>;
+export type ProductMap = Record<string, PaidPlan>;
 type JsonObject = Record<string, unknown>;
 
 type CachedAccessToken = {
@@ -75,7 +75,7 @@ export function googlePlayIsConfigured(env: Env) {
   );
 }
 
-async function serviceAccountAccessToken(env: Env) {
+export async function serviceAccountAccessToken(env: Env) {
   if (!googlePlayIsConfigured(env)) throw new GooglePlayError('unconfigured');
   const cacheKey = `${env.GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL}:${env.GOOGLE_PLAY_PACKAGE_NAME}`;
   if (cachedAccessToken?.key === cacheKey && cachedAccessToken.expiresAt > Date.now() + 60_000) {
@@ -121,6 +121,146 @@ async function serviceAccountAccessToken(env: Env) {
   const expiresIn = typeof token.expires_in === 'number' ? Math.min(Math.max(token.expires_in, 60), 3600) : 3600;
   cachedAccessToken = { key: cacheKey, token: token.access_token, expiresAt: Date.now() + expiresIn * 1000 };
   return token.access_token;
+}
+
+export type GooglePlayMoney = {
+  currencyCode: string;
+  units: string;
+  nanos?: number;
+};
+
+export type GooglePlayRegionalPrice = {
+  regionCode: string;
+  newSubscriberAvailability: boolean;
+  price: GooglePlayMoney | null;
+};
+
+export type GooglePlayBasePlan = {
+  basePlanId: string;
+  regionalConfigs: GooglePlayRegionalPrice[];
+  /** Complete provider object retained for PATCH. Google Play base plans have
+   * immutable type fields that must not be discarded when prices change. */
+  raw: JsonObject;
+};
+
+export type GooglePlaySubscription = {
+  packageName: string;
+  productId: string;
+  regionsVersion: string;
+  basePlans: GooglePlayBasePlan[];
+};
+
+function requiredText(value: unknown, field: string, maximum = 200) {
+  if (typeof value !== 'string' || !value.trim() || value.length > maximum) {
+    throw new GooglePlayError('provider_unavailable');
+  }
+  return value.trim();
+}
+
+function readMoney(value: unknown): GooglePlayMoney | null {
+  const source = object(value);
+  if (!source) return null;
+  const currencyCode = typeof source.currencyCode === 'string' ? source.currencyCode.toUpperCase() : '';
+  const units = typeof source.units === 'string' ? source.units : '';
+  const nanos = typeof source.nanos === 'number' && Number.isInteger(source.nanos) ? source.nanos : undefined;
+  if (!/^[A-Z]{3}$/.test(currencyCode) || !/^-?\d+$/.test(units) || (nanos !== undefined && Math.abs(nanos) > 999999999)) {
+    throw new GooglePlayError('provider_unavailable');
+  }
+  return { currencyCode, units, ...(nanos === undefined ? {} : { nanos }) };
+}
+
+function parseSubscription(value: unknown): GooglePlaySubscription {
+  const subscription = object(value);
+  const regionsVersion = object(subscription?.regionsVersion);
+  const rawPlans = Array.isArray(subscription?.basePlans) ? subscription.basePlans : null;
+  if (!subscription || !regionsVersion || !rawPlans) throw new GooglePlayError('provider_unavailable');
+  const basePlans = rawPlans.map((raw): GooglePlayBasePlan => {
+    const plan = object(raw);
+    if (!plan) throw new GooglePlayError('provider_unavailable');
+    const rawConfigs = Array.isArray(plan?.regionalConfigs) ? plan.regionalConfigs : [];
+    return {
+      basePlanId: requiredText(plan?.basePlanId, 'basePlanId'),
+      regionalConfigs: rawConfigs.map((rawConfig): GooglePlayRegionalPrice => {
+        const config = object(rawConfig);
+        const regionCode = requiredText(config?.regionCode, 'regionCode', 2).toUpperCase();
+        if (!/^[A-Z]{2}$/.test(regionCode)) throw new GooglePlayError('provider_unavailable');
+        return {
+          regionCode,
+          newSubscriberAvailability: config?.newSubscriberAvailability === true,
+          price: readMoney(config?.price),
+        };
+      }),
+      raw: plan,
+    };
+  });
+  return {
+    packageName: requiredText(subscription.packageName, 'packageName'),
+    productId: requiredText(subscription.productId, 'productId'),
+    regionsVersion: requiredText(regionsVersion.version, 'regionsVersion'),
+    basePlans,
+  };
+}
+
+function subscriptionEndpoint(env: Env, productId: string) {
+  return `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(env.GOOGLE_PLAY_PACKAGE_NAME!)}/subscriptions/${encodeURIComponent(productId)}`;
+}
+
+/** Reads the live regional base-plan prices Google Play will charge. */
+export async function getGooglePlaySubscription(env: Env, productId: string) {
+  if (!googlePlayIsConfigured(env)) throw new GooglePlayError('unconfigured');
+  const response = await fetch(subscriptionEndpoint(env, productId), {
+    headers: { Authorization: `Bearer ${await serviceAccountAccessToken(env)}`, Accept: 'application/json' },
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => null);
+  if (!response?.ok) throw new GooglePlayError('provider_unavailable');
+  return parseSubscription(await response.json().catch(() => null));
+}
+
+/**
+ * Replaces the complete base-plan list with a reviewed regional price change.
+ * Google Play requires the parent subscription PATCH and a RegionsVersion.
+ */
+export async function updateGooglePlayRegionalBasePlanPrice(
+  env: Env,
+  current: GooglePlaySubscription,
+  input: { basePlanId: string; regionCode: string; price: GooglePlayMoney },
+) {
+  const regionCode = input.regionCode.toUpperCase();
+  const basePlans = current.basePlans.map((basePlan) => {
+    if (basePlan.basePlanId !== input.basePlanId) return basePlan;
+    let found = false;
+    const regionalConfigs = basePlan.regionalConfigs.map((config) => {
+      if (config.regionCode !== regionCode) return config;
+      found = true;
+      return { ...config, newSubscriberAvailability: true, price: input.price };
+    });
+    if (!found) {
+      regionalConfigs.push({ regionCode, newSubscriberAvailability: true, price: input.price });
+    }
+    return { ...basePlan, regionalConfigs, raw: { ...basePlan.raw, regionalConfigs } };
+  });
+  if (!basePlans.some((basePlan) => basePlan.basePlanId === input.basePlanId)) {
+    throw new GooglePlayError('invalid_purchase');
+  }
+  const url = new URL(subscriptionEndpoint(env, current.productId));
+  url.searchParams.set('updateMask', 'basePlans');
+  url.searchParams.set('regionsVersion.version', current.regionsVersion);
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${await serviceAccountAccessToken(env)}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      packageName: current.packageName,
+      productId: current.productId,
+      basePlans: basePlans.map((basePlan) => basePlan.raw),
+    }),
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => null);
+  if (!response?.ok) throw new GooglePlayError('provider_unavailable');
+  return parseSubscription(await response.json().catch(() => null));
 }
 
 function object(value: unknown): JsonObject | null {

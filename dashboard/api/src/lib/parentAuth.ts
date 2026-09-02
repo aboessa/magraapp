@@ -204,6 +204,16 @@ function secret(env: Env, name: 'AUTH_TOKEN_SECRET' | 'MEDIA_TOKEN_SECRET') {
   return hasUsableSecret(value) ? value : null;
 }
 
+/// SEC-109: حلقة المفاتيح المقبولة للتحقّق — الحالي أوّلًا، ثم السابق.
+///
+/// **التوقيع بالحالي وحده.** الحلقة للقراءة لا للكتابة: لو وُقِّع بالسابق لصار
+/// الدوران بلا نهاية، ولما انقضت نافذته أبدًا.
+///
+/// والترتيب مقصود: توكن قديم بلا `kid` يُجرَّب على الحالي أوّلًا، وهو الأغلب.
+function secretRing(env: Env, name: 'AUTH_TOKEN_SECRET' | 'MEDIA_TOKEN_SECRET') {
+  return [env[name], env[`${name}_PREVIOUS`]];
+}
+
 async function signedRefreshToken(env: Env, parts: RefreshTokenParts) {
   const signingSecret = secret(env, 'AUTH_TOKEN_SECRET');
   if (!signingSecret) throw new Error('Authentication is not configured');
@@ -247,7 +257,8 @@ export async function authenticateParent(env: Env, authorization: string | undef
   const token = bearerToken(authorization);
   if (!token) return { ok: false, reason: 'unauthorized' };
 
-  const claims = await verifySignedToken<AccessClaims>(token, signingSecret);
+  // SEC-109: الحلقة لا السرّ الواحد. تدوير السرّ لا يُخرج جلسةً قائمة.
+  const claims = await verifySignedToken<AccessClaims>(token, secretRing(env, 'AUTH_TOKEN_SECRET'));
   if (!claims || claims.typ !== 'parent_access' || !isValidExpiry(claims.exp)
     || typeof claims.sub !== 'string' || typeof claims.sid !== 'string' || !Number.isInteger(claims.epoch)) {
     return { ok: false, reason: 'unauthorized' };
@@ -328,7 +339,9 @@ export async function verifyParentProof(env: Env, values: {
   const token = parentProofToken(values.header);
   if (!token) return { ok: false, reason: 'invalid' };
 
-  const claims = await verifySignedToken<ParentProofClaims>(token, signingSecret);
+  const claims = await verifySignedToken<ParentProofClaims>(
+    token, secretRing(env, 'AUTH_TOKEN_SECRET'),
+  );
   const now = Math.floor(Date.now() / 1000);
   if (!claims || claims.typ !== 'parent_proof' || !isValidExpiry(claims.exp)
     || typeof claims.sub !== 'string' || typeof claims.sid !== 'string'
@@ -474,7 +487,9 @@ export async function createVerificationToken(env: Env, parentId: string, email:
 export async function verifyEmailToken(env: Env, token: string) {
   const signingSecret = secret(env, 'AUTH_TOKEN_SECRET');
   if (!signingSecret) return null;
-  const claims = await verifySignedToken<VerificationClaims>(token, signingSecret);
+  const claims = await verifySignedToken<VerificationClaims>(
+    token, secretRing(env, 'AUTH_TOKEN_SECRET'),
+  );
   if (!claims || claims.typ !== 'email_verification' || !isValidExpiry(claims.exp)
     || typeof claims.sub !== 'string' || typeof claims.email !== 'string') return null;
   return claims;
@@ -509,7 +524,9 @@ export async function createPasswordResetToken(env: Env, values: {
 export async function verifyPasswordResetToken(env: Env, token: string) {
   const signingSecret = secret(env, 'AUTH_TOKEN_SECRET');
   if (!signingSecret) return null;
-  const claims = await verifySignedToken<PasswordResetClaims>(token, signingSecret);
+  const claims = await verifySignedToken<PasswordResetClaims>(
+    token, secretRing(env, 'AUTH_TOKEN_SECRET'),
+  );
   const now = Math.floor(Date.now() / 1000);
   if (!claims || claims.typ !== 'password_reset' || !isValidExpiry(claims.exp)
     || !Number.isInteger(claims.iat) || claims.iat > now + 30
@@ -534,7 +551,8 @@ export async function verifyMediaToken(env: Env, authorization: string | undefin
   if (!signingSecret) return null;
   const token = bearerToken(authorization);
   if (!token) return null;
-  const claims = await verifySignedToken<MediaClaims>(token, signingSecret);
+  // توكن وسائط عمره ثلاث دقائق، لكن دورانه في منتصفها يقطع مشاهدة جارية.
+  const claims = await verifySignedToken<MediaClaims>(token, secretRing(env, 'MEDIA_TOKEN_SECRET'));
   if (!claims || claims.typ !== 'media_lease' || !isValidExpiry(claims.exp)
     || typeof claims.sub !== 'string' || typeof claims.sid !== 'string'
     || typeof claims.lid !== 'string' || typeof claims.aid !== 'string'

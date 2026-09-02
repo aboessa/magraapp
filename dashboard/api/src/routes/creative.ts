@@ -38,6 +38,32 @@ app.get('/creative/reference-activities', async (c) => {
   }
 });
 
+/// `GET /creative/reference-activities/:id` — single activity with its steps.
+///
+/// ## No client caller today, and why that is not a defect
+///
+/// A full search of `app_main/lib` finds only the bulk list
+/// (`/creative/reference-activities`, consumed via `fetchReferenceFromApi` in
+/// `creative_catalogue_provider.dart`, fixed in Task 13); the per-activity steps
+/// shown in `reference_drawing_page.dart` come from the bundled
+/// `assets/data/reference_steps.json` asset, not from this route.
+///
+/// A search of `dashboard/front/src` for `reference-activities` also finds no
+/// caller. `CreativeStudioOverviewPage.tsx` and `ReferenceDrawingDetailPage.tsx`
+/// do call a per-id "reference activity" path, but at `/api/admin/reference-
+/// activities/:id` — a distinct, admin-prefixed route that does not exist
+/// anywhere in `dashboard/api/src` (see `PROJECT_AUDIT_TASKS.md`, "Creative
+/// Studio" section). That is a separate, pre-existing bug (dashboard calling a
+/// route that was never built) and out of this task's scope; it is not a
+/// caller of *this* public, unauthenticated route.
+///
+/// Kept rather than removed per Requirement 6.5: there is a plausible future
+/// product use for a single reference activity with its steps — e.g. opening
+/// one coloring activity from a deep link or a share/notification target
+/// without fetching the whole catalogue. Removing it now would foreclose that
+/// without saving anything, since the handler is small and already correct.
+/// Revisit if a deep-link-to-activity feature is scoped; until then this
+/// stays undocumented-but-dormant rather than deleted.
 app.get('/creative/reference-activities/:id', async (c) => {
   const db = c.env.DB;
   const id = c.req.param('id');

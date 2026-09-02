@@ -1,6 +1,13 @@
+-- OBSOLETE LEGACY — DO NOT APPLY TO NEW DBs
+-- This file enforced limits on legacy tables `children_profiles` and `parents`
+-- which no longer exist in current architecture. Current enforcement is in
+-- `src/do/FamilyState.ts:1906` (plan limits + nickname uniqueness).
+-- Kept for historical reference only. Modern D1 uses `family_projection` and `child_projection`.
+--
 -- Applied separately because Wrangler remote D1 migrations fail to parse
 -- CREATE TRIGGER blocks with error 7500. Reference:
 -- https://community.cloudflare.com/t/create-trigger-does-not-work-in-migrations/728030
+-- STATUS: ARCHIVED — 2026-08-24
 
 CREATE TRIGGER IF NOT EXISTS children_profiles_limit_insert
 BEFORE INSERT ON children_profiles

@@ -43,6 +43,13 @@ function fakeDb({ failWrites = false } = {}) {
   };
 }
 
+/// Only the `failed_family_events` inserts.
+///
+/// OPS-106 added alert writes to the same handler, so counting every statement
+/// no longer measures "how many events were captured". Filtering by table keeps
+/// these assertions about the thing they were written to protect.
+const captures = (db) => db.writes.filter((write) => /INSERT INTO failed_family_events/.test(write.sql));
+
 /// Queue message stub tracking which disposition the handler chose.
 function fakeMessage(body, attempts = 3) {
   return {
@@ -82,8 +89,8 @@ test('a failed event is persisted before it is acknowledged', async () => {
 
   await withQuietConsole(() => handleFamilyEventsDlq({ messages: [message] }, { DB: db }));
 
-  assert.equal(db.writes.length, 1, 'the event must be written to failed_family_events');
-  assert.match(db.writes[0].sql, /INSERT INTO failed_family_events/);
+  assert.equal(captures(db).length, 1, 'the event must be written to failed_family_events');
+  assert.match(db.writes[0].sql, /INSERT INTO failed_family_events/, 'and written first');
   assert.equal(message.acked, true, 'once persisted, acking is safe');
   assert.equal(message.retried, false);
 });
@@ -144,7 +151,7 @@ test('a non-object body does not throw', async () => {
 
   await withQuietConsole(() => handleFamilyEventsDlq({ messages }, { DB: db }));
 
-  assert.equal(db.writes.length, 3, 'every message is recorded whatever its shape');
+  assert.equal(captures(db).length, 3, 'every message is recorded whatever its shape');
   for (const message of messages) assert.equal(message.acked, true);
 });
 
@@ -205,17 +212,24 @@ test('an unserializable payload is recorded as such', async () => {
 test('one failing message does not block the rest of the batch', async () => {
   // Queue batches hold up to ten messages; a single bad one must not strand the
   // others in the DLQ.
-  let call = 0;
+  // The failure is aimed at the *second capture*, not the second statement:
+  // OPS-106 made the handler write alert rows too, so counting raw statements
+  // would now fail an alert write and prove nothing about batch isolation.
+  let capture = 0;
   const writes = [];
   const db = {
     prepare(sql) {
+      const isCapture = /INSERT INTO failed_family_events/.test(sql);
       return {
         bind(...params) {
           return {
             async run() {
-              call += 1;
-              if (call === 2) throw new Error('transient');
+              if (isCapture) {
+                capture += 1;
+                if (capture === 2) throw new Error('transient');
+              }
               writes.push({ sql, params });
+              return { meta: { changes: 1 } };
             },
           };
         },
@@ -229,7 +243,10 @@ test('one failing message does not block the rest of the batch', async () => {
   assert.equal(messages[0].acked, true);
   assert.equal(messages[1].retried, true, 'only the failing message is retried');
   assert.equal(messages[2].acked, true);
-  assert.equal(writes.length, 2);
+  assert.equal(
+    writes.filter((write) => /INSERT INTO failed_family_events/.test(write.sql)).length,
+    2,
+  );
 });
 
 /* --------------------------------------------------- the recovery path exists */

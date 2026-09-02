@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import type { Env } from '../lib/db.ts'
-import { PLAN_LIMITS, type Plan } from '../lib/familyPolicy.ts'
+import { PLAN_LIMITS, PLAN_POLICY_VERSION, type Plan } from '../lib/familyPolicy.ts'
 import { requireAdmin } from '../lib/adminAuth.ts'
 
 type AppEnv = { Bindings: Env }
@@ -28,7 +28,11 @@ route.get('/plans', (c) => {
   return c.json({
     success: true,
     data: {
+      // API-102: `family_policy` هو المصدر **الوحيد** الآن. كان جدول
+      // `subscription_plan_limits` يحمل الأرقام نفسها ولا يقرؤه أحد، فأُسقط في
+      // المهاجرة 0085. و`policy_version` هنا يقول أي نسخة أرقام تُعرَض.
       source: 'family_policy',
+      policy_version: PLAN_POLICY_VERSION,
       pricing_available: false,
       plans,
     },

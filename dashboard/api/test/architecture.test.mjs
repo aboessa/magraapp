@@ -16,6 +16,7 @@ import {
   createSignedToken,
   hasUsableSecret,
   hashPassword,
+  tokenKeyId,
   verifyHmacSignature,
   verifyPassword,
   verifySignedToken,
@@ -75,7 +76,11 @@ test('signed tokens reject tampering and weak secrets', async () => {
   assert.equal(hasUsableSecret(secret), true);
   assert.equal(hasUsableSecret('too-short'), false);
   const token = await createSignedToken({ typ: 'test', sub: 'parent_12345678' }, secret);
-  assert.deepEqual(await verifySignedToken(token, secret), { typ: 'test', sub: 'parent_12345678' });
+  // SEC-109: الحمولة تحمل `kid` الآن — معرّف المفتاح مشتقّ من السرّ، وهو ما
+  // يجعل الدوران ممكنًا بلا إخراج المستخدمين. تفصيله في `tokenRotation.test.mjs`.
+  assert.deepEqual(await verifySignedToken(token, secret), {
+    typ: 'test', sub: 'parent_12345678', kid: await tokenKeyId(secret),
+  });
   const tampered = `${token.slice(0, -1)}${token.endsWith('A') ? 'B' : 'A'}`;
   assert.equal(await verifySignedToken(tampered, secret), null);
   assert.equal(await verifySignedToken(token, 'abcdef0123456789abcdef0123456789'), null);

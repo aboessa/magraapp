@@ -20,6 +20,12 @@ import {
 } from '../lib/parentAuth.ts';
 import { createHmacSignature } from '../lib/security.ts';
 import {
+  parseBody,
+  text as textField,
+  validationFailure,
+  type BodySchema,
+} from '../lib/requestSchema.ts';
+import {
   emailIsConfigured,
   passwordResetEmailIsConfigured,
   sendPasswordResetEmail,
@@ -32,6 +38,7 @@ type Envelope<T> = { success: boolean; data?: T; error?: string };
 
 const authRoute = new Hono<AppEnv>();
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const PLATFORMS = [
   'android',
   'android_tv',
@@ -56,9 +63,49 @@ function password(value: unknown) {
   return typeof value === 'string' && value.length >= 12 && value.length <= 256 ? value : null;
 }
 
-async function body(c: { req: { json(): Promise<unknown> } }): Promise<JsonBody | null> {
-  const value = await c.req.json().catch(() => null);
-  return value && typeof value === 'object' && !Array.isArray(value) ? value as JsonBody : null;
+/// SEC-110: مخطَّطات أجسام الطلبات لهذا الموجّه.
+///
+/// المخطَّط **لا يستبدل** الدوالّ أعلاه: `normalizeEmail` تُطبّع وتفحص النمط،
+/// و`password` تفحص الطول الأدنى، و`device` تفحص القائمة المغلقة للمنصّات. وهذه
+/// دلالات لا أشكال. ما يضيفه المخطَّط طبقة سابقة لها: النوع، والسقف، **ورفض
+/// الحقل غير المعروف**.
+///
+/// وأثره الأول ظهر هنا: `POST /register` كان يستقبل `installation_id` و`platform`
+/// و`device_name` من التطبيق (`majarra_api_client.dart:238`) **ويهملها كلّها**.
+/// إعلانها يوثّق أن العميل يرسلها، وحذفها من العميل قرار مستقلّ.
+const SCHEMAS = {
+  register: {
+    email: textField({ max: 254 }),
+    password: textField({ min: 1, max: 256 }),
+    display_name: textField({ max: 80, optional: true }),
+    installation_id: textField({ max: 200, optional: true }),
+    platform: textField({ max: 20, optional: true }),
+    device_name: textField({ max: 80, optional: true }),
+  },
+  login: {
+    email: textField({ max: 254 }),
+    password: textField({ min: 1, max: 256 }),
+    installation_id: textField({ max: 200 }),
+    platform: textField({ max: 20 }),
+    device_name: textField({ max: 80, optional: true }),
+  },
+  email: { email: textField({ max: 254 }) },
+  verifyEmail: { token: textField({ max: 4096 }) },
+  resetPassword: {
+    token: textField({ max: 8192 }),
+    new_password: textField({ min: 1, max: 256 }),
+  },
+  refresh: { refresh_token: textField({ max: 512 }) },
+} satisfies Record<string, BodySchema>;
+
+/// يقرأ الجسم مقابل مخطَّط. الفشل ردٌّ جاهز بشكل موحَّد.
+async function schemaBody<T extends JsonBody>(
+  c: { req: { json(): Promise<unknown> } },
+  schema: BodySchema,
+): Promise<{ ok: true; value: T } | { ok: false; response: Response }> {
+  const parsed = await parseBody<T>(c, schema);
+  if (parsed.ok) return { ok: true, value: parsed.value };
+  return { ok: false, response: Response.json(validationFailure(parsed), { status: 400 }) };
 }
 
 function device(value: JsonBody) {
@@ -89,18 +136,42 @@ function directoryUnavailable(c: { json(value: unknown, status: 503): Response }
   return c.json({ success: false, error: 'Identity directory is temporarily unavailable' }, 503);
 }
 
+/// الحدّ يُطبَّق مرة واحدة، على الحافة في `src/index.ts`.
+///
+/// ## العلّة التي أُزيلت هنا
+///
+/// كانت هذه الوحدة تُركّب `strictAuthLimit` على خمسة مسارات، و`index.ts:83`
+/// يركّبه على `/api/v1/auth/*`. الطلب الواحد كان يمرّ بالوسيط **مرتين**،
+/// فيستهلك وحدتين من الميزانية بدل واحدة: الحدّ المُعلَن 5 لكل دقيقة صار
+/// عمليًّا 2، وترويسة `X-RateLimit-Limit` تقول 5 وترويسة `Remaining` تنقص
+/// باثنين. النتيجة العملية أن ولي أمر يخطئ كلمة المرور مرتين يُحجب دقيقة
+/// كاملة، ويُقال له إن له خمس محاولات.
+///
+/// كشفها `test/rateLimit.test.mjs:213` بستّ محاولات أنتجت أربع استجابات 429 بدل
+/// واحدة — وهو رقم لا يفسّره إلا الاستهلاك المزدوج.
+///
+/// واثنان من الخمسة كانا ميتين أصلًا: لا يوجد مسار `/password-reset/request`
+/// ولا `/password-reset/verify` في هذه الوحدة؛ المسارات الفعلية
+/// `/forgot-password` و`/reset-password`، وكلاهما مشمول بنمط الحافة.
+///
+/// القاعدة: كل الحدود تُعلَن في مكان واحد (`index.ts`) حتى يبقى مجموع ما
+/// يستهلكه الطلب مقروءًا من ملف واحد.
+
 authRoute.post('/register', async (c) => {
   if (!authIsConfigured(c.env)) return unconfigured(c);
-  const value = await body(c);
-  const email = value ? normalizeEmail(value.email) : null;
-  const passphrase = value ? password(value.password) : null;
-  const displayName = value ? text(value.display_name, 80) : null;
+  const parsed = await schemaBody(c, SCHEMAS.register);
+  if (!parsed.ok) return parsed.response;
+  const value = parsed.value;
+  const email = normalizeEmail(value.email);
+  const passphrase = password(value.password);
+  const displayName = text(value.display_name, 80);
   if (!email || !passphrase) {
     return c.json({ success: false, error: 'A valid email and a password of at least 12 characters are required' }, 400);
   }
 
-  // Staging and production remain fail-closed until all Resend settings are
-  // present. Development returns the token directly and never calls Resend.
+  // الإنتاج يفشل مغلقًا حتى تُضبط كل إعدادات Resend. والتطوير يعيد التوكن
+  // مباشرة ولا ينادي Resend إطلاقًا. (لا توجد بيئة ثالثة: قرار مالك بأن كل شيء
+  // على الإنتاج في مرحلة التطوير هذه.)
   if (c.env.ENVIRONMENT !== 'development' && !emailIsConfigured(c.env)) {
     return c.json({ success: false, error: 'Email verification delivery is not configured' }, 503);
   }
@@ -152,10 +223,13 @@ authRoute.post('/register', async (c) => {
 
 authRoute.post('/resend-verification', async (c) => {
   if (!authIsConfigured(c.env)) return unconfigured(c);
-  const value = await body(c);
-  const email = value ? normalizeEmail(value.email) : null;
+  const parsed = await schemaBody(c, SCHEMAS.email);
   // Always answer identically so an attacker cannot enumerate accounts.
   const generic = { success: true, data: { message: 'If the account requires verification, an email has been sent.' } };
+  // الجواب العامّ يبقى للبريد **الصالح شكلًا وغير المعروف**: هذا ما يمنع التعداد.
+  // وجسم بلا حقل بريد أصلًا ليس سؤالًا عن حساب، فالردّ عليه رفضُ شكل لا جواب عامّ.
+  if (!parsed.ok) return parsed.response;
+  const email = normalizeEmail(parsed.value.email);
   if (!email) return c.json(generic);
   if (c.env.ENVIRONMENT !== 'development' && !emailIsConfigured(c.env)) {
     return c.json({ success: false, error: 'Email verification delivery is not configured' }, 503);
@@ -200,8 +274,9 @@ authRoute.post('/resend-verification', async (c) => {
 
 authRoute.post('/verify-email', async (c) => {
   if (!authIsConfigured(c.env)) return unconfigured(c);
-  const value = await body(c);
-  const token = value ? text(value.token, 4096) : null;
+  const parsed = await schemaBody(c, SCHEMAS.verifyEmail);
+  if (!parsed.ok) return parsed.response;
+  const token = text(parsed.value.token, 4096);
   if (!token) return c.json({ success: false, error: 'Verification token is required' }, 400);
   const claims = await verifyEmailToken(c.env, token);
   if (!claims) return c.json({ success: false, error: 'Verification token is invalid or expired' }, 400);
@@ -225,12 +300,13 @@ authRoute.post('/verify-email', async (c) => {
 
 authRoute.post('/forgot-password', async (c) => {
   if (!authIsConfigured(c.env)) return unconfigured(c);
-  const value = await body(c);
-  const email = value ? normalizeEmail(value.email) : null;
+  const parsed = await schemaBody(c, SCHEMAS.email);
   const generic = {
     success: true,
     data: { message: 'If an eligible account exists, a password reset email has been sent.' },
   };
+  if (!parsed.ok) return parsed.response;
+  const email = normalizeEmail(parsed.value.email);
   if (!email) return c.json(generic);
   if (c.env.ENVIRONMENT !== 'development' && !passwordResetEmailIsConfigured(c.env)) {
     return c.json({ success: false, error: 'Password reset delivery is not configured' }, 503);
@@ -289,9 +365,10 @@ authRoute.post('/forgot-password', async (c) => {
 
 authRoute.post('/reset-password', async (c) => {
   if (!authIsConfigured(c.env)) return unconfigured(c);
-  const value = await body(c);
-  const token = value ? text(value.token, 8192) : null;
-  const nextPassword = value ? password(value.new_password) : null;
+  const parsed = await schemaBody(c, SCHEMAS.resetPassword);
+  if (!parsed.ok) return parsed.response;
+  const token = text(parsed.value.token, 8192);
+  const nextPassword = password(parsed.value.new_password);
   if (!token || !nextPassword) {
     return c.json({ success: false, error: 'A valid reset token and password of at least 12 characters are required' }, 400);
   }
@@ -356,11 +433,13 @@ authRoute.post('/reset-password', async (c) => {
 
 authRoute.post('/login', async (c) => {
   if (!authIsConfigured(c.env)) return unconfigured(c);
-  const value = await body(c);
-  const email = value ? normalizeEmail(value.email) : null;
-  const passphrase = value ? password(value.password) : null;
+  const parsed = await schemaBody(c, SCHEMAS.login);
+  if (!parsed.ok) return parsed.response;
+  const value = parsed.value;
+  const email = normalizeEmail(value.email);
+  const passphrase = password(value.password);
   if (!email || !passphrase) return c.json({ success: false, error: 'Invalid email or password' }, 401);
-  const deviceValues = device(value!);
+  const deviceValues = device(value);
   if (!deviceValues) return c.json({ success: false, error: 'A valid installation and platform are required' }, 400);
 
   const locator = await identityLocator(c.env, email);
@@ -417,8 +496,9 @@ authRoute.post('/login', async (c) => {
 
 authRoute.post('/refresh', async (c) => {
   if (!authIsConfigured(c.env)) return unconfigured(c);
-  const value = await body(c);
-  const refreshToken = value ? text(value.refresh_token, 512) : null;
+  const parsed = await schemaBody(c, SCHEMAS.refresh);
+  if (!parsed.ok) return parsed.response;
+  const refreshToken = text(parsed.value.refresh_token, 512);
   if (!refreshToken) return c.json({ success: false, error: 'Refresh token is required' }, 400);
   const session = await rotateParentSession(c.env, refreshToken);
   if (!session) return c.json({ success: false, error: 'Refresh token is invalid or expired' }, 401);

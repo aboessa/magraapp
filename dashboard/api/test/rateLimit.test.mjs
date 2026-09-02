@@ -375,3 +375,56 @@ test('the Durable Object class is exported and declared for both environments', 
     'a migration tag must create the class in dev and production',
   );
 });
+
+/* ------------------------------- the analytics quota, proven by a request */
+//
+// `QA-104`: this used to live in `analyticsIngest.test.mjs` as
+//
+//   assert.match(source, /app\.use\('\/api\/v1\/analytics\/\*', analyticsLimit\)/)
+//
+// justified by a comment claiming the middleware was out of that suite's reach.
+// This suite mounts the worker, so the claim was testable all along — and a source
+// match would stay green if the mount path were changed to one that never matches
+// a real request, which is the whole failure mode.
+//
+// Proven by the response, not by 241 requests: the limiter stamps
+// `X-RateLimit-*` on every reply it handles, so one call is enough to show the
+// middleware ran on this path, and its `Limit` identifies *which* preset ran.
+
+test('the analytics ingest path is behind its own quota, and the preset is the analytics one', async () => {
+  const namespace = rateLimiterNamespace();
+  const res = await call('/api/v1/analytics/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ events: [] }),
+  }, namespace);
+
+  // The route may answer 200, 400 or 401 depending on the body — irrelevant here.
+  // What matters is that the limiter ran before it.
+  assert.ok(
+    res.headers.get('X-RateLimit-Limit'),
+    'no rate-limit headers: the analytics path is not behind a limiter',
+  );
+  assert.equal(
+    res.headers.get('X-RateLimit-Limit'), '240',
+    'the analytics preset allows 240 per minute; a different number means a different preset ran',
+  );
+  // And the bucket is keyed for analytics, so it does not share a budget with
+  // another path. Read from the names the namespace was asked for.
+  assert.ok(
+    namespace._names.some((name) => name.startsWith('analytics:')),
+    `expected an analytics bucket, saw: ${namespace._names.join(', ')}`,
+  );
+});
+
+test('an unlimited path stamps no analytics budget, so the assertion above means something', async () => {
+  // A test that only ever sees the header cannot tell "the limiter ran" from
+  // "every response has this header". This is the control case.
+  const namespace = rateLimiterNamespace();
+  const res = await call('/api/v1/planets', { method: 'GET' }, namespace);
+  assert.ok(
+    !namespace._names.some((name) => name.startsWith('analytics:')),
+    'a catalogue read must not consume the analytics budget',
+  );
+  assert.notEqual(res.status, 429);
+});

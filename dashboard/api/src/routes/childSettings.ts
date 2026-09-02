@@ -2,17 +2,43 @@ import { Hono } from 'hono';
 import type { Env } from '../lib/db.ts';
 import { queryFirst } from '../lib/db.ts';
 import { authenticateParent, verifyParentProof } from '../lib/parentAuth.ts';
+import {
+  boolean,
+  integer,
+  oneOf,
+  parseBody,
+  text,
+  validationFailure,
+} from '../lib/requestSchema.ts';
 
 type AppEnv = { Bindings: Env };
 const route = new Hono<AppEnv>();
 
-function isHHMM(v: string) { return /^([01]\d|2[0-3]):([0-5]\d)$/.test(v); }
+/// `HH:MM` أو نصّ فارغ (يعني «لا حدّ»).
+const HHMM_OR_EMPTY = /^$|^([01]\d|2[0-3]):([0-5]\d)$/;
+
+/// منطقي، ويقبل `1`/`0` **انتقاليًّا**.
+///
+/// شاشة وليّ الأمر ترسل `allow_speed_change: v ? 1 : 0`
+/// (`parent_dashboard_page.dart:553`) لأن الخادم كان يقرأ أي قيمة صادقة. صُحِّح
+/// العميل ليرسل منطقيًّا، ويبقى القبول هنا لأن نسخة مثبَّتة على جهاز لا تُصلَح
+/// بنشر خادم. وما لا يُقبل: `"yes"` ولا `2` ولا `""` — التسامح محدود بقيمتين
+/// معلومتين، لا بمفهوم «الصادق بالتقريب».
+const LEGACY_BOOLEAN = {
+  optional: true,
+  check: (value: unknown) => (
+    typeof value === 'boolean' || value === 0 || value === 1 ? null : 'type' as const
+  ),
+};
 
 route.get('/:childId', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return c.json({ success: false, error: 'Unauthorized' }, 401);
   const childId = c.req.param('childId');
-  const child = await queryFirst(c.env.DB, `SELECT id FROM children_profiles WHERE id=? AND parent_id=?`, [childId, auth.principal.parentId]);
+  // API-105: الإسقاط وحده. حُذف الرجوع إلى `children_profiles`: الجدول صفر صفًّا
+  // ولا كاتب له، فالرجوع إليه لم يكن يُنقذ حسابًا قديمًا — كان يُخفي أن المصدر
+  // الوحيد هو الإسقاط، ويجعل عطلًا فيه يبدو «حسابًا غير موجود».
+  const child = await queryFirst(c.env.DB, `SELECT child_id AS id FROM child_projection WHERE child_id=? AND parent_id=? AND status='active'`, [childId, auth.principal.parentId]);
   if (!child) return c.json({ success: false, error: 'Child not found' }, 404);
   let settings = await queryFirst(c.env.DB, `SELECT * FROM child_settings WHERE child_id=?`, [childId]);
   if (!settings) {
@@ -34,33 +60,42 @@ route.put('/:childId', async (c) => {
     return c.json({ success: false, error: 'A current parent proof is required' }, proof.reason === 'unconfigured' ? 503 : 403);
   }
   const childId = c.req.param('childId');
-  const child = await queryFirst(c.env.DB, `SELECT id FROM children_profiles WHERE id=? AND parent_id=?`, [childId, auth.principal.parentId]);
+  // API-105: الإسقاط وحده هنا أيضًا. بوابة الملكية على الكتابة يجب أن تكون نفسها
+  // بوابة القراءة، وإلا صار للمسارَين تعريفان لـ«طفل هذه الأسرة».
+  const child = await queryFirst(c.env.DB, `SELECT child_id AS id FROM child_projection WHERE child_id=? AND parent_id=? AND status='active'`, [childId, auth.principal.parentId]);
   if (!child) return c.json({ success: false, error: 'Child not found' }, 404);
-  const body = await c.req.json() as Record<string, unknown>;
+  // SEC-110: المخطَّط يفحص النوع والمدى والقائمة المغلقة قبل أي سطر منطق.
+  //
+  // وما استُبدل يستحقّ الذكر: `Number(body.daily_minutes)` كان يقبل `'30'` نصًّا،
+  // و`body.autoplay ? 1 : 0` كان يقبل **أي** قيمة صادقة — فيصير `"no"` تشغيلًا
+  // تلقائيًّا مفعَّلًا. والمخطَّط يرفض النوع الخطأ بدل أن يخمّن مقصده.
+  const parsed = await parseBody(c, {
+    daily_minutes: integer({ min: 5, max: 180, optional: true }),
+    max_session_minutes: integer({ min: 5, max: 180, optional: true, nullable: true }),
+    // النصّ الفارغ يعني «امسح الحدّ»، وهو عقد قائم يستهلكه العميل.
+    bedtime_start: text({ min: 0, max: 5, pattern: HHMM_OR_EMPTY, optional: true, nullable: true }),
+    bedtime_end: text({ min: 0, max: 5, pattern: HHMM_OR_EMPTY, optional: true, nullable: true }),
+    autoplay_override: oneOf(['off', 'on', 'inherit'], { optional: true, nullable: true }),
+    allow_speed_change: LEGACY_BOOLEAN,
+    autoplay: LEGACY_BOOLEAN,
+  });
+  if (!parsed.ok) return c.json(validationFailure(parsed), 400);
+  const body = parsed.value;
+
   const fields: string[] = []; const vals: unknown[] = [];
-  if ('daily_minutes' in body) {
-    const v = Number(body.daily_minutes);
-    if (!Number.isInteger(v) || v < 5 || v > 180) return c.json({ success: false, error: 'daily_minutes 5-180' }, 400);
-    fields.push('daily_minutes=?'); vals.push(v);
-  }
+  if ('daily_minutes' in body) { fields.push('daily_minutes=?'); vals.push(body.daily_minutes); }
   if ('max_session_minutes' in body) {
-    const v = body.max_session_minutes == null ? null : Number(body.max_session_minutes);
-    if (v != null && (!Number.isInteger(v) || v < 5 || v > 180)) return c.json({ success: false, error: 'max_session_minutes 5-180' }, 400);
-    fields.push('max_session_minutes=?'); vals.push(v);
+    fields.push('max_session_minutes=?'); vals.push(body.max_session_minutes);
   }
-  if ('bedtime_start' in body || 'bedtime_end' in body) {
-    const s = body.bedtime_start as string | null; const e = body.bedtime_end as string | null;
-    if (s != null && s !== '' && !isHHMM(s)) return c.json({ success: false, error: 'bedtime_start HH:MM' }, 400);
-    if (e != null && e !== '' && !isHHMM(e)) return c.json({ success: false, error: 'bedtime_end HH:MM' }, 400);
-    if ('bedtime_start' in body) { fields.push('bedtime_start=?'); vals.push(s === '' ? null : s); }
-    if ('bedtime_end' in body) { fields.push('bedtime_end=?'); vals.push(e === '' ? null : e); }
+  for (const name of ['bedtime_start', 'bedtime_end'] as const) {
+    if (!(name in body)) continue;
+    fields.push(`${name}=?`);
+    vals.push(body[name] === '' ? null : body[name]);
   }
-  if ('autoplay_override' in body) {
-    const v = body.autoplay_override as string | null;
-    if (v != null && !['off','on','inherit'].includes(v)) return c.json({ success: false, error: 'autoplay_override off/on/inherit' }, 400);
-    fields.push('autoplay_override=?'); vals.push(v);
+  if ('autoplay_override' in body) { fields.push('autoplay_override=?'); vals.push(body.autoplay_override); }
+  if ('allow_speed_change' in body) {
+    fields.push('allow_speed_change=?'); vals.push(body.allow_speed_change ? 1 : 0);
   }
-  if ('allow_speed_change' in body) { fields.push('allow_speed_change=?'); vals.push(body.allow_speed_change ? 1 : 0); }
   if ('autoplay' in body) { fields.push('autoplay=?'); vals.push(body.autoplay ? 1 : 0); }
   if (!fields.length) return c.json({ success: false, error: 'No fields' }, 400);
   vals.push(childId);

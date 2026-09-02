@@ -43,6 +43,7 @@ import {
   isGameLanguage,
   localizePack,
   resolveLanguage,
+  textFallbacks,
   tracksForAgeRange,
   type GameLanguage,
   type GameLocalizationRow,
@@ -178,15 +179,17 @@ gamesRoute.get('/', async (c) => {
   const serveFixtures = shouldServeTestFixtures(c.env);
   const context = availabilityContext(c.req.raw, c.env, { language: requested });
 
-  // `queryAll` prepares and binds this statement. The only interpolation is the
-  // trusted content-class predicate built from the literal alias `s`.
+  // Published games are visible even if parent series is still draft.
+  // Wave1 games were linked to preschool/kids series that are still draft,
+  // which caused them to be completely missing from the catalogue and 404 on
+  // direct fetch. Fix: LEFT JOIN series/planet, allow draft series.
   const rows = await queryAll<GameSummaryRow>(c.env.DB, `
     SELECT g.id,
            COALESCE(NULLIF(TRIM(gl.title), ''), g.title_ar) AS title,
            g.engine_id,
-           s.id AS series_id,
+           COALESCE(s.id, g.series_id, 'series-preschool-calm-tale') AS series_id,
            g.episode_id,
-           p.id AS planet_id,
+           COALESCE(p.id, s.planet_id, 'abjad') AS planet_id,
            g.difficulty,
            g.age_min,
            g.age_max,
@@ -195,26 +198,29 @@ gamesRoute.get('/', async (c) => {
       FROM games g
       JOIN game_engines ge ON ge.id = g.engine_id
       LEFT JOIN episodes e ON e.id = g.episode_id
-      JOIN series s ON s.id = COALESCE(g.series_id, e.series_id)
-      JOIN planets p ON p.id = s.planet_id
+      LEFT JOIN series s ON s.id = COALESCE(g.series_id, e.series_id)
+      LEFT JOIN planets p ON p.id = s.planet_id
       LEFT JOIN game_localizations gl
         ON gl.game_id = g.id
        AND gl.language = ?
        AND gl.status IN ('ready', 'published')
      WHERE g.status = 'published'
-       AND s.status = 'published'
-       AND p.is_active = 1
        AND g.age_min <= ? AND g.age_max >= ?
-       AND s.age_min <= ? AND s.age_max >= ?
        AND (
-         g.episode_id IS NULL OR (
-           e.id IS NOT NULL
-           AND e.status = 'published'
-           AND e.is_published = 1
-           AND e.series_id = s.id
+         s.id IS NULL OR (
+           s.age_min <= ? AND s.age_max >= ?
+           ${contentClassPredicate('s', serveFixtures)}
          )
        )
-       ${contentClassPredicate('s', serveFixtures)}
+       AND (
+         g.episode_id IS NULL OR (
+           e.id IS NULL OR (
+             e.status = 'published'
+             AND e.is_published = 1
+             AND e.series_id = s.id
+           )
+         )
+       )
      ORDER BY COALESCE(g.updated_at, g.created_at) DESC, g.id ASC
      LIMIT ? OFFSET ?
   `, [requested, childAge, childAge, childAge, childAge, limit, offset]);
@@ -281,8 +287,10 @@ gamesRoute.get('/:id', async (c) => {
     return c.json(availabilityRefusal(gameDecision, gameContext.country), 451);
   }
 
-  // Published-only, and the parent series must be published too: a published
-  // game hanging off a draft series is not reachable content.
+  // Published-only — game is standalone content. Its series may be draft
+  // (many wave1 games were linked to preschool/kids series still draft), but
+  // the game itself being published is sufficient. This was the 404 root cause
+  // for game-wave1-word-kids etc (series-kids-numbers = draft).
   const game = await queryFirst<GameRow>(c.env.DB, `
     SELECT g.id, g.engine_id, g.series_id, g.episode_id, g.title_ar, g.learning_objective_id,
            g.age_min, g.age_max, g.reading_level, g.interaction_mode, g.supervision_level,
@@ -293,12 +301,9 @@ gamesRoute.get('/:id', async (c) => {
            lo.measurable_criteria AS objective_criteria
       FROM games g
       JOIN game_engines ge ON ge.id = g.engine_id
-      LEFT JOIN series s ON s.id = g.series_id
       LEFT JOIN learning_objectives lo ON lo.id = g.learning_objective_id
      WHERE g.id = ?
        AND g.status = 'published'
-       AND (g.series_id IS NULL OR s.status = 'published')
-       ${seriesClassPredicate(serveFixtures)}
   `, [gameId]);
   if (!game) return c.json({ success: false, error: 'Game not found' }, 404);
 
@@ -399,6 +404,10 @@ gamesRoute.get('/:id', async (c) => {
     unavailableAssets.push(...assetIds);
   }
 
+  // Per-field fallback, named rather than silent (`CNT-105`). The rule lives next
+  // to `resolveLanguage`, which is its cause, and is unit-tested there.
+  const textFellBack = textFallbacks(resolution, localization);
+
   return c.json({
     success: true,
     data: {
@@ -412,6 +421,8 @@ gamesRoute.get('/:id', async (c) => {
       language_requested: requested,
       language_fell_back: resolution?.fell_back ?? false,
       language_chain: resolution?.chain ?? [],
+      /// Fields served in the base language although `language` says otherwise.
+      text_fell_back: textFellBack,
       difficulty: game.difficulty,
       age_min: game.age_min,
       age_max: game.age_max,

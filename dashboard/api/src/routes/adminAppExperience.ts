@@ -9,7 +9,8 @@ import { pathParam } from '../lib/routeParams.ts'
 import type { AdminSessionUser } from '../lib/adminUsers.ts'
 import {
   CONFIG_KEYS,
-  HOME_BLOCK_TYPES,
+  OFFERED_BLOCK_TYPES,
+  RETIRED_BLOCK_TYPES,
   SYSTEM_BLOCK_TYPES,
   TARGETING_DIMENSIONS,
   homeContextFromQuery,
@@ -145,7 +146,13 @@ route.get('/home-experience', async (c) => {
       // list of its own, which is how it came to offer `continue_journey` and
       // `featured_series` — two types the table's CHECK constraint rejects, so
       // creating either failed with an opaque database error.
-      block_types: HOME_BLOCK_TYPES,
+      //
+      // `APP-104`: offered, not every accepted type. Three types no client
+      // renders were being listed here with labels, so an editor could publish a
+      // row that never appeared on any device. `retired_block_types` is sent so
+      // the dashboard can explain an existing row rather than show a blank type.
+      block_types: OFFERED_BLOCK_TYPES,
+      retired_block_types: RETIRED_BLOCK_TYPES,
       system_block_types: SYSTEM_BLOCK_TYPES,
       targeting_dimensions: TARGETING_DIMENSIONS,
       config_keys: CONFIG_KEYS,
@@ -210,12 +217,21 @@ route.post('/home-experience', requirePermission('create'), async (c) => {
   if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400)
 
   const blockType = typeof body.block_type === 'string' ? body.block_type : ''
-  if (!(HOME_BLOCK_TYPES as readonly string[]).includes(blockType)) {
+  // `APP-104`: validated against the **offered** list, not everything the CHECK
+  // constraint tolerates. A retired type is refused on write while rows already
+  // holding it keep reading — otherwise withdrawing a type would either break
+  // production data or keep letting editors create rows no device renders.
+  if (!OFFERED_BLOCK_TYPES.includes(blockType)) {
     // Checked here rather than left to the CHECK constraint so the operator gets
     // the list of valid types instead of "SQLITE_CONSTRAINT".
+    const retired = RETIRED_BLOCK_TYPES.includes(blockType)
     return c.json({
       success: false,
-      error: `block_type must be one of: ${HOME_BLOCK_TYPES.join(', ')}`,
+      error: retired
+        // A distinct message: "not a valid type" would send the operator looking
+        // for a typo in a name that used to be correct.
+        ? `block_type '${blockType}' was withdrawn: no app version renders it`
+        : `block_type must be one of: ${OFFERED_BLOCK_TYPES.join(', ')}`,
     }, 400)
   }
   const fields = blockFields(body)
@@ -571,15 +587,29 @@ route.get('/home-experience/preview', async (c) => {
 // نموًّا في المنصّة.
 route.get('/devices', async (c) => {
   const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'), UNBOUNDED_LIST_PAGINATION)
-  const total = await queryFirst<{ total: number }>(c.env.DB, 'SELECT COUNT(*) AS total FROM account_devices')
-  const rows = await queryAll(c.env.DB, `
-    SELECT d.*, p.display_name as parent_name
-      FROM account_devices d
-      LEFT JOIN parents p ON p.id=d.parent_id
-     ORDER BY d.last_seen_at DESC
-     LIMIT ? OFFSET ?
-  `, [limit, offset])
-  return c.json({ success: true, data: rows, meta: { total: Number(total?.total ?? 0), limit, offset } })
+  // `DB-102`: القائمة **غير متوفّرة**، لا فارغة.
+  //
+  // كان هنا `COUNT(*)` وقائمةٌ من `account_devices`. والمقيس: الجدول بلا كاتب
+  // واحد في المستودع (صفر `INSERT`/`UPDATE`)، فالردّ كان دائمًا `data: []` و
+  // `total: 0` — أي أن المشغّل يقرأ «صفر أجهزة على المنصّة» بينما الأجهزة تعمل
+  // وسلطتها في `FamilyState`. وشقيقُ هذا المسار (`/devices/:id/revoke`) يرفض
+  // بصراحةٍ لهذا السبب نفسه منذ قبل هذه الدفعة؛ فالقائمة كانت تُخالفه بصمتها.
+  //
+  // و`total: null` لا صفر: الصفر ادّعاءُ قياسٍ لم يحدث.
+  return c.json({
+    success: true,
+    data: [],
+    meta: {
+      total: null,
+      limit,
+      offset,
+      unavailable: {
+        source: 'account_devices (جدول D1 بلا كاتب)',
+        reason:
+          'ملكية الأجهزة انتقلت إلى FamilyState (`0010_cleanup_dead_d1_tables.sql`)، ولا إسقاط أجهزة يُغذّى من أحداثه. قائمةُ أسرةٍ واحدة متاحة في مساحة العميل عبر قراءة السلطة.',
+      },
+    },
+  })
 })
 
 /**
@@ -703,12 +733,13 @@ route.get('/support/family/:id', async (c) => {
        WHERE parent_id = ?
        ORDER BY last_event_at_ms DESC
     `, [id]),
-    queryAll(c.env.DB, `
-      SELECT id, display_name, platform, status
-        FROM account_devices
-       WHERE parent_id = ?
-       ORDER BY last_seen_at DESC
-    `, [id]),
+    // `DB-102`: `account_devices` بلا كاتب، فالقائمة كانت فارغة دائمًا وتُقرأ
+    // «لا أجهزة». تُعلن الحالة صراحةً بدل ذلك.
+    Promise.resolve({
+      available: false,
+      source: 'account_devices (جدول D1 بلا كاتب)',
+      reason: 'السلطة في FamilyState؛ لا إسقاط أجهزة في D1.',
+    }),
     queryAll(c.env.DB, `
       SELECT product_id, plan, entitlement_status, expires_at_ms
         FROM billing_audit
@@ -729,11 +760,15 @@ route.get('/support/family/:id', async (c) => {
 ///
 /// ## Why this exists alongside the projection above
 ///
-/// `account_devices` is a D1 projection fed by queue events. It is the right thing
-/// to list and filter across accounts, and it is the wrong thing to answer "is this
-/// parent's tablet still signed in right now", because a projection is by definition
-/// behind and a support conversation happens in the present. The audit recorded the
-/// consequence as a real gap: «لا إسقاط أجهزة حي من FamilyState».
+/// `DB-102`: تصحيح. كان مكتوبًا هنا أن `account_devices` «إسقاط D1 يُغذّيه
+/// الطابور»، وأنه الأداة الصحيحة للسرد والتصفية عبر الحسابات. والمقيس: **لا
+/// كاتب له في المستودع كلّه** — صفر `INSERT`/`UPDATE` في `src` و`scripts`
+/// و`migrations`. فهو ميتٌ لا إسقاطٌ متأخّر، والسرد عبره كان يُعيد صفرًا دائمًا.
+///
+/// والباقي من التحليل الأصلي صحيح ويبقى: قراءةُ إسقاطٍ لا تجيب «هل لوح هذا
+/// الأب متّصل الآن؟» لأن الإسقاط متأخّرٌ بطبيعته والمحادثة تجري في الحاضر.
+/// والفجوة المسجَّلة «لا إسقاط أجهزة حي من FamilyState» **قائمة**: لا مصدر
+/// مُجمَّع عبر الأسر، فالسرد عبر الحسابات يُعلن عدم توفّره حتى يُبنى.
 ///
 /// `FamilyState` is the authority (`do/FamilyState.ts`), and its `GET /devices`
 /// handler requires no parent session — unlike `POST /devices/revoke`, which checks

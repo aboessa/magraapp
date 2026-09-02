@@ -45,6 +45,7 @@ import type { Env } from '../lib/db.ts';
 import { queryAll, queryFirst } from '../lib/db.ts';
 import { CMS_LANGUAGES, direction, type CmsLanguage } from '../lib/cmsContent.ts';
 import { publicAssetBaseUrl, publicAssetUrl } from '../lib/assetUrls.ts';
+import { publicDocumentHeaders } from '../lib/securityHeaders.ts';
 import {
   blogIndexPath, isNeverIndexable, planetLanguages, planetPath, seriesLanguages, seriesPath,
 } from '../lib/publicRoutes.ts';
@@ -204,19 +205,19 @@ function footerFor(language: CmsLanguage, alternates: RenderHead['alternates'], 
   });
 }
 
+/// SEC-108: الترويسات الأمنية من `lib/securityHeaders.ts` لا مكتوبة هنا. كانت
+/// هذه الاستجابة تحمل `nosniff` و`Referrer-Policy` فقط: لا CSP، ولا منع تأطير،
+/// ولا HSTS — على مستند مبنيّ من محتوى يكتبه بشر في اللوحة.
 const htmlResponse = (body: string, status = 200, cacheSeconds = 300) => new Response(body, {
   status,
-  headers: {
-    'Content-Type': 'text/html; charset=UTF-8',
+  headers: publicDocumentHeaders(
     // A public document with no personalisation, so it is cacheable. `noindex` documents get
     // no shared cache: they are error and refusal states, and caching them at the edge makes
     // a transient one look permanent.
-    'Cache-Control': status === 200
+    status === 200
       ? `public, max-age=60, s-maxage=${cacheSeconds}, stale-while-revalidate=60`
       : 'no-store',
-    'X-Content-Type-Options': 'nosniff',
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
-  },
+  ),
 });
 
 /// A 404 document. Always `noindex`, always status 404.

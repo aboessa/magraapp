@@ -85,12 +85,46 @@ test('the scanner reports the line number so a finding can be located', () => {
 /* ------------------------------------------------------------- the workflow */
 
 test('the pipeline has a secret gate, a dependency report and a release gate', () => {
-  for (const job of ['secrets:', 'dependencies:', 'deploy-gate:']) {
+  for (const job of ['secrets:', 'dependencies:', 'migrations:', 'deploy:']) {
     assert.match(workflow, new RegExp(`^  ${job}`, 'm'), `missing job: ${job}`);
   }
   // The scanner's own rules are verified before the repository is scanned.
   assert.match(workflow, /scan-secrets\.mjs --self-test/);
   assert.match(workflow, /node tools\/ci\/scan-secrets\.mjs\s*$/m);
+});
+
+test('the referential integrity sweep runs on the from-zero database', () => {
+  // `DB-103`: وموضعه يهمّ — القاعدة في وظيفة `migrations` نتاجُ الترحيلات وحدها،
+  // فأي عطلٍ يجده يُنسَب إلى ما يمكن إصلاحه لا إلى بيانات بيئةٍ قديمة.
+  const job = workflow.slice(workflow.indexOf('  migrations:'), workflow.indexOf('  content-pacing:'));
+  assert.match(job, /node tools\/ops\/referential-integrity\.mjs/);
+  assert.ok(
+    job.indexOf('migrate:local') < job.indexOf('referential-integrity'),
+    'الفحص يلي بناء القاعدة',
+  );
+});
+
+test('the mojibake gate runs', () => {
+  assert.match(workflow, /node tools\/ci\/mojibake-scan\.mjs --check/);
+});
+
+test('the document classification gate runs', () => {
+  // `DOCS-101`: نفس درس الدفعة 42 — أداةٌ غير مربوطة بالمسار ليست بوابة.
+  assert.match(workflow, /node tools\/ci\/docs-classified\.mjs --check/);
+});
+
+test('the bundle size gates run, and the size one runs after the build', () => {
+  // `PERF-101`: أداةٌ موجودة وغير مربوطة بالمسار ليست بوابة — وهو ما وقع فعلًا
+  // مع `feature-matrix --check` (الدفعة 42). فالحرس هنا على **الربط**.
+  const job = workflow.slice(workflow.indexOf('  flutter:'), workflow.indexOf('  worker:'));
+  assert.match(job, /node tools\/ci\/assets-declared\.mjs --check/);
+  assert.match(job, /node tools\/ci\/aab-size\.mjs/);
+  // والترتيب جزءٌ من الصحّة: قياسُ الحزمة قبل بنائها يقيس حزمةً قديمة أو لا
+  // شيء. الأداة تفشل على الغياب، وهذا يضمن ألّا يُعاد الترتيب بلا انتباه.
+  assert.ok(
+    job.indexOf('flutter build appbundle') < job.indexOf('aab-size.mjs'),
+    'قياس الحزمة يجب أن يلي بناءها',
+  );
 });
 
 test('the secret scan sees history, not just the tip', () => {
@@ -101,7 +135,7 @@ test('the secret scan sees history, not just the tip', () => {
 });
 
 test('critical advisories fail the dependency job while lesser ones only report', () => {
-  const job = workflow.slice(workflow.indexOf('  dependencies:'), workflow.indexOf('  deploy-gate:'));
+  const job = workflow.slice(workflow.indexOf('  dependencies:'), workflow.indexOf('\n  deploy:'));
   assert.match(job, /--audit-level=critical/);
   // Reported for both workspaces.
   assert.match(job, /dashboard\/api/);
@@ -113,21 +147,28 @@ test('critical advisories fail the dependency job while lesser ones only report'
 });
 
 test('the deploy gate cannot run on a red pipeline or off master', () => {
-  const job = workflow.slice(workflow.indexOf('  deploy-gate:'));
+  const job = workflow.slice(workflow.indexOf('\n  deploy:'));
   const needs = job.match(/needs: \[([^\]]+)\]/);
   assert.ok(needs, 'the deploy gate must declare its dependencies');
   const declared = needs[1].split(',').map((name) => name.trim());
   // Every test job must gate it; a deploy that can outrun the suites is not a gate.
-  for (const job of ['flutter', 'worker', 'admin', 'content-pacing', 'secrets', 'dependencies']) {
-    assert.ok(declared.includes(job), `deploy-gate does not wait for ${job}`);
+  // `migrations` joined the list in `DB-104`: shipping a bundle whose schema cannot
+  // be built from the repository is the same class of unverified release.
+  for (const name of ['flutter', 'worker', 'admin', 'migrations', 'content-pacing',
+    'secrets', 'dependencies']) {
+    assert.ok(declared.includes(name), `deploy does not wait for ${name}`);
   }
   assert.match(job, /if: github\.ref == 'refs\/heads\/master' && github\.event_name == 'push'/);
-  // It is a dry run, and says so: a real deploy needs a token this repository does
-  // not hold, and granting one is an owner decision.
-  assert.match(job, /wrangler deploy --dry-run/);
   assert.match(job, /--env production/);
-  // The comment explaining how to make it real sits above the job key.
-  assert.match(workflow, /To make it a real deploy/);
+  // `OPS-105`: it deploys for real when the credentials exist, and dry-runs when they
+  // do not. Both paths must be present — a job that only ever dry-runs passes
+  // vacuously, and one that only ever deploys fails every run until a token exists.
+  assert.match(job, /npx wrangler deploy --env production 2>&1/);
+  assert.match(job, /wrangler deploy --dry-run/);
+  assert.match(job, /steps\.creds\.outputs\.present/);
+  // The old comment promised a file edit as the switch-on. The switch is now the
+  // secret itself, so the promise must not survive as documentation.
+  assert.equal(workflow.includes('To make it a real deploy'), false);
 });
 
 test('every job still runs on the branch that exists', () => {
@@ -143,11 +184,26 @@ test('no step masks a failure with a fallback', () => {
   // `|| true` is permitted only on the informational advisory reports, which exit
   // non-zero whenever anything is outdated and are not gates.
   const informational = /npm audit|flutter pub outdated/;
+  // Tolerated by name, not by pattern. Each of these reads a value the deploy has
+  // *already* completed without: the Cloudflare version id for the record, and the
+  // live commit inside a retry loop that fails loudly by itself after six attempts.
+  // Failing a successful deploy because a version string could not be parsed would
+  // trade a real release for a bookkeeping detail.
+  //
+  // The list is exact so that a new `||` anywhere still fails this test.
+  const tolerated = [
+    "grep -oiE 'version id:",
+    'npx wrangler versions list --env production --json',
+    'console.log(v?.[0]?.id ?? "")',
+    'curl -fsS --max-time 15 https://api.majarra.app/version',
+    'console.log(JSON.parse(s).commit ?? "")',
+  ];
   const lines = workflow.split('\n');
   for (const [index, line] of lines.entries()) {
     // Comments discussing the old masked command are not themselves steps.
     if (/^\s*#/.test(line)) continue;
     if (!/\|\|/.test(line)) continue;
+    if (tolerated.some((allowed) => line.includes(allowed))) continue;
     assert.match(
       line, informational,
       `line ${index + 1} masks a failure with a fallback: ${line.trim()}`,

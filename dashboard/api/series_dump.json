@@ -1,0 +1,110 @@
+﻿[
+  {
+    "results": [
+      {
+        "id": "series-preschool-luna-words",
+        "title_ar": "┘ä┘ê┘å╪º ╪¬┘â╪¬╪┤┘ü ╪º┘ä┘â┘ä┘à╪º╪¬",
+        "title_en": "Luna Discovers Words",
+        "description_ar": "╪¬╪╣┘ä┘à ╪╡┘ê╪¬┘è ╪¿╪╡╪▒┘è ┘ä┘ä┘â┘ä┘à╪º╪¬ ╪º┘ä╪╣╪▒╪¿┘è╪⌐ ┘à╪╣ ┘ä┘ê┘å╪º.",
+        "age_min": 3,
+        "age_max": 5,
+        "planet_id": "abjad",
+        "visual_style": "Soft 2D"
+      },
+      {
+        "id": "series-preschool-colors",
+        "title_ar": "╪ú┘ä┘ê╪º┘å ╪¡┘ê┘ä┘å╪º",
+        "title_en": "Colors Around Us",
+        "description_ar": "╪º┘â╪¬╪┤╪º┘ü ╪º┘ä╪ú┘ä┘ê╪º┘å ┘ü┘è ╪º┘ä╪¿┘è╪ª╪⌐ ╪º┘ä┘à╪¡┘è╪╖╪⌐ ╪¿╪ú┘å╪┤╪╖╪⌐ ┘ä┘à╪│┘è╪⌐ ╪¿╪│┘è╪╖╪⌐.",
+        "age_min": 3,
+        "age_max": 5,
+        "planet_id": "alam",
+        "visual_style": "Soft 2D"
+      },
+      {
+        "id": "series-preschool-count",
+        "title_ar": "╪╣╪»┘æ ┘à╪╣┘è",
+        "title_en": "Count With Me",
+        "description_ar": "┘à┘ê╪º┘é┘ü ┘é╪╡┘è╪▒╪⌐ ╪¬╪│╪º╪╣╪» ╪º┘ä╪╖┘ü┘ä ╪╣┘ä┘ë ╪º┘ä╪╣╪» ┘ê╪º┘ä╪¬╪╡┘å┘è┘ü.",
+        "age_min": 3,
+        "age_max": 5,
+        "planet_id": "arqam",
+        "visual_style": "Soft 2D"
+      },
+      {
+        "id": "series-preschool-calm-tale",
+        "title_ar": "╪¡┘â╪º┘è╪⌐ ┘ç╪º╪»╪ª╪⌐",
+        "title_en": "A Calm Tale",
+        "description_ar": "┘é╪╡╪╡ ┘é╪╡┘è╪▒╪⌐ ┘ç╪º╪»╪ª╪⌐ ╪¿┘â╪½╪º┘ü╪⌐ ╪¿╪╡╪▒┘è╪⌐ ┘ê╪╡┘ê╪¬┘è╪⌐ ┘à┘å╪«┘ü╪╢╪⌐.",
+        "age_min": 3,
+        "age_max": 5,
+        "planet_id": "qisas",
+        "visual_style": "Painterly 2D"
+      },
+      {
+        "id": "series-kids-wisdom",
+        "title_ar": "╪¡┘â╪º┘è╪⌐ ┘ê╪¡┘â┘à╪⌐",
+        "title_en": "A Tale and Wisdom",
+        "description_ar": "╪¡┘â╪º┘è╪º╪¬ ┘à╪│╪¬┘é┘ä╪⌐ ╪¬╪▒╪¿╪╖ ╪º┘ä┘à┘ê╪º┘é┘ü ╪º┘ä┘è┘ê┘à┘è╪⌐ ╪¿┘é┘è┘à ┘é╪º╪¿┘ä╪⌐ ┘ä┘ä╪¬╪╖╪¿┘è┘é.",
+        "age_min": 6,
+        "age_max": 8,
+        "planet_id": "qiyam",
+        "visual_style": "Watercolor Motion Story"
+      },
+      {
+        "id": "series-kids-numbers",
+        "title_ar": "┘à╪║╪º┘à╪▒╪º╪¬ ╪º┘ä╪ú╪▒┘é╪º┘à",
+        "title_en": "Adventures of Numbers",
+        "description_ar": "╪¬╪«┘ê╪╢ ┘å┘ê┘à╪º ┘ê╪╣╪»┘æ╪º╪» ┘à╪║╪º┘à╪▒╪º╪¬ ┘ü┘è ╪º┘ä╪╣╪» ┘ê╪º┘ä╪ú┘å┘à╪º╪╖ ┘ê╪º┘ä╪ú╪┤┘â╪º┘ä.",
+        "age_min": 6,
+        "age_max": 8,
+        "planet_id": "arqam",
+        "visual_style": "Limited 2D"
+      },
+      {
+        "id": "series-kids-body",
+        "title_ar": "╪º┘â╪¬╪┤┘ü ╪¼╪│┘à┘â",
+        "title_en": "Discover Your Body",
+        "description_ar": "╪┤╪▒╪¡ ╪ó┘à┘å ┘ê┘à╪¿╪│╪╖ ┘ä╪ú╪╣╪╢╪º╪í ╪º┘ä╪¼╪│┘à ┘ê╪º┘ä╪¡┘ê╪º╪│.",
+        "age_min": 6,
+        "age_max": 8,
+        "planet_id": "oloom",
+        "visual_style": "Cinematic Infographic"
+      },
+      {
+        "id": "series-kids-bedtime",
+        "title_ar": "╪¡┘â╪º┘è╪º╪¬ ┘é╪¿┘ä ╪º┘ä┘å┘ê┘à",
+        "title_en": "Bedtime Stories",
+        "description_ar": "┘é╪╡╪╡ ╪╣╪▒╪¿┘è╪⌐ ┘à╪╖┘à╪ª┘å╪⌐ ┘é╪¿┘ä ╪º┘ä┘å┘ê┘à ╪¿┘ä╪º ╪Ñ╪½╪º╪▒╪⌐ ╪▓╪º╪ª╪»╪⌐.",
+        "age_min": 6,
+        "age_max": 8,
+        "planet_id": "qisas",
+        "visual_style": "Painterly Storybook"
+      },
+      {
+        "id": "series-kids-home",
+        "title_ar": "╪¼╪▒┘æ╪¿ ┘ü┘è ╪º┘ä╪¿┘è╪¬",
+        "title_en": "Try It at Home",
+        "description_ar": "╪¬╪¼╪º╪▒╪¿ ┘à┘å╪▓┘ä┘è╪⌐ ╪ó┘à┘å╪⌐ ╪¬┘é╪»┘à┘ç╪º ╪│┘ä┘à┘ë ╪¿┘à╪┤╪º╪▒┘â╪⌐ ┘ê┘ä┘è ╪º┘ä╪ú┘à╪▒.",
+        "age_min": 6,
+        "age_max": 8,
+        "planet_id": "oloom",
+        "visual_style": "Family Program"
+      },
+      {
+        "id": "series-drawing-fixture",
+        "title_ar": "╪¡╪▓┘à╪⌐ ╪¬╪¡┘é┘æ┘é ╪º┘ä╪▒╪│┘à",
+        "title_en": "Drawing Verification Fixture",
+        "description_ar": "╪│┘ä╪│┘ä╪⌐ ╪¬╪¡┘é┘æ┘é ╪¬┘é┘å┘è╪⌐ ┘ä┘ä╪▒╪│┘à. ┘ä┘è╪│╪¬ ┘à╪¡╪¬┘ê┘ë ┘à╪¼╪▒╪⌐ ┘ê┘ä╪º ╪¬┘Å╪╣╪▒╪╢ ┘ü┘è ╪º┘ä╪Ñ┘å╪¬╪º╪¼.",
+        "age_min": 3,
+        "age_max": 5,
+        "planet_id": "alam",
+        "visual_style": "Soft 2D"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "duration": 1
+    }
+  }
+]

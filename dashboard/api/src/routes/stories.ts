@@ -10,6 +10,7 @@ import {
 import { availabilityContext, availabilityFor, availabilityRefusal } from '../lib/requestGeo.ts';
 import { optionalContentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass.ts';
 import type { Plan } from '../lib/familyPolicy.ts';
+import { bodyOr400, text } from '../lib/requestSchema.ts';
 
 /// `artworkSelect` is typed to `series|episode`, so this local variant covers
 /// `story` and `story_page`. Roles are inlined from constants, never request input.
@@ -85,6 +86,7 @@ const STORY_COVER_ROLES = ['cover', 'poster'] as const;
 const PAGE_IMAGE_ROLES = ['page', 'illustration', 'cover'] as const;
 const LANGUAGE_TAG = /^[a-z]{2}(-[a-z]{2})?$/;
 
+
 function pagination(value: string | undefined, fallback: number): number {
   const parsed = Number.parseInt(value ?? '', 10);
   return Number.isInteger(parsed) ? Math.min(Math.max(parsed, 0), 100) : fallback;
@@ -122,6 +124,23 @@ function parseStringMap(value: unknown): Record<string, string> {
       .map(([key, item]) => [key.toLowerCase(), item.trim()])
       .filter(([, item]) => item.length > 0),
   );
+}
+
+// `characters.reference_images` stores a JSON array of image references and
+// the schema has no dedicated avatar column. The first entry (if any) is the
+// closest equivalent to a character "avatar" and is surfaced as such here.
+function firstReferenceImage(value: unknown): string | null {
+  let parsed: unknown = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) return null;
+  const first = parsed[0];
+  return typeof first === 'string' ? first : null;
 }
 
 function parseObjectArray(value: unknown): Array<Record<string, unknown>> {
@@ -361,20 +380,71 @@ storiesRoute.get('/:id', async (c) => {
   }
 
   return cachedPublicJson(c.req.raw, c.env.CACHE, async () => {
-    const story = await queryFirst<Record<string, unknown>>(
-      c.env.DB,
-      `SELECT s.id, s.slug, s.title_ar, s.title_en, s.description_ar, s.description_en,
-          s.type, s.age_min, s.age_max, s.reading_level, s.interaction_mode,
-          s.supervision_level, s.is_free, s.series_id, s.default_language, s.languages,
-          ser.title_ar AS series_title, p.name_ar AS planet_name,
-          (SELECT COUNT(*) FROM story_pages sp WHERE sp.story_id = s.id) AS pages_count,
-          ${assetSelect('cover_asset', 'story', 's.id', STORY_COVER_ROLES, ['image'])}
-        FROM stories s
-        LEFT JOIN series ser ON ser.id = s.series_id
-        LEFT JOIN planets p ON p.id = ser.planet_id
-        WHERE s.id = ? AND s.status = 'published'${optionalContentClassPredicate('ser', shouldServeTestFixtures(c.env))}`,
-      [id],
-    );
+    const [story, narratorRows, listenDuration, characterRows, similarRows] = await Promise.all([
+      queryFirst<Record<string, unknown>>(
+        c.env.DB,
+        `SELECT s.id, s.slug, s.title_ar, s.title_en, s.description_ar, s.description_en,
+            s.type, s.age_min, s.age_max, s.reading_level, s.interaction_mode,
+            s.supervision_level, s.is_free, s.series_id, s.default_language, s.languages,
+            ser.title_ar AS series_title, p.name_ar AS planet_name,
+            (SELECT COUNT(*) FROM story_pages sp WHERE sp.story_id = s.id) AS pages_count,
+            ${assetSelect('cover_asset', 'story', 's.id', STORY_COVER_ROLES, ['image'])}
+          FROM stories s
+          LEFT JOIN series ser ON ser.id = s.series_id
+          LEFT JOIN planets p ON p.id = ser.planet_id
+          WHERE s.id = ? AND s.status = 'published'${optionalContentClassPredicate('ser', shouldServeTestFixtures(c.env))}`,
+        [id],
+      ),
+      // Languages that have at least one narrated page. `asset_id` is always
+      // null here on purpose: the real audio reference is a protected asset
+      // resolved through POST /stories/:id/audio-sessions, not a direct link.
+      queryAll<{ language: string }>(
+        c.env.DB,
+        `SELECT DISTINCT spl.language
+           FROM story_page_localizations spl
+           JOIN story_pages sp ON sp.id = spl.page_id
+          WHERE sp.story_id = ? AND spl.narration_asset_id IS NOT NULL`,
+        [id],
+      ),
+      // SQL SUM() returns NULL when no matching row exists, which is exactly
+      // the "no known duration" signal we want to forward as-is (not 0).
+      queryFirst<{ total: number | null }>(
+        c.env.DB,
+        `SELECT SUM(duration_ms) AS total FROM story_pages WHERE story_id = ? AND duration_ms IS NOT NULL`,
+        [id],
+      ),
+      queryAll<{ id: string; name_ar: string; reference_images: unknown }>(
+        c.env.DB,
+        `SELECT DISTINCT ch.id, ch.name_ar, ch.reference_images
+           FROM story_bubbles sb
+           JOIN story_pages sp ON sp.id = sb.page_id
+           JOIN characters ch ON ch.id = sb.character_id
+          WHERE sp.story_id = ? AND sb.character_id IS NOT NULL`,
+        [id],
+      ),
+      queryAll<Record<string, unknown>>(
+        c.env.DB,
+        `SELECT s.id, s.title_ar,
+            ${assetSelect('cover_asset', 'story', 's.id', STORY_COVER_ROLES, ['image'])}
+          FROM stories s
+          LEFT JOIN series ser ON ser.id = s.series_id
+         WHERE s.status = 'published' AND s.id != ?
+           AND (
+             (s.series_id IS NOT NULL AND s.series_id = (SELECT series_id FROM stories WHERE id = ?))
+             OR (
+               ser.planet_id IS NOT NULL
+               AND ser.planet_id = (
+                 SELECT curseries.planet_id FROM stories cur
+                   JOIN series curseries ON curseries.id = cur.series_id
+                  WHERE cur.id = ?
+               )
+             )
+           )
+         LIMIT 6`,
+        [id, id, id],
+      ),
+    ]);
+
     if (story) {
       const base = publicAssetBaseUrl(c.env);
       applyAssetUrl(story, 'cover_asset', 'cover_url', base);
@@ -382,6 +452,26 @@ storiesRoute.get('/:id', async (c) => {
         ? story.default_language.toLowerCase()
         : 'ar';
       story.languages = parseLanguages(story.languages, defaultLanguage);
+
+      story.narrators = narratorRows.map((row) => ({ language: row.language, asset_id: null }));
+      story.listen_duration_ms = listenDuration?.total ?? null;
+      story.characters = characterRows.map((row) => ({
+        id: row.id,
+        name_ar: row.name_ar,
+        name_en: null,
+        avatar_url: firstReferenceImage(row.reference_images),
+      }));
+
+      story.similar = similarRows.map((row) => {
+        applyAssetUrl(row, 'cover_asset', 'cover_url', base);
+        return { id: row.id, title_ar: row.title_ar, cover_url: row.cover_url };
+      });
+
+      // No chapter or post-story activity concept exists in the current
+      // schema; these stay explicitly empty until Planet of Stories defines
+      // real aggregation/activity structures (see design.md Component 4).
+      story.chapters = [];
+      story.activities = [];
     }
     return { success: true, data: story };
   });
@@ -622,13 +712,23 @@ storiesRoute.post('/:id/audio-sessions', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return unauthorized(auth.reason);
 
-  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null;
-  const childId = typeof body?.child_id === 'string' ? body.child_id : '';
-  const pageId = typeof body?.page_id === 'string' ? body.page_id : '';
-  const language = typeof body?.language === 'string' ? body.language.trim().toLowerCase() : 'ar';
-  const bubbleId = typeof body?.bubble_id === 'string' && body.bubble_id ? body.bubble_id : null;
-  if (!childId) return c.json({ success: false, error: 'child_id required' }, 400);
-  if (!pageId) return c.json({ success: false, error: 'page_id required' }, 400);
+  // SEC-110: نفس مخطَّط جلسة السرد في `books.ts`، بحقل `bubble_id` إضافي.
+  const parsed = await bodyOr400<{
+    child_id: string;
+    page_id: string;
+    language?: string;
+    bubble_id?: string;
+  }>(c, {
+    child_id: text({ max: 128 }),
+    page_id: text({ max: 128 }),
+    language: text({ max: 16, optional: true }),
+    bubble_id: text({ max: 128, optional: true }),
+  });
+  if (!parsed.ok) return parsed.response;
+  const childId = parsed.value.child_id;
+  const pageId = parsed.value.page_id;
+  const language = (parsed.value.language ?? 'ar').trim().toLowerCase();
+  const bubbleId = parsed.value.bubble_id || null;
   if (!LANGUAGE_TAG.test(language)) {
     return c.json({ success: false, error: 'Invalid language tag' }, 400);
   }

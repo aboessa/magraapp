@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 import {
   CONFIG_KEYS,
   HOME_BLOCK_TYPES,
+  OFFERED_BLOCK_TYPES,
+  RETIRED_BLOCK_TYPES,
   SYSTEM_BLOCK_TYPES,
   TARGETING_DIMENSIONS,
   compareVersions,
@@ -69,6 +71,48 @@ test('the accepted block types are exactly the ones the table allows', () => {
   );
   const declared = [...constraint.matchAll(/'([a-z_]+)'/g)].map((match) => match[1]);
   assert.deepEqual([...HOME_BLOCK_TYPES].sort(), [...new Set(declared)].sort());
+});
+
+/* ----------------------------------------------- withdrawn types (`APP-104`) */
+
+test('a withdrawn type stays accepted by the table but is not offered', () => {
+  // Three types were fully built in the app — enum value, default row, widget —
+  // then disabled by a constant because no data source existed, while this API
+  // kept offering them and the dashboard listed them with Arabic labels. An
+  // editor could add "الأكثر مشاهدة", schedule it, publish it, and nothing would
+  // ever appear on any device, with no error anywhere.
+  //
+  // The split is the point: the CHECK constraint still accepts them so rows
+  // already saved in production keep reading, while the builder cannot create a
+  // new one. Tightening the constraint instead would have made existing rows
+  // unreadable.
+  for (const type of RETIRED_BLOCK_TYPES) {
+    assert.ok(
+      HOME_BLOCK_TYPES.includes(type),
+      `${type} must stay accepted by the table so existing rows keep reading`,
+    );
+    assert.equal(
+      OFFERED_BLOCK_TYPES.includes(type), false,
+      `${type} must not be offered to the builder`,
+    );
+  }
+});
+
+test('the offered list is derived, not a second hand-kept list', () => {
+  // Two hand-maintained lists drift, and the drift here shows up as a row an
+  // editor configures and never sees.
+  assert.deepEqual(
+    [...OFFERED_BLOCK_TYPES].sort(),
+    HOME_BLOCK_TYPES.filter((type) => !RETIRED_BLOCK_TYPES.includes(type)).sort(),
+  );
+  assert.equal(OFFERED_BLOCK_TYPES.length, HOME_BLOCK_TYPES.length - RETIRED_BLOCK_TYPES.length);
+});
+
+test('a withdrawn type is not classified as a system block', () => {
+  // A type with no content picker *and* no renderer is not "system": it is gone.
+  for (const type of RETIRED_BLOCK_TYPES) {
+    assert.equal(SYSTEM_BLOCK_TYPES.includes(type), false, type);
+  }
 });
 
 test('system blocks are the ones whose contents the server computes', () => {

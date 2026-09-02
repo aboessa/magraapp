@@ -102,7 +102,9 @@ test('the progressive playback path keeps all four checks', () => {
   const sessionStart = source.indexOf("episodesRoute.post('/:id/playback-sessions'");
   const session = source.slice(sessionStart, source.indexOf("episodesRoute.post('/:id/playback-sessions/:leaseId/heartbeat'"));
   assert.match(session, /authenticateParent/);
-  assert.match(session, /child_id required/);
+  // SEC-110 replaced the hand-written `child_id required` check with a schema.
+  // The property is the same: no lease without a declared child.
+  assert.match(session, /bodyOr400<\{ child_id: string \}>\(c, PLAYBACK_SESSION\)/);
   assert.match(session, /availabilityFor/);
   assert.match(session, /'\/playback\/start'/);
 });

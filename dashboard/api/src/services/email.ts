@@ -153,6 +153,46 @@ async function send(env: Env, recipient: string, message: Message): Promise<Send
   return sendViaResend(env, recipient, message);
 }
 
+/// هل قناة تنبيهات العمليات مُهيَّأة؟ (`OPS-106`)
+///
+/// `emailIsConfigured` **لا تصلح** هنا: هي تشترط `EMAIL_VERIFICATION_URL`، وهو
+/// رابط لا شأن له بتنبيه عمليات. استعمالها كان سيربط وصول التنبيهات بإعدادٍ
+/// لمسار آخر تمامًا — فيسكت الرصد حين يتغيّر شيء في تأكيد البريد.
+export function opsAlertEmailIsConfigured(env: Env): boolean {
+  return Boolean(
+    configuredValue(env.EMAIL_FROM, 320)
+      && configuredValue(env.OPS_ALERT_EMAIL, 320)
+      && hasDeliveryProvider(env),
+  );
+}
+
+/// يرسل تنبيه عمليات إلى المستقبِل المُعلَن في `OPS_ALERT_EMAIL`.
+///
+/// ## لماذا مُغلِّف هنا لا `send` مُصدَّرة
+///
+/// `send` تقبل أي مستقبِل وأي نصّ. تصديرها كان سيجعل كل مسار قادرًا على إرسال
+/// بريد باسم المنصّة، وهذا سطح لا يُصان. والمُغلِّف يثبّت شيئين: المستقبِل من
+/// الإعداد لا من المتصل، والغرض معلَن في اسم الدالّة.
+///
+/// ولا يرفع استثناءً بحال: المتصل مستهلك طابور أو دورة cron، وفشل بريد لا يجوز
+/// أن يُفشل حفظ ما استدعى التنبيه.
+export async function sendOpsAlertEmail(env: Env, message: {
+  subject: string;
+  text: string;
+  idempotencySeed: string;
+}): Promise<SendResult> {
+  if (!opsAlertEmailIsConfigured(env)) return { ok: false, reason: 'unconfigured' };
+  const recipient = configuredValue(env.OPS_ALERT_EMAIL, 320)!;
+  return send(env, recipient, {
+    subject: message.subject,
+    text: message.text,
+    // نصّ بلا زخرفة: التنبيه يُقرأ على هاتف في الطريق، و`<div dir="rtl">` لا
+    // يضيف إليه شيئًا. والنصّ يمرّ في كل قارئ بريد بلا تعطيل صور.
+    html: `<pre dir="auto" style="font:14px/1.6 system-ui">${escaped(message.text)}</pre>`,
+    idempotencySeed: message.idempotencySeed,
+  });
+}
+
 export async function sendVerificationEmail(env: Env, recipient: string, token: string): Promise<SendResult> {
   if (!emailIsConfigured(env)) return { ok: false, reason: 'unconfigured' };
   return send(env, recipient, verificationMessage(env, token));

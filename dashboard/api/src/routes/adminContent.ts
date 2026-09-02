@@ -12,7 +12,7 @@ import { actorId, auditStatement } from '../lib/auditLog.ts'
 import { requirePermission } from '../lib/adminAuth.ts'
 import {
   bookLanguagesError,
-  bookPublishError,
+  bookPagesReleaseError,
   engineIdError,
   gamePublishError,
   isReleaseStatus,
@@ -829,10 +829,14 @@ route.post('/books', requirePermission('create'), async (c) => {
   const languageError = bookLanguagesError(bookLanguages, bookDefaultLanguage)
   if (languageError) return c.json({ success: false, error: languageError }, 400)
   if (isReleaseStatus(status)) {
-    const gate = bookPublishError(pages)
-    if (gate) return c.json({ success: false, error: gate }, 400)
-    const islamic = await islamicReleaseError(c.env.DB, seriesId)
-    if (islamic) return c.json({ success: false, error: islamic }, 400)
+    // `API-107`: كتابٌ يُنشأ **بحالة نشر** لا يمكن أن تكون له صفحات: صفحاته في
+    // `story_pages` وتُضاف بعد وجوده. وكان الفحص يقرأ العمود القديم
+    // `books.pages` من جسم الطلب، فيُجيز نشرًا لكتابٍ لا صفحة له في المصدر الذي
+    // يقرأه التطبيق. والرفض هنا صريحٌ بسببه بدل فحصٍ يقيس شكل قيمة.
+    return c.json({
+      success: false,
+      error: 'A book cannot be created already released: add its pages to story_pages first, then change the status',
+    }, 400)
   }
   const id = crypto.randomUUID()
   try {
@@ -925,8 +929,8 @@ route.patch('/books/:id', requirePermission('edit_metadata'), async (c) => {
   if (!sets.length) return c.json({ success: false, error: 'No supported fields supplied' }, 400)
   const finalStatus = value.status === undefined ? String(existing.status) : stringValue(value.status)
   if (isReleaseStatus(finalStatus)) {
-    const finalPages = value.pages === undefined ? existing.pages : value.pages
-    const gate = bookPublishError(finalPages)
+    // `API-107`: العدّ من `story_pages` لا من العمود القديم `books.pages`.
+    const gate = await bookPagesReleaseError(c.env.DB, id)
     if (gate) return c.json({ success: false, error: gate }, 400)
     const finalSeriesId = value.series_id === undefined
       ? (existing.series_id == null ? null : String(existing.series_id))

@@ -11,6 +11,11 @@ import {
   type AdminSessionUser,
 } from '../lib/adminUsers.ts'
 import { requireAdmin } from '../lib/adminAuth.ts'
+import {
+  escalationRefusal,
+  roleBeyondActor,
+  verifiedGrantedBy,
+} from '../lib/privilegeGuard.ts'
 import { auditStatement } from '../lib/auditLog.ts'
 import { parsePagination, UNBOUNDED_LIST_PAGINATION } from '../lib/catalogueValidation.ts'
 
@@ -57,42 +62,11 @@ function audit(db: D1Database, actor: string, action: string, entityId: string, 
   return auditStatement(db, actor, action, 'admin_user', entityId, details)
 }
 
-/// Privilege comparison for granting a role.
+/// SEC-103: انتقلت المقارنة إلى `lib/privilegeGuard.ts`.
 ///
-/// `canManage` only asks whether the actor may manage permissions at all. It
-/// does not ask whether the actor may hand out *this* role, so any holder of
-/// `manage_permissions` could mint an `owner` grant and escalate past their own
-/// level. The rule enforced here is the standard one: you cannot give away a
-/// permission you do not hold.
-///
-/// Returns the permissions the actor is missing, or null when the grant is
-/// within the actor's own privilege.
-async function permissionsBeyondActor(
-  db: D1Database,
-  c: { get: (key: 'adminUser') => unknown },
-  roleId: string,
-): Promise<string[] | null> {
-  const user = c.get('adminUser') as AdminSessionUser | undefined
-  // Break-glass before the first account exists, matching canManage(): there is
-  // no actor to compare against yet. requireAdmin already refuses this path once
-  // any admin user is seeded.
-  if (!user) return null
-  // owner / system_admin already hold everything; the subset test would pass
-  // anyway, and skipping it keeps seeding a new owner possible.
-  if (isSuperuser(user)) return null
-
-  const rows = await queryAll<{ permission_id: string }>(
-    db,
-    'SELECT permission_id FROM role_permissions WHERE role_id = ?',
-    [roleId],
-  )
-  const held = new Set(user.permissions)
-  const missing = rows
-    .map((row) => row.permission_id)
-    .filter((permission) => !held.has(permission))
-    .sort()
-  return missing.length ? missing : null
-}
+/// كانت معرَّفة هنا ومستخدَمة في مسار واحد، فبقيت خمسة أبواب أخرى تتجاوزها —
+/// وهذا ما يفعله حرسٌ يعيش في ملف المسار الذي كتبه أوّل من احتاجه. وفي ملف واحد
+/// مشترك يصير تجاوزه مرئيًّا: كل موضع منح إمّا يستدعيه أو يُسأل لماذا لا.
 
 /// Whether removing [grantId] would leave [userId] unable to manage permissions.
 ///
@@ -141,7 +115,7 @@ type UserListRow = {
 }
 
 adminUsersRoute.get('/users', async (c) => {
-  if (!canManage(c)) return c.json({ success: false, error: 'Ù„Ø§ ØªÙ…Ù„Ùƒ ØµÙ„Ø§Ø­ÙŠØ© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' }, 403)
+  if (!canManage(c)) return c.json({ success: false, error: 'لا تملك صلاحية إدارة المستخدمين' }, 403)
 
   // ÙƒØ§Ù†Øª Ø¨Ù„Ø§ Ø­Ø¯Ù‘ Ø¥Ø·Ù„Ø§Ù‚Ù‹Ø§. Ø§Ù„Ø­Ø¯Ù‘ Ø³Ø®ÙŠÙ‘ Ù„Ø£Ù† Ø®ÙØ¶Ù‡ Ø¥Ù„Ù‰ 20 ÙŠÙØ®ÙÙŠ Ù…ÙˆØ¸ÙÙŠÙ† ØªØ¹Ø±Ø¶Ù‡Ù… Ø§Ù„Ù„ÙˆØ­Ø©
   // Ø§Ù„ÙŠÙˆÙ…ØŒ Ùˆ`meta.total` ÙŠØ¬Ø¹Ù„ Ø§Ù„Ø¹Ø¯Ø¯ Ø§Ù„Ø­Ù‚ÙŠÙ‚ÙŠ Ù…Ø¹Ø±ÙˆÙÙ‹Ø§.
@@ -181,28 +155,35 @@ adminUsersRoute.get('/users', async (c) => {
  * Ø§Ù„ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø¤Ù‚ØªØ© ÙˆÙŠØ¬Ø¨ Ø£Ù† ØªÙ†ØªÙ‡ÙŠ ØµÙ„Ø§Ø­ÙŠØªÙ‡Ø§ Ø¹Ù†Ø¯ Ø£ÙˆÙ„ Ø¯Ø®ÙˆÙ„ Ù„ØµØ§Ø­Ø¨Ù‡Ø§.
  */
 adminUsersRoute.post('/users', async (c) => {
-  if (!canManage(c)) return c.json({ success: false, error: 'Ù„Ø§ ØªÙ…Ù„Ùƒ ØµÙ„Ø§Ø­ÙŠØ© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' }, 403)
+  if (!canManage(c)) return c.json({ success: false, error: 'لا تملك صلاحية إدارة المستخدمين' }, 403)
 
   const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
-  if (!body) return c.json({ success: false, error: 'ØµÙŠØºØ© Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± ØµØ§Ù„Ø­Ø©' }, 400)
+  if (!body) return c.json({ success: false, error: 'صيغة الطلب غير صالحة' }, 400)
 
   const email = normalizeEmail(body.email)
-  if (!email) return c.json({ success: false, error: 'Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ ØºÙŠØ± ØµØ§Ù„Ø­' }, 400)
+  if (!email) return c.json({ success: false, error: 'البريد الإلكتروني غير صالح' }, 400)
 
   const displayName = typeof body.display_name === 'string' ? body.display_name.trim().slice(0, 120) : ''
-  if (!displayName) return c.json({ success: false, error: 'Ø§Ù„Ø§Ø³Ù… Ù…Ø·Ù„ÙˆØ¨' }, 400)
+  if (!displayName) return c.json({ success: false, error: 'الاسم مطلوب' }, 400)
 
   const password = typeof body.password === 'string' ? body.password : ''
   const weak = validatePassword(password)
   if (weak) return c.json({ success: false, error: weak }, 400)
 
   const roleId = typeof body.role_id === 'string' ? body.role_id.trim() : ''
-  if (!roleId) return c.json({ success: false, error: 'Ø§Ù„Ø¯ÙˆØ± Ù…Ø·Ù„ÙˆØ¨' }, 400)
+  if (!roleId) return c.json({ success: false, error: 'الدور مطلوب' }, 400)
   const role = await queryFirst<{ id: string }>(c.env.DB, 'SELECT id FROM roles WHERE id = ?', [roleId])
-  if (!role) return c.json({ success: false, error: 'Ø¯ÙˆØ± ØºÙŠØ± Ù…Ø¹Ø±ÙˆÙ' }, 400)
+  if (!role) return c.json({ success: false, error: 'دور غير معروف' }, 400)
 
   const existing = await queryFirst<{ id: string }>(c.env.DB, 'SELECT id FROM admin_users WHERE email = ?', [email])
-  if (existing) return c.json({ success: false, error: 'Ù‡Ø°Ø§ Ø§Ù„Ø¨Ø±ÙŠØ¯ Ù…Ø³ØªØ®Ø¯Ù… Ø¨Ø§Ù„ÙØ¹Ù„' }, 409)
+  if (existing) return c.json({ success: false, error: 'هذا البريد مستخدم بالفعل' }, 409)
+
+  // SEC-103: نفس حرس التصعيد الذي على `POST /users/:id/grants`.
+  //
+  // كان غائبًا هنا، والباب أوسع: بدل منح دور لمستخدم قائم، **يُنشأ مستخدم جديد
+  // بدور `owner` مباشرة** — وبكلمة مرور يعرفها المُنشئ.
+  const beyondOnCreate = await roleBeyondActor(c.env.DB, c.get('adminUser'), roleId)
+  if (beyondOnCreate) return c.json(escalationRefusal(beyondOnCreate), 403)
 
   const id = crypto.randomUUID()
   const actor = actorId(c)
@@ -219,7 +200,7 @@ adminUsersRoute.post('/users', async (c) => {
     c.env.DB.prepare(`
       INSERT INTO access_grants (id, grantee_type, grantee_id, role_id, scope_type, granted_by)
       VALUES (?, 'user', ?, ?, 'platform', ?)
-    `).bind(crypto.randomUUID(), id, roleId, actor),
+    `).bind(crypto.randomUUID(), id, roleId, await verifiedGrantedBy(c.env.DB, c.get('adminUser'))),
     audit(c.env.DB, actor, 'create', id, { email, display_name: displayName, role_id: roleId }),
   ])
 
@@ -230,16 +211,16 @@ adminUsersRoute.post('/users', async (c) => {
 })
 
 adminUsersRoute.patch('/users/:id', async (c) => {
-  if (!canManage(c)) return c.json({ success: false, error: 'Ù„Ø§ ØªÙ…Ù„Ùƒ ØµÙ„Ø§Ø­ÙŠØ© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' }, 403)
+  if (!canManage(c)) return c.json({ success: false, error: 'لا تملك صلاحية إدارة المستخدمين' }, 403)
 
   const id = c.req.param('id')
   const target = await queryFirst<{ id: string; email: string }>(
     c.env.DB, 'SELECT id, email FROM admin_users WHERE id = ?', [id],
   )
-  if (!target) return c.json({ success: false, error: 'Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯' }, 404)
+  if (!target) return c.json({ success: false, error: 'المستخدم غير موجود' }, 404)
 
   const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
-  if (!body) return c.json({ success: false, error: 'ØµÙŠØºØ© Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± ØµØ§Ù„Ø­Ø©' }, 400)
+  if (!body) return c.json({ success: false, error: 'صيغة الطلب غير صالحة' }, 400)
 
   const actor = actorId(c)
   const sets: string[] = []
@@ -247,7 +228,7 @@ adminUsersRoute.patch('/users/:id', async (c) => {
 
   if (body.display_name !== undefined) {
     const value = typeof body.display_name === 'string' ? body.display_name.trim().slice(0, 120) : ''
-    if (!value) return c.json({ success: false, error: 'Ø§Ù„Ø§Ø³Ù… Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø£Ù† ÙŠÙƒÙˆÙ† ÙØ§Ø±ØºÙ‹Ø§' }, 400)
+    if (!value) return c.json({ success: false, error: 'الاسم لا يمكن أن يكون فارغًا' }, 400)
     sets.push('display_name = ?')
     params.push(value)
   }
@@ -257,7 +238,7 @@ adminUsersRoute.patch('/users/:id', async (c) => {
     // Ù„Ø§ ÙŠØ³ØªØ·ÙŠØ¹ Ø£Ø­Ø¯ ØªØ¹Ø·ÙŠÙ„ Ù†ÙØ³Ù‡: ÙŠÙÙ‚Ø¯ Ø§Ù„ÙˆØµÙˆÙ„ ÙÙˆØ±Ù‹Ø§ Ø¨Ù„Ø§ Ø³Ø¨ÙŠÙ„ Ù„Ù„ØªØ±Ø§Ø¬Ø¹
     const self = c.get('adminUser')
     if (!active && self?.id === id) {
-      return c.json({ success: false, error: 'Ù„Ø§ ÙŠÙ…ÙƒÙ†Ùƒ ØªØ¹Ø·ÙŠÙ„ Ø­Ø³Ø§Ø¨Ùƒ Ø§Ù„Ø­Ø§Ù„ÙŠ' }, 400)
+      return c.json({ success: false, error: 'لا يمكنك تعطيل حسابك الحالي' }, 400)
     }
     sets.push('is_active = ?')
     params.push(active ? 1 : 0)
@@ -265,7 +246,7 @@ adminUsersRoute.patch('/users/:id', async (c) => {
     if (!active) await revokeAllSessions(c.env.DB, id)
   }
 
-  if (!sets.length) return c.json({ success: false, error: 'Ù„Ø§ Ø­Ù‚ÙˆÙ„ Ù„Ù„ØªØ­Ø¯ÙŠØ«' }, 400)
+  if (!sets.length) return c.json({ success: false, error: 'لا حقول للتحديث' }, 400)
 
   sets.push(`updated_at = datetime('now')`)
   await c.env.DB.batch([
@@ -284,11 +265,11 @@ adminUsersRoute.patch('/users/:id', async (c) => {
  * Ø§Ù„Ø­Ø³Ø§Ø¨ Ø­ØªÙ‰ Ù„Ø§ ÙŠØ³ØªÙÙŠØ¯ Ù…Ù† Ø°Ù„Ùƒ Ù…Ù† Ø§Ø³ØªÙˆÙ„Ù‰ Ø¹Ù„Ù‰ Ø¬Ù„Ø³Ø© Ù…ÙØªÙˆØ­Ø©.
  */
 adminUsersRoute.post('/users/:id/reset-password', async (c) => {
-  if (!canManage(c)) return c.json({ success: false, error: 'Ù„Ø§ ØªÙ…Ù„Ùƒ ØµÙ„Ø§Ø­ÙŠØ© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' }, 403)
+  if (!canManage(c)) return c.json({ success: false, error: 'لا تملك صلاحية إدارة المستخدمين' }, 403)
 
   const id = c.req.param('id')
   const target = await queryFirst<{ id: string }>(c.env.DB, 'SELECT id FROM admin_users WHERE id = ?', [id])
-  if (!target) return c.json({ success: false, error: 'Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯' }, 404)
+  if (!target) return c.json({ success: false, error: 'المستخدم غير موجود' }, 404)
 
   const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
   const password = body && typeof body.password === 'string' ? body.password : ''
@@ -304,42 +285,36 @@ adminUsersRoute.post('/users/:id/reset-password', async (c) => {
 
 /// ÙŠÙ…Ù†Ø­ Ø¯ÙˆØ±Ù‹Ø§ Ø¹Ù„Ù‰ Ù†Ø·Ø§Ù‚ Ø§Ù„Ù…Ù†ØµÙ‘Ø© Ø£Ùˆ Ù†Ø·Ø§Ù‚ Ø£Ø¶ÙŠÙ‚.
 adminUsersRoute.post('/users/:id/grants', async (c) => {
-  if (!canManage(c)) return c.json({ success: false, error: 'Ù„Ø§ ØªÙ…Ù„Ùƒ ØµÙ„Ø§Ø­ÙŠØ© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' }, 403)
+  if (!canManage(c)) return c.json({ success: false, error: 'لا تملك صلاحية إدارة المستخدمين' }, 403)
 
   const id = c.req.param('id')
   const target = await queryFirst<{ id: string }>(c.env.DB, 'SELECT id FROM admin_users WHERE id = ?', [id])
-  if (!target) return c.json({ success: false, error: 'Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯' }, 404)
+  if (!target) return c.json({ success: false, error: 'المستخدم غير موجود' }, 404)
 
   const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
-  if (!body) return c.json({ success: false, error: 'ØµÙŠØºØ© Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± ØµØ§Ù„Ø­Ø©' }, 400)
+  if (!body) return c.json({ success: false, error: 'صيغة الطلب غير صالحة' }, 400)
 
   const roleId = typeof body.role_id === 'string' ? body.role_id.trim() : ''
   const role = await queryFirst<{ id: string }>(c.env.DB, 'SELECT id FROM roles WHERE id = ?', [roleId])
-  if (!role) return c.json({ success: false, error: 'Ø¯ÙˆØ± ØºÙŠØ± Ù…Ø¹Ø±ÙˆÙ' }, 400)
+  if (!role) return c.json({ success: false, error: 'دور غير معروف' }, 400)
 
   const SCOPES = ['platform', 'planet', 'section', 'series', 'content', 'page', 'language']
   const scopeType = typeof body.scope_type === 'string' ? body.scope_type : 'platform'
-  if (!SCOPES.includes(scopeType)) return c.json({ success: false, error: 'Ù†Ø·Ø§Ù‚ ØºÙŠØ± Ù…Ø¹Ø±ÙˆÙ' }, 400)
+  if (!SCOPES.includes(scopeType)) return c.json({ success: false, error: 'نطاق غير معروف' }, 400)
   const scopeId = typeof body.scope_id === 'string' ? body.scope_id.trim() || null : null
 
   // Privilege escalation guard: refuse a role carrying permissions the actor
   // does not hold. Without this, holding `manage_permissions` was enough to
   // mint an `owner` grant and escalate past your own level.
-  const beyond = await permissionsBeyondActor(c.env.DB, c, roleId)
-  if (beyond) {
-    return c.json({
-      success: false,
-      error: 'cannot grant a role that exceeds your own privilege',
-      details: { missing_permissions: beyond },
-    }, 403)
-  }
+  const beyond = await roleBeyondActor(c.env.DB, c.get('adminUser'), roleId)
+  if (beyond) return c.json(escalationRefusal(beyond), 403)
 
   const grantId = crypto.randomUUID()
   await c.env.DB.batch([
     c.env.DB.prepare(`
       INSERT INTO access_grants (id, grantee_type, grantee_id, role_id, scope_type, scope_id, granted_by)
       VALUES (?, 'user', ?, ?, ?, ?, ?)
-    `).bind(grantId, id, roleId, scopeType, scopeId, actorId(c)),
+    `).bind(grantId, id, roleId, scopeType, scopeId, await verifiedGrantedBy(c.env.DB, c.get('adminUser'))),
     audit(c.env.DB, actorId(c), 'create', id, { grant: grantId, role_id: roleId, scope_type: scopeType }),
   ])
 
@@ -347,7 +322,7 @@ adminUsersRoute.post('/users/:id/grants', async (c) => {
 })
 
 adminUsersRoute.delete('/users/:id/grants/:grantId', async (c) => {
-  if (!canManage(c)) return c.json({ success: false, error: 'Ù„Ø§ ØªÙ…Ù„Ùƒ ØµÙ„Ø§Ø­ÙŠØ© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' }, 403)
+  if (!canManage(c)) return c.json({ success: false, error: 'لا تملك صلاحية إدارة المستخدمين' }, 403)
 
   const id = c.req.param('id')
   const grantId = c.req.param('grantId')
@@ -356,7 +331,7 @@ adminUsersRoute.delete('/users/:id/grants/:grantId', async (c) => {
     `SELECT id, role_id FROM access_grants WHERE id = ? AND grantee_type = 'user' AND grantee_id = ?`,
     [grantId, id],
   )
-  if (!grant) return c.json({ success: false, error: 'Ø§Ù„Ù…Ù†Ø­ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯' }, 404)
+  if (!grant) return c.json({ success: false, error: 'المنح غير موجود' }, 404)
 
   // Ù…Ù†Ø¹ Ø¥Ø²Ø§Ù„Ø© Ø¢Ø®Ø± Ù…Ù†Ø­ Ù…Ù„ÙƒÙŠØ©: Ø§Ù„Ù…Ù†ØµÙ‘Ø© Ø¨Ù„Ø§ Ù…Ø§Ù„Ùƒ Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø¯Ø§Ø±ØªÙ‡Ø§
   if (grant.role_id === 'owner') {
@@ -366,7 +341,7 @@ adminUsersRoute.delete('/users/:id/grants/:grantId', async (c) => {
          AND (valid_until IS NULL OR valid_until > datetime('now'))
     `)
     if (Number(owners?.total ?? 0) <= 1) {
-      return c.json({ success: false, error: 'Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø²Ø§Ù„Ø© Ø¢Ø®Ø± Ù…Ø§Ù„Ùƒ Ù„Ù„Ù…Ù†ØµÙ‘Ø©' }, 400)
+      return c.json({ success: false, error: 'لا يمكن إزالة آخر مالك للمنصّة' }, 400)
     }
   }
 
@@ -389,7 +364,7 @@ adminUsersRoute.delete('/users/:id/grants/:grantId', async (c) => {
 
 /// Ø¬Ù„Ø³Ø§Øª Ù…Ø³ØªØ®Ø¯Ù… Ø§Ù„Ù†Ø´Ø·Ø©ØŒ Ù„Ù…Ø±Ø§Ø¬Ø¹ØªÙ‡Ø§ ÙˆØ³Ø­Ø¨Ù‡Ø§
 adminUsersRoute.get('/users/:id/sessions', async (c) => {
-  if (!canManage(c)) return c.json({ success: false, error: 'Ù„Ø§ ØªÙ…Ù„Ùƒ ØµÙ„Ø§Ø­ÙŠØ© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' }, 403)
+  if (!canManage(c)) return c.json({ success: false, error: 'لا تملك صلاحية إدارة المستخدمين' }, 403)
 
   const rows = await queryAll<Record<string, unknown>>(c.env.DB, `
     SELECT id, user_agent, source_ip, created_at, last_seen_at, expires_at
@@ -401,7 +376,7 @@ adminUsersRoute.get('/users/:id/sessions', async (c) => {
 })
 
 adminUsersRoute.post('/users/:id/revoke-sessions', async (c) => {
-  if (!canManage(c)) return c.json({ success: false, error: 'Ù„Ø§ ØªÙ…Ù„Ùƒ ØµÙ„Ø§Ø­ÙŠØ© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†' }, 403)
+  if (!canManage(c)) return c.json({ success: false, error: 'لا تملك صلاحية إدارة المستخدمين' }, 403)
   const id = c.req.param('id')
   await revokeAllSessions(c.env.DB, id)
   await c.env.DB.batch([audit(c.env.DB, actorId(c), 'update', id, { change: 'sessions_revoked' })])

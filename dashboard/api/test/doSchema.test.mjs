@@ -290,9 +290,15 @@ test('both objects declare contiguous, uniquely numbered steps', () => {
 test('the twelve family and seven identity mutations are all accounted for', () => {
   // The audit counted nineteen bare ALTERs across the two objects. All nineteen are
   // now numbered steps, so none was quietly dropped in the conversion.
-  assert.equal(FAMILY_SCHEMA_STEPS.length, 12);
+  //
+  // Two more FamilyState steps were added afterwards, deliberately, as real new
+  // columns for later features rather than migration debt: `track_transition_
+  // deferred_until` (age-track deferral, app-foundation-family-journey task 25)
+  // and `onboarding_completed_at` (first-run onboarding completion, task 32).
+  // The counts below cover the original 19 plus those two.
+  assert.equal(FAMILY_SCHEMA_STEPS.length, 14);
   assert.equal(IDENTITY_SCHEMA_STEPS.length, 7);
-  assert.equal(FAMILY_SCHEMA_STEPS.length + IDENTITY_SCHEMA_STEPS.length, 19);
+  assert.equal(FAMILY_SCHEMA_STEPS.length + IDENTITY_SCHEMA_STEPS.length, 21);
 
   for (const [label, steps, expected] of [
     ['FamilyState', FAMILY_SCHEMA_STEPS, [
@@ -301,6 +307,7 @@ test('the twelve family and seven identity mutations are all accounted for', () 
       'family.profile_applied_version', 'lifecycle_jobs.processing_started_at',
       'lifecycle_jobs.receipt_hash', 'profile_sync_jobs.intent_version',
       'attempts.game_id', 'attempts.content_type',
+      'children.track_transition_deferred_until', 'children.onboarding_completed_at',
     ]],
     ['IdentityState', IDENTITY_SCHEMA_STEPS, [
       'identity.status', 'identity.deletion_request_id', 'identity.deleted_at',

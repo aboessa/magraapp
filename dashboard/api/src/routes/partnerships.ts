@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import type { Env } from '../lib/db.ts'
 import { isEmailAddress, parseEmailList, sendEmail } from '../lib/email.ts'
 import { consumeRateLimit, generalLimit } from '../lib/rateLimit.ts'
+import { bodyOr400, text as textField } from '../lib/requestSchema.ts'
 import {
   buildPartnershipEmail,
   KINDS,
@@ -41,8 +42,27 @@ function text(value: unknown, max: number) {
 }
 
 partnershipsRoute.post('/', generalLimit, async (c) => {
-  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
-  if (!body) return c.json({ success: false, error: 'صيغة الطلب غير صالحة' }, 400)
+  // SEC-110: مخطَّط الشكل والسقوف، **وفخّ البوتات مُعلَن فيه**.
+  //
+  // `website` حقل مخفي لا يملؤه إنسان. ولو لم يُعلَن لصار رفضُ «حقل غير معروف»
+  // يُخبر المُرسِل الآلي أن الحقل هو ما كشفه — وهو عكس الغرض. فيُقبل شكلًا،
+  // ويُعالَج بنجاح كاذب أدناه.
+  //
+  // ورسائل الرفض الدلالية تبقى كما هي: هذا نموذج عامّ يقرؤه إنسان، و«البريد
+  // الإلكتروني غير صالح» أنفع له من `invalid_body`.
+  const parsed = await bodyOr400<Record<string, unknown>>(c, {
+    kind: textField({ max: 32, optional: true }),
+    name: textField({ max: LIMITS.name, optional: true }),
+    organization: textField({ max: LIMITS.organization, optional: true }),
+    email: textField({ max: LIMITS.email, optional: true }),
+    message: textField({ max: LIMITS.message, optional: true }),
+    phone: textField({ max: LIMITS.phone, optional: true }),
+    country: textField({ max: LIMITS.country, optional: true }),
+    locale: textField({ max: 8, optional: true }),
+    website: textField({ min: 0, max: 500, optional: true }),
+  })
+  if (!parsed.ok) return parsed.response
+  const body = parsed.value
 
   // فخ البوتات: حقل مخفي يجب أن يبقى فارغًا. نُعيد نجاحًا كاذبًا حتى لا
   // يتعلّم المُرسِل الآلي أن الحقل هو ما كشفه.

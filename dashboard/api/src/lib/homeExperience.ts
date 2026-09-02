@@ -35,6 +35,42 @@ export const HOME_BLOCK_TYPES = [
 export type HomeBlockType = typeof HOME_BLOCK_TYPES[number]
 
 /**
+ * Block types withdrawn from the builder because no client renders them.
+ *
+ * `APP-104`: each of these was fully built on the app side — an enum value, a row
+ * in the default layout, a widget — and then **disabled by a constant** because
+ * the data feeding it did not exist. Meanwhile this API kept offering them and
+ * the dashboard kept listing them with Arabic labels. So an editor could add
+ * "الأكثر مشاهدة", schedule it, publish it, and nothing would ever appear on any
+ * device, with no error anywhere.
+ *
+ * Why withdrawn rather than completed: `most_watched` needs a cross-family
+ * ranking (a privacy decision, not just an endpoint), `learning_journey` has no
+ * source at all, and `because_you_watched` reads the *same* recommendations
+ * source as the working `recommended` block — a second rail from one source is a
+ * product choice, not a missing feature.
+ *
+ * They stay in [HOME_BLOCK_TYPES] because that list mirrors the table's CHECK
+ * constraint, which still accepts them: rows already saved in production must
+ * keep reading. The client skips an unrenderable type and reports it in
+ * `HomeLayout.unsupportedTypes`, so an existing row degrades observably instead
+ * of crashing.
+ */
+export const RETIRED_BLOCK_TYPES: readonly string[] = [
+  'most_watched', 'because_you_watched', 'learning_journey',
+]
+
+/**
+ * The block types the builder may create, and the dashboard should list.
+ *
+ * Derived from [HOME_BLOCK_TYPES] rather than written out a second time: two
+ * hand-maintained lists drift, and the drift here shows up as a row an editor
+ * configures and never sees.
+ */
+export const OFFERED_BLOCK_TYPES: readonly string[] = HOME_BLOCK_TYPES
+  .filter((type) => !RETIRED_BLOCK_TYPES.includes(type))
+
+/**
  * Blocks whose contents the server computes from the child's own state rather
  * than from an editorial selection.
  *
@@ -44,8 +80,9 @@ export type HomeBlockType = typeof HOME_BLOCK_TYPES[number]
  * explain why a row has no content picker.
  */
 export const SYSTEM_BLOCK_TYPES: readonly string[] = [
-  'continue_watching', 'continue_drawing', 'recommended', 'because_you_watched',
-  'most_watched', 'learning_journey',
+  // `APP-104`: the three retired types were listed here too. A retired type has
+  // no content picker *and* no renderer, so classifying it is meaningless.
+  'continue_watching', 'continue_drawing', 'recommended',
 ]
 
 export function isSystemBlock(blockType: string, config: Record<string, unknown>): boolean {

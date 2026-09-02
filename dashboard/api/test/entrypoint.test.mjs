@@ -183,7 +183,18 @@ test('two-segment admin literals are not shadowed by generic :id routes', async 
   //
   // `/admin/recommendations` is deliberately absent: it exposes POST only, so a
   // GET 404 there is correct and says nothing about shadowing.
-  for (const path of ['/api/v1/admin/games/ops', '/api/v1/admin/games/analytics']) {
+  //
+  // `/stories/library` is the same defect in a second place: adminStories.ts was
+  // mounted *after* adminContent.ts, whose `route.get('/stories/:id')` bound the
+  // literal `library` as an id and answered `{"error":"Story not found"}` with a
+  // 404 — so the picture-book library screen never loaded. The unit tests in
+  // storyWorkspace.test.mjs mount that router alone, so only a request through the
+  // composed app can see it.
+  for (const path of [
+    '/api/v1/admin/games/ops',
+    '/api/v1/admin/games/analytics',
+    '/api/v1/admin/stories/library',
+  ]) {
     const res = await app.request(path, { method: 'GET' }, env());
     assert.notEqual(res.status, 404, `${path} is shadowed by a generic :id route`);
   }

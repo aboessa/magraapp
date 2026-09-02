@@ -9,8 +9,9 @@ import {
 // الذي يطالب بالامتداد في الاستيراد النسبي ولا يستنتجه كما يفعل مُجمِّع wrangler.
 // بلا الامتداد لا يمكن استيراد هذا الكائن في اختبار إطلاقًا — وهو أكبر ملف منطق
 // في المشروع وكان بلا أي تغطية.
-import { boundedInteger, deriveAgeTrack, isPlan, normalizeTracks, PLAN_LIMITS, planAllows, type AgeTrack, type Plan } from '../lib/familyPolicy.ts';
+import { boundedInteger, deriveAgeTrack, isPlan, normalizeTracks, PLAN_LIMITS, PLAN_POLICY_VERSION, planAllows, type AgeTrack, type Plan } from '../lib/familyPolicy.ts';
 import { hashPassword, verifyPassword } from '../lib/security.ts';
+import { loadScreenTimePolicy } from '../lib/parentalControls.ts';
 import { addColumn, applySchemaSteps, readSchemaState, type SchemaState } from '../lib/doSchema.ts';
 import {
   deriveMastery,
@@ -54,6 +55,25 @@ type ProfileSyncJob = {
 
 const JOB_PROCESSING_LEASE_MS = 5 * 60 * 1000;
 
+/// عمر عقد التشغيل. النبضة تجدّده، فهو سقف الانقطاع لا سقف المشاهدة.
+const LEASE_TTL_MS = 15 * 60 * 1000;
+
+/**
+ * أقصى ما تُضيفه نبضة واحدة إلى رصيد اليوم.
+ *
+ * النبضة تصل كل بضع دقائق. فارق أكبر من هذا يعني جهازًا نام أو فقد الشبكة أو
+ * ساعة تحرّكت — لا طفلًا شاهد. احتساب الفارق كما هو كان سيحرق حدّ اليوم كله بنبضة
+ * متأخرة واحدة، وهو خطأ في غير مصلحة الطفل.
+ */
+const MAX_HEARTBEAT_CREDIT_SECONDS = 5 * 60;
+
+type ScreenTimeGate = {
+  dailyLimitSeconds: number | null;
+  sessionLimitSeconds: number | null;
+  bedtimeActive: boolean;
+  localDate: string;
+};
+
 type SessionRow = {
   id: string;
   device_id: string;
@@ -69,6 +89,29 @@ type FamilyEvent = {
   occurredAt: number;
   payload: Record<string, unknown>;
 };
+
+/// API-102: رفضُ حدٍّ يذكر **أي حدّ**، وقيمته، والمُستهلَك منه، وإصدار السياسة.
+///
+/// كانت الرفوض نصًّا وحده (`'Child profile limit reached'`)، فلا يعرف العميل أي
+/// رقم بلغه، ولا يعرف من يقرأ سجلًّا بعد شهر **على أي سياسة رُفض** — والأرقام
+/// تتغيّر مع الباقات. و«رُفض على سياسة 2» جواب، و«رُفض» ليس جوابًا.
+function limitRefusal(error: string, limitName: string, context: {
+  plan: Plan;
+  limit: number;
+  current: number;
+}) {
+  return {
+    success: false as const,
+    error,
+    limit: {
+      name: limitName,
+      plan: context.plan,
+      value: context.limit,
+      current: context.current,
+      policy_version: PLAN_POLICY_VERSION,
+    },
+  };
+}
 
 function json(data: unknown, status = 200) {
   return Response.json(data, { status });
@@ -95,6 +138,13 @@ export const FAMILY_SCHEMA_STEPS = [
   addColumn('profile_sync_jobs', 'intent_version', 'INTEGER NOT NULL DEFAULT 0', 10),
   addColumn('attempts', 'game_id', 'TEXT', 11),
   addColumn('attempts', 'content_type', 'TEXT', 12),
+  addColumn('children', 'track_transition_deferred_until', 'INTEGER', 13),
+  // Requirement 8.4/8.5 (app-foundation-family-journey): set once, on the
+  // child creation call that closes out the onboarding journey. Its
+  // presence (non-null) on ANY child in the family is what the client's
+  // router guard reads to decide a returning, fully-onboarded family never
+  // sees `/onboarding` again — see `OnboardingFlowPage`/`AuthGuard`.
+  addColumn('children', 'onboarding_completed_at', 'INTEGER', 14),
 ];
 
 /// The version a fully migrated `FamilyState` reaches.
@@ -246,6 +296,65 @@ export class FamilyState {
         created_at INTEGER NOT NULL,
         last_heartbeat_at INTEGER NOT NULL,
         ended_at INTEGER
+      );
+      /* وقت الشاشة المُستهلَك، مفتاحه اليوم المحلي للأسرة لا يوم UTC.
+         الاحتساب هنا لا في D1: الحدّ اليومي قراءة-تعديل-كتابة، وهذا الكائن هو
+         الموضع الوحيد الذي يسلسلها لكل أسرة. وجدول child_screen_time_daily في
+         D1 يبقى إسقاطًا للتقارير الإدارية، لا سلطة. */
+      CREATE TABLE IF NOT EXISTS screen_time_daily (
+        child_id TEXT NOT NULL,
+        activity_date TEXT NOT NULL,
+        watched_seconds INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (child_id, activity_date)
+      );
+      /* ENC-001 — سلطة الترخيص للاستخدام دون إنترنت.
+         لماذا هنا لا في D1: إصدار الترخيص عدٌّ ثم إدراج على حالة مشتركة (حدّ
+         أجهزة التنزيل وحدّ العناصر لكل باقة)، وهذا الكائن هو الموضع الوحيد
+         المُسلسَل لكل أسرة. صفوف D1 (media_licenses, child_downloads)
+         إسقاط يكتبه الطابور للتقارير الإدارية، لا سلطة.
+
+         ولماذا جدول مستقل لا playback_leases: عمر العقد دقائق ويجدّده نبض
+         مستمر، وعمر الترخيص أيام على جهاز قد لا يتصل. دورتا حياة مختلفتان،
+         ودمجهما كان يعني أن انقطاع الشبكة يُلغي تنزيلًا مدفوعًا. */
+      CREATE TABLE IF NOT EXISTS offline_licenses (
+        id TEXT PRIMARY KEY,
+        child_id TEXT NOT NULL,
+        device_id TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        /* عهد المصادقة عند الإصدار: أي إبطال جهاز يرفعه، فيصير كل ترخيص أقدم
+           غير صالح بلا حاجة إلى تتبّعه واحدًا واحدًا. */
+        auth_epoch INTEGER NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        content_version INTEGER NOT NULL DEFAULT 1,
+        required_plan TEXT NOT NULL,
+        rights TEXT NOT NULL DEFAULT 'offline_playback',
+        /* معرّف مفتاح التوقيع الذي وقّع الترخيص. يُسجَّل ليكون تدوير المفاتيح
+           قابلًا للتدقيق: أي ترخيص وُقّع بمفتاح انسحب؟ */
+        signature_key_id TEXT,
+        status TEXT NOT NULL DEFAULT 'pending'
+          CHECK (status IN ('pending', 'active', 'expired', 'revoked', 'superseded')),
+        issued_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        completed_at INTEGER,
+        revoked_at INTEGER,
+        /* التجديد يُصدر سجلًّا جديدًا ولا يُحيي القديم: القديم يصير
+           superseded ويحمل الجديد إشارةً إليه. */
+        renewed_from TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_offline_licenses_active
+        ON offline_licenses(status, expires_at);
+      CREATE INDEX IF NOT EXISTS idx_offline_licenses_device
+        ON offline_licenses(device_id, status);
+      CREATE TABLE IF NOT EXISTS offline_license_assets (
+        license_id TEXT NOT NULL,
+        asset_id TEXT NOT NULL,
+        byte_size INTEGER,
+        /* بصمة المصدر كما يعرفها الخادم. يحتاجها العميل ليتحقّق أن ما نزّله هو
+           ما نُشر (ENC-007)، وتبقى NULL لأصل لم تُحسب بصمته عند الاستيراد. */
+        source_sha256 TEXT,
+        PRIMARY KEY (license_id, asset_id)
       );
       CREATE TABLE IF NOT EXISTS idempotency_keys (
         key TEXT PRIMARY KEY,
@@ -514,10 +623,19 @@ export class FamilyState {
       'POST /lifecycle/status-capability': (r) => this.lifecycleStatusCapability(r),
       'GET /children': () => this.getChildren(),
       'POST /children': (r) => this.addChild(r),
+      'PATCH /children': (r) => this.updateChild(r),
+      'POST /children/track-transition': (r) => this.trackTransition(r),
       'POST /progress': (r) => this.updateProgress(r),
       'POST /favorites': (r) => this.updateFavorite(r),
       'GET /devices': () => this.getDevices(),
       'POST /devices/revoke': (r) => this.revokeDevice(r),
+      // ENC-001 — تراخيص الاستخدام دون إنترنت. سلطتها هنا لأن الإصدار عدٌّ ثم
+      // إدراج على حدود مشتركة (أجهزة التنزيل، عدد العناصر لكل باقة).
+      'POST /downloads/issue': (r) => this.issueOfflineLicense(r),
+      'POST /downloads/complete': (r) => this.completeOfflineLicense(r),
+      'POST /downloads/renew': (r) => this.renewOfflineLicense(r),
+      'POST /downloads/revoke': (r) => this.revokeOfflineLicenses(r),
+      'POST /downloads/list': (r) => this.listOfflineLicenses(r),
       'POST /playback/start': (r) => this.startPlayback(r),
       'POST /playback/heartbeat': (r) => this.heartbeatPlayback(r),
       'POST /playback/end': (r) => this.endPlayback(r),
@@ -525,6 +643,7 @@ export class FamilyState {
       'GET /billing/status': () => this.getBillingStatus(),
       'GET /state': () => this.getState(),
       'POST /parent-pin': (r) => this.setParentPin(r),
+      'GET /parent-pin/status': () => this.parentPinStatus(),
       'POST /parent-pin/verify': (r) => this.verifyParentPin(r),
       'POST /parent-proof/validate': (r) => this.validateParentProof(r),
       'POST /rewards': (r) => this.grantReward(r),
@@ -1126,6 +1245,13 @@ export class FamilyState {
       this.sql.exec(`UPDATE auth_sessions SET status = 'revoked', revoked_at = ? WHERE device_id = ? AND status = 'active'`, now, deviceId);
       this.sql.exec(`UPDATE family SET auth_epoch = auth_epoch + 1, updated_at = ? WHERE singleton = 1`, now);
       this.sql.exec(`UPDATE playback_leases SET status = 'revoked', ended_at = ? WHERE device_id = ? AND status = 'active'`, now, deviceId);
+      // ENC-001/ENC-010: الإبطال يصل إلى التنزيلات أيضًا. بلا هذا السطر يبقى ما
+      // على الجهاز مرخَّصًا أيامًا بعد أن سُحب الجهاز — وهو بالضبط الانفصال
+      // الذي يرصده `ENC-010`.
+      this.sql.exec(
+        `UPDATE offline_licenses SET status = 'revoked', revoked_at = ? WHERE device_id = ? AND status IN ('pending', 'active')`,
+        now, deviceId,
+      );
       this.addOutbox('device.revoked', {
         deviceId,
         // The projection and every downstream consumer can tell an operator action
@@ -1143,9 +1269,20 @@ export class FamilyState {
   ///
   /// Distinct from revoking the device: a family that lost a tablet needs the device
   /// gone, while a family that hit a download limit needs only the offline copies
-  /// invalidated and the device left signed in. Implemented as lease revocation
-  /// because leases are what authorise offline media in this architecture; there is no
-  /// separate downloads table, and inventing one would create a second truth.
+  /// invalidated and the device left signed in.
+  ///
+  /// ## تصحيح: صار يُبطل التراخيص نفسها
+  ///
+  /// كان هذا يُبطل `playback_leases` وحدها، والتعليق يقول إن العقود «هي ما يُرخّص
+  /// الوسائط دون إنترنت في هذه المعمارية، ولا جدول تنزيلات، وإنشاء واحد يخلق
+  /// حقيقة ثانية». ذلك كان صحيحًا وصفًا للواقع وخطأً كأمر: عقد التشغيل عمره
+  /// دقائق ويجدّده نبض، فإبطاله لا يمسّ ملفًا على جهاز غير متصل. أي أن الأمر
+  /// كان **لا يفعل ما يسمّيه**.
+  ///
+  /// `ENC-001` أنشأ الجدول الذي كان ناقصًا، والحقيقة الثانية زالت بأن صار
+  /// الترخيص هو سلطة الاستخدام دون إنترنت والعقد سلطة البثّ الآني. هذا الأمر
+  /// يُبطل الاثنين: التراخيص لأنها ما يُرخّص الملفات، والعقود لأن جهازًا يبثّ
+  /// الآن يجب أن يتوقف كذلك.
   private async adminRevokeDownloads(request: Request) {
     const body = await request.json() as Record<string, unknown>;
     const operator = this.operatorFrom(body);
@@ -1157,6 +1294,7 @@ export class FamilyState {
 
     const now = Date.now();
     let affected = 0;
+    let licencesRevoked = 0;
     this.state.storage.transactionSync(() => {
       const rows = deviceId
         ? this.sql.exec<{ total: number }>(`SELECT COUNT(*) AS total FROM playback_leases WHERE device_id = ? AND status = 'active'`, deviceId).toArray()
@@ -1167,16 +1305,29 @@ export class FamilyState {
       } else {
         this.sql.exec(`UPDATE playback_leases SET status = 'revoked', ended_at = ? WHERE status = 'active'`, now);
       }
+      const licences = deviceId
+        ? this.sql.exec<{ id: string }>(
+          `UPDATE offline_licenses SET status = 'revoked', revoked_at = ?
+            WHERE device_id = ? AND status IN ('pending', 'active') RETURNING id`,
+          now, deviceId,
+        ).toArray()
+        : this.sql.exec<{ id: string }>(
+          `UPDATE offline_licenses SET status = 'revoked', revoked_at = ?
+            WHERE status IN ('pending', 'active') RETURNING id`,
+          now,
+        ).toArray();
+      licencesRevoked = licences.length;
       this.addOutbox('downloads.revoked', {
         deviceId: deviceId || null,
         leases_revoked: affected,
+        licences_revoked: licencesRevoked,
         by: 'operator',
         operator_id: operator.actorId,
         reason: operator.reason,
       });
     });
     await this.scheduleOutbox();
-    return json({ success: true, data: { leases_revoked: affected } });
+    return json({ success: true, data: { leases_revoked: affected, licences_revoked: licencesRevoked } });
   }
 
   /// `POST /admin/resync` — re-emits the family's current state to the projection.
@@ -1336,7 +1487,9 @@ export class FamilyState {
     if (existingDevice?.status === 'revoked') return json({ success: false, error: 'Device is revoked' }, 403);
     const activeDevices = this.sql.exec<{ count: number }>(`SELECT COUNT(*) AS count FROM devices WHERE status = 'active'`).toArray()[0]?.count ?? 0;
     if (!existingDevice && activeDevices >= PLAN_LIMITS[plan].devices) {
-      return json({ success: false, error: 'This account has reached its device limit' }, 403);
+      return json(limitRefusal('This account has reached its device limit', 'devices', {
+        plan, limit: PLAN_LIMITS[plan].devices, current: activeDevices,
+      }), 403);
     }
 
     const deviceId = existingDevice?.id ?? crypto.randomUUID();
@@ -1663,7 +1816,7 @@ export class FamilyState {
       answers_json: undefined,
     }));
 
-    return json({
+    const exported = {
       success: true,
       data: {
         family: {
@@ -1719,7 +1872,25 @@ export class FamilyState {
           FROM playback_leases ORDER BY created_at
         `).toArray(),
       },
+    };
+
+    // PRIV-102: تصدير كامل بيانات الحساب كان أوسع قراءة على المسار كلّه ولا
+    // يترك أثرًا. الحدث يسجّل أن التصدير حدث ومتى وحجمه — عدد صفوف كل قسم —
+    // ولا شيء من محتواه: تكرار المحتوى في سجل التدقيق يخلق نسخة ثانية من
+    // البيانات نفسها في جدول أطول عمرًا، وهو عكس غرض السجل.
+    const exportedRowCounts: Record<string, number> = {};
+    for (const [section, value] of Object.entries(exported.data)) {
+      if (Array.isArray(value)) exportedRowCounts[section] = value.length;
+    }
+    this.state.storage.transactionSync(() => {
+      this.addOutbox('data.exported', {
+        sections: Object.keys(exported.data).length,
+        rows: exportedRowCounts,
+      });
     });
+    await this.scheduleOutbox();
+
+    return json(exported);
   }
 
   private async lifecycleStatus(request: Request) {
@@ -1881,9 +2052,15 @@ export class FamilyState {
   }
 
   private async getChildren() {
+    // `SELECT *` already forwards `onboarding_completed_at` unchanged once the
+    // column exists (added via FAMILY_SCHEMA_STEPS version 14) — no explicit
+    // column list needed here, but it is spelled out on the typed row shape
+    // below so a reviewer can see it is a real, expected field, not an
+    // incidental one that happened to ride along.
     const rows = this.sql.exec<{
       id: string; nickname: string; birth_month: number; birth_year: number; age_track: AgeTrack;
       avatar_id: string; language: string; interests_json: string; status: string;
+      onboarding_completed_at: number | null;
     }>(`SELECT * FROM children WHERE status = 'active' ORDER BY created_at`).toArray();
     return json({ success: true, data: rows.map((row) => ({ ...row, interests: JSON.parse(row.interests_json) })) });
   }
@@ -1897,6 +2074,16 @@ export class FamilyState {
     const avatarId = typeof body.avatar_id === 'string' ? body.avatar_id.slice(0, 100) : '';
     const language = typeof body.language === 'string' ? body.language.slice(0, 10) : 'ar';
     const interests = Array.isArray(body.interests) ? body.interests.slice(0, 30) : [];
+    // Requirement 8.4: the client sends this exactly once, on the LAST child
+    // creation call of a first-run onboarding journey — never on a normal
+    // "add a second/third child" creation from an already-onboarded family
+    // (`OnboardingFlowPage` vs `ChildProfileFormPage` opened alone from
+    // `ChildSwitcherPage`, see task 32). A boolean flag rather than a
+    // client-supplied timestamp: the server's own clock is the only
+    // authority `onboarding_completed_at` should ever record, matching how
+    // every other `_at` column in this table (`created_at`, `updated_at`) is
+    // always `Date.now()`, never a client-supplied value.
+    const onboardingCompleted = body.onboarding_completed === true;
     if (!this.activeSession(sessionId) || !nickname || birthMonth === null || birthYear === null || !avatarId) {
       return json({ success: false, error: 'Invalid child profile' }, 400);
     }
@@ -1904,32 +2091,242 @@ export class FamilyState {
     if (!track) return json({ success: false, error: 'Child must be between 3 and 12 years old' }, 400);
     const plan = this.currentPlan();
     const count = this.sql.exec<{ count: number }>(`SELECT COUNT(*) AS count FROM children WHERE status = 'active'`).toArray()[0]?.count ?? 0;
-    if (count >= PLAN_LIMITS[plan].children) return json({ success: false, error: 'Child profile limit reached' }, 403);
+    if (count >= PLAN_LIMITS[plan].children) {
+      return json(limitRefusal('Child profile limit reached', 'children', {
+        plan, limit: PLAN_LIMITS[plan].children, current: count,
+      }), 403);
+    }
+
+    // Nickname uniqueness within family — prevents confusing UI with duplicate names
+    const nicknameConflict = this.assertNicknameAvailable(nickname);
+    if (nicknameConflict) return nicknameConflict;
 
     const childId = crypto.randomUUID();
     const now = Date.now();
+    const onboardingCompletedAt = onboardingCompleted ? now : null;
     this.state.storage.transactionSync(() => {
       this.sql.exec(`
         INSERT INTO children (
           id, nickname, birth_month, birth_year, age_track, avatar_id, language,
-          interests_json, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, childId, nickname, birthMonth, birthYear, track, avatarId, language, JSON.stringify(interests), now, now);
+          interests_json, created_at, updated_at, onboarding_completed_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, childId, nickname, birthMonth, birthYear, track, avatarId, language, JSON.stringify(interests), now, now, onboardingCompletedAt);
       this.addOutbox('child.created', {
         childId,
         nickname,
         ageTrack: track,
         avatarId,
         language,
+        // API-102: إنشاء الطفل قرار حدٍّ (`children`)، فالسياسة التي أجازته تُسجَّل
+        // معه. سجلٌّ يقول «أُنشئ» بلا سياسته لا يُفسِّر لماذا رُفض التالي.
+        policyVersion: PLAN_POLICY_VERSION,
       });
     });
     await this.scheduleOutbox();
     return json({ success: true, data: { id: childId, nickname, age_track: track } }, 201);
   }
 
-  private child(childId: string): { id: string; age_track: AgeTrack } | null {
-    return this.sql.exec<{ id: string; age_track: AgeTrack }>(`
-      SELECT id, age_track FROM children WHERE id = ? AND status = 'active'
+  // Shared by addChild و updateChild — الاستثناء الاختياري يمنع رفض تعديل
+  // طفل بنفس الاسم الذي يحمله فعلًا.
+  private assertNicknameAvailable(nickname: string, excludeChildId?: string): Response | null {
+    const existing = excludeChildId
+      ? this.sql.exec<{ id: string }>(
+        `SELECT id FROM children WHERE status='active' AND lower(nickname)=lower(?) AND id <> ? LIMIT 1`,
+        nickname, excludeChildId,
+      ).toArray()[0]
+      : this.sql.exec<{ id: string }>(
+        `SELECT id FROM children WHERE status='active' AND lower(nickname)=lower(?) LIMIT 1`,
+        nickname,
+      ).toArray()[0];
+    return existing ? json({ success: false, error: 'A child with this nickname already exists in this family' }, 409) : null;
+  }
+
+  private async updateChild(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const childId = typeof body.child_id === 'string' ? body.child_id : '';
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    if (!this.child(childId)) return json({ success: false, error: 'Active child profile not found' }, 404);
+
+    // كل الحقول اختيارية — تُحدَّث فقط إن أُرسلت فعليًا في الجسم.
+    // عمدًا: لا birth_month/birth_year/age_track هنا. هذه محصورة في مسار
+    // الانتقال العمري (track-transition) الذي يعيد حسابها عبر deriveAgeTrack
+    // ويصدر حدث child.track_transitioned مستقلًا — قبولها هنا يتيح تغيير
+    // المسار العمري بلا مراجعة أو تأجيل، وهذا يخالف Requirement 12.
+    const fields: string[] = [];
+    const params: unknown[] = [];
+
+    if ('nickname' in body) {
+      const nickname = typeof body.nickname === 'string' ? body.nickname.trim().slice(0, 40) : '';
+      if (!nickname) return json({ success: false, error: 'nickname must not be empty' }, 400);
+      const conflict = this.assertNicknameAvailable(nickname, childId);
+      if (conflict) return conflict;
+      fields.push('nickname = ?');
+      params.push(nickname);
+    }
+    if ('avatar_id' in body) {
+      const avatarId = typeof body.avatar_id === 'string' ? body.avatar_id.slice(0, 100) : '';
+      if (!avatarId) return json({ success: false, error: 'avatar_id must not be empty' }, 400);
+      fields.push('avatar_id = ?');
+      params.push(avatarId);
+    }
+    if ('language' in body) {
+      const language = typeof body.language === 'string' ? body.language.slice(0, 10) : '';
+      if (!language) return json({ success: false, error: 'language must not be empty' }, 400);
+      fields.push('language = ?');
+      params.push(language);
+    }
+    if ('interests' in body) {
+      const interests = Array.isArray(body.interests) ? body.interests.slice(0, 30) : null;
+      if (interests === null) return json({ success: false, error: 'interests must be an array' }, 400);
+      fields.push('interests_json = ?');
+      params.push(JSON.stringify(interests));
+    }
+
+    if (fields.length === 0) return json({ success: false, error: 'No fields to update' }, 400);
+
+    const now = Date.now();
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(
+        `UPDATE children SET ${fields.join(', ')}, updated_at = ? WHERE id = ?`,
+        ...params, now, childId,
+      );
+      this.addOutbox('child.updated', {
+        childId,
+        fields: Object.keys(body).filter((k) => k !== 'session_id' && k !== 'child_id'),
+        // API-105: القيَم الجديدة، لا أسماء الحقول وحدها.
+        //
+        // كانت الحمولة تحمل `fields` فقط، فلم يكن الإسقاط يستطيع تطبيق شيء —
+        // ولهذا بقيت اللوحة تعرض الاسم المستعار القديم بعد تعديله. والقيَم
+        // المُرسَلة هي المُعلَنة في المخطَّط وحدها، و`redactForAudit` يمسح
+        // `nickname` قبل سجلّ التدقيق كما كان.
+        nickname: typeof body.nickname === 'string' ? body.nickname.trim().slice(0, 40) : undefined,
+        avatarId: typeof body.avatar_id === 'string' ? body.avatar_id.slice(0, 100) : undefined,
+        language: typeof body.language === 'string' ? body.language.slice(0, 10) : undefined,
+      });
+    });
+    await this.scheduleOutbox();
+
+    const updated = this.sql.exec<{
+      id: string; nickname: string; age_track: AgeTrack; avatar_id: string; language: string; interests_json: string;
+    }>(`SELECT id, nickname, age_track, avatar_id, language, interests_json FROM children WHERE id = ?`, childId).toArray()[0]!;
+    return json({
+      success: true,
+      data: {
+        id: updated.id,
+        nickname: updated.nickname,
+        age_track: updated.age_track,
+        avatar_id: updated.avatar_id,
+        language: updated.language,
+        interests: JSON.parse(updated.interests_json),
+      },
+    });
+  }
+
+  /// عدد الأيام الأقصى الذي يبقى فيه تأجيل انتقال عمري ساريًا. مذكور صريحًا في
+  /// المتطلب 12.3 ("مدة محدودة معلنة")، ولا مصدر آخر له في الكود.
+  private static readonly TRACK_TRANSITION_DEFER_MS = 30 * 24 * 60 * 60 * 1000;
+
+  /// `POST /children/track-transition` — إعادة حساب المسار العمري لطفل مقابل
+  /// `deriveAgeTrack(birth_month, birth_year)`، ودعم ثلاثة أفعال:
+  ///
+  ///  * `review` — يعرض المسار المخزَّن والمحتسب للمقارنة، بلا كتابة.
+  ///  * `accept` — يكتب `age_track` المحتسب فقط، ويمسح أي تأجيل معلَّق، ويُصدر
+  ///    `child.track_transitioned`. لا يلمس أي جدول تقدم/إتقان/مفضلة/مكافآت
+  ///    (Requirement 12.2).
+  ///  * `defer` — يكتب موعدًا مستقبليًا بحد 30 يومًا؛ يرفض بـ409 إن وُجد تأجيل
+  ///    سابق لم يَنقضِ (Requirement 12.3: "مرة واحدة" قبل الانقضاء).
+  ///
+  /// `child_id` يصل داخل الجسم لا في مسار الطلب، بنفس أسلوب `updateChild` —
+  /// المسار الداخلي لهذا الكائن مسطّح، ولا يدعم استخراج مقطع `:id` من الرابط.
+  private async trackTransition(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const childId = typeof body.child_id === 'string' ? body.child_id : '';
+    const action = body.action === 'accept' || body.action === 'defer' || body.action === 'review'
+      ? body.action
+      : null;
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    if (!action) return json({ success: false, error: "action must be 'accept', 'defer', or 'review'" }, 400);
+    const child = this.child(childId);
+    if (!child) return json({ success: false, error: 'Active child profile not found' }, 404);
+
+    const now = Date.now();
+    const computedTrack = deriveAgeTrack(child.birth_month, child.birth_year);
+    // عمر خارج 3-12 سنة ليس له مسار محتسب؛ لا يوجد ما يُقارَن أو يُطبَّق.
+    if (!computedTrack) {
+      return json({ success: false, error: 'Child age is outside the supported range' }, 409);
+    }
+
+    if (action === 'review') {
+      return json({
+        success: true,
+        data: {
+          child_id: child.id,
+          stored_track: child.age_track,
+          computed_track: computedTrack,
+          changed: child.age_track !== computedTrack,
+        },
+      });
+    }
+
+    if (action === 'defer') {
+      if (child.track_transition_deferred_until !== null && child.track_transition_deferred_until > now) {
+        return json({
+          success: false,
+          error: 'A track transition deferral is already active',
+          data: { deferred_until: child.track_transition_deferred_until },
+        }, 409);
+      }
+      const deferredUntil = now + FamilyState.TRACK_TRANSITION_DEFER_MS;
+      this.sql.exec(
+        `UPDATE children SET track_transition_deferred_until = ?, updated_at = ? WHERE id = ?`,
+        deferredUntil, now, child.id,
+      );
+      return json({
+        success: true,
+        data: { child_id: child.id, deferred_until: deferredUntil },
+      });
+    }
+
+    // action === 'accept'
+    const previousTrack = child.age_track;
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(
+        `UPDATE children
+         SET age_track = ?, track_transition_deferred_until = NULL, updated_at = ?
+         WHERE id = ?`,
+        computedTrack, now, child.id,
+      );
+      this.addOutbox('child.track_transitioned', {
+        childId: child.id,
+        previousTrack,
+        ageTrack: computedTrack,
+      });
+    });
+    await this.scheduleOutbox();
+    return json({
+      success: true,
+      data: { child_id: child.id, previous_track: previousTrack, age_track: computedTrack },
+    });
+  }
+
+  private child(childId: string): {
+    id: string;
+    age_track: AgeTrack;
+    birth_month: number;
+    birth_year: number;
+    track_transition_deferred_until: number | null;
+  } | null {
+    return this.sql.exec<{
+      id: string;
+      age_track: AgeTrack;
+      birth_month: number;
+      birth_year: number;
+      track_transition_deferred_until: number | null;
+    }>(`
+      SELECT id, age_track, birth_month, birth_year, track_transition_deferred_until
+      FROM children WHERE id = ? AND status = 'active'
     `, childId).toArray()[0] ?? null;
   }
 
@@ -2417,6 +2814,413 @@ export class FamilyState {
     return json({ success: true, data: { action } });
   }
 
+  /**
+   * سياسة وقت الشاشة، مقروءة داخل هذا الكائن لا مُمرَّرة إليه.
+   *
+   * ## لماذا هنا
+   *
+   * أول تصميم قرأ السياسة في المسار ومرّرها في جسم النداء الداخلي. المشكلة ظهرت
+   * عند نبضة القلب: المسار لا يعرف معرّف الطفل — العقد هو من يحمله — فكان الحل
+   * الوحيد أن يرسله العميل. وعميل معدَّل يرسل معرّف طفل آخر حدّه اليومي 180 دقيقة
+   * فيقرأ الخادم سياسة الطفل الخطأ.
+   *
+   * القراءة هنا تُغلق ذلك تمامًا: معرّف الطفل يأتي من العقد أو من الجلسة داخل هذا
+   * الكائن، ومعرّف ولي الأمر من صف الأسرة، ولا شيء من السياسة يسافر على الشبكة.
+   */
+  private async screenTimeGate(childId: string): Promise<ScreenTimeGate> {
+    const parentId = this.family()?.parent_id ?? '';
+    const policy = await loadScreenTimePolicy(this.env, parentId, childId);
+    return {
+      dailyLimitSeconds: policy.dailyMinutes === null ? null : policy.dailyMinutes * 60,
+      sessionLimitSeconds: policy.maxSessionMinutes === null ? null : policy.maxSessionMinutes * 60,
+      bedtimeActive: policy.bedtimeActive,
+      localDate: policy.localDate,
+    };
+  }
+
+  /// ثواني المشاهدة المُحتسَبة لطفل في يوم محلي واحد.
+  private watchedSecondsOn(childId: string, activityDate: string): number {
+    if (!activityDate) return 0;
+    return this.sql.exec<{ watched_seconds: number }>(
+      'SELECT watched_seconds FROM screen_time_daily WHERE child_id = ? AND activity_date = ?',
+      childId, activityDate,
+    ).toArray()[0]?.watched_seconds ?? 0;
+  }
+
+  /**
+   * يضيف الفارق المنقضي إلى رصيد اليوم.
+   *
+   * الفارق يُقصّ عند [MAX_HEARTBEAT_CREDIT_SECONDS] عن قصد: نبضة القلب كل بضع
+   * دقائق، فأي فارق أكبر يعني أن الجهاز نام أو فقد الشبكة أو أن ساعته تحرّكت —
+   * وليس أن الطفل شاهد. احتساب الفارق كما هو كان سيحرق حدّ اليوم كله بنبضة واحدة
+   * متأخرة، وهو خطأ في غير مصلحة الطفل.
+   */
+  private creditWatchTime(childId: string, activityDate: string, elapsedMs: number, now: number): void {
+    if (!childId || !activityDate || elapsedMs <= 0) return;
+    const seconds = Math.min(Math.floor(elapsedMs / 1000), MAX_HEARTBEAT_CREDIT_SECONDS);
+    if (seconds <= 0) return;
+    this.sql.exec(`
+      INSERT INTO screen_time_daily (child_id, activity_date, watched_seconds, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(child_id, activity_date) DO UPDATE SET
+        watched_seconds = watched_seconds + excluded.watched_seconds,
+        updated_at = excluded.updated_at
+    `, childId, activityDate, seconds, now);
+  }
+
+  // --- ENC-001: تراخيص الاستخدام دون إنترنت --------------------------------
+  //
+  // ## ما كان
+  //
+  // العميل يقرّر بنفسه أن التنزيل مسموح، ويشفّر بمفتاحه، ويمنح نفسه صلاحية 30
+  // يومًا محسوبة على ساعة الجهاز. الخادم لا يعرف أن تنزيلًا حدث، فلا يعدّه ولا
+  // يحدّه ولا يبطله. وحدّ `downloadDevices` في `PLAN_LIMITS` كان معلَنًا ولا
+  // يقرؤه أحد.
+  //
+  // ## الحالات
+  //
+  // `pending` — أُصدر الترخيص وبدأ التنزيل. يُحسَب في الحدود من هذه اللحظة،
+  // وإلّا لاستطاع عميل بدء عشرة تنزيلات متوازية وتجاوز الحدّ بلا مخالفة.
+  // `active` — اكتمل التنزيل. `expired`/`revoked`/`superseded` نهائية: لا شيء
+  // يعيدها، والتجديد يُصدر سجلًّا جديدًا.
+
+  /// يُنهي التراخيص المنتهية زمنيًّا. يُستدعى قبل أي عدّ حتى لا يُحسب المنتهي.
+  private sweepOfflineLicenses(now = Date.now()) {
+    this.sql.exec(
+      `UPDATE offline_licenses SET status = 'expired'
+        WHERE status IN ('pending', 'active') AND expires_at <= ?`,
+      now,
+    );
+  }
+
+  private offlineLicenseRow(licenseId: string) {
+    return this.sql.exec<{
+      id: string; child_id: string; device_id: string; session_id: string; auth_epoch: number;
+      entity_type: string; entity_id: string; content_version: number; required_plan: string;
+      rights: string; status: string; issued_at: number; expires_at: number;
+    }>(`
+      SELECT id, child_id, device_id, session_id, auth_epoch, entity_type, entity_id,
+             content_version, required_plan, rights, status, issued_at, expires_at
+        FROM offline_licenses WHERE id = ?
+    `, licenseId).toArray()[0] ?? null;
+  }
+
+  private offlineLicenseAssets(licenseId: string) {
+    return this.sql.exec<{ asset_id: string; byte_size: number | null; source_sha256: string | null }>(`
+      SELECT asset_id, byte_size, source_sha256 FROM offline_license_assets
+       WHERE license_id = ? ORDER BY asset_id
+    `, licenseId).toArray();
+  }
+
+  /// `POST /downloads/issue` — يُصدر ترخيصًا لعنصر واحد على جهاز الجلسة.
+  ///
+  /// الحدود تُفرض هنا كلها في معاملة واحدة: خطة المحتوى، ومسار العمر، وحدّ
+  /// أجهزة التنزيل، وحدّ عدد العناصر. والفحص قبل الإدراج في نفس المعاملة هو ما
+  /// يمنع تجاوز الحدّ بطلبين متوازيين.
+  private async issueOfflineLicense(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const childId = typeof body.child_id === 'string' ? body.child_id : '';
+    const entityType = typeof body.entity_type === 'string' ? body.entity_type : '';
+    const entityId = typeof body.entity_id === 'string' ? body.entity_id : '';
+    const contentVersion = boundedInteger(body.content_version, 1, Number.MAX_SAFE_INTEGER) ?? 1;
+    const requiredPlan = isPlan(body.required_plan) ? body.required_plan : null;
+    const allowedTracks = normalizeTracks(body.allowed_tracks);
+    const ttlMs = boundedInteger(body.ttl_ms, 60_000, 90 * 24 * 60 * 60 * 1000);
+    const assets = Array.isArray(body.assets) ? body.assets : [];
+    const signatureKeyId = typeof body.signature_key_id === 'string' ? body.signature_key_id : null;
+    // SEC-107: يمرّ كما جاء من `lib/deviceIntegrity.ts` إلى سجلّ الأودت. لا قرار
+    // هنا: السياسة كلها في ذلك الملف، وقراره وصل في `ttl_ms` قبل هذا السطر.
+    const integrity = body.integrity && typeof body.integrity === 'object' ? body.integrity : null;
+
+    const session = this.activeSession(sessionId);
+    const child = this.child(childId);
+    const family = this.family();
+    if (!session || !child || !family || !entityType || !entityId || !requiredPlan
+      || !allowedTracks || ttlMs === null || assets.length === 0) {
+      return json({ success: false, error: 'Offline licence request is invalid' }, 400);
+    }
+    if (!allowedTracks.includes(child.age_track)) {
+      return json({ success: false, error: 'Content is not available for this age track' }, 403);
+    }
+
+    const plan = this.currentPlan();
+    if (!planAllows(plan, requiredPlan)) {
+      return json({ success: false, error: 'An active subscription for this content tier is required' }, 402);
+    }
+    const limits = PLAN_LIMITS[plan];
+    // الباقة المجانية بلا تنزيل: الحدّ صفر، والرفض صريح بدل إخفاء زرّ في العميل.
+    if (limits.downloadDevices === 0) {
+      return json({
+        ...limitRefusal('Offline downloads are not part of this plan', 'download_devices', {
+          plan, limit: 0, current: 0,
+        }),
+        code: 'offline_not_in_plan',
+      }, 402);
+    }
+
+    const now = Date.now();
+    this.sweepOfflineLicenses(now);
+
+    // ترخيص قائم لنفس (طفل، جهاز، عنصر، إصدار) يُعاد كما هو: إعادة الطلب بعد
+    // انقطاع شبكة لا يجوز أن تستهلك حدًّا إضافيًّا.
+    const existing = this.sql.exec<{ id: string }>(`
+      SELECT id FROM offline_licenses
+       WHERE child_id = ? AND device_id = ? AND entity_type = ? AND entity_id = ?
+         AND content_version = ? AND status IN ('pending', 'active')
+       LIMIT 1
+    `, childId, session.device_id, entityType, entityId, contentVersion).toArray()[0];
+    if (existing) {
+      const row = this.offlineLicenseRow(existing.id)!;
+      return json({
+        success: true,
+        data: { licence: row, assets: this.offlineLicenseAssets(row.id), plan, reused: true },
+      });
+    }
+
+    const deviceRows = this.sql.exec<{ device_id: string }>(`
+      SELECT DISTINCT device_id FROM offline_licenses WHERE status IN ('pending', 'active')
+    `).toArray().map((row) => row.device_id);
+    if (!deviceRows.includes(session.device_id) && deviceRows.length >= limits.downloadDevices) {
+      return json({
+        ...limitRefusal('This plan has reached its download device limit', 'download_devices', {
+          plan, limit: limits.downloadDevices, current: deviceRows.length,
+        }),
+        code: 'download_device_limit',
+        data: { limit: limits.downloadDevices, devices: deviceRows.length },
+      }, 409);
+    }
+
+    const items = this.sql.exec<{ count: number }>(`
+      SELECT COUNT(*) AS count FROM offline_licenses WHERE status IN ('pending', 'active')
+    `).toArray()[0]?.count ?? 0;
+    if (items >= limits.offlineItems) {
+      return json({
+        ...limitRefusal('This plan has reached its offline item limit', 'offline_items', {
+          plan, limit: limits.offlineItems, current: items,
+        }),
+        code: 'offline_item_limit',
+        data: { limit: limits.offlineItems, items },
+      }, 409);
+    }
+
+    const licenseId = crypto.randomUUID();
+    const expiresAt = now + ttlMs;
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(`
+        INSERT INTO offline_licenses (
+          id, child_id, device_id, session_id, auth_epoch, entity_type, entity_id,
+          content_version, required_plan, rights, signature_key_id, status, issued_at, expires_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'offline_playback', ?, 'pending', ?, ?)
+      `, licenseId, childId, session.device_id, sessionId, family.auth_epoch,
+        entityType, entityId, contentVersion, requiredPlan, signatureKeyId, now, expiresAt);
+      for (const entry of assets) {
+        const asset = entry as Record<string, unknown>;
+        const assetId = typeof asset.asset_id === 'string' ? asset.asset_id : '';
+        if (!assetId) continue;
+        this.sql.exec(`
+          INSERT OR IGNORE INTO offline_license_assets (license_id, asset_id, byte_size, source_sha256)
+          VALUES (?, ?, ?, ?)
+        `, licenseId, assetId,
+          boundedInteger(asset.byte_size, 0, Number.MAX_SAFE_INTEGER),
+          typeof asset.source_sha256 === 'string' ? asset.source_sha256 : null);
+      }
+      this.addOutbox('offline_license.issued', {
+        licenseId, childId, deviceId: session.device_id, entityType, entityId,
+        contentVersion, requiredPlan, expiresAt,
+        authEpoch: family.auth_epoch,
+        signatureKeyId,
+        // SEC-107: أسماء إشارات ودرجة خطورة، لا وصف جهاز. و`null` حين لا شيء
+        // لتُرصد — السطر يبقى نظيفًا للحالة الطبيعية.
+        integrity,
+        // API-102: حدّا `download_devices` و`offline_items` مرّا قبل هذا السطر.
+        policyVersion: PLAN_POLICY_VERSION,
+      });
+    });
+    await this.scheduleOutbox();
+
+    return json({
+      success: true,
+      data: {
+        licence: this.offlineLicenseRow(licenseId),
+        assets: this.offlineLicenseAssets(licenseId),
+        plan,
+        reused: false,
+      },
+    }, 201);
+  }
+
+  /// `POST /downloads/complete` — التنزيل اكتمل، فالترخيص صار نشطًا.
+  private async completeOfflineLicense(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const licenseId = typeof body.licence_id === 'string' ? body.licence_id : '';
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+
+    const now = Date.now();
+    this.sweepOfflineLicenses(now);
+    const updated = this.sql.exec<{ id: string }>(`
+      UPDATE offline_licenses SET status = 'active', completed_at = ?
+       WHERE id = ? AND session_id = ? AND status = 'pending'
+       RETURNING id
+    `, now, licenseId, sessionId).toArray();
+    if (!updated.length) {
+      // لا إحياء لترخيص منتهٍ أو مسحوب: الحالتان نهائيتان بالتعريف.
+      return json({ success: false, error: 'Offline licence is unavailable' }, 404);
+    }
+    const row = this.offlineLicenseRow(licenseId)!;
+    const assets = this.offlineLicenseAssets(licenseId);
+    this.state.storage.transactionSync(() => {
+      // الأصول تُرسَل مع الاكتمال لا مع الإصدار: صفوف `child_downloads` تعني
+      // «هذا الملف على الجهاز»، وكتابتها قبل اكتمال التنزيل تجعلها تكذب.
+      this.addOutbox('offline_license.completed', {
+        licenseId,
+        childId: row.child_id,
+        deviceId: row.device_id,
+        assets: assets.map((asset) => ({
+          assetId: asset.asset_id,
+          byteSize: asset.byte_size,
+          sourceSha256: asset.source_sha256,
+        })),
+      });
+    });
+    await this.scheduleOutbox();
+    return json({ success: true, data: { licence: this.offlineLicenseRow(licenseId) } });
+  }
+
+  /// `POST /downloads/renew` — سجلّ جديد يخلف القديم، ولا يُحيي القديم.
+  private async renewOfflineLicense(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const licenseId = typeof body.licence_id === 'string' ? body.licence_id : '';
+    const ttlMs = boundedInteger(body.ttl_ms, 60_000, 90 * 24 * 60 * 60 * 1000);
+    const signatureKeyId = typeof body.signature_key_id === 'string' ? body.signature_key_id : null;
+    const session = this.activeSession(sessionId);
+    const family = this.family();
+    if (!session || !family || ttlMs === null) return json({ success: false, error: 'Unauthorized' }, 401);
+
+    const now = Date.now();
+    // لا `sweep` قبل القراءة: التجديد بعد انتهاء المدة سلوك مشروع (جهاز عاد
+    // للاتصال متأخرًا)، والمرفوض هو تجديد ترخيص **مسحوب** أو مخلوف.
+    const previous = this.sql.exec<{
+      id: string; child_id: string; entity_type: string; entity_id: string;
+      content_version: number; required_plan: string; status: string;
+    }>(`
+      SELECT id, child_id, entity_type, entity_id, content_version, required_plan, status
+        FROM offline_licenses WHERE id = ? AND device_id = ?
+    `, licenseId, session.device_id).toArray()[0];
+    if (!previous || previous.status === 'revoked' || previous.status === 'superseded') {
+      return json({ success: false, error: 'Offline licence is unavailable' }, 404);
+    }
+
+    const plan = this.currentPlan();
+    if (!isPlan(previous.required_plan) || !planAllows(plan, previous.required_plan)) {
+      // الاشتراك سقط بعد الإصدار: التجديد يُرفض والترخيص القديم يبقى منتهيًا.
+      return json({ success: false, error: 'An active subscription for this content tier is required' }, 402);
+    }
+
+    const renewedId = crypto.randomUUID();
+    const expiresAt = now + ttlMs;
+    const assets = this.offlineLicenseAssets(licenseId);
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(
+        `UPDATE offline_licenses SET status = 'superseded' WHERE id = ? AND status IN ('pending', 'active', 'expired')`,
+        licenseId,
+      );
+      this.sql.exec(`
+        INSERT INTO offline_licenses (
+          id, child_id, device_id, session_id, auth_epoch, entity_type, entity_id,
+          content_version, required_plan, rights, status, issued_at, expires_at, renewed_from
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'offline_playback', 'active', ?, ?, ?)
+      `, renewedId, previous.child_id, session.device_id, sessionId, family.auth_epoch,
+        previous.entity_type, previous.entity_id, previous.content_version,
+        previous.required_plan, now, expiresAt, licenseId);
+      for (const asset of assets) {
+        this.sql.exec(`
+          INSERT OR IGNORE INTO offline_license_assets (license_id, asset_id, byte_size, source_sha256)
+          VALUES (?, ?, ?, ?)
+        `, renewedId, asset.asset_id, asset.byte_size, asset.source_sha256);
+      }
+      this.addOutbox('offline_license.renewed', {
+        licenseId: renewedId, renewedFrom: licenseId, childId: previous.child_id,
+        deviceId: session.device_id, expiresAt,
+        entityType: previous.entity_type,
+        entityId: previous.entity_id,
+        contentVersion: previous.content_version,
+        requiredPlan: previous.required_plan,
+        authEpoch: family.auth_epoch,
+        signatureKeyId,
+      });
+    });
+    await this.scheduleOutbox();
+    return json({
+      success: true,
+      data: { licence: this.offlineLicenseRow(renewedId), assets, plan },
+    }, 201);
+  }
+
+  /// `POST /downloads/revoke` — بأمر وليّ الأمر: ترخيص واحد، أو كل تراخيص جهاز.
+  private async revokeOfflineLicenses(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const licenseId = typeof body.licence_id === 'string' ? body.licence_id : '';
+    const deviceId = typeof body.device_id === 'string' ? body.device_id : '';
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    if (!licenseId && !deviceId) return json({ success: false, error: 'licence_id or device_id is required' }, 400);
+
+    const now = Date.now();
+    let revoked = 0;
+    this.state.storage.transactionSync(() => {
+      const rows = licenseId
+        ? this.sql.exec<{ id: string }>(`
+            UPDATE offline_licenses SET status = 'revoked', revoked_at = ?
+             WHERE id = ? AND status IN ('pending', 'active') RETURNING id
+          `, now, licenseId).toArray()
+        : this.sql.exec<{ id: string }>(`
+            UPDATE offline_licenses SET status = 'revoked', revoked_at = ?
+             WHERE device_id = ? AND status IN ('pending', 'active') RETURNING id
+          `, now, deviceId).toArray();
+      revoked = rows.length;
+      if (revoked > 0) {
+        this.addOutbox('offline_license.revoked', {
+          licenseIds: rows.map((row) => row.id),
+          deviceId: deviceId || null,
+          by: 'parent',
+        });
+      }
+    });
+    if (revoked > 0) await this.scheduleOutbox();
+    return json({ success: true, data: { revoked } });
+  }
+
+  /// `POST /downloads/list` — ما هو مرخَّص الآن على هذه الأسرة.
+  private async listOfflineLicenses(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    const now = Date.now();
+    this.sweepOfflineLicenses(now);
+    const plan = this.currentPlan(now);
+    const rows = this.sql.exec(`
+      SELECT id, child_id, device_id, entity_type, entity_id, content_version,
+             required_plan, status, issued_at, expires_at, completed_at
+        FROM offline_licenses
+       WHERE status IN ('pending', 'active')
+       ORDER BY issued_at DESC
+    `).toArray();
+    return json({
+      success: true,
+      data: {
+        licences: rows,
+        limits: {
+          download_devices: PLAN_LIMITS[plan].downloadDevices,
+          offline_items: PLAN_LIMITS[plan].offlineItems,
+        },
+        plan,
+      },
+    });
+  }
+
   private async startPlayback(request: Request) {
     const body = await request.json() as Record<string, unknown>;
     const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
@@ -2435,15 +3239,49 @@ export class FamilyState {
     if (!allowedTracks.includes(child.age_track)) return json({ success: false, error: 'Content is not available for this age track' }, 403);
     if (!planAllows(plan, requiredPlan)) return json({ success: false, error: 'An active subscription for this content tier is required' }, 403);
 
+    // حدود ولي الأمر: وقت النوم ثم الحدّ اليومي.
+    //
+    // تُقرأ من D1 في الـWorker وتُمرَّر هنا (`lib/parentalControls.ts`)، ولا تُقبل
+    // من العميل. الفرض في هذا الكائن لأن الحدّ اليومي قراءة-تعديل-كتابة على رصيد
+    // مشترك، وهذا الموضع هو الوحيد المُسلسَل لكل أسرة.
+    const screenTime = await this.screenTimeGate(childId);
+    if (screenTime.bedtimeActive) {
+      return json({ success: false, code: 'screen_time_bedtime', error: 'Bedtime is active' }, 403);
+    }
+    if (screenTime.dailyLimitSeconds !== null) {
+      const used = this.watchedSecondsOn(childId, screenTime.localDate);
+      if (used >= screenTime.dailyLimitSeconds) {
+        return json({
+          success: false,
+          code: 'screen_time_daily_limit',
+          error: 'Daily screen-time limit reached',
+          data: { used_seconds: used, limit_seconds: screenTime.dailyLimitSeconds },
+        }, 403);
+      }
+    }
+
     const now = Date.now();
     this.sql.exec(`UPDATE playback_leases SET status = 'expired', ended_at = ? WHERE status = 'active' AND expires_at <= ?`, now, now);
     const active = this.sql.exec<{ count: number }>(`
       SELECT COUNT(*) AS count FROM playback_leases WHERE status = 'active' AND expires_at > ?
     `, now).toArray()[0]?.count ?? 0;
-    if (active >= PLAN_LIMITS[plan].concurrentStreams) return json({ success: false, error: 'Concurrent stream limit reached' }, 429);
+    if (active >= PLAN_LIMITS[plan].concurrentStreams) {
+      return json(limitRefusal('Concurrent stream limit reached', 'concurrent_streams', {
+        plan, limit: PLAN_LIMITS[plan].concurrentStreams, current: active,
+      }), 429);
+    }
 
     const leaseId = crypto.randomUUID();
-    const expiresAt = now + 15 * 60 * 1000;
+    // العقد الأول محدود بنفس الحدود: ما بقي من اليوم، وحدّ الجلسة، وسقف العقد.
+    const startBudgets = [now + LEASE_TTL_MS];
+    if (screenTime.sessionLimitSeconds !== null) {
+      startBudgets.push(now + screenTime.sessionLimitSeconds * 1000);
+    }
+    if (screenTime.dailyLimitSeconds !== null) {
+      const remaining = screenTime.dailyLimitSeconds - this.watchedSecondsOn(childId, screenTime.localDate);
+      startBudgets.push(now + Math.max(remaining, 0) * 1000);
+    }
+    const expiresAt = Math.min(...startBudgets);
     this.state.storage.transactionSync(() => {
       this.sql.exec(`
         INSERT INTO playback_leases (
@@ -2451,7 +3289,11 @@ export class FamilyState {
           expires_at, created_at, last_heartbeat_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, leaseId, childId, session.device_id, sessionId, assetId, entityType, entityId, expiresAt, now, now);
-      this.addOutbox('playback.started', { leaseId, childId, assetId, entityType, entityId, deviceId: session.device_id });
+      this.addOutbox('playback.started', {
+        leaseId, childId, assetId, entityType, entityId, deviceId: session.device_id,
+        // قرار حدّ (`concurrent_streams`) مثل سابقه.
+        policyVersion: PLAN_POLICY_VERSION,
+      });
     });
     await this.scheduleOutbox();
     return json({ success: true, data: { lease_id: leaseId, expires_at: expiresAt, plan } }, 201);
@@ -2467,11 +3309,58 @@ export class FamilyState {
     if (!requiredPlan || !allowedTracks) return json({ success: false, error: 'Playback policy is required' }, 400);
 
     const now = Date.now();
-    const lease = this.sql.exec<{ child_id: string; asset_id: string; entity_id: string }>(`
-      SELECT child_id, asset_id, entity_id FROM playback_leases
+    const lease = this.sql.exec<{
+      child_id: string; asset_id: string; entity_id: string;
+      created_at: number; last_heartbeat_at: number;
+    }>(`
+      SELECT child_id, asset_id, entity_id, created_at, last_heartbeat_at FROM playback_leases
       WHERE id = ? AND session_id = ? AND status = 'active' AND expires_at > ?
     `, leaseId, sessionId, now).toArray()[0];
     if (!lease) return json({ success: false, error: 'Playback lease is unavailable' }, 404);
+
+    // احتساب ما مضى قبل أي قرار: الوقت الذي شُوهد فعلًا يُسجَّل حتى لو انتهى هذا
+    // النداء بسحب العقد، وإلّا صارت آخر فترة مشاهدة قبل كل رفض مجانية.
+    const screenTime = await this.screenTimeGate(lease.child_id);
+    this.creditWatchTime(lease.child_id, screenTime.localDate, now - lease.last_heartbeat_at, now);
+
+    const revoke = (reason: string, code: string, message: string, extra: Record<string, unknown> = {}) => {
+      this.state.storage.transactionSync(() => {
+        this.sql.exec(`
+          UPDATE playback_leases SET status = 'revoked', ended_at = ?
+          WHERE id = ? AND session_id = ? AND status = 'active'
+        `, now, leaseId, sessionId);
+        this.addOutbox('playback.revoked', { leaseId, reason });
+      });
+      return json({ success: false, code, error: message, data: extra }, 403);
+    };
+
+    if (screenTime.bedtimeActive) {
+      const response = revoke('bedtime', 'screen_time_bedtime', 'Bedtime is active');
+      await this.scheduleOutbox();
+      return response;
+    }
+    if (screenTime.sessionLimitSeconds !== null) {
+      const elapsed = Math.floor((now - lease.created_at) / 1000);
+      if (elapsed >= screenTime.sessionLimitSeconds) {
+        const response = revoke('session_limit', 'screen_time_session_limit', 'Session length limit reached', {
+          elapsed_seconds: elapsed,
+          limit_seconds: screenTime.sessionLimitSeconds,
+        });
+        await this.scheduleOutbox();
+        return response;
+      }
+    }
+    if (screenTime.dailyLimitSeconds !== null) {
+      const used = this.watchedSecondsOn(lease.child_id, screenTime.localDate);
+      if (used >= screenTime.dailyLimitSeconds) {
+        const response = revoke('daily_limit', 'screen_time_daily_limit', 'Daily screen-time limit reached', {
+          used_seconds: used,
+          limit_seconds: screenTime.dailyLimitSeconds,
+        });
+        await this.scheduleOutbox();
+        return response;
+      }
+    }
 
     const child = this.child(lease.child_id);
     const plan = this.currentPlan(now);
@@ -2487,7 +3376,21 @@ export class FamilyState {
       return json({ success: false, error: 'Playback is no longer allowed' }, 403);
     }
 
-    const expiresAt = now + 15 * 60 * 1000;
+    // العقد لا يُجدَّد إلى ما بعد ما تسمح به حدود ولي الأمر.
+    //
+    // بلا هذا القصّ يبقى العقد صالحًا خمسة عشر دقيقة بعد اللحظة التي يُفترض أن
+    // ينتهي فيها الوقت، فتُطلَب النبضة التالية بعد فوات الأوان ويكسب الطفل جلسة
+    // إضافية. القصّ يجعل العقد نفسه يحمل الحدّ.
+    const budgets = [now + LEASE_TTL_MS];
+    if (screenTime.sessionLimitSeconds !== null) {
+      budgets.push(lease.created_at + screenTime.sessionLimitSeconds * 1000);
+    }
+    if (screenTime.dailyLimitSeconds !== null) {
+      const remaining = screenTime.dailyLimitSeconds - this.watchedSecondsOn(lease.child_id, screenTime.localDate);
+      budgets.push(now + Math.max(remaining, 0) * 1000);
+    }
+    const expiresAt = Math.min(...budgets);
+
     const updated = this.sql.exec(`
       UPDATE playback_leases SET last_heartbeat_at = ?, expires_at = ?
       WHERE id = ? AND session_id = ? AND status = 'active' AND expires_at > ?
@@ -2727,6 +3630,25 @@ export class FamilyState {
         pin_version: nextPinVersion,
       },
     });
+  }
+
+  /// Whether this family has ever enrolled a parent PIN.
+  ///
+  /// Exists so `routes/family.ts` can decide, for the very first parental
+  /// write of a brand-new family (granting the first consent, in the
+  /// onboarding journey — Requirement 8.2/9.2), whether a `manage_consents`
+  /// proof can even exist yet. It cannot: every proof purpose other than
+  /// `parent_area` is exchanged from a `parent_area` proof
+  /// (`POST /parent-proof/authorize`), and a `parent_area` proof is only ever
+  /// minted by `POST /parent-pin` (enrolment) or `POST /parent-pin/verify`
+  /// (unlock) — both of which come *after* the consent step in the
+  /// onboarding order. Requiring a proof that structurally cannot exist yet
+  /// would make the first consent unwritable, not merely PIN-gated.
+  private parentPinStatus() {
+    const row = this.sql.exec<{ parent_pin_hash: string | null }>(`
+      SELECT parent_pin_hash FROM family WHERE singleton = 1
+    `).toArray()[0];
+    return json({ success: true, data: { enrolled: !!row?.parent_pin_hash } });
   }
 
   private async verifyParentPin(request: Request) {

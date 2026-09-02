@@ -15,6 +15,7 @@ import type { Env } from '../lib/db.ts';
 import { callDurable, familyStub } from '../lib/doClient.ts';
 import { authenticateParent, verifyParentProof } from '../lib/parentAuth.ts';
 import { evaluateConsent, type ConsentRow } from '../lib/consent.ts';
+import { bodyOr400, text } from '../lib/requestSchema.ts';
 import {
   creationClaimError,
   creationKeyBelongsTo,
@@ -371,8 +372,12 @@ creationsRoute.post('/purge', async (c) => {
   }
 
   const bucket = creationsBucket(c.env);
-  const value = await c.req.json().catch(() => null) as Record<string, unknown> | null;
-  const childId = typeof value?.child_id === 'string' ? value.child_id.trim() : null;
+  // SEC-110: حقل واحد اختياري — وغيابه يعني «كل الأسرة»، وهو ما يحتاجه حذف حساب.
+  const parsed = await bodyOr400<{ child_id?: string }>(c, {
+    child_id: text({ max: 128, optional: true }),
+  });
+  if (!parsed.ok) return parsed.response;
+  const childId = parsed.value.child_id?.trim() ?? null;
 
   if (childId !== null) {
     if (!isSafeStorageId(childId)) {
@@ -430,6 +435,26 @@ creationsRoute.post('/purge', async (c) => {
 /// A single delete can leave a row removed and its object present. This drains
 /// that queue, and is safe to call repeatedly: a key whose object is already gone
 /// settles on the first attempt.
+///
+/// ## No client caller today, and why that is not a defect
+///
+/// A full search of `app_main/lib` and `dashboard/front/src` finds no caller.
+/// That is expected: this is a maintenance/retry tool for the failure path
+/// described above (R2 delete throws after the D1 row is already gone), not a
+/// user-facing action — nothing in the child app or the admin dashboard should
+/// ever need to "retry a deletion" on purpose. It exists to be invoked
+/// operationally (a cron/scheduled task, or manually by an operator) whenever
+/// `deletions-settled` reports a `failed` key, draining `pending-deletions`
+/// until the object store matches the row store. It is authenticated per
+/// family and only ever touches that family's own queued keys
+/// (`creationKeyBelongsTo`), so it carries no cross-account risk.
+///
+/// Kept rather than removed per Requirement 6.5: `scheduled/cleanup.ts` does not
+/// yet sweep every family's pending deletions on a schedule, so until it does,
+/// removing this endpoint would remove the only way to drain a stuck deletion
+/// queue. Follow-up: wire this into `scheduled/cleanup.ts` so pending
+/// deletions self-heal without a manual call — tracked, not done here since
+/// that is a behavior change beyond documenting this endpoint's fate.
 creationsRoute.post('/reconcile', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return unauthorized(auth.reason);

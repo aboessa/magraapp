@@ -39,7 +39,7 @@ async function hmac(value: string, secret: string) {
   return new Uint8Array(signature);
 }
 
-export function hasUsableSecret(value: string | undefined): value is string {
+export function hasUsableSecret(value: string | null | undefined): value is string {
   return typeof value === 'string' && encoder.encode(value).length >= 32;
 }
 
@@ -144,29 +144,101 @@ export async function verifyHmacSignature(value: string, signature: string, secr
   return constantTimeEqual(supplied, await hmac(value, secret));
 }
 
+/// SEC-109: معرّف المفتاح، مشتقّ من السرّ نفسه لا مُسمّى في الإعداد.
+///
+/// ## لماذا مشتقّ لا مُسمّى
+///
+/// المُسمّى يحتاج حقلًا ثانيًا في الإعداد (`AUTH_TOKEN_KEY_ID`) يجب أن يُغيَّر مع
+/// السرّ في نفس اللحظة. وهذا فرصة خطأ بشري كاملة: مشغّل يُبدّل السرّ وينسى
+/// المعرّف، فتُوقَّع توكنات بمفتاح جديد تحت معرّف قديم — وهو أسوأ من غياب المعرّف
+/// أصلًا، لأنه يجعل التحقّق يختار المفتاح **الخطأ** بثقة.
+///
+/// المشتقّ لا يمكن أن يفترق عن سرّه: هو دالّة منه. وسحب سرّ من الإعداد يُسقط
+/// معرّفه معه، فتُرفض توكناته بلا أي خطوة إضافية.
+///
+/// ## ولماذا لا يفشي السرّ
+///
+/// HMAC باتجاه واحد، والمعرّف اثنا عشر حرفًا من مُخرَجه — أي ٧٢ بتًا. لا يُستدلّ
+/// منه على السرّ، ولا يُفيد إلا في **اختيار** مفتاح من مجموعة معلومة سلفًا.
+const fingerprints = new Map<string, string>();
+
+export async function tokenKeyId(secret: string): Promise<string> {
+  const cached = fingerprints.get(secret);
+  if (cached) return cached;
+  // البصمة تُحسَب مرّة لكل سرّ في عمر العُزلة: مرّة لكل طلب كانت ستضيف HMAC
+  // لكل تحقّق بلا فائدة، والمفاتيح اثنان لا آلاف.
+  const digest = base64Url(await hmac('majarra:token-key-id:v1', secret)).slice(0, 12);
+  fingerprints.set(secret, digest);
+  return digest;
+}
+
+/// يوقّع توكنًا، ويُدرج `kid` في حمولته.
+///
+/// `kid` في الحمولة لا في رأس منفصل: الشكل `payload.signature` يقرؤه العميل
+/// والتراخيص معًا، وإضافة رأس ثالث كانت ستغيّر عقدًا يعرفه طرفان مقابل صفر مكسب
+/// — الحمولة موقَّعة أيضًا، فالمعرّف فيها ليس أقلّ حمايةً.
 export async function createSignedToken(payload: Record<string, unknown>, secret: string) {
   if (!hasUsableSecret(secret)) throw new Error('Signing secret is not configured');
-  const encodedPayload = base64Url(encoder.encode(JSON.stringify(payload)));
+  const withKeyId = { ...payload, kid: await tokenKeyId(secret) };
+  const encodedPayload = base64Url(encoder.encode(JSON.stringify(withKeyId)));
   const signature = await hmac(encodedPayload, secret);
   return `${encodedPayload}.${base64Url(signature)}`;
 }
 
-export async function verifySignedToken<T extends Record<string, unknown>>(token: string, secret: string): Promise<T | null> {
-  if (!hasUsableSecret(secret)) return null;
+/// يتحقّق من توكن مقابل **حلقة مفاتيح**: الحالي، ثم السابق أثناء نافذة الدوران.
+///
+/// ## المشكلة التي يحلّها
+///
+/// كان تدوير `AUTH_TOKEN_SECRET` يُبطل فورًا كل التوكنات القائمة: كل وليّ أمر
+/// يُخرَج من جلسته، وكل توكن وسائط جارٍ يفشل في منتصف مشاهدة. فكان التدوير عمليًّا
+/// لا يحدث — وسرٌّ لا يُدوَّر هو سرٌّ يبقى إلى الأبد.
+///
+/// ## اختيار المفتاح
+///
+/// `kid` في الحمولة يُقرأ **قبل** التحقّق، وهو مقروء من مدخل غير موثوق — فلا
+/// يُصدَّق، بل يُستخدم للاختيار وحده، والتوقيع هو ما يحكم. ومعرّف لا يقابل أي
+/// مفتاح في الحلقة يُرفض بلا حساب HMAC واحد: السرّ المسحوب لا يعود له وجود.
+///
+/// وتوكن بلا `kid` — أُصدر قبل هذا التغيير — يُجرَّب على كل مفاتيح الحلقة. هذا
+/// تسامح **مؤقّت** بمقدار عمر أطول توكن (ثلاثون يومًا للتحديث)، وحذفه اليوم كان
+/// سيُخرج كل مستخدم قائم، أي نفس العطل الذي كُتب هذا الملف لإصلاحه.
+export async function verifySignedToken<T extends Record<string, unknown>>(
+  token: string,
+  secrets: string | readonly (string | null | undefined)[],
+): Promise<T | null> {
+  const ring = (typeof secrets === 'string' ? [secrets] : secrets)
+    .filter((value): value is string => hasUsableSecret(value));
+  if (ring.length === 0) return null;
+
   const [encodedPayload, encodedSignature, ...extra] = token.split('.');
   if (!encodedPayload || !encodedSignature || extra.length) return null;
   const suppliedSignature = fromBase64Url(encodedSignature);
   if (!suppliedSignature) return null;
 
-  const expectedSignature = await hmac(encodedPayload, secret);
-  if (!constantTimeEqual(suppliedSignature, expectedSignature)) return null;
-
   const bytes = fromBase64Url(encodedPayload);
   if (!bytes) return null;
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(decoder.decode(bytes));
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as T : null;
+    parsed = JSON.parse(decoder.decode(bytes));
   } catch {
     return null;
   }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+
+  const declared = (parsed as Record<string, unknown>).kid;
+  const candidates: string[] = [];
+  if (typeof declared === 'string' && declared) {
+    for (const candidate of ring) {
+      if (await tokenKeyId(candidate) === declared) candidates.push(candidate);
+    }
+    if (candidates.length === 0) return null;
+  } else {
+    candidates.push(...ring);
+  }
+
+  for (const candidate of candidates) {
+    const expected = await hmac(encodedPayload, candidate);
+    if (constantTimeEqual(suppliedSignature, expected)) return parsed as T;
+  }
+  return null;
 }

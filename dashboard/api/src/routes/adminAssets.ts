@@ -239,6 +239,117 @@ route.get('/assets/stats', async (c) => {
   return c.json({ success: true, data: { by_status: byStatus, by_kind: byKind, storage: storage ?? { ready_count: 0, total_bytes: 0 } } })
 })
 
+/**
+ * Every column anywhere in the schema that points at `content_assets`.
+ *
+ * ## Why this is discovered and not written down (`CNT-104`)
+ *
+ * The audit item says two linking paths coexist — `asset_links` for episodes and a
+ * direct column for stories — and that an "unused assets" report must know both or
+ * give a wrong answer. Measured, there are **sixteen foreign keys across thirteen
+ * tables**: `asset_links`, `asset_uploads`, `blog_authors`, `blog_posts`,
+ * `episode_audio_tracks`, `episode_renditions`, `episode_subtitle_tracks`,
+ * `playback_leases`, `questions`, `seo_meta`, `story_page_localizations`,
+ * `story_pages`, `web_page_sections`.
+ *
+ * So a report built on the item's own premise would still be wrong — and wrong in the
+ * direction that gets an in-use asset deleted. A hand-written list of thirteen tables
+ * would be right today and wrong at the next migration, which is the failure this
+ * audit keeps finding.
+ *
+ * The list is therefore read from SQLite's own catalogue on every call: a new
+ * reference column is covered the moment its migration lands, with nothing to
+ * remember. The cost is one extra query.
+ */
+async function assetReferenceColumns(db: D1Database): Promise<Array<{ table: string; column: string }>> {
+  const tables = await queryAll<{ name: string; sql: string }>(
+    db,
+    `SELECT name, sql FROM sqlite_master WHERE type = 'table' AND sql LIKE '%REFERENCES content_assets%'`,
+  )
+  const out: Array<{ table: string; column: string }> = []
+  const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/
+  for (const table of tables) {
+    if (!IDENTIFIER.test(table.name)) continue
+    // `<column> TEXT ... REFERENCES content_assets` — the column immediately precedes
+    // its own type and constraint, so the match is anchored on the reference and
+    // walks back to the name rather than guessing from a list of known suffixes
+    // (`*_asset_id` would miss `asset_id` shapes and any future name).
+    for (const match of table.sql.matchAll(/([A-Za-z_][A-Za-z0-9_]*)\s+TEXT[^,]*?REFERENCES\s+content_assets/gi)) {
+      const column = match[1]
+      if (IDENTIFIER.test(column)) out.push({ table: table.name, column })
+    }
+  }
+  return out
+}
+
+/// `GET /admin/assets/unreferenced`
+///
+/// Assets nothing points at, by every reference path in the schema.
+///
+/// `archived` is excluded by default: the acceptance criterion is "linked to an entity
+/// **or** explicitly classified as archive", so an archived asset is a decision that
+/// was made, not a loose end. `?include_archived=1` shows them for a storage audit.
+///
+/// The response carries `checked_paths` — what the report actually looked at. A report
+/// whose coverage is invisible cannot be trusted, and invisible coverage is exactly
+/// how "two paths" became the accepted description of thirteen.
+route.get('/assets/unreferenced', async (c) => {
+  const paths = await assetReferenceColumns(c.env.DB)
+  if (paths.length === 0) {
+    // Nothing to check against means everything looks unused. Refusing is the only
+    // honest answer: reporting every asset as an orphan invites a mass deletion.
+    return c.json({
+      success: false,
+      error: 'No reference columns discovered; refusing to report every asset as unused',
+    }, 500)
+  }
+
+  const kind = c.req.query('kind')
+  const includeArchived = c.req.query('include_archived') === '1'
+  const limit = Math.min(Math.max(Number(c.req.query('limit') ?? 200), 1), 1000)
+
+  const clauses: string[] = []
+  const params: unknown[] = []
+  if (kind) { clauses.push('ca.kind = ?'); params.push(kind) }
+  if (!includeArchived) clauses.push("ca.status <> 'archived'")
+  for (const path of paths) {
+    clauses.push(`NOT EXISTS (SELECT 1 FROM ${path.table} t WHERE t.${path.column} = ca.id)`)
+  }
+  const where = `WHERE ${clauses.join(' AND ')}`
+
+  const rows = await queryAll<Row>(
+    c.env.DB,
+    `SELECT ca.id, ca.title_ar, ca.kind, ca.status, ca.size_bytes, ca.r2_key, ca.created_at
+       FROM content_assets ca ${where}
+      ORDER BY ca.kind, ca.created_at DESC
+      LIMIT ?`,
+    [...params, limit],
+  )
+  const byKind = await queryAll<Row>(
+    c.env.DB,
+    `SELECT ca.kind, COUNT(*) AS count, COALESCE(SUM(ca.size_bytes), 0) AS bytes
+       FROM content_assets ca ${where} GROUP BY ca.kind ORDER BY count DESC`,
+    params,
+  )
+  const total = await queryFirst<{ total: number }>(
+    c.env.DB,
+    `SELECT COUNT(*) AS total FROM content_assets ca ${where}`,
+    params,
+  )
+
+  return c.json({
+    success: true,
+    data: {
+      total: Number(total?.total ?? 0),
+      by_kind: byKind,
+      assets: rows,
+      checked_paths: paths,
+      include_archived: includeArchived,
+      limit,
+    },
+  })
+})
+
 route.get('/assets/:id', async (c) => {
   const asset = await queryFirst<Row>(c.env.DB, `SELECT ca.*, vs.name_ar AS visual_style_name FROM content_assets ca LEFT JOIN visual_styles vs ON vs.id = ca.visual_style_id WHERE ca.id = ?`, [pathParam(c, 'id')])
   if (!asset) return c.json({ success: false, error: 'Asset not found' }, 404)
@@ -420,7 +531,20 @@ route.put('/assets/:id/content', requirePermission('upload_images'), async (c) =
   // bucket. lib/assetBuckets.ts is the single authority.
   const bucketName = bucketForAsset({ visibility: asset.visibility as string | null, kind })
   const key = String(asset.r2_key || objectKey(String(asset.visibility), kind, filename, String(asset.expected_path || '')))
-  const checksum = c.req.header('X-File-SHA256') || undefined
+  // ENC-007: البصمة يُتحقَّق منها في R2 لا تُقبل كما وصلت.
+  //
+  // كانت تُخزَّن كما أعلنها العميل الرافع بلا أي تحقّق، فصار العمود «ما ادّعاه
+  // الرافع» لا «ما في الملف». والعميل ينزّل ثم يقارن ببصمة من هذا العمود
+  // (`ENC-007`)، فبصمة غير مطابقة للبايتات تعني **رفض كل تنزيل** لأصل سليم —
+  // أو قبول أصل مبتور إن كانت البصمة تصفه.
+  //
+  // تمريرها إلى `put` يجعل R2 نفسه يرفض الكتابة عند عدم التطابق، فالعمود يصف
+  // البايتات المخزَّنة فعلًا.
+  const declaredChecksum = c.req.header('X-File-SHA256')?.trim().toLowerCase()
+  if (declaredChecksum !== undefined && !/^[a-f0-9]{64}$/.test(declaredChecksum)) {
+    return c.json({ success: false, error: 'X-File-SHA256 must be 64 hex characters' }, 400)
+  }
+  const checksum = declaredChecksum || undefined
   const actualWidth = integer(c.req.header('X-Image-Width'))
   const actualHeight = integer(c.req.header('X-Image-Height'))
   const expectedWidth = asset.expected_width ? Number(asset.expected_width) : null
@@ -434,10 +558,22 @@ route.put('/assets/:id/content', requirePermission('upload_images'), async (c) =
     ...(actualWidth !== null && actualHeight !== null ? { actual_dimensions: { width: actualWidth, height: actualHeight }, dimension_match: !dimensionMismatch } : {}),
   }
 
-  const result = await bucket(c.env, bucketName).put(key, c.req.raw.body, {
-    httpMetadata: { contentType: mime, cacheControl: asset.visibility === 'public' ? 'public, max-age=31536000, immutable' : 'private, no-store' },
-    customMetadata: { assetId: id, originalFilename: filename, visibility: String(asset.visibility), ...(checksum ? { sha256: checksum } : {}) },
-  })
+  let result: R2Object
+  try {
+    result = await bucket(c.env, bucketName).put(key, c.req.raw.body, {
+      httpMetadata: { contentType: mime, cacheControl: asset.visibility === 'public' ? 'public, max-age=31536000, immutable' : 'private, no-store' },
+      customMetadata: { assetId: id, originalFilename: filename, visibility: String(asset.visibility), ...(checksum ? { sha256: checksum } : {}) },
+      // R2 يحسب البصمة أثناء الكتابة ويرفض العنصر إن لم تطابق.
+      ...(checksum ? { sha256: checksum } : {}),
+    })
+  } catch (error) {
+    // الفشل الغالب هو عدم تطابق البصمة، ورسالته يجب أن تقول ذلك بدل 500 عام.
+    console.error('asset_upload_failed', error instanceof Error ? error.message : String(error))
+    return c.json({
+      success: false,
+      error: 'تعذّر حفظ الملف. تحقّق من أن البصمة المُعلَنة تطابق الملف المرفوع.',
+    }, 422)
+  }
   await c.env.DB.batch([
     c.env.DB.prepare(`
       UPDATE content_assets SET status = 'ready', source = CASE WHEN source = 'catalog' THEN 'generated' ELSE source END,

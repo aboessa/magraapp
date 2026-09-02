@@ -145,7 +145,7 @@ test('an objective with no attempts reports a null success rate', async () => {
 
 test('a child with no attempts reports a null success rate', async () => {
   const report = await call('/mastery/by-child', fakeDb([
-    ['GROUP BY cp.id', [{
+    ['GROUP BY cp.child_id', [{
       child_id: 'c-1', nickname: 'سعاد', age_track: 'kids', parent_id: 'p-1',
       objectives_count: 0, independent_count: 0, needs_review_count: 0,
       attempts: 0, correct_attempts: 0, last_attempt_at: null,
@@ -248,7 +248,7 @@ test('filters are bound as parameters, never interpolated', async () => {
   const db = fakeDb([['COUNT(*) AS total', [{ total: 0 }]]]);
   await call('/mastery/by-child?parent_id=p-1&track=kids', db);
 
-  const query = db.queries.find((q) => q.sql.includes('GROUP BY cp.id'));
+  const query = db.queries.find((q) => q.sql.includes('GROUP BY cp.child_id'));
   assert.ok(query.params.includes('p-1'));
   assert.ok(query.params.includes('kids'));
   // The value must not appear in the SQL text itself.

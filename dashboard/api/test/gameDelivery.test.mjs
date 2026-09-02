@@ -1,4 +1,4 @@
-/// Tests for lib/gameDelivery.ts — what the app is allowed to receive, and how
+﻿/// Tests for lib/gameDelivery.ts — what the app is allowed to receive, and how
 /// a language is chosen.
 
 import test from 'node:test';
@@ -8,6 +8,7 @@ import {
   isGameLanguage,
   localizePack,
   resolveLanguage,
+  textFallbacks,
   tracksForAgeRange,
 } from '../src/lib/gameDelivery.ts';
 
@@ -152,4 +153,49 @@ test('age ranges map onto the platform tracks', () => {
   // games.age_min/age_max is the only authority and there is no game_tracks.
   assert.deepEqual(tracksForAgeRange(5, 7), ['preschool', 'kids']);
   assert.deepEqual(tracksForAgeRange(3, 12), ['preschool', 'kids', 'junior']);
+});
+
+// --- per-field language fallback (CNT-105) ---------------------------------
+//
+// `resolveLanguage` picks a localization by whether a row exists, not by whether
+// that row has text. So a French row with a null title was served as
+// `language: 'fr'`, `fell_back: false`, and the Arabic title — one field in a
+// script the child may not read, with nothing in the payload saying so.
+test('a resolved language with empty text names the fields that fell back', () => {
+  const resolution = resolveLanguage('fr', ['fr']);
+  assert.equal(resolution.language, 'fr');
+  assert.equal(resolution.fell_back, false, 'the row exists, so the language did not fall back');
+
+  // This is the case the payload used to hide: language says fr, title is Arabic.
+  assert.deepEqual(
+    textFallbacks(resolution, { title: null, instructions: 'Suis la ligne' }),
+    ['title'],
+  );
+  assert.deepEqual(
+    textFallbacks(resolution, { title: 'Trace', instructions: null }),
+    ['instructions'],
+  );
+  assert.deepEqual(
+    textFallbacks(resolution, { title: null, instructions: null }),
+    ['title', 'instructions'],
+  );
+});
+
+test('a fully translated row reports nothing, so the signal stays meaningful', () => {
+  const resolution = resolveLanguage('fr', ['fr']);
+  assert.deepEqual(textFallbacks(resolution, { title: 'Trace', instructions: 'Suis' }), []);
+});
+
+test('Arabic is the base language, so serving Arabic text is not a fallback', () => {
+  // Reporting `title` here would fire on every Arabic game and train readers to
+  // ignore the field — the same way a guard that cries wolf gets switched off.
+  const resolution = resolveLanguage('ar', ['ar']);
+  assert.deepEqual(textFallbacks(resolution, { title: null, instructions: null }), []);
+});
+
+test('no resolvable localization reports nothing rather than guessing', () => {
+  // `resolveLanguage` returns null, and the route serves no game at all in that
+  // case. Naming fields here would describe a payload that is never sent.
+  assert.equal(resolveLanguage('fr', []), null);
+  assert.deepEqual(textFallbacks(null, { title: null, instructions: null }), []);
 });

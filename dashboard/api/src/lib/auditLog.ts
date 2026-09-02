@@ -128,7 +128,11 @@ export function redactForAudit(value: unknown, depth = 0): unknown {
 }
 
 /// Serializes a redacted payload, failing safe if it still cannot be encoded.
-function serializeDetails(details: unknown): string {
+///
+/// Exported for `lib/familyAudit.ts`: the family-path audit trail is a separate
+/// table but must not be a separate redaction policy. A private copy there would
+/// drift, and the drift would be invisible until a token appeared in a row.
+export function serializeAuditDetails(details: unknown): string {
   let encoded: string;
   try {
     encoded = JSON.stringify(redactForAudit(details ?? {}) ?? {});
@@ -162,7 +166,7 @@ export function auditStatement(
     action,
     entityType,
     entityId,
-    serializeDetails(details),
+    serializeAuditDetails(details),
   );
 }
 

@@ -14,9 +14,34 @@ function cleanEtag(value: string) {
   return value.replace(/^W\//, '').replace(/^"|"$/g, '');
 }
 
+/// `GET /api/v1/media/assets/:assetId`
+///
+/// ## لماذا تُقبل القدرة في سلسلة الاستعلام أيضًا
+///
+/// الترويسة هي المسار المُفضَّل ويستخدمها كل عميل يستطيع ضبطها:
+/// `playback_page.dart` و`audio_player_page.dart` و`reader_narration.dart` كلها
+/// تُرسل `Authorization` عن قصد وبتعليق يشرح ذلك.
+///
+/// لكن مستهلكَين لا يستطيعان ضبط ترويسة لكل طلب:
+///
+/// 1. **متغيّرات HLS.** `routes/episodes.ts` يكتب روابط الـvariants داخل
+///    الـmaster playlist، والمشغّل يجلبها بنفسه بلا وسيط يضيف ترويسة.
+/// 2. **صوت الألعاب.** `media_audio_player.dart` يبني الرابط عبر `urlBuilder`
+///    ويسلّمه لمشغّل يقبل رابطًا فقط.
+///
+/// إسقاط هذا الفرع كان سيكسر الاثنين صامتًا، فهو **تنازل موثَّق** لا سهو. ما
+/// يجعله مقبولًا هو أن التوكن قدرة قصيرة العمر (ثلاث دقائق،
+/// `MEDIA_TOKEN_TTL_SECONDS` في `lib/parentAuth.ts`) مربوطة بأصل واحد
+/// (`claims.aid`)، وأن الاستجابة تحمل `no-store` و`no-referrer` فلا يتسرّب
+/// الرابط عبر `Referer` إلى أي أصل خارجي.
+///
+/// ما يبقى مطلوبًا (متابعة، ليس هنا): تمرير الترويسة في مسار صوت الألعاب —
+/// يستلزم توسيع `GameAudioPlayer` ليقبل ترويسات — حتى يبقى هذا الفرع لـHLS
+/// وحده. وحتى ذلك الحين لا يجوز تسجيل سلسلة الاستعلام على الحافة.
 mediaRoute.get('/assets/:assetId', async (c) => {
   if (!mediaIsConfigured(c.env)) return c.json({ success: false, error: 'Secure media delivery is not configured' }, 503);
-  const authHeader = c.req.header('Authorization') ?? (c.req.query('token') ? `Bearer ${c.req.query('token')}` : undefined);
+  const queryToken = c.req.query('token');
+  const authHeader = c.req.header('Authorization') ?? (queryToken ? `Bearer ${queryToken}` : undefined);
   const claims = await verifyMediaToken(c.env, authHeader);
   const assetId = c.req.param('assetId');
   if (!claims || claims.aid !== assetId) return c.json({ success: false, error: 'Unauthorized' }, 401);

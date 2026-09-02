@@ -10,6 +10,12 @@ import {
   type ParentPrincipal,
   type ParentProofPurpose,
 } from '../lib/parentAuth.ts';
+import {
+  parseBody,
+  text as textField,
+  validationFailure,
+  type BodySchema,
+} from '../lib/requestSchema.ts';
 
 type AppEnv = { Bindings: Env };
 type JsonBody = Record<string, unknown>;
@@ -17,9 +23,39 @@ type Envelope<T> = { success: boolean; data?: T; error?: string };
 
 const accountRoute = new Hono<AppEnv>();
 
-async function body(c: { req: { json(): Promise<unknown> } }): Promise<JsonBody | null> {
-  const value = await c.req.json().catch(() => null);
-  return value && typeof value === 'object' && !Array.isArray(value) ? value as JsonBody : null;
+/// SEC-110: مخطَّطات أجسام الطلبات لهذا الموجّه.
+///
+/// إيصال الحذف نمطه صريح: ٤٣ حرفًا من أبجدية base64url — أي ٢٥٦ بتًا. وإعلانه في
+/// المخطَّط يجعل الشكل مرفوضًا **قبل** أي استعلام، فلا يُستهلك نداءٌ على قيمة لا
+/// يمكن أن تكون إيصالًا.
+const RECEIPT = /^[A-Za-z0-9_-]{43}$/;
+
+const SCHEMAS = {
+  updateProfile: { display_name: textField({ max: 200, nullable: true }) },
+  changePassword: {
+    current_password: textField({ min: 1, max: 256 }),
+    // الحدّ الأدنى الحقيقي (١٢) يبقى في المنطق أدناه مع رسالته: المخطَّط يقول
+    // «نصّ في حدود معقولة»، والسياسة تقول «طويل بما يكفي».
+    new_password: textField({ min: 1, max: 256 }),
+  },
+  deletionStatus: {
+    parent_id: textField({ min: 8, max: 200 }),
+    request_id: textField({ min: 8, max: 200 }),
+    receipt_secret: textField({ min: 43, max: 43, pattern: RECEIPT }),
+  },
+  deleteAccount: {
+    current_password: textField({ min: 1, max: 256 }),
+    receipt_secret: textField({ min: 43, max: 43, pattern: RECEIPT }),
+  },
+} satisfies Record<string, BodySchema>;
+
+async function schemaBody<T>(
+  c: { req: { json(): Promise<unknown> } },
+  schema: BodySchema,
+): Promise<{ ok: true; value: T } | { ok: false; response: Response }> {
+  const parsed = await parseBody(c, schema);
+  if (parsed.ok) return { ok: true, value: parsed.value as T };
+  return { ok: false, response: Response.json(validationFailure(parsed), { status: 400 }) };
 }
 
 function unauthorized(reason: 'unconfigured' | 'unauthorized') {
@@ -148,15 +184,17 @@ accountRoute.patch('/profile', async (c) => {
   );
   if (!proof.ok) return proofDenied(proof.reason);
 
-  const value = await body(c);
-  const displayName = value?.display_name === null
-    ? null
-    : typeof value?.display_name === 'string' && value.display_name.trim().length > 0
-      ? value.display_name.trim().slice(0, 80)
-      : undefined;
-  if (displayName === undefined) {
+  // النوع المُعلَن هنا **دعوى** يجب أن تطابق المخطَّط أعلاه. استنتاجه من المخطَّط
+  // ممكن بأنواع وهمية، ورُفض: يضيف طبقة أنواع عامّة يقرأها كل قارئ للملف مقابل
+  // توفير سطر — والمخطَّط والدعوى متجاوران فافتراقهما مرئي.
+  const parsed = await schemaBody<{ display_name: string | null }>(c, SCHEMAS.updateProfile);
+  if (!parsed.ok) return parsed.response;
+  // `null` صريح يعني «امسح الاسم»، والفراغ بعد التقليم ليس اسمًا.
+  const trimmed = parsed.value.display_name === null ? null : parsed.value.display_name.trim();
+  if (trimmed !== null && trimmed.length === 0) {
     return c.json({ success: false, error: 'A valid display_name is required' }, 400);
   }
+  const displayName = trimmed === null ? null : trimmed.slice(0, 80);
 
   const operationId = requestId(c.req.header('Idempotency-Key'));
   const familyUpdate = await callDurable<Envelope<{
@@ -180,9 +218,13 @@ accountRoute.post('/change-password', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return unauthorized(auth.reason);
 
-  const value = await body(c);
-  const currentPassword = typeof value?.current_password === 'string' ? value.current_password : '';
-  const newPassword = typeof value?.new_password === 'string' ? value.new_password : '';
+  const parsed = await schemaBody<{
+    current_password: string;
+    new_password: string;
+  }>(c, SCHEMAS.changePassword);
+  if (!parsed.ok) return parsed.response;
+  const currentPassword = parsed.value.current_password;
+  const newPassword = parsed.value.new_password;
   if (currentPassword.length < 1 || newPassword.length < 12 || newPassword.length > 256) {
     return c.json({ success: false, error: 'Current password and a new password of at least 12 characters are required' }, 400);
   }
@@ -328,15 +370,16 @@ accountRoute.get('/deletions/:requestId', async (c) => {
 // therefore uses a client-generated 256-bit capability retained in secure
 // storage, never a bearer session and never a secret in the URL.
 accountRoute.post('/deletions/status', async (c) => {
-  const value = await body(c);
-  const parentId = typeof value?.parent_id === 'string' ? value.parent_id : '';
-  const deletionRequestId = typeof value?.request_id === 'string' ? value.request_id : '';
-  const receiptSecret = typeof value?.receipt_secret === 'string' ? value.receipt_secret : '';
-  if (parentId.length < 8 || parentId.length > 200
-    || deletionRequestId.length < 8 || deletionRequestId.length > 200
-    || !/^[A-Za-z0-9_-]{43}$/.test(receiptSecret)) {
-    return c.json({ success: false, error: 'Deletion receipt is invalid' }, 400);
-  }
+  // مسار غير مُصادَق عليه (يُستهلك بإيصال الحذف وحده)، فهو أوّل من يستحقّ مخطَّطًا.
+  const parsed = await schemaBody<{
+    parent_id: string;
+    request_id: string;
+    receipt_secret: string;
+  }>(c, SCHEMAS.deletionStatus);
+  if (!parsed.ok) return parsed.response;
+  const parentId = parsed.value.parent_id;
+  const deletionRequestId = parsed.value.request_id;
+  const receiptSecret = parsed.value.receipt_secret;
   const result = await callDurable(
     familyStub(c.env, parentId),
     '/lifecycle/status-capability',
@@ -404,13 +447,13 @@ accountRoute.delete('/children/:childId', async (c) => {
 accountRoute.delete('/delete', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return unauthorized(auth.reason);
-  const value = await body(c);
-  const currentPassword = typeof value?.current_password === 'string' ? value.current_password : '';
-  const receiptSecret = typeof value?.receipt_secret === 'string' ? value.receipt_secret : '';
-  if (!currentPassword) return c.json({ success: false, error: 'Current password is required' }, 400);
-  if (!/^[A-Za-z0-9_-]{43}$/.test(receiptSecret)) {
-    return c.json({ success: false, error: 'A valid deletion receipt is required' }, 400);
-  }
+  const parsed = await schemaBody<{
+    current_password: string;
+    receipt_secret: string;
+  }>(c, SCHEMAS.deleteAccount);
+  if (!parsed.ok) return parsed.response;
+  const currentPassword = parsed.value.current_password;
+  const receiptSecret = parsed.value.receipt_secret;
 
   // Reject callers without the purpose-bound capability before password
   // verification can affect lockout counters or become a credential oracle.

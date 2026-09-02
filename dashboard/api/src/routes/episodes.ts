@@ -18,6 +18,8 @@ import {
   availabilityRefusal,
 } from '../lib/requestGeo.ts';
 import type { AgeTrack, Plan } from '../lib/familyPolicy.ts';
+import { bodyOr400, boolean, integer, list, opaque, text, type BodySchema } from '../lib/requestSchema.ts';
+
 
 type AppEnv = { Bindings: Env };
 type Envelope<T> = { success: boolean; data?: T; error?: string };
@@ -44,6 +46,33 @@ type PlaybackLease = {
 };
 
 const episodesRoute = new Hono<AppEnv>();
+
+/// SEC-110: مخطَّطات أجسام الطلبات في هذا الموجّه.
+///
+/// جلسة التشغيل لا تحتاج إلا معرّف الطفل: الباقي — الحلقة، والجهاز، والأسرة —
+/// يأتي من المسار ومن الجلسة المُصادَقة، وقبوله من الجسم كان سيجعل العميل يقرّر
+/// نيابةً عن الخادم.
+const PLAYBACK_SESSION: BodySchema = { child_id: text({ max: 128 }) };
+
+/// تقدّم مشاهدة، أو محاولة تفاعلية داخل حلقة.
+///
+/// `answers` حرّة الشكل لأن شكلها يختلف بنوع النشاط، والسقف هو الحماية. أما
+/// `score`/`max_score`/`time_spent` فأعداد صحيحة: كانت تُقرأ بـ`Number(...)` الذي
+/// يقبل `'7'` نصًّا و`'7abc'` → `NaN` يمرّ من فحص `< 0`.
+const EPISODE_PROGRESS: BodySchema = {
+  child_id: text({ max: 128 }),
+  progress_seconds: integer({ min: 0, optional: true }),
+  answers: list(opaque(), { max: 200, optional: true }),
+  score: integer({ min: 0, optional: true }),
+  max_score: integer({ min: 0, optional: true }),
+  time_spent: integer({ min: 0, optional: true }),
+  // هذه الثلاثة كشفها المُصرِّف حين صار الجسم مُصنَّفًا: المعالج يقرؤها ولم يكن
+  // أحد يعلنها. وهذا بالضبط ما يفعله المخطَّط — يجعل «ما يُقرأ» و«ما يُعلَن» شيئًا
+  // واحدًا لا شيئين يفترقان بمرور الوقت.
+  duration_seconds: integer({ min: 0, optional: true }),
+  event_id: text({ max: 128, optional: true }),
+  is_completed: boolean({ optional: true }),
+};
 
 function pagination(value: string | undefined, fallback: number) {
   const parsed = Number.parseInt(value ?? '', 10);
@@ -265,9 +294,10 @@ episodesRoute.post('/:id/playback-sessions', async (c) => {
   if (!mediaIsConfigured(c.env)) return c.json({ success: false, error: 'Secure media delivery is not configured' }, 503);
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return unauthorized(auth.reason);
-  const value = await c.req.json().catch(() => null) as Record<string, unknown> | null;
-  const childId = typeof value?.child_id === 'string' ? value.child_id : '';
-  if (!childId) return c.json({ success: false, error: 'child_id required' }, 400);
+  // SEC-110: مخطَّط بدل قراءة حقل واحد وتجاهل الباقي.
+  const parsed = await bodyOr400<{ child_id: string }>(c, PLAYBACK_SESSION);
+  if (!parsed.ok) return parsed.response;
+  const childId = parsed.value.child_id;
 
   const catalog = await catalogMedia(c.env, c.req.param('id'));
   if (!catalog) return c.json({ success: false, error: 'Protected episode media is unavailable' }, 404);
@@ -284,6 +314,9 @@ episodesRoute.post('/:id/playback-sessions', async (c) => {
     return c.json(availabilityRefusal(playbackDecision, playbackContext.country), 451);
   }
 
+  // حدود ولي الأمر (وقت النوم، الحدّ اليومي، حدّ الجلسة) تُفرض داخل `FamilyState`:
+  // هو الذي يعرف معرّف الطفل الموثوق ويسلسل احتساب الوقت لكل أسرة. الرفض يعود
+  // برمز `screen_time_*` يُمرّره `forward` كما هو، فيعرف العميل أي شاشة يعرض.
   const requiredPlan: Plan = catalog.media.is_free ? 'free' : catalog.media.price_tier;
   const created = await callDurable<Envelope<PlaybackLease>>(familyStub(c.env, auth.principal.parentId), '/playback/start', {
     body: {
@@ -372,14 +405,21 @@ episodesRoute.get('/:id/stream', (c) => c.json({
 episodesRoute.post('/:id/progress', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return unauthorized(auth.reason);
-  const value = await c.req.json().catch(() => null) as Record<string, unknown> | null;
-  if (!value) return c.json({ success: false, error: 'A JSON object is required' }, 400);
-  const childId = typeof value.child_id === 'string' ? value.child_id : '';
-  const progressSeconds = Number(value.progress_seconds ?? 0);
-  if (!childId) return c.json({ success: false, error: 'child_id required' }, 400);
-  if (!Number.isFinite(progressSeconds) || progressSeconds < 0) {
-    return c.json({ success: false, error: 'progress_seconds must be a non-negative number' }, 400);
-  }
+  const parsed = await bodyOr400<{
+    child_id: string;
+    progress_seconds?: number;
+    answers?: unknown[];
+    score?: number;
+    max_score?: number;
+    time_spent?: number;
+    duration_seconds?: number;
+    event_id?: string;
+    is_completed?: boolean;
+  }>(c, EPISODE_PROGRESS);
+  if (!parsed.ok) return parsed.response;
+  const value = parsed.value;
+  const childId = value.child_id;
+  const progressSeconds = value.progress_seconds ?? 0;
 
   const episode = await queryFirst<{ id: string; learning_objective_id: string | null; duration_seconds: number | null }>(c.env.DB, `
     SELECT e.id, e.learning_objective_id, e.duration_seconds FROM episodes e

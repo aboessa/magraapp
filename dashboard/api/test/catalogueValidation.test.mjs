@@ -20,7 +20,7 @@ import {
   WATCH_ORDERS,
   ageRangeError,
   bookLanguagesError,
-  bookPublishError,
+  bookPagesReleaseError,
   engineIdError,
   enumError,
   gamePublishError,
@@ -280,12 +280,26 @@ test('a game with a populated content pack passes the gate, as an object or as s
   assert.equal(gamePublishError('{"rounds":[{"answer":"أ"}]}'), null);
 });
 
-test('a book needs at least one page and a project needs materials and steps', () => {
-  assert.ok(bookPublishError('[]'));
-  assert.ok(bookPublishError([]));
-  assert.ok(bookPublishError(null));
-  assert.equal(bookPublishError([{ image: 'a.png' }]), null);
-  assert.equal(bookPublishError('[{"image":"a.png"}]'), null);
+test('a book needs at least one real page in story_pages before release', async () => {
+  // `API-107`: كان الفحص على شكل قيمة (`books.pages` نصَّ JSON)، فصار على حالة
+  // (`story_pages`) — وهو المصدر الذي يقرأه `GET /books/:id/pages` والتطبيق.
+  const db = (total) => ({
+    prepare: (sql) => ({
+      bind: (...params) => ({
+        async first() {
+          assert.match(sql, /FROM story_pages WHERE story_id = \?/);
+          assert.deepEqual(params, ['book-1']);
+          return { total };
+        },
+      }),
+    }),
+  });
+
+  assert.match(await bookPagesReleaseError(db(0), 'book-1'), /story_pages/);
+  assert.equal(await bookPagesReleaseError(db(3), 'book-1'), null);
+});
+
+test('a project needs materials and steps', () => {
 
   assert.match(projectPublishError('[]', '["step"]'), /material/);
   assert.match(projectPublishError('["glue"]', '[]'), /step/);
