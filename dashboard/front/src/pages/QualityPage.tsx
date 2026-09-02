@@ -9,7 +9,7 @@ import { usePreferences } from '../context/preferences'
 import { api, ApiError } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
 import { useUrlListState } from '../hooks/useUrlListState'
-import type { PublishGateResult } from '../types/api'
+import type { PublishGateResult, PublishSweepReport, PublishSweepStatus } from '../types/api'
 type GateFinding = PublishGateResult['findings'][number]
 
 type Verdict = 'READY' | 'READY_WITH_WARNINGS' | 'BLOCKED' | 'NOT_EVALUATED'
@@ -55,6 +55,27 @@ const copy = {
     groups: { CONTENT:'المحتوى', PRODUCTION:'الإنتاج', LOCALIZATION:'الترجمة', MEDIA:'الوسائط', AUDIO:'الصوت', REVIEWS:'المراجعات', WORKFLOW:'سير العمل', RIGHTS:'الحقوق', SAFETY:'السلامة', PUBLISHING:'النشر' },
     lastEvaluated:'آخر تقييم', scheduledPublish:'النشر المجدول', publishNow:'انشر الآن',
     history:'السجل', showPassed:'إظهار الناجحة', batch:'فحص دفعي', batchResult:'نتيجة الدفعي', exportReport:'تصدير تقرير الجاهزية',
+    sweep: {
+      title:'مسح البوابة على دفعة',
+      ledePublished:'البوابة تعمل لحظةَ النشر ولا تُعاد. هذا الفحص يُعيد تقييمها على كل صفّ منشور، فيُظهر ما فُصل أصله بعد نشره أو ما نُشر قبل وجود فحصٍ ما. الأثر الأسوأ على الحلقات: طفلٌ يضغط «شاهد» فيحصل على خطأ.',
+      ledePending:'ما ينتظر النشر، وما ينقص كلَّ واحدٍ منه بالاسم. هذا طابور المحرِّر: معرفة أن اثنتي عشرة قصة تقف عند «جاهزة» رقمٌ بلا خطوةٍ تالية، ومعرفة أن ثمانيًا منها تنقصها الرسوم خطوة.',
+      statusLabel:'الحالة', statusPublished:'منشور', statusReady:'جاهز', statusScheduled:'مجدول', statusReview:'قيد المراجعة',
+      check:'افحص الدفعة', checking:'جارٍ الفحص…',
+      entity:'العنصر', blockers:'ما يحجبه',
+      clean:(n:number, s:string)=> s === 'published'
+        ? `لا انحراف: ${n} صفًّا منشورًا فُحص وكلّها تمرّ البوابة اليوم.`
+        : `${n} صفًّا فُحص ولا شيء يحجبها — كلّها قابلة للنشر الآن.`,
+      found:(n:number, s:string)=> s === 'published'
+        ? `${n} صفًّا منشورًا يفشل البوابة اليوم.`
+        : `${n} صفًّا لا يمكن نشره قبل معالجة ما يحجبه.`,
+      unavailable:(n:number)=> `${n} صفًّا تعذّر تقييمه — غير معروف، لا سليم.`,
+      warnings:'تحذيرات',
+      // «يمرّ» لا «سليم»: البوابة لا تحجبه، وهذا لا يعني أنه مكتمل.
+      warned:(n:number)=> `${n} صفًّا يمرّ البوابة ويحمل تحذيرًا (مثل مراجعة معلّقة لم تُعتمد)`,
+      // العدد صريح: «وغيرها» تُخفي الفرق بين موضعين ومئة وسبعين.
+      more:(n:number)=> `و${n} موضعًا آخر`,
+      failed:'تعذّر مسح البوابة',
+    },
     noData:'لا بيانات', selectContent:'اختر محتوى للفحص', gateNote:'هذه هي بوابة النشر نفسها — لا قواعد موازية.',
     publishing:'يُنشر…', publishDone:'تم النشر', publishFailed:'تعذّر النشر',
     publishBlocked:'النشر ممنوع', publishUnsupported:'هذا النوع لا يُنشر من هنا',
@@ -74,6 +95,25 @@ const copy = {
     groups: { CONTENT:'Content', PRODUCTION:'Production', LOCALIZATION:'Localization', MEDIA:'Media', AUDIO:'Audio', REVIEWS:'Reviews', WORKFLOW:'Workflow', RIGHTS:'Rights', SAFETY:'Safety', PUBLISHING:'Publishing' },
     lastEvaluated:'Last evaluated', scheduledPublish:'Scheduled publish', publishNow:'Publish now',
     history:'History', showPassed:'Show passed', batch:'Batch check', batchResult:'Batch result', exportReport:'Export readiness report',
+    sweep: {
+      title:'Sweep the gate over a batch',
+      ledePublished:'The gate runs when something is published and never again. This re-runs it over every published row, so a row whose asset was unlinked after publishing — or one published before a check existed — shows up. Worst for episodes: a child presses watch and gets an error.',
+      ledePending:'What is waiting to be published, and what each one is missing by name. This is the editor queue: knowing that twelve stories sit at ready is a number with no next action; knowing eight of them lack artwork is a next action.',
+      statusLabel:'Status', statusPublished:'Published', statusReady:'Ready', statusScheduled:'Scheduled', statusReview:'In review',
+      check:'Sweep batch', checking:'Checking…',
+      entity:'Item', blockers:'Blocked by',
+      clean:(n:number, s:string)=> s === 'published'
+        ? `No drift: ${n} published row(s) checked, all pass the gate today.`
+        : `${n} row(s) checked and nothing blocks them — all publishable now.`,
+      found:(n:number, s:string)=> s === 'published'
+        ? `${n} published row(s) fail the gate today.`
+        : `${n} row(s) cannot be published until their blockers are cleared.`,
+      unavailable:(n:number)=> `${n} row(s) could not be evaluated — unknown, not clean.`,
+      warnings:'Warnings',
+      warned:(n:number)=> `${n} row(s) pass the gate carrying a warning (such as a review still pending)`,
+      more:(n:number)=> `and ${n} more`,
+      failed:'Could not sweep the gate',
+    },
     noData:'No data', selectContent:'Select content to check', gateNote:'This is the publish gate itself — no parallel rules.',
     publishing:'Publishing…', publishDone:'Published', publishFailed:'Publish failed',
     publishBlocked:'Publish blocked', publishUnsupported:'This type cannot be published here',
@@ -126,6 +166,27 @@ export function QualityPage(){
   const [batchRunning, setBatchRunning] = useState(false)
   const [batchSummary, setBatchSummary] = useState<{ ready:number; blocked:number; warnings:number }|null>(null)
   const [error, setError] = useState('')
+  // مسح البوابة (`CNT-101`, `CNT-102`): لا يُحمَّل تلقائيًّا — يُعيد تقييم البوابة
+  // لكل صفّ، فهو أثقل من قراءة. يُطلب بزرّ، وحالته منفصلة عن حالة الشاشة.
+  //
+  // والحالة المختارة سؤالٌ مختلف لا فلترًا تجميليًّا: `published` = ما هو حيّ
+  // ومعطوب، و`ready` = ما ينتظر النشر وما ينقصه بالاسم.
+  const [sweepStatus, setSweepStatus] = useState<PublishSweepStatus>('published')
+  const [sweep, setSweep] = useState<PublishSweepReport | null>(null)
+  const [sweepLoading, setSweepLoading] = useState(false)
+  const [sweepError, setSweepError] = useState('')
+
+  const loadSweep = useCallback(async(status: PublishSweepStatus)=>{
+    setSweepLoading(true); setSweepError('')
+    try{
+      const r = await api.publishSweep({ status, limit: 100 })
+      setSweep(r.data)
+    }catch(e){
+      // فشل الفحص لا يُعرض «لا شيء محجوب»: الفرق بين «لا شيء» و«لا أعرف» هو كل الفائدة.
+      setSweepError(e instanceof Error ? e.message : text.sweep.failed)
+      setSweep(null)
+    }finally{ setSweepLoading(false) }
+  },[text.sweep.failed])
 
   const loadList = useCallback(async()=>{
     setLoading(true); setError('')
@@ -247,6 +308,100 @@ export function QualityPage(){
 
       {error && <div className="inline-alert inline-alert--error">{error}</div>}
       {!directId && batchSummary && <div className="inline-alert inline-alert--info">{text.batchResult}: {batchSummary.ready} {text.metrics.ready} · {batchSummary.blocked} محجوب · {batchSummary.warnings} تحذيرات</div>}
+
+      {/* منشورٌ الآن وسيفشل لو نُشر اليوم (`CNT-101`).
+          هذه الشاشة تفحص عيّنة من كل نوع أيًّا كانت حالتها؛ وهذا القسم يسأل السؤال
+          التشغيلي المعاكس: ما هو **حيّ** ومعطوب. البوابة تعمل لحظةَ النشر ولا
+          تُعاد، فلا شيء كان يرصد صفًّا فُصل أصله بعد نشره. */}
+      {!directId && <section className="panel">
+        <div className="panel__header">
+          <h3>{text.sweep.title}</h3>
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <label style={{ display:'flex', gap:6, alignItems:'center', fontSize:12 }}>
+              <span>{text.sweep.statusLabel}</span>
+              <select value={sweepStatus} onChange={e=> { const s = e.target.value as PublishSweepStatus; setSweepStatus(s); setSweep(null); setSweepError('') }}>
+                <option value="published">{text.sweep.statusPublished}</option>
+                <option value="ready">{text.sweep.statusReady}</option>
+                <option value="scheduled">{text.sweep.statusScheduled}</option>
+                <option value="review">{text.sweep.statusReview}</option>
+              </select>
+            </label>
+            <button className="button button--ghost button--small" onClick={()=> void loadSweep(sweepStatus)} disabled={sweepLoading}>
+              <Icon name="refresh" size={14}/>{sweepLoading ? text.sweep.checking : text.sweep.check}
+            </button>
+          </div>
+        </div>
+        <div style={{ padding:12 }}>
+          {/* الشرح يتبع السؤال المختار: الحالتان ليستا فلترًا على شيء واحد. */}
+          <p className="panel__note" style={{ marginTop:0 }}>
+            {sweepStatus === 'published' ? text.sweep.ledePublished : text.sweep.ledePending}
+          </p>
+          {sweepError && <div className="inline-alert inline-alert--error">{sweepError}</div>}
+          {sweep && (
+            <>
+              {/* صفرٌ مقيس يختلف عن «لم أفحص»: العدد المفحوص معروض معه. */}
+              {sweep.blocked_count === 0
+                ? <div className="inline-alert inline-alert--info">{text.sweep.clean(Object.values(sweep.checked).reduce((a,b)=> a+b, 0), sweep.status)}</div>
+                : <div className={`inline-alert ${sweep.status === 'published' ? 'inline-alert--error' : 'inline-alert--warn'}`}>{text.sweep.found(sweep.blocked_count, sweep.status)}</div>}
+              {sweep.blocked.length > 0 && (
+                <table className="data-table"><thead><tr>
+                  <th>{text.sweep.entity}</th><th>{text.sweep.blockers}</th>
+                </tr></thead><tbody>
+                  {sweep.blocked.map((row)=> (
+                    <tr key={`${row.entity_type}:${row.entity_id}`}>
+                      <td><Link to={adminPath(`quality?type=${row.entity_type}&id=${encodeURIComponent(row.entity_id)}`)}>{row.entity_type} · <span dir="ltr">{row.entity_id}</span></Link></td>
+                      {/* اسم الفحص وحده نصفُ تقرير: «رسوم الصفحات» لا تقول كم ولا
+                          أيّها. البوابة تُعيد `detail` بالعدد و`items` بالمواضع
+                          («صفحة 3: بلا رسم»)، وكانت تُلقى هنا. والقائمة قد تبلغ
+                          178 صفحة، فتُقصّ مع **عددٍ صريح** للباقي لا بصمت. */}
+                      <td>
+                        <ul style={{ margin:0, paddingInlineStart:16 }}>
+                          {row.blockers.map((b)=> (
+                            <li key={b.id}>
+                              <strong>{b.label_ar}</strong>
+                              {b.detail ? <> — {b.detail}</> : null}
+                              {b.items && b.items.length > 0 && (
+                                <div className="table-secondary" style={{ fontSize:11 }}>
+                                  {b.items.slice(0, 8).join(' · ')}
+                                  {b.items.length > 8 ? ` ${text.sweep.more(b.items.length - 8)}` : ''}
+                                </div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody></table>
+              )}
+              {/* يمرّ ويحمل تحذيرًا (`CNT-107`). مفصول عن المحجوب: التحذير ليس
+                  رفضًا، وإسقاطه يجعل التحذير المُتجاهَل غير مرئي — وهو ما كان
+                  يُخفي «منشورٌ وكل مراجعاته معلّقة». */}
+              {sweep.warned_count > 0 && (
+                <details style={{ marginTop:10 }}>
+                  <summary>{text.sweep.warned(sweep.warned_count)}</summary>
+                  <table className="data-table"><thead><tr>
+                    <th>{text.sweep.entity}</th><th>{text.sweep.warnings}</th>
+                  </tr></thead><tbody>
+                    {sweep.warned.map((row)=> (
+                      <tr key={`w:${row.entity_type}:${row.entity_id}`}>
+                        <td><Link to={adminPath(`quality?type=${row.entity_type}&id=${encodeURIComponent(row.entity_id)}`)}>{row.entity_type} · <span dir="ltr">{row.entity_id}</span></Link></td>
+                        <td>{row.warnings.map((w)=> w.label_ar).join(' · ')}</td>
+                      </tr>
+                    ))}
+                  </tbody></table>
+                </details>
+              )}
+              {/* صفٌّ تعذّر تقييمه ليس صفًّا سليمًا، فلا يُطوى في «لا شيء محجوب». */}
+              {sweep.unavailable.length > 0 && (
+                <div className="inline-alert inline-alert--warn" style={{ marginTop:8 }}>
+                  {text.sweep.unavailable(sweep.unavailable.length)}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </section>}
 
       {/* Top summary */}
       {!directId && <section className="prod-command">

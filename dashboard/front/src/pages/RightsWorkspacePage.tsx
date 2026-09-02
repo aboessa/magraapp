@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
+import { Icon } from '../components/Icon'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
 
@@ -50,7 +51,7 @@ export function RightsWorkspacePage(){
       {tab==='content' && <div className="panel" style={{padding:16}}><h3>{text.content}</h3>{(data.affected_content??[]).map((c:any)=><div key={c.id}><Link to={adminPath(`series/${c.id}`)}>{c.title_ar}</Link> — {c.status}</div>)}<p className="panel__note">Rights → Content → canonical Content Workspace; Content Workspace → Rights</p><p className="panel__note">Scheduled releases affected: {(data.affected_content??[]).length} items</p></div>}
       {tab==='territories' && <div className="panel" style={{padding:16}}><h3>{text.territories}</h3><p>Countries: {parseList(data.countries).join(', ') || 'All'}</p><p>Languages: {parseList(data.languages).join(', ') || 'All'}</p><p>Devices: {parseList(data.devices).join(', ') || 'All'}</p><p className="panel__note">Availability consistency enforced — no conflicting territory values.</p></div>}
       {tab==='windows' && <div className="panel" style={{padding:16}}><h3>{text.windows}</h3><p>Start: —</p><p>End: {data.expiry_date ?? 'Perpetual'}</p><p>Status: {isExpired? 'EXPIRED': daysRemaining!=null && daysRemaining<=90? 'EXPIRING':'ACTIVE'}</p><p className="panel__note">Expiry alerts: 90/60/30/7 days (policy)</p></div>}
-      {tab==='history' && <div className="panel" style={{padding:16}}><h3>{text.history}</h3><table className="data-table"><thead><tr><th>Action</th><th>Actor</th><th>Time</th></tr></thead><tbody>{(data.history??[]).map((h:any)=><tr key={h.id}><td>{h.action}</td><td>{h.actor_id}</td><td>{h.created_at}</td></tr>)}</tbody></table></div>}
+      {tab==='history' && <div className="panel" style={{padding:16}}><div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}><h3>{text.history}</h3><Link className="button button--ghost button--small" to={`${adminPath('audit-logs')}?entity_type=rights_license&entity_id=${encodeURIComponent(id)}`}><Icon name="clock" size={14}/> Full audit in Audit Log →</Link></div><table className="data-table"><thead><tr><th>Action</th><th>Actor</th><th>Time</th></tr></thead><tbody>{(data.history??[]).map((h:any)=><tr key={h.id}><td>{h.action}</td><td>{h.actor_id}</td><td>{h.created_at}</td></tr>)}</tbody></table></div>}
     </div>
   )
 }

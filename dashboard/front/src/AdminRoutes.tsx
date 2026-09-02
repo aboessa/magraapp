@@ -1,21 +1,10 @@
-import { lazy, useEffect, useState } from 'react'
+﻿import { lazy, useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { AdminLayout } from './components/AdminLayout'
 import { AdminLoginPage } from './pages/AdminLoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { hasAdminSession, verifySession } from './lib/adminSession'
 import { usePreferences } from './context/preferences'
-// الشاشات غير المُنفَّذة تبقى ساكنة: كل واحدة ٢–٣ كيلوبايت وتتشارك
-// NotImplementedPage، فتقسيمها ينتج ثماني حِزَم صغيرة بلا مكسب.
-import { AdvancedFinancePage } from './pages/AdvancedFinancePage'
-import { CampaignsPage } from './pages/CampaignsPage'
-import { CampaignWorkspacePage } from './pages/CampaignWorkspacePage'
-import { OpsSlaPage } from './pages/OpsSlaPage'
-import { QuizBuilderPage } from './pages/QuizBuilderPage'
-import { RecommendationsPage } from './pages/RecommendationsPage'
-import { RevenuePage } from './pages/RevenuePage'
-import { SchoolAccountsPage } from './pages/SchoolAccountsPage'
-import { TranslationCenterPage } from './pages/TranslationCenterPage'
 import './styles/dashboard.css'
 // أنماط استوديو المحرّكات في ملف مستقلّ: dashboard.css قارب التسعين كيلوبايت،
 // وإلحاق محرّرات أحد عشر محرّكًا به يجعل مراجعة أي تغيير فيه أصعب.
@@ -26,6 +15,8 @@ import './styles/adminUx.css'
 // حالات المصنع وإجراءات الإنفاق لها طبقة صغيرة مستقلة حتى تبقى الحدود المالية
 // قابلة للمراجعة ولا تختلط بأنماط حالة نشر المحتوى.
 import './styles/contentFactory.css'
+// بريميوم ريديزاين كامل للـ admin والـ sidebar مع أنيميشن احترافي
+import './styles/adminPremium.css'
 
 /**
  * كل مسارات لوحة الإدارة في وحدة واحدة تُحمّل عند الطلب فقط،
@@ -58,6 +49,29 @@ import './styles/contentFactory.css'
  * عند التحميل، وتُعرض شاشة الدخول عند رفضه.
  */
 
+// كانت هذه التسع ساكنةً بحُجّة مكتوبة هنا: «غير مُنفَّذة، وكل واحدة ٢–٣ كيلوبايت
+// وتتشارك NotImplementedPage». والحُجّة سقطت (`ADM-107`): كلّها شاشات حقيقية تنادي
+// الخادم، وطولها اليوم بين 94 و343 سطرًا، والمكوّن المشترك محذوف لأنه لم يكن
+// مستخدَمًا. فصارت `lazy` مثل الـ115 الأخرى بدل استثناءٍ يستند إلى وصفٍ باطل.
+const AdvancedFinancePage = lazy(() => import('./pages/AdvancedFinancePage').then((module) => ({ default: module.AdvancedFinancePage })))
+const CampaignsPage = lazy(() => import('./pages/CampaignsPage').then((module) => ({ default: module.CampaignsPage })))
+const CampaignWorkspacePage = lazy(() => import('./pages/CampaignWorkspacePage').then((module) => ({ default: module.CampaignWorkspacePage })))
+const OpsSlaPage = lazy(() => import('./pages/OpsSlaPage').then((module) => ({ default: module.OpsSlaPage })))
+const QuizBuilderPage = lazy(() => import('./pages/QuizBuilderPage').then((module) => ({ default: module.QuizBuilderPage })))
+const RecommendationsPage = lazy(() => import('./pages/RecommendationsPage').then((module) => ({ default: module.RecommendationsPage })))
+const RevenuePage = lazy(() => import('./pages/RevenuePage').then((module) => ({ default: module.RevenuePage })))
+const SchoolAccountsPage = lazy(() => import('./pages/SchoolAccountsPage').then((module) => ({ default: module.SchoolAccountsPage })))
+const TranslationCenterPage = lazy(() => import('./pages/TranslationCenterPage').then((module) => ({ default: module.TranslationCenterPage })))
+
+// --- استوديو المبدعين V2 R2-first ------------------------------------------------
+// R2-backed: لا assets في APK، كل الرسومات تلوين/وصل/أكمل/تتبع/حروف/أرقام تتحمل من THUMBS_BUCKET
+const CreativeStudioAdminPage = lazy(() => import('./pages/CreativeStudioAdminPage').then((m) => ({ default: m.default })));
+const CreativeColoringAdminPage = lazy(() => import('./pages/CreativeColoringAdminPage').then((m) => ({ default: m.default })));
+const CreativeDrawLikeMeAdminPage = lazy(() => import('./pages/CreativeDrawLikeMeAdminPage').then((m) => ({ default: m.default })));
+const CreativeCompleteAdminPage = lazy(() => import('./pages/CreativeCompleteAdminPage').then((m) => ({ default: m.default })));
+const CreativeConnectDotsAdminPage = lazy(() => import('./pages/CreativeConnectDotsAdminPage').then((m) => ({ default: m.default })));
+const CreativeTraceAdminPage = lazy(() => import('./pages/CreativeTraceAdminPage').then((m) => ({ default: m.default })));
+
 // --- المحتوى ---------------------------------------------------------------
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
 const WebsiteModePage = lazy(() => import('./pages/WebsiteModePage').then((module) => ({ default: module.WebsiteModePage })))
@@ -71,6 +85,10 @@ const OpsIncidentWorkspacePage = lazy(() => import('./pages/OpsIncidentWorkspace
 const FailedEventWorkspacePage = lazy(() => import('./pages/FailedEventWorkspacePage').then((module) => ({ default: module.FailedEventWorkspacePage })))
 const TaxonomyPage = lazy(() => import('./pages/TaxonomyPage').then((module) => ({ default: module.TaxonomyPage })))
 const PlanetsPage = lazy(() => import('./pages/PlanetsPage').then((module) => ({ default: module.PlanetsPage })))
+// `ADM-101`: `GET /admin/availability` كانت بلا مُستهلِك، فسؤال «ما المحجوب على
+// المنصّة وأين؟» لم يكن له جواب إلا باستعلام D1 — ومسار التشغيل يرفض بـ451 اعتمادًا
+// على هذا الجدول.
+const AvailabilityPoliciesPage = lazy(() => import('./pages/AvailabilityPoliciesPage').then((module) => ({ default: module.AvailabilityPoliciesPage })))
 // مساحة عمل الكوكب بدل صفحة التفاصيل السابقة: عشرة تبويبات تقرأ تجميعة واحدة،
 // فصفحة التفاصيل القديمة (وصف + لون + ترتيب) لم يبقَ لها معنى.
 const PlanetWorkspacePage = lazy(() => import('./pages/PlanetWorkspacePage').then((module) => ({ default: module.PlanetWorkspacePage })))
@@ -102,6 +120,7 @@ const VisualStylesPage = lazy(() => import('./pages/VisualStylesPage').then((mod
 const VisualStyleWorkspacePage = lazy(() => import('./pages/VisualStyleWorkspacePage').then((module) => ({ default: module.VisualStyleWorkspacePage })))
 const VisualStyleComparePage = lazy(() => import('./pages/VisualStyleComparePage').then((module) => ({ default: module.VisualStyleComparePage })))
 const NarrationPage = lazy(() => import('./pages/NarrationPage').then((module) => ({ default: module.NarrationPage })))
+const AiProvidersPage = lazy(() => import('./pages/AiProvidersPage').then((module) => ({ default: module.AiProvidersPage })))
 const QualityPage = lazy(() => import('./pages/QualityPage').then((module) => ({ default: module.QualityPage })))
 const CreativeStudioOverviewPage = lazy(() => import('./pages/CreativeStudioOverviewPage').then((m) => ({ default: m.default })))
 const ReferenceDrawingDetailPage = lazy(() => import('./pages/ReferenceDrawingDetailPage').then((m) => ({ default: m.default })))
@@ -225,6 +244,7 @@ export default function AdminRoutes() {
         <Route path="app-diagnostics" element={<AppDiagnosticsPage />} />
         <Route path="taxonomy" element={<TaxonomyPage />} />
         <Route path="planets" element={<PlanetsPage />} />
+        <Route path="availability" element={<AvailabilityPoliciesPage />} />
         <Route path="planets/:id" element={<PlanetWorkspacePage />} />
         <Route path="skills" element={<SkillsPage />} />
         <Route path="objectives" element={<LearningObjectivesPage />} />
@@ -267,7 +287,14 @@ export default function AdminRoutes() {
         <Route path="visual-styles/compare" element={<VisualStyleComparePage />} />
         <Route path="visual-styles/:id" element={<VisualStyleWorkspacePage />} />
         <Route path="visual-styles" element={<VisualStylesPage />} />
-        <Route path="creative-studio" element={<CreativeStudioOverviewPage />} />
+        <Route path="creative-studio" element={<CreativeStudioAdminPage />} />
+        <Route path="creative-studio/v2" element={<CreativeStudioAdminPage />} />
+        <Route path="creative-studio/coloring" element={<CreativeColoringAdminPage />} />
+        <Route path="creative-studio/draw-like-me" element={<CreativeDrawLikeMeAdminPage />} />
+        <Route path="creative-studio/connect-dots" element={<CreativeConnectDotsAdminPage />} />
+        <Route path="creative-studio/complete" element={<CreativeCompleteAdminPage />} />
+        <Route path="creative-studio/trace" element={<CreativeTraceAdminPage />} />
+        <Route path="creative-studio/copy-pattern" element={<CreativeStudioAdminPage />} />
         <Route path="creative-studio/reference" element={<CreativeStudioOverviewPage />} />
         <Route path="creative-studio/reference/:id" element={<ReferenceDrawingDetailPage />} />
         <Route path="creative-studio/authoring" element={<DrawingAuthoringPage />} />
@@ -305,6 +332,7 @@ export default function AdminRoutes() {
         <Route path="failed-events" element={<FailedEventsPage />} />
         <Route path="failed-events/:id" element={<FailedEventWorkspacePage />} />
         <Route path="narration" element={<NarrationPage />} />
+        <Route path="ai-providers" element={<AiProvidersPage />} />
         <Route path="quality" element={<QualityPage />} />
         <Route path="mastery" element={<MasteryPage />} />
         <Route path="app-experience" element={<AppExperiencePage />} />

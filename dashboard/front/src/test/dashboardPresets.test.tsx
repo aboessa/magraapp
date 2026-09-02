@@ -63,11 +63,20 @@ function mockSupporting() {
   vi.spyOn(api, 'failedFamilyEvents').mockResolvedValue(envelope([], 0) as never)
 }
 
+/// يكتب في المخزنين معًا كما يفعل `saveSession` في الإنتاج.
+///
+/// كتابة sessionStorage وحدها كانت تُبقي مستخدم الحالة السابقة في localStorage —
+/// وهو المصدر الموثوق في `lib/adminSession.ts` — فيقرأ `suggestedPreset()` دورًا
+/// قديمًا: بعد `session(['support'])` بقي `content_manager` يحصل على تخطيط
+/// `support`.
 const session = (roles: string[]) => {
-  window.sessionStorage.setItem('majarra-admin-token', 'test-token')
-  window.sessionStorage.setItem('majarra-admin-user', JSON.stringify({
+  const payload = JSON.stringify({
     id: 'u1', email: 'a@b.c', display_name: 'Tester', roles, permissions: [], must_change_password: false,
-  }))
+  })
+  window.localStorage.setItem('majarra-admin-token', 'test-token')
+  window.localStorage.setItem('majarra-admin-user', payload)
+  window.sessionStorage.setItem('majarra-admin-token', 'test-token')
+  window.sessionStorage.setItem('majarra-admin-user', payload)
 }
 
 // --- منطق الإعداد -----------------------------------------------------------

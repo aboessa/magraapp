@@ -1,4 +1,4 @@
-export type AgeTrack = 'preschool' | 'kids' | 'junior'
+﻿export type AgeTrack = 'preschool' | 'kids' | 'junior'
 export type ContentStatus =
   | 'draft'
   | 'writing'
@@ -35,7 +35,7 @@ export interface Planet {
   description_ar?: string | null
   color_hex: string
   icon_url?: string | null
-  /// يُحلّ من asset_links مثل icon_url، وليس عمودًا في جدول planets نفسه
+  /// ÙŠÙØ­Ù„Ù‘ Ù…Ù† asset_links Ù…Ø«Ù„ icon_urlØŒ ÙˆÙ„ÙŠØ³ Ø¹Ù…ÙˆØ¯Ù‹Ø§ ÙÙŠ Ø¬Ø¯ÙˆÙ„ planets Ù†ÙØ³Ù‡
   cover_url?: string | null
   sort_order: number
   is_active?: boolean
@@ -43,7 +43,7 @@ export interface Planet {
   assets_count?: number
 }
 
-/// تفصيل كوكب واحد من GET /admin/planets/:id، مع سلاسله وتصنيفاته الفعلية.
+/// ØªÙØµÙŠÙ„ ÙƒÙˆÙƒØ¨ ÙˆØ§Ø­Ø¯ Ù…Ù† GET /admin/planets/:idØŒ Ù…Ø¹ Ø³Ù„Ø§Ø³Ù„Ù‡ ÙˆØªØµÙ†ÙŠÙØ§ØªÙ‡ Ø§Ù„ÙØ¹Ù„ÙŠØ©.
 export interface PlanetSeriesSummary {
   id: string
   title_ar: string
@@ -73,14 +73,14 @@ export interface PlanetDetail extends Planet {
 }
 
 /**
- * مؤشّرات الكوكب من `GET /admin/planets`.
+ * Ù…Ø¤Ø´Ù‘Ø±Ø§Øª Ø§Ù„ÙƒÙˆÙƒØ¨ Ù…Ù† `GET /admin/planets`.
  *
- * كلها محسوبة في الخادم من جداول حقيقية، وتستثني محتوى الاختبار
- * (`series.content_class = test_fixture`) بخلاف `series_count` و`assets_count`
- * المحفوظين بمعناهما الأصلي لأن شاشات أخرى تقرأهما.
+ * ÙƒÙ„Ù‡Ø§ Ù…Ø­Ø³ÙˆØ¨Ø© ÙÙŠ Ø§Ù„Ø®Ø§Ø¯Ù… Ù…Ù† Ø¬Ø¯Ø§ÙˆÙ„ Ø­Ù‚ÙŠÙ‚ÙŠØ©ØŒ ÙˆØªØ³ØªØ«Ù†ÙŠ Ù…Ø­ØªÙˆÙ‰ Ø§Ù„Ø§Ø®ØªØ¨Ø§Ø±
+ * (`series.content_class = test_fixture`) Ø¨Ø®Ù„Ø§Ù `series_count` Ùˆ`assets_count`
+ * Ø§Ù„Ù…Ø­ÙÙˆØ¸ÙŠÙ† Ø¨Ù…Ø¹Ù†Ø§Ù‡Ù…Ø§ Ø§Ù„Ø£ØµÙ„ÙŠ Ù„Ø£Ù† Ø´Ø§Ø´Ø§Øª Ø£Ø®Ø±Ù‰ ØªÙ‚Ø±Ø£Ù‡Ù…Ø§.
  *
- * `content_updated_at` أحدث تعديل على سلاسل الكوكب وحلقاته لا على صفّ الكوكب:
- * جدول `planets` بلا عمود `updated_at`.
+ * `content_updated_at` Ø£Ø­Ø¯Ø« ØªØ¹Ø¯ÙŠÙ„ Ø¹Ù„Ù‰ Ø³Ù„Ø§Ø³Ù„ Ø§Ù„ÙƒÙˆÙƒØ¨ ÙˆØ­Ù„Ù‚Ø§ØªÙ‡ Ù„Ø§ Ø¹Ù„Ù‰ ØµÙÙ‘ Ø§Ù„ÙƒÙˆÙƒØ¨:
+ * Ø¬Ø¯ÙˆÙ„ `planets` Ø¨Ù„Ø§ Ø¹Ù…ÙˆØ¯ `updated_at`.
  */
 export interface PlanetHealth {
   series_total: number
@@ -109,7 +109,7 @@ export interface PlanetListRow extends Planet {
   health: PlanetHealth
 }
 
-/// ملخّص كل الكواكب (لا المجموعة المفلترة)، فلا يتغيّر عند تطبيق فلتر.
+/// Ù…Ù„Ø®Ù‘Øµ ÙƒÙ„ Ø§Ù„ÙƒÙˆØ§ÙƒØ¨ (Ù„Ø§ Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹Ø© Ø§Ù„Ù…ÙÙ„ØªØ±Ø©)ØŒ ÙÙ„Ø§ ÙŠØªØºÙŠÙ‘Ø± Ø¹Ù†Ø¯ ØªØ·Ø¨ÙŠÙ‚ ÙÙ„ØªØ±.
 export interface PlanetsSummary {
   total: number
   active: number
@@ -126,7 +126,7 @@ export interface PlanetsListEnvelope extends ApiEnvelope<PlanetListRow[]> {
   meta: { total: number; summary: PlanetsSummary; notes: string[] }
 }
 
-/// وحدة في مساحة العمل: `unavailable` غير فارغ يعني «تعذّرت القراءة» لا «صفر».
+/// ÙˆØ­Ø¯Ø© ÙÙŠ Ù…Ø³Ø§Ø­Ø© Ø§Ù„Ø¹Ù…Ù„: `unavailable` ØºÙŠØ± ÙØ§Ø±Øº ÙŠØ¹Ù†ÙŠ Â«ØªØ¹Ø°Ù‘Ø±Øª Ø§Ù„Ù‚Ø±Ø§Ø¡Ø©Â» Ù„Ø§ Â«ØµÙØ±Â».
 export interface WorkspaceModule {
   unavailable: string | null
 }
@@ -187,7 +187,7 @@ export interface PlanetWorkspaceMedia extends WorkspaceModule {
   cdn_configured: boolean
 }
 
-/// إشارة لغة واحدة مع مقامها. `unavailable` يعني «لا عمود لهذا القياس».
+/// Ø¥Ø´Ø§Ø±Ø© Ù„ØºØ© ÙˆØ§Ø­Ø¯Ø© Ù…Ø¹ Ù…Ù‚Ø§Ù…Ù‡Ø§. `unavailable` ÙŠØ¹Ù†ÙŠ Â«Ù„Ø§ Ø¹Ù…ÙˆØ¯ Ù„Ù‡Ø°Ø§ Ø§Ù„Ù‚ÙŠØ§Ø³Â».
 export interface LocalizationSignal {
   key: string
   label_ar: string
@@ -195,8 +195,8 @@ export interface LocalizationSignal {
   total: number
   unavailable: string | null
   note: string | null
-  /// مسار الشاشة التي تُغلق هذا النقص، أو `null` إذا لا عمل يُفتح: إشارة مكتملة
-  /// أو غير قابلة للقياس. المسار نسبي لجذر لوحة الإدارة.
+  /// Ù…Ø³Ø§Ø± Ø§Ù„Ø´Ø§Ø´Ø© Ø§Ù„ØªÙŠ ØªÙØºÙ„Ù‚ Ù‡Ø°Ø§ Ø§Ù„Ù†Ù‚ØµØŒ Ø£Ùˆ `null` Ø¥Ø°Ø§ Ù„Ø§ Ø¹Ù…Ù„ ÙŠÙÙØªØ­: Ø¥Ø´Ø§Ø±Ø© Ù…ÙƒØªÙ…Ù„Ø©
+  /// Ø£Ùˆ ØºÙŠØ± Ù‚Ø§Ø¨Ù„Ø© Ù„Ù„Ù‚ÙŠØ§Ø³. Ø§Ù„Ù…Ø³Ø§Ø± Ù†Ø³Ø¨ÙŠ Ù„Ø¬Ø°Ø± Ù„ÙˆØ­Ø© Ø§Ù„Ø¥Ø¯Ø§Ø±Ø©.
   drill?: string | null
 }
 
@@ -308,7 +308,7 @@ export interface PlanetWorkspaceRights extends WorkspaceModule {
   notes: string[]
 }
 
-/// كل عنصر يحمل عددًا حقيقيًا ووجهة مفلترة تحلّه. لا عدّاد بلا وجهة.
+/// ÙƒÙ„ Ø¹Ù†ØµØ± ÙŠØ­Ù…Ù„ Ø¹Ø¯Ø¯Ù‹Ø§ Ø­Ù‚ÙŠÙ‚ÙŠÙ‹Ø§ ÙˆÙˆØ¬Ù‡Ø© Ù…ÙÙ„ØªØ±Ø© ØªØ­Ù„Ù‘Ù‡. Ù„Ø§ Ø¹Ø¯Ù‘Ø§Ø¯ Ø¨Ù„Ø§ ÙˆØ¬Ù‡Ø©.
 export interface PlanetAttentionItem {
   key: string
   label_ar: string
@@ -339,7 +339,7 @@ export interface PlanetWorkspace {
   learning: PlanetWorkspaceLearning
   reviews: PlanetWorkspaceReviews
   rights: PlanetWorkspaceRights
-  /// التحليلات غير متاحة على مستوى الكوكب: لا كاتب لجداول النشاط في D1.
+  /// Ø§Ù„ØªØ­Ù„ÙŠÙ„Ø§Øª ØºÙŠØ± Ù…ØªØ§Ø­Ø© Ø¹Ù„Ù‰ Ù…Ø³ØªÙˆÙ‰ Ø§Ù„ÙƒÙˆÙƒØ¨: Ù„Ø§ ÙƒØ§ØªØ¨ Ù„Ø¬Ø¯Ø§ÙˆÙ„ Ø§Ù„Ù†Ø´Ø§Ø· ÙÙŠ D1.
   analytics: { unavailable: string; source: string }
   attention: PlanetAttentionItem[]
   activity: PlanetActivityRow[]
@@ -410,7 +410,7 @@ export interface PlanetTreeEnvelope extends ApiEnvelope<PlanetTreeSeries[]> {
   }
 }
 
-/// حِمل تعديل الكوكب. الحقول التي يقبلها الخادم فعلًا لا أكثر.
+/// Ø­ÙÙ…Ù„ ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„ÙƒÙˆÙƒØ¨. Ø§Ù„Ø­Ù‚ÙˆÙ„ Ø§Ù„ØªÙŠ ÙŠÙ‚Ø¨Ù„Ù‡Ø§ Ø§Ù„Ø®Ø§Ø¯Ù… ÙØ¹Ù„Ù‹Ø§ Ù„Ø§ Ø£ÙƒØ«Ø±.
 export interface PlanetPayload {
   name_ar: string
   name_en?: string | null
@@ -418,7 +418,7 @@ export interface PlanetPayload {
   color_hex: string
   sort_order?: number
   is_active?: boolean
-  /// عند الإنشاء فقط: المعرّف/الـslug
+  /// Ø¹Ù†Ø¯ Ø§Ù„Ø¥Ù†Ø´Ø§Ø¡ ÙÙ‚Ø·: Ø§Ù„Ù…Ø¹Ø±Ù‘Ù/Ø§Ù„Ù€slug
   id?: string
 }
 
@@ -438,6 +438,7 @@ export interface SeriesRecord {
   interaction_mode: 'tap' | 'guided' | 'mixed' | 'independent'
   supervision_level: 'none' | 'recommended' | 'required'
   cover_url?: string | null
+  banner_url?: string | null
   logo_url?: string | null
   trailer_url?: string | null
   description_ar?: string | null
@@ -453,7 +454,7 @@ export interface SeriesRecord {
   episodes_count?: number
   created_at: string
   updated_at: string
-  // Islamic governance (migration 0011) — null for non-islamic series
+  // Islamic governance (migration 0011) â€” null for non-islamic series
   source_type?: 'quran' | 'hadith' | 'sira' | 'adab' | 'general' | null
   source_reference?: string | null
   verse_surah?: number | null
@@ -495,9 +496,9 @@ export interface EpisodeRecord {
   updated_at: string
 }
 
-/// تفصيل سلسلة واحدة من GET /admin/series/:id: الصف الأساسي مع مواسمها،
-/// شخصياتها، وحلقاتها الفعلية (بصور مصغّرة محلولة). لا توجد بيانات تقدّم
-/// إنتاج منفصلة (سكربت/صوت/فيديو/QA) في الخادم بعد — راجع status وحده.
+/// ØªÙØµÙŠÙ„ Ø³Ù„Ø³Ù„Ø© ÙˆØ§Ø­Ø¯Ø© Ù…Ù† GET /admin/series/:id: Ø§Ù„ØµÙ Ø§Ù„Ø£Ø³Ø§Ø³ÙŠ Ù…Ø¹ Ù…ÙˆØ§Ø³Ù…Ù‡Ø§ØŒ
+/// Ø´Ø®ØµÙŠØ§ØªÙ‡Ø§ØŒ ÙˆØ­Ù„Ù‚Ø§ØªÙ‡Ø§ Ø§Ù„ÙØ¹Ù„ÙŠØ© (Ø¨ØµÙˆØ± Ù…ØµØºÙ‘Ø±Ø© Ù…Ø­Ù„ÙˆÙ„Ø©). Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª ØªÙ‚Ø¯Ù‘Ù…
+/// Ø¥Ù†ØªØ§Ø¬ Ù…Ù†ÙØµÙ„Ø© (Ø³ÙƒØ±Ø¨Øª/ØµÙˆØª/ÙÙŠØ¯ÙŠÙˆ/QA) ÙÙŠ Ø§Ù„Ø®Ø§Ø¯Ù… Ø¨Ø¹Ø¯ â€” Ø±Ø§Ø¬Ø¹ status ÙˆØ­Ø¯Ù‡.
 export interface SeriesDetail extends SeriesRecord {
   seasons: SeasonRecord[]
   characters: CharacterRecord[]
@@ -677,8 +678,8 @@ export interface SeasonRecord {
   status: ContentStatus
 }
 
-/// ملخص الحلقة الذي يعيده GET /admin/seasons/:id. لا يحمل صورة أو وصفًا أو
-/// تفاصيل وسائط؛ على الواجهة ألا تتعامل معه كـ EpisodeRecord كامل.
+/// Ù…Ù„Ø®Øµ Ø§Ù„Ø­Ù„Ù‚Ø© Ø§Ù„Ø°ÙŠ ÙŠØ¹ÙŠØ¯Ù‡ GET /admin/seasons/:id. Ù„Ø§ ÙŠØ­Ù…Ù„ ØµÙˆØ±Ø© Ø£Ùˆ ÙˆØµÙÙ‹Ø§ Ø£Ùˆ
+/// ØªÙØ§ØµÙŠÙ„ ÙˆØ³Ø§Ø¦Ø·Ø› Ø¹Ù„Ù‰ Ø§Ù„ÙˆØ§Ø¬Ù‡Ø© Ø£Ù„Ø§ ØªØªØ¹Ø§Ù…Ù„ Ù…Ø¹Ù‡ ÙƒÙ€ EpisodeRecord ÙƒØ§Ù…Ù„.
 export interface SeasonEpisodeSummary {
   id: string
   episode_number?: number | null
@@ -710,8 +711,8 @@ export interface CharacterRecord {
   status: 'active' | 'archived'
 }
 
-/// تفصيل شخصية واحدة من GET /admin/characters/:id. عدد الفقاعات استخدامٌ
-/// فعلي في القصص، لا مقياس تحليلي مُنشأ في الواجهة.
+/// ØªÙØµÙŠÙ„ Ø´Ø®ØµÙŠØ© ÙˆØ§Ø­Ø¯Ø© Ù…Ù† GET /admin/characters/:id. Ø¹Ø¯Ø¯ Ø§Ù„ÙÙ‚Ø§Ø¹Ø§Øª Ø§Ø³ØªØ®Ø¯Ø§Ù…ÙŒ
+/// ÙØ¹Ù„ÙŠ ÙÙŠ Ø§Ù„Ù‚ØµØµØŒ Ù„Ø§ Ù…Ù‚ÙŠØ§Ø³ ØªØ­Ù„ÙŠÙ„ÙŠ Ù…ÙÙ†Ø´Ø£ ÙÙŠ Ø§Ù„ÙˆØ§Ø¬Ù‡Ø©.
 export interface CharacterDetail extends CharacterRecord {
   bubbles_count: number
   allowed_roles: NonNullable<CharacterRecord['role']>[]
@@ -791,26 +792,26 @@ export interface StoryDetail extends StoryRecord {
   assets: AssetRecord[]
 }
 
-/// تغطية لغة واحدة على صفحات القصة، ومعها مقامها دائمًا.
+/// ØªØºØ·ÙŠØ© Ù„ØºØ© ÙˆØ§Ø­Ø¯Ø© Ø¹Ù„Ù‰ ØµÙØ­Ø§Øª Ø§Ù„Ù‚ØµØ©ØŒ ÙˆÙ…Ø¹Ù‡Ø§ Ù…Ù‚Ø§Ù…Ù‡Ø§ Ø¯Ø§Ø¦Ù…Ù‹Ø§.
 ///
-/// نسبة بلا مقام غير قابلة للاستخدام: «٦» قد تكون ستًّا من ست أو ستًّا من أربعين.
-/// والنصّ والسرد سؤالان مختلفان: صفحة قد تحمل نصًّا إنجليزيًّا بلا صوت إنجليزي،
-/// فدمجهما في رقم واحد يُخفي أيّهما ناقص.
+/// Ù†Ø³Ø¨Ø© Ø¨Ù„Ø§ Ù…Ù‚Ø§Ù… ØºÙŠØ± Ù‚Ø§Ø¨Ù„Ø© Ù„Ù„Ø§Ø³ØªØ®Ø¯Ø§Ù…: Â«Ù¦Â» Ù‚Ø¯ ØªÙƒÙˆÙ† Ø³ØªÙ‹Ù‘Ø§ Ù…Ù† Ø³Øª Ø£Ùˆ Ø³ØªÙ‹Ù‘Ø§ Ù…Ù† Ø£Ø±Ø¨Ø¹ÙŠÙ†.
+/// ÙˆØ§Ù„Ù†ØµÙ‘ ÙˆØ§Ù„Ø³Ø±Ø¯ Ø³Ø¤Ø§Ù„Ø§Ù† Ù…Ø®ØªÙ„ÙØ§Ù†: ØµÙØ­Ø© Ù‚Ø¯ ØªØ­Ù…Ù„ Ù†ØµÙ‹Ù‘Ø§ Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠÙ‹Ù‘Ø§ Ø¨Ù„Ø§ ØµÙˆØª Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠØŒ
+/// ÙØ¯Ù…Ø¬Ù‡Ù…Ø§ ÙÙŠ Ø±Ù‚Ù… ÙˆØ§Ø­Ø¯ ÙŠÙØ®ÙÙŠ Ø£ÙŠÙ‘Ù‡Ù…Ø§ Ù†Ø§Ù‚Øµ.
 export interface StoryLanguageCoverage {
   language: string
-  /// معلَنة في `stories.languages`. الإعلان نيّة لا إنجاز، فهو منفصل عن العدّ.
+  /// Ù…Ø¹Ù„ÙŽÙ†Ø© ÙÙŠ `stories.languages`. Ø§Ù„Ø¥Ø¹Ù„Ø§Ù† Ù†ÙŠÙ‘Ø© Ù„Ø§ Ø¥Ù†Ø¬Ø§Ø²ØŒ ÙÙ‡Ùˆ Ù…Ù†ÙØµÙ„ Ø¹Ù† Ø§Ù„Ø¹Ø¯Ù‘.
   declared: boolean
   text_done: number
   narration_done: number
-  /// مؤشّرات التوقيت. لا شيء في المنصّة يكتبها، فهي صفر في كل مكان — والصدق في
-  /// إظهارها صفرًا معلَّلًا أفضل من حذفها.
+  /// Ù…Ø¤Ø´Ù‘Ø±Ø§Øª Ø§Ù„ØªÙˆÙ‚ÙŠØª. Ù„Ø§ Ø´ÙŠØ¡ ÙÙŠ Ø§Ù„Ù…Ù†ØµÙ‘Ø© ÙŠÙƒØªØ¨Ù‡Ø§ØŒ ÙÙ‡ÙŠ ØµÙØ± ÙÙŠ ÙƒÙ„ Ù…ÙƒØ§Ù† â€” ÙˆØ§Ù„ØµØ¯Ù‚ ÙÙŠ
+  /// Ø¥Ø¸Ù‡Ø§Ø±Ù‡Ø§ ØµÙØ±Ù‹Ø§ Ù…Ø¹Ù„ÙŽÙ‘Ù„Ù‹Ø§ Ø£ÙØ¶Ù„ Ù…Ù† Ø­Ø°ÙÙ‡Ø§.
   timing_done: number
   total: number
 }
 
 export type StoryReadinessState = 'ready' | 'partial' | 'empty'
 
-/// صفٌّ في مكتبة القصص: الغلاف الحقيقي والتغطية المعدودة لا التسمية.
+/// ØµÙÙŒÙ‘ ÙÙŠ Ù…ÙƒØªØ¨Ø© Ø§Ù„Ù‚ØµØµ: Ø§Ù„ØºÙ„Ø§Ù Ø§Ù„Ø­Ù‚ÙŠÙ‚ÙŠ ÙˆØ§Ù„ØªØºØ·ÙŠØ© Ø§Ù„Ù…Ø¹Ø¯ÙˆØ¯Ø© Ù„Ø§ Ø§Ù„ØªØ³Ù…ÙŠØ©.
 export interface StoryLibraryRow {
   id: string
   slug: string
@@ -833,7 +834,7 @@ export interface StoryLibraryRow {
   planet_id?: string | null
   planet_name?: string | null
   planet_color?: string | null
-  /// غلاف حقيقي من `asset_links` بدور cover/poster، أو `null` فتظهر حالة صريحة.
+  /// ØºÙ„Ø§Ù Ø­Ù‚ÙŠÙ‚ÙŠ Ù…Ù† `asset_links` Ø¨Ø¯ÙˆØ± cover/posterØŒ Ø£Ùˆ `null` ÙØªØ¸Ù‡Ø± Ø­Ø§Ù„Ø© ØµØ±ÙŠØ­Ø©.
   cover_url?: string | null
   pages_total: number
   pages_with_image: number
@@ -853,7 +854,7 @@ export interface StoryLibrarySummary {
   missing_cover: number
 }
 
-/// لغة واحدة على صفحة واحدة.
+/// Ù„ØºØ© ÙˆØ§Ø­Ø¯Ø© Ø¹Ù„Ù‰ ØµÙØ­Ø© ÙˆØ§Ø­Ø¯Ø©.
 export interface StoryWorkspaceLocalization {
   language: string
   has_text: boolean
@@ -862,11 +863,11 @@ export interface StoryWorkspaceLocalization {
   alt_text?: string | null
   narration_asset_id?: string | null
   narration_status?: string | null
-  /// `generated` تعني تصييرًا آليًّا لا تسجيلًا مُعتمدًا. الفرق مهم: مساواتهما
-  /// تسمح بنشر صوت لم يراجعه أحد.
+  /// `generated` ØªØ¹Ù†ÙŠ ØªØµÙŠÙŠØ±Ù‹Ø§ Ø¢Ù„ÙŠÙ‹Ù‘Ø§ Ù„Ø§ ØªØ³Ø¬ÙŠÙ„Ù‹Ø§ Ù…ÙØ¹ØªÙ…Ø¯Ù‹Ø§. Ø§Ù„ÙØ±Ù‚ Ù…Ù‡Ù…: Ù…Ø³Ø§ÙˆØ§ØªÙ‡Ù…Ø§
+  /// ØªØ³Ù…Ø­ Ø¨Ù†Ø´Ø± ØµÙˆØª Ù„Ù… ÙŠØ±Ø§Ø¬Ø¹Ù‡ Ø£Ø­Ø¯.
   narration_source?: string | null
   narration_size?: number | null
-  /// جاهز فعلًا: بوّابة النشر لا تقبل إلا `status = 'ready'`.
+  /// Ø¬Ø§Ù‡Ø² ÙØ¹Ù„Ù‹Ø§: Ø¨ÙˆÙ‘Ø§Ø¨Ø© Ø§Ù„Ù†Ø´Ø± Ù„Ø§ ØªÙ‚Ø¨Ù„ Ø¥Ù„Ø§ `status = 'ready'`.
   narration_ready: boolean
   has_timing: boolean
   timing_count: number
@@ -884,8 +885,8 @@ export interface StoryWorkspacePage {
   dwell_ms?: number | null
   image_asset_id?: string | null
   image_status?: string | null
-  /// رابط عام مبنيّ عبر حَرس البادئة نفسه الذي يستخدمه بقيّة الكتالوج، فمفتاح
-  /// مخالف لعمود الظهور يُنتج `null` لا صورة مكسورة.
+  /// Ø±Ø§Ø¨Ø· Ø¹Ø§Ù… Ù…Ø¨Ù†ÙŠÙ‘ Ø¹Ø¨Ø± Ø­ÙŽØ±Ø³ Ø§Ù„Ø¨Ø§Ø¯Ø¦Ø© Ù†ÙØ³Ù‡ Ø§Ù„Ø°ÙŠ ÙŠØ³ØªØ®Ø¯Ù…Ù‡ Ø¨Ù‚ÙŠÙ‘Ø© Ø§Ù„ÙƒØªØ§Ù„ÙˆØ¬ØŒ ÙÙ…ÙØªØ§Ø­
+  /// Ù…Ø®Ø§Ù„Ù Ù„Ø¹Ù…ÙˆØ¯ Ø§Ù„Ø¸Ù‡ÙˆØ± ÙŠÙÙ†ØªØ¬ `null` Ù„Ø§ ØµÙˆØ±Ø© Ù…ÙƒØ³ÙˆØ±Ø©.
   image_url?: string | null
   image_width?: number | null
   image_height?: number | null
@@ -898,10 +899,10 @@ export interface StoryWorkspacePage {
   localizations: StoryWorkspaceLocalization[]
 }
 
-/// عائق واحد، مُسمًّى بموضعه.
+/// Ø¹Ø§Ø¦Ù‚ ÙˆØ§Ø­Ø¯ØŒ Ù…ÙØ³Ù…Ù‹Ù‘Ù‰ Ø¨Ù…ÙˆØ¶Ø¹Ù‡.
 ///
-/// «لا يمكن النشر» بلا موضع تجعل المحرِّر يفتح كل صفحة بالتناوب. لذلك كل عائق
-/// يحمل رقم الصفحة وتبويب المفتِّش الذي يُغلقه.
+/// Â«Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø§Ù„Ù†Ø´Ø±Â» Ø¨Ù„Ø§ Ù…ÙˆØ¶Ø¹ ØªØ¬Ø¹Ù„ Ø§Ù„Ù…Ø­Ø±ÙÙ‘Ø± ÙŠÙØªØ­ ÙƒÙ„ ØµÙØ­Ø© Ø¨Ø§Ù„ØªÙ†Ø§ÙˆØ¨. Ù„Ø°Ù„Ùƒ ÙƒÙ„ Ø¹Ø§Ø¦Ù‚
+/// ÙŠØ­Ù…Ù„ Ø±Ù‚Ù… Ø§Ù„ØµÙØ­Ø© ÙˆØªØ¨ÙˆÙŠØ¨ Ø§Ù„Ù…ÙØªÙÙ‘Ø´ Ø§Ù„Ø°ÙŠ ÙŠÙØºÙ„Ù‚Ù‡.
 export interface StoryBlocker {
   key: string
   severity: 'blocker' | 'warning'
@@ -916,14 +917,14 @@ export interface StoryWorkspaceReadiness {
   pages_total: number
   pages_with_image: number
   pages_ready: number
-  /// حُكمان منفصلان بقصد: سرد بلا مؤشّرات توقيت هو «اقرأ لي» مكتمل و«قراءة
-  /// متزامنة» فارغة، فرقم واحد لا يصلح للاثنين.
+  /// Ø­ÙÙƒÙ…Ø§Ù† Ù…Ù†ÙØµÙ„Ø§Ù† Ø¨Ù‚ØµØ¯: Ø³Ø±Ø¯ Ø¨Ù„Ø§ Ù…Ø¤Ø´Ù‘Ø±Ø§Øª ØªÙˆÙ‚ÙŠØª Ù‡Ùˆ Â«Ø§Ù‚Ø±Ø£ Ù„ÙŠÂ» Ù…ÙƒØªÙ…Ù„ ÙˆÂ«Ù‚Ø±Ø§Ø¡Ø©
+  /// Ù…ØªØ²Ø§Ù…Ù†Ø©Â» ÙØ§Ø±ØºØ©ØŒ ÙØ±Ù‚Ù… ÙˆØ§Ø­Ø¯ Ù„Ø§ ÙŠØµÙ„Ø­ Ù„Ù„Ø§Ø«Ù†ÙŠÙ†.
   read_to_me_ready: boolean
   read_along_ready: boolean
   publishable: boolean
 }
 
-/// ما لا يدعمه المخطَّط، مُعلَنًا لا مُكتشَفًا من رفض 409.
+/// Ù…Ø§ Ù„Ø§ ÙŠØ¯Ø¹Ù…Ù‡ Ø§Ù„Ù…Ø®Ø·ÙŽÙ‘Ø·ØŒ Ù…ÙØ¹Ù„ÙŽÙ†Ù‹Ø§ Ù„Ø§ Ù…ÙÙƒØªØ´ÙŽÙÙ‹Ø§ Ù…Ù† Ø±ÙØ¶ 409.
 export interface StoryCapabilities {
   reviews_supported: boolean
   reviews_reason: string
@@ -1020,8 +1021,8 @@ export interface AssetLinkRecord {
   sort_order: number
 }
 
-/// تفصيل أصل من GET /admin/assets/:id، ويشمل الارتباطات الفعلية التي تمنع
-/// تخمين مكان استخدام الملف من اسمه فقط.
+/// ØªÙØµÙŠÙ„ Ø£ØµÙ„ Ù…Ù† GET /admin/assets/:idØŒ ÙˆÙŠØ´Ù…Ù„ Ø§Ù„Ø§Ø±ØªØ¨Ø§Ø·Ø§Øª Ø§Ù„ÙØ¹Ù„ÙŠØ© Ø§Ù„ØªÙŠ ØªÙ…Ù†Ø¹
+/// ØªØ®Ù…ÙŠÙ† Ù…ÙƒØ§Ù† Ø§Ø³ØªØ®Ø¯Ø§Ù… Ø§Ù„Ù…Ù„Ù Ù…Ù† Ø§Ø³Ù…Ù‡ ÙÙ‚Ø·.
 export interface AssetDetail extends AssetRecord {
   links: AssetLinkRecord[]
 }
@@ -1163,7 +1164,7 @@ export interface ProjectPayload {
   status: ContentStatus
 }
 
-/* --------------------------------------------------------- طلبات الشراكة */
+/* --------------------------------------------------------- Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø´Ø±Ø§ÙƒØ© */
 
 export type PartnershipKind = 'school' | 'nursery' | 'publisher' | 'producer' | 'creator' | 'other'
 export type PartnershipStatus = 'new' | 'in_review' | 'contacted' | 'accepted' | 'declined' | 'spam'
@@ -1210,26 +1211,26 @@ export interface PartnershipSettings {
 
 export interface PartnershipSettingsEnvelope {
   settings: PartnershipSettings
-  /** المزوّد الذي سيُستخدم فعلًا، أو none إن لم يُضبط أي منهما */
+  /** Ø§Ù„Ù…Ø²ÙˆÙ‘Ø¯ Ø§Ù„Ø°ÙŠ Ø³ÙŠÙØ³ØªØ®Ø¯Ù… ÙØ¹Ù„Ù‹Ø§ØŒ Ø£Ùˆ none Ø¥Ù† Ù„Ù… ÙŠÙØ¶Ø¨Ø· Ø£ÙŠ Ù…Ù†Ù‡Ù…Ø§ */
   emailProvider: 'resend' | 'cloudflare' | 'none'
   defaultFrom: string | null
   inboxConfigured: boolean
 }
 
-/* -------------------------------------------------------- وضع الموقع العام */
+/* -------------------------------------------------------- ÙˆØ¶Ø¹ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ø¹Ø§Ù… */
 
 export type SiteMode = 'live' | 'construction' | 'maintenance'
 
 export interface SiteModeSettings {
   site_mode: SiteMode
-  /** موعد الإطلاق بصيغة ISO، أو نص فارغ إن لم يُعلن */
+  /** Ù…ÙˆØ¹Ø¯ Ø§Ù„Ø¥Ø·Ù„Ø§Ù‚ Ø¨ØµÙŠØºØ© ISOØŒ Ø£Ùˆ Ù†Øµ ÙØ§Ø±Øº Ø¥Ù† Ù„Ù… ÙŠÙØ¹Ù„Ù† */
   site_launch_at: string
   site_status_message: string
-  /** دقائق، أو نص فارغ إن كانت المدة غير محدّدة */
+  /** Ø¯Ù‚Ø§Ø¦Ù‚ØŒ Ø£Ùˆ Ù†Øµ ÙØ§Ø±Øº Ø¥Ù† ÙƒØ§Ù†Øª Ø§Ù„Ù…Ø¯Ø© ØºÙŠØ± Ù…Ø­Ø¯Ù‘Ø¯Ø© */
   maintenance_eta_minutes: string
 }
 
-/** ما يراه الزائر فعلًا، يُحسب في الخادم من الإعدادات */
+/** Ù…Ø§ ÙŠØ±Ø§Ù‡ Ø§Ù„Ø²Ø§Ø¦Ø± ÙØ¹Ù„Ù‹Ø§ØŒ ÙŠÙØ­Ø³Ø¨ ÙÙŠ Ø§Ù„Ø®Ø§Ø¯Ù… Ù…Ù† Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª */
 export interface SiteModePreview {
   mode: SiteMode
   launchAt: string | null
@@ -1239,14 +1240,14 @@ export interface SiteModePreview {
 
 export interface SiteModeEnvelope {
   settings: SiteModeSettings
-  /** الأوضاع المتاحة من الخادم، فلا تنحرف قائمة الواجهة عنه */
+  /** Ø§Ù„Ø£ÙˆØ¶Ø§Ø¹ Ø§Ù„Ù…ØªØ§Ø­Ø© Ù…Ù† Ø§Ù„Ø®Ø§Ø¯Ù…ØŒ ÙÙ„Ø§ ØªÙ†Ø­Ø±Ù Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„ÙˆØ§Ø¬Ù‡Ø© Ø¹Ù†Ù‡ */
   modes: SiteMode[]
   preview: SiteModePreview
 }
 
-/* ------------------------------------------- مستخدمو اللوحة والصلاحيات */
+/* ------------------------------------------- Ù…Ø³ØªØ®Ø¯Ù…Ùˆ Ø§Ù„Ù„ÙˆØ­Ø© ÙˆØ§Ù„ØµÙ„Ø§Ø­ÙŠØ§Øª */
 
-/** موظف في فريق العمل. مشتق من admin_users + admin_credentials */
+/** Ù…ÙˆØ¸Ù ÙÙŠ ÙØ±ÙŠÙ‚ Ø§Ù„Ø¹Ù…Ù„. Ù…Ø´ØªÙ‚ Ù…Ù† admin_users + admin_credentials */
 export interface AdminUserRecord {
   id: string
   email: string
@@ -1254,10 +1255,10 @@ export interface AdminUserRecord {
   is_active: boolean
   is_external: boolean
   created_at: string
-  /** هل ضُبطت له كلمة مرور؟ حساب بلا كلمة لا يستطيع الدخول */
+  /** Ù‡Ù„ Ø¶ÙØ¨Ø·Øª Ù„Ù‡ ÙƒÙ„Ù…Ø© Ù…Ø±ÙˆØ±ØŸ Ø­Ø³Ø§Ø¨ Ø¨Ù„Ø§ ÙƒÙ„Ù…Ø© Ù„Ø§ ÙŠØ³ØªØ·ÙŠØ¹ Ø§Ù„Ø¯Ø®ÙˆÙ„ */
   has_password: boolean
   last_login_at: string | null
-  /** غير فارغ عند القفل المؤقت بعد محاولات فاشلة */
+  /** ØºÙŠØ± ÙØ§Ø±Øº Ø¹Ù†Ø¯ Ø§Ù„Ù‚ÙÙ„ Ø§Ù„Ù…Ø¤Ù‚Øª Ø¨Ø¹Ø¯ Ù…Ø­Ø§ÙˆÙ„Ø§Øª ÙØ§Ø´Ù„Ø© */
   locked_until: string | null
   roles: string[]
 }
@@ -1270,17 +1271,17 @@ export interface AdminUserPayload {
   is_external?: boolean
 }
 
-/** دور من جدول roles المبذور في المهاجرة 0014 */
+/** Ø¯ÙˆØ± Ù…Ù† Ø¬Ø¯ÙˆÙ„ roles Ø§Ù„Ù…Ø¨Ø°ÙˆØ± ÙÙŠ Ø§Ù„Ù…Ù‡Ø§Ø¬Ø±Ø© 0014 */
 export interface RoleRecord {
   id: string
   name_ar: string
   is_system: number
   permissions_count?: number
   /**
-   * معرّفات صلاحيات هذا الدور من role_permissions.
+   * Ù…Ø¹Ø±Ù‘ÙØ§Øª ØµÙ„Ø§Ø­ÙŠØ§Øª Ù‡Ø°Ø§ Ø§Ù„Ø¯ÙˆØ± Ù…Ù† role_permissions.
    *
-   * أُضيفت لأن الخادم كان يُعيد العدد فقط، فلم تستطع الواجهة بناء مصفوفة
-   * الصلاحيات من بيانات حقيقية — وكانت المصفوفة مكتوبة ثابتة في الكود.
+   * Ø£ÙØ¶ÙŠÙØª Ù„Ø£Ù† Ø§Ù„Ø®Ø§Ø¯Ù… ÙƒØ§Ù† ÙŠÙØ¹ÙŠØ¯ Ø§Ù„Ø¹Ø¯Ø¯ ÙÙ‚Ø·ØŒ ÙÙ„Ù… ØªØ³ØªØ·Ø¹ Ø§Ù„ÙˆØ§Ø¬Ù‡Ø© Ø¨Ù†Ø§Ø¡ Ù…ØµÙÙˆÙØ©
+   * Ø§Ù„ØµÙ„Ø§Ø­ÙŠØ§Øª Ù…Ù† Ø¨ÙŠØ§Ù†Ø§Øª Ø­Ù‚ÙŠÙ‚ÙŠØ© â€” ÙˆÙƒØ§Ù†Øª Ø§Ù„Ù…ØµÙÙˆÙØ© Ù…ÙƒØªÙˆØ¨Ø© Ø«Ø§Ø¨ØªØ© ÙÙŠ Ø§Ù„ÙƒÙˆØ¯.
    */
   permissions: string[]
 }
@@ -1291,13 +1292,13 @@ export interface PermissionRecord {
   description_ar: string | null
 }
 
-/** منح صلاحية بأربع طبقات نطاق، من جدول access_grants */
+/** Ù…Ù†Ø­ ØµÙ„Ø§Ø­ÙŠØ© Ø¨Ø£Ø±Ø¨Ø¹ Ø·Ø¨Ù‚Ø§Øª Ù†Ø·Ø§Ù‚ØŒ Ù…Ù† Ø¬Ø¯ÙˆÙ„ access_grants */
 export interface AccessGrantRecord {
   id: string
   grantee_type: 'user' | 'team'
   grantee_id: string
   role_id: string
-  /** يأتي من LEFT JOIN roles في الخادم */
+  /** ÙŠØ£ØªÙŠ Ù…Ù† LEFT JOIN roles ÙÙŠ Ø§Ù„Ø®Ø§Ø¯Ù… */
   role_name: string | null
   scope_type: 'platform' | 'planet' | 'section' | 'series' | 'content' | 'page' | 'language'
   scope_id: string | null
@@ -1345,7 +1346,7 @@ export interface TaskRecord {
   title_ar: string
   content_type: string | null
   content_id: string | null
-  /** من LEFT JOIN series في الخادم */
+  /** Ù…Ù† LEFT JOIN series ÙÙŠ Ø§Ù„Ø®Ø§Ø¯Ù… */
   series_title: string | null
   assignee_id: string | null
   status: string
@@ -1366,7 +1367,7 @@ export interface WorkflowRunRecord {
   updated_at: string
 }
 
-/** جهاز عائلة من account_devices. لا يُعرض أي معرّف تثبيت خام */
+/** Ø¬Ù‡Ø§Ø² Ø¹Ø§Ø¦Ù„Ø© Ù…Ù† account_devices. Ù„Ø§ ÙŠÙØ¹Ø±Ø¶ Ø£ÙŠ Ù…Ø¹Ø±Ù‘Ù ØªØ«Ø¨ÙŠØª Ø®Ø§Ù… */
 export interface AdminDeviceRecord {
   id: string
   parent_id: string
@@ -1379,7 +1380,7 @@ export interface AdminDeviceRecord {
   revoked_at: string | null
 }
 
-/** حدود باقة كما يفرضها familyPolicy في FamilyState، وليست عقد أسعار متجر. */
+/** Ø­Ø¯ÙˆØ¯ Ø¨Ø§Ù‚Ø© ÙƒÙ…Ø§ ÙŠÙØ±Ø¶Ù‡Ø§ familyPolicy ÙÙŠ FamilyStateØŒ ÙˆÙ„ÙŠØ³Øª Ø¹Ù‚Ø¯ Ø£Ø³Ø¹Ø§Ø± Ù…ØªØ¬Ø±. */
 export interface PlanLimits {
   children: number
   devices: number
@@ -1401,11 +1402,11 @@ export interface PlansCatalogue {
 export interface RightsLicenseRecord {
   id: string
   content_id: string
-  /** من LEFT JOIN series في الخادم */
+  /** Ù…Ù† LEFT JOIN series ÙÙŠ Ø§Ù„Ø®Ø§Ø¯Ù… */
   series_title: string | null
   owner: string
   license_type: string
-  /** مخزَّنة كنص JSON في D1 */
+  /** Ù…Ø®Ø²ÙŽÙ‘Ù†Ø© ÙƒÙ†Øµ JSON ÙÙŠ D1 */
   countries: string
   languages: string
   devices: string
@@ -1423,7 +1424,7 @@ export interface RightsLicensePayload {
   expiry_date?: string | null
 }
 
-/** إعداد تحكّم عن بعد. الخادم يفكّ تحليل JSON قبل الإرسال */
+/** Ø¥Ø¹Ø¯Ø§Ø¯ ØªØ­ÙƒÙ‘Ù… Ø¹Ù† Ø¨Ø¹Ø¯. Ø§Ù„Ø®Ø§Ø¯Ù… ÙŠÙÙƒÙ‘ ØªØ­Ù„ÙŠÙ„ JSON Ù‚Ø¨Ù„ Ø§Ù„Ø¥Ø±Ø³Ø§Ù„ */
 export interface RemoteConfigRecord {
   key: string
   value: unknown
@@ -1440,10 +1441,10 @@ export interface FeatureFlagRecord {
 }
 
 /**
- * الأبعاد التي يطبّقها المُحلِّل فعلًا (`api/src/lib/homeExperience.ts`).
+ * Ø§Ù„Ø£Ø¨Ø¹Ø§Ø¯ Ø§Ù„ØªÙŠ ÙŠØ·Ø¨Ù‘Ù‚Ù‡Ø§ Ø§Ù„Ù…ÙØ­Ù„ÙÙ‘Ù„ ÙØ¹Ù„Ù‹Ø§ (`api/src/lib/homeExperience.ts`).
  *
- * كانت الواجهة تعرض `age_min`/`age_max` في جملة الاستهداف، وهما بعدان لم يقرأهما
- * أي مُحلِّل: قاعدة تُكتب فيهما تُحفظ وتُعرض كأنها سارية ثم تُتجاهل في كل طلب.
+ * ÙƒØ§Ù†Øª Ø§Ù„ÙˆØ§Ø¬Ù‡Ø© ØªØ¹Ø±Ø¶ `age_min`/`age_max` ÙÙŠ Ø¬Ù…Ù„Ø© Ø§Ù„Ø§Ø³ØªÙ‡Ø¯Ø§ÙØŒ ÙˆÙ‡Ù…Ø§ Ø¨Ø¹Ø¯Ø§Ù† Ù„Ù… ÙŠÙ‚Ø±Ø£Ù‡Ù…Ø§
+ * Ø£ÙŠ Ù…ÙØ­Ù„ÙÙ‘Ù„: Ù‚Ø§Ø¹Ø¯Ø© ØªÙÙƒØªØ¨ ÙÙŠÙ‡Ù…Ø§ ØªÙØ­ÙØ¸ ÙˆØªÙØ¹Ø±Ø¶ ÙƒØ£Ù†Ù‡Ø§ Ø³Ø§Ø±ÙŠØ© Ø«Ù… ØªÙØªØ¬Ø§Ù‡Ù„ ÙÙŠ ÙƒÙ„ Ø·Ù„Ø¨.
  */
 export interface HomeTargeting {
   track?: string[]
@@ -1451,7 +1452,7 @@ export interface HomeTargeting {
   country?: string[]
   plan?: string[]
   platform?: string[]
-  /// أدنى إصدار تطبيق، مقارنة رقمية لا نصية.
+  /// Ø£Ø¯Ù†Ù‰ Ø¥ØµØ¯Ø§Ø± ØªØ·Ø¨ÙŠÙ‚ØŒ Ù…Ù‚Ø§Ø±Ù†Ø© Ø±Ù‚Ù…ÙŠØ© Ù„Ø§ Ù†ØµÙŠØ©.
   min_app_version?: string
   is_new_user?: boolean
 }
@@ -1480,25 +1481,30 @@ export interface HomeBlockRecord {
   updated_at?: string
   targeting: HomeTargeting
   config: HomeBlockConfig
-  /// كتلة يحسب الخادم محتواها من حالة الطفل؛ لا يُختار محتواها تحريريًا.
+  /// ÙƒØªÙ„Ø© ÙŠØ­Ø³Ø¨ Ø§Ù„Ø®Ø§Ø¯Ù… Ù…Ø­ØªÙˆØ§Ù‡Ø§ Ù…Ù† Ø­Ø§Ù„Ø© Ø§Ù„Ø·ÙÙ„Ø› Ù„Ø§ ÙŠÙØ®ØªØ§Ø± Ù…Ø­ØªÙˆØ§Ù‡Ø§ ØªØ­Ø±ÙŠØ±ÙŠÙ‹Ø§.
   is_system?: boolean
-  /// رسالة الخطأ إن كان JSON المخزَّن لا يجتاز التحقق، وnull إن كان سليمًا.
+  /// Ø±Ø³Ø§Ù„Ø© Ø§Ù„Ø®Ø·Ø£ Ø¥Ù† ÙƒØ§Ù† JSON Ø§Ù„Ù…Ø®Ø²ÙŽÙ‘Ù† Ù„Ø§ ÙŠØ¬ØªØ§Ø² Ø§Ù„ØªØ­Ù‚Ù‚ØŒ Ùˆnull Ø¥Ù† ÙƒØ§Ù† Ø³Ù„ÙŠÙ…Ù‹Ø§.
   targeting_invalid?: string | null
   config_invalid?: string | null
 }
 
-/// ما يقبله الخادم، يُرسَل مع القائمة فلا تُخترع الواجهة قائمة أنواع خاصة بها.
+/// Ù…Ø§ ÙŠÙ‚Ø¨Ù„Ù‡ Ø§Ù„Ø®Ø§Ø¯Ù…ØŒ ÙŠÙØ±Ø³ÙŽÙ„ Ù…Ø¹ Ø§Ù„Ù‚Ø§Ø¦Ù…Ø© ÙÙ„Ø§ ØªÙØ®ØªØ±Ø¹ Ø§Ù„ÙˆØ§Ø¬Ù‡Ø© Ù‚Ø§Ø¦Ù…Ø© Ø£Ù†ÙˆØ§Ø¹ Ø®Ø§ØµØ© Ø¨Ù‡Ø§.
 export interface HomeBuilderMeta {
+  /// `APP-104`: the types the builder may create — offered, not every type the
+  /// table tolerates. Three types no app version renders were being offered here.
   block_types: string[]
   system_block_types: string[]
+  /// Types withdrawn from the picker. Sent so an existing row can be explained
+  /// rather than shown as an ordinary block that simply never appears.
+  retired_block_types?: string[]
   targeting_dimensions: string[]
   config_keys: string[]
 }
 
 /**
- * نسخة محفوظة من كتلة.
+ * Ù†Ø³Ø®Ø© Ù…Ø­ÙÙˆØ¸Ø© Ù…Ù† ÙƒØªÙ„Ø©.
  *
- * `restorable` false للنسخة التي تسجّل إنشاء الكتلة: لا حالة أسبق تُستعاد إليها.
+ * `restorable` false Ù„Ù„Ù†Ø³Ø®Ø© Ø§Ù„ØªÙŠ ØªØ³Ø¬Ù‘Ù„ Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„ÙƒØªÙ„Ø©: Ù„Ø§ Ø­Ø§Ù„Ø© Ø£Ø³Ø¨Ù‚ ØªÙØ³ØªØ¹Ø§Ø¯ Ø¥Ù„ÙŠÙ‡Ø§.
  */
 export interface HomeBlockVersion {
   id: string
@@ -1512,15 +1518,15 @@ export interface HomeBlockVersion {
 
 export interface HomeVersionsMeta {
   total: number
-  /// سجلات من تطبيق سابق لا تحمل الاستهداف ولا الإعداد، فلا يمكن الاستعادة إليها.
+  /// Ø³Ø¬Ù„Ø§Øª Ù…Ù† ØªØ·Ø¨ÙŠÙ‚ Ø³Ø§Ø¨Ù‚ Ù„Ø§ ØªØ­Ù…Ù„ Ø§Ù„Ø§Ø³ØªÙ‡Ø¯Ø§Ù ÙˆÙ„Ø§ Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯ØŒ ÙÙ„Ø§ ÙŠÙ…ÙƒÙ† Ø§Ù„Ø§Ø³ØªØ¹Ø§Ø¯Ø© Ø¥Ù„ÙŠÙ‡Ø§.
   legacy_records: number
   note: string | null
 }
 
 /**
- * نتيجة بحث الدعم عن عائلة.
+ * Ù†ØªÙŠØ¬Ø© Ø¨Ø­Ø« Ø§Ù„Ø¯Ø¹Ù… Ø¹Ù† Ø¹Ø§Ø¦Ù„Ø©.
  *
- * لا تحمل بيانات دفع كاملة: `entitlements` من billing_audit بلا رمز الشراء.
+ * Ù„Ø§ ØªØ­Ù…Ù„ Ø¨ÙŠØ§Ù†Ø§Øª Ø¯ÙØ¹ ÙƒØ§Ù…Ù„Ø©: `entitlements` Ù…Ù† billing_audit Ø¨Ù„Ø§ Ø±Ù…Ø² Ø§Ù„Ø´Ø±Ø§Ø¡.
  */
 export interface SupportFamilyRecord {
   parent_id: string
@@ -1528,7 +1534,7 @@ export interface SupportFamilyRecord {
   status: ParentRecord['status']
 }
 
-/** أقل بيانات لازمة لموظف الدعم؛ لا يشمل avatar أو لغة الطفل أو طوابع الأحداث. */
+/** Ø£Ù‚Ù„ Ø¨ÙŠØ§Ù†Ø§Øª Ù„Ø§Ø²Ù…Ø© Ù„Ù…ÙˆØ¸Ù Ø§Ù„Ø¯Ø¹Ù…Ø› Ù„Ø§ ÙŠØ´Ù…Ù„ avatar Ø£Ùˆ Ù„ØºØ© Ø§Ù„Ø·ÙÙ„ Ø£Ùˆ Ø·ÙˆØ§Ø¨Ø¹ Ø§Ù„Ø£Ø­Ø¯Ø§Ø«. */
 export interface SupportChildRecord {
   child_id: string
   nickname: string | null
@@ -1536,7 +1542,7 @@ export interface SupportChildRecord {
   status: 'active' | 'archived'
 }
 
-/** جهاز دعم مختصر؛ hashes التثبيت وauth epoch لا يصلان إلى المتصفح. */
+/** Ø¬Ù‡Ø§Ø² Ø¯Ø¹Ù… Ù…Ø®ØªØµØ±Ø› hashes Ø§Ù„ØªØ«Ø¨ÙŠØª Ùˆauth epoch Ù„Ø§ ÙŠØµÙ„Ø§Ù† Ø¥Ù„Ù‰ Ø§Ù„Ù…ØªØµÙØ­. */
 export interface SupportDeviceRecord {
   id: string
   display_name: string | null
@@ -1544,7 +1550,7 @@ export interface SupportDeviceRecord {
   status: 'active' | 'revoked'
 }
 
-/** ملخص استحقاق بلا hashes أو معرّفات شراء من المزوّد. */
+/** Ù…Ù„Ø®Øµ Ø§Ø³ØªØ­Ù‚Ø§Ù‚ Ø¨Ù„Ø§ hashes Ø£Ùˆ Ù…Ø¹Ø±Ù‘ÙØ§Øª Ø´Ø±Ø§Ø¡ Ù…Ù† Ø§Ù„Ù…Ø²ÙˆÙ‘Ø¯. */
 export interface SupportEntitlementRecord {
   product_id: string
   plan: 'family' | 'family_plus'
@@ -1560,10 +1566,10 @@ export interface SupportFamilyEnvelope {
 }
 
 /**
- * نتيجة معاينة الصفحة الرئيسية بعد تطبيق الاستهداف والجدولة.
+ * Ù†ØªÙŠØ¬Ø© Ù…Ø¹Ø§ÙŠÙ†Ø© Ø§Ù„ØµÙØ­Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ© Ø¨Ø¹Ø¯ ØªØ·Ø¨ÙŠÙ‚ Ø§Ù„Ø§Ø³ØªÙ‡Ø¯Ø§Ù ÙˆØ§Ù„Ø¬Ø¯ÙˆÙ„Ø©.
  *
- * التشخيصات حقيقية: كانت الشاشة تطبع «Fallback applied: none» دائمًا وتحسب
- * المستثنى من قائمة فلترتها بنفسها، فكانت تصف فلترتها لا فلترة الخادم.
+ * Ø§Ù„ØªØ´Ø®ÙŠØµØ§Øª Ø­Ù‚ÙŠÙ‚ÙŠØ©: ÙƒØ§Ù†Øª Ø§Ù„Ø´Ø§Ø´Ø© ØªØ·Ø¨Ø¹ Â«Fallback applied: noneÂ» Ø¯Ø§Ø¦Ù…Ù‹Ø§ ÙˆØªØ­Ø³Ø¨
+ * Ø§Ù„Ù…Ø³ØªØ«Ù†Ù‰ Ù…Ù† Ù‚Ø§Ø¦Ù…Ø© ÙÙ„ØªØ±ØªÙ‡Ø§ Ø¨Ù†ÙØ³Ù‡Ø§ØŒ ÙÙƒØ§Ù†Øª ØªØµÙ ÙÙ„ØªØ±ØªÙ‡Ø§ Ù„Ø§ ÙÙ„ØªØ±Ø© Ø§Ù„Ø®Ø§Ø¯Ù….
  */
 export interface HomePreviewEnvelope {
   blocks: Array<{
@@ -1604,13 +1610,13 @@ export interface BillingStats {
 }
 
 /**
- * صفّ شراء من `billing_audit` (المهاجرة 0008).
+ * ØµÙÙ‘ Ø´Ø±Ø§Ø¡ Ù…Ù† `billing_audit` (Ø§Ù„Ù…Ù‡Ø§Ø¬Ø±Ø© 0008).
  *
- * `/billing/purchases` يعيد أعمدة أكثر من `recent_purchases` داخل `/stats`:
- * يضيف `purchase_token_hash` و`verified_at_ms`. الملخّص يجيب «ما الحالة
- * العامة»، وهذا المسار يجيب «ما الذي حدث في هذا الشراء بالضبط».
+ * `/billing/purchases` ÙŠØ¹ÙŠØ¯ Ø£Ø¹Ù…Ø¯Ø© Ø£ÙƒØ«Ø± Ù…Ù† `recent_purchases` Ø¯Ø§Ø®Ù„ `/stats`:
+ * ÙŠØ¶ÙŠÙ `purchase_token_hash` Ùˆ`verified_at_ms`. Ø§Ù„Ù…Ù„Ø®Ù‘Øµ ÙŠØ¬ÙŠØ¨ Â«Ù…Ø§ Ø§Ù„Ø­Ø§Ù„Ø©
+ * Ø§Ù„Ø¹Ø§Ù…Ø©Â»ØŒ ÙˆÙ‡Ø°Ø§ Ø§Ù„Ù…Ø³Ø§Ø± ÙŠØ¬ÙŠØ¨ Â«Ù…Ø§ Ø§Ù„Ø°ÙŠ Ø­Ø¯Ø« ÙÙŠ Ù‡Ø°Ø§ Ø§Ù„Ø´Ø±Ø§Ø¡ Ø¨Ø§Ù„Ø¶Ø¨Ø·Â».
  *
- * `purchase_token_hash` ملخّص لا الرمز نفسه — الرمز الأصلي لا يُخزَّن إطلاقًا.
+ * `purchase_token_hash` Ù…Ù„Ø®Ù‘Øµ Ù„Ø§ Ø§Ù„Ø±Ù…Ø² Ù†ÙØ³Ù‡ â€” Ø§Ù„Ø±Ù…Ø² Ø§Ù„Ø£ØµÙ„ÙŠ Ù„Ø§ ÙŠÙØ®Ø²ÙŽÙ‘Ù† Ø¥Ø·Ù„Ø§Ù‚Ù‹Ø§.
  */
 export interface BillingPurchaseRecord {
   parent_id: string
@@ -1626,11 +1632,11 @@ export interface BillingPurchaseRecord {
 }
 
 /**
- * آخر خطة مدفوعة مسقطة من `family_projection`.
+ * Ø¢Ø®Ø± Ø®Ø·Ø© Ù…Ø¯ÙÙˆØ¹Ø© Ù…Ø³Ù‚Ø·Ø© Ù…Ù† `family_projection`.
  *
- * الخادم يستثني `plan = 'free'`. هذا إسقاط تشغيلي غير متزامن وليس قرار
- * استحقاق لحظيًا: FamilyState هو مصدر الخطة الفعلية. ولا يحمل الإسقاط تاريخ
- * بداية أو نهاية؛ تلك في `billing_audit`.
+ * Ø§Ù„Ø®Ø§Ø¯Ù… ÙŠØ³ØªØ«Ù†ÙŠ `plan = 'free'`. Ù‡Ø°Ø§ Ø¥Ø³Ù‚Ø§Ø· ØªØ´ØºÙŠÙ„ÙŠ ØºÙŠØ± Ù…ØªØ²Ø§Ù…Ù† ÙˆÙ„ÙŠØ³ Ù‚Ø±Ø§Ø±
+ * Ø§Ø³ØªØ­Ù‚Ø§Ù‚ Ù„Ø­Ø¸ÙŠÙ‹Ø§: FamilyState Ù‡Ùˆ Ù…ØµØ¯Ø± Ø§Ù„Ø®Ø·Ø© Ø§Ù„ÙØ¹Ù„ÙŠØ©. ÙˆÙ„Ø§ ÙŠØ­Ù…Ù„ Ø§Ù„Ø¥Ø³Ù‚Ø§Ø· ØªØ§Ø±ÙŠØ®
+ * Ø¨Ø¯Ø§ÙŠØ© Ø£Ùˆ Ù†Ù‡Ø§ÙŠØ©Ø› ØªÙ„Ùƒ ÙÙŠ `billing_audit`.
  */
 export interface BillingEntitlementRecord {
   parent_id: string
@@ -1640,7 +1646,7 @@ export interface BillingEntitlementRecord {
   updated_at: string
 }
 
-// Commerce — Subscriptions & Transactions (billing_audit + family_projection)
+// Commerce â€” Subscriptions & Transactions (billing_audit + family_projection)
 export interface SubscriptionRecord {
   id: string
   parent_id: string
@@ -1688,6 +1694,7 @@ export interface PlanPricingRow {
   store_product_id: string
   country: string
   currency: string
+  currency_exponent: number
   price_minor: number
   effective_from: string
   effective_until?: string | null
@@ -1695,6 +1702,22 @@ export interface PlanPricingRow {
   provider?: string
   billing_period?: string
 }
+export interface BillingPaymentMethod {
+  id: string
+  provider: 'google_play' | 'app_store' | 'stripe' | 'payment_gateway'
+  method_code: string
+  name_ar: string
+  name_en: string
+  country: string
+  platform: 'android' | 'ios' | 'web'
+  checkout_mode: 'native_store' | 'hosted_checkout' | 'redirect'
+  status: 'draft' | 'active' | 'disabled'
+  sort_order: number
+  runtime_ready: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface PlanDetail {
   id: string
   limits: { children:number; devices:number; concurrent_streams:number; download_devices:number }
@@ -1767,13 +1790,13 @@ export interface RightsDetail {
   history?: Array<{ id:string; action:string; created_at:string }>
 }
 
-/* ------------------------------------- تفصيل ولي الأمر وتقدّم الطفل */
+/* ------------------------------------- ØªÙØµÙŠÙ„ ÙˆÙ„ÙŠ Ø§Ù„Ø£Ù…Ø± ÙˆØªÙ‚Ø¯Ù‘Ù… Ø§Ù„Ø·ÙÙ„ */
 
 /**
- * صفّ طفل من `child_projection` (المهاجرة 0008).
+ * ØµÙÙ‘ Ø·ÙÙ„ Ù…Ù† `child_projection` (Ø§Ù„Ù…Ù‡Ø§Ø¬Ø±Ø© 0008).
  *
- * الإسقاط لا الجدول الأصلي: كل أعمدته nullable لأنه يُبنى من أحداث، والحدث
- * الأول قد لا يحمل كل الحقول. `children_profiles` هو مصدر الحقيقة الكامل.
+ * Ø§Ù„Ø¥Ø³Ù‚Ø§Ø· Ù„Ø§ Ø§Ù„Ø¬Ø¯ÙˆÙ„ Ø§Ù„Ø£ØµÙ„ÙŠ: ÙƒÙ„ Ø£Ø¹Ù…Ø¯ØªÙ‡ nullable Ù„Ø£Ù†Ù‡ ÙŠÙØ¨Ù†Ù‰ Ù…Ù† Ø£Ø­Ø¯Ø§Ø«ØŒ ÙˆØ§Ù„Ø­Ø¯Ø«
+ * Ø§Ù„Ø£ÙˆÙ„ Ù‚Ø¯ Ù„Ø§ ÙŠØ­Ù…Ù„ ÙƒÙ„ Ø§Ù„Ø­Ù‚ÙˆÙ„. `children_profiles` Ù‡Ùˆ Ù…ØµØ¯Ø± Ø§Ù„Ø­Ù‚ÙŠÙ‚Ø© Ø§Ù„ÙƒØ§Ù…Ù„.
  */
 export interface ParentDetailChild {
   child_id: string
@@ -1789,10 +1812,10 @@ export interface ParentDetailChild {
 }
 
 /**
- * تفصيل ولي أمر واحد من `/admin/parents/:id`.
+ * ØªÙØµÙŠÙ„ ÙˆÙ„ÙŠ Ø£Ù…Ø± ÙˆØ§Ø­Ø¯ Ù…Ù† `/admin/parents/:id`.
  *
- * المصدر `family_projection` لا `parents`: الأول إسقاط مبنيّ من أحداث العائلة
- * والثاني جدول الهوية. الخادم يصرّح بذلك في `meta.source`.
+ * Ø§Ù„Ù…ØµØ¯Ø± `family_projection` Ù„Ø§ `parents`: Ø§Ù„Ø£ÙˆÙ„ Ø¥Ø³Ù‚Ø§Ø· Ù…Ø¨Ù†ÙŠÙ‘ Ù…Ù† Ø£Ø­Ø¯Ø§Ø« Ø§Ù„Ø¹Ø§Ø¦Ù„Ø©
+ * ÙˆØ§Ù„Ø«Ø§Ù†ÙŠ Ø¬Ø¯ÙˆÙ„ Ø§Ù„Ù‡ÙˆÙŠØ©. Ø§Ù„Ø®Ø§Ø¯Ù… ÙŠØµØ±Ù‘Ø­ Ø¨Ø°Ù„Ùƒ ÙÙŠ `meta.source`.
  */
 export interface ParentDetail {
   parent_id: string
@@ -1805,7 +1828,7 @@ export interface ParentDetail {
   children: ParentDetailChild[]
 }
 
-/// صفّ مشاهدة من `watch_progress`. الأعمدة بالثواني لا بالميلي ثانية.
+/// ØµÙÙ‘ Ù…Ø´Ø§Ù‡Ø¯Ø© Ù…Ù† `watch_progress`. Ø§Ù„Ø£Ø¹Ù…Ø¯Ø© Ø¨Ø§Ù„Ø«ÙˆØ§Ù†ÙŠ Ù„Ø§ Ø¨Ø§Ù„Ù…ÙŠÙ„ÙŠ Ø«Ø§Ù†ÙŠØ©.
 export interface ChildWatchProgress {
   episode_id: string
   episode_title: string | null
@@ -1817,7 +1840,7 @@ export interface ChildWatchProgress {
   updated_at: string
 }
 
-/// صفّ إتقان لهدف واحد عند طفل واحد.
+/// ØµÙÙ‘ Ø¥ØªÙ‚Ø§Ù† Ù„Ù‡Ø¯Ù ÙˆØ§Ø­Ø¯ Ø¹Ù†Ø¯ Ø·ÙÙ„ ÙˆØ§Ø­Ø¯.
 export interface ChildMasteryRow {
   objective_id: string
   code: string | null
@@ -1825,19 +1848,19 @@ export interface ChildMasteryRow {
   level: MasteryLevel
   attempts: number
   correct_attempts: number
-  /// `null` عند غياب المحاولات: «لا بيانات» ليست «نسبة نجاح صفر»
+  /// `null` Ø¹Ù†Ø¯ ØºÙŠØ§Ø¨ Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø§Øª: Â«Ù„Ø§ Ø¨ÙŠØ§Ù†Ø§ØªÂ» Ù„ÙŠØ³Øª Â«Ù†Ø³Ø¨Ø© Ù†Ø¬Ø§Ø­ ØµÙØ±Â»
   success_rate: number | null
   last_attempt_at: string | null
 }
 
 /**
- * تقدّم طفل واحد من `/admin/analytics/children/:id`.
+ * ØªÙ‚Ø¯Ù‘Ù… Ø·ÙÙ„ ÙˆØ§Ø­Ø¯ Ù…Ù† `/admin/analytics/children/:id`.
  *
- * ثلاثة مصادر لأن «تقدّم الطفل» ليس جدولًا واحدًا: المشاهدة في
- * `watch_progress`، والإتقان في `mastery`، والمحاولات في `attempts`.
+ * Ø«Ù„Ø§Ø«Ø© Ù…ØµØ§Ø¯Ø± Ù„Ø£Ù† Â«ØªÙ‚Ø¯Ù‘Ù… Ø§Ù„Ø·ÙÙ„Â» Ù„ÙŠØ³ Ø¬Ø¯ÙˆÙ„Ù‹Ø§ ÙˆØ§Ø­Ø¯Ù‹Ø§: Ø§Ù„Ù…Ø´Ø§Ù‡Ø¯Ø© ÙÙŠ
+ * `watch_progress`ØŒ ÙˆØ§Ù„Ø¥ØªÙ‚Ø§Ù† ÙÙŠ `mastery`ØŒ ÙˆØ§Ù„Ù…Ø­Ø§ÙˆÙ„Ø§Øª ÙÙŠ `attempts`.
  *
- * المسار كان يستعلم جدولًا اسمه `content_progress` لا وجود له في أي مهاجرة ولا
- * في الإنتاج، فكان يرمي على كل نداء — ولم يظهر ذلك لأنه بلا واجهة.
+ * Ø§Ù„Ù…Ø³Ø§Ø± ÙƒØ§Ù† ÙŠØ³ØªØ¹Ù„Ù… Ø¬Ø¯ÙˆÙ„Ù‹Ø§ Ø§Ø³Ù…Ù‡ `content_progress` Ù„Ø§ ÙˆØ¬ÙˆØ¯ Ù„Ù‡ ÙÙŠ Ø£ÙŠ Ù…Ù‡Ø§Ø¬Ø±Ø© ÙˆÙ„Ø§
+ * ÙÙŠ Ø§Ù„Ø¥Ù†ØªØ§Ø¬ØŒ ÙÙƒØ§Ù† ÙŠØ±Ù…ÙŠ Ø¹Ù„Ù‰ ÙƒÙ„ Ù†Ø¯Ø§Ø¡ â€” ÙˆÙ„Ù… ÙŠØ¸Ù‡Ø± Ø°Ù„Ùƒ Ù„Ø£Ù†Ù‡ Ø¨Ù„Ø§ ÙˆØ§Ø¬Ù‡Ø©.
  */
 export interface ChildProgressReport {
   child: {
@@ -1860,13 +1883,13 @@ export interface AnalyticsOverview {
   recent_events: Record<string, unknown>[]
 }
 
-/* ------------------------------------------------------- الإطار التعليمي */
+/* ------------------------------------------------------- Ø§Ù„Ø¥Ø·Ø§Ø± Ø§Ù„ØªØ¹Ù„ÙŠÙ…ÙŠ */
 
 /**
- * مهارة. الجدول من المهاجرة 0001.
+ * Ù…Ù‡Ø§Ø±Ø©. Ø§Ù„Ø¬Ø¯ÙˆÙ„ Ù…Ù† Ø§Ù„Ù…Ù‡Ø§Ø¬Ø±Ø© 0001.
  *
- * `category` بلا CHECK في D1، فأي نص غير فارغ مقبول. لا تُخترع قائمة بيضاء
- * لا يفرضها المخطَّط — الخادم يصرّح بذلك في adminCatalogue.ts.
+ * `category` Ø¨Ù„Ø§ CHECK ÙÙŠ D1ØŒ ÙØ£ÙŠ Ù†Øµ ØºÙŠØ± ÙØ§Ø±Øº Ù…Ù‚Ø¨ÙˆÙ„. Ù„Ø§ ØªÙØ®ØªØ±Ø¹ Ù‚Ø§Ø¦Ù…Ø© Ø¨ÙŠØ¶Ø§Ø¡
+ * Ù„Ø§ ÙŠÙØ±Ø¶Ù‡Ø§ Ø§Ù„Ù…Ø®Ø·ÙŽÙ‘Ø· â€” Ø§Ù„Ø®Ø§Ø¯Ù… ÙŠØµØ±Ù‘Ø­ Ø¨Ø°Ù„Ùƒ ÙÙŠ adminCatalogue.ts.
  */
 export interface SkillRecord {
   id: string
@@ -1874,7 +1897,7 @@ export interface SkillRecord {
   category: string
   description: string | null
   created_at: string
-  /// من استعلام تجميعي في GET /admin/skills، لا عمود في الجدول
+  /// Ù…Ù† Ø§Ø³ØªØ¹Ù„Ø§Ù… ØªØ¬Ù…ÙŠØ¹ÙŠ ÙÙŠ GET /admin/skillsØŒ Ù„Ø§ Ø¹Ù…ÙˆØ¯ ÙÙŠ Ø§Ù„Ø¬Ø¯ÙˆÙ„
   objectives_count?: number
 }
 
@@ -1885,7 +1908,7 @@ export interface SkillPayload {
   description?: string | null
 }
 
-/// ارتباطات الهدف التي تمنع حذفه. تُعاد في 409 من DELETE أيضًا لا في GET وحده.
+/// Ø§Ø±ØªØ¨Ø§Ø·Ø§Øª Ø§Ù„Ù‡Ø¯Ù Ø§Ù„ØªÙŠ ØªÙ…Ù†Ø¹ Ø­Ø°ÙÙ‡. ØªÙØ¹Ø§Ø¯ ÙÙŠ 409 Ù…Ù† DELETE Ø£ÙŠØ¶Ù‹Ø§ Ù„Ø§ ÙÙŠ GET ÙˆØ­Ø¯Ù‡.
 export interface ObjectiveUsage {
   episodes: number
   games: number
@@ -1896,10 +1919,10 @@ export interface ObjectiveUsage {
 }
 
 /**
- * هدف تعليمي قابل للقياس. الجدول من المهاجرة 0001.
+ * Ù‡Ø¯Ù ØªØ¹Ù„ÙŠÙ…ÙŠ Ù‚Ø§Ø¨Ù„ Ù„Ù„Ù‚ÙŠØ§Ø³. Ø§Ù„Ø¬Ø¯ÙˆÙ„ Ù…Ù† Ø§Ù„Ù…Ù‡Ø§Ø¬Ø±Ø© 0001.
  *
- * `track_ids` ليست عمودًا: الخادم يجمعها من learning_objective_tracks ويعيدها
- * مصفوفة جاهزة (`serializeObjective`)، فلا تُفكَّك في الواجهة.
+ * `track_ids` Ù„ÙŠØ³Øª Ø¹Ù…ÙˆØ¯Ù‹Ø§: Ø§Ù„Ø®Ø§Ø¯Ù… ÙŠØ¬Ù…Ø¹Ù‡Ø§ Ù…Ù† learning_objective_tracks ÙˆÙŠØ¹ÙŠØ¯Ù‡Ø§
+ * Ù…ØµÙÙˆÙØ© Ø¬Ø§Ù‡Ø²Ø© (`serializeObjective`)ØŒ ÙÙ„Ø§ ØªÙÙÙƒÙŽÙ‘Ùƒ ÙÙŠ Ø§Ù„ÙˆØ§Ø¬Ù‡Ø©.
  */
 export interface LearningObjectiveRecord {
   id: string
@@ -1912,7 +1935,7 @@ export interface LearningObjectiveRecord {
   measurable_criteria: string | null
   created_at: string
   track_ids: AgeTrack[]
-  /// من LEFT JOIN skills
+  /// Ù…Ù† LEFT JOIN skills
   skill_name?: string | null
   skill_category?: string | null
   episodes_count?: number
@@ -1932,11 +1955,11 @@ export interface LearningObjectivePayload {
   age_min: number
   age_max: number
   measurable_criteria?: string | null
-  /// إن أُغفلت يشتقّها الخادم من المدى العمري
+  /// Ø¥Ù† Ø£ÙØºÙÙ„Øª ÙŠØ´ØªÙ‚Ù‘Ù‡Ø§ Ø§Ù„Ø®Ø§Ø¯Ù… Ù…Ù† Ø§Ù„Ù…Ø¯Ù‰ Ø§Ù„Ø¹Ù…Ø±ÙŠ
   track_ids?: AgeTrack[]
 }
 
-/* ---------------------------------------------- بنك الأسئلة */
+/* ---------------------------------------------- Ø¨Ù†Ùƒ Ø§Ù„Ø£Ø³Ø¦Ù„Ø© */
 
 export type QuestionType = 'MULTIPLE_CHOICE'|'TRUE_FALSE'|'ORDERING'|'MATCHING'|'IMAGE_CHOICE'
 export type QuestionStatus = 'draft'|'in_review'|'approved'|'archived'
@@ -1993,7 +2016,7 @@ export interface QuestionPayload {
   media_asset_id?: string|null
 }
 
-/* ------------------------------------------- مركز الترجمة */
+/* ------------------------------------------- Ù…Ø±ÙƒØ² Ø§Ù„ØªØ±Ø¬Ù…Ø© */
 
 export type TranslationStatus = 'pending'|'in_translation'|'ready_for_review'|'changes_requested'|'approved'|'stale'
 export type GlossaryCategory = 'character'|'planet'|'educational'|'islamic'|'scientific'|'ui'|'general'
@@ -2043,14 +2066,14 @@ export interface GlossaryTerm {
   updated_at: string
 }
 
-/* --------------------------------------------------------- مراجعات المحتوى */
+/* --------------------------------------------------------- Ù…Ø±Ø§Ø¬Ø¹Ø§Øª Ø§Ù„Ù…Ø­ØªÙˆÙ‰ */
 
 /**
- * أنواع الكيانات القابلة للمراجعة.
+ * Ø£Ù†ÙˆØ§Ø¹ Ø§Ù„ÙƒÙŠØ§Ù†Ø§Øª Ø§Ù„Ù‚Ø§Ø¨Ù„Ø© Ù„Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©.
  *
- * `story` غائب عن قصد: الـCHECK في D1 هو
- * `entity_type IN ('series','episode','book','game','project')`، فصفّ مراجعة
- * لقصة يفشل القيد. توسيعه يحتاج مهاجرة وإعادة بناء الجدول.
+ * `story` ØºØ§Ø¦Ø¨ Ø¹Ù† Ù‚ØµØ¯: Ø§Ù„Ù€CHECK ÙÙŠ D1 Ù‡Ùˆ
+ * `entity_type IN ('series','episode','book','game','project')`ØŒ ÙØµÙÙ‘ Ù…Ø±Ø§Ø¬Ø¹Ø©
+ * Ù„Ù‚ØµØ© ÙŠÙØ´Ù„ Ø§Ù„Ù‚ÙŠØ¯. ØªÙˆØ³ÙŠØ¹Ù‡ ÙŠØ­ØªØ§Ø¬ Ù…Ù‡Ø§Ø¬Ø±Ø© ÙˆØ¥Ø¹Ø§Ø¯Ø© Ø¨Ù†Ø§Ø¡ Ø§Ù„Ø¬Ø¯ÙˆÙ„.
  */
 export type ReviewEntityType = 'series' | 'episode' | 'story' | 'book' | 'game' | 'project'
 export type ReviewerRole = 'edu' | 'lang' | 'sharia' | 'rights' | 'qa'
@@ -2075,20 +2098,20 @@ export interface ContentReviewPayload {
   comments?: string | null
 }
 
-/* ------------------------------------------------ أحداث العائلة الفاشلة (DLQ) */
+/* ------------------------------------------------ Ø£Ø­Ø¯Ø§Ø« Ø§Ù„Ø¹Ø§Ø¦Ù„Ø© Ø§Ù„ÙØ§Ø´Ù„Ø© (DLQ) */
 
-/// مطابق لقيد CHECK على failed_family_events.status في المهاجرة 0021
+/// Ù…Ø·Ø§Ø¨Ù‚ Ù„Ù‚ÙŠØ¯ CHECK Ø¹Ù„Ù‰ failed_family_events.status ÙÙŠ Ø§Ù„Ù…Ù‡Ø§Ø¬Ø±Ø© 0021
 export type FailedEventStatus = 'pending' | 'replayed' | 'discarded'
 
 /**
- * حدث عائلة استنفد محاولاته وسقط في الـDLQ.
+ * Ø­Ø¯Ø« Ø¹Ø§Ø¦Ù„Ø© Ø§Ø³ØªÙ†ÙØ¯ Ù…Ø­Ø§ÙˆÙ„Ø§ØªÙ‡ ÙˆØ³Ù‚Ø· ÙÙŠ Ø§Ù„Ù€DLQ.
  *
- * أعمدة الهوية كلها nullable عن قصد: رسالة مشوّهة هي أحد أسباب الوصول إلى
- * الـDLQ أصلًا، فلا هوية لها. تسجيل الفشل بحقول فارغة أنفع من إسقاط الصفّ.
+ * Ø£Ø¹Ù…Ø¯Ø© Ø§Ù„Ù‡ÙˆÙŠØ© ÙƒÙ„Ù‡Ø§ nullable Ø¹Ù† Ù‚ØµØ¯: Ø±Ø³Ø§Ù„Ø© Ù…Ø´ÙˆÙ‘Ù‡Ø© Ù‡ÙŠ Ø£Ø­Ø¯ Ø£Ø³Ø¨Ø§Ø¨ Ø§Ù„ÙˆØµÙˆÙ„ Ø¥Ù„Ù‰
+ * Ø§Ù„Ù€DLQ Ø£ØµÙ„Ù‹Ø§ØŒ ÙÙ„Ø§ Ù‡ÙˆÙŠØ© Ù„Ù‡Ø§. ØªØ³Ø¬ÙŠÙ„ Ø§Ù„ÙØ´Ù„ Ø¨Ø­Ù‚ÙˆÙ„ ÙØ§Ø±ØºØ© Ø£Ù†ÙØ¹ Ù…Ù† Ø¥Ø³Ù‚Ø§Ø· Ø§Ù„ØµÙÙ‘.
  *
- * `payload` هو الجسم الخام كما وصل. قد يكون حدثًا صالحًا، أو نائبًا يحمل
- * `{ error: 'payload_truncated' | 'payload_not_serializable' }` عندما تعذّر حفظه
- * كاملًا — والنائب لا يُعاد تشغيله لأنه ليس حدثًا.
+ * `payload` Ù‡Ùˆ Ø§Ù„Ø¬Ø³Ù… Ø§Ù„Ø®Ø§Ù… ÙƒÙ…Ø§ ÙˆØµÙ„. Ù‚Ø¯ ÙŠÙƒÙˆÙ† Ø­Ø¯Ø«Ù‹Ø§ ØµØ§Ù„Ø­Ù‹Ø§ØŒ Ø£Ùˆ Ù†Ø§Ø¦Ø¨Ù‹Ø§ ÙŠØ­Ù…Ù„
+ * `{ error: 'payload_truncated' | 'payload_not_serializable' }` Ø¹Ù†Ø¯Ù…Ø§ ØªØ¹Ø°Ù‘Ø± Ø­ÙØ¸Ù‡
+ * ÙƒØ§Ù…Ù„Ù‹Ø§ â€” ÙˆØ§Ù„Ù†Ø§Ø¦Ø¨ Ù„Ø§ ÙŠÙØ¹Ø§Ø¯ ØªØ´ØºÙŠÙ„Ù‡ Ù„Ø£Ù†Ù‡ Ù„ÙŠØ³ Ø­Ø¯Ø«Ù‹Ø§.
  */
 export interface FailedFamilyEventRecord {
   id: string
@@ -2105,8 +2128,8 @@ export interface FailedFamilyEventRecord {
   resolution_note: string | null
 }
 
-/// القائمة تُعيد `pending` مستقلًّا عن `total`: العدد المعلَّق هو ما يحتاج تصرّفًا،
-/// و`total` يشمل ما حُلَّ سلفًا.
+/// Ø§Ù„Ù‚Ø§Ø¦Ù…Ø© ØªÙØ¹ÙŠØ¯ `pending` Ù…Ø³ØªÙ‚Ù„Ù‹Ù‘Ø§ Ø¹Ù† `total`: Ø§Ù„Ø¹Ø¯Ø¯ Ø§Ù„Ù…Ø¹Ù„ÙŽÙ‘Ù‚ Ù‡Ùˆ Ù…Ø§ ÙŠØ­ØªØ§Ø¬ ØªØµØ±Ù‘ÙÙ‹Ø§ØŒ
+/// Ùˆ`total` ÙŠØ´Ù…Ù„ Ù…Ø§ Ø­ÙÙ„ÙŽÙ‘ Ø³Ù„ÙÙ‹Ø§.
 export interface FailedFamilyEventListMeta extends PaginationMeta {
   pending: number
 }
@@ -2119,32 +2142,32 @@ export interface FailedEventReplayResult {
   id: string
   replayed: boolean
   event_id: string
-  /// صحيح عندما كان الحدث مُسقَطًا سلفًا: `processFamilyEvent` يفحص
-  /// processed_family_events فلا يُطبَّق شيء مرتين.
+  /// ØµØ­ÙŠØ­ Ø¹Ù†Ø¯Ù…Ø§ ÙƒØ§Ù† Ø§Ù„Ø­Ø¯Ø« Ù…ÙØ³Ù‚ÙŽØ·Ù‹Ø§ Ø³Ù„ÙÙ‹Ø§: `processFamilyEvent` ÙŠÙØ­Øµ
+  /// processed_family_events ÙÙ„Ø§ ÙŠÙØ·Ø¨ÙŽÙ‘Ù‚ Ø´ÙŠØ¡ Ù…Ø±ØªÙŠÙ†.
   duplicate: boolean
 }
 
-/* ------------------------------------------------------- توليد السرد (TTS) */
+/* ------------------------------------------------------- ØªÙˆÙ„ÙŠØ¯ Ø§Ù„Ø³Ø±Ø¯ (TTS) */
 
 /**
- * النقل المستخدم فعلًا. الاثنان يصلان إلى الموديل نفسه لكن باعتمادَين مختلفين:
+ * Ø§Ù„Ù†Ù‚Ù„ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… ÙØ¹Ù„Ù‹Ø§. Ø§Ù„Ø§Ø«Ù†Ø§Ù† ÙŠØµÙ„Ø§Ù† Ø¥Ù„Ù‰ Ø§Ù„Ù…ÙˆØ¯ÙŠÙ„ Ù†ÙØ³Ù‡ Ù„ÙƒÙ† Ø¨Ø§Ø¹ØªÙ…Ø§Ø¯ÙŽÙŠÙ† Ù…Ø®ØªÙ„ÙÙŠÙ†:
  *
- * - `cloud_tts`: حساب خدمة، ويُعيد MP3 مباشرة. مُفضَّل لأن Workers لا تُحوّل صيغًا.
- * - `ai_studio`: مفتاح API، ويُعيد PCM خامًا يلفّه الخادم كـWAV.
+ * - `cloud_tts`: Ø­Ø³Ø§Ø¨ Ø®Ø¯Ù…Ø©ØŒ ÙˆÙŠÙØ¹ÙŠØ¯ MP3 Ù…Ø¨Ø§Ø´Ø±Ø©. Ù…ÙÙØ¶ÙŽÙ‘Ù„ Ù„Ø£Ù† Workers Ù„Ø§ ØªÙØ­ÙˆÙ‘Ù„ ØµÙŠØºÙ‹Ø§.
+ * - `ai_studio`: Ù…ÙØªØ§Ø­ APIØŒ ÙˆÙŠÙØ¹ÙŠØ¯ PCM Ø®Ø§Ù…Ù‹Ø§ ÙŠÙ„ÙÙ‘Ù‡ Ø§Ù„Ø®Ø§Ø¯Ù… ÙƒÙ€WAV.
  *
- * `null` يعني أن أيًّا منهما غير مُهيَّأ، فالتوليد متعذّر.
+ * `null` ÙŠØ¹Ù†ÙŠ Ø£Ù† Ø£ÙŠÙ‹Ù‘Ø§ Ù…Ù†Ù‡Ù…Ø§ ØºÙŠØ± Ù…ÙÙ‡ÙŠÙŽÙ‘Ø£ØŒ ÙØ§Ù„ØªÙˆÙ„ÙŠØ¯ Ù…ØªØ¹Ø°Ù‘Ø±.
  */
 export type TtsTransport = 'cloud_tts' | 'ai_studio'
 
-/// الترميزات التي يقبلها Cloud TTS. نقل ai_studio يتجاهلها ويُعيد WAV دائمًا.
+/// Ø§Ù„ØªØ±Ù…ÙŠØ²Ø§Øª Ø§Ù„ØªÙŠ ÙŠÙ‚Ø¨Ù„Ù‡Ø§ Cloud TTS. Ù†Ù‚Ù„ ai_studio ÙŠØªØ¬Ø§Ù‡Ù„Ù‡Ø§ ÙˆÙŠÙØ¹ÙŠØ¯ WAV Ø¯Ø§Ø¦Ù…Ù‹Ø§.
 export type TtsEncoding = 'MP3' | 'LINEAR16' | 'OGG_OPUS'
 
 /**
- * حدود المزوّد **بالبايت لا بالحرف**.
+ * Ø­Ø¯ÙˆØ¯ Ø§Ù„Ù…Ø²ÙˆÙ‘Ø¯ **Ø¨Ø§Ù„Ø¨Ø§ÙŠØª Ù„Ø§ Ø¨Ø§Ù„Ø­Ø±Ù**.
  *
- * الفرق جوهري للعربية: UTF-8 يرمّز الحرف العربي في بايتين، فحدّ 4000 بايت هو
- * ~2000 حرف. وGemini-TTS يقتطع الزائد **بصمت**، فالخادم يرفض بدل أن يُنتج سردًا
- * ينقطع في منتصف الجملة.
+ * Ø§Ù„ÙØ±Ù‚ Ø¬ÙˆÙ‡Ø±ÙŠ Ù„Ù„Ø¹Ø±Ø¨ÙŠØ©: UTF-8 ÙŠØ±Ù…Ù‘Ø² Ø§Ù„Ø­Ø±Ù Ø§Ù„Ø¹Ø±Ø¨ÙŠ ÙÙŠ Ø¨Ø§ÙŠØªÙŠÙ†ØŒ ÙØ­Ø¯Ù‘ 4000 Ø¨Ø§ÙŠØª Ù‡Ùˆ
+ * ~2000 Ø­Ø±Ù. ÙˆGemini-TTS ÙŠÙ‚ØªØ·Ø¹ Ø§Ù„Ø²Ø§Ø¦Ø¯ **Ø¨ØµÙ…Øª**ØŒ ÙØ§Ù„Ø®Ø§Ø¯Ù… ÙŠØ±ÙØ¶ Ø¨Ø¯Ù„ Ø£Ù† ÙŠÙÙ†ØªØ¬ Ø³Ø±Ø¯Ù‹Ø§
+ * ÙŠÙ†Ù‚Ø·Ø¹ ÙÙŠ Ù…Ù†ØªØµÙ Ø§Ù„Ø¬Ù…Ù„Ø©.
  */
 export interface TtsLimits {
   text_bytes: number
@@ -2157,40 +2180,40 @@ export interface TtsConfig {
   configured: boolean
   transport: TtsTransport | null
   default_model: string
-  /// قائمة مغلقة، فالخطأ المطبعيّ يصير 400 لا خطأ مزوّد غامضًا
+  /// Ù‚Ø§Ø¦Ù…Ø© Ù…ØºÙ„Ù‚Ø©ØŒ ÙØ§Ù„Ø®Ø·Ø£ Ø§Ù„Ù…Ø·Ø¨Ø¹ÙŠÙ‘ ÙŠØµÙŠØ± 400 Ù„Ø§ Ø®Ø·Ø£ Ù…Ø²ÙˆÙ‘Ø¯ ØºØ§Ù…Ø¶Ù‹Ø§
   voices: string[]
   limits: TtsLimits
-  /// ar-EG هو الوحيد GA لـGemini-TTS؛ ar-001 لا يزال Preview
+  /// ar-EG Ù‡Ùˆ Ø§Ù„ÙˆØ­ÙŠØ¯ GA Ù„Ù€Gemini-TTSØ› ar-001 Ù„Ø§ ÙŠØ²Ø§Ù„ Preview
   recommended_language: string
 }
 
 /**
- * نتيجة معاينة السرد.
+ * Ù†ØªÙŠØ¬Ø© Ù…Ø¹Ø§ÙŠÙ†Ø© Ø§Ù„Ø³Ø±Ø¯.
  *
- * المسار يُعيد **صوتًا خامًا لا JSON**، فالعميل يبني هذا الكائن من الجسم
- * وترويسات `X-Tts-*`. الحقول مصدرها الخادم لا افتراض العميل: قد يختلف الترميز
- * الفعلي عمّا طُلب لأن نقل ai_studio يُعيد WAV دائمًا.
+ * Ø§Ù„Ù…Ø³Ø§Ø± ÙŠÙØ¹ÙŠØ¯ **ØµÙˆØªÙ‹Ø§ Ø®Ø§Ù…Ù‹Ø§ Ù„Ø§ JSON**ØŒ ÙØ§Ù„Ø¹Ù…ÙŠÙ„ ÙŠØ¨Ù†ÙŠ Ù‡Ø°Ø§ Ø§Ù„ÙƒØ§Ø¦Ù† Ù…Ù† Ø§Ù„Ø¬Ø³Ù…
+ * ÙˆØªØ±ÙˆÙŠØ³Ø§Øª `X-Tts-*`. Ø§Ù„Ø­Ù‚ÙˆÙ„ Ù…ØµØ¯Ø±Ù‡Ø§ Ø§Ù„Ø®Ø§Ø¯Ù… Ù„Ø§ Ø§ÙØªØ±Ø§Ø¶ Ø§Ù„Ø¹Ù…ÙŠÙ„: Ù‚Ø¯ ÙŠØ®ØªÙ„Ù Ø§Ù„ØªØ±Ù…ÙŠØ²
+ * Ø§Ù„ÙØ¹Ù„ÙŠ Ø¹Ù…Ù‘Ø§ Ø·ÙÙ„Ø¨ Ù„Ø£Ù† Ù†Ù‚Ù„ ai_studio ÙŠÙØ¹ÙŠØ¯ WAV Ø¯Ø§Ø¦Ù…Ù‹Ø§.
  */
 export interface TtsPreviewResult {
-  /// عنوان blob محليّ صالح لعنصر <audio>. يجب تحريره بـrevokeObjectURL.
+  /// Ø¹Ù†ÙˆØ§Ù† blob Ù…Ø­Ù„ÙŠÙ‘ ØµØ§Ù„Ø­ Ù„Ø¹Ù†ØµØ± <audio>. ÙŠØ¬Ø¨ ØªØ­Ø±ÙŠØ±Ù‡ Ø¨Ù€revokeObjectURL.
   url: string
   mimeType: string
   bytes: number
   transport: string
   model: string
   voice: string
-  /// نفس الـblob الذي بُني منه `url`، محتفَظًا به لحفظه لاحقًا في مكتبة
-  /// الوسائط دون توليد جديد.
+  /// Ù†ÙØ³ Ø§Ù„Ù€blob Ø§Ù„Ø°ÙŠ Ø¨ÙÙ†ÙŠ Ù…Ù†Ù‡ `url`ØŒ Ù…Ø­ØªÙÙŽØ¸Ù‹Ø§ Ø¨Ù‡ Ù„Ø­ÙØ¸Ù‡ Ù„Ø§Ø­Ù‚Ù‹Ø§ ÙÙŠ Ù…ÙƒØªØ¨Ø©
+  /// Ø§Ù„ÙˆØ³Ø§Ø¦Ø· Ø¯ÙˆÙ† ØªÙˆÙ„ÙŠØ¯ Ø¬Ø¯ÙŠØ¯.
   blob: Blob
 }
 
-/* ----------------------------------------------------- الإتقان والمحاولات */
+/* ----------------------------------------------------- Ø§Ù„Ø¥ØªÙ‚Ø§Ù† ÙˆØ§Ù„Ù…Ø­Ø§ÙˆÙ„Ø§Øª */
 
 /**
- * مستويات الإتقان، مطابقة لقيد CHECK على `mastery.level` في المهاجرة 0001.
+ * Ù…Ø³ØªÙˆÙŠØ§Øª Ø§Ù„Ø¥ØªÙ‚Ø§Ù†ØŒ Ù…Ø·Ø§Ø¨Ù‚Ø© Ù„Ù‚ÙŠØ¯ CHECK Ø¹Ù„Ù‰ `mastery.level` ÙÙŠ Ø§Ù„Ù…Ù‡Ø§Ø¬Ø±Ø© 0001.
  *
- * `needs_review` ليس موقعًا على السلّم بل علامة تراجع، ولذلك يأتي آخرًا في
- * الترتيب لا بين `assisted` و`independent`.
+ * `needs_review` Ù„ÙŠØ³ Ù…ÙˆÙ‚Ø¹Ù‹Ø§ Ø¹Ù„Ù‰ Ø§Ù„Ø³Ù„Ù‘Ù… Ø¨Ù„ Ø¹Ù„Ø§Ù…Ø© ØªØ±Ø§Ø¬Ø¹ØŒ ÙˆÙ„Ø°Ù„Ùƒ ÙŠØ£ØªÙŠ Ø¢Ø®Ø±Ù‹Ø§ ÙÙŠ
+ * Ø§Ù„ØªØ±ØªÙŠØ¨ Ù„Ø§ Ø¨ÙŠÙ† `assisted` Ùˆ`independent`.
  */
 export type MasteryLevel =
   | 'not_started'
@@ -2201,10 +2224,10 @@ export type MasteryLevel =
   | 'needs_review'
 
 /**
- * ملخّص الإتقان لهدف تعليمي واحد.
+ * Ù…Ù„Ø®Ù‘Øµ Ø§Ù„Ø¥ØªÙ‚Ø§Ù† Ù„Ù‡Ø¯Ù ØªØ¹Ù„ÙŠÙ…ÙŠ ÙˆØ§Ø­Ø¯.
  *
- * يجيب سؤال «أي هدف يتعثّر فيه الأطفال». `success_rate` يُحسب في الخادم لأن
- * القسمة تحتاج كل الصفوف؛ حسابها بعد الترقيم يعطي نسبة الصفحة لا نسبة الهدف.
+ * ÙŠØ¬ÙŠØ¨ Ø³Ø¤Ø§Ù„ Â«Ø£ÙŠ Ù‡Ø¯Ù ÙŠØªØ¹Ø«Ù‘Ø± ÙÙŠÙ‡ Ø§Ù„Ø£Ø·ÙØ§Ù„Â». `success_rate` ÙŠÙØ­Ø³Ø¨ ÙÙŠ Ø§Ù„Ø®Ø§Ø¯Ù… Ù„Ø£Ù†
+ * Ø§Ù„Ù‚Ø³Ù…Ø© ØªØ­ØªØ§Ø¬ ÙƒÙ„ Ø§Ù„ØµÙÙˆÙØ› Ø­Ø³Ø§Ø¨Ù‡Ø§ Ø¨Ø¹Ø¯ Ø§Ù„ØªØ±Ù‚ÙŠÙ… ÙŠØ¹Ø·ÙŠ Ù†Ø³Ø¨Ø© Ø§Ù„ØµÙØ­Ø© Ù„Ø§ Ù†Ø³Ø¨Ø© Ø§Ù„Ù‡Ø¯Ù.
  */
 export interface MasteryByObjective {
   id: string
@@ -2218,15 +2241,15 @@ export interface MasteryByObjective {
   not_started_count: number
   attempts: number
   correct_attempts: number
-  /// `null` عند غياب المحاولات: «لا بيانات» ليست «نسبة نجاح صفر»
+  /// `null` Ø¹Ù†Ø¯ ØºÙŠØ§Ø¨ Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø§Øª: Â«Ù„Ø§ Ø¨ÙŠØ§Ù†Ø§ØªÂ» Ù„ÙŠØ³Øª Â«Ù†Ø³Ø¨Ø© Ù†Ø¬Ø§Ø­ ØµÙØ±Â»
   success_rate: number | null
   last_attempt_at: string | null
 }
 
-/// ملخّص الإتقان لطفل واحد. يجيب سؤال «من يحتاج مساعدة».
+/// Ù…Ù„Ø®Ù‘Øµ Ø§Ù„Ø¥ØªÙ‚Ø§Ù† Ù„Ø·ÙÙ„ ÙˆØ§Ø­Ø¯. ÙŠØ¬ÙŠØ¨ Ø³Ø¤Ø§Ù„ Â«Ù…Ù† ÙŠØ­ØªØ§Ø¬ Ù…Ø³Ø§Ø¹Ø¯Ø©Â».
 export interface MasteryByChild {
   child_id: string
-  /// كُنية لا اسم قانوني. `adminFamilyProjection` يكشفها بالفعل للوحة.
+  /// ÙƒÙÙ†ÙŠØ© Ù„Ø§ Ø§Ø³Ù… Ù‚Ø§Ù†ÙˆÙ†ÙŠ. `adminFamilyProjection` ÙŠÙƒØ´ÙÙ‡Ø§ Ø¨Ø§Ù„ÙØ¹Ù„ Ù„Ù„ÙˆØ­Ø©.
   nickname: string
   age_track: AgeTrack
   parent_id: string
@@ -2240,10 +2263,10 @@ export interface MasteryByChild {
 }
 
 /**
- * محاولة واحدة من جدول `attempts`.
+ * Ù…Ø­Ø§ÙˆÙ„Ø© ÙˆØ§Ø­Ø¯Ø© Ù…Ù† Ø¬Ø¯ÙˆÙ„ `attempts`.
  *
- * عمود `answers` لا يُعاد من الخادم عن قصد: حجمه غير محدود ولا يفيد لوحة
- * الإدارة بقدر ما يوسّع سطح تعرّض بيانات الأطفال.
+ * Ø¹Ù…ÙˆØ¯ `answers` Ù„Ø§ ÙŠÙØ¹Ø§Ø¯ Ù…Ù† Ø§Ù„Ø®Ø§Ø¯Ù… Ø¹Ù† Ù‚ØµØ¯: Ø­Ø¬Ù…Ù‡ ØºÙŠØ± Ù…Ø­Ø¯ÙˆØ¯ ÙˆÙ„Ø§ ÙŠÙÙŠØ¯ Ù„ÙˆØ­Ø©
+ * Ø§Ù„Ø¥Ø¯Ø§Ø±Ø© Ø¨Ù‚Ø¯Ø± Ù…Ø§ ÙŠÙˆØ³Ù‘Ø¹ Ø³Ø·Ø­ ØªØ¹Ø±Ù‘Ø¶ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø£Ø·ÙØ§Ù„.
  */
 export interface AttemptRecord {
   id: string
@@ -2255,14 +2278,14 @@ export interface AttemptRecord {
   episode_title: string | null
   score: number | null
   max_score: number | null
-  /// `null` عندما لا يكون للدرجة سقف: score بلا max_score لا يقبل نسبة مئوية
+  /// `null` Ø¹Ù†Ø¯Ù…Ø§ Ù„Ø§ ÙŠÙƒÙˆÙ† Ù„Ù„Ø¯Ø±Ø¬Ø© Ø³Ù‚Ù: score Ø¨Ù„Ø§ max_score Ù„Ø§ ÙŠÙ‚Ø¨Ù„ Ù†Ø³Ø¨Ø© Ù…Ø¦ÙˆÙŠØ©
   score_percent: number | null
   time_spent_seconds: number
   help_used: boolean
   created_at: string
 }
 
-/// قائمة الأهداف تُرفق المستويات المتاحة مع الترقيم، فلا تُكرَّر في الواجهة.
+/// Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø£Ù‡Ø¯Ø§Ù ØªÙØ±ÙÙ‚ Ø§Ù„Ù…Ø³ØªÙˆÙŠØ§Øª Ø§Ù„Ù…ØªØ§Ø­Ø© Ù…Ø¹ Ø§Ù„ØªØ±Ù‚ÙŠÙ…ØŒ ÙÙ„Ø§ ØªÙÙƒØ±ÙŽÙ‘Ø± ÙÙŠ Ø§Ù„ÙˆØ§Ø¬Ù‡Ø©.
 export interface MasteryByObjectiveMeta extends PaginationMeta {
   levels: MasteryLevel[]
 }
@@ -2271,23 +2294,23 @@ export interface MasteryByObjectiveEnvelope extends ApiEnvelope<MasteryByObjecti
   meta: MasteryByObjectiveMeta
 }
 
-/* --------------------------------------------- فحص الجودة والتصدير (النسخ) */
+/* --------------------------------------------- ÙØ­Øµ Ø§Ù„Ø¬ÙˆØ¯Ø© ÙˆØ§Ù„ØªØµØ¯ÙŠØ± (Ø§Ù„Ù†Ø³Ø®) */
 
 /**
- * الأنواع القابلة للفحص والتصدير.
+ * Ø§Ù„Ø£Ù†ÙˆØ§Ø¹ Ø§Ù„Ù‚Ø§Ø¨Ù„Ø© Ù„Ù„ÙØ­Øµ ÙˆØ§Ù„ØªØµØ¯ÙŠØ±.
  *
- * `story` و`book` كيانان مختلفان لا مترادفان: `stories` له صفحات في جدول
- * `story_pages`، و`books` يخزّن صفحاته في عمود JSON. كان الخادم يقرأ `story`
- * من جدول `books` فلا ينجح الفحص على أي مدخل صحيح.
+ * `story` Ùˆ`book` ÙƒÙŠØ§Ù†Ø§Ù† Ù…Ø®ØªÙ„ÙØ§Ù† Ù„Ø§ Ù…ØªØ±Ø§Ø¯ÙØ§Ù†: `stories` Ù„Ù‡ ØµÙØ­Ø§Øª ÙÙŠ Ø¬Ø¯ÙˆÙ„
+ * `story_pages`ØŒ Ùˆ`books` ÙŠØ®Ø²Ù‘Ù† ØµÙØ­Ø§ØªÙ‡ ÙÙŠ Ø¹Ù…ÙˆØ¯ JSON. ÙƒØ§Ù† Ø§Ù„Ø®Ø§Ø¯Ù… ÙŠÙ‚Ø±Ø£ `story`
+ * Ù…Ù† Ø¬Ø¯ÙˆÙ„ `books` ÙÙ„Ø§ ÙŠÙ†Ø¬Ø­ Ø§Ù„ÙØ­Øµ Ø¹Ù„Ù‰ Ø£ÙŠ Ù…Ø¯Ø®Ù„ ØµØ­ÙŠØ­.
  */
 export type QualityEntityType = 'series' | 'story' | 'book' | 'game' | 'project'
 
 /**
- * جاهزية النشر الموحّدة: `GET /admin/publish-readiness/:type/:id`.
+ * Ø¬Ø§Ù‡Ø²ÙŠØ© Ø§Ù„Ù†Ø´Ø± Ø§Ù„Ù…ÙˆØ­Ù‘Ø¯Ø©: `GET /admin/publish-readiness/:type/:id`.
  *
- * تشمل `episode` بخلاف `QualityEntityType` لأن بوابة النشر تفحص الحلقة فعليًا
- * (فيديو، مصغّرة، صوت عربي، السلسلة الأمّ)، بينما فحوص الجودة القديمة لا تعرف
- * الحلقات إطلاقًا. النوعان مفصولان عن قصد فلا يُدَّعى وجود فحص جودة للحلقة.
+ * ØªØ´Ù…Ù„ `episode` Ø¨Ø®Ù„Ø§Ù `QualityEntityType` Ù„Ø£Ù† Ø¨ÙˆØ§Ø¨Ø© Ø§Ù„Ù†Ø´Ø± ØªÙØ­Øµ Ø§Ù„Ø­Ù„Ù‚Ø© ÙØ¹Ù„ÙŠÙ‹Ø§
+ * (ÙÙŠØ¯ÙŠÙˆØŒ Ù…ØµØºÙ‘Ø±Ø©ØŒ ØµÙˆØª Ø¹Ø±Ø¨ÙŠØŒ Ø§Ù„Ø³Ù„Ø³Ù„Ø© Ø§Ù„Ø£Ù…Ù‘)ØŒ Ø¨ÙŠÙ†Ù…Ø§ ÙØ­ÙˆØµ Ø§Ù„Ø¬ÙˆØ¯Ø© Ø§Ù„Ù‚Ø¯ÙŠÙ…Ø© Ù„Ø§ ØªØ¹Ø±Ù
+ * Ø§Ù„Ø­Ù„Ù‚Ø§Øª Ø¥Ø·Ù„Ø§Ù‚Ù‹Ø§. Ø§Ù„Ù†ÙˆØ¹Ø§Ù† Ù…ÙØµÙˆÙ„Ø§Ù† Ø¹Ù† Ù‚ØµØ¯ ÙÙ„Ø§ ÙŠÙØ¯ÙŽÙ‘Ø¹Ù‰ ÙˆØ¬ÙˆØ¯ ÙØ­Øµ Ø¬ÙˆØ¯Ø© Ù„Ù„Ø­Ù„Ù‚Ø©.
  */
 export type PublishableEntityType = 'series' | 'episode' | 'story' | 'book' | 'game' | 'project'
 
@@ -2316,8 +2339,51 @@ export interface PublishGateResult {
   blockers: PublishGateFinding[]
   warnings: PublishGateFinding[]
 }
+/// تقرير الأصول التي لا يشير إليها شيء (`CNT-104`).
+///
+/// `checked_paths` ليست تفصيلًا تقنيًّا: تقريرٌ لا تُرى تغطيته لا يُوثَق به، وغيابُ
+/// الرؤية هو كيف صار «مسارَان» وصفًا مقبولًا لثلاثة عشر جدولًا.
+export interface UnreferencedAssetsReport {
+  total: number
+  by_kind: Array<{ kind: string; count: number; bytes: number }>
+  assets: Array<{
+    id: string; title_ar: string; kind: string; status: string
+    size_bytes: number | null; r2_key: string | null; created_at: string | null
+  }>
+  checked_paths: Array<{ table: string; column: string }>
+  include_archived: boolean
+  limit: number
+}
+export type PublishSweepStatus = 'published' | 'ready' | 'scheduled' | 'review'
+/// نتيجة مسح البوابة على صفوف بحالةٍ واحدة (`CNT-101`, `CNT-102`).
+///
+/// `unavailable` ليست تفصيلًا: صفٌّ تعذّر تقييمه ليس صفًّا سليمًا، وعرضه ضمن
+/// «لا شيء محجوب» هو خطأ «الصفر مكان المجهول» نفسه في موضع أخطر.
+export interface PublishSweepReport {
+  status: PublishSweepStatus
+  checked: Record<string, number>
+  blocked_count: number
+  blocked: Array<{
+    entity_type: PublishableEntityType
+    entity_id: string
+    blockers: PublishGateFinding[]
+  }>
+  /// صفوف تمرّ البوابة وتحمل تحذيرات (`CNT-107`).
+  ///
+  /// مفصولة عن `blocked` عن قصد: طيُّها فيه يسمّي التحذير رفضًا، وإسقاطها يجعل
+  /// التحذير المُتجاهَل غير مرئي. والمثال الذي كشفها: 43 سجلّ مراجعة كلّها معلّقة،
+  /// والبوابة تُحذِّر ولا تحجب (بقرارٍ موثَّق)، فكان المنشور بلا اعتماد يظهر نظيفًا.
+  warned_count: number
+  warned: Array<{
+    entity_type: PublishableEntityType
+    entity_id: string
+    warnings: PublishGateFinding[]
+  }>
+  unavailable: Array<{ entity_type: PublishableEntityType; error: string }>
+  limit: number
+}
 
-/// جسم رفض النشر بـ409. نفس شكل نتيجة الجاهزية منقوصًا من الفحوص الناجحة.
+/// Ø¬Ø³Ù… Ø±ÙØ¶ Ø§Ù„Ù†Ø´Ø± Ø¨Ù€409. Ù†ÙØ³ Ø´ÙƒÙ„ Ù†ØªÙŠØ¬Ø© Ø§Ù„Ø¬Ø§Ù‡Ø²ÙŠØ© Ù…Ù†Ù‚ÙˆØµÙ‹Ø§ Ù…Ù† Ø§Ù„ÙØ­ÙˆØµ Ø§Ù„Ù†Ø§Ø¬Ø­Ø©.
 export interface PublishRefusal {
   entity_type: PublishableEntityType
   entity_id: string
@@ -2326,7 +2392,7 @@ export interface PublishRefusal {
   warnings: PublishGateFinding[]
 }
 
-// --- سياسة الإتاحة الجغرافية ------------------------------------------------
+// --- Ø³ÙŠØ§Ø³Ø© Ø§Ù„Ø¥ØªØ§Ø­Ø© Ø§Ù„Ø¬ØºØ±Ø§ÙÙŠØ© ------------------------------------------------
 
 export type AvailabilityMode = 'worldwide' | 'worldwide_except' | 'selected_only' | 'unavailable'
 export type AvailabilityReason = 'rights' | 'commercial' | 'editorial' | 'legal'
@@ -2354,7 +2420,7 @@ export type AvailabilityCode =
 export interface AvailabilityDecision {
   available: boolean
   code: AvailabilityCode
-  /// explicit ⇒ مُلغاة على العنصر · inherited ⇒ موروثة · default ⇒ لا سياسة
+  /// explicit â‡’ Ù…ÙÙ„ØºØ§Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø¹Ù†ØµØ± Â· inherited â‡’ Ù…ÙˆØ±ÙˆØ«Ø© Â· default â‡’ Ù„Ø§ Ø³ÙŠØ§Ø³Ø©
   source: 'explicit' | 'inherited' | 'default'
   policy: AvailabilityPolicy | null
   inherited_from: { entity_type: AvailabilityScope; entity_id: string } | null
@@ -2383,7 +2449,7 @@ export interface AvailabilityListRow extends AvailabilityPolicy {
   updated_at: string
 }
 
-// --- محرك سير العمل ---------------------------------------------------------
+// --- Ù…Ø­Ø±Ùƒ Ø³ÙŠØ± Ø§Ù„Ø¹Ù…Ù„ ---------------------------------------------------------
 
 export type WorkflowStageStatus =
   | 'pending' | 'in_progress' | 'approved' | 'rejected' | 'changes_requested' | 'skipped'
@@ -2425,7 +2491,7 @@ export interface WorkflowRunStageState {
 export interface WorkflowStageView extends WorkflowStageDefinition {
   run_stage: WorkflowRunStageState | null
   unmet_dependencies: string[]
-  /// محسوبة على الخادم بنفس دالة الفرض، فالزر المعطَّل يطابق ما سيرفضه الخادم.
+  /// Ù…Ø­Ø³ÙˆØ¨Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø®Ø§Ø¯Ù… Ø¨Ù†ÙØ³ Ø¯Ø§Ù„Ø© Ø§Ù„ÙØ±Ø¶ØŒ ÙØ§Ù„Ø²Ø± Ø§Ù„Ù…Ø¹Ø·ÙŽÙ‘Ù„ ÙŠØ·Ø§Ø¨Ù‚ Ù…Ø§ Ø³ÙŠØ±ÙØ¶Ù‡ Ø§Ù„Ø®Ø§Ø¯Ù….
   can_decide: boolean
   refusal_reason: string | null
 }
@@ -2494,12 +2560,12 @@ export interface WorkflowMyStage {
 }
 
 /**
- * قراءة حيّة لأجهزة عائلة من FamilyState لا من إسقاط D1.
+ * Ù‚Ø±Ø§Ø¡Ø© Ø­ÙŠÙ‘Ø© Ù„Ø£Ø¬Ù‡Ø²Ø© Ø¹Ø§Ø¦Ù„Ø© Ù…Ù† FamilyState Ù„Ø§ Ù…Ù† Ø¥Ø³Ù‚Ø§Ø· D1.
  *
- * الفرق ليس تجميليًا: الإسقاط يتغذّى من طابور فهو متأخّر بطبيعته، ومحادثة الدعم
- * تجري في الحاضر. `revoke_available` تبقى false لأن `POST /devices/revoke` في
- * الـDO يتحقّق من جلسة والٍ فعليًا، فلا مسار إداري له — والإعلان عن ذلك في
- * الجسم يمنع الواجهة من تقديم قراءة حيّة وسحبًا كأنهما متاحان معًا.
+ * Ø§Ù„ÙØ±Ù‚ Ù„ÙŠØ³ ØªØ¬Ù…ÙŠÙ„ÙŠÙ‹Ø§: Ø§Ù„Ø¥Ø³Ù‚Ø§Ø· ÙŠØªØºØ°Ù‘Ù‰ Ù…Ù† Ø·Ø§Ø¨ÙˆØ± ÙÙ‡Ùˆ Ù…ØªØ£Ø®Ù‘Ø± Ø¨Ø·Ø¨ÙŠØ¹ØªÙ‡ØŒ ÙˆÙ…Ø­Ø§Ø¯Ø«Ø© Ø§Ù„Ø¯Ø¹Ù…
+ * ØªØ¬Ø±ÙŠ ÙÙŠ Ø§Ù„Ø­Ø§Ø¶Ø±. `revoke_available` ØªØ¨Ù‚Ù‰ false Ù„Ø£Ù† `POST /devices/revoke` ÙÙŠ
+ * Ø§Ù„Ù€DO ÙŠØªØ­Ù‚Ù‘Ù‚ Ù…Ù† Ø¬Ù„Ø³Ø© ÙˆØ§Ù„Ù ÙØ¹Ù„ÙŠÙ‹Ø§ØŒ ÙÙ„Ø§ Ù…Ø³Ø§Ø± Ø¥Ø¯Ø§Ø±ÙŠ Ù„Ù‡ â€” ÙˆØ§Ù„Ø¥Ø¹Ù„Ø§Ù† Ø¹Ù† Ø°Ù„Ùƒ ÙÙŠ
+ * Ø§Ù„Ø¬Ø³Ù… ÙŠÙ…Ù†Ø¹ Ø§Ù„ÙˆØ§Ø¬Ù‡Ø© Ù…Ù† ØªÙ‚Ø¯ÙŠÙ… Ù‚Ø±Ø§Ø¡Ø© Ø­ÙŠÙ‘Ø© ÙˆØ³Ø­Ø¨Ù‹Ø§ ÙƒØ£Ù†Ù‡Ù…Ø§ Ù…ØªØ§Ø­Ø§Ù† Ù…Ø¹Ù‹Ø§.
  */
 export interface SupportLiveDevice {
   id: string
@@ -2517,7 +2583,7 @@ export interface SupportLiveDevices {
   revoke_available: boolean
 }
 
-// --- تذاكر الدعم -------------------------------------------------------------
+// --- ØªØ°Ø§ÙƒØ± Ø§Ù„Ø¯Ø¹Ù… -------------------------------------------------------------
 
 export type TicketCategory =
   | 'billing' | 'subscription' | 'playback' | 'downloads' | 'account'
@@ -2528,7 +2594,7 @@ export type TicketAction =
   | 'entitlement_resync' | 'subscription_resync' | 'restore_purchase'
   | 'device_revoke' | 'pin_reset' | 'account_recovery' | 'manual_note'
 
-/// حالة SLA محسوبة على الخادم: ساعتان منفصلتان (أول ردّ، الحلّ) وسببها نصًّا.
+/// Ø­Ø§Ù„Ø© SLA Ù…Ø­Ø³ÙˆØ¨Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø®Ø§Ø¯Ù…: Ø³Ø§Ø¹ØªØ§Ù† Ù…Ù†ÙØµÙ„ØªØ§Ù† (Ø£ÙˆÙ„ Ø±Ø¯Ù‘ØŒ Ø§Ù„Ø­Ù„Ù‘) ÙˆØ³Ø¨Ø¨Ù‡Ø§ Ù†ØµÙ‹Ù‘Ø§.
 export interface TicketSlaState {
   first_response_breached: boolean
   resolution_breached: boolean
@@ -2579,9 +2645,9 @@ export interface SupportTicketEvent {
 export interface SupportTicketDetail {
   ticket: SupportTicket
   timeline: SupportTicketEvent[]
-  /// الإجراءات التي يمكن للمنصّة تنفيذها فعلًا اليوم.
+  /// Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª Ø§Ù„ØªÙŠ ÙŠÙ…ÙƒÙ† Ù„Ù„Ù…Ù†ØµÙ‘Ø© ØªÙ†ÙÙŠØ°Ù‡Ø§ ÙØ¹Ù„Ù‹Ø§ Ø§Ù„ÙŠÙˆÙ….
   supported_actions: TicketAction[]
-  /// وسببُ تعذّر كل إجراء غير متاح، نصًّا يقرأه المشغّل.
+  /// ÙˆØ³Ø¨Ø¨Ù ØªØ¹Ø°Ù‘Ø± ÙƒÙ„ Ø¥Ø¬Ø±Ø§Ø¡ ØºÙŠØ± Ù…ØªØ§Ø­ØŒ Ù†ØµÙ‹Ù‘Ø§ ÙŠÙ‚Ø±Ø£Ù‡ Ø§Ù„Ù…Ø´ØºÙ‘Ù„.
   unavailable_actions: Record<string, string>
 }
 
@@ -2595,11 +2661,11 @@ export interface SupportSlaOverview {
     updated_at: string
   }>
   open_breaches: { first_response: number; resolution: number }
-  /// جدول الانتقالات المسموحة، من `lib/supportCrm.ts` في الخادم.
+  /// Ø¬Ø¯ÙˆÙ„ Ø§Ù„Ø§Ù†ØªÙ‚Ø§Ù„Ø§Øª Ø§Ù„Ù…Ø³Ù…ÙˆØ­Ø©ØŒ Ù…Ù† `lib/supportCrm.ts` ÙÙŠ Ø§Ù„Ø®Ø§Ø¯Ù….
   ///
-  /// يأتي من الخادم لا يُكتب في العميل: لوحة الكانبان تحتاج معرفة الأعمدة
-  /// المسموحة قبل بدء السحب، ونسخة في العميل كانت ستصير تعريفًا ثانيًا لسير
-  /// العمل ينحرف عن الأول عند إضافة أي حالة.
+  /// ÙŠØ£ØªÙŠ Ù…Ù† Ø§Ù„Ø®Ø§Ø¯Ù… Ù„Ø§ ÙŠÙÙƒØªØ¨ ÙÙŠ Ø§Ù„Ø¹Ù…ÙŠÙ„: Ù„ÙˆØ­Ø© Ø§Ù„ÙƒØ§Ù†Ø¨Ø§Ù† ØªØ­ØªØ§Ø¬ Ù…Ø¹Ø±ÙØ© Ø§Ù„Ø£Ø¹Ù…Ø¯Ø©
+  /// Ø§Ù„Ù…Ø³Ù…ÙˆØ­Ø© Ù‚Ø¨Ù„ Ø¨Ø¯Ø¡ Ø§Ù„Ø³Ø­Ø¨ØŒ ÙˆÙ†Ø³Ø®Ø© ÙÙŠ Ø§Ù„Ø¹Ù…ÙŠÙ„ ÙƒØ§Ù†Øª Ø³ØªØµÙŠØ± ØªØ¹Ø±ÙŠÙÙ‹Ø§ Ø«Ø§Ù†ÙŠÙ‹Ø§ Ù„Ø³ÙŠØ±
+  /// Ø§Ù„Ø¹Ù…Ù„ ÙŠÙ†Ø­Ø±Ù Ø¹Ù† Ø§Ù„Ø£ÙˆÙ„ Ø¹Ù†Ø¯ Ø¥Ø¶Ø§ÙØ© Ø£ÙŠ Ø­Ø§Ù„Ø©.
   transitions?: Record<TicketStatus, TicketStatus[]>
   statuses?: TicketStatus[]
 }
@@ -2613,7 +2679,7 @@ export interface SupportSavedView {
   created_at: string
 }
 
-// --- مركز الإنتاج ------------------------------------------------------------
+// --- Ù…Ø±ÙƒØ² Ø§Ù„Ø¥Ù†ØªØ§Ø¬ ------------------------------------------------------------
 
 export type ProductionRequirementKey =
   | 'script' | 'educational' | 'translation_ar' | 'translation_en' | 'translation_fr'
@@ -2624,16 +2690,16 @@ export type RequirementState =
   | 'ready' | 'partial' | 'in_progress' | 'missing' | 'blocked' | 'not_applicable'
 
 /**
- * صفّ متطلب واحد.
+ * ØµÙÙ‘ Ù…ØªØ·Ù„Ø¨ ÙˆØ§Ø­Ø¯.
  *
- * الحالة مشتقّة على الخادم من الأصول نفسها ولا تُكتب من الواجهة: لا حقل حالة في
- * أي مسار. ما يُكتب هو الطبقة البشرية فقط (مسؤول، فريق، استحقاق، عائق، ملاحظة).
+ * Ø§Ù„Ø­Ø§Ù„Ø© Ù…Ø´ØªÙ‚Ù‘Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø®Ø§Ø¯Ù… Ù…Ù† Ø§Ù„Ø£ØµÙˆÙ„ Ù†ÙØ³Ù‡Ø§ ÙˆÙ„Ø§ ØªÙÙƒØªØ¨ Ù…Ù† Ø§Ù„ÙˆØ§Ø¬Ù‡Ø©: Ù„Ø§ Ø­Ù‚Ù„ Ø­Ø§Ù„Ø© ÙÙŠ
+ * Ø£ÙŠ Ù…Ø³Ø§Ø±. Ù…Ø§ ÙŠÙÙƒØªØ¨ Ù‡Ùˆ Ø§Ù„Ø·Ø¨Ù‚Ø© Ø§Ù„Ø¨Ø´Ø±ÙŠØ© ÙÙ‚Ø· (Ù…Ø³Ø¤ÙˆÙ„ØŒ ÙØ±ÙŠÙ‚ØŒ Ø§Ø³ØªØ­Ù‚Ø§Ù‚ØŒ Ø¹Ø§Ø¦Ù‚ØŒ Ù…Ù„Ø§Ø­Ø¸Ø©).
  */
 export interface ProductionRequirementRow {
   key: ProductionRequirementKey
   label_ar: string
   state: RequirementState
-  /// نسبة حقيقية فقط حين يوجد مقام (صفحات القصة مثلًا)، وإلا null.
+  /// Ù†Ø³Ø¨Ø© Ø­Ù‚ÙŠÙ‚ÙŠØ© ÙÙ‚Ø· Ø­ÙŠÙ† ÙŠÙˆØ¬Ø¯ Ù…Ù‚Ø§Ù… (ØµÙØ­Ø§Øª Ø§Ù„Ù‚ØµØ© Ù…Ø«Ù„Ù‹Ø§)ØŒ ÙˆØ¥Ù„Ø§ null.
   percent: number | null
   detail: string
   owner_role: string
@@ -2681,8 +2747,8 @@ export interface ProductionQueueRow {
 // --- Content factory ---------------------------------------------------------
 
 /**
- * حالة تشغيل مصنع المحتوى. هذه دورة تشغيل وليست حالة نشر المحتوى، لذلك لا
- * تستخدم ContentStatus ولا StatusBadge الخاص بالكتالوج.
+ * Ø­Ø§Ù„Ø© ØªØ´ØºÙŠÙ„ Ù…ØµÙ†Ø¹ Ø§Ù„Ù…Ø­ØªÙˆÙ‰. Ù‡Ø°Ù‡ Ø¯ÙˆØ±Ø© ØªØ´ØºÙŠÙ„ ÙˆÙ„ÙŠØ³Øª Ø­Ø§Ù„Ø© Ù†Ø´Ø± Ø§Ù„Ù…Ø­ØªÙˆÙ‰ØŒ Ù„Ø°Ù„Ùƒ Ù„Ø§
+ * ØªØ³ØªØ®Ø¯Ù… ContentStatus ÙˆÙ„Ø§ StatusBadge Ø§Ù„Ø®Ø§Øµ Ø¨Ø§Ù„ÙƒØªØ§Ù„ÙˆØ¬.
  */
 export type ContentFactoryRunState =
   | 'planned'
@@ -2791,7 +2857,7 @@ export interface ContentFactoryVisualIdentity {
   approved_at: string
 }
 
-/** الخطة الثابتة فقط؛ بيانات المحاولات والمفاتيح ونتائج المزود ليست جزءًا منها. */
+/** Ø§Ù„Ø®Ø·Ø© Ø§Ù„Ø«Ø§Ø¨ØªØ© ÙÙ‚Ø·Ø› Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø§Øª ÙˆØ§Ù„Ù…ÙØ§ØªÙŠØ­ ÙˆÙ†ØªØ§Ø¦Ø¬ Ø§Ù„Ù…Ø²ÙˆØ¯ Ù„ÙŠØ³Øª Ø¬Ø²Ø¡Ù‹Ø§ Ù…Ù†Ù‡Ø§. */
 export interface ContentFactoryManifest {
   schema_version: 'content-factory.production-manifest/v1'
   manifest_id: string
@@ -2986,8 +3052,8 @@ export interface ContentFactoryQueueResult {
 
 // --- Customer 360 ------------------------------------------------------------
 
-/// قسم تعذّر تحميله. يُعرض بسببه لا كقسم فارغ: «تعذّر الوصول» و«لا بيانات»
-/// جوابان مختلفان، وأحدهما فقط يعني أن العائلة لا تستطيع الدخول.
+/// Ù‚Ø³Ù… ØªØ¹Ø°Ù‘Ø± ØªØ­Ù…ÙŠÙ„Ù‡. ÙŠÙØ¹Ø±Ø¶ Ø¨Ø³Ø¨Ø¨Ù‡ Ù„Ø§ ÙƒÙ‚Ø³Ù… ÙØ§Ø±Øº: Â«ØªØ¹Ø°Ù‘Ø± Ø§Ù„ÙˆØµÙˆÙ„Â» ÙˆÂ«Ù„Ø§ Ø¨ÙŠØ§Ù†Ø§ØªÂ»
+/// Ø¬ÙˆØ§Ø¨Ø§Ù† Ù…Ø®ØªÙ„ÙØ§Ù†ØŒ ÙˆØ£Ø­Ø¯Ù‡Ù…Ø§ ÙÙ‚Ø· ÙŠØ¹Ù†ÙŠ Ø£Ù† Ø§Ù„Ø¹Ø§Ø¦Ù„Ø© Ù„Ø§ ØªØ³ØªØ·ÙŠØ¹ Ø§Ù„Ø¯Ø®ÙˆÙ„.
 export interface UnavailableSection {
   available: false
   source: string
@@ -3019,7 +3085,10 @@ export interface CustomerListRow {
   plan: string
   status: string
   child_count: number
-  device_count: number
+  /// `DB-102`: قابل للعدم. `account_devices` في D1 بلا كاتب والسلطة في
+  /// `FamilyState` لكل أسرة، فلا عدّ مُجمَّع عبر الأسر — و`null` تعني «غير
+  /// متوفّر» لا «صفر جهاز».
+  device_count: number | null
   open_tickets: number
 }
 
@@ -3030,28 +3099,35 @@ export interface Customer360 {
     child_id: string; nickname: string | null; age_track: string | null
     status: string; last_event_at_ms: number
   }>
-  devices_projection: Array<{
-    id: string; display_name: string | null; platform: string; status: string; last_seen_at: string
-  }>
+  /// `DB-102`: صار **غير متوفّر دائمًا**. `account_devices` في D1 ميت
+  /// (`0010_cleanup_dead_d1_tables.sql`) وبلا كاتب، فكانت القائمة فارغة أبدًا
+  /// وتُقرأ «لا أجهزة». الأجهزة الحقيقية في `authority.devices`.
+  devices_projection: UnavailableSection
   billing: Array<{
     product_id: string; plan: string; entitlement_status: string
     expires_at_ms: number | null; created_at: string
   }>
-  purchases: Array<{
-    product_id: string; purchase_state: string; purchased_at: string | null
-    expires_at: string | null; last_verified_at: string; created_at: string
-  }>
+  /// `DB-102`: `google_play_purchases` بلا كاتب — مسار الشراء نفسه غير موصول
+  /// (`API-104`). الفراغ كان يُقرأ «لا شراءات» وسببه «لا كاتب».
+  purchases: UnavailableSection
   tickets: Array<{
     id: string; reference: string; subject: string; category: string; priority: string
     status: string; assignee_id: string | null; first_response_at: string | null
     resolution_due_at: string | null; created_at: string
   }>
   audit: Array<{ action: string; entity_type: string; entity_id: string; actor_id: string; created_at: string }>
+  /// PRIV-102: أثر عمليات مسار الأسرة نفسها — الجلسات والأجهزة ومنح التشغيل
+  /// ودورة حياة الحساب. منفصل عن `audit` (سجل أفعال المسؤولين) لأن الفاعل
+  /// مختلف: `actor_kind` يقول من فعل، ووليّ الأمر ليس مسؤولًا.
+  family_audit: Array<{
+    action: string; actor_kind: 'parent' | 'operator' | 'system'; actor_id: string | null
+    entity_type: string; entity_id: string | null; details: string; occurred_at_ms: number
+  }>
   consents: unknown[] | UnavailableSection
   progress_summary: { records: number } | { available: false; reason: string }
 }
 
-/// فحص واحد. `message` جاهزة للعرض بالعربية من الخادم، وتحمل السبب لا الحكم فقط.
+/// ÙØ­Øµ ÙˆØ§Ø­Ø¯. `message` Ø¬Ø§Ù‡Ø²Ø© Ù„Ù„Ø¹Ø±Ø¶ Ø¨Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© Ù…Ù† Ø§Ù„Ø®Ø§Ø¯Ù…ØŒ ÙˆØªØ­Ù…Ù„ Ø§Ù„Ø³Ø¨Ø¨ Ù„Ø§ Ø§Ù„Ø­ÙƒÙ… ÙÙ‚Ø·.
 export interface QualityCheck {
   check: string
   passed: boolean
@@ -3059,11 +3135,11 @@ export interface QualityCheck {
 }
 
 /**
- * نتيجة فحص الجاهزية.
+ * Ù†ØªÙŠØ¬Ø© ÙØ­Øµ Ø§Ù„Ø¬Ø§Ù‡Ø²ÙŠØ©.
  *
- * `readyToPublish` مبنيّ على بوابات النشر نفسها التي يفرضها
- * `PATCH /stories/:id` — لا على قواعد موازية. نسختان من «هل هذا جاهز» تتباعدان،
- * فتُعطي الأضعف إذنًا ترفضه الأخرى بـ409 عند النشر الفعلي.
+ * `readyToPublish` Ù…Ø¨Ù†ÙŠÙ‘ Ø¹Ù„Ù‰ Ø¨ÙˆØ§Ø¨Ø§Øª Ø§Ù„Ù†Ø´Ø± Ù†ÙØ³Ù‡Ø§ Ø§Ù„ØªÙŠ ÙŠÙØ±Ø¶Ù‡Ø§
+ * `PATCH /stories/:id` â€” Ù„Ø§ Ø¹Ù„Ù‰ Ù‚ÙˆØ§Ø¹Ø¯ Ù…ÙˆØ§Ø²ÙŠØ©. Ù†Ø³Ø®ØªØ§Ù† Ù…Ù† Â«Ù‡Ù„ Ù‡Ø°Ø§ Ø¬Ø§Ù‡Ø²Â» ØªØªØ¨Ø§Ø¹Ø¯Ø§Ù†ØŒ
+ * ÙØªÙØ¹Ø·ÙŠ Ø§Ù„Ø£Ø¶Ø¹Ù Ø¥Ø°Ù†Ù‹Ø§ ØªØ±ÙØ¶Ù‡ Ø§Ù„Ø£Ø®Ø±Ù‰ Ø¨Ù€409 Ø¹Ù†Ø¯ Ø§Ù„Ù†Ø´Ø± Ø§Ù„ÙØ¹Ù„ÙŠ.
  */
 export interface QualityReport {
   entity_type: QualityEntityType
@@ -3073,7 +3149,7 @@ export interface QualityReport {
   readyToPublish: boolean
 }
 
-/// ملف النسخة المُصدَّرة. الحقول تتبع جدول الكيان، فتُقرأ كسجل مفتوح.
+/// Ù…Ù„Ù Ø§Ù„Ù†Ø³Ø®Ø© Ø§Ù„Ù…ÙØµØ¯ÙŽÙ‘Ø±Ø©. Ø§Ù„Ø­Ù‚ÙˆÙ„ ØªØªØ¨Ø¹ Ø¬Ø¯ÙˆÙ„ Ø§Ù„ÙƒÙŠØ§Ù†ØŒ ÙØªÙÙ‚Ø±Ø£ ÙƒØ³Ø¬Ù„ Ù…ÙØªÙˆØ­.
 export interface BackupExport extends Record<string, unknown> {
   entity_type: QualityEntityType
   exported_at: string
@@ -3081,13 +3157,13 @@ export interface BackupExport extends Record<string, unknown> {
 }
 
 
-// --- إدارة الموقع العام والمدوّنة و SEO ---------------------------------------
+// --- Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ø¹Ø§Ù… ÙˆØ§Ù„Ù…Ø¯ÙˆÙ‘Ù†Ø© Ùˆ SEO ---------------------------------------
 
 /**
- * لغات المحتوى العام. ثلاث لغات، والعربية هي الأصل ومنها `x-default`.
+ * Ù„ØºØ§Øª Ø§Ù„Ù…Ø­ØªÙˆÙ‰ Ø§Ù„Ø¹Ø§Ù…. Ø«Ù„Ø§Ø« Ù„ØºØ§ØªØŒ ÙˆØ§Ù„Ø¹Ø±Ø¨ÙŠØ© Ù‡ÙŠ Ø§Ù„Ø£ØµÙ„ ÙˆÙ…Ù†Ù‡Ø§ `x-default`.
  *
- * الاتجاه مشتقّ لا مُخزَّن: `dir` قيمة واحدة لكل لغة، وتخزينها في الصفوف يسمح
- * بصفحة عربية موسومة `ltr` — وهي حالة لا معنى لها ولا وسيلة لتصحيحها بعد الحفظ.
+ * Ø§Ù„Ø§ØªØ¬Ø§Ù‡ Ù…Ø´ØªÙ‚Ù‘ Ù„Ø§ Ù…ÙØ®Ø²ÙŽÙ‘Ù†: `dir` Ù‚ÙŠÙ…Ø© ÙˆØ§Ø­Ø¯Ø© Ù„ÙƒÙ„ Ù„ØºØ©ØŒ ÙˆØªØ®Ø²ÙŠÙ†Ù‡Ø§ ÙÙŠ Ø§Ù„ØµÙÙˆÙ ÙŠØ³Ù…Ø­
+ * Ø¨ØµÙØ­Ø© Ø¹Ø±Ø¨ÙŠØ© Ù…ÙˆØ³ÙˆÙ…Ø© `ltr` â€” ÙˆÙ‡ÙŠ Ø­Ø§Ù„Ø© Ù„Ø§ Ù…Ø¹Ù†Ù‰ Ù„Ù‡Ø§ ÙˆÙ„Ø§ ÙˆØ³ÙŠÙ„Ø© Ù„ØªØµØ­ÙŠØ­Ù‡Ø§ Ø¨Ø¹Ø¯ Ø§Ù„Ø­ÙØ¸.
  */
 export type CmsLanguage = 'ar' | 'en' | 'fr'
 export type CmsStatus = 'draft' | 'review' | 'scheduled' | 'published' | 'archived'
@@ -3121,7 +3197,7 @@ export interface WebPageListRow {
   has_seo: number
 }
 
-/// قسم صفحة كما يعيده الخادم: المحتوى و CTA نصّان JSON، لا كائنان.
+/// Ù‚Ø³Ù… ØµÙØ­Ø© ÙƒÙ…Ø§ ÙŠØ¹ÙŠØ¯Ù‡ Ø§Ù„Ø®Ø§Ø¯Ù…: Ø§Ù„Ù…Ø­ØªÙˆÙ‰ Ùˆ CTA Ù†ØµÙ‘Ø§Ù† JSONØŒ Ù„Ø§ ÙƒØ§Ø¦Ù†Ø§Ù†.
 export interface WebSectionRow {
   id: string
   section_type: WebSectionType
@@ -3134,7 +3210,7 @@ export interface WebSectionRow {
   media_title: string | null
 }
 
-/// قسم داخل المحرِّر: نفس الصفّ بعد تحليل الـJSON، مع مفتاح محلّي للسحب والترتيب.
+/// Ù‚Ø³Ù… Ø¯Ø§Ø®Ù„ Ø§Ù„Ù…Ø­Ø±ÙÙ‘Ø±: Ù†ÙØ³ Ø§Ù„ØµÙÙ‘ Ø¨Ø¹Ø¯ ØªØ­Ù„ÙŠÙ„ Ø§Ù„Ù€JSONØŒ Ù…Ø¹ Ù…ÙØªØ§Ø­ Ù…Ø­Ù„Ù‘ÙŠ Ù„Ù„Ø³Ø­Ø¨ ÙˆØ§Ù„ØªØ±ØªÙŠØ¨.
 export interface WebSectionDraft {
   key: string
   section_type: WebSectionType
@@ -3220,7 +3296,7 @@ export interface BlogBlock {
   [key: string]: unknown
 }
 
-/// كتلة داخل المحرِّر. `key` محلّي فقط ولا يُرسَل إلى الخادم.
+/// ÙƒØªÙ„Ø© Ø¯Ø§Ø®Ù„ Ø§Ù„Ù…Ø­Ø±ÙÙ‘Ø±. `key` Ù…Ø­Ù„Ù‘ÙŠ ÙÙ‚Ø· ÙˆÙ„Ø§ ÙŠÙØ±Ø³ÙŽÙ„ Ø¥Ù„Ù‰ Ø§Ù„Ø®Ø§Ø¯Ù….
 export interface BlogBlockDraft extends BlogBlock {
   key: string
 }
@@ -3335,11 +3411,11 @@ export interface SeoIssue {
 }
 
 /**
- * تدقيق SEO الداخلي.
+ * ØªØ¯Ù‚ÙŠÙ‚ SEO Ø§Ù„Ø¯Ø§Ø®Ù„ÙŠ.
  *
- * `index_status_available` تبقى false ويجب أن تُعرض كذلك: التدقيق يثبت ما في
- * قاعدة البيانات ولا يعرف شيئًا عن فهرسة محرّكات البحث. خلط الاثنين على شاشة
- * واحدة يجعل «صفر أخطاء» تُقرأ كـ«الموقع مفهرس»، وهما ادّعاءان مختلفان.
+ * `index_status_available` ØªØ¨Ù‚Ù‰ false ÙˆÙŠØ¬Ø¨ Ø£Ù† ØªÙØ¹Ø±Ø¶ ÙƒØ°Ù„Ùƒ: Ø§Ù„ØªØ¯Ù‚ÙŠÙ‚ ÙŠØ«Ø¨Øª Ù…Ø§ ÙÙŠ
+ * Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª ÙˆÙ„Ø§ ÙŠØ¹Ø±Ù Ø´ÙŠØ¦Ù‹Ø§ Ø¹Ù† ÙÙ‡Ø±Ø³Ø© Ù…Ø­Ø±Ù‘ÙƒØ§Øª Ø§Ù„Ø¨Ø­Ø«. Ø®Ù„Ø· Ø§Ù„Ø§Ø«Ù†ÙŠÙ† Ø¹Ù„Ù‰ Ø´Ø§Ø´Ø©
+ * ÙˆØ§Ø­Ø¯Ø© ÙŠØ¬Ø¹Ù„ Â«ØµÙØ± Ø£Ø®Ø·Ø§Ø¡Â» ØªÙÙ‚Ø±Ø£ ÙƒÙ€Â«Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ù…ÙÙ‡Ø±Ø³Â»ØŒ ÙˆÙ‡Ù…Ø§ Ø§Ø¯Ù‘Ø¹Ø§Ø¡Ø§Ù† Ù…Ø®ØªÙ„ÙØ§Ù†.
  */
 export interface SeoAudit {
   issues: SeoIssue[]
@@ -3350,14 +3426,14 @@ export interface SeoAudit {
     audited_posts: number
     redirects: number
   }
-  /// حالة خريطة الموقع. لا تاريخ توليد: تُولَّد عند كل طلب من قاعدة البيانات.
+  /// Ø­Ø§Ù„Ø© Ø®Ø±ÙŠØ·Ø© Ø§Ù„Ù…ÙˆÙ‚Ø¹. Ù„Ø§ ØªØ§Ø±ÙŠØ® ØªÙˆÙ„ÙŠØ¯: ØªÙÙˆÙ„ÙŽÙ‘Ø¯ Ø¹Ù†Ø¯ ÙƒÙ„ Ø·Ù„Ø¨ Ù…Ù† Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª.
   sitemap: {
     generated_on_request: boolean
     included_urls: number
     excluded_unpublished: number
     noindex_published: number
   }
-  /// ما يفحصه التدقيق وما لا يفحصه، بالاسم والسبب.
+  /// Ù…Ø§ ÙŠÙØ­ØµÙ‡ Ø§Ù„ØªØ¯Ù‚ÙŠÙ‚ ÙˆÙ…Ø§ Ù„Ø§ ÙŠÙØ­ØµÙ‡ØŒ Ø¨Ø§Ù„Ø§Ø³Ù… ÙˆØ§Ù„Ø³Ø¨Ø¨.
   coverage: Array<{ id: string; implemented: boolean; note: string | null }>
   source: string
   index_status_available: boolean
@@ -3369,36 +3445,36 @@ export interface SeoSlugCheck {
   reason: string | null
 }
 
-// --- اللوحة التنفيذية --------------------------------------------------------
+// --- Ø§Ù„Ù„ÙˆØ­Ø© Ø§Ù„ØªÙ†ÙÙŠØ°ÙŠØ© --------------------------------------------------------
 
 /**
- * وحدة واحدة في اللوحة التنفيذية.
+ * ÙˆØ­Ø¯Ø© ÙˆØ§Ø­Ø¯Ø© ÙÙŠ Ø§Ù„Ù„ÙˆØ­Ø© Ø§Ù„ØªÙ†ÙÙŠØ°ÙŠØ©.
  *
- * كل وحدة تحمل مصدرها والمسار الذي تُفصَّل فيه: رقم بلا مكان يُفتح فيه هو رقم لا
- * يمكن التصرّف بناءً عليه، وهو ما جعل اللوحة السابقة تُقرأ ولا تُستخدم.
- * `unavailable` تُستخدم حين لا تكون البيانات موجودة أصلًا، فتُعلَن ولا تُصفَّر:
- * صفر ملفّق أخطر من فراغ مُعلَن.
+ * ÙƒÙ„ ÙˆØ­Ø¯Ø© ØªØ­Ù…Ù„ Ù…ØµØ¯Ø±Ù‡Ø§ ÙˆØ§Ù„Ù…Ø³Ø§Ø± Ø§Ù„Ø°ÙŠ ØªÙÙØµÙŽÙ‘Ù„ ÙÙŠÙ‡: Ø±Ù‚Ù… Ø¨Ù„Ø§ Ù…ÙƒØ§Ù† ÙŠÙÙØªØ­ ÙÙŠÙ‡ Ù‡Ùˆ Ø±Ù‚Ù… Ù„Ø§
+ * ÙŠÙ…ÙƒÙ† Ø§Ù„ØªØµØ±Ù‘Ù Ø¨Ù†Ø§Ø¡Ù‹ Ø¹Ù„ÙŠÙ‡ØŒ ÙˆÙ‡Ùˆ Ù…Ø§ Ø¬Ø¹Ù„ Ø§Ù„Ù„ÙˆØ­Ø© Ø§Ù„Ø³Ø§Ø¨Ù‚Ø© ØªÙÙ‚Ø±Ø£ ÙˆÙ„Ø§ ØªÙØ³ØªØ®Ø¯Ù….
+ * `unavailable` ØªÙØ³ØªØ®Ø¯Ù… Ø­ÙŠÙ† Ù„Ø§ ØªÙƒÙˆÙ† Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ù…ÙˆØ¬ÙˆØ¯Ø© Ø£ØµÙ„Ù‹Ø§ØŒ ÙØªÙØ¹Ù„ÙŽÙ† ÙˆÙ„Ø§ ØªÙØµÙÙŽÙ‘Ø±:
+ * ØµÙØ± Ù…Ù„ÙÙ‘Ù‚ Ø£Ø®Ø·Ø± Ù…Ù† ÙØ±Ø§Øº Ù…ÙØ¹Ù„ÙŽÙ†.
  */
 export interface ExecutiveMetric {
   key: string
   label_ar: string
   label_en: string
-  /// `null` يعني «لا يمكن معرفته»، لا صفرًا.
+  /// `null` ÙŠØ¹Ù†ÙŠ Â«Ù„Ø§ ÙŠÙ…ÙƒÙ† Ù…Ø¹Ø±ÙØªÙ‡Â»ØŒ Ù„Ø§ ØµÙØ±Ù‹Ø§.
   ///
-  /// كان الخادم يُنهي كل عدّ بـ`?? 0`، فمصدر غير مقروء يُعرَض رقمًا حقيقيًّا. الآن
-  /// المقياس الذي تعذّر حسابه يحمل `null` وسببه في `unavailable`، والواجهة تطبع
-  /// شرطة لا صفرًا ولا تفتح له شاشة مفلترة.
+  /// ÙƒØ§Ù† Ø§Ù„Ø®Ø§Ø¯Ù… ÙŠÙÙ†Ù‡ÙŠ ÙƒÙ„ Ø¹Ø¯Ù‘ Ø¨Ù€`?? 0`ØŒ ÙÙ…ØµØ¯Ø± ØºÙŠØ± Ù…Ù‚Ø±ÙˆØ¡ ÙŠÙØ¹Ø±ÙŽØ¶ Ø±Ù‚Ù…Ù‹Ø§ Ø­Ù‚ÙŠÙ‚ÙŠÙ‹Ù‘Ø§. Ø§Ù„Ø¢Ù†
+  /// Ø§Ù„Ù…Ù‚ÙŠØ§Ø³ Ø§Ù„Ø°ÙŠ ØªØ¹Ø°Ù‘Ø± Ø­Ø³Ø§Ø¨Ù‡ ÙŠØ­Ù…Ù„ `null` ÙˆØ³Ø¨Ø¨Ù‡ ÙÙŠ `unavailable`ØŒ ÙˆØ§Ù„ÙˆØ§Ø¬Ù‡Ø© ØªØ·Ø¨Ø¹
+  /// Ø´Ø±Ø·Ø© Ù„Ø§ ØµÙØ±Ù‹Ø§ ÙˆÙ„Ø§ ØªÙØªØ­ Ù„Ù‡ Ø´Ø§Ø´Ø© Ù…ÙÙ„ØªØ±Ø©.
   value: number | null
   tone: 'neutral' | 'good' | 'warn' | 'danger'
-  /// سبب تعذّر الحساب، أو null حين توجد قيمة.
+  /// Ø³Ø¨Ø¨ ØªØ¹Ø°Ù‘Ø± Ø§Ù„Ø­Ø³Ø§Ø¨ØŒ Ø£Ùˆ null Ø­ÙŠÙ† ØªÙˆØ¬Ø¯ Ù‚ÙŠÙ…Ø©.
   unavailable?: string | null
-  /// الفترة التي يعنيها الرقم، مُعلَنة بدل أن تُفترَض.
+  /// Ø§Ù„ÙØªØ±Ø© Ø§Ù„ØªÙŠ ÙŠØ¹Ù†ÙŠÙ‡Ø§ Ø§Ù„Ø±Ù‚Ù…ØŒ Ù…ÙØ¹Ù„ÙŽÙ†Ø© Ø¨Ø¯Ù„ Ø£Ù† ØªÙÙØªØ±ÙŽØ¶.
   window?: string
-  /// المسار داخل اللوحة الذي يعرض هذه المجموعة بالضبط، بفلاترها
+  /// Ø§Ù„Ù…Ø³Ø§Ø± Ø¯Ø§Ø®Ù„ Ø§Ù„Ù„ÙˆØ­Ø© Ø§Ù„Ø°ÙŠ ÙŠØ¹Ø±Ø¶ Ù‡Ø°Ù‡ Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹Ø© Ø¨Ø§Ù„Ø¶Ø¨Ø·ØŒ Ø¨ÙÙ„Ø§ØªØ±Ù‡Ø§
   drill: string | null
-  /// طلب القائمة الذي يُعيد المجموعة نفسها بالحرف.
+  /// Ø·Ù„Ø¨ Ø§Ù„Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø°ÙŠ ÙŠÙØ¹ÙŠØ¯ Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹Ø© Ù†ÙØ³Ù‡Ø§ Ø¨Ø§Ù„Ø­Ø±Ù.
   drill_api?: string
-  /// `exact` أي أن الوجهة تُعيد العدد نفسه؛ `related` تتطلّب `note` يشرح الفرق.
+  /// `exact` Ø£ÙŠ Ø£Ù† Ø§Ù„ÙˆØ¬Ù‡Ø© ØªÙØ¹ÙŠØ¯ Ø§Ù„Ø¹Ø¯Ø¯ Ù†ÙØ³Ù‡Ø› `related` ØªØªØ·Ù„Ù‘Ø¨ `note` ÙŠØ´Ø±Ø­ Ø§Ù„ÙØ±Ù‚.
   drill_match?: 'exact' | 'related'
   note?: string
 }
@@ -3415,11 +3491,11 @@ export interface ExecutiveModule {
 export interface ExecutiveOverview {
   generated_at: string
   modules: ExecutiveModule[]
-  /// ما لا تستطيع هذه اللوحة قوله، ولماذا.
+  /// Ù…Ø§ Ù„Ø§ ØªØ³ØªØ·ÙŠØ¹ Ù‡Ø°Ù‡ Ø§Ù„Ù„ÙˆØ­Ø© Ù‚ÙˆÙ„Ù‡ØŒ ÙˆÙ„Ù…Ø§Ø°Ø§.
   limits: string[]
 }
 
-// --- البحث الشامل (adminSearch.ts) ------------------------------------------
+// --- Ø§Ù„Ø¨Ø­Ø« Ø§Ù„Ø´Ø§Ù…Ù„ (adminSearch.ts) ------------------------------------------
 
 export interface GlobalSearchResult {
   id: string
@@ -3427,8 +3503,8 @@ export interface GlobalSearchResult {
   title: string
   subtitle: string | null
   status: string | null
-  /// مسار نسبي داخل اللوحة. القاعدة تُضاف بـ`adminPath()` في العميل، فالخادم
-  /// لا يعرف مسار اللوحة ولا يجب أن يعرفه.
+  /// Ù…Ø³Ø§Ø± Ù†Ø³Ø¨ÙŠ Ø¯Ø§Ø®Ù„ Ø§Ù„Ù„ÙˆØ­Ø©. Ø§Ù„Ù‚Ø§Ø¹Ø¯Ø© ØªÙØ¶Ø§Ù Ø¨Ù€`adminPath()` ÙÙŠ Ø§Ù„Ø¹Ù…ÙŠÙ„ØŒ ÙØ§Ù„Ø®Ø§Ø¯Ù…
+  /// Ù„Ø§ ÙŠØ¹Ø±Ù Ù…Ø³Ø§Ø± Ø§Ù„Ù„ÙˆØ­Ø© ÙˆÙ„Ø§ ÙŠØ¬Ø¨ Ø£Ù† ÙŠØ¹Ø±ÙÙ‡.
   admin_route: string
   image_url: string | null
   context: string | null
@@ -3443,9 +3519,9 @@ export interface GlobalSearch {
   query: string
   groups: GlobalSearchGroup[]
   total: number
-  /// أنواع في برنامج العمل بلا جدول في أي مهاجرة. تُعرض كتصريح لا كنتيجة فارغة.
+  /// Ø£Ù†ÙˆØ§Ø¹ ÙÙŠ Ø¨Ø±Ù†Ø§Ù…Ø¬ Ø§Ù„Ø¹Ù…Ù„ Ø¨Ù„Ø§ Ø¬Ø¯ÙˆÙ„ ÙÙŠ Ø£ÙŠ Ù…Ù‡Ø§Ø¬Ø±Ø©. ØªÙØ¹Ø±Ø¶ ÙƒØªØµØ±ÙŠØ­ Ù„Ø§ ÙƒÙ†ØªÙŠØ¬Ø© ÙØ§Ø±ØºØ©.
   unavailable: Array<{ type: string; reason: string }>
-  /// مصادر فشلت في هذا النداء. مصدر واحد فاشل لا يُفرِّغ اللوحة.
+  /// Ù…ØµØ§Ø¯Ø± ÙØ´Ù„Øª ÙÙŠ Ù‡Ø°Ø§ Ø§Ù„Ù†Ø¯Ø§Ø¡. Ù…ØµØ¯Ø± ÙˆØ§Ø­Ø¯ ÙØ§Ø´Ù„ Ù„Ø§ ÙŠÙÙØ±ÙÙ‘Øº Ø§Ù„Ù„ÙˆØ­Ø©.
   failed: Array<{ type: string; reason: string }>
   scope: {
     restricted: boolean
@@ -3455,7 +3531,7 @@ export interface GlobalSearch {
   types: Array<{ type: string; group: 'catalogue' | 'platform' }>
 }
 
-// --- تقويم المحتوى (adminCalendar.ts) ---------------------------------------
+// --- ØªÙ‚ÙˆÙŠÙ… Ø§Ù„Ù…Ø­ØªÙˆÙ‰ (adminCalendar.ts) ---------------------------------------
 
 export interface CalendarEventRecord {
   id: string
@@ -3494,7 +3570,220 @@ export interface ContentCalendar {
     same_day_collision: number
   }
   unavailable: Array<{ type: string; reason: string }>
-  /// خطأ أن يُرسم المجدول كأن مؤقّتًا سينشره: لا مُشغِّل دوري للنشر.
+  /// Ø®Ø·Ø£ Ø£Ù† ÙŠÙØ±Ø³Ù… Ø§Ù„Ù…Ø¬Ø¯ÙˆÙ„ ÙƒØ£Ù† Ù…Ø¤Ù‚Ù‘ØªÙ‹Ø§ Ø³ÙŠÙ†Ø´Ø±Ù‡: Ù„Ø§ Ù…ÙØ´ØºÙÙ‘Ù„ Ø¯ÙˆØ±ÙŠ Ù„Ù„Ù†Ø´Ø±.
   scheduler_available: boolean
   scheduler_note: string
 }
+
+/* ------------------------------------------- Ø³Ø¬Ù„ Ù…Ø²ÙˆÙ‘Ø¯ÙŠ Ø§Ù„Ø°ÙƒØ§Ø¡ Ø§Ù„Ø§ØµØ·Ù†Ø§Ø¹ÙŠ */
+
+/**
+ * Ø£Ù†ÙˆØ§Ø¹ Ø³Ø¬Ù„ Ø§Ù„Ø°ÙƒØ§Ø¡ Ø§Ù„Ø§ØµØ·Ù†Ø§Ø¹ÙŠ Ù…Ù† `GET /admin/ai/registry`.
+ *
+ * Ù…Ø·Ø§Ø¨Ù‚Ø© Ù„Ù‚ÙŠÙˆØ¯ CHECK ÙÙŠ Ø§Ù„Ù…Ù‡Ø§Ø¬Ø±Ø© 0063 ÙˆÙ„Ø«ÙˆØ§Ø¨Øª `api/src/lib/aiRegistry.ts`.
+ *
+ * ## Ù…Ø§ Ù„Ø§ ÙŠÙˆØ¬Ø¯ ÙÙŠ Ù‡Ø°Ù‡ Ø§Ù„Ø£Ù†ÙˆØ§Ø¹
+ *
+ * Ù„Ø§ Ø­Ù‚Ù„ Ù…ÙØªØ§Ø­. `credential_ref` Ù‡Ùˆ **Ø§Ø³Ù…** Ø³Ø±Ù‘ Worker Ù„Ø§ Ù‚ÙŠÙ…ØªÙ‡ØŒ ÙˆØ§Ù„Ø®Ø§Ø¯Ù… Ù„Ø§
+ * ÙŠÙØ¹ÙŠØ¯ Ø§Ù„Ù‚ÙŠÙ…Ø© Ø¹Ù„Ù‰ Ø£ÙŠ Ù…Ø³Ø§Ø±. `configured` Ù‡Ùˆ ÙƒÙ„ Ù…Ø§ ÙŠÙÙ‚Ø§Ù„ Ø¹Ù† Ø§Ù„Ø³Ø±Ù‘ØŒ ÙˆÙ‡Ùˆ Ù†ÙØ³ Ø¹Ù‚Ø¯
+ * `GET /admin/tts/config`.
+ */
+export type AiAuthMode = 'api_key_header' | 'bearer' | 'service_account'
+export type AiModality = 'text' | 'image' | 'video' | 'audio'
+export type AiPriceUnit =
+  | 'per_1k_input_tokens'
+  | 'per_1k_output_tokens'
+  | 'per_1k_characters'
+  | 'per_image'
+  | 'per_second'
+export type AiEntityStatus = 'active' | 'disabled'
+
+/// Ø³Ø¨Ø¨ Ø§Ø³ØªØ¨Ø¹Ø§Ø¯ Ù…Ø³Ø§Ø± Ù…Ø±Ø´ÙŽÙ‘Ø­. ÙƒÙ„ Ù‚ÙŠÙ…Ø© Ù‚Ø§Ø¨Ù„Ø© Ù„Ù„ØªÙ†ÙÙŠØ° Ù…Ù† Ø§Ù„Ù…Ø³Ø¤ÙˆÙ„ØŒ ÙÙ„Ø§ Â«ÙØ´Ù„ Ø¹Ø§Ù…Â».
+export type AiRouteSkipReason =
+  | 'route_disabled'
+  | 'model_disabled'
+  | 'provider_disabled'
+  | 'credential_ref_not_allowed'
+  | 'credential_missing'
+  | 'modality_mismatch'
+  | 'json_schema_unsupported'
+  | 'daily_call_cap_reached'
+  | 'daily_spend_cap_reached'
+
+export interface AiProviderRecord {
+  id: string
+  slug: string
+  name_ar: string
+  auth_mode: AiAuthMode
+  base_url: string
+  /// Ø§Ø³Ù… Ø³Ø±Ù‘ Ø§Ù„Ù€WorkerØŒ Ù…Ø«Ù„ `GOOGLE_AI_API_KEY`. Ù„ÙŠØ³ Ù…ÙØªØ§Ø­Ù‹Ø§.
+  credential_ref: string
+  /// Ù‡Ù„ Ø§Ù„Ø³Ø±Ù‘ Ø§Ù„Ù…Ø³Ù…Ù‘Ù‰ Ù…ÙˆØ¬ÙˆØ¯ ÙØ¹Ù„Ù‹Ø§ ÙÙŠ Ù‡Ø°Ù‡ Ø§Ù„Ø¨ÙŠØ¦Ø©.
+  configured: boolean
+  unconfigured_reason: 'credential_ref_not_allowed' | 'credential_missing' | null
+  /// Ù‡Ù„ ÙŠØ¹Ø±Ù Ø§Ù„ÙƒÙˆØ¯ Ø§Ù„ØªØ­Ø¯Ù‘Ø« Ø¨Ø¨Ø±ÙˆØªÙˆÙƒÙˆÙ„ Ù‡Ø°Ø§ Ø§Ù„Ù…Ø²ÙˆÙ‘Ø¯ Ù†ØµÙŠÙ‹Ù‘Ø§ (`services/aiText.ts`).
+  /// Ù…Ø²ÙˆÙ‘Ø¯ Ø¨Ù„Ø§ Ù…Ø­ÙˆÙ‘Ù„ ÙŠÙ…ÙƒÙ† ØªØ³Ø¬ÙŠÙ„Ù‡ ÙˆØªÙˆØ¬ÙŠÙ‡Ù‡ØŒ Ù„ÙƒÙ†Ù‡ Ø³ÙŠØ±ÙØ¶ Ø¹Ù†Ø¯ Ø§Ù„ØªÙˆÙ„ÙŠØ¯.
+  has_text_adapter: boolean
+  status: AiEntityStatus
+  notes_ar?: string | null
+  model_count: number
+  updated_at: string
+  updated_by?: string | null
+}
+
+export interface AiModelRecord {
+  id: string
+  provider_id: string
+  provider_slug?: string | null
+  /// Ø³Ù„Ø³Ù„Ø© Ø§Ù„Ù…Ø²ÙˆÙ‘Ø¯ Ø§Ù„Ø­Ø±ÙÙŠØ© Ø§Ù„Ù…ÙØ±Ø³Ù„Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø³Ù„Ùƒ.
+  model_id: string
+  name_ar: string
+  modality: AiModality
+  supports_json_schema: boolean
+  max_input_tokens?: number | null
+  max_output_tokens?: number | null
+  /// `null` ØªØ¹Ù†ÙŠ Â«Ø¨Ù„Ø§ Ø³Ø¹Ø±Â» Ù„Ø§ Â«Ù…Ø¬Ø§Ù†ÙŠÂ». Ø§Ù„ØµÙØ± ÙƒØ§Ù† Ø³ÙŠÙÙ‚Ø±Ø£ Ù…Ø¬Ø§Ù†Ù‹Ø§ ÙˆÙŠÙ…Ø±Ù‘ ØªØ­Øª Ø£ÙŠ Ø³Ù‚Ù.
+  price_micros?: number | null
+  price_credits?: number | null
+  price_unit?: AiPriceUnit | null
+  status: AiEntityStatus
+  last_probe_at?: string | null
+  last_probe_status?: 'ok' | 'failed' | null
+  last_probe_detail?: string | null
+  route_count: number
+  updated_at: string
+}
+
+export interface AiTaskRouteRecord {
+  id: string
+  model_id: string
+  model_ref: string
+  model_name_ar: string
+  provider_slug: string
+  /// Ù¡ Ù‡Ùˆ Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØŒ ÙˆÙ¢ ÙˆÙ…Ø§ Ø¨Ø¹Ø¯Ù‡ Ø¨Ø¯Ø§Ø¦Ù„ ØªÙØ¬Ø±ÙŽÙ‘Ø¨ Ø¨Ø§Ù„ØªØ±ØªÙŠØ¨.
+  priority: number
+  is_enabled: boolean
+  /// Ù†ØµÙ‘ JSON ÙƒÙ…Ø§ Ù‡Ùˆ Ù…Ø®Ø²ÙŽÙ‘Ù†Ø› Ø´ÙƒÙ„Ù‡ ÙŠÙ…Ù„ÙƒÙ‡ Ø§Ù„ÙƒÙˆØ¯ Ø§Ù„Ù…Ø³ØªØ¯Ø¹ÙŠ Ù„Ø§ Ù‡Ø°Ù‡ Ø§Ù„Ø´Ø§Ø´Ø©.
+  params: string
+  daily_call_cap?: number | null
+  daily_spend_cap_micros?: number | null
+}
+
+export interface AiRouteSkipRecord {
+  priority: number
+  model_id: string
+  model_ref: string
+  provider_slug: string
+  reason: AiRouteSkipReason
+}
+
+export interface AiTaskRecord {
+  id: string
+  name_ar: string
+  description_ar: string
+  required_modality: AiModality
+  requires_json_schema: boolean
+  /**
+   * Ù‡Ù„ ÙŠØ³ØªØ¯Ø¹ÙŠ ÙƒÙˆØ¯Ù Ø¥Ù†ØªØ§Ø¬Ù Ù‡Ø°Ø§ Ø§Ù„ØªÙˆØ¬ÙŠÙ‡ Ø¨Ø¹Ø¯.
+   *
+   * `false` ÙŠØ¹Ù†ÙŠ Ø£Ù† Ø§Ù„ØªÙˆØ¬ÙŠÙ‡ Ù‚Ø§Ø¨Ù„ Ù„Ù„Ø¶Ø¨Ø· ÙˆÙ„Ø§ Ø´ÙŠØ¡ ÙŠÙ‚Ø±Ø£Ù‡ØŒ ÙˆØ§Ù„Ø´Ø§Ø´Ø© ØªÙ‚ÙˆÙ„ Ø°Ù„Ùƒ ØµØ±Ø§Ø­Ø©Ù‹
+   * Ø¨Ø¯Ù„ Ø£Ù† ØªÙÙˆÙ‡Ù… Ø¨Ø£Ù† Ø§Ù„Ù…Ù‡Ù…Ø© ØªØ¹Ù…Ù„. ØªÙÙ‚Ù„ÙŽØ¨ ÙÙŠ Ø§Ù„Ù…Ù‡Ø§Ø¬Ø±Ø© Ù†ÙØ³Ù‡Ø§ Ø§Ù„ØªÙŠ ØªÙÙ†Ø²Ù„ Ø§Ù„ÙƒÙˆØ¯.
+   */
+  is_wired: boolean
+  sort_order: number
+  routes: AiTaskRouteRecord[]
+  /// Ø§Ù„Ù…ÙˆØ¯ÙŠÙ„ Ø§Ù„Ø°ÙŠ Ø³ÙŠØ®Ø¯Ù… Ø§Ù„Ù…Ù‡Ù…Ø© ÙØ¹Ù„Ù‹Ø§ Ø§Ù„Ø¢Ù†ØŒ Ù…Ø­Ø³ÙˆØ¨Ù‹Ø§ Ø¨Ù†ÙØ³ Ø§Ù„Ø¯Ø§Ù„Ø© Ø§Ù„ØªÙŠ ÙŠØ³ØªØ®Ø¯Ù…Ù‡Ø§
+  /// ÙƒÙˆØ¯ Ø§Ù„ØªÙˆÙ„ÙŠØ¯ (`evaluateTaskRoutes`)ØŒ ÙÙ„Ø§ ØªÙ†Ø­Ø±Ù Ø§Ù„Ø´Ø§Ø´Ø© Ø¹Ù…Ù‘Ø§ Ø³ÙŠØ­Ø¯Ø«.
+  resolved_model_id: string | null
+  skipped: AiRouteSkipRecord[]
+  usage_today: { calls: number; spend_micros: number }
+}
+
+/// Ø§Ù„Ø®ÙŠØ§Ø±Ø§Øª ØªÙØ±Ø³Ù„ Ù…Ø¹ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª ÙÙ„Ø§ ØªØ¹Ø±Ø¶ Ø§Ù„ÙˆØ§Ø¬Ù‡Ø© Ù‚ÙŠÙ…Ø© ÙŠØ±ÙØ¶Ù‡Ø§ Ø§Ù„Ø®Ø§Ø¯Ù….
+export interface AiRegistryOptions {
+  auth_modes: AiAuthMode[]
+  modalities: AiModality[]
+  price_units: AiPriceUnit[]
+  /// Ø£Ø³Ù…Ø§Ø¡ Ø§Ù„Ø£Ø³Ø±Ø§Ø± Ø§Ù„Ù…Ø³Ù…ÙˆØ­ Ø§Ù„Ø¥Ø´Ø§Ø±Ø© Ø¥Ù„ÙŠÙ‡Ø§. ØªÙˆØ³ÙŠØ¹Ù‡Ø§ ÙŠØ­ØªØ§Ø¬ ØªØ¹Ø¯ÙŠÙ„ ÙƒÙˆØ¯ ÙˆÙ†Ø´Ø±Ù‹Ø§.
+  credential_refs: string[]
+  text_adapters: string[]
+  max_priority: number
+}
+
+export interface AiRegistry {
+  providers: AiProviderRecord[]
+  models: AiModelRecord[]
+  tasks: AiTaskRecord[]
+  options: AiRegistryOptions
+  notes: string[]
+  generated_at: string
+}
+
+export interface AiProviderPayload {
+  slug: string
+  name_ar: string
+  auth_mode: AiAuthMode
+  base_url: string
+  credential_ref: string
+  notes_ar?: string | null
+  status?: AiEntityStatus
+}
+
+export interface AiModelPayload {
+  provider_id: string
+  model_id: string
+  name_ar: string
+  modality: AiModality
+  supports_json_schema?: boolean
+  max_input_tokens?: number | null
+  max_output_tokens?: number | null
+  price_micros?: number | null
+  price_unit?: AiPriceUnit | null
+  status?: AiEntityStatus
+}
+
+export interface AiRoutePayload {
+  model_id: string
+  priority: number
+  is_enabled?: boolean
+  params?: Record<string, unknown> | string
+  daily_call_cap?: number | null
+  daily_spend_cap_micros?: number | null
+}
+
+/// Ù†ØªÙŠØ¬Ø© Ø§Ø®ØªØ¨Ø§Ø± Ù…ÙˆØ¯ÙŠÙ„. `schema_honoured` ØªÙ‚ÙˆÙ„ Ù‡Ù„ Ø¹Ø§Ø¯ ÙƒØ§Ø¦Ù† ÙØ¹Ù„Ù‹Ø§ Ù„Ø§ Ù‡Ù„ Ø·ÙÙ„Ø¨ØŒ
+/// Ùˆ`cost_known` ØªÙØ±Ù‘Ù‚ Ø¨ÙŠÙ† Â«ØµÙØ±Â» ÙˆÂ«Ø³Ø¹Ø± ØºÙŠØ± Ù…Ø³Ø¬ÙŽÙ‘Ù„Â».
+export interface AiProbeResult {
+  status: 'ok'
+  latency_ms: number
+  input_tokens?: number | null
+  output_tokens?: number | null
+  schema_honoured: boolean | null
+  cost_micros: number | null
+  cost_known: boolean
+  sample: string
+}
+
+export interface AiUsageRow {
+  task_id: string
+  provider_slug: string
+  model_ref: string
+  purpose: 'production' | 'probe'
+  status: 'ok' | 'refused' | 'provider_failed' | 'invalid_output'
+  calls: number
+  spend_micros: number
+}
+
+export interface AiUsageDayRow {
+  day: string
+  purpose: 'production' | 'probe'
+  calls: number
+  spend_micros: number
+}
+
+export interface AiUsageEnvelope {
+  days: number
+  by_task: AiUsageRow[]
+  by_day: AiUsageDayRow[]
+}
+

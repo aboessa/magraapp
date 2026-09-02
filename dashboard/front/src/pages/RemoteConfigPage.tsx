@@ -1,8 +1,6 @@
-// @ts-nocheck
-import { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { Modal } from '../components/Modal'
-import { Icon } from '../components/Icon'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import type { FeatureFlagRecord, RemoteConfigRecord } from '../types/api'
@@ -38,6 +36,10 @@ const copy = {
     killSwitchDesc: 'مفاتيح إيقاف تشغيلية عالية الخطورة — تتطلب تأكيد أثر وسبب وصلاحية ومراجعة',
     empty: 'لا إعدادات', flagsEmpty: 'لا أعلام',
     invalidJson: 'JSON غير صالح', invalidRollout: 'النسبة 0-100', invalidVersion: 'نسخة دلالية غير صالحة (مثل 2.4.0)',
+    // كان `text.loadError` مُستخدَمًا في ثلاثة مواضع وغير موجود، فيصير `undefined`:
+    // فشلٌ غير `Error` كان يُنتج `setError(undefined)` فتُعرض الصفحة **فارغةً
+    // كأن القراءة نجحت**، والحفظ الفاشل كان يُغلق بلا رسالة.
+    loadError: 'تعذّر قراءة الضبط البعيد',
   },
   en: {
     eyebrow: 'App Control', title: 'Remote Config', lede: 'Settings reaching all users immediately — controlled operations. Environment is visibly Production.',
@@ -55,6 +57,7 @@ const copy = {
     killSwitchDesc: 'Operational kill switches — require impact preview + reason + permission + audit',
     empty: 'No config', flagsEmpty: 'No flags',
     invalidJson: 'Invalid JSON', invalidRollout: 'Rollout 0-100', invalidVersion: 'Invalid semver (e.g. 2.4.0)',
+    loadError: 'Could not read remote config',
   }
 }
 
@@ -85,7 +88,6 @@ export function RemoteConfigPage(){
   const [preview,setPreview]=useState<any>(null)
   const [history,setHistory]=useState<any[]>([])
 
-  const envLabel = (window as any).__ENV__ ?? 'production'
 
   const load=useCallback(async()=>{
     setLoading(true); setError('')
@@ -99,7 +101,6 @@ export function RemoteConfigPage(){
 
   useEffect(()=>{ void load()},[load])
 
-  const killFlags = useMemo(()=> entries.filter(e=> KILL_SWITCHES.includes(e.key)) ?? [],[entries])
 
   function openEdit(e:RemoteConfigRecord){
     setSelected(e); setValueText(JSON.stringify(e.value)); setRollout(String(e.rollout_percent)); setTargetingText(JSON.stringify(e.targeting ?? {})); setModalError(''); setConfirmHighRisk(false)

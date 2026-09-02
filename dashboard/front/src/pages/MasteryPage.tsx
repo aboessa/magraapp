@@ -1,8 +1,7 @@
-// @ts-nocheck
-import { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
-import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { EmptyState } from '../components/PageState'
 import { ListToolbar } from '../components/AdvancedFilters'
 import type { FilterField } from '../components/AdvancedFilters'
 import { SavedViewsMenu } from '../components/ListTools'
@@ -33,6 +32,8 @@ const copy={
     objectivesWithEvidence:'أهداف لها دليل', objectivesWithout:'أهداف بلا دليل', childrenWithEvidence:'أطفال لهم دليل مؤهل', needsReviewCount:'في قائمة المراجعة', recentAttempts:'محاولات حديثة', invalidEvidence:'أدلة مرفوضة',
     tabOverview:'نظرة عامة', tabObjectives:'حسب الهدف', tabSkill:'حسب المهارة', tabChildren:'حسب الطفل', tabAttempts:'المحاولات', tabNeeds:'يحتاج مراجعة', tabDiag:'تشخيص الدليل',
     noEvidenceWhy:'لا توجد محاولات مؤهلة لهذا الهدف بعد', whyContent:'محتوى مرتبط', whyGames:'ألعاب قادرة على توليد دليل', runtimeStatus:'حالة التشغيل',
+    // «لا محرّك يقيسه» ليست «لا لعبة»: قد تكون مرتبطة بلعبة على محرّك لا يكتب إتقانًا.
+    whyNoCapableGame:'لا لعبة منشورة على محرّك يقيس الإتقان', whyNoQuestions:'لا أسئلة', whyQuestions:(n:number)=> `${n} سؤالًا`,
     needsReviewTitle:'قائمة يحتاج مراجعة', needsReviewDesc:'أسباب: تضارب أدلة، تغيّر الربط، تغيّر نسخة الهدف، مصدر غير صالح',
     evidenceTrace:'تتبع الدليل: هدف → مصدر → محاولة → تأهيل → تحديث إتقان',
     qualifying:'مؤهلة', notQualifying:'غير مؤهلة', entertainmentNote:'الألعاب الترفيهية لا تُنشئ إتقانًا تلقائيًا — فحص نوع المحرك مطلوب',
@@ -50,6 +51,7 @@ const copy={
     objectivesWithEvidence:'Objectives with evidence', objectivesWithout:'Objectives without evidence', childrenWithEvidence:'Children with qualifying evidence', needsReviewCount:'Needs review', recentAttempts:'Recent attempts', invalidEvidence:'Rejected evidence',
     tabOverview:'Overview', tabObjectives:'By objective', tabSkill:'By skill', tabChildren:'By child', tabAttempts:'Attempts', tabNeeds:'Needs review', tabDiag:'Diagnostics',
     noEvidenceWhy:'No qualifying attempts for this objective yet', whyContent:'Linked content', whyGames:'Games capable of evidence', runtimeStatus:'Runtime status',
+    whyNoCapableGame:'No published game on a mastery-writing engine', whyNoQuestions:'No questions', whyQuestions:(n:number)=> `${n} question(s)`,
     needsReviewTitle:'Needs Review queue', needsReviewDesc:'Reasons: conflicting evidence, mapping changed, objective version changed, invalid source',
     evidenceTrace:'Trace: Objective → Source → Attempt → Qualification → Mastery update',
     qualifying:'QUALIFIED', notQualifying:'NOT QUALIFIED', entertainmentNote:'Entertainment-first games do not create mastery automatically — engine type check required',
@@ -225,13 +227,33 @@ export function MasteryPage(){
 
         {tab==='diagnostics' && (
           objectives.length? <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>{text.objective}</th><th>محتوى</th><th>ألعاب</th><th>حالة التشغيل</th></tr></thead><tbody>
-            {objectives.map(row=> <tr key={row.id}><td><Link to={adminPath(`objectives/${row.id}`)}>{row.title_ar}</Link><div><small dir="ltr">{row.code}</small> — <span className="prod-chip prod-chip--blocked">{text.noEvidenceWhy}</span></div></td><td>{text.whyContent}</td><td>{text.whyGames}</td><td>{text.runtimeStatus}</td></tr>)}
+            {/* كانت هذه الخلايا تكتب **عناوين الأعمدة مكان قيمها**: ثلاث عبارات
+                ثابتة تتكرّر في كل صفّ، فالتبويب الذي يوجد ليجيب «لماذا لا دليل؟»
+                كان يجيب بما يشبه الجواب ولا يقيس شيئًا — وأسوأ من الخلية الفارغة،
+                لأن القارئ يستنتج أن لكل هدفٍ محتوًى وألعابًا قادرة، وهو عكس ما
+                يوجد التبويب لكشفه. */}
+            {objectives.map(row=> {
+              const capable = Number((row as any).evidence_capable_games ?? 0)
+              const linked = Number((row as any).linked_episodes ?? 0) + Number((row as any).linked_games ?? 0)
+              const questions = Number((row as any).questions_count ?? 0)
+              return <tr key={row.id}>
+                <td><Link to={adminPath(`objectives/${row.id}`)}>{row.title_ar}</Link><div><small dir="ltr">{row.code}</small> — <span className="prod-chip prod-chip--blocked">{text.noEvidenceWhy}</span></div></td>
+                <td>{linked}</td>
+                {/* لعبةٌ على محرّكٍ لا يكتب إتقانًا لا تُنتج دليلًا أبدًا، فالعدد
+                    هنا ليس عدد الألعاب المرتبطة. وصفرٌ مع وجود ألعاب مرتبطة
+                    خطأُ ربطٍ لا نقصُ محتوى. */}
+                <td>{capable === 0
+                  ? <span className="prod-chip prod-chip--blocked">{text.whyNoCapableGame}</span>
+                  : capable}</td>
+                <td>{questions === 0 ? text.whyNoQuestions : text.whyQuestions(questions)}</td>
+              </tr>
+            })}
           </tbody></table></div> : <EmptyState title={text.emptyDiag} description={text.noEvidenceWhy} />
         )}
 
         {tab==='children' && (
           children.length? <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>{text.child}</th><th>{text.track}</th><th>{text.objectivesCount}</th><th>{text.independent}</th><th>{text.needsReview}</th><th>{text.attempts}</th><th>{text.successRate}</th></tr></thead><tbody>
-            {children.map(row=> <tr key={row.child_id}><td><div className="entity-cell"><span className="entity-avatar"><Icon name="children" size={18}/></span><div><strong>{row.nickname}</strong><small dir="ltr">{row.child_id.slice(0,8)}…</small></div></div></td><td><span className={`track-badge track-badge--${row.age_track}`}>{trackLabels[locale as any][row.age_track]}</span></td><td>{row.objectives_count}</td><td>{row.independent_count}</td><td>{row.needs_review_count? <span className="status-badge status-badge--review">{row.needs_review_count}</span>: '0'}</td><td>{row.attempts}</td><td><Rate value={row.success_rate} hint={text.noDataHint} /></td></tr>)}
+            {children.map(row=> <tr key={row.child_id}><td><div className="entity-cell"><span className="entity-avatar"><Icon name="children" size={18}/></span><div><strong>{row.nickname}</strong><small dir="ltr">{row.child_id.slice(0,8)}…</small></div></div></td><td><span className={`track-badge track-badge--${row.age_track}`}>{trackLabels[locale][row.age_track]}</span></td><td>{row.objectives_count}</td><td>{row.independent_count}</td><td>{row.needs_review_count? <span className="status-badge status-badge--review">{row.needs_review_count}</span>: '0'}</td><td>{row.attempts}</td><td><Rate value={row.success_rate} hint={text.noDataHint} /></td></tr>)}
           </tbody></table></div> : <EmptyState title={text.emptyChildren} description={text.privacyNote} />
         )}
 

@@ -14,6 +14,17 @@ export const statusLabels: Record<Locale, Record<ContentStatus, string>> = {
   },
 }
 
+/**
+ * تسمية مسار عمريّ قيمته نصّ من الخادم لا `AgeTrack` مضمونة.
+ *
+ * كانت الصفحات تكتب `trackLabels[locale as any][value]`، و`as any` هو ما كان
+ * يُسكت الفحص: قيمةٌ لا يعرفها الجدول تُنتج `undefined` فتظهر **شارة فارغة** لا
+ * أثر لها في السجل. هنا تظهر القيمة الخام بدل الفراغ، فيُرى الخلل ولا يُخفى.
+ */
+export function trackLabel(locale: Locale, value: string): string {
+  return trackLabels[locale][value as AgeTrack] ?? value
+}
+
 export const trackLabels: Record<Locale, Record<AgeTrack, string>> = {
   ar: { preschool: 'البراعم 3–5', kids: 'المستكشفون 6–8', junior: 'الروّاد 9–12' },
   en: { preschool: 'Preschool 3–5', kids: 'Explorers 6–8', junior: 'Pioneers 9–12' },
@@ -44,17 +55,25 @@ export const accountStatusLabels: Record<Locale, Record<ParentRecord['status'], 
   en: { active: 'Active', suspended: 'Suspended', archived: 'Archived' },
 }
 
+import { DEFAULT_LOCALE_MAP } from './constants.ts'
 export function localeCode(locale: Locale) {
-  return locale === 'ar' ? 'ar-EG' : 'en-US'
+  return (DEFAULT_LOCALE_MAP as any)[locale] ?? (locale === 'ar' ? 'ar-EG' : 'en-US')
 }
 
 export function formatNumber(value: number, locale: Locale) {
   return new Intl.NumberFormat(localeCode(locale)).format(value)
 }
 
-export function formatDate(value: string, locale: Locale, includeTime = false) {
+export function formatDate(value: string | number | null | undefined, locale: Locale, includeTime = false) {
+  if (value == null || value === '') return '—'
+  const date = new Date(typeof value === 'number' ? value : String(value))
+  if (Number.isNaN(date.getTime())) return '—'
   const options: Intl.DateTimeFormatOptions = includeTime
     ? { dateStyle: 'medium', timeStyle: 'short' }
     : { dateStyle: 'medium' }
-  return new Intl.DateTimeFormat(localeCode(locale), options).format(new Date(value))
+  return new Intl.DateTimeFormat(localeCode(locale), options).format(date)
+}
+
+export function formatDateTime(value: string | number | null | undefined, locale: Locale) {
+  return formatDate(value, locale, true)
 }

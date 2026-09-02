@@ -1,8 +1,4 @@
-// @ts-nocheck
-import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Icon } from '../components/Icon'
-import { ErrorState, LoadingState } from '../components/PageState'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
@@ -59,7 +55,9 @@ const copy = {
     resetPassword: 'إصدار استرداد مؤقت',
     resetPrompt: 'سيُصدر رمز استرداد مؤقت — ليس تعيين كلمة مرور يدويًا',
     revokeSessions: 'سحب الجلسات',
-    revokeDetail: 'سيُسحب 2 جلسة — الأثر: تسجيل خروج فوري',
+    // كان «سيُسحب 2 جلسة»: عددٌ ثابت في النصّ لا يقرؤه أحد من الخادم. تأكيدٌ
+    // يذكر رقمًا مُختلَقًا يجعل المسؤول يظنّ أن اللوحة تعرف حالة الجلسات.
+    revokeDetail: 'ستُسحب كل جلسات هذا الحساب — الأثر: تسجيل خروج فوري',
     confirmDisable: 'تعطيل هذا الحساب؟ سيُسحب 2 جلسة، Teams: 2، Tasks: 3 — نقل العمل أولاً.',
     empty: 'لا موظفين بعد',
     loadError: 'تعذر التحميل',
@@ -116,7 +114,7 @@ const copy = {
     resetPassword: 'Issue temporary recovery',
     resetPrompt: 'Temporary recovery will be issued — not manual password set',
     revokeSessions: 'Revoke sessions',
-    revokeDetail: '2 sessions will be revoked — immediate sign-out',
+    revokeDetail: 'All sessions for this account will be revoked — immediate sign-out',
     confirmDisable: 'Disable this account? 2 sessions, Teams: 2, Tasks: 3 — transfer work first.',
     empty: 'No staff yet',
     loadError: 'Unable to load',
@@ -211,7 +209,10 @@ export function TeamAccessPage() {
     if (!window.confirm(text.revokeDetail)) return
     try {
       await api.revokeAdminUserSessions(u.id)
-      setNotice('Sessions revoked — 2 sessions')
+      // كان النصّ «— 2 sessions»: عددٌ **مُختلَق**. النقطة تُعيد `revoked: true`
+      // بلا عدد، فكان التأكيد يذكر رقمًا لم يقله الخادم — في عملية أمنية يُبنى
+      // عليها قرار. التأكيد الآن يقول ما حدث فقط.
+      setNotice(locale === 'ar' ? 'سُحبت كل جلسات هذا الحساب' : 'All sessions for this account were revoked')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.loadError)
     }
@@ -230,6 +231,15 @@ export function TeamAccessPage() {
 
   return (
     <div className="page-stack">
+      {/* `notice` كان يُكتب في ثلاثة مواضع ولا يُعرض في أيّها: إنشاء حساب،
+          وإصدار كلمة مرور مؤقّتة، وسحب الجلسات. والسحب بلا تأكيد أسوأ من غيره —
+          المسؤول لا يعرف أنه حدث فيُعيده. `aria-live` لأن التأكيد يظهر بعد فعل. */}
+      {notice && (
+        <section className="panel panel--notice" role="status" aria-live="polite" style={{ padding: 12 }}>
+          {notice}
+          <button className="button button--ghost button--small" style={{ marginInlineStart: 12 }} onClick={() => setNotice('')} aria-label="إخفاء">×</button>
+        </section>
+      )}
       <section className="page-intro">
         <div>
           <span className="eyebrow">{text.eyebrow}</span>

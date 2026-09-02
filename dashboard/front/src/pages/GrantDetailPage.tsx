@@ -1,14 +1,11 @@
-// @ts-nocheck
-import { useCallback, useEffect, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
-import { usePreferences } from '../context/preferences'
 
 export function GrantDetailPage() {
   const { id = '' } = useParams()
-  const { locale } = usePreferences()
   const [grant, setGrant] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

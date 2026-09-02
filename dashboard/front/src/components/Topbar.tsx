@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Icon } from './Icon'
 import { adminPath } from '../lib/adminPath'
+import { readAdminUser, signOut } from '../lib/adminSession'
 import { usePreferences } from '../context/preferences'
 import type { Locale } from '../context/preferences'
 
@@ -161,11 +163,32 @@ export function Topbar({ onOpenPalette }: { onOpenPalette: () => void }) {
   const location = useLocation()
   const { theme, toggleTheme, locale, setLocale, setMenuOpen } = usePreferences()
   const text = copy[locale]
+  const [profileOpen, setProfileOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
 
   // المسار قد ينتهي بشرطة مائلة، فتُقصّ قبل المطابقة لئلا يفشل مفتاح صحيح
   const path = location.pathname.replace(/\/+$/, '') || adminPath()
   const pages = pageMap(locale)
   const page = pages[path] ?? pages[adminPath()]
+
+  const user = readAdminUser()
+
+  // إغلاق قائمة البروفايل عند الضغط خارجها
+  useEffect(() => {
+    if (!profileOpen) return
+    const handle = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [profileOpen])
+
+  const handleSignOut = async () => {
+    await signOut()
+    window.location.href = adminPath()
+  }
 
   return (
     <header className="topbar">
@@ -187,7 +210,47 @@ export function Topbar({ onOpenPalette }: { onOpenPalette: () => void }) {
         <button className="icon-button" type="button" onClick={toggleTheme} aria-label={theme === 'dark' ? text.light : text.dark} title={theme === 'dark' ? text.light : text.dark}>
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
         </button>
-        <div className="admin-profile" title={text.account}><span>{locale === 'ar' ? 'م' : 'M'}</span><div><strong>{text.role}</strong><small>{text.org}</small></div></div>
+        <div className="admin-profile-wrapper" ref={profileRef}>
+          <button
+            className="admin-profile admin-profile--button"
+            type="button"
+            title={text.account}
+            aria-label={text.account}
+            aria-expanded={profileOpen}
+            aria-haspopup="menu"
+            onClick={() => setProfileOpen((v) => !v)}
+          >
+            <span>{locale === 'ar' ? 'م' : 'M'}</span>
+            <div><strong>{user?.display_name || text.role}</strong><small>{user?.email || text.org}</small></div>
+          </button>
+          {profileOpen && (
+            <div className="admin-profile-menu" role="menu">
+              <div className="admin-profile-menu__header">
+                <strong>{user?.display_name || text.role}</strong>
+                <small>{user?.email || ''}</small>
+                <small>{user?.roles?.join(', ') || ''}</small>
+              </div>
+              <div className="admin-profile-menu__divider" />
+              <a className="admin-profile-menu__item" role="menuitem" href={adminPath('my-account')}>
+                <Icon name="settings" size={14} />
+                <span>{locale === 'ar' ? 'حسابي' : 'My account'}</span>
+              </a>
+              <a className="admin-profile-menu__item" role="menuitem" href={adminPath('settings')}>
+                <Icon name="settings" size={14} />
+                <span>{locale === 'ar' ? 'الإعدادات' : 'Settings'}</span>
+              </a>
+              <a className="admin-profile-menu__item" role="menuitem" href={adminPath('sessions')}>
+                <Icon name="settings" size={14} />
+                <span>{locale === 'ar' ? 'الجلسات' : 'Sessions'}</span>
+              </a>
+              <div className="admin-profile-menu__divider" />
+              <button className="admin-profile-menu__item admin-profile-menu__item--danger" role="menuitem" type="button" onClick={() => void handleSignOut()}>
+                <Icon name="logout" size={14} />
+                <span>{locale === 'ar' ? 'تسجيل الخروج' : 'Sign out'}</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   )

@@ -25,7 +25,7 @@ const copy = {
     progress: 'سجلات التقدّم',
     liveSource: 'المصدر: FamilyState (حيّ)',
     projectionSource: 'المصدر: إسقاط D1 (متأخّر بطبيعته)',
-    tabs: { overview: 'نظرة عامة', children: 'الأطفال', subscription: 'الاشتراك', devices: 'الأجهزة', purchases: 'المدفوعات', tickets: 'الدعم', consents: 'الموافقات', audit: 'السجل' },
+    tabs: { overview: 'نظرة عامة', children: 'الأطفال', subscription: 'الاشتراك', devices: 'الأجهزة', purchases: 'المدفوعات', tickets: 'الدعم', consents: 'الموافقات', audit: 'سجل اللوحة', familyAudit: 'سجل عمليات الأسرة' },
     revoke: 'سحب الجهاز',
     revokeDownloads: 'إلغاء التنزيلات',
     resync: 'إعادة مزامنة الإسقاط',
@@ -48,6 +48,10 @@ const copy = {
     noPurchases: 'لا سجل مدفوعات',
     noBilling: 'لا سجل استحقاق',
     noAudit: 'لا سجل عمليات',
+    noFamilyAudit: 'لا عمليات مسجَّلة على هذه الأسرة',
+    familyAuditNote: 'أثر عمليات المسار نفسه: الجلسات والأجهزة ومنح التشغيل ودورة حياة الحساب. بلا توكن ولا رابط ولا بيانات طفل.',
+    entity: 'الكيان',
+    actorKind: { parent: 'وليّ الأمر', operator: 'مسؤول', system: 'النظام' } as Record<string, string>,
     noConsents: 'لا موافقات مسجَّلة',
     action: 'العملية',
     actor: 'الفاعل',
@@ -88,7 +92,7 @@ const copy = {
     progress: 'Progress records',
     liveSource: 'Source: FamilyState (live)',
     projectionSource: 'Source: D1 projection (behind by design)',
-    tabs: { overview: 'Overview', children: 'Children', subscription: 'Subscription', devices: 'Devices', purchases: 'Payments', tickets: 'Support', consents: 'Consents', audit: 'History' },
+    tabs: { overview: 'Overview', children: 'Children', subscription: 'Subscription', devices: 'Devices', purchases: 'Payments', tickets: 'Support', consents: 'Consents', audit: 'Admin log', familyAudit: 'Family activity' },
     revoke: 'Revoke device',
     revokeDownloads: 'Revoke downloads',
     resync: 'Resync projection',
@@ -111,6 +115,10 @@ const copy = {
     noPurchases: 'No payment records',
     noBilling: 'No entitlement history',
     noAudit: 'No audit history',
+    noFamilyAudit: 'No recorded activity for this family',
+    familyAuditNote: 'Client-path activity: sessions, devices, playback grants and account lifecycle. No tokens, no URLs, no child data.',
+    entity: 'Entity',
+    actorKind: { parent: 'Parent', operator: 'Operator', system: 'System' } as Record<string, string>,
     noConsents: 'No recorded consents',
     action: 'Action',
     actor: 'Actor',
@@ -213,7 +221,9 @@ export function CustomerDetailPage() {
         <div className="stat-card"><span>{text.effectivePlan}</span><strong>{live ? live.effective_plan : '—'}</strong></div>
         <div className="stat-card"><span>{text.status}</span><strong>{data.family.status}</strong></div>
         <div className="stat-card"><span>{text.children}</span><strong>{data.children.length}</strong></div>
-        <div className="stat-card"><span>{text.devices}</span><strong>{live ? live.devices.length : data.devices_projection.length}</strong></div>
+        {/* `DB-102`: البديل «—» لا صفر. كان `data.devices_projection.length`،
+            وهو إسقاطٌ ميت بلا كاتب فيقرأ دائمًا صفرًا. */}
+        <div className="stat-card"><span>{text.devices}</span><strong>{live ? live.devices.length : '—'}</strong></div>
         <div className="stat-card"><span>{text.tickets}</span><strong>{data.tickets.length}</strong></div>
         <div className="stat-card"><span>{text.sessions}</span><strong>{live ? live.active_sessions : '—'}</strong></div>
         <div className="stat-card"><span>{text.leases}</span><strong>{live ? live.active_leases : '—'}</strong></div>
@@ -320,36 +330,22 @@ export function CustomerDetailPage() {
           </table>
         </div>
       ) : <p className="readiness-note">{text.noDevices}</p>}
-      {data.devices_projection.length > 0 && (
-        <>
-          <h4 style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{text.projectionSource}</h4>
-          <div className="table-scroll" tabIndex={0}>
-            <table className="data-table">
-              <thead><tr><th>{text.device}</th><th>{text.platform}</th><th>{text.status}</th><th>{text.lastSeen}</th></tr></thead>
-              <tbody>
-                {data.devices_projection.map((device) => (
-                  <tr key={device.id}><td><Link className="table-primary" to={adminPath(`devices/${device.id}`)}>{device.display_name || device.id.slice(0, 12)}</Link></td><td>{device.platform}</td><td>{device.status}</td><td dir="ltr">{String(device.last_seen_at).slice(0, 16).replace('T', ' ')}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+      {/* `DB-102`: كان هنا جدولٌ ثانٍ «من الإسقاط». والإسقاط `account_devices`
+          ميتٌ بلا كاتب، فالجدول لم يظهر يومًا (شرطُه `length > 0`) — أي واجهةٌ
+          مصانةٌ لبيانات لا تصل. صار السبب معروضًا بدل جدولٍ لا يُبنى. */}
+      <p className="readiness-note">
+        {data.devices_projection.available === false
+          ? `${text.projectionSource}: ${data.devices_projection.reason}`
+          : text.projectionSource}
+      </p>
     </div>
   )
 
-  const purchasesTab = data.purchases.length ? (
-    <div className="table-scroll" tabIndex={0}>
-      <table className="data-table">
-        <thead><tr><th>{text.product}</th><th>{text.status}</th><th>{text.date}</th><th>{text.expires}</th></tr></thead>
-        <tbody>
-          {data.purchases.map((entry, index) => (
-            <tr key={`${entry.product_id}-${index}`}><td dir="ltr">{entry.product_id}</td><td>{entry.purchase_state}</td><td dir="ltr">{entry.purchased_at?.slice(0, 10) ?? '—'}</td><td dir="ltr">{entry.expires_at?.slice(0, 10) ?? '—'}</td></tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  ) : <EmptyState title={text.noPurchases} description={text.product} />
+  // `DB-102`: الشراءات **غير متوفّرة** لا فارغة — الجدول بلا كاتب لأن مسار
+  // الشراء غير موصول (`API-104`). و«لا شراءات» كانت ستُقرأ إجابةً مقيسة.
+  const purchasesTab = data.purchases.available === false
+    ? <EmptyState title={text.noPurchases} description={data.purchases.reason} />
+    : <EmptyState title={text.noPurchases} description={text.product} />
 
   const ticketsTab = data.tickets.length ? (
     <div className="table-scroll" tabIndex={0}>
@@ -382,13 +378,39 @@ export function CustomerDetailPage() {
     </div>
   ) : <EmptyState title={text.noAudit} description={text.tabs.audit} />
 
+  // PRIV-102: تبويب منفصل عن سجل اللوحة عن قصد. دمجهما كان سيخلط «من فعل هذا
+  // بالحساب» بـ«ماذا فعل الحساب»، وهما سؤالان مختلفان لمراجعتين مختلفتين.
+  // `?? []` لأن الحقل أُضيف بعد الإصدار الأول من هذا الردّ: نسخة أقدم من الخادم
+  // تُعيد الصفحة كاملة بتبويب فارغ، لا شاشة معطَّلة.
+  const familyAudit = data.family_audit ?? []
+  const familyAuditTab = familyAudit.length ? (
+    <div className="page-stack">
+      <p className="readiness-note">{text.familyAuditNote}</p>
+      <div className="table-scroll" tabIndex={0}>
+        <table className="data-table">
+          <thead><tr><th>{text.action}</th><th>{text.actor}</th><th>{text.entity}</th><th>{text.date}</th></tr></thead>
+          <tbody>
+            {familyAudit.map((entry, index) => (
+              <tr key={`${entry.action}-${entry.occurred_at_ms}-${index}`}>
+                <td dir="ltr">{entry.action}</td>
+                <td>{text.actorKind[entry.actor_kind] ?? entry.actor_kind}{entry.actor_kind === 'operator' && entry.actor_id ? <small dir="ltr"> {entry.actor_id}</small> : null}</td>
+                <td><small dir="ltr">{entry.entity_type}{entry.entity_id ? ` · ${entry.entity_id.slice(0, 12)}` : ''}</small></td>
+                <td dir="ltr">{new Date(entry.occurred_at_ms).toISOString().slice(0, 16).replace('T', ' ')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ) : <EmptyState title={text.noFamilyAudit} description={text.familyAuditNote} />
+
   return (
     <div className="page-stack">
       <EntityHeader
         breadcrumbs={[{ label: text.eyebrow, to: adminPath('customers') }, { label: data.family.parent_id }]}
         title={data.family.parent_id}
         subtitle={`${text.plan}: ${data.family.plan}`}
-        meta={<><span>{text.children}: {data.children.length}</span><span>{text.devices}: {live ? live.devices.length : data.devices_projection.length}</span><span>{text.tickets}: {data.tickets.length}</span></>}
+        meta={<><span>{text.children}: {data.children.length}</span><span>{text.devices}: {live ? live.devices.length : '—'}</span><span>{text.tickets}: {data.tickets.length}</span></>}
         status={<span className={`account-status account-status--${data.family.status === 'active' ? 'active' : 'archived'}`}>{data.family.status}</span>}
         actions={<Link className="button button--ghost" to={adminPath('customers')}>{text.back}</Link>}
       />
@@ -400,10 +422,12 @@ export function CustomerDetailPage() {
           { key: 'children', label: text.tabs.children, badge: data.children.length, content: childrenTab },
           { key: 'subscription', label: text.tabs.subscription, content: subscriptionTab },
           { key: 'devices', label: text.tabs.devices, badge: live?.devices.length, content: devicesTab },
-          { key: 'purchases', label: text.tabs.purchases, badge: data.purchases.length, content: purchasesTab },
+          // `DB-102`: لا شارة عدد — المصدر غير متوفّر، والصفر كان يُقرأ قياسًا.
+          { key: 'purchases', label: text.tabs.purchases, content: purchasesTab },
           { key: 'tickets', label: text.tabs.tickets, badge: data.tickets.length, content: ticketsTab },
           { key: 'consents', label: text.tabs.consents, content: consentsTab },
           { key: 'audit', label: text.tabs.audit, badge: data.audit.length, content: auditTab },
+          { key: 'family-audit', label: text.tabs.familyAudit, badge: familyAudit.length, content: familyAuditTab },
         ]}
       />
       {pending && (

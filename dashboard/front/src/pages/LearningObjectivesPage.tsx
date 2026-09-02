@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
@@ -7,7 +6,7 @@ import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
-import { formatNumber, trackLabels } from '../lib/labels'
+import { formatNumber, trackLabel, trackLabels } from '../lib/labels'
 import type { AgeTrack, LearningObjectiveRecord, SkillRecord } from '../types/api'
 
 const ALL_TRACKS: AgeTrack[]=['preschool','kids','junior']
@@ -153,7 +152,7 @@ export function LearningObjectivesPage(){
           <div><span className="panel__kicker">{text.list}</span><h3>{text.total} <span className="title-count">{formatNumber(total, locale as any)}</span></h3></div>
           <div className="filters-row">
             <label className="search-field"><Icon name="search" size={17}/><input value={query} onChange={e=> setQuery(e.target.value)} placeholder={text.search}/></label>
-            <select value={track} onChange={e=> setTrack(e.target.value)}><option value="">{text.allTracks}</option>{ALL_TRACKS.map(i=> <option key={i} value={i}>{trackLabels[locale as any][i]}</option>)}</select>
+            <select value={track} onChange={e=> setTrack(e.target.value)}><option value="">{text.allTracks}</option>{ALL_TRACKS.map(i=> <option key={i} value={i}>{trackLabels[locale][i]}</option>)}</select>
             <select value={skillId} onChange={e=> setSkillId(e.target.value)}><option value="">{text.allSkills}</option>{skills.map(s=> <option key={s.id} value={s.id}>{s.name_ar}</option>)}</select>
           </div>
         </header>
@@ -174,7 +173,7 @@ export function LearningObjectivesPage(){
                 <td><Link to={adminPath(`objectives/${item.id}`)} style={{ textDecoration:'none' }}><strong>{item.title_ar}</strong><br/><small className="table-secondary" dir="ltr">{item.code}</small>{item.measurable_criteria && <small className="table-secondary" style={{ display:'block', maxWidth:280, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.measurable_criteria}</small>}</Link></td>
                 <td>{item.skill_name? <span className="track-badge">{item.skill_name}</span>: <span className="table-secondary">—</span>}</td>
                 <td dir="ltr">{item.age_min}–{item.age_max}</td>
-                <td>{item.track_ids?.length? <div className="badge-row">{item.track_ids.map((v:any)=> <span key={v} className={`track-badge track-badge--${v}`}>{trackLabels[locale as any][v]}</span>)}</div>: <button className="button button--ghost button--small" onClick={()=> void rederive(item)}>{text.rederive}</button>}</td>
+                <td>{item.track_ids?.length? <div className="badge-row">{item.track_ids.map((v:string)=> <span key={v} className={`track-badge track-badge--${v}`}>{trackLabel(locale, v)}</span>)}</div>: <button className="button button--ghost button--small" onClick={()=> void rederive(item)}>{text.rederive}</button>}</td>
                 <td>{hasCriterion? <span className="prod-chip prod-chip--complete">✓</span>: <span className="prod-chip prod-chip--blocked">—</span>}</td>
                 <td><span className="table-secondary">{formatNumber(Number(item.episodes_count??0), locale as any)} {text.episodes} · {formatNumber(Number(item.games_count??0), locale as any)} {text.games}</span></td>
                 <td>{qCount? <Link to={adminPath(`quiz?objective_id=${item.id}`)} className="prod-chip prod-chip--complete">{qCount}</Link> : <span className="table-secondary">0</span>}</td>
@@ -201,7 +200,7 @@ export function LearningObjectivesPage(){
           </div>
           <fieldset className="field"><span>{text.tracksField}</span><div className="checkbox-row">{ALL_TRACKS.map(v=>{
             const allowed=allowedTracks.includes(v)
-            return <label key={v} className={`checkbox-chip ${allowed?'':'checkbox-chip--disabled'}`}><input type="checkbox" checked={form.track_ids.includes(v)} disabled={!allowed} onChange={()=> setForm((c:any)=> ({...c, track_ids: c.track_ids.includes(v)? c.track_ids.filter((x:any)=>x!==v): [...c.track_ids, v]}))}/><span>{trackLabels[locale as any][v]}</span></label>
+            return <label key={v} className={`checkbox-chip ${allowed?'':'checkbox-chip--disabled'}`}><input type="checkbox" checked={form.track_ids.includes(v)} disabled={!allowed} onChange={()=> setForm((c:any)=> ({...c, track_ids: c.track_ids.includes(v)? c.track_ids.filter((x:any)=>x!==v): [...c.track_ids, v]}))}/><span>{trackLabels[locale][v]}</span></label>
           })}</div><small>{text.tracksHint}</small></fieldset>
           <label className="field"><span>{text.descriptionField}</span><textarea rows={2} value={form.description_ar} onChange={e=> setForm({...form, description_ar:e.target.value})} /></label>
           <label className="field"><span>{text.criteriaField}</span><textarea rows={2} value={form.measurable_criteria} onChange={e=> setForm({...form, measurable_criteria:e.target.value})} /><small>{text.criteriaHint}</small></label>

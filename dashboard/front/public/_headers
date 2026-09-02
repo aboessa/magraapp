@@ -1,0 +1,48 @@
+# SEC-106 / SEC-108 — ترويسات مستند اللوحة.
+#
+# Cloudflare Pages يقرأ هذا الملف من جذر مخرجات البناء. `public/` يُنسَخ إلى
+# `dist/` كما هو، فالملف يصل إلى الجذر تلقائيًّا بلا خطوة بناء إضافية.
+#
+# ## لماذا هذا الملف موجود
+#
+# رمز جلسة اللوحة في `localStorage` (SEC-106): أي تنفيذ سكربت داخل أصل اللوحة
+# يقرؤه، وهو يمنح صلاحيات إدارية كاملة. تحويله إلى كوكي `HttpOnly` غير ممكن
+# بالاستضافة الحالية — اللوحة على `majarra.app` (Pages) والـAPI على
+# `api.majarra.app` (Worker)، فالكوكي يصير طرفًا ثالثًا وتحجبه المتصفّحات.
+# انظر `DECIDE-109` في الأودت.
+#
+# فالتعويض هو منع تنفيذ السكربت الغريب أصلًا: `script-src 'self'` تعني أن
+# سكربتًا مضمَّنًا مُدرَجًا — وهو الشكل الغالب لثغرات XSS — لا يُنفَّذ، ولا يُنفَّذ
+# سكربت من أي أصل آخر.
+#
+# ## قبل تعديل أي توجيه
+#
+# كل توجيه هنا مبنيّ على ما تحتاجه اللوحة فعلًا، مُتحقَّقًا من المصدر:
+#   * لا سكربت مضمَّن في `index.html` ولا `eval` ولا `new Function` ولا وسم
+#     `script` يُنشأ في وقت التشغيل — لذلك `script-src 'self'` بلا استثناءات.
+#   * `index.css:1` يستورد خطًّا من `fonts.googleapis.com`، والخط نفسه من
+#     `fonts.gstatic.com` — لذلك السماح لهما بالتحديد لا بـ`https:` مفتوحة.
+#   * `style-src 'unsafe-inline'` لأن Vite يضمّن أنماطًا وقت التشغيل، ولأن
+#     المكوّنات تستخدم `style=`. الأثر محدود: بلا تنفيذ سكربت، أقصى ما يفعله
+#     حقن CSS تشويه شكلي.
+#   * `img-src`/`media-src` واسعة على `https:` لأن اللوحة تعرض أصولًا من R2
+#     ومن روابط يضعها المحرّرون، و`blob:` لمعاينة ما يُنشَأ محليًّا. الصورة لا
+#     تُنفَّذ فالسماح مقبول.
+#   * `connect-src` محصورة في الـAPI: `'self'` لبناء يستخدم مسارًا نسبيًّا،
+#     و`api.majarra.app` للإنتاج (`.env.production`).
+#   * `frame-ancestors 'none'` — لا تُؤطَّر اللوحة في أي موقع، فـclickjacking
+#     على أزرار إدارية غير ممكن. و`X-Frame-Options` معها للمتصفّحات الأقدم.
+#   * `base-uri 'none'` و`object-src 'none'` و`form-action 'self'` — منافذ
+#     كلاسيكية لا تحتاجها اللوحة.
+#
+# أي إضافة مورد خارجي (خط، صورة من أصل جديد، سكربت تحليلات) تحتاج تعديلًا هنا،
+# وإلا حجبه المتصفّح. هذا مقصود: الحاجز يُراجَع بوعي لا يُفتح بالصمت.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://api.majarra.app; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()

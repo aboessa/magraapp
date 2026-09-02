@@ -1,18 +1,11 @@
-// @ts-nocheck
-import { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
-import { ListToolbar } from '../components/AdvancedFilters'
-import type { FilterField } from '../components/AdvancedFilters'
-import { SavedViewsMenu } from '../components/ListTools'
-import { Pagination } from '../components/Pagination'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
-import { useUrlListState } from '../hooks/useUrlListState'
-import { DetailTabs } from '../components/DetailTabs'
 
 const copy={
   ar:{
@@ -62,7 +55,9 @@ export function OpsSlaPage(){
       setPolicies((p as any).data ?? [])
       setCommand((c as any).data)
       if(tab==='work'){
-        const w=await api.supportFamily('test').catch(()=> null) // placeholder
+        // كان هنا نداءٌ مُعلَّم «placeholder»: `api.supportFamily('test')`
+        // بمُعرَّف عائلة مُختلق، نتيجته تُهمَل. أي طلبٌ فعليّ إلى الإنتاج في كل
+        // فتح للتبويب مقابل لا شيء — أخفاه `@ts-nocheck` بإسكات «`w` بلا قارئ».
         // fetch support tickets for work table
         const tickets=await (api as any).supportTickets?.({ limit:10 } as any).catch(()=> ({data:[]})) as any
         setWork(tickets.data ?? [])

@@ -95,6 +95,7 @@ const copy = {
     sections: 'الأقسام', preview: 'معاينة المُحلِّل', addSection: 'قسم جديد',
     enabled: 'مفعل', disabled: 'معطل', system: 'نظام', editorial: 'تحريري',
     draft: 'مسودة', active: 'نشط',
+    retiredType: 'نوع مسحوب: لا إصدار من التطبيق يعرضه. احذف هذا الصف أو غيّر نوعه.',
     targeting: 'الاستهداف', schedule: 'الجدولة',
     moveUp: 'تحريك لأعلى', moveDown: 'تحريك لأسفل',
     versions: 'النسخ', save: 'حفظ', cancel: 'تراجع', delete: 'حذف',
@@ -123,6 +124,7 @@ const copy = {
     sections: 'Sections', preview: 'Resolver preview', addSection: 'Add section',
     enabled: 'Enabled', disabled: 'Disabled', system: 'System', editorial: 'Editorial',
     draft: 'Draft', active: 'Active',
+    retiredType: 'Withdrawn type: no app version renders it. Delete this row or change its type.',
     targeting: 'Targeting', schedule: 'Schedule',
     moveUp: 'Move up', moveDown: 'Move down',
     versions: 'Versions', save: 'Save', cancel: 'Revert', delete: 'Delete',
@@ -461,6 +463,12 @@ export function AppExperiencePage() {
                     {' '}{targetingSentence(block.targeting, locale, text.everyone)}
                   </small>
                   {Number(block.is_draft ?? 0) === 1 && <small>{text.draft}</small>}
+                  {/* APP-104: an existing row whose type no app renders. Said
+                      plainly, because the row otherwise looks enabled and
+                      targeted while never appearing on any device. */}
+                  {(meta?.retired_block_types ?? []).includes(block.block_type) && (
+                    <small role="alert">{text.retiredType}</small>
+                  )}
                   {(block.targeting_invalid || block.config_invalid) && (
                     <small role="alert">{block.targeting_invalid || block.config_invalid}</small>
                   )}

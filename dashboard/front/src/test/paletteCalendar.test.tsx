@@ -43,11 +43,19 @@ const searchPayload = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
+/// يكتب في المخزنين معًا، تمامًا كما يفعل `saveSession` في الإنتاج.
+///
+/// كان يكتب في sessionStorage وحده، فبعد أول جلسة تبقى نسخة المستخدم السابق في
+/// localStorage — وهو المصدر الموثوق — فيقرأ الحرس هوية قديمة. تبديل المستخدم في
+/// اختبار يجب أن يبدّله في كل مكان يبدّله فيه تسجيل دخول حقيقي.
 const session = (roles: string[], permissions: string[] = []) => {
-  window.sessionStorage.setItem('majarra-admin-token', 'test-token')
-  window.sessionStorage.setItem('majarra-admin-user', JSON.stringify({
+  const user = JSON.stringify({
     id: 'u1', email: 'a@b.c', display_name: 'Tester', roles, permissions, must_change_password: false,
-  }))
+  })
+  window.localStorage.setItem('majarra-admin-token', 'test-token')
+  window.localStorage.setItem('majarra-admin-user', user)
+  window.sessionStorage.setItem('majarra-admin-token', 'test-token')
+  window.sessionStorage.setItem('majarra-admin-user', user)
 }
 
 describe('CommandPalette', () => {

@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
@@ -14,6 +13,8 @@ const copy = {
     systemHealth: 'صحة النظام', businessHealth: 'صحة الأعمال', services: 'كتالوج الخدمات', service: 'الخدمة', status: 'الحالة', lastCheck: 'آخر فحص', errorRate: 'معدل الأخطاء', latency: 'زمن الاستجابة', openAlerts: 'تنبيهات', openIncident: 'حادث', dependencies: 'اعتماديات',
     healthy: 'سليم', degraded: 'متدهور', partial: 'انقطاع جزئي', outage: 'انقطاع', unknown: 'غير معروف',
     telemetry: 'قدرات القياس', notConfigured: 'غير مُهيأ', viewDetails: 'عرض التفاصيل التقنية', lastUpdated: 'آخر تحديث', refresh: 'تحديث',
+    // «تعذّرت القراءة» لا «لا يوجد»: الشرطة بلا سبب تُقرأ صفرًا.
+    probeFailed: 'تعذّرت القراءة — القيمة غير معروفة',
     queues: 'الطوابير', publishingBlocked: 'مهام نشر محجوبة', supportBreaches: 'تجاوزات دعم', workflowStuck: 'سير عمل عالق',
     timeline: 'الخط الزمني التشغيلي', noIncidents: 'لا حوادث مفتوحة',
   },
@@ -23,6 +24,7 @@ const copy = {
     systemHealth: 'System health', businessHealth: 'Business health', services: 'Service catalogue', service: 'Service', status: 'Status', lastCheck: 'Last check', errorRate: 'Error rate', latency: 'Latency', openAlerts: 'Alerts', openIncident: 'Incident', dependencies: 'Dependencies',
     healthy: 'Healthy', degraded: 'Degraded', partial: 'Partial outage', outage: 'Outage', unknown: 'Unknown',
     telemetry: 'Telemetry capability', notConfigured: 'Not configured', viewDetails: 'View technical details', lastUpdated: 'Last updated', refresh: 'Refresh',
+    probeFailed: 'Read failed — value unknown',
     queues: 'Queues', publishingBlocked: 'Publishing blocked', supportBreaches: 'Support breaches', workflowStuck: 'Workflow stuck',
     timeline: 'Operational timeline', noIncidents: 'No open incidents',
   }
@@ -97,6 +99,29 @@ export function OpsPage(){
 
   const overallTone = toneMap[overview?.overall_health ?? 'unknown'] ?? 'draft'
 
+  /**
+   * ترجمة حالةٍ نصّها من الخادم.
+   *
+   * كان الكود يكتب `text[status]` مباشرةً، وهو ما كان `@ts-nocheck` يُسكته:
+   * الخادم قد يُعيد حالةً لا مفتاح لها في نصوص الصفحة. الفحص الصريح يُبقي
+   * الاحتياط الذي كان مكتوبًا بـ`??` صحيحًا فعلًا لا بالنيّة.
+   */
+  const statusLabel = (status: string | undefined): string | undefined => (
+    status && status in text ? (text as Record<string, string>)[status] : undefined
+  )
+
+  /// مقياسٌ غير معروف يُطبع شرطةً لا صفرًا (`ADM-106`).
+  const metric = (value: number | null | undefined): string => (
+    typeof value === 'number' ? String(value) : '—'
+  )
+
+  /// سبب عدم التوفّر باسم المسبار الذي فشل، فلا تبقى الشرطة بلا تفسير.
+  const reasonFor = (probe: string): string => {
+    const list = (overview?.unavailable_probes ?? []) as Array<{ probe?: string }>
+    const hit = list.find((p) => p.probe === probe)
+    return hit ? text.probeFailed : ''
+  }
+
   return (
     <div className="page-stack">
       <section className="page-intro"><div><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2><p>{text.lede}</p></div>
@@ -108,11 +133,14 @@ export function OpsPage(){
 
       {/* Overall health above fold */}
       <section className="stat-row" style={{display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12}}>
-        <div className={`stat-card stat-card--${overallTone}`}><span>{text.overall}</span><strong>{text[overview?.overall_health] ?? overview?.overall_health ?? text.unknown}</strong><small>{text.lastUpdated}: {overview?.generated_at ? String(overview.generated_at).slice(11,16): '—'}</small></div>
-        <Link to={adminPath('ops/incidents')} className="stat-card"><span>{text.critical}</span><strong>{overview?.critical_incidents ?? 0}</strong></Link>
-        <Link to={adminPath('ops/alerts')} className="stat-card"><span>{text.alerts}</span><strong>{overview?.active_alerts ?? 0}</strong></Link>
-        <Link to={adminPath('failed-events')} className="stat-card"><span>{text.failed}</span><strong>{overview?.failed_queue_events ?? 0}</strong></Link>
-        <div className="stat-card"><span>{text.backlog}</span><strong>{overview?.queue_backlog ?? '—'}</strong><small>{overview?.queue_backlog===null? text.notConfigured: ''}</small></div>
+        <div className={`stat-card stat-card--${overallTone}`}><span>{text.overall}</span><strong>{statusLabel(overview?.overall_health) ?? overview?.overall_health ?? text.unknown}</strong><small>{text.lastUpdated}: {overview?.generated_at ? String(overview.generated_at).slice(11,16): '—'}</small></div>
+        {/* `?? 0` هنا كان يُعيد إنتاج العطل الذي أُصلح في الخادم: القيمة تصل
+            `null` («تعذّرت القراءة») فتُطبع `0` («لا شيء»). الشرطة مع السبب
+            تُبقي الفرق ظاهرًا للمشغّل. */}
+        <Link to={adminPath('ops/incidents')} className="stat-card"><span>{text.critical}</span><strong>{metric(overview?.critical_incidents)}</strong><small>{reasonFor('ops_incidents')}</small></Link>
+        <Link to={adminPath('ops/alerts')} className="stat-card"><span>{text.alerts}</span><strong>{metric(overview?.active_alerts)}</strong><small>{reasonFor('ops_alerts')}</small></Link>
+        <Link to={adminPath('failed-events')} className="stat-card"><span>{text.failed}</span><strong>{metric(overview?.failed_queue_events)}</strong><small>{reasonFor('failed_family_events')}</small></Link>
+        <div className="stat-card"><span>{text.backlog}</span><strong>{metric(overview?.queue_backlog)}</strong><small>{reasonFor('queue_health') || (overview?.queue_backlog===null? text.notConfigured: '')}</small></div>
       </section>
 
       <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
@@ -125,7 +153,7 @@ export function OpsPage(){
               {k:text.family, v:'unknown'},
               {k:text.website, v:'unknown'},
             ].map(tile=>(
-              <div key={tile.k} className={`stat-card stat-card--${toneMap[tile.v]??'draft'}`}><span>{tile.k}</span><strong>{text[tile.v] ?? tile.v ?? text.unknown}</strong></div>
+              <div key={tile.k} className={`stat-card stat-card--${toneMap[tile.v]??'draft'}`}><span>{tile.k}</span><strong>{statusLabel(tile.v) ?? tile.v ?? text.unknown}</strong></div>
             ))}
           </div>
           <div style={{padding:12, fontSize:12, color:'var(--muted)'}}>API health: request rate / success / 4xx/5xx / p50/p95/p99 if Analytics Engine available — otherwise: <strong>{text.notConfigured}</strong></div>

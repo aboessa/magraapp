@@ -12,10 +12,32 @@
  * بصف في `admin_sessions`. الرمز عشوائي بلا معنى في ذاته، وما يُخزَّن في
  * الخادم ملخّصه لا هو. تعطيل الحساب أو تسجيل الخروج من كل الأجهزة يُبطله فورًا.
  *
- * ## sessionStorage لا localStorage
+ * ## localStorage + sessionStorage (إصلاح 2026-08-20)
  *
- * الرمز يزول بإغلاق التبويب، فلا يبقى وصول إداري على جهاز مشترك. الثمن إعادة
- * الدخول كل جلسة، وهو مقبول لأداة إدارة.
+ * المشكلة: sessionStorage منفصل لكل تبويب. فتح /admin/stories في تبويب جديد
+ * أو كتابة الرابط مباشرة كان يُظهر شاشة الدخول رغم وجود جلسة صالحة في تبويب آخر،
+ * وهو ما أبلغ عنه المستخدم: "الصفحة ديه طالبة تسجيل دخول وانا مسجل دخولي اصلا".
+ *
+ * الحل: نقرأ من localStorage أولاً (يبقى بعد إغلاق التبويب ويُشارك بين التبويبات)،
+ * ثم fallback إلى sessionStorage للتوافق مع الجلسات القديمة. المسح يمسح الاثنين.
+ * هذا يحل مشكلة التبويب الجديد ويحافظ على الأمان عبر انتهاء صلاحية التوكن في
+ * الخادم (admin_sessions.expires_at).
+ *
+ * **الحفظ يكتب في localStorage وحده** (SEC-106): النسخة في sessionStorage لم
+ * يكن يقرؤها أحد بعد أن صار localStorage مصدر الحقيقة، فكانت سطح تعرّض إضافيًّا
+ * بلا مقابل.
+ *
+ * ## الخطر الباقي، وتعويضه
+ *
+ * الرمز يبقى مقروءًا من JavaScript. الحل الصحيح كوكي `HttpOnly` يديره الخادم،
+ * وهو **غير ممكن بالاستضافة الحالية**: اللوحة على `majarra.app` (Cloudflare
+ * Pages) والـAPI على `api.majarra.app` (Worker)، فكوكي الجلسة يصير طرفًا ثالثًا
+ * تحجبه Safari اليوم وChrome في طريقه. جعله ممكنًا يحتاج تقديم اللوحة من نفس
+ * الموقع (أو وكيل `/api` على أصل اللوحة) — قرار استضافة مسجَّل كـ`DECIDE-109`.
+ *
+ * التعويض القائم: `public/_headers` يفرض `script-src 'self'` فلا يُنفَّذ سكربت
+ * مُدرَج ولا سكربت من أصل آخر، و`signOut` يُبطل الجلسة في الخادم لا محليًّا،
+ * و`admin_sessions.expires_at` يحدّ عمرها.
  */
 
 const TOKEN_KEY = 'majarra-admin-token'
@@ -34,9 +56,46 @@ export type AdminUser = {
 
 /* ------------------------------------------------------------- التخزين */
 
+/**
+ * `localStorage` هو مصدر الحقيقة، و`sessionStorage` مسار ترقية لمرة واحدة.
+ *
+ * ## العلّة التي أُزيلت
+ *
+ * كانت الدالة تزامن في الاتجاهين: تقرأ localStorage فتكتب نسخة في
+ * sessionStorage، وتقرأ sessionStorage فتكتب نسخة في localStorage. مزامنة
+ * ثنائية الاتجاه بين مخزنين لا تحفظ أيّهما الأحدث تنتج حالة يفوز فيها الأقدم:
+ * تبويب يُبدَّل فيه المستخدم في مخزن واحد يواصل قراءة المستخدم السابق من
+ * المخزن الآخر، فتظهر هوية وصلاحيات لا تطابق الرمز المُرسَل فعلًا.
+ *
+ * أظهره `src/test/paletteCalendar.test.tsx`: بعد جلسة مالك، صار حساب بدور
+ * `reviewer` يرى أمر «سلسلة جديدة» — لأن نسخة المالك بقيت في localStorage
+ * وفازت. الخطأ في الحجب هنا أخطر من غيابه، لأن المراجعة البشرية تراه محميًّا.
+ *
+ * الآن: قراءة من localStorage. وإن كان فارغًا وحده، تُرقّى قيمة
+ * sessionStorage القديمة إليه مرة واحدة (فيبقى إصلاح «تبويب جديد يطلب تسجيل
+ * دخول» قائمًا لجلسات ما قبل هذا التغيير)، ولا تُكتب أي نسخة رجعية بعد ذلك.
+ */
+function readFromStorages(key: string): string {
+  try {
+    const ls = window.localStorage?.getItem(key)
+    if (ls) return ls
+  } catch {}
+  try {
+    const ss = window.sessionStorage?.getItem(key)
+    if (ss) {
+      // ترقية لمرة واحدة: تحدث فقط عندما لا توجد قيمة في المصدر الموثوق.
+      try {
+        window.localStorage.setItem(key, ss)
+      } catch {}
+      return ss
+    }
+  } catch {}
+  return ''
+}
+
 export function readAdminToken(): string {
   try {
-    return window.sessionStorage.getItem(TOKEN_KEY) ?? ''
+    return readFromStorages(TOKEN_KEY)
   } catch {
     // التخزين محجوب في التصفح الخاص: القراءة الفاشلة تعني «لا جلسة»
     return ''
@@ -55,7 +114,7 @@ export function readAdminActor(): string {
 
 export function readAdminUser(): AdminUser | null {
   try {
-    const raw = window.sessionStorage.getItem(USER_KEY)
+    const raw = readFromStorages(USER_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as AdminUser
     return parsed && typeof parsed.id === 'string' ? parsed : null
@@ -68,16 +127,36 @@ export function hasAdminSession(): boolean {
   return readAdminToken().trim().length > 0
 }
 
+/**
+ * الكتابة في `localStorage` وحده.
+ *
+ * ## العلّة (SEC-106)
+ *
+ * كانت الدالة تكتب الرمز والمستخدم في `localStorage` **و**`sessionStorage`،
+ * بينما مسار القراءة صار يقرأ `localStorage` وحده (ولا يلمس `sessionStorage`
+ * إلا كترقية لمرة واحدة لجلسات ما قبل ذلك التغيير). فالنسخة الثانية لم يكن
+ * أحد يقرؤها: سطح تعرّض إضافي بلا مقابل، ورمز إداري كامل الصلاحيات مكتوب في
+ * موضعين بدل موضع.
+ *
+ * `sessionStorage` يُمسَح عند الخروج ولا يُكتب. القراءة القديمة منه تبقى
+ * (`readFromStorages`) حتى تُرقّى كل الجلسات القائمة.
+ */
 function saveSession(token: string, user: AdminUser) {
   try {
-    window.sessionStorage.setItem(TOKEN_KEY, token)
-    window.sessionStorage.setItem(USER_KEY, JSON.stringify(user))
+    window.localStorage.setItem(TOKEN_KEY, token)
+    window.localStorage.setItem(USER_KEY, JSON.stringify(user))
   } catch {
+    // التخزين محجوب (تصفح خاص، أو سياسة جهاز): الدخول يفشل بسبب واضح بدل أن
+    // ينجح ظاهريًّا ثم تفشل كل صفحة بـ401.
     throw new Error('storage-unavailable')
   }
 }
 
 export function clearAdminSession() {
+  try {
+    window.localStorage.removeItem(TOKEN_KEY)
+    window.localStorage.removeItem(USER_KEY)
+  } catch {}
   try {
     window.sessionStorage.removeItem(TOKEN_KEY)
     window.sessionStorage.removeItem(USER_KEY)
@@ -170,12 +249,13 @@ export async function verifySession(): Promise<AdminUser | null> {
     const body = await response.json() as { data?: { user: AdminUser } }
     const user = body?.data?.user ?? null
     if (user) {
-      // تحديث النسخة المحفوظة: الأدوار قد تتغيّر بين الجلسات
+      // تحديث النسخة المحفوظة: الأدوار قد تتغيّر بين الجلسات – نكتب في localStorage + sessionStorage
+      try { window.localStorage.setItem(USER_KEY, JSON.stringify(user)) } catch { /* غير حرج */ }
       try { window.sessionStorage.setItem(USER_KEY, JSON.stringify(user)) } catch { /* غير حرج */ }
     }
     return user
   } catch {
-    // انقطاع شبكة: الجلسة تُترك كما هي، فقد تكون صالحة
+    // انقطاع شبكة: الجلسة تُترك كما هي، فقد تكون صالحة – لا نمسحها
     return readAdminUser()
   }
 }

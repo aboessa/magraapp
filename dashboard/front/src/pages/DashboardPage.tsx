@@ -11,6 +11,7 @@ import { readAdminUser } from '../lib/adminSession'
 import { usePreferences } from '../context/preferences'
 import { DASHBOARD_VERSION, rangeToParams, type DashboardRange } from '../lib/dashboardRange'
 import { HeroKpis } from '../components/HeroKpis'
+import { DASHBOARD_EXPIRING_SOON_MS } from '../lib/constants.ts'
 import { AnalyticsPanel, RevenuePanel } from '../components/dashboard/RevenuePanels'
 import { AttentionPanels } from '../components/dashboard/AttentionPanels'
 import { ExecutiveModules } from '../components/dashboard/ExecutiveModules'
@@ -30,7 +31,7 @@ async function loadOpsWidgets(actorId: string | null) {
     api.rights().catch(() => ({ data: [] as any })),
   ])
   const now = Date.now()
-  const soon = now + 30 * 24 * 60 * 60 * 1000
+  const soon = now + DASHBOARD_EXPIRING_SOON_MS
   return {
     pendingReviews: reviews.data,
     myTasks: tasks.data.filter((task: any) => task.status !== 'done' && (!actorId || task.assignee_id === actorId)).slice(0, 6),

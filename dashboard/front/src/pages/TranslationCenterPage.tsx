@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
@@ -67,7 +66,23 @@ export function TranslationCenterPage(){
   const [loading,setLoading]=useState(true)
   const [error,setError]=useState('')
   const [tab,setTab]=useState<'queue'|'glossary'|'memory'|'stale'>('queue')
+  const [memoryQuery,setMemoryQuery]=useState('')
+  const [memoryResults,setMemoryResults]=useState<any[]>([])
+  const [memoryBusy,setMemoryBusy]=useState(false)
+  const [memoryLang,setMemoryLang]=useState('en')
   const columns=useColumnPreferences('translation', COLUMNS)
+
+  const searchMemory=useCallback(async(q:string, targetLang:string)=>{
+    if(q.trim().length<3){ setMemoryResults([]); return }
+    setMemoryBusy(true)
+    try{ const res=await api.translationMemory(q.trim(), targetLang); setMemoryResults((res as any).data ?? []) } catch{ setMemoryResults([]) } finally{ setMemoryBusy(false) }
+  },[])
+
+  useEffect(()=>{
+    if(tab!=='memory') return
+    const t=setTimeout(()=> { void searchMemory(memoryQuery, memoryLang) }, 320)
+    return ()=> clearTimeout(t)
+  },[memoryQuery, memoryLang, tab, searchMemory])
 
   const load=useCallback(async()=>{
     setLoading(true); setError('')
@@ -170,14 +185,31 @@ export function TranslationCenterPage(){
 
       {tab==='memory' && (
         <section className="panel"><div style={{ padding:16 }}>
-          <h3>{text.tmTitle}</h3>
-          <p className="panel__note">تخزن الترجمات المعتمدة السابقة وتقترحها للمترجم — لا اقتراحات AI وهمية</p>
-          <div className="search-field" style={{ maxWidth:400 }}><Icon name="search" size={16}/><input placeholder="ابحث في ذاكرة الترجمة..." onChange={async e=>{
-            const q=e.target.value; if(q.length<3) return;
-            const res=await api.translationMemory(q,'en');
-            console.log('TM', res)
-          }} /></div>
-          <p className="panel__note" style={{ marginTop:12 }}>تظهر الاقتراحات في مساحة الترجمة الجانبية</p>
+          <div style={{ display:'flex', justifyContent:'space-between', gap:12, flexWrap:'wrap', alignItems:'center' }}>
+            <div><h3>{text.tmTitle}</h3><p className="panel__note">تخزن الترجمات المعتمدة السابقة وتقترحها للمترجم — لا اقتراحات AI وهمية. البحث في النص المصدر.</p></div>
+            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+              <select value={memoryLang} onChange={e=> setMemoryLang(e.target.value)} style={{ height:36, borderRadius:9, border:'1px solid var(--line)', background:'var(--surface-2)', padding:'0 10px' }}><option value="en">EN</option><option value="fr">FR</option><option value="ar">AR</option></select>
+              <span style={{ color:'var(--muted)', fontSize:10 }}>{memoryResults.length} نتائج</span>
+            </div>
+          </div>
+
+          <div className="search-field" style={{ maxWidth:480, marginTop:14 }}><Icon name="search" size={16}/><input value={memoryQuery} onChange={e=> setMemoryQuery(e.target.value)} placeholder="ابحث في ذاكرة الترجمة... (3 أحرف على الأقل)" /></div>
+
+          {memoryBusy ? <div style={{ padding:20 }}><span className="spinner" aria-hidden="true" style={{ display:'inline-block', width:20, height:20, borderWidth:2 }} /> <small style={{ color:'var(--muted)' }}>بحث...</small></div> :
+            memoryResults.length ? (
+              <div style={{ marginTop:14, display:'grid', gap:8 }}>
+                {memoryResults.map((m:any,i:number)=>(
+                  <div key={i} style={{ padding:12, borderRadius:12, border:'1px solid var(--line)', background:'var(--surface-2)', display:'grid', gap:6 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', gap:12 }}><strong style={{ fontSize:12 }}>{m.source_text?.slice(0,120) ?? '—'}</strong><span className="status-badge status-badge--published" style={{ fontSize:10 }}>{memoryLang.toUpperCase()}</span></div>
+                    <div style={{ fontSize:12, color:'var(--text-soft)', background:'var(--surface)', padding:8, borderRadius:8, border:'1px solid var(--line)' }}>{m.target_text ?? '—'}</div>
+                  </div>
+                ))}
+              </div>
+            ) : memoryQuery.trim().length>=3 ? (
+              <div style={{ marginTop:16 }}><EmptyState title="لا نتائج في الذاكرة" description={`لا توجد ترجمة سابقة مطابقة لـ "${memoryQuery}" في ${memoryLang.toUpperCase()}`} /></div>
+            ) : (
+              <p className="panel__note" style={{ marginTop:12 }}>اكتب 3 أحرف على الأقل للبحث. تظهر الاقتراحات هنا وفي مساحة الترجمة الجانبية عند فتح وحدة ترجمة.</p>
+            )}
         </div></section>
       )}
 

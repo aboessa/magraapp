@@ -203,7 +203,23 @@ export function CustomersPage() {
                       {columns.isVisible('plan') && <td><span className={`plan-badge plan-badge--${row.plan}`}>{planLabel(row.plan)}</span></td>}
                       {columns.isVisible('status') && <td><span className={`account-status account-status--${row.status === 'active' ? 'active' : 'archived'}`}>{row.status}</span></td>}
                       {columns.isVisible('children') && <td>{row.child_count}</td>}
-                      {columns.isVisible('devices') && <td>{row.device_count}</td>}
+                      {/* `DB-102`: العدّ **غير متوفّر** لا صفر. `account_devices` في
+                          D1 بلا كاتب (السلطة في FamilyState لكل أسرة، ولا تجميع
+                          عبر الأسر)، فكان العمود يعرض صفرًا لكل أسرة. */}
+                      {columns.isVisible('devices') && (
+                        <td>
+                          {row.device_count === null || row.device_count === undefined ? (
+                            <span
+                              className="table-secondary"
+                              title="غير متوفّر: عدّ الأجهزة سلطته FamilyState لكل أسرة، ولا إسقاط مُجمَّع في D1."
+                            >
+                              —
+                            </span>
+                          ) : (
+                            row.device_count
+                          )}
+                        </td>
+                      )}
                       {columns.isVisible('openTickets') && <td>{row.open_tickets > 0 ? <span className="readiness-item readiness-item--warn readiness-pill">{row.open_tickets}</span> : <span className="table-secondary">0</span>}</td>}
                       <td><Link className="button button--ghost" to={adminPath(`customers/${row.parent_id}`)}>{text.open}</Link></td>
                     </tr>

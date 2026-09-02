@@ -1,11 +1,9 @@
-// @ts-nocheck
-import { useCallback, useEffect, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
-import { formatDate } from '../lib/labels'
 
 const copy = {
   ar: {
@@ -50,11 +48,14 @@ export function ObjectiveWorkspacePage(){
       const res = await api.learningObjective(id)
       setData(res.data)
       // fetch coverage: episodes, games, projects via existing APIs
-      const [epRes, gameRes, qRes, mRes] = await Promise.allSettled([
+      // كان هنا مدخلٌ رابع: `masteryByObjective` يُنادى **مرّتين** ثم تُهدَر
+      // نتيجته (`mRes` بلا قارئ)، والكتلة التالية تنادِيه ثالثةً وتقرأ. أي
+      // نداءان زائدان في كل فتح للصفحة، أخفاهما `@ts-nocheck` بإسكات «مُعرَّف
+      // ولا يُقرأ». القارئ الوحيد باقٍ كما هو.
+      const [epRes, gameRes, qRes] = await Promise.allSettled([
         api.episodes({ limit:50 } as any),
         api.games({ limit:50 } as any),
         api.questions({ objective_id: id, limit:50 } as any),
-        api.masteryByObjective({} as any).then(()=> api.masteryByObjective({}).catch(()=>null)),
       ])
       const eps = epRes.status==='fulfilled'? (epRes.value as any).data?.filter((e:any)=> e.learning_objective_id===id) ?? [] : []
       const gs = gameRes.status==='fulfilled'? (gameRes.value as any).data?.filter((g:any)=> g.learning_objective_id===id) ?? [] : []

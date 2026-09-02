@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { Modal } from '../components/Modal'
+import { Icon } from '../components/Icon'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import type { AccessGrantRecord, PermissionRecord, RoleRecord } from '../types/api'
@@ -49,6 +51,16 @@ const copy = {
     loadError: 'تعذر تحميل الأدوار',
     noRoles: 'لا أدوار مضبوطة',
     noRolesHint: 'الأدوار تُبذَر مع المهاجرات. راجع مدير النظام.',
+    addRole: 'دور جديد',
+    createTitle: 'إنشاء دور مخصص',
+    idLabel: 'المعرّف الفني (مثل custom_editor)',
+    nameLabel: 'الاسم العربي',
+    descLabel: 'الوصف',
+    permsLabel: 'الصلاحيات',
+    save: 'إنشاء',
+    cancel: 'إلغاء',
+    required: 'المعرف والاسم مطلوبان',
+    createOk: 'تم إنشاء الدور',
   },
   en: {
     eyebrow: 'Roles and permissions',
@@ -73,6 +85,16 @@ const copy = {
     loadError: 'Unable to load roles',
     noRoles: 'No roles configured',
     noRolesHint: 'Roles are seeded by migrations. Contact your system administrator.',
+    addRole: 'New role',
+    createTitle: 'Create custom role',
+    idLabel: 'Technical ID (e.g. custom_editor)',
+    nameLabel: 'Arabic name',
+    descLabel: 'Description',
+    permsLabel: 'Permissions',
+    save: 'Create',
+    cancel: 'Cancel',
+    required: 'ID and name required',
+    createOk: 'Role created',
   },
 }
 
@@ -89,6 +111,11 @@ export function RolesPage() {
   const [grants, setGrants] = useState<AccessGrantRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
+  const [form, setForm] = useState({ id:'', name_ar:'', description_ar:'', perms: [] as string[] })
+  const [formError, setFormError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [notice, setNotice] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -115,19 +142,17 @@ export function RolesPage() {
   if (loading) return <LoadingState />
   if (error) return <ErrorState message={error} onRetry={() => void load()} />
 
-  if (!roles.length) {
-    return (
-      <div className="page-stack">
-        <section className="page-intro">
-          <div>
-            <span className="eyebrow">{text.eyebrow}</span>
-            <h2>{text.title}</h2>
-          </div>
-        </section>
-        <EmptyState title={text.noRoles} description={text.noRolesHint} />
-      </div>
-    )
+  async function createRole(){
+    if(!form.id.trim() || !form.name_ar.trim()){ setFormError(text.required); return }
+    setSaving(true); setFormError('')
+    try{
+      await api.createRole({ id: form.id.trim(), name_ar: form.name_ar.trim(), description_ar: form.description_ar.trim() || null, permissions: form.perms })
+      setNotice(text.createOk); setShowCreate(false); setForm({ id:'', name_ar:'', description_ar:'', perms: [] }); await load()
+    }catch(e){ setFormError(e instanceof Error? e.message: 'Error') } finally{ setSaving(false) }
   }
+
+  if (!roles.length && loading) return <LoadingState/>
+  if (error && !roles.length) return <ErrorState message={error} onRetry={()=>void load()} />
 
   return (
     <div className="page-stack">
@@ -137,7 +162,12 @@ export function RolesPage() {
           <h2>{text.title}</h2>
           <p>{text.lede}</p>
         </div>
+        <div className="page-intro__actions">
+          <button className="button button--primary" onClick={()=> { setForm({ id:'', name_ar:'', description_ar:'', perms: [] }); setFormError(''); setShowCreate(true) }}><Icon name="plus" size={14}/>{text.addRole}</button>
+        </div>
       </section>
+
+      {notice && <div className="inline-alert inline-alert--success">{notice}</div>}
 
       <div className="dashboard-grid">
         <section className="panel">
@@ -247,6 +277,24 @@ export function RolesPage() {
           </table>
         </div>
       </section>
+
+      <Modal open={showCreate} onClose={()=> !saving && setShowCreate(false)} title={text.createTitle}>
+        <div className="entity-form">
+          {formError && <div className="inline-alert inline-alert--error">{formError}</div>}
+          <label className="field"><span>{text.idLabel} *</span><input dir="ltr" value={form.id} onChange={e=> setForm({...form, id:e.target.value})} placeholder="custom_editor" /></label>
+          <label className="field"><span>{text.nameLabel} *</span><input value={form.name_ar} onChange={e=> setForm({...form, name_ar:e.target.value})} placeholder="محرر مخصص" /></label>
+          <label className="field"><span>{text.descLabel}</span><textarea rows={2} value={form.description_ar} onChange={e=> setForm({...form, description_ar:e.target.value})} /></label>
+          <div className="field"><span>{text.permsLabel}</span><div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0,1fr))', gap:6, maxHeight:240, overflowY:'auto', padding:8, border:'1px solid var(--line)', borderRadius:10, background:'var(--surface-2)' }}>
+            {permissions.map(p=> (
+              <label key={p.id} style={{ display:'flex', gap:8, alignItems:'center', fontSize:12, cursor:'pointer' }}>
+                <input type="checkbox" checked={form.perms.includes(p.id)} onChange={()=> setForm(f=> ({...f, perms: f.perms.includes(p.id) ? f.perms.filter(x=>x!==p.id) : [...f.perms, p.id]}))} />
+                <span>{p.description_ar ?? p.action} <small dir="ltr" style={{ color:'var(--muted)' }}>({p.id})</small></span>
+              </label>
+            ))}
+          </div></div>
+          <div className="form-actions"><button className="button button--ghost" onClick={()=> setShowCreate(false)}>{text.cancel}</button><button className="button button--primary" disabled={saving} onClick={()=>void createRole()}>{saving? '...': text.save}</button></div>
+        </div>
+      </Modal>
     </div>
   )
 }

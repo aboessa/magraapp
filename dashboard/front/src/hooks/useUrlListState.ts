@@ -58,14 +58,21 @@ export function useUrlListState<F extends Record<string, string>>(
   const defaultSort = options?.defaultSort ?? ''
   const defaultView = options?.defaultView ?? 'table'
 
+  // defaults passed inline would change identity every render and cause infinite reload loops
+  // e.g. QuizBuilderPage was passing { type:'', status:'', ... } directly.
+  // Stabilize by JSON key so filters only recompute when actual values change.
+  const defaultsKey = JSON.stringify(defaults)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableDefaults = useMemo(() => defaults, [defaultsKey])
+
   const filters = useMemo(() => {
-    const result = { ...defaults }
-    for (const key of Object.keys(defaults) as Array<Extract<keyof F, string>>) {
+    const result = { ...stableDefaults }
+    for (const key of Object.keys(stableDefaults) as Array<Extract<keyof F, string>>) {
       const value = searchParams.get(key)
       if (value !== null) result[key] = value as F[Extract<keyof F, string>]
     }
     return result
-  }, [defaults, searchParams])
+  }, [stableDefaults, searchParams])
 
   const write = useCallback((mutate: (params: URLSearchParams) => void, resetPage: boolean) => {
     const params = new URLSearchParams(searchParams)
@@ -76,31 +83,31 @@ export function useUrlListState<F extends Record<string, string>>(
 
   const setFilter = useCallback((key: Extract<keyof F, string>, value: string) => {
     write((params) => {
-      if (!value || value === defaults[key]) params.delete(key)
+      if (!value || value === stableDefaults[key]) params.delete(key)
       else params.set(key, value)
     }, true)
-  }, [defaults, write])
+  }, [stableDefaults, write])
 
   const setFilters = useCallback((next: Partial<Record<Extract<keyof F, string>, string>>) => {
     write((params) => {
       for (const [key, value] of Object.entries(next) as Array<[Extract<keyof F, string>, string]>) {
-        if (!value || value === defaults[key]) params.delete(key)
+        if (!value || value === stableDefaults[key]) params.delete(key)
         else params.set(key, value)
       }
     }, true)
-  }, [defaults, write])
+  }, [stableDefaults, write])
 
   const clearFilters = useCallback(() => {
     write((params) => {
-      for (const key of Object.keys(defaults)) params.delete(key)
+      for (const key of Object.keys(stableDefaults)) params.delete(key)
       params.delete('q')
     }, true)
-  }, [defaults, write])
+  }, [stableDefaults, write])
 
   const activeFilterCount = useMemo(
-    () => (Object.keys(defaults) as Array<Extract<keyof F, string>>)
-      .filter((key) => filters[key] !== defaults[key]).length,
-    [defaults, filters],
+    () => (Object.keys(stableDefaults) as Array<Extract<keyof F, string>>)
+      .filter((key) => filters[key] !== stableDefaults[key]).length,
+    [stableDefaults, filters],
   )
 
   return {

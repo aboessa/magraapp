@@ -1,6 +1,4 @@
-// @ts-nocheck
-import { EmptyState } from '../components/PageState'
-import { usePreferences } from '../context/preferences'
+﻿import { usePreferences } from '../context/preferences'
 export function AppDiagnosticsPage(){
   const { locale }=usePreferences()
   return (

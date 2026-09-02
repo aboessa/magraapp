@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import { adminPath } from '../lib/adminPath'
 import { Icon } from '../components/Icon'
 import { usePreferences } from '../context/preferences'

@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { usePreferences } from '../context/preferences'
+﻿import { usePreferences } from '../context/preferences'
 import { readAdminUser } from '../lib/adminSession'
 import { Link } from 'react-router-dom'
 import { adminPath } from '../lib/adminPath'

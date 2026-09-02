@@ -1,12 +1,10 @@
-// @ts-nocheck
-import { useCallback, useEffect, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
-import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
+import { ErrorState, LoadingState } from '../components/PageState'
 import { Icon } from '../components/Icon'
 import { usePreferences } from '../context/preferences'
-import { Modal } from '../components/Modal'
 import type { Planet, TeamRecord } from '../types/api'
 
 /**
@@ -189,11 +187,8 @@ export function TeamsPage() {
     }
   }
 
-  const scopeLabel = (team: TeamRecord) => {
-    if (team.planet_id) return text.scopePlanet(planets.find((p) => p.id === team.planet_id)?.name_ar ?? team.planet_id)
-    if (team.section) return text.scopeDepartment(team.section)
-    return text.scopePlatform
-  }
+  // حُذفت `scopeLabel`: الجدول يعرض النطاق في عمودين بالفعل (نوع النطاق، ثم
+  // الكوكب أو القسم)، فكانت نسخةً ثانية بلا نداء لا معلومةً مفقودة.
 
   if (loading) return <LoadingState />
   if (error) return <ErrorState message={error} onRetry={() => void load()} />

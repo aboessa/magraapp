@@ -1,11 +1,7 @@
-// @ts-nocheck
-import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Icon } from '../components/Icon'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
-import { adminPath } from '../lib/adminPath'
 
 const copy={
   ar:{

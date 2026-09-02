@@ -31,9 +31,9 @@ const API_ROOT = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/,
 export const apiRoot = API_ROOT
 /**
  * فوق هذا الحد يُستخدم رفع مجزأ عبر asset-upload-sessions (R2 multipart).
- * 95 MiB هو حدّ Worker's bundling — لا يُنقل إلى .env لأنه قيد منصة لا إعداد.
+ * 95 MiB هو حدّ Worker's bundling — الآن مركزي في constants.ts مع دعم VITE_DIRECT_UPLOAD_LIMIT override.
  */
-const DIRECT_UPLOAD_LIMIT = 95 * 1024 * 1024 // bytes
+import { DIRECT_UPLOAD_LIMIT } from './constants.ts'
 
 export class ApiError extends Error {
   status: number
@@ -441,6 +441,10 @@ export const api = {
   revokeMyOtherSessions: () =>
     request<ApiEnvelope<{ revoked: number }>>('/admin/auth/sessions/revoke-others', { method: 'POST' }),
   roles: () => request<ApiEnvelope<import('../types/api').RoleRecord[]>>('/admin/roles'),
+  createRole: (payload: { id: string; name_ar: string; description_ar?: string | null; permissions?: string[] }) =>
+    request<ApiEnvelope<{ id: string; name_ar: string }>>('/admin/roles', { method: 'POST', body: JSON.stringify(payload) }),
+  updateRole: (id: string, payload: { name_ar?: string; description_ar?: string | null; permissions?: string[] }) =>
+    request<ApiEnvelope<{ id: string }>>(`/admin/roles/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   permissions: () => request<ApiEnvelope<import('../types/api').PermissionRecord[]>>('/admin/permissions'),
   grants: () => request<ApiEnvelope<import('../types/api').AccessGrantRecord[]>>('/admin/grants'),
   createGrant: (payload: import('../types/api').AccessGrantPayload) => request<ApiEnvelope<{ id: string }>>('/admin/grants', { method: 'POST', body: JSON.stringify(payload) }),
@@ -618,6 +622,8 @@ export const api = {
   billingPurchases: (limit = 100) => request<ApiEnvelope<import('../types/api').BillingPurchaseRecord[]>>(`/admin/billing/purchases${queryString({ limit })}`),
   /// الاستحقاقات النشطة من family_projection. الخادم يستثني plan='free'.
   billingEntitlements: () => request<ApiEnvelope<import('../types/api').BillingEntitlementRecord[]>>('/admin/billing/entitlements'),
+  billingRefunds: (filters: Record<string,string|number|undefined>={}) => request<PaginatedEnvelope<any>>(`/admin/billing/refunds${queryString(filters)}`),
+  createRefund: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string }>>('/admin/billing/refunds', { method:'POST', body: JSON.stringify(payload) }),
   // Commerce — Subscriptions & Transactions
   subscriptions: (filters: Record<string,string|number|undefined>={}) => request<PaginatedEnvelope<import('../types/api').SubscriptionRecord>>(`/admin/subscriptions${queryString(filters)}`),
   subscription: (id:string) => request<ApiEnvelope<import('../types/api').SubscriptionDetail>>(`/admin/subscriptions/${encodeURIComponent(id)}`),
@@ -627,10 +633,52 @@ export const api = {
   // Plans & Pricing
   planDetail: (id:string) => request<ApiEnvelope<import('../types/api').PlanDetail>>(`/admin/plans/${encodeURIComponent(id)}`),
   pricingMatrix: (filters: Record<string,string|number|undefined>={}) => request<ApiEnvelope<import('../types/api').PlanPricingRow[]>>(`/admin/pricing/matrix${queryString(filters)}`),
-  storeProducts: () => request<ApiEnvelope<import('../types/api').StoreProduct[]>>('/admin/store-products'),
-  createStoreProduct: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string }>>('/admin/store-products', { method:'POST', body: JSON.stringify(payload) }),
-  createPricing: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string }>>('/admin/pricing', { method:'POST', body: JSON.stringify(payload) }),
+  storeProducts: (filters: Record<string,string|number|undefined>={}) => request<ApiEnvelope<import('../types/api').StoreProduct[]>>(`/admin/store-products${queryString(filters)}`),
+  createStoreProduct: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string; status:string }>>('/admin/store-products', { method:'POST', body: JSON.stringify(payload) }),
+  updateStoreProduct: (id:string, payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string; updated:boolean }>>(`/admin/store-products/${encodeURIComponent(id)}`, { method:'PATCH', body: JSON.stringify(payload) }),
+  setStoreProductStatus: (id:string, status:string, reason:string) => request<ApiEnvelope<{ id:string; status:string }>>(`/admin/store-products/${encodeURIComponent(id)}/status`, { method:'POST', body: JSON.stringify({ status, reason }) }),
+  createPricing: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string; status:string }>>('/admin/pricing', { method:'POST', body: JSON.stringify(payload) }),
+  updatePricing: (id:string, payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string; updated:boolean }>>(`/admin/pricing/${encodeURIComponent(id)}`, { method:'PATCH', body: JSON.stringify(payload) }),
+  setPricingStatus: (id:string, status:'active'|'expired', reason:string) => request<ApiEnvelope<{ id:string; status:string }>>(`/admin/pricing/${encodeURIComponent(id)}/status`, { method:'POST', body: JSON.stringify({ status, reason }) }),
+  paymentMethods: () => request<ApiEnvelope<import('../types/api').BillingPaymentMethod[]>>('/admin/payment-methods'),
+  createPaymentMethod: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string; status:string; runtime_ready:boolean }>>('/admin/payment-methods', { method:'POST', body: JSON.stringify(payload) }),
+  updatePaymentMethod: (id:string, payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string; updated:boolean }>>(`/admin/payment-methods/${encodeURIComponent(id)}`, { method:'PATCH', body: JSON.stringify(payload) }),
+  setPaymentMethodStatus: (id:string, status:'draft'|'active'|'disabled', reason:string) => request<ApiEnvelope<{ id:string; status:string; runtime_ready:boolean }>>(`/admin/payment-methods/${encodeURIComponent(id)}/status`, { method:'POST', body: JSON.stringify({ status, reason }) }),
   promotions: () => request<ApiEnvelope<import('../types/api').PromotionRow[]>>('/admin/promotions'),
+  googlePlayProducts: () => request<ApiEnvelope<Array<{ product_id: string; plan: string }>>>('/admin/google-play/products'),
+  googlePlayPrices: (productId: string) => request<ApiEnvelope<{
+    product_id: string
+    plan: string
+    regions_version: string
+    base_plans: Array<{ base_plan_id: string; regional_configs: Array<{
+      region_code: string
+      new_subscriber_availability: boolean
+      price: { currencyCode: string; units: string; nanos?: number } | null
+    }> }>
+  }>>(`/admin/google-play/prices${queryString({ product_id: productId })}`),
+  googlePlayPriceDrafts: (productId?: string) => request<ApiEnvelope<Array<{
+    id: string
+    product_id: string
+    base_plan_id: string
+    region_code: string
+    currency_code: string
+    units: string
+    nanos: number
+    observed_price: { currencyCode: string; units: string; nanos?: number } | null
+    status: 'draft' | 'published' | 'superseded' | 'failed'
+    created_at: string
+    published_at: string | null
+    failure_code: string | null
+  }>>>(`/admin/google-play/price-drafts${queryString({ product_id: productId })}`),
+  createGooglePlayPriceDraft: (payload: {
+    product_id: string
+    base_plan_id: string
+    region_code: string
+    currency_code: string
+    units: string
+    nanos: number
+  }) => request<ApiEnvelope<{ id: string; status: 'draft' }>>('/admin/google-play/price-drafts', { method: 'POST', body: JSON.stringify(payload) }),
+  publishGooglePlayPriceDraft: (id: string, confirmation: string) => request<ApiEnvelope<{ id: string; status: 'published'; regions_version: string }>>(`/admin/google-play/price-drafts/${encodeURIComponent(id)}/publish`, { method: 'POST', body: JSON.stringify({ confirmation }) }),
   // Rights
   rightDetail: (id:string) => request<ApiEnvelope<import('../types/api').RightsDetail>>(`/admin/rights/${encodeURIComponent(id)}`),
   // Revenue & Finance
@@ -720,6 +768,22 @@ export const api = {
   /// جاهزية النشر الموحّدة. نفس المصدر الذي تستدعيه عملية النشر على الخادم،
   /// فما تعرضه هذه الشاشة هو ما سيفرضه الخادم فعلًا لا تقديرًا مستقلًا.
   publishReadiness: (type: import('../types/api').PublishableEntityType, id: string) => request<ApiEnvelope<import('../types/api').PublishGateResult>>(`/admin/publish-readiness/${type}/${encodeURIComponent(id)}`),
+  /// مسحُ البوابة على صفوفٍ بحالةٍ واحدة (`CNT-101`, `CNT-102`).
+  ///
+  /// سؤالان لا واحد، والفرق بينهما تشغيليّ:
+  ///
+  /// * `published` — ما هو **حيّ الآن** وسيفشل لو نُشر اليوم. البوابة تعمل لحظةَ
+  ///   النشر ولا تُعاد، فصفٌّ فُصل أصله بعد نشره يبقى حيًّا ومعطوبًا. وأثره على
+  ///   الحلقات هو الأسوأ: طفلٌ يضغط «شاهد» فيحصل على خطأ.
+  /// * `ready` — ما ينتظر النشر، **وما ينقص كلَّ واحدٍ بالاسم**. وهذا طابور
+  ///   المحرِّر: «اثنتا عشرة قصة تقف عند ready» رقمٌ بلا خطوةٍ تالية بلا هذا.
+  publishSweep: (params?: { type?: import('../types/api').PublishableEntityType; status?: import('../types/api').PublishSweepStatus; limit?: number }) => request<ApiEnvelope<import('../types/api').PublishSweepReport>>(`/admin/publish-readiness/sweep${queryString({ type: params?.type, status: params?.status, limit: params?.limit })}`),
+  /// الأصول التي لا يشير إليها شيء، بكل مسارات الربط في المخطَّط (`CNT-104`).
+  ///
+  /// المسارات **مكتشفة** من كتالوج SQLite لا مكتوبة: البند وصفها بمسارين، وهي
+  /// ستة عشر مفتاحًا في ثلاثة عشر جدولًا. وتقريرٌ يعرف بعضها يسمّي أصلًا مستخدَمًا
+  /// يتيمًا — والخطأ في هذا الاتجاه يُحذَف به محتوى.
+  unreferencedAssets: (params?: { kind?: string; include_archived?: 1; limit?: number }) => request<ApiEnvelope<import('../types/api').UnreferencedAssetsReport>>(`/admin/assets/unreferenced${queryString({ kind: params?.kind, include_archived: params?.include_archived, limit: params?.limit })}`),
 
   /// نشر القصص والكتب والألعاب والمشروعات.
   ///
@@ -880,4 +944,64 @@ export const api = {
       body: JSON.stringify({ [field]: value }),
     })
   },
+
+  // --- سجل مزوّدي الذكاء الاصطناعي (adminAiProviders.ts) --------------------
+  //
+  // لا دالة هنا تُرسل مفتاحًا ولا تستقبله. `credential_ref` اسم سرّ Worker،
+  // و`configured` هو كل ما يقوله الخادم عن وجوده.
+  /// السجل كاملًا: المزوّدون والموديلات والمهام والتوجيه المحسوب، في نداء واحد.
+  aiRegistry: () => request<ApiEnvelope<import('../types/api').AiRegistry>>('/admin/ai/registry'),
+  aiUsage: (days?: number) =>
+    request<ApiEnvelope<import('../types/api').AiUsageEnvelope>>(`/admin/ai/usage${queryString({ days })}`),
+
+  createAiProvider: (payload: import('../types/api').AiProviderPayload) =>
+    request<ApiEnvelope<{ id: string; slug: string }>>('/admin/ai/providers', { method: 'POST', body: JSON.stringify(payload) }),
+  updateAiProvider: (id: string, payload: Partial<import('../types/api').AiProviderPayload>) =>
+    request<ApiEnvelope<{ id: string; updated: boolean }>>(`/admin/ai/providers/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  /// تعطيل لا حذف: الحذف يتشعّب إلى الموديلات والتوجيه فيُفرغ مهامًا بلا إعلان.
+  /// الخادم يُعيد عدد المسارات المتأثّرة حتى يُعرض الأثر بعد التنفيذ.
+  disableAiProvider: (id: string) =>
+    request<ApiEnvelope<{ id: string; status: string; affected_routes: number }>>(`/admin/ai/providers/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+  createAiModel: (payload: import('../types/api').AiModelPayload) =>
+    request<ApiEnvelope<{ id: string; model_id: string }>>('/admin/ai/models', { method: 'POST', body: JSON.stringify(payload) }),
+  updateAiModel: (id: string, payload: Partial<import('../types/api').AiModelPayload>) =>
+    request<ApiEnvelope<{ id: string; updated: boolean }>>(`/admin/ai/models/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  disableAiModel: (id: string) =>
+    request<ApiEnvelope<{ id: string; status: string; affected_routes: number }>>(`/admin/ai/models/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+  /// يستبدل توجيه مهمة واحدة كاملًا. الاستبدال الكلّي لأن
+  /// `UNIQUE (task_id, priority)` يجعل التعديل الجزئي يتعارض عند نقل أولوية إلى
+  /// خانة مشغولة — نفس سبب وجود `reorderStoryPages`.
+  saveAiTaskRoutes: (taskId: string, routes: import('../types/api').AiRoutePayload[]) =>
+    request<ApiEnvelope<{ task_id: string; routes: number }>>(
+      `/admin/ai/tasks/${encodeURIComponent(taskId)}/routes`,
+      { method: 'PUT', body: JSON.stringify({ routes }) },
+    ),
+
+  /// اختبار اتصال حقيقي بموديل نصّي. **ينفق رصيدًا فعليًا** ويُسجَّل في
+  /// `ai_call_log` بـ`purpose = 'probe'`. الموديلات غير النصّية مرفوضة: اختبارها
+  /// يعني إنتاجًا مدفوعًا بلا خطة ولا اعتماد صرف، ومساره مصنع المحتوى.
+  probeAiModel: (id: string) =>
+    request<ApiEnvelope<import('../types/api').AiProbeResult>>(`/admin/ai/models/${encodeURIComponent(id)}/probe`, { method: 'POST' }),
+
+  // --- المدارس B2B (schools) ----------------------------------------------------
+  schools: (filters: Record<string,string|number|undefined>={}) => request<PaginatedEnvelope<any>>(`/admin/schools${queryString(filters)}`),
+  school: (id:string) => request<ApiEnvelope<any>>(`/admin/schools/${encodeURIComponent(id)}`),
+  createSchool: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string; code:string }>>('/admin/schools', { method:'POST', body: JSON.stringify(payload) }),
+  updateSchool: (id:string, payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string }>>(`/admin/schools/${encodeURIComponent(id)}`, { method:'PATCH', body: JSON.stringify(payload) }),
+  schoolClassrooms: (schoolId:string) => request<ApiEnvelope<any[]>>(`/admin/schools/${encodeURIComponent(schoolId)}/classrooms`),
+  createClassroom: (schoolId:string, payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string; code:string }>>(`/admin/schools/${encodeURIComponent(schoolId)}/classrooms`, { method:'POST', body: JSON.stringify(payload) }),
+  schoolEnrollments: (schoolId:string, filters: Record<string,string|number|undefined>={}) => request<PaginatedEnvelope<any>>(`/admin/schools/${encodeURIComponent(schoolId)}/enrollments${queryString(filters)}`),
+  enrollStudent: (schoolId:string, payload: { classroom_id:string; child_id:string; parent_id:string }) => request<ApiEnvelope<{ id:string }>>(`/admin/schools/${encodeURIComponent(schoolId)}/enrollments`, { method:'POST', body: JSON.stringify(payload) }),
+  assignSchoolTeacher: (schoolId:string, payload: { teacher_id:string; classroom_id?:string|null; role?:string; permissions?:string[] }) => request<ApiEnvelope<{ id:string }>>(`/admin/schools/${encodeURIComponent(schoolId)}/teachers`, { method:'POST', body: JSON.stringify(payload) }),
+
+  // --- التوصيات (home_recommendations) ------------------------------------------
+  recommendations: () => request<ApiEnvelope<any[]>>('/admin/recommendations'),
+  createRecommendation: (payload: { series_id: string; child_id?: string | null; reason?: string; priority?: number; is_pinned?: boolean }) =>
+    request<ApiEnvelope<{ id: string }>>('/admin/recommendations', { method: 'POST', body: JSON.stringify(payload) }),
+  updateRecommendation: (id: string, payload: { priority?: number; is_pinned?: boolean; is_hidden?: boolean; reason?: string }) =>
+    request<ApiEnvelope<{ id: string }>>(`/admin/recommendations/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteRecommendation: (id: string) =>
+    request<ApiEnvelope<{ id: string; deleted: boolean }>>(`/admin/recommendations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 }

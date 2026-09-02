@@ -123,19 +123,24 @@ export function ChildrenPage() {
               <table className="data-table">
                 <thead><tr><th>{text.child}</th>{columns.isVisible('parent') && <th>{text.parent}</th>}{columns.isVisible('birth') && <th>{text.birth}</th>}{columns.isVisible('computedTrack') && <th>{text.computedTrack}</th>}{columns.isVisible('interests') && <th>{text.interests}</th>}{columns.isVisible('status') && <th>{text.status}</th>}<th /></tr></thead>
                 <tbody>
-                  {records.map((child) => (
+                  {records.map((child: any) => {
+                    const safeNickname = (child.nickname as string | null) ?? ''
+                    const initial = safeNickname.trim().charAt(0) || (locale === 'ar' ? 'ط' : 'C')
+                    const bm = Number(child.birth_month) || 1
+                    const by = Number(child.birth_year) || 0
+                    return (
                     <tr key={child.id}>
                       <td>
                         <Link className="entity-cell entity-cell--button" to={adminPath(`children/${child.id}`)}>
-                          <span className={`entity-avatar child-avatar child-avatar--${child.age_track}`}>{child.nickname.charAt(0)}</span>
-                          <div><strong>{child.nickname}</strong><small>{ageBand(child.birth_month, child.birth_year, locale)} · {child.avatar_id}</small></div>
+                          <span className={`entity-avatar child-avatar child-avatar--${child.age_track ?? 'kids'}`}>{initial}</span>
+                          <div><strong>{safeNickname || text.noName}</strong><small>{ageBand(bm, by, locale)} · {child.avatar_id ?? '—'}</small></div>
                         </Link>
                       </td>
                       {columns.isVisible('parent') && <td><Link className="table-primary" to={adminPath(`parents/${child.parent_id}`)}>{child.parent_name || text.noName}</Link><small className="table-secondary">{child.parent_email || ''}</small></td>}
-                      {columns.isVisible('birth') && <td>{months[locale][child.birth_month - 1]} {formatNumber(child.birth_year, locale)}</td>}
+                      {columns.isVisible('birth') && <td>{(months[locale][bm - 1] ?? '—')} {by ? formatNumber(by, locale) : '—'}</td>}
                       {columns.isVisible('computedTrack') && <td><TrackBadge track={child.age_track} /></td>}
-                      {columns.isVisible('interests') && <td className="cell-wrap">{interestsText(child.interests, locale) || text.unspecified}</td>}
-                      {columns.isVisible('status') && <td><span className={`account-status account-status--${child.status}`}>{accountStatusLabels[locale][child.status]}</span></td>}
+                      {columns.isVisible('interests') && <td className="cell-wrap">{interestsText(child.interests ?? '[]', locale) || text.unspecified}</td>}
+                      {columns.isVisible('status') && <td><span className={`account-status account-status--${child.status}`}>{(accountStatusLabels[locale] as any)?.[child.status] ?? child.status}</span></td>}
                       <td>
                         <div className="table-actions">
                           <Link className="button button--ghost button--small" to={adminPath(`children/${child.id}`)}>{text.viewChild}</Link>
@@ -143,7 +148,7 @@ export function ChildrenPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

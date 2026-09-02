@@ -130,7 +130,7 @@ export function ParentsPage() {
                       <td>{parent.children_count}</td>
                       <td>{parent.locale === 'ar' ? text.arabic : parent.locale === 'en' ? text.english : parent.locale}</td>
                       <td><span className={`account-status account-status--${parent.status}`}>{accountStatusLabels[locale][parent.status]}</span></td>
-                      <td>{formatDate(parent.created_at, locale)}</td>
+                      <td>{formatDate((parent as any).created_at ?? (parent as any).created_at_ms ?? (parent as any).last_event_at_ms, locale)}</td>
                       <td>
                         <div className="table-actions">
                           <Link className="button button--ghost button--small" to={adminPath(`parents/${parent.id}`)}>{text.open}</Link>

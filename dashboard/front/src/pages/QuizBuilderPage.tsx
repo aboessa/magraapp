@@ -52,11 +52,13 @@ const COLUMNS: ColumnDefinition[]=[
   { key:'status', label:'status' },
 ]
 
+const QUIZ_FILTER_DEFAULTS = { type:'', status:'', objective_id:'', difficulty:'' } as const
+
 export function QuizBuilderPage(){
   const { locale }=usePreferences()
   const text=copy[locale] as any
   const navigate=useNavigate()
-  const list=useUrlListState({ type:'', status:'', objective_id:'', difficulty:'' } as any, { limit:25 })
+  const list=useUrlListState(QUIZ_FILTER_DEFAULTS as any, { limit:25 })
   const { query, filters, offset, limit }=list
   const [records,setRecords]=useState<QuestionRecord[]>([])
   const [total,setTotal]=useState(0)
@@ -65,7 +67,12 @@ export function QuizBuilderPage(){
   const [loading,setLoading]=useState(true)
   const [error,setError]=useState('')
   const [modalOpen,setModalOpen]=useState(false)
-  const [form,setForm]=useState<any>({ code:`Q-${Date.now().toString().slice(-6)}`, type:'MULTIPLE_CHOICE', prompt_ar:'', learning_objective_id:'', age_min:6, age_max:8, difficulty:'medium', correct_answer:{ value:'' }, distractors:[] })
+  const [importOpen,setImportOpen]=useState(false)
+  const [importJson,setImportJson]=useState('')
+  const [importError,setImportError]=useState('')
+  const [importBusy,setImportBusy]=useState(false)
+  const [importResult,setImportResult]=useState<string>('')
+  const [form,setForm]=useState<any>(()=> ({ code:`Q-${Date.now().toString().slice(-6)}`, type:'MULTIPLE_CHOICE', prompt_ar:'', learning_objective_id:'', age_min:6, age_max:8, difficulty:'medium', correct_answer:{ value:'' }, distractors:[] }))
   const [formError,setFormError]=useState('')
   const [saving,setSaving]=useState(false)
   const columns=useColumnPreferences('quiz', COLUMNS)
@@ -80,6 +87,8 @@ export function QuizBuilderPage(){
       setRecords((qRes as any).data); setTotal((qRes as any).meta?.total ?? (qRes as any).data.length); setSummary((qRes as any).meta?.summary)
       setObjectives((objRes as any).data)
     }catch(e){ setError(e instanceof Error? e.message: text.loadError)} finally{ setLoading(false)}
+  // filters object identity changes only when searchParams actually changes thanks to stableDefaults fix,
+  // so this is safe and won't cause infinite loop.
   },[query, filters, limit, offset, text.loadError])
 
   useEffect(()=>{ const t=setTimeout(()=> void load(),220); return ()=> clearTimeout(t)},[load])
@@ -104,6 +113,28 @@ export function QuizBuilderPage(){
     }catch(err){ setFormError(err instanceof Error? err.message: text.saveError)} finally{ setSaving(false)}
   }
 
+  async function handleImport(){
+    setImportError(''); setImportResult(''); setImportBusy(true)
+    try{
+      let questions:any[]=[]
+      const trimmed=importJson.trim()
+      if(!trimmed) throw new Error('JSON فارغ')
+      const parsed=JSON.parse(trimmed)
+      questions=Array.isArray(parsed)? parsed : parsed.questions ?? []
+      if(!Array.isArray(questions) || questions.length===0) throw new Error('الملف لا يحتوي على مصفوفة أسئلة')
+      const res=await api.importQuestions(questions)
+      setImportResult(`تم استيراد ${res.data.imported} سؤال - IDs: ${(res.data.ids??[]).slice(0,3).join(', ')}${(res.data.ids?.length??0)>3?'...':''}`)
+      await load()
+    }catch(e){ setImportError(e instanceof Error? e.message: 'خطأ في الاستيراد') } finally{ setImportBusy(false) }
+  }
+
+  function onImportFile(e:any){
+    const file=e.target.files?.[0]; if(!file) return
+    const reader=new FileReader()
+    reader.onload=()=>{ setImportJson(String(reader.result||'')) }
+    reader.readAsText(file)
+  }
+
   const filterFields: FilterField[]=[
     { key:'type', label:text.type, type:'select', options:[{value:'',label:'All'}, ...TYPES.map(v=>({value:v,label:v}))] },
     { key:'status', label:text.status, type:'select', options:[{value:'',label:'All'}, ...STATUSES.map(v=>({value:v,label:v}))] },
@@ -117,7 +148,7 @@ export function QuizBuilderPage(){
   return (
     <div className="page-stack">
       <section className="page-intro"><div><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2><p>{text.lede}</p></div>
-        <div className="page-intro__actions"><button className="button button--secondary" onClick={()=> void load()}><Icon name="refresh" size={17}/>{text.refresh}</button><button className="button button--primary" onClick={()=> setModalOpen(true)}><Icon name="plus" size={17}/>{text.add}</button></div>
+        <div className="page-intro__actions"><button className="button button--secondary" onClick={()=> void load()}><Icon name="refresh" size={17}/>{text.refresh}</button><button className="button button--ghost" onClick={()=> { setImportOpen(true); setImportError(''); setImportResult(''); setImportJson('') }}><Icon name="upload" size={14}/>{text.import}</button><button className="button button--primary" onClick={()=> setModalOpen(true)}><Icon name="plus" size={17}/>{text.add}</button></div>
       </section>
 
       <section className="prod-command" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -206,6 +237,17 @@ export function QuizBuilderPage(){
           )}
           <div className="form-actions"><button className="button button--ghost" type="button" onClick={()=> setModalOpen(false)}>{text.cancel}</button><button className="button button--primary" type="submit" disabled={saving}>{text.save}</button></div>
         </form>
+      </Modal>
+
+      <Modal open={importOpen} onClose={()=> !importBusy && setImportOpen(false)} title={text.import}>
+        <div className="entity-form">
+          {importError && <div className="inline-alert inline-alert--error">{importError}</div>}
+          {importResult && <div className="inline-alert inline-alert--success">{importResult}</div>}
+          <p style={{ fontSize:12, color:'var(--muted)' }}>صيغة JSON: مصفوفة من كائنات السؤال — نفس صيغة تصدير `export`. مثال: <code>[{`{code, type, prompt_ar, learning_objective_id, age_min, age_max, difficulty, correct_answer, distractors}`}]</code></p>
+          <label className="field"><span>ملف JSON</span><input type="file" accept=".json" onChange={onImportFile} /></label>
+          <label className="field"><span>أو الصق JSON هنا</span><textarea rows={8} dir="ltr" value={importJson} onChange={e=> setImportJson(e.target.value)} placeholder='[{"code":"Q-001","type":"MULTIPLE_CHOICE","prompt_ar":"..."}]' /></label>
+          <div className="form-actions"><button className="button button--ghost" type="button" onClick={()=> setImportOpen(false)}>{text.cancel}</button><button className="button button--primary" disabled={importBusy} onClick={()=> void handleImport()}>{importBusy ? 'جارٍ...' : text.import}</button></div>
+        </div>
       </Modal>
     </div>
   )

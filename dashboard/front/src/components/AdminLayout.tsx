@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { CommandPalette, useCommandPalette } from './CommandPalette'
+import { PermissionGate } from './PermissionGate'
 import { usePreferences } from '../context/preferences'
 import { ADMIN_BASE } from '../lib/adminPath'
 
@@ -50,14 +51,27 @@ export function AdminLayout() {
       {menuOpen && <button className="sidebar-overlay" type="button" aria-label={locale === 'ar' ? 'إغلاق القائمة' : 'Close menu'} onClick={() => setMenuOpen(false)} />}
       <div className="admin-workspace">
         <Topbar onOpenPalette={() => palette.setOpen(true)} />
-        <main className="admin-content">
+        <main className="admin-content" key={location.pathname.split('/').slice(0,4).join('/')}>
           <Suspense fallback={
-            <div className="page-state page-state--loading" role="status" aria-live="polite">
-              <span className="spinner" aria-hidden="true" />
-              <p>{locale === 'ar' ? 'جارٍ تحميل الشاشة…' : 'Loading the screen…'}</p>
+            <div className="page-state page-state--loading" role="status" aria-live="polite" style={{ minHeight: 320 }}>
+              <div style={{ display:'grid', gap:14, width:'100%', maxWidth:720, margin:'0 auto' }}>
+                <div style={{ height:22, width:'42%', borderRadius:8, background:'var(--surface-2)', animation:'pulse 1.2s ease-in-out infinite' }} />
+                <div style={{ height:16, width:'68%', borderRadius:8, background:'var(--surface-2)', animation:'pulse 1.2s ease-in-out infinite .15s' }} />
+                <div style={{ height:180, borderRadius:16, background:'linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.6s ease-in-out infinite' }} />
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12 }}>
+                  <div style={{ height:88, borderRadius:14, background:'var(--surface-2)', animation:'pulse 1.2s ease-in-out infinite .3s' }} />
+                  <div style={{ height:88, borderRadius:14, background:'var(--surface-2)', animation:'pulse 1.2s ease-in-out infinite .45s' }} />
+                  <div style={{ height:88, borderRadius:14, background:'var(--surface-2)', animation:'pulse 1.2s ease-in-out infinite .6s' }} />
+                </div>
+              </div>
+              <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}} @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
             </div>
           }>
-            <Outlet />
+            {/* الحرس داخل الحدود لا خارجها: عند الحجب لا يُرسَم `Outlet` فلا
+                تُنزَّل حزمة الصفحة أصلًا. */}
+            <PermissionGate>
+              <Outlet />
+            </PermissionGate>
           </Suspense>
         </main>
       </div>
