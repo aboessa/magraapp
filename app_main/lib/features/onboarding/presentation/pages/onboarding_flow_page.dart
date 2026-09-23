@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../app/router/auth_guard.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../l10n/app_localizations_ar.dart';
@@ -227,6 +228,9 @@ class _FinishStep extends ConsumerWidget {
                     child: FilledButton(
                       onPressed: () async {
                         await ref.read(onboardingControllerProvider.notifier).complete();
+                        ref
+                            .read(authGuardProvider)
+                            .setOnboardingJourneyInProgress(false);
                         if (context.mounted) context.go('/');
                       },
                       style: FilledButton.styleFrom(

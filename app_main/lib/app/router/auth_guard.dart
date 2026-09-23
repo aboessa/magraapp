@@ -1,11 +1,44 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 enum AuthLoadOutcome { ready, expiredWithoutRefresh }
+
+/// حالة تهيئة الأسرة، بأربع قيم لا بمنطقيّة واحدة (`BUILD-201`, `APP-205`).
+///
+/// ## العلّة التي أوجبت هذا النوع
+///
+/// كان الحقل `bool _hasCompletedOnboarding` وقيمته الافتراضية `false`. فـ«لم
+/// تُجلَب القائمة بعد» و«فشل الجلب» و«أسرةٌ جديدة فعلًا» **شكلٌ واحد**، والقرار
+/// المبنيّ عليها واحد: إلى `/onboarding`. والأثران المقيسان:
+///
+/// * **إقلاع بارد لأسرةٍ قائمة** يُعيد التوجيه إلى `/onboarding` قبل أن يُحسم
+///   `familyChildrenProvider`، ثم يبقى هناك — لأن `/onboarding` نفسه
+///   `authenticatedFamily` ولا فرع يُخرج منه (موصَّف في رأس
+///   `onboarding_journey_integration_test.dart`).
+/// * **خطأ شبكةٍ عابر** يُقرأ «أسرةٌ جديدة»، فتُعاد رحلة أوّل استخدام على أسرةٍ
+///   أكملتها.
+///
+/// والتمييز بين [incomplete] و[complete] **عدد الأطفال لا الختم**: حسابٌ قديم
+/// أُنشئ قبل وجود `onboarding_completed_at` له طفل بلا ختم، وهو أكمل التهيئة
+/// بمعناها. فالاستجابة الناجحة **الفارغة** وحدها تبدأ الرحلة.
+enum FamilyOnboardingStatus {
+  /// `familyChildrenProvider` لم يُحسم بعد. لا تُبنى قرارات توجيهٍ نهائية عليها.
+  loading,
+
+  /// فشل جلب القائمة. تُعرض شاشةٌ قابلة لإعادة المحاولة، ولا تُعدّ الأسرة جديدة.
+  error,
+
+  /// نجح الجلب وأعاد **صفر أطفال** — وهذه وحدها أسرةٌ تبدأ الرحلة.
+  incomplete,
+
+  /// نجح الجلب وأعاد طفلًا واحدًا على الأقل، بختمٍ أو بلا ختم.
+  complete,
+}
 
 /// Reactive session and parental-area gate used by [GoRouter].
 ///
@@ -31,10 +64,41 @@ class AuthGuard extends ChangeNotifier {
   final FlutterSecureStorage _storage;
   Timer? _parentAccessTimer;
 
+  // Defer notify to avoid `!_dirty` when GoRouter (refreshListenable)
+  // is notified while the widget tree is still building on web
+  // (assert in framework.dart:5444). GoRouter subscribes to this
+  // ChangeNotifier; if we notify inside a build, the router calls
+  // setState during buildScope which re-enters the build.
+  //
+  // Binding may not be initialized in pure unit tests – fall back to
+  // immediate notify (tests pump frames explicitly and don't hit the
+  // re-entrancy path).
+  void _scheduleNotify() {
+    if (!hasListeners) return;
+    // Fast path for tests / non-widget contexts.
+    try {
+      final binding = WidgetsBinding.instance;
+      // SchedulerPhase.idle == not in build/layout/paint/commit.
+      if (binding.schedulerPhase == SchedulerPhase.idle) {
+        notifyListeners();
+        return;
+      }
+      // Inside a build – wait for this frame to complete.
+      binding.addPostFrameCallback((_) {
+        if (hasListeners) notifyListeners();
+      });
+      return;
+    } catch (_) {
+      // No binding yet (e.g. dart test without TestWidgetsFlutterBinding)
+    }
+    notifyListeners();
+  }
+
   bool _isAuthenticated = false;
   bool _isDemo = false;
   bool _hasChild = false;
-  bool _hasCompletedOnboarding = false;
+  FamilyOnboardingStatus _familyOnboardingStatus = FamilyOnboardingStatus.loading;
+  bool _onboardingJourneyInProgress = false;
   bool _isLoading = true;
   String? _parentId;
   String? _parentAccessOwner;
@@ -52,16 +116,33 @@ class AuthGuard extends ChangeNotifier {
   bool get isRealAuthenticated => _isAuthenticated && !_isDemo;
   bool get hasChild => _hasChild;
 
-  /// Whether ANY child profile in the family carries a non-null
-  /// `onboarding_completed_at` (Requirement 8.1, 8.5, 8.6). Kept in sync by
-  /// `syncAuthGuardWithChildren` (`child_provider.dart`), which watches
-  /// `familyChildrenProvider` — this field never reads a Riverpod provider
-  /// itself, matching how [hasChild] is set by [setHasChild] rather than
-  /// computed here. A family where this is `true` never sees `/onboarding`
-  /// again, even while switching to or creating an additional child that
-  /// has not itself completed onboarding (a second child opens
-  /// `ChildProfileFormPage` alone, never the full journey).
-  bool get hasCompletedOnboarding => _hasCompletedOnboarding;
+  /// حالة تهيئة الأسرة (Requirement 8.1, 8.5, 8.6). يضبطها مستمع
+  /// `familyChildrenProvider` في `routerProvider` عبر
+  /// [setFamilyOnboardingStatus] — وهذا الحقل **لا يقرأ مزوّد Riverpod** بنفسه،
+  /// كما أن [hasChild] يُضبَط بـ[setHasChild] ولا يُحسب هنا.
+  FamilyOnboardingStatus get familyOnboardingStatus => _familyOnboardingStatus;
+
+  /// أسرةٌ لها طفلٌ واحد على الأقل. تبقى مشتقّة لا مُخزَّنة حتى لا يوجد مصدرا
+  /// حقيقةٍ لنفس الواقعة.
+  ///
+  /// و**لا تُستخدم وحدها لقرار `/onboarding`**: `false` هنا تشمل [loading] و
+  /// [error]، وهما ليستا «أسرةً جديدة». استخدم [shouldEnterOnboarding].
+  bool get hasCompletedOnboarding =>
+      _familyOnboardingStatus == FamilyOnboardingStatus.complete;
+
+  /// هل رحلة أوّل استخدام **جارية الآن**؟
+  ///
+  /// منفصلة عن [familyOnboardingStatus] لأنها تجيب سؤالًا آخر: الأولى «هل
+  /// الأسرة جديدة؟»، وهذه «هل نُخرج المستخدم من الشاشة التي هو فيها؟». ولولا
+  /// الفصل لانتُزع مستخدمٌ من شاشة الاحتفال في اللحظة التي يُنشئ فيها أوّل طفل
+  /// — لأن الأسرة تصير [complete] بذلك الإنشاء نفسه.
+  bool get onboardingJourneyInProgress => _onboardingJourneyInProgress;
+
+  /// القرار الوحيد الذي يُبنى عليه التوجيه إلى `/onboarding`.
+  ///
+  /// [loading] و[error] تُعيدان `false` بقصد: شاشة الأطفال تعرض مؤشّر تحميلٍ أو
+  /// خطأً قابلًا لإعادة المحاولة، وكلاهما أصدق من رحلةٍ لا يحتاجها أحد.
+  bool get shouldEnterOnboarding => _onboardingJourneyInProgress;
   String? get parentId => _parentId;
   DateTime? get parentAccessExpiresAt => _parentAccessExpiresAt;
 
@@ -165,7 +246,7 @@ class AuthGuard extends ChangeNotifier {
       return AuthLoadOutcome.expiredWithoutRefresh;
     }
     _isLoading = false;
-    notifyListeners();
+    _scheduleNotify();
     return AuthLoadOutcome.ready;
   }
 
@@ -185,7 +266,7 @@ class AuthGuard extends ChangeNotifier {
     // when the same parent signs in again, the session id may have changed, so
     // a proof bound to the previous session must never survive the replacement.
     _clearParentAccess();
-    if (changed) notifyListeners();
+    if (changed) _scheduleNotify();
   }
 
   /// Starts a memory-only reviewer experience without writing fake credentials.
@@ -194,22 +275,43 @@ class AuthGuard extends ChangeNotifier {
     _isDemo = true;
     _parentId = null;
     _hasChild = false;
-    _hasCompletedOnboarding = false;
+    // `incomplete` لا `loading`: الضيف لا يُجلَب له شيء من الخادم، فحالته
+    // معروفة يقينًا لا منتظَرة. وهي نفس ما كانت عليه المنطقيّة قبل هذا النوع
+    // (`false`)، فسلوك الضيف لم يتغيّر في هذه الدفعة.
+    _familyOnboardingStatus = FamilyOnboardingStatus.incomplete;
+    _onboardingJourneyInProgress = false;
     _isLoading = false;
     _clearParentAccess();
-    notifyListeners();
+    _scheduleNotify();
   }
 
   void setHasChild(bool value) {
     if (_hasChild == value) return;
     _hasChild = value;
-    notifyListeners();
+    _scheduleNotify();
   }
 
+  void setFamilyOnboardingStatus(FamilyOnboardingStatus value) {
+    if (_familyOnboardingStatus == value) return;
+    _familyOnboardingStatus = value;
+    _scheduleNotify();
+  }
+
+  /// يضبط الحالة بمنطقيّة، للمواضع التي تعرف الجواب يقينًا ولا تمرّ بالمزوّد
+  /// (اختبارات مصفوفة الحراسة، ومسارات إعادة التعيين أدناه).
+  ///
+  /// `false` تعني [FamilyOnboardingStatus.incomplete] لا [loading]: من ينادي
+  /// هذه الدالّة يؤكّد أنه **يعرف** أن الأسرة بلا أطفال، لا أنه لم يعرف بعد.
   void setHasCompletedOnboarding(bool value) {
-    if (_hasCompletedOnboarding == value) return;
-    _hasCompletedOnboarding = value;
-    notifyListeners();
+    setFamilyOnboardingStatus(
+      value ? FamilyOnboardingStatus.complete : FamilyOnboardingStatus.incomplete,
+    );
+  }
+
+  void setOnboardingJourneyInProgress(bool value) {
+    if (_onboardingJourneyInProgress == value) return;
+    _onboardingJourneyInProgress = value;
+    _scheduleNotify();
   }
 
   /// Stores a server-signed `parent_area` proof in memory only.
@@ -233,7 +335,7 @@ class AuthGuard extends ChangeNotifier {
       effectiveExpiry.difference(DateTime.now()),
       revokeParentAccess,
     );
-    notifyListeners();
+    _scheduleNotify();
     return true;
   }
 
@@ -241,7 +343,7 @@ class AuthGuard extends ChangeNotifier {
     final hadAccess =
         _parentAccessExpiresAt != null || _parentAccessOwner != null;
     _clearParentAccess();
-    if (hadAccess) notifyListeners();
+    if (hadAccess) _scheduleNotify();
   }
 
   /// Marks the session as ended so `redirect` sends the user to `/login`.
@@ -249,11 +351,15 @@ class AuthGuard extends ChangeNotifier {
     _isAuthenticated = false;
     _isDemo = false;
     _hasChild = false;
-    _hasCompletedOnboarding = false;
+    // `loading` لا `incomplete`: بعد الخروج لا نعرف شيئًا عن أسرة الحساب
+    // التالي، وبقاءُ `incomplete` كان سيجعل أوّل إطارٍ بعد دخولٍ جديد يقرأ
+    // «أسرةٌ جديدة» قبل أن تُجلَب قائمتها.
+    _familyOnboardingStatus = FamilyOnboardingStatus.loading;
+    _onboardingJourneyInProgress = false;
     _parentId = null;
     _isLoading = false;
     _clearParentAccess();
-    notifyListeners();
+    _scheduleNotify();
   }
 
   void _clearParentAccess() {
@@ -276,3 +382,50 @@ final authGuardProvider = Provider<AuthGuard>((ref) {
   ref.onDispose(guard.dispose);
   return guard;
 });
+
+/// مفتاح الجلسة: نصٌّ يتغيّر عند كل تحوّل **حقيقي** في هوية الجلسة
+/// (تحميل ← جاهز، دخول، ضيف، خروج، تبدّل وليّ الأمر).
+///
+/// ## لماذا يلزم هذا أصلًا
+///
+/// `authGuardProvider` مزوّد `Provider` يُعيد `ChangeNotifier` **قابلًا
+/// للتغيّر**. و`ref.watch` عليه يُعيد الحساب إذا تغيّر **الكائن** لا إذا
+/// أخطر الكائن مستمعيه — والكائن لا يُستبدل أبدًا. فكل `FutureProvider`
+/// يكتب `ref.watch(authGuardProvider)` يُحسب **مرّة واحدة**، في أوّل قراءة،
+/// وهي تقع قبل الدخول (`isLoading == true` أو غير مُصدَّق) فيُخزَّن الناتج
+/// الفارغ ولا يُعاد جلبه بعد نجاح الدخول.
+///
+/// وهذا ما كان يُفرِغ «من يشاهد الآن؟» رغم أن الخادم يُعيد الأطفال الثلاثة،
+/// ويُبقي `hasCompletedOnboarding` على `false` لأن مستمع الموجّه لا يرى إلا
+/// القائمة الفارغة المُخزَّنة.
+///
+/// والمفتاح نصّ لا عدّاد: `StateNotifier` لا يُخطر إلا إذا اختلفت القيمة،
+/// فإخطارات الحرّاس الأخرى (منح إثبات والد، تبدّل الطفل النشط) لا تُسبّب
+/// إعادة جلبٍ لا داعي لها — لأنها لا تُغيّر هذا النصّ.
+final authSessionKeyProvider =
+    StateNotifierProvider<AuthSessionKey, String>((ref) {
+  return AuthSessionKey(ref.watch(authGuardProvider));
+});
+
+@visibleForTesting
+class AuthSessionKey extends StateNotifier<String> {
+  AuthSessionKey(this._guard) : super(_read(_guard)) {
+    _guard.addListener(_sync);
+  }
+
+  final AuthGuard _guard;
+
+  static String _read(AuthGuard g) =>
+      '${g.isLoading}|${g.isAuthenticated}|${g.isDemo}|${g.parentId}';
+
+  void _sync() {
+    final next = _read(_guard);
+    if (next != state) state = next;
+  }
+
+  @override
+  void dispose() {
+    _guard.removeListener(_sync);
+    super.dispose();
+  }
+}
