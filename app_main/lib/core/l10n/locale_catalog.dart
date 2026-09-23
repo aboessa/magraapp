@@ -71,9 +71,16 @@ abstract final class AppLocales {
   /// Every locale the app declares, in display order.
   static const all = [arabic, english, french];
 
-  /// Locales with generated delegates today. French is declared but has no ARB
-  /// yet, so it is not passed to `MaterialApp.supportedLocales` until its
-  /// resources exist.
+  /// ما يُعلَن لـ`MaterialApp.supportedLocales`.
+  ///
+  /// الفرنسية مستثناة لأن جهوزيتها [LocaleCompleteness.planned]، **لا** لأن
+  /// ملفها غائب: `app_fr.arb` موجود اليوم بـ257 مفتاحًا (كان التعليق السابق هنا
+  /// يقول إنه غير موجود، وتقادم). والمعيار هو الجهوزية لا وجود الملف، وإلّا صار
+  /// إسقاطُ ملفٍ نصفَ مترجم إعلانًا بلغةٍ جاهزة.
+  ///
+  /// و`majarra_app.dart` يقرأ هذه القائمة لا `AppLocalizations.supportedLocales`
+  /// المولَّدة من الملفات الموجودة — وإلّا افترق الإعلان عن الكتالوج، وهو ما وقع
+  /// فعلًا (`I18N-201`).
   static List<Locale> get materialSupported =>
       [arabic.locale, english.locale];
 

@@ -636,6 +636,8 @@ export class FamilyState {
       'POST /downloads/renew': (r) => this.renewOfflineLicense(r),
       'POST /downloads/revoke': (r) => this.revokeOfflineLicenses(r),
       'POST /downloads/list': (r) => this.listOfflineLicenses(r),
+      // `API-201`: حدود ولي الأمر لأسطح بلا عقد تشغيل (السرد الصوتي).
+      'POST /screen-time/check': (r) => this.checkScreenTime(r),
       'POST /playback/start': (r) => this.startPlayback(r),
       'POST /playback/heartbeat': (r) => this.heartbeatPlayback(r),
       'POST /playback/end': (r) => this.endPlayback(r),
@@ -3219,6 +3221,56 @@ export class FamilyState {
         plan,
       },
     });
+  }
+
+  /// `POST /screen-time/check` — حدود ولي الأمر بلا عقد تشغيل (`API-201`).
+  ///
+  /// ## لماذا نقطةٌ منفصلة عن `/playback/start`
+  ///
+  /// جلسات السرد الصوتي **لا تُنشئ عقدًا** بقرارٍ مكتوب في `books.ts:585-592`:
+  /// العقد وُجد لسقف التشغيل المتزامن، والسقف مقصورٌ على الفيديو في الخطة
+  /// (`تشفير المحتوي.md:71`) — فاحتساب حكايةٍ قبل النوم عليه كان سيمنع أبًا يقرأ
+  /// لطفل بينما يشاهد آخر. وذلك القرار **صحيح ويبقى**.
+  ///
+  /// والعطل أن تركَ العقد ترك معه **وقت النوم والحدّ اليومي**، وهما ليسا تزامنًا.
+  /// فطفلٌ يُرفَض له الفيديو في التاسعة مساءً كان يحصل على الكتب المسموعة في
+  /// التاسعة مساءً، والرقابة التي يضبطها ولي الأمر تُقرأ عامّةً وهي على ثلث
+  /// المحتوى.
+  ///
+  /// فهذه النقطة تفصل الأمرين: تفحص الوقت ولا تُنشئ عقدًا ولا تعدّ تزامنًا.
+  ///
+  /// ## ما لا تفعله، وهو مقصود
+  ///
+  /// **لا تحتسب وقتًا.** الاحتساب في `creditWatchTime` يحتاج فارقًا بين نبضتين،
+  /// والسرد بلا نبضة: منح توكنٍ ليس دليلًا على أن أحدًا سمع. فالصوت يُرفَض بعد
+  /// استهلاك حدّ اليوم ولا يُسهم في استهلاكه — نصفُ البند، والنصف الآخر يحتاج
+  /// إشارة تقدُّم استماعٍ من العميل لا تخمينًا في الخادم.
+  private async checkScreenTime(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
+    const childId = typeof body.child_id === 'string' ? body.child_id : '';
+    if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    // الطفل يُتحقَّق **داخل الكائن**: الأسرة هنا هي السلطة، فمعرّفٌ من أسرة أخرى
+    // غير قابل للتمثيل أصلًا لا مرفوضًا فحسب.
+    const child = this.child(childId);
+    if (!child) return json({ success: false, error: 'Active child profile not found' }, 404);
+
+    const screenTime = await this.screenTimeGate(childId);
+    if (screenTime.bedtimeActive) {
+      return json({ success: false, code: 'screen_time_bedtime', error: 'Bedtime is active' }, 403);
+    }
+    if (screenTime.dailyLimitSeconds !== null) {
+      const used = this.watchedSecondsOn(childId, screenTime.localDate);
+      if (used >= screenTime.dailyLimitSeconds) {
+        return json({
+          success: false,
+          code: 'screen_time_daily_limit',
+          error: 'Daily screen-time limit reached',
+          data: { used_seconds: used, limit_seconds: screenTime.dailyLimitSeconds },
+        }, 403);
+      }
+    }
+    return json({ success: true, data: { allowed: true } });
   }
 
   private async startPlayback(request: Request) {

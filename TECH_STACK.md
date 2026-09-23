@@ -37,6 +37,28 @@
 
 ## 3. Backend: Supabase/Postgres
 
+> <!-- section-status: superseded -->
+> **⛔ هذا القسم منقضٍ ولا يوصف النظام المُنفَّذ (`DOCS-201`، قِيس 2026-09-23).**
+>
+> الوصف أدناه (Supabase وPostgres وRLS وEdge Functions) كان قرار المرحلة 0 ولم
+> يُنفَّذ. المُنفَّذ فعلًا **Cloudflare Worker + D1 (SQLite) + Durable Objects**:
+>
+> | ما يقوله هذا القسم | المُنفَّذ، والدليل |
+> |---|---|
+> | Supabase Auth + Postgres | Worker على Hono · `dashboard/api/src/index.ts` |
+> | Postgres | **D1/SQLite** · `wrangler.jsonc` → `d1_databases.DB = majarra-db` · 94 ملف ترحيل |
+> | RLS وسياسات `using`/`with check` و`auth.uid()` | **الملكية بالبناء**: كائن Durable لكل أسرة (`src/do/FamilyState.ts`)، فمعرّفٌ من أسرة أخرى **غير قابل للتمثيل** لا مرفوضًا بسياسة |
+> | Storage | **R2** بثلاثة دلاء مفصولة (`MEDIA_BUCKET` خاص · `THUMBS_BUCKET` خلف CDN · `CREATIONS_BUCKET` لرسوم الأطفال، لا يُفرَّق بـCDN أبدًا) |
+> | Edge Functions | موجّهات Hono + طابورا Queues مع DLQ + جدولا cron |
+>
+> وبحثُ `supabase` في المانيفستات الأربعة (`package.json` ×3 و`pubspec.yaml`):
+> **صفر مطابقة**.
+>
+> **ما يبقى صحيحًا في هذا القسم:** أسماء الكيانات ودالّة العمر والمسار
+> (`preschool`/`kids`/`junior` وحدود 3–12 ورفض ما خارجها) — وهي منفَّذة في
+> `src/lib/familyPolicy.ts` (`deriveAgeTrack`, `PLAN_LIMITS`). اقرأ الكيانات
+> والقواعد، لا المنصّة.
+
 Supabase مناسب لـMVP عبر Auth وPostgres وRLS وStorage وEdge Functions. تُفصل بيئتا Staging وProduction، وتدار الأسرار خارج التطبيق.
 
 ### الكيانات الأساسية
@@ -78,6 +100,21 @@ onboarding_completed_at
 - فتح محتوى أعلى عمرًا يتطلب قرار ولي الأمر عبر PIN، ولا يغير الطفل مساره.
 
 ### RLS والعزل
+
+> <!-- section-status: superseded -->
+> **⛔ المنظومة منقضية، والأهداف باقية (`DOCS-201`).** لا RLS ولا `auth.uid()` ولا
+> سياسات `using`/`with check` — تلك بدائيات Postgres/Supabase، والمُنفَّذ D1/SQLite.
+>
+> والعزل مُنفَّذ **بالبناء لا بالسياسة**: `src/do/FamilyState.ts` كائن Durable لكل
+> أسرة، فلا استعلام يحتاج شرطًا يقول «هذا الطفل لهذه الأسرة» — المعرّف من أسرة
+> أخرى غير قابل للتمثيل داخل الكائن. وهو أقوى من RLS لا أضعف: سياسةٌ منسيّة تفتح
+> بابًا، وكائنٌ منفصل لا باب فيه يُنسى.
+>
+> **وما يبقى ملزمًا من البنود أدناه:** حدّ 1 أو 4 ملفات داخل معاملة خادمية
+> (منفَّذ ذرّيًّا في `FamilyState` مع `PLAN_LIMITS`) · «لا تقبل APIs الحساسة
+> `parent_id` من العميل كمرجع ثقة» (منفَّذ: الهوية من الجلسة) · فصلُ التوصيات
+> والتقارير والمؤقتات والتنزيلات لكل طفل · واختبارات محاولة الوصول المتقاطع
+> (منفَّذة في `test/` على الكائن لا على سياسات).
 
 - كل جدول طفل يحمل `child_id` مع foreign key و`on delete cascade` حين يلزم.
 - سياسة الملكية تتحقق من أن `children_profiles.parent_id = auth.uid()`.
@@ -138,6 +175,25 @@ onboarding_completed_at
 
 ## 8. الاشتراكات والأجهزة عبر RevenueCat
 
+> <!-- section-status: superseded -->
+> **⛔ المزوّد في هذا القسم منقضٍ (`DOCS-201`، قِيس 2026-09-23).** ولا RevenueCat
+> في المشروع: بحثُ `revenuecat|purchases_flutter` في المانيفستات الأربعة يُعيد
+> **صفر مطابقة**.
+>
+> المُنفَّذ **Google Play مع تحقّق خادميّ مباشر**:
+> `dashboard/api/src/services/googlePlay.ts` (JWT حساب خدمة على
+> `androidpublisher`) و`in_app_purchase: 3.2.3` + `in_app_purchase_android` في
+> `app_main/pubspec.yaml`، والتحقّق عبر `purchase.verificationData.serverVerificationData`.
+> ولا مسار شراء على الويب أو iOS بعد.
+>
+> **وما يبقى صحيحًا وملزمًا في هذا القسم هو جدول الحدود نفسه** — وهو منفَّذ حرفًا
+> بحرف في `src/lib/familyPolicy.ts` (`PLAN_LIMITS`) ومفروض داخل `FamilyState`:
+> `free {1 ملف، 1 تشغيل، 0 تنزيل}` · `family {4، 2، 2}` · `family_plus {4، 4، 4}`.
+> وكذلك قاعدتا «Backend هو مصدر الحقيقة» و«لا nickname ولا ميلاد إلى المزوّد».
+>
+> **وتصحيح بنيويّ:** في هذا الملف **قسمان يحملان الرقم `## 8`** — هذا، والخصوصية
+> بعده. الترقيم لم يُصحَّح حتى لا تُكسَر إحالاتٌ قائمة إلى «§8 الخصوصية».
+
 - Entitlements: `free` و`family` و`family_plus`. RevenueCat يثبت الاستحقاق، لكن Backend هو مصدر الحقيقة لحدود الأجهزة والتشغيل والتنزيل.
 
 | الباقة | ملفات الأطفال | `max_registered_devices` | `max_concurrent_streams` | `max_download_devices` |
@@ -192,5 +248,18 @@ onboarding_completed_at
 - تعدد الأطفال: التبديل وعزل الوقت والتقارير والتنزيلات والمفضلة والتوصيات.
 
 ## 11. قرار التقنية للـMVP
+
+> <!-- section-status: superseded -->
+> **⛔ نصف هذا القرار انقضى (`DOCS-201`، قِيس 2026-09-23).**
+>
+> الصحيح والمُنفَّذ: **Flutter + Riverpod + GoRouter + Secure Storage +
+> PIN/biometric**. والمنقضي: **Supabase/Postgres/RLS** (→ Cloudflare Worker + D1 +
+> Durable Objects، §3 أعلاه) و**RevenueCat** (→ Google Play، §8 أعلاه) و«مزود بث
+> متخصص» (→ الوسائط تُخدَم من الـWorker بتوكن قدرة قصير العمر، **بلا DRM** بقرار
+> مالك موثَّق في `AUDIT_FULL_2026.md:190` و`:504-521`).
+>
+> **ومعيار القبول في آخر هذا القسم يبقى ملزمًا بنصّه**: إثبات دعم المسارات الثلاثة
+> منذ MVP وعزل بيانات كل طفل على العميل والخادم وفي التخزين غير المتصل. وهو
+> المعيار الذي يخدمه `FamilyState` اليوم.
 
 اعتماد Flutter + Riverpod + GoRouter وSupabase/Postgres/RLS ومزود بث متخصص وRevenueCat وSecure Storage وPIN/biometric. معيار القبول المعماري ليس تشغيل المحتوى فقط، بل إثبات دعم المسارات الثلاثة منذ MVP وعزل جميع بيانات كل طفل على العميل والخادم وفي التخزين غير المتصل.

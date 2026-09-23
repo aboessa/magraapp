@@ -65,6 +65,9 @@ class ChildControlsController extends StateNotifier<ChildControlsState> {
   Future<void> setDailyMinutes(int minutes) =>
       _write('daily_minutes', (repo) => repo.setDailyMinutes(_childId, minutes));
 
+  Future<void> clearDailyLimit() =>
+      _write('daily_minutes_clear', (repo) => repo.clearDailyLimit(_childId));
+
   Future<void> setBedtimeStart(String time) =>
       _write('bedtime_start', (repo) => repo.setBedtimeStart(_childId, time));
 

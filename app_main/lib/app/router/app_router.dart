@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/onboarding/application/onboarding_journey.dart';
 import '../../core/device/device_profile.dart';
 import '../theme/app_colors.dart';
 import '../../features/details/presentation/series_details_page.dart';
@@ -43,7 +46,7 @@ import '../../features/auth/presentation/pages/pin_setup_page.dart';
 import '../../features/auth/presentation/pages/pin_unlock_page.dart';
 import '../../features/auth/data/parent_pin_store.dart';
 import '../../features/auth/presentation/pages/help_signin_page.dart';
-import '../../features/child/application/family_children_provider.dart';
+import '../../features/onboarding/application/onboarding_controller.dart';
 import '../../features/child/presentation/pages/child_switcher_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_flow_page.dart';
 import '../../features/parent/presentation/pages/parent_dashboard_page.dart';
@@ -60,22 +63,64 @@ final routerProvider = Provider<GoRouter>((ref) {
   final guard = ref.watch(authGuardProvider);
   final resetTokenVault = ref.watch(resetTokenVaultProvider);
   // Watch child state to keep the parental/child guards in sync.
+  // _scheduleNotify inside AuthGuard already defers when inside a build,
+  // so no extra microtask here is needed.
   ref.listen(childProvider, (prev, next) {
     syncAuthGuardWithChild(next, guard);
   });
-  // Watch the family's full child roster to keep `AuthGuard.
-  // hasCompletedOnboarding` in sync (Requirement 8.1, 8.5, 8.6) — mirrors
-  // the `childProvider` listener above exactly, but reads whether ANY child
-  // in the family ever finished onboarding rather than the single active
-  // selection. `_guardRedirect` stays purely synchronous by reading this
-  // pre-computed boolean instead of the async provider directly.
-  ref.listen(familyChildrenProvider, (prev, next) {
-    final children = next.valueOrNull;
-    if (children == null) return;
-    guard.setHasCompletedOnboarding(
-      children.any((child) => child.onboardingCompletedAt != null),
+  // حالة تهيئة الأسرة ورحلتها (Requirement 8.1, 8.5, 8.6).
+  //
+  // `_guardRedirect` يبقى متزامنًا بقراءة منطقيّاتٍ مُحسَّبة هنا، لا بقراءة
+  // مزوّدٍ غير متزامن. والقرار يحتاج مصدرين — قائمة الأطفال والخطوة المحفوظة —
+  // فيُعاد حسابه كلّما تغيّر أحدهما، والقواعد نفسها دوالُّ خالصة في
+  // `features/onboarding/application/onboarding_journey.dart`.
+  //
+  // `fireImmediately` في الاثنين: `ref.listen` لا يُشعِل على القيمة الأولى،
+  // فبلا هذا يبقى أوّل إطارٍ على القيم الافتراضية — وهو بالضبط الإطار الذي كان
+  // يُعيد التوجيه إلى `/onboarding` قبل أن يُحسم الجلب.
+  // الحالة تُشتَقّ من قيمةٍ **مُمرَّرة** لا من قراءةٍ لاحقة للمزوّد: عند الفشل
+  // يُسلِّم Riverpod الخطأ إلى `onError`، وتوقيتُ استقرار حالة المزوّد الداخلية
+  // بعدها ليس عقدًا يُعتمد عليه. فمن يعرف الجواب يُمرّره.
+  void applyOnboardingJourney({
+    required FamilyOnboardingStatus status,
+    required bool anyChildStamped,
+  }) {
+    final hasPersistedStep = ref.read(onboardingControllerProvider).hasPersistedStep;
+
+    guard.setFamilyOnboardingStatus(status);
+    guard.setOnboardingJourneyInProgress(onboardingJourneyIsActive(
+      status: status,
+      hasPersistedStep: hasPersistedStep,
+      anyChildStamped: anyChildStamped,
+    ));
+
+    // خطوةٌ خلّفها حسابٌ قديم: تُمسح هنا لأن `OnboardingFlowPage` لا يُبنى في
+    // هذه الحالة أصلًا (التوجيه يذهب إلى `/children`)، فلا موضع آخر يراها.
+    if (persistedStepIsStale(
+      status: status,
+      hasPersistedStep: hasPersistedStep,
+      anyChildStamped: anyChildStamped,
+    )) {
+      unawaited(ref.read(onboardingControllerProvider.notifier).complete());
+    }
+  }
+
+  void syncOnboardingJourney() {
+    applyOnboardingJourney(
+      status: ref.read(familyOnboardingStatusProvider),
+      anyChildStamped: ref.read(anyChildStampedProvider),
     );
-  });
+  }
+
+  // الاستماع إلى المزوّدين **المشتقّين** لا إلى `familyChildrenProvider` مباشرةً:
+  // الأخير غير متزامن، و`ref.listen` عليه يُصعِّد الفشل خطأً غير مُعالَج بدل أن
+  // يُسلّمه حالةً (موصَّف في `onboarding_journey.dart`). والمشتقّان
+  // `Provider` عاديّان لا يرميان أبدًا.
+  ref.listen(familyOnboardingStatusProvider, (prev, next) => syncOnboardingJourney(),
+      fireImmediately: true);
+  ref.listen(anyChildStampedProvider, (prev, next) => syncOnboardingJourney());
+  ref.listen(onboardingControllerProvider, (prev, next) => syncOnboardingJourney(),
+      fireImmediately: true);
   return GoRouter(
     initialLocation: '/',
     refreshListenable: guard,
@@ -138,24 +183,35 @@ String? _guardRedirect(
       authEntry.contains(loc) &&
       loc != '/reset-password') {
     if (guard.hasChild) return '/';
-    // Requirement 8.1: a family with no active child AND no child anywhere
-    // that ever completed onboarding goes to the first-run journey instead
-    // of straight to the (empty) child switcher. A family that has
-    // completed onboarding once (`hasCompletedOnboarding == true`) always
-    // falls through to `/children` here even with no active child selected
-    // — e.g. adding a second child later — matching Requirement 8.6.
-    return guard.hasCompletedOnboarding ? '/children' : '/onboarding';
+    // Requirement 8.1: أسرةٌ بلا طفلٍ نشط تذهب إلى الرحلة **فقط** إن كانت
+    // الرحلة جارية فعلًا (`shouldEnterOnboarding`) — أي أسرةٌ بلا أطفال، أو
+    // خطوةٌ محفوظة تُستأنف. و«لم يُحسم الجلب» و«فشل الجلب» تذهبان إلى
+    // `/children`، حيث مؤشّر تحميلٍ أو خطأٌ قابل لإعادة المحاولة. وأسرةٌ
+    // أكملت التهيئة تمرّ إلى `/children` حتى بلا طفلٍ مختار (إضافة طفلٍ ثانٍ
+    // لاحقًا) — Requirement 8.6.
+    return guard.shouldEnterOnboarding ? '/onboarding' : '/children';
   }
 
-  // Requirement 8.5: `/onboarding` itself must be re-evaluated once
-  // `hasCompletedOnboarding` resolves — not just the routes that redirect
-  // *into* it. Without this, a family whose onboarding status resolves
-  // asynchronously (after `familyChildrenProvider` settles, later than the
-  // synchronous redirect that first sent them here) could get stuck showing
-  // the onboarding flow even though the guard now correctly knows better.
-  if (loc == '/onboarding' && guard.hasCompletedOnboarding) {
+  // Requirement 8.5: `/onboarding` نفسه يُعاد تقييمه، لا المسارات المُوجِّهة
+  // إليه وحدها. وبلا هذا الفرع تبقى أسرةٌ حُسمت حالتها **بعد** التوجيه المتزامن
+  // الأوّل عالقةً على الرحلة، لأن `/onboarding` مصنَّف `authenticatedFamily`
+  // فلا فرعَ فئةٍ يُخرج منه.
+  //
+  // والشرط `!onboardingJourneyInProgress` لا `hasCompletedOnboarding`: الأسرة
+  // تصير `complete` **بإنشاء أوّل طفل داخل الرحلة نفسها**، فالحكم بالحالة وحدها
+  // كان ينتزع المستخدم من شاشة الاحتفال في اللحظة التي يستحقّها.
+  if (loc == '/onboarding' && !guard.onboardingJourneyInProgress) {
     return guard.hasChild ? '/' : '/children';
   }
+
+  // والمقابل المتناظر: أسرةٌ هبطت على `/children` ثم حُسمت حالتها `incomplete`.
+  //
+  // التوجيه الأوّل متزامن ويقع قبل حسم `familyChildrenProvider`، فيذهب إلى
+  // `/children` بحقّ (لا نعرف بعد). ثم يُحسم الجلب بصفر أطفال، وبلا هذا الفرع
+  // تبقى الأسرة على شاشة «من يشاهد الآن؟» **فارغةً بلا مخرج** — لأن
+  // `/children` مصنَّف `authenticatedFamily` فلا فرعَ فئةٍ ينقل منه، وهي نفس
+  // العلّة الموصوفة على `/onboarding` أعلاه في الاتجاه المعاكس.
+  if (loc == '/children' && guard.shouldEnterOnboarding) return '/onboarding';
 
   // Demo is a child-only, memory-only experience. It cannot enrol a PIN or
   // manage a real account, so those routes lead to sign-in rather than bouncing
@@ -473,8 +529,12 @@ final List<RouteBase> _routes = <RouteBase>[
   ),
   GoRoute(
     path: '/parent-pin',
-    builder: (context, state) =>
-        _PinGatePage(returnTo: state.uri.queryParameters['from']),
+    builder: (context, state) => _PinGatePage(
+      returnTo: state.uri.queryParameters['from'],
+      // `stage` يحمل **جواب الخادم** بعد أن يُكذّب الاستدلال المحلي، فلا
+      // يُعاد سؤال `hasPin()` الذي أخطأ أصلًا. انظر `_PinGatePage`.
+      stage: state.uri.queryParameters['stage'],
+    ),
   ),
   GoRoute(
     path: '/children',
@@ -721,10 +781,26 @@ final List<RouteBase> _routes = <RouteBase>[
 /// out wrong (403 on setup, 404 on unlock) by navigating to the other one,
 /// so a wrong first guess here costs one extra round trip, never a stuck
 /// screen.
+///
+/// ## ولماذا يلزم [stage]
+///
+/// «التطبيبُ الذاتي» كان يعود إلى `/parent-pin` **بلا أي معلومة جديدة**، وهذا
+/// المُوزِّع يُعيد سؤال `hasPin()` نفسه — وهو المصدر الذي أخطأ أوّلًا. فالجواب
+/// لا يتغيّر، فيُعاد بناء نفس الشاشة، ويُعاد الطلب، ويُعاد 403: حلقة مفرغة لا
+/// «رحلة ذهابٍ واحدة زائدة». وهذا ما ظهر على المتصفّح كـ
+/// `POST /api/v1/family/parent-pin 403 (Forbidden)` بلا تقدّم.
+///
+/// و`stage` يحمل جواب الخادم عبر عنوان المسار: `unlock` يعني «الخادم يقول إن
+/// رمزًا موجود» و`setup` يعني «الخادم يقول لا رمز». وحين يُمرَّر، يُقدَّم على
+/// الاستدلال المحلي بلا قراءةٍ للمخزن الآمن أصلًا.
 class _PinGatePage extends ConsumerStatefulWidget {
-  const _PinGatePage({this.returnTo});
+  const _PinGatePage({this.returnTo, this.stage});
 
   final String? returnTo;
+
+  /// `'unlock'` أو `'setup'` — جواب الخادم بعد أن كذّب الاستدلال المحلي.
+  /// `null` في الدخول الأوّل، فيُستشار المخزن المحلي كما كان.
+  final String? stage;
 
   @override
   ConsumerState<_PinGatePage> createState() => _PinGatePageState();
@@ -741,6 +817,16 @@ class _PinGatePageState extends ConsumerState<_PinGatePage> {
   }
 
   Future<void> _check() async {
+    // جواب الخادم يسبق كل استدلال محلي: بلا هذا الفرع يعود المُوزِّع إلى
+    // `hasPin()` الذي أخطأ فتُعاد نفس الشاشة ويُعاد نفس 403 بلا نهاية.
+    final stage = widget.stage;
+    if (stage == 'unlock' || stage == 'setup') {
+      setState(() {
+        _hasPin = stage == 'unlock';
+        _loading = false;
+      });
+      return;
+    }
     final guard = ref.read(authGuardProvider);
     bool hasPin;
     try {

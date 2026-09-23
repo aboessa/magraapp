@@ -211,6 +211,18 @@ jobs:
       - name: No new zero-fallback metrics in dashboard pages
         run: node tools/ci/zero-fallback-scan.mjs --check
 
+      # `DATA-201`: إنتاج الفيديو سجّل وسائطه في الإنتاج بأربعة ملفات SQL شُغِّلت
+      # بيدٍ من `tools/ops/`، وكلّها خارج git. والمستودع كان قد دفع ثمن القدرة على
+      # بناء القاعدة من الصفر (`DB-104`، ووظيفة `migrations` أعلاه) — وهذه
+      # الملفات تنقضها في كل تشغيل، **ولا شيء يسجّل أنها شُغِّلت**.
+      #
+      # محتواها صار في `0092_register_first_episode_media.sql`، والبوابة تمنع
+      # عودة النمط. وهي مرقَّمةٌ من جذر المستودع لا من `dashboard/api`، لأن
+      # الملفات المخالفة كانت في `tools/ops/` خارج حزمة الـWorker تمامًا.
+      - run: node tools/ci/content-sql-outside-migrations.mjs --self-test
+      - name: No content-table writes in SQL outside migrations/
+        run: node tools/ci/content-sql-outside-migrations.mjs --check
+
       - name: Verdicts and evidence agree with the source
         run: node tools/dashboard-audit/feature-matrix.mjs --check
       - name: The committed matrix is the one the generator produces

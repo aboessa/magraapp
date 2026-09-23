@@ -13,11 +13,20 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/device/device_profile.dart';
 import '../../../../core/failures/app_failure.dart';
 import '../../../../core/widgets/cinematic_background.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations_ar.dart';
 import '../../data/billing_catalog.dart';
 import '../../data/billing_status.dart';
 import '../../data/google_play_billing.dart';
 import '../../../home/application/home_providers.dart';
 import '../widgets/profile_page_content.dart';
+
+@visibleForTesting
+bool shouldInitializePurchaseStore({
+  bool isWeb = kIsWeb,
+  TargetPlatform? platform,
+}) =>
+    !isWeb && (platform ?? defaultTargetPlatform) == TargetPlatform.android;
 
 /// Membership and subscription state.
 ///
@@ -34,7 +43,12 @@ class MembershipPage extends ConsumerStatefulWidget {
 }
 
 class _MembershipPageState extends ConsumerState<MembershipPage> {
-  final InAppPurchase _purchases = InAppPurchase.instance;
+  // `in_app_purchase` has no web implementation in this app. Reading
+  // `InAppPurchase.instance` while constructing the page therefore reaches the
+  // platform interface's uninitialised `late _instance` and replaces the whole
+  // membership screen with Flutter's red error view. Create the store client
+  // only on the one platform whose purchase flow is implemented.
+  InAppPurchase? _purchases;
   final Set<String> _knownProductIds = <String>{};
   final Set<String> _verifyingPurchaseIds = <String>{};
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
@@ -44,7 +58,10 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
   @override
   void initState() {
     super.initState();
-    _purchaseSubscription = _purchases.purchaseStream.listen(
+    if (!shouldInitializePurchaseStore()) return;
+    final purchases = InAppPurchase.instance;
+    _purchases = purchases;
+    _purchaseSubscription = purchases.purchaseStream.listen(
       _handlePurchaseUpdates,
       onError: (_, __) =>
           _setBillingMessage('تعذر إتمام عملية الشراء. أعد المحاولة.'),
@@ -65,6 +82,8 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
 
   Future<void> _restorePendingPurchases() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    final purchases = _purchases;
+    if (purchases == null) return;
     try {
       final contextData = GooglePlayBillingContext.fromEnvelope(
         await ref.read(majarraApiClientProvider).getGooglePlayBillingContext(),
@@ -72,8 +91,8 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
       _knownProductIds
         ..clear()
         ..addAll(contextData.products.keys);
-      if (await _purchases.isAvailable()) {
-        await _purchases.restorePurchases(
+      if (await purchases.isAvailable()) {
+        await purchases.restorePurchases(
           applicationUserName: contextData.obfuscatedAccountId,
         );
       }
@@ -84,6 +103,8 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
   }
 
   Future<void> _handlePurchaseUpdates(List<PurchaseDetails> purchases) async {
+    final store = _purchases;
+    if (store == null) return;
     for (final purchase in purchases) {
       if (!_knownProductIds.contains(purchase.productID)) continue;
       if (purchase.status == PurchaseStatus.pending) {
@@ -113,7 +134,7 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
             .read(majarraApiClientProvider)
             .verifyGooglePlayPurchase(token);
         if (purchase.pendingCompletePurchase) {
-          await _purchases.completePurchase(purchase);
+          await store.completePurchase(purchase);
         }
         ref.invalidate(billingStatusProvider);
         _setBillingMessage('تم تفعيل الباقة بنجاح.');
@@ -131,6 +152,9 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
   }
 
   Future<void> _openPlans() async {
+    // يُقرأ قبل أي `await`: قراءة `BuildContext` بعد نقطة تعليق تحتاج حرس
+    // `mounted` ويُبلّغ عنها المحلّل، والرسالة نفسها لا تتغيّر بانتظار المتجر.
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
     final isTelevision =
         ref.read(deviceProfileProvider).valueOrNull?.isTelevision ?? false;
     if (isTelevision) {
@@ -153,6 +177,11 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
       _setBillingMessage('الاشتراك غير متاح من هذه المنصة حاليًا.');
       return;
     }
+    final purchases = _purchases;
+    if (purchases == null) {
+      _setBillingMessage(l10n.googlePlayUnavailableOnDevice);
+      return;
+    }
     if (_billingActionInProgress) return;
     setState(() {
       _billingActionInProgress = true;
@@ -166,10 +195,10 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
       _knownProductIds
         ..clear()
         ..addAll(contextData.products.keys);
-      if (!await _purchases.isAvailable()) {
-        throw StateError('Google Play غير متاح على هذا الجهاز.');
+      if (!await purchases.isAvailable()) {
+        throw StateError(l10n.googlePlayUnavailableOnDevice);
       }
-      final response = await _purchases.queryProductDetails(_knownProductIds);
+      final response = await purchases.queryProductDetails(_knownProductIds);
       final available = response.productDetails
           .where((product) => _knownProductIds.contains(product.id))
           .toList(growable: false);
@@ -212,6 +241,14 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
   }
 
   Future<void> _startPurchase(ProductDetails product, String accountId) async {
+    final purchases = _purchases;
+    if (purchases == null) {
+      _setBillingMessage(
+        (AppLocalizations.of(context) ?? AppLocalizationsAr())
+            .googlePlayUnavailableOnDevice,
+      );
+      return;
+    }
     if (_billingActionInProgress) return;
     setState(() {
       _billingActionInProgress = true;
@@ -225,7 +262,7 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
           : null,
     );
     try {
-      final started = await _purchases.buyNonConsumable(
+      final started = await purchases.buyNonConsumable(
         purchaseParam: parameter,
       );
       if (!started) {

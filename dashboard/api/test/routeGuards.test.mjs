@@ -401,10 +401,21 @@ test('an actor cannot remove their own last permission-management grant', () => 
 test('the guard sweep actually inspected the routers', () => {
   // Without this, a regex that silently stops matching turns the sweep above
   // into a test that passes by examining nothing.
-  assert.ok(adminRouterFiles.length >= 15, `expected the admin routers, found ${adminRouterFiles.length}`);
-  assert.ok(allMutations.length >= 90, `expected ~96 mutating handlers, found ${allMutations.length}`);
+  //
+  // `SEC-203`: the floors were `>= 90` and `>= 80` against a comment reading
+  // "expected ~96 mutating handlers". Measured 2026-09-23: **211 mutating
+  // handlers in 45 admin routers, 196 of them carrying a named permission.**
+  // So the anti-vacuity guard tolerated losing sight of ~121 handlers — which
+  // is the exact failure mode it exists to prevent, defeated by a constant that
+  // stopped being true.
+  //
+  // Re-measure and raise these when the surface grows; a floor below reality is
+  // a comment, not a gate. Reproduce with:
+  //   node -e "…" on src/routes/admin*.ts with the regex in mutatingHandlers()
+  assert.ok(adminRouterFiles.length >= 40, `expected ~45 admin routers, found ${adminRouterFiles.length}`);
+  assert.ok(allMutations.length >= 200, `expected ~211 mutating handlers, found ${allMutations.length}`);
   assert.ok(
-    allMutations.filter((handler) => handler.permission).length >= 80,
+    allMutations.filter((handler) => handler.permission).length >= 190,
     'almost every mutation should resolve to a named permission',
   );
 });

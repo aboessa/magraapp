@@ -106,6 +106,18 @@ app.use('/api/v1/auth/*', strictAuthLimit);
 app.use('/api/v1/account', strictAuthLimit);
 app.use('/api/v1/account/*', strictAuthLimit);
 app.use('/api/v1/billing/*', billingLimit);
+// SEC-202: باب اللوحة يُحرَس كباب الأسرة، لا بحصّة التشغيل الإداريّة.
+//
+// `adminLimit` سخيّ بقصد (600/دقيقة): مشغّلٌ يفتح عشرين شاشة تقرأ كلٌّ منها عدّة
+// نقاط. لكنه كان يُطابق `/api/v1/admin/auth/login` أيضًا لأن التركيب بالبادئة،
+// و`strictAuthLimit` مقصورٌ على `/api/v1/auth/*`. والنتيجة أن **دخول اللوحة كان
+// على 600 محاولة/دقيقة مقابل 5 لدخول الأسرة** — وبلا توكن يهبط `perPrincipal`
+// إلى مفتاح العنوان، فالـ600 لمهاجمٍ مجهول.
+//
+// يُركَّب **قبل** `adminLimit`: أوّل وسيطٍ يُطابق هو الذي يحكم، فالترتيب هو
+// الإصلاح. ويخصّ المسار الدقيق لا البادئة، حتى لا تُخنَق بقيّة `/admin/auth/*`
+// (تجديد الجلسة، `me`) بحصّة خمسٍ في الدقيقة.
+app.use('/api/v1/admin/auth/login', strictAuthLimit);
 app.use('/api/v1/admin/*', adminLimit);
 // Telemetry writes a D1 row per call and accepts an anonymous `app_open`, so it
 // needs its own quota. Its absence here was half of the ingest defect.

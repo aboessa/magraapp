@@ -6,6 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../application/creative_catalogue_provider.dart';
 import '../../../data/local_creation_store.dart';
+import '../../../../../core/images/heavy_assets.dart';
+import '../../../../../core/widgets/cinematic_image.dart';
+import '../../../../../l10n/app_localizations.dart';
+import '../../../../../l10n/app_localizations_ar.dart';
 import 'connect_dots_board_page.dart';
 
 class ConnectDotsCataloguePage extends ConsumerStatefulWidget {
@@ -207,23 +211,17 @@ class _ConnectDotsCataloguePageState
         ),
         child: AspectRatio(
           aspectRatio: 2.4,
-          child: Image.asset(
-            'assets/images/studio/connect-dots-banner.webp',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Image.asset(
+          // R2-first: bundled webp paints instantly, CDN twin via disk cache
+          // after first load. The PNG rung is gone — never uploaded.
+          child: CinematicImage(
+            assetPath: 'assets/images/studio/connect-dots-banner.webp',
+            networkUrl: heavyStudioBannerUrl(
               'assets/images/studio/connect-dots-banner.png',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: const Color(0xFF1A0B3E),
-                child: const Center(
-                  child: Icon(
-                    Icons.rocket_launch_rounded,
-                    color: Colors.white24,
-                    size: 48,
-                  ),
-                ),
-              ),
             ),
+            semanticLabel:
+                (AppLocalizations.of(context) ?? AppLocalizationsAr())
+                    .studioBannerConnectDotsLabel,
+            fit: BoxFit.cover,
           ),
         ),
       );

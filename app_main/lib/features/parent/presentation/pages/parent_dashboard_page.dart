@@ -13,6 +13,8 @@ import '../../../child/domain/child_profile.dart';
 import '../../../child/presentation/widgets/child_avatars.dart';
 import '../../../home/application/home_providers.dart';
 import '../../../home/domain/content_models.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations_ar.dart';
 import '../../application/child_controls_controller.dart';
 import '../../application/parent_reports.dart';
 
@@ -504,6 +506,7 @@ class ParentalControlsSection extends ConsumerStatefulWidget {
 class _ParentalControlsSectionState extends ConsumerState<ParentalControlsSection> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
     final settingsAsync = ref.watch(childSettingsProvider(widget.childId));
     // `APP-102`: علَم الحفظ ونتيجة الكتابة صارا في المتحكّم، لا في حالة العنصر.
     // كانت ستّ كتابات لضوابط رقابية بلا `catch`، فيفشل الطلب ويبقى وليّ الأمر
@@ -521,7 +524,11 @@ class _ParentalControlsSectionState extends ConsumerState<ParentalControlsSectio
         ),
       ),
       data: (data) {
-        final daily = (data['daily_minutes'] as num?)?.toInt() ?? 30;
+        // `null` = لم يفعّل وليّ الأمر حدًّا يوميًّا (قرار المالك، `DECIDE-108`).
+        // وكان هنا `?? 30`: يعرض حدًّا لم يُضبَط، فيقرأ وليّ الأمر «الحدّ مفعَّل
+        // على 30» وهو غير مفعَّل — أو كان مفعَّلًا لأن الخادم كان يفرضه بالفعل
+        // ولا يملك إلغاءه.
+        final daily = (data['daily_minutes'] as num?)?.toInt();
         final bedStart = data['bedtime_start'] as String?;
         final bedEnd = data['bedtime_end'] as String?;
         final allowSpeed = (data['allow_speed_change'] as num?)?.toInt() == 1;
@@ -534,12 +541,30 @@ class _ParentalControlsSectionState extends ConsumerState<ParentalControlsSectio
               const Text('حدود الوقت والسماحات', style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 13)),
             ]),
             const Divider(height: 18, color: Colors.white12),
-            Text('وقت الشاشة اليومي: $daily دقيقة', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 12)),
-            Slider(
-              value: daily.toDouble(), min: 5, max: 180, divisions: 35, label: '$daily',
-              activeColor: AppColors.starGold, inactiveColor: Colors.white12,
-              onChanged: (v) => controller.setDailyMinutes(v.round()),
+            // التفعيل مفتاحٌ صريح، والشريط يظهر بعده. والنصّ يقول الحالة صراحةً
+            // بدل أن يعرض رقمًا يُقرأ حدًّا ساريًا وهو ليس كذلك.
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.parentDailyLimitTitle, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 12)),
+              subtitle: Text(
+                daily == null ? l10n.parentDailyLimitOff : l10n.parentDailyLimitOn(daily),
+                style: const TextStyle(fontSize: 11, color: AppColors.mutedText),
+              ),
+              value: daily != null,
+              activeThumbColor: AppColors.starGold,
+              // القيمة الابتدائية عند التفعيل 30 دقيقة، وهي **اختيار وليّ الأمر**
+              // لحظة تحويله المفتاح لا افتراضًا صامتًا يُطبَّق عليه — وذاك الفرق
+              // هو `DECIDE-108` كلّه. وله بعدها الشريط.
+              onChanged: (on) => on
+                  ? controller.setDailyMinutes(30)
+                  : controller.clearDailyLimit(),
             ),
+            if (daily != null)
+              Slider(
+                value: daily.clamp(5, 180).toDouble(), min: 5, max: 180, divisions: 35, label: '$daily',
+                activeColor: AppColors.starGold, inactiveColor: Colors.white12,
+                onChanged: (v) => controller.setDailyMinutes(v.round()),
+              ),
             if (controls.saving) const LinearProgressIndicator(minHeight: 2, color: AppColors.starGold, backgroundColor: Colors.white12),
             // فشلُ كتابة ضابطٍ رقابي **يُقال**. وهو ما لم يكن يحدث: خمس كتابات
             // بلا `catch` وواحدة بـ`finally` وحده.

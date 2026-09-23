@@ -70,7 +70,10 @@ route.put('/:childId', async (c) => {
   // و`body.autoplay ? 1 : 0` كان يقبل **أي** قيمة صادقة — فيصير `"no"` تشغيلًا
   // تلقائيًّا مفعَّلًا. والمخطَّط يرفض النوع الخطأ بدل أن يخمّن مقصده.
   const parsed = await parseBody(c, {
-    daily_minutes: integer({ min: 5, max: 180, optional: true }),
+    // `nullable` هو تفعيل/إلغاء الحدّ اليومي (قرار المالك، `DECIDE-108`):
+    // `null` يعني «لم يفعّله ولي الأمر» ويُوقف الفحص، تمامًا كما يفعل النصّ
+    // الفارغ في `bedtime_*` أدناه. وبدونه كان الحدّ يُضبَط ولا يُلغى.
+    daily_minutes: integer({ min: 5, max: 180, optional: true, nullable: true }),
     max_session_minutes: integer({ min: 5, max: 180, optional: true, nullable: true }),
     // النصّ الفارغ يعني «امسح الحدّ»، وهو عقد قائم يستهلكه العميل.
     bedtime_start: text({ min: 0, max: 5, pattern: HHMM_OR_EMPTY, optional: true, nullable: true }),

@@ -14,10 +14,36 @@ import '../../home/application/home_providers.dart';
 import '../domain/child_profile.dart';
 
 final familyChildrenProvider = FutureProvider<List<ChildProfile>>((ref) async {
-  if (ref.read(authGuardProvider).isDemo) return _demoChildren;
+  // `authSessionKeyProvider` لا `authGuardProvider` وحده: الثاني `Provider`
+  // يُعيد `ChangeNotifier` **ثابت الهوية**، فـ`ref.watch` عليه لا يُعيد الحساب
+  // عند إخطاره — والنتيجة أن هذا المزوّد كان يُحسب مرّة واحدة قبل الدخول
+  // (`isLoading == true`)، فيُخزَّن `const []` ولا يُعاد جلبه بعد نجاح الدخول:
+  // «من يشاهد الآن؟» تبقى فارغة رغم أن الخادم يُعيد الأطفال.
+  ref.watch(authSessionKeyProvider);
+  final guard = ref.read(authGuardProvider);
+  // No authenticated session yet — don't hit the API, otherwise every guest
+  // on /login triggers GET /family/children → 401 (seen in DevTools).
+  // Demo returns its local child without ever calling the server.
+  if (guard.isDemo) return _demoChildren;
+  if (!guard.isAuthenticated || guard.isLoading) return const <ChildProfile>[];
+  // الفشل يُرفَع ولا يُبتلَع (`APP-205`, `BUILD-201`).
+  //
+  // كان هنا `catch (_) { return const []; }` بحجّة «لا تُلقِ من مستمع الموجّه».
+  // والحجّة سقطت من طرفين: الحالتان التي كانت تحميان منها (`401` قبل استقرار
+  // الحراسة، وجلسةٌ لم تُحمَّل بعد) يحسمهما الشرطان أعلاه بعودةٍ مبكّرة قبل أي
+  // نداء؛ وثمنُها أن **قائمةً فارغة صارت جواب الفشل أيضًا**، فيقرأ الموجّه
+  // «أسرةٌ جديدة» على انقطاع شبكةٍ عابر ويُعيد رحلة أوّل استخدام على أسرةٍ
+  // أكملتها.
+  //
+  // ومستهلِكا هذا المزوّد يتعاملان مع الخطأ صراحةً اليوم: `ChildSwitcherPage`
+  // يعرض `_RosterLoadError` بزرّ إعادة محاولة، ومستمع `routerProvider` يحوّله
+  // إلى `FamilyOnboardingStatus.error` — وكلاهما أصدق من فراغٍ بشكل نجاح.
   final api = ref.watch(majarraApiClientProvider);
   final rows = await api.fetchChildren();
-  return rows.map(ChildProfile.fromJson).where((c) => c.id.isNotEmpty).toList(growable: false);
+  return rows
+      .map(ChildProfile.fromJson)
+      .where((c) => c.id.isNotEmpty)
+      .toList(growable: false);
 });
 
 const _demoChildren = <ChildProfile>[

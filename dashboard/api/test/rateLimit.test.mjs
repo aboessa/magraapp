@@ -351,6 +351,36 @@ test('every endpoint group the audit found unprotected is now registered', async
   }
 });
 
+test('admin sign-in is on the strict auth budget, and before the admin one', () => {
+  // `SEC-202`: `app.use('/api/v1/admin/*', adminLimit)` matches
+  // `/api/v1/admin/auth/login` too, so the dashboard door sat on the operator
+  // budget — 600 a minute against the family door's 5. With no bearer token
+  // `perPrincipal` falls back to the address key, so those 600 were available
+  // to an anonymous caller.
+  const source = read('src/index.ts');
+
+  const strict = source.indexOf("app.use('/api/v1/admin/auth/login', strictAuthLimit)");
+  const broad = source.indexOf("app.use('/api/v1/admin/*', adminLimit)");
+
+  assert.notEqual(strict, -1, 'admin sign-in must carry strictAuthLimit');
+  assert.notEqual(broad, -1, 'the admin prefix limit must still exist');
+  // Order is the whole fix: the first matching middleware governs, so a
+  // registration placed after the prefix would never be reached.
+  assert.ok(
+    strict < broad,
+    'the strict sign-in limit must be registered BEFORE the broad admin prefix',
+  );
+
+  // The narrow path, not the prefix: `/admin/auth/*` also carries session
+  // refresh and `me`, and choking those at five a minute would log operators
+  // out mid-shift.
+  assert.equal(
+    /app\.use\('\/api\/v1\/admin\/auth\/\*', strictAuthLimit\)/.test(source),
+    false,
+    'only the login path belongs on the strict budget, not every /admin/auth route',
+  );
+});
+
 test('the limiter no longer uses KV or a swallowed catch', () => {
   const source = read('src/lib/rateLimit.ts');
   // KV cannot hold a counter: ~1 write/s per key and reads stale for up to a

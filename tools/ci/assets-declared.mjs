@@ -145,12 +145,90 @@ if (process.argv.includes('--json')) {
 ///
 /// المسارات المُركَّبة (`'assets/data/x/$id.json'`) لا تُحلّ نصًّا، فيُفحَص
 /// **مجلدها**: مجلدٌ غير مُعلَن لا يُبندل منه شيء، وهو الحكم الصادق المتاح.
+/// دوالُّ تشتقّ رابط CDN من مسارٍ مبندل. وسيطُها **مفتاح اشتقاق لا مسار تحميل**.
+///
+/// ترحيل R2 (‏`heavy_assets.dart`‏) نقل 135 ملفًّا raster إلى الـCDN وأبقى
+/// توأمًا WebP مبندلًا باسمٍ مختلف الامتداد. فصار المسار الحرفيّ `...png` في
+/// `lib/` يؤدّي دورًا ثانيًا لم يكن موجودًا يوم كُتب هذا الفحص: مفتاحٌ يُشتقّ منه
+/// الرابط، بينما المرسوم فعلًا هو `...webp`.
+const CDN_KEY_HELPERS = /(?:heavyCdnUrl|heavyStudioBannerUrl)\(\s*$|(?:heavyCdnUrl|heavyStudioBannerUrl)\(\s*'/;
+
+/// البادئات التي رُحِّلت إلى R2، **مقروءةً من سجلّ الترحيل نفسه**.
+///
+/// لا تُكرَّر القائمة هنا: مصدرها `_migratedPrefixes` في
+/// `lib/core/images/heavy_assets.dart`، فبادئةٌ تُضاف هناك تُعرَف هنا بلا تعديل،
+/// وبادئةٌ تُحذَف تعود تحت الحرس تلقائيًّا. وقائمةٌ ثانية كانت ستفترق عن الأولى
+/// أوّل مرّة يُرحَّل مجلّد.
+///
+/// و`assets/avatars/` تُضاف صراحةً لأنها رُفعت بسكربتٍ مستقلّ
+/// (`tools/upload_avatars_r2.mjs`) ولم تدخل قائمة `heavy_assets.dart`؛ والقرار
+/// موثَّق في `pubspec.yaml` عند إعلان الأڤاتار: ملفٌ واحد مبندل من 67 والباقي من
+/// R2 عبر `RemoteImageCache`.
+function migratedPrefixes() {
+  const registry = join(appRoot, 'lib', 'core', 'images', 'heavy_assets.dart');
+  const prefixes = new Set(['assets/avatars/']);
+  let source;
+  try {
+    source = readFileSync(registry, 'utf8');
+  } catch {
+    // السجلّ غائب: لا إعفاء. الحرس يعود إلى سلوكه قبل الترحيل بدل أن يُعفي الكل.
+    return prefixes;
+  }
+  const block = source.slice(source.indexOf('_migratedPrefixes'));
+  const end = block.indexOf('];');
+  for (const m of block.slice(0, end === -1 ? undefined : end).matchAll(/'(assets\/[^']*\/)'/g)) {
+    prefixes.add(m[1]);
+  }
+  return prefixes;
+}
+
+/// هل المسار تحت بادئةٍ مُرحَّلة؟ فإن كان، فالـCDN مصدره، وأيّ توأمٍ مبندل قرارُ
+/// منتَجٍ مُسجَّل في `pubspec.yaml` لا شأن لهذه البوابة به.
+function underMigratedPrefix(path, prefixes) {
+  for (const prefix of prefixes) {
+    if (path.startsWith(prefix)) return true;
+  }
+  return false;
+}
+
+/// نافذة البحث عن `networkUrl:` حول المسار، بالأسطر.
+///
+/// بانيات الـwidgets متعدّدة الأسطر، فـ`assetPath:` و`networkUrl:` يقعان على
+/// سطرين متجاورين لا سطرٍ واحد (`child_avatars.dart:245-246`،
+/// `home_feed.dart:672-675`). والنافذة **ضيّقة بقصد**: انحيازها الوحيد أنها قد
+/// تُغفل مسارًا وحيد-المصدر مجاورًا لصورةٍ شبكية أخرى، وهو انحياز في اتجاه
+/// «أبلِغ أكثر» لا «أخفِ».
+const NETWORK_SOURCE_WINDOW = 4;
+
+/// هل هذا المسار **رُتبةَ احتياطٍ** لصورةٍ مصدرها الأوّل الشبكة؟
+///
+/// `CinematicImage` ترتيب مصادرها: ملفٌ مُخزَّن ← شبكة ← `assetPath` المبندل.
+/// فمسارٌ يُمرَّر مع `networkUrl:` ليس وعدًا وحيدًا بل الرُّتبة الأخيرة، وقرارُ
+/// بندلته مُسجَّل في `pubspec.yaml` (مثال: أڤاتار واحد مبندل من 67، والباقي من
+/// R2 عبر `RemoteImageCache` — انظر التعليق عند `assets/avatars/`). وهذا قرار
+/// منتَج لا شأن لهذه البوابة به.
+///
+/// والذي تحرسه البوابة يبقى كما وُجد (`PERF-101`): مسارٌ هو **المصدر الوحيد**
+/// ولا ملف له.
+function hasNetworkSibling(lines, index) {
+  const from = Math.max(0, index - NETWORK_SOURCE_WINDOW);
+  const to = Math.min(lines.length, index + NETWORK_SOURCE_WINDOW + 1);
+  for (let i = from; i < to; i += 1) {
+    if (/networkUrl:/.test(lines[i])) return true;
+  }
+  return false;
+}
+
 function unbundledReferences(declaredSet, declaredDirs) {
   const libFiles = walk(join(appRoot, 'lib')).filter((p) => p.endsWith('.dart'));
+  const migrated = migratedPrefixes();
   const bad = [];
   for (const file of libFiles) {
     const text = readFileSync(file, 'utf8');
     const lines = text.split(/\r?\n/);
+    // سجلّ الترحيل نفسه: بادئاتُه وأسماء لافتاته **بيانات** يُشتقّ منها، ولا
+    // يُحمَّل منها شيء. الملف هو تعريف القاعدة، فمحاكمته بها دور.
+    const isMigrationRegistry = file.split(sep).join('/').endsWith('lib/core/images/heavy_assets.dart');
     lines.forEach((line, i) => {
       if (line.trimStart().startsWith('///') || line.trimStart().startsWith('//')) {
         return; // تعليق: لا يُحمَّل منه أصل
@@ -160,6 +238,15 @@ function unbundledReferences(declaredSet, declaredDirs) {
         // `'assets/'` وحدها ليست مسار تحميل بل مقارنةُ بادئة
         // (`path.startsWith('assets/')`)، فلا تُحاكَم كأصل مفقود.
         if (raw === 'assets/') continue;
+        if (isMigrationRegistry) continue;
+        // مفتاح اشتقاق: `heavyCdnUrl('assets/...png')`.
+        const before = line.slice(0, m.index);
+        if (CDN_KEY_HELPERS.test(before) || CDN_KEY_HELPERS.test(lines[i - 1] ?? '')) continue;
+        if (hasNetworkSibling(lines, i)) continue;
+        // تحت بادئةٍ مُرحَّلة: جداول المفاتيح (`creative_remote_assets.dart`،
+        // `ChildAvatars.all`، `_fallbackLocal`) تُعلَن في موضعٍ والاشتقاق يقع في
+        // آخر، فلا قربٌ نصّيّ يكشفها. والبادئة تكشفها بالتصريح.
+        if (underMigratedPrefix(raw, migrated)) continue;
         const interpolated = raw.includes('$');
         const rel = interpolated
           ? raw.slice(0, raw.lastIndexOf('/', raw.indexOf('$')) + 1)

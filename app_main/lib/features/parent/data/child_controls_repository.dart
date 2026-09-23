@@ -24,6 +24,18 @@ class ChildControlsRepository {
   Future<void> setDailyMinutes(String childId, int minutes) =>
       _api.updateChildSettings(childId, {'daily_minutes': minutes});
 
+  /// يُلغي الحدّ اليومي.
+  ///
+  /// قرار المالك (`DECIDE-108`): الضوابط يفعّلها وليّ الأمر، فلا بدّ من طريقٍ
+  /// لإطفائها. و`null` هو ما يقبله `PUT /child-settings/:id` لذلك — نفس دور
+  /// النصّ الفارغ في `clearBedtime` أعلاه.
+  ///
+  /// وهذا لم يكن ممكنًا قبل `0093`: العمود كان `NOT NULL DEFAULT 30`، والمخطَّط
+  /// يقبل 5–180 وحدها، والشريط في الشاشة يبدأ من 5 — فكان وليّ الأمر يُمنَح حدًّا
+  /// لمجرّد فتح الشاشة ولا يملك إلغاءه.
+  Future<void> clearDailyLimit(String childId) =>
+      _api.updateChildSettings(childId, {'daily_minutes': null});
+
   /// بداية نافذة النوم بصيغة `HH:mm`.
   Future<void> setBedtimeStart(String childId, String time) =>
       _api.updateChildSettings(childId, {'bedtime_start': time});

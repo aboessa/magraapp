@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show SchedulerPhase;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/env/app_environment.dart';
 import '../core/env/app_version.dart';
@@ -103,7 +105,17 @@ class _MajarraAppState extends ConsumerState<MajarraApp>
         // half-translated language. When a locale's coverage reaches the threshold
         // its flag flips to `complete` and it becomes selectable.
         locale: AppLocales.fallback.locale,
-        supportedLocales: AppLocalizations.supportedLocales,
+        // ‏`I18N-201`: الكتالوج هو ما يُعلَن، لا القائمة المولَّدة.
+        //
+        // كان هنا `AppLocalizations.supportedLocales`، وهي مُشتقّة من ملفات ARB
+        // **الموجودة** لا من جهوزيتها. و`app_fr.arb` صار موجودًا بـ257 مفتاحًا،
+        // فصارت الفرنسية تُعلَن لـMaterial بينما `AppLocales.french.completeness`
+        // تقول `planned`. أي أن `locale_catalog.dart` يزعم أنه «البوابة الوحيدة
+        // التي تستشيرها الواجهة، ولا علَم تمكينٍ ثانٍ يمكن أن يفترق» — وقد افترق.
+        //
+        // `materialSupported` تُعيد `[ar, en]` ويحرسها `locale_catalog_test`،
+        // فالإعلان صار مربوطًا بالجهوزية المُقاسة لا بوجود ملف.
+        supportedLocales: AppLocales.materialSupported,
         localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
@@ -136,22 +148,7 @@ class _MajarraAppState extends ConsumerState<MajarraApp>
           // وحده — فحتى لو صحّ الشرط لكان يتأخّر إلى أوّل دورة إطار أخرى.
           return InputModeTracker(
             child: _EnvironmentBanner(
-              child: ListenableBuilder(
-                listenable: router.routerDelegate,
-                builder: (context, _) {
-                  final media = MediaQuery.of(context);
-                  // هاتف مضغوط في الأفقي (مثل 844×390): الشاشة تُكسر، فتُعرَض
-                  // دعوةُ إدارة الجهاز بدل تخطيط مشوَّه. والحدّ 900 يستثني
-                  // الأجهزة اللوحية والتلفاز.
-                  final isLandscapeTooWide =
-                      media.size.width > media.size.height &&
-                      media.size.width < 900;
-                  if (isLandscapeTooWide && !routeAllowsLandscape(router)) {
-                    return const _PortraitRequiredScreen();
-                  }
-                  return content;
-                },
-              ),
+              child: _OrientationGate(router: router, child: content),
             ),
           );
         },
@@ -338,6 +335,80 @@ class _VersionGateState extends ConsumerState<_VersionGate> {
           ),
         ),
       );
+    }
+    return widget.child;
+  }
+}
+
+/// بوابة الاتجاه: تقرأ المسار الحالي من `go_router` لتحديد ما إذا كان الأفقي
+/// مسموحًا (`APP-108`)، مع تأجيل إعادة البناء خارج طور البناء.
+///
+/// ## لماذا لا `ListenableBuilder`
+///
+/// هذا الموضع داخل `MaterialApp.router(builder:)`، وهو **فوق** ودجت `Router`
+/// نفسها. فالاشتراك المباشر على `router.routerDelegate` يجعل مستمعًا **سلفًا**
+/// لشجرة الراوتر: أوّل إعادة توجيه (`/` → `/login`) يُخطر المُفوِّض مستمعيه
+/// **أثناء بناء الشجرة تحته**، فيُوسم السلف «قذرًا» في منتصف بنائه ويسقط
+/// `assert(!_dirty)` في `framework.dart` — وهو ما ظهر كـ
+/// `(building _EnvironmentBanner) Assertion failed: !_dirty`.
+///
+/// والحلّ نفس حلّ `AuthGuard._scheduleNotify`: إن جاء الإخطار وسط إطارٍ جارٍ
+/// يُؤجَّل `setState` إلى ما بعد الإطار، وإلا يُطبَّق فورًا.
+class _OrientationGate extends StatefulWidget {
+  const _OrientationGate({required this.router, required this.child});
+
+  final GoRouter router;
+  final Widget child;
+
+  @override
+  State<_OrientationGate> createState() => _OrientationGateState();
+}
+
+class _OrientationGateState extends State<_OrientationGate> {
+  @override
+  void initState() {
+    super.initState();
+    widget.router.routerDelegate.addListener(_onRouteChanged);
+  }
+
+  @override
+  void didUpdateWidget(_OrientationGate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.router != widget.router) {
+      oldWidget.router.routerDelegate.removeListener(_onRouteChanged);
+      widget.router.routerDelegate.addListener(_onRouteChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.router.routerDelegate.removeListener(_onRouteChanged);
+    super.dispose();
+  }
+
+  void _onRouteChanged() {
+    if (!mounted) return;
+    final binding = WidgetsBinding.instance;
+    // SchedulerPhase.idle == لسنا داخل build/layout/paint/commit.
+    if (binding.schedulerPhase == SchedulerPhase.idle) {
+      setState(() {});
+      return;
+    }
+    // وسط إطارٍ جارٍ: نُؤجّل إلى ما بعده حتى لا نُوسم قذرين أثناء البناء.
+    binding.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    // هاتف مضغوط في الأفقي (مثل 844×390): الشاشة تُكسر، فتُعرَض دعوةُ إدارة
+    // الجهاز بدل تخطيط مشوَّه. والحدّ 900 يستثني الأجهزة اللوحية والتلفاز.
+    final isLandscapeTooWide =
+        media.size.width > media.size.height && media.size.width < 900;
+    if (isLandscapeTooWide && !routeAllowsLandscape(widget.router)) {
+      return const _PortraitRequiredScreen();
     }
     return widget.child;
   }

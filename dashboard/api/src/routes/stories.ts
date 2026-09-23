@@ -762,6 +762,16 @@ storiesRoute.post('/:id/audio-sessions', async (c) => {
     );
   }
 
+  // `API-201` / `DECIDE-108`: كما في `books.ts` — القرار اتُّخذ، والتعليل الكامل
+  // هناك. والسطحان يُربطان **معًا**: كلاهما يمنح توكن وسائط لطفل، فربطُ أحدهما
+  // وحده يترك بابًا مفتوحًا، ويحرس ذلك اختبارٌ يفحص الملفّين معًا.
+  const gate = await callDurable(
+    familyStub(c.env, auth.principal.parentId),
+    '/screen-time/check',
+    { body: { session_id: auth.principal.sessionId, child_id: childId } },
+  );
+  if (!gate.ok) return forward(gate);
+
   const token = await createMediaToken(c.env, {
     sub: auth.principal.parentId,
     sid: auth.principal.sessionId,

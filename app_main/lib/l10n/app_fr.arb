@@ -249,11 +249,21 @@
   "consentStatusGranted": "Accordé",
   "consentLoadErrorGeneric": "Impossible de charger l'état des consentements",
   "consentWriteErrorGeneric": "Impossible d'enregistrer la modification. Réessaie",
+  "consentWriteRequiresParentPin": "Cette modification est un registre parental, et votre famille a déjà un code. Saisissez-le, puis réessayez.",
+  "consentUnlockAction": "Saisir le code parental",
   "consentContinueButton": "Continuer",
   "onboardingBasicControlsStepTitle": "Contrôles de base",
   "onboardingBasicControlsStepIntro": "Définissez les limites de temps d'écran et les autorisations pour le profil de votre enfant. Vous pourrez les modifier plus tard depuis l'espace parent.",
   "onboardingContinueButton": "Continuer",
   "onboardingFinishTitle": "Tout est prêt !",
   "onboardingFinishBody": "Vous avez créé le profil de votre enfant et défini les contrôles de base. Vous pouvez commencer maintenant, et modifier tout paramètre plus tard depuis l'espace parent.",
-  "onboardingFinishButton": "Commencer"
+  "onboardingFinishButton": "Commencer",
+  "studioBannerDrawLikeMeLabel": "Dessine comme moi",
+  "studioBannerConnectDotsLabel": "Relie les points",
+  "studioBannerColoringLabel": "Colorie",
+  "studioBannerCreativeStudioLabel": "Studio créatif",
+  "googlePlayUnavailableOnDevice": "Google Play n'est pas disponible sur cet appareil.",
+  "parentDailyLimitTitle": "Limite quotidienne de temps d'écran",
+  "parentDailyLimitOff": "Désactivée — aucune limite de temps d'écran",
+  "parentDailyLimitOn": "Activée : {minutes} minutes par jour"
 }

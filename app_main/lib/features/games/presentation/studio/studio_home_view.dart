@@ -22,6 +22,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/images/heavy_assets.dart';
+import '../../../../core/widgets/cinematic_image.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations_ar.dart';
 import 'studio_app_bar.dart';
 import 'studio_categories.dart';
 import 'studio_category_counts.dart';
@@ -67,9 +71,11 @@ class StudioHomeView extends ConsumerWidget {
   final VoidCallback? onOpenProfile;
 
   /// Main studio banner — user-provided "رئيسيه الاستوديو الابداعي.png"
-  /// WebP optimized (56KB) with PNG fallback (174KB) for older devices.
+  /// R2-first via `CinematicImage`: bundled webp (56KB) paints instantly, CDN
+  /// WebP via disk cache after first load. The PNG fallback (174KB) is GONE:
+  /// never uploaded, never referenced — the bundled webp is already sharper
+  /// than any PNG rung could add.
   static const String _heroArt = 'assets/images/studio/studio-main-banner.webp';
-  static const String _heroArtFallback = 'assets/images/studio/studio-main-banner.png';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -116,7 +122,7 @@ class StudioHomeView extends ConsumerWidget {
             ),
             children: [
               const SizedBox(height: StudioSpace.sm),
-              _hero(),
+              _hero(context),
               const SizedBox(height: StudioSpace.xl),
               StudioSectionHeader(
                 title: 'اختر نشاطك الإبداعي',
@@ -164,7 +170,7 @@ class StudioHomeView extends ConsumerWidget {
     onOpenCategory(category);
   }
 
-  Widget _hero() {
+  Widget _hero(BuildContext context) {
     if (loadingCreations) {
       return const SizedBox(
         height: 168,
@@ -197,19 +203,15 @@ class StudioHomeView extends ConsumerWidget {
               borderRadius: BorderRadius.circular(22),
               child: AspectRatio(
                 aspectRatio: 1.85,
-                child: Image.asset(
-                  _heroArt,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Image.asset(
-                    _heroArtFallback,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: const Color(0xFF1A0B3E),
-                      child: const Center(
-                        child: Icon(Icons.palette_rounded, size: 48, color: Colors.white24),
-                      ),
-                    ),
+                child: CinematicImage(
+                  assetPath: _heroArt,
+                  networkUrl: heavyStudioBannerUrl(
+                    'assets/images/studio/studio-main-banner.png',
                   ),
+                  semanticLabel:
+                      (AppLocalizations.of(context) ?? AppLocalizationsAr())
+                          .studioBannerCreativeStudioLabel,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),

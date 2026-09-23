@@ -156,8 +156,11 @@ const _allowedConstantLists = <String, String>{
   // للمستخدم. لا يجوز توسيعها قبل ذلك القرار.
   'coloring_home_v2.dart:_kLocalFallback5':
       'TEMPORARY: five bundled colouring fallbacks for an offline studio; tracked with APP-103',
-  'reference_catalogue_page_live.dart:_fallbackLocal':
-      'TEMPORARY: bundled reference sheets used only when the catalogue request fails; tracked with APP-103',
+  // ‏`reference_catalogue_page_live.dart:_fallbackLocal` **حُذف من هذه القائمة**
+  // ولم يُحذف من الكود: الثابت ما زال موجودًا، لكنه صار يشتقّ عناوينه من
+  // `heavyCdnUrl` وقت التشغيل بدل أن يحمل محتوًى مؤلَّفًا، فلم يعد الكاشف يرصده.
+  // ومدخلٌ في قائمة سماحٍ لا يقابله رَصْدٌ يُفشل الجولة بقصد — وهو حرسٌ ضدّ
+  // «استثناءٍ أُصلح سببه وبقي يغطّي ما لا يحتاج تغطية».
   'creative_remote_assets.dart:_kFallback5':
       'TEMPORARY: five bundled asset ids used when the remote asset map is unavailable; tracked with APP-103',
   'drawing_asset_map.dart:kDrawingAssetMap':

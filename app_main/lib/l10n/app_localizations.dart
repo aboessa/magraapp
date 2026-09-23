@@ -1588,6 +1588,18 @@ abstract class AppLocalizations {
   /// **'تعذّر حفظ التغيير. حاول مجددًا'**
   String get consentWriteErrorGeneric;
 
+  /// No description provided for @consentWriteRequiresParentPin.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا التغيير سجلٌّ يخصّ وليّ الأمر، ولأسرتك رمز مُسجَّل فعلًا. أدخل الرمز ثم أعد المحاولة.'**
+  String get consentWriteRequiresParentPin;
+
+  /// No description provided for @consentUnlockAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل رمز ولي الأمر'**
+  String get consentUnlockAction;
+
   /// No description provided for @consentContinueButton.
   ///
   /// In ar, this message translates to:
@@ -1629,6 +1641,54 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ابدأ الآن'**
   String get onboardingFinishButton;
+
+  /// Screen-reader label for the Draw Like Me catalogue banner image.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارسم مثلي'**
+  String get studioBannerDrawLikeMeLabel;
+
+  /// Screen-reader label for the Connect the Dots catalogue banner image.
+  ///
+  /// In ar, this message translates to:
+  /// **'صل النقاط'**
+  String get studioBannerConnectDotsLabel;
+
+  /// Screen-reader label for the colouring home banner image.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوّن'**
+  String get studioBannerColoringLabel;
+
+  /// Screen-reader label for the creative studio hero banner image.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاستوديو الإبداعي'**
+  String get studioBannerCreativeStudioLabel;
+
+  /// Shown to a parent when the device has no usable Google Play billing service.
+  ///
+  /// In ar, this message translates to:
+  /// **'Google Play غير متاح على هذا الجهاز.'**
+  String get googlePlayUnavailableOnDevice;
+
+  /// Title of the opt-in switch for the daily screen-time limit (DECIDE-108).
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّ وقت الشاشة اليومي'**
+  String get parentDailyLimitTitle;
+
+  /// Subtitle when the parent has not enabled a daily screen-time limit.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مفعَّل — لا حدّ على وقت الشاشة'**
+  String get parentDailyLimitOff;
+
+  /// Subtitle showing the daily screen-time limit the parent enabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفعَّل: {minutes} دقيقة يوميًّا'**
+  String parentDailyLimitOn(int minutes);
 }
 
 class _AppLocalizationsDelegate

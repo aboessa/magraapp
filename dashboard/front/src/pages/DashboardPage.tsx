@@ -24,22 +24,41 @@ void _BulkOpsPanel
 export { DASHBOARD_VERSION, rangeToParams, type DashboardRange }
 export { ExecutiveModules } from '../components/dashboard/ExecutiveModules'
 
-async function loadOpsWidgets(actorId: string | null) {
+/// ثلاث قراءات، وكلٌّ منها تُميّز **الفشل** عن **الفراغ** (`ADM-203`).
+///
+/// ## ما كان
+///
+/// `api.contentReviews(...).catch(() => ({ data: [] }))` — وكذلك `tasks` و
+/// `rights`. فقراءةٌ فاشلة تُشحَن قائمةً فارغة، والشاشة تعرض «لا توجد مراجعات
+/// معلّقة حاليًا». وهي صورةُ `?? 0` في هيئة قائمة، وعلى **أوّل شاشة بعد الدخول**:
+/// مشغّلٌ يقرأ «كل شيء تمام» على خادمٍ لم يُجب.
+///
+/// والنمط الصحيح قائمٌ في الملف المجاور: `HeroKpis` يعرض `'—'` عند الغياب ويضع
+/// `overall_health: 'unknown'` لا `'healthy'`. هذا هو نفسه للقوائم: `null` تعني
+/// «تعذّرت القراءة»، و`[]` تعني «لا شيء معلَّق».
+async function loadOpsWidgets(actorId: string | null): Promise<OpsWidgets> {
+  const FAILED = null
   const [reviews, tasks, rights] = await Promise.all([
-    api.contentReviews({ status: 'pending', limit: 6 }).catch(() => ({ data: [] as any })),
-    actorId ? api.tasks().catch(() => ({ data: [] as any })) : Promise.resolve({ data: [] as any }),
-    api.rights().catch(() => ({ data: [] as any })),
+    api.contentReviews({ status: 'pending', limit: 6 }).then((r) => r.data as any[]).catch(() => FAILED),
+    // بلا فاعلٍ معروف لا مهامَّ **بالتعريف**، وهذه ليست قراءةً فاشلة: `[]` هي
+    // الجواب الصادق، لا `null`.
+    actorId ? api.tasks().then((r) => r.data as any[]).catch(() => FAILED) : Promise.resolve([] as any[]),
+    api.rights().then((r) => r.data as any[]).catch(() => FAILED),
   ])
   const now = Date.now()
   const soon = now + DASHBOARD_EXPIRING_SOON_MS
   return {
-    pendingReviews: reviews.data,
-    myTasks: tasks.data.filter((task: any) => task.status !== 'done' && (!actorId || task.assignee_id === actorId)).slice(0, 6),
-    expiringRights: rights.data.filter((right: any) => {
-      if (!right.expiry_date) return false
-      const expiry = new Date(right.expiry_date).getTime()
-      return Number.isFinite(expiry) && expiry >= now && expiry <= soon
-    }),
+    pendingReviews: reviews,
+    myTasks: tasks === FAILED
+      ? FAILED
+      : tasks.filter((task: any) => task.status !== 'done' && (!actorId || task.assignee_id === actorId)).slice(0, 6),
+    expiringRights: rights === FAILED
+      ? FAILED
+      : rights.filter((right: any) => {
+        if (!right.expiry_date) return false
+        const expiry = new Date(right.expiry_date).getTime()
+        return Number.isFinite(expiry) && expiry >= now && expiry <= soon
+      }),
   }
 }
 
@@ -82,7 +101,13 @@ const copy = {
   },
 }
 
-type OpsWidgets = { pendingReviews: any[]; myTasks: any[]; expiringRights: any[] }
+/// `null` = تعذّرت القراءة · `[]` = لا شيء معلَّق. الفرق هو البند كلّه
+/// (`ADM-203`)، فلا يجوز توحيدهما في `any[]` كما كان.
+type OpsWidgets = {
+  pendingReviews: any[] | null
+  myTasks: any[] | null
+  expiringRights: any[] | null
+}
 export function DashboardPage() {
   const { locale } = usePreferences()
   const text = copy[locale]
@@ -155,6 +180,8 @@ export function DashboardPage() {
     } catch {}
   }, [range])
 
+  const [focusMode, setFocusMode] = useState<'all' | 'content' | 'growth' | 'ops'>('all')
+
   if (loading && !data) return <LoadingState label={text.loading} />
   if (error && !data) return <ErrorState message={error} onRetry={() => void load()} />
   if (!data) return null
@@ -162,137 +189,287 @@ export function DashboardPage() {
   const totals = data.totals
 
   return (
-    <div className="page-stack" style={{ gap: 20 }}>
-      <section className="page-intro" style={{ alignItems: 'flex-start', paddingBottom: 4 }}>
-        <div style={{ minWidth: 0 }}>
-          <span className="eyebrow" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
-            {text.operations}
-            <span style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'4px 9px', borderRadius:999, background:'var(--surface-3)', border:'1px solid var(--line)', fontSize:10.5, color:'var(--muted)', letterSpacing:0, textTransform:'none', fontWeight:600 }}>
-              <span style={{ width:6, height:6, borderRadius:'50%', background:'#10b981', display:'inline-block' }} /> {locale==='ar' ? 'مباشر من قاعدة البيانات' : 'Live from database'}
+    <div className="page-stack" style={{ gap: 22 }}>
+      {/* --- 1. Bento Header Banner --- */}
+      <section className="bento-header">
+        <div style={{ minWidth: 0, zIndex: 1 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <span className="eyebrow" style={{ color: 'var(--primary-strong)', fontWeight: 700, margin: 0 }}>
+              {text.operations}
             </span>
-          </span>
-          <h2 style={{ fontSize:24, letterSpacing:'-.03em', marginTop:6 }}>{text.welcome}</h2>
-          <p style={{ marginTop:6, fontSize:12.5, maxWidth:620 }}>{text.liveData}</p>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.28)', fontSize: 11, color: '#34d399', fontWeight: 600 }}>
+              <span className="pulse-beacon" />
+              {locale === 'ar' ? 'بيانات حية مباشرة من D1' : 'Live from D1 Database'}
+            </span>
+          </div>
+          <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-.03em', margin: 0, color: 'var(--text)' }}>
+            {text.welcome}
+          </h1>
+          <p style={{ marginTop: 6, fontSize: 13, color: 'var(--muted)', maxWidth: 640, lineHeight: 1.5 }}>
+            {text.liveData}
+          </p>
         </div>
-        <div className="page-intro__actions" style={{ flexWrap:'wrap' }}>
-          <button className="button button--secondary" type="button" onClick={() => void load()} disabled={loading}><Icon name="refresh" size={15} />{text.refresh}</button>
-          <Link className="button button--primary" to={adminPath('series')}><Icon name="plus" size={15} />{text.newSeries}</Link>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', zIndex: 1 }}>
+          {/* Time Range Pills */}
+          <div className="range-pill-group preset-tabs" role="tablist" aria-label="Range">
+            {(['today','7d','30d','all'] as DashboardRange[]).map(v => {
+              const label = v==='today' ? (locale==='ar'?'اليوم':'Today') : v==='7d' ? (locale==='ar'?'7 أيام':'7 days') : v==='30d' ? (locale==='ar'?'30 يومًا':'30 days') : (locale==='ar'?'الكل':'All')
+              return (
+                <button
+                  key={v}
+                  role="tab"
+                  className="range-pill-btn"
+                  aria-selected={range===v}
+                  onClick={() => setRange(v)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+
+          <button className="button button--secondary" type="button" onClick={() => void load()} disabled={loading} style={{ borderRadius: 12 }}>
+            <Icon name="refresh" size={15} />
+            {text.refresh}
+          </button>
+          <Link className="button button--primary" to={adminPath('series')} style={{ borderRadius: 12 }}>
+            <Icon name="plus" size={15} />
+            {text.newSeries}
+          </Link>
         </div>
       </section>
 
-      <section className="panel" style={{ padding:'10px 12px', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:12 }}>
-        <div className="preset-tabs" role="tablist" aria-label="Range">
-          {(['today','7d','30d','all'] as DashboardRange[]).map(v=>{
-            const label = v==='today' ? (locale==='ar'?'اليوم':'Today') : v==='7d' ? (locale==='ar'?'7 أيام':'7 days') : v==='30d' ? (locale==='ar'?'30 يومًا':'30 days') : (locale==='ar'?'الكل':'All')
-            return <button key={v} role="tab" aria-selected={range===v} onClick={()=>setRange(v)} type="button">{label}</button>
-          })}
+      {/* --- 2. Smart Focus View Switcher --- */}
+      <div className="focus-tabs-container">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className={`focus-tab-btn ${focusMode === 'all' ? 'active' : ''}`}
+            onClick={() => setFocusMode('all')}
+          >
+            <span>🌟</span>
+            <span>{locale === 'ar' ? 'عرض شامل (الكل)' : 'All Overview'}</span>
+          </button>
+          <button
+            type="button"
+            className={`focus-tab-btn ${focusMode === 'content' ? 'active' : ''}`}
+            onClick={() => setFocusMode('content')}
+          >
+            <span>🎬</span>
+            <span>{locale === 'ar' ? 'المحتوى والإنتاج' : 'Content & Production'}</span>
+          </button>
+          <button
+            type="button"
+            className={`focus-tab-btn ${focusMode === 'growth' ? 'active' : ''}`}
+            onClick={() => setFocusMode('growth')}
+          >
+            <span>📈</span>
+            <span>{locale === 'ar' ? 'الاشتراكات والنمو' : 'Growth & Revenue'}</span>
+          </button>
+          <button
+            type="button"
+            className={`focus-tab-btn ${focusMode === 'ops' ? 'active' : ''}`}
+            onClick={() => setFocusMode('ops')}
+          >
+            <span>⚡</span>
+            <span>{locale === 'ar' ? 'العمليات وصحة المنصة' : 'Ops & Health'}</span>
+          </button>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--muted)' }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: 'var(--muted)' }}>
           <Icon name="clock" size={13} />
-          <span>{range==='all' ? (locale==='ar'?'لقطة حالية من قاعدة البيانات':'Snapshot from database') : (locale==='ar'?`نطاق ${range} — يُمرَّر إلى /admin/revenue/overview و /admin/dashboard/executive`:`Range ${range} — sent to /admin/revenue/overview & /admin/dashboard/executive`)}</span>
+          <span>
+            {range === 'all'
+              ? (locale === 'ar' ? 'لقطة فورية' : 'Full Snapshot')
+              : (locale === 'ar' ? `نطاق: ${range}` : `Range: ${range}`)}
+          </span>
         </div>
-      </section>
-
-      <HeroKpis locale={locale} range={range} />
+      </div>
 
       {error && <div className="inline-alert inline-alert--error">{text.updateError} {error}</div>}
 
-      <ExecutiveModules locale={locale} range={range} />
+      {/* --- 3. Hero KPIs Grid --- */}
+      <HeroKpis locale={locale} range={range} />
 
-      <section className="stats-grid" aria-label={text.statsAria}>
+      {/* --- 4. Core Catalog & Audience Stats --- */}
+      <section className="stats-grid kpi-bento-grid" aria-label={text.statsAria}>
         <StatCard label={text.totalSeries} value={formatNumber(totals.total_series, locale)} description={`${formatNumber(totals.published_series, locale)} ${text.publishedNow}`} icon="series" tone="blue" />
         <StatCard label={text.episodes} value={formatNumber(totals.total_episodes, locale)} description={`${formatNumber(totals.published_episodes, locale)} ${text.available}`} icon="episodes" tone="cyan" />
         <StatCard label={text.parents} value={formatNumber(totals.active_parents, locale)} description={text.activeAccounts} icon="parents" tone="yellow" />
         <StatCard label={text.children} value={formatNumber(totals.active_children, locale)} description={text.isolatedProfiles} icon="children" tone="purple" />
       </section>
 
-      <section className="dashboard-grid dashboard-grid--tracks">
-        <RevenuePanel revDetail={revDetail} locale={locale} />
-        <AnalyticsPanel analytics={analytics} failedCount={failedCount} locale={locale} />
-      </section>
+      {/* --- 5. Executive Operational Modules --- */}
+      <ExecutiveModules locale={locale} range={range} />
 
-      <section className="dashboard-grid dashboard-grid--tracks">
-        <AttentionPanels attention={attention} ops={ops} locale={locale} />
-      </section>
-
-      <ContentHealthPanels data={data} locale={locale} />
-
-      <section className="dashboard-grid dashboard-grid--activity">
-        <TimelinePanel timeline={timeline} locale={locale} />
-        <FailedPanel failedCount={failedCount} failedList={failedList} locale={locale} />
-      </section>
-
-      <section className="dashboard-grid dashboard-grid--tracks">
-        <SearchPanel locale={locale} />
-        <PlatformPanel failedCount={failedCount} locale={locale} />
-      </section>
-
-      <section className="dashboard-grid dashboard-grid--tracks">
-        <TeamPanel teamLoad={teamLoad} locale={locale} />
-        <article className="panel">
-          <header className="panel__header"><div><span className="panel__kicker">Release</span><h3>{locale==='ar'?'الإصدارات':'Releases'}</h3></div><Link className="text-link" to={adminPath('app-releases')}>Releases <Icon name="arrow" size={12} /></Link></header>
-          <div style={{ padding:'14px 16px', display:'grid', gap:8 }}>
-            <div style={{ display:'flex', gap:8, alignItems:'center', padding:'10px', border:'1px dashed var(--line)', borderRadius:10, background:'var(--surface-3)' }}>
-              <Icon name="devices" size={16} />
-              <span style={{ fontSize:12, color:'var(--muted)' }}>{locale==='ar'?'الإصدارات تُدار من /app-releases — لا تكامل متجر خارجي حتى الآن':'Releases managed at /app-releases — no external store integration yet'}</span>
-            </div>
-            <small style={{ color:'var(--muted)', fontSize:11 }}>Phase 27 — {locale==='ar'?'تتبع إصدار الأندرويد/iOS والحدّ الأدنى':'Tracks Android/iOS versions & minimum supported'}</small>
-          </div>
-        </article>
-      </section>
-
-      <section className="dashboard-grid dashboard-grid--tracks">
-        <WebsitePanel teamLoad={teamLoad} locale={locale} />
-      </section>
-
-      {!showAdvanced ? (
-        <button className="button button--secondary" type="button" onClick={()=>setShowAdvanced(true)} style={{ alignSelf:'center' }}>
-          <Icon name="arrow" size={12} /> {locale==='ar'?'عرض الأقسام المتقدّمة — تقويم 7 أيام، جودة، ترجمة، تسويق، أداء، قانوني':'Show advanced — Calendar, Quality, Translation, Marketing, Performance, Legal'} ({locale==='ar'?'مطوي':'collapsed'})
-        </button>
-      ) : (
+      {/* --- 6. Content & Production Bento Area --- */}
+      {(focusMode === 'all' || focusMode === 'content') && (
         <>
-        <button className="button button--ghost button--small" type="button" onClick={()=>setShowAdvanced(false)} style={{ alignSelf:'center' }}>
-          {locale==='ar'?'إخفاء المتقدّم — إبقاء الأساسي فقط':'Hide advanced — keep essentials only'}
-        </button>
-
-      <AdvancedPanels teasers={teasers} locale={locale} />
-        <button className="button button--ghost button--small" type="button" onClick={()=>setShowAdvanced(false)} style={{ alignSelf:'center' }}>
-          {locale==='ar'?'إخفاء المتقدّم':'Hide advanced'}
-        </button>
+          <section className="dashboard-grid dashboard-grid--tracks">
+            <AttentionPanels attention={attention} ops={ops} locale={locale} />
+          </section>
+          <ContentHealthPanels data={data} locale={locale} />
         </>
       )}
 
-      <section className="dashboard-grid dashboard-grid--tracks">
-        <article className="panel">
-          <header className="panel__header"><div><span className="panel__kicker">{locale==='ar'?'اختصارات':'Quick actions'}</span><h3>{locale==='ar'?'إجراءات سريعة':'Quick actions'}</h3></div><span style={{ fontSize:11, color:'var(--muted)' }}>Ctrl+K</span></header>
-          <div style={{ padding:'12px 14px', display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
-            <Link className="button button--secondary" to={adminPath('series')} style={{ justifyContent:'flex-start' }}><Icon name="plus" size={14} />{locale==='ar'?'سلسلة جديدة':'New series'}</Link>
-            <Link className="button button--secondary" to={adminPath('stories')} style={{ justifyContent:'flex-start' }}><Icon name="books" size={14} />{locale==='ar'?'قصة جديدة':'New story'}</Link>
-            <Link className="button button--secondary" to={adminPath('content-reviews')} style={{ justifyContent:'flex-start' }}><Icon name="reviews" size={14} />{locale==='ar'?'المراجعات':'Reviews'}</Link>
-            <Link className="button button--secondary" to={adminPath('production')} style={{ justifyContent:'flex-start' }}><Icon name="episodes" size={14} />{locale==='ar'?'مركز الإنتاج':'Production'}</Link>
+      {/* --- 7. Growth & Revenue Bento Area --- */}
+      {(focusMode === 'all' || focusMode === 'growth') && (
+        <>
+          <section className="dashboard-grid dashboard-grid--tracks">
+            <RevenuePanel revDetail={revDetail} locale={locale} />
+            <AnalyticsPanel analytics={analytics} failedCount={failedCount} locale={locale} />
+          </section>
+          <section className="dashboard-grid dashboard-grid--tracks">
+            <WebsitePanel teamLoad={teamLoad} locale={locale} />
+          </section>
+        </>
+      )}
+
+      {/* --- 8. Operations & Platform Health Bento Area --- */}
+      {(focusMode === 'all' || focusMode === 'ops') && (
+        <>
+          <section className="dashboard-grid dashboard-grid--activity">
+            <TimelinePanel timeline={timeline} locale={locale} />
+            <FailedPanel failedCount={failedCount} failedList={failedList} locale={locale} />
+          </section>
+
+          <section className="dashboard-grid dashboard-grid--tracks">
+            <SearchPanel locale={locale} />
+            <PlatformPanel failedCount={failedCount} locale={locale} />
+          </section>
+
+          <section className="dashboard-grid dashboard-grid--tracks">
+            <TeamPanel teamLoad={teamLoad} locale={locale} />
+            <article className="panel bento-card">
+              <header className="panel__header">
+                <div>
+                  <span className="panel__kicker">Release Pipeline</span>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 2 }}>{locale==='ar'?'إصدارات التطبيق':'App Releases'}</h3>
+                </div>
+                <Link className="text-link" to={adminPath('app-releases')} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600 }}>
+                  Releases <Icon name="arrow" size={12} />
+                </Link>
+              </header>
+              <div style={{ padding:'16px 18px', display:'grid', gap:10 }}>
+                <div style={{ display:'flex', gap:10, alignItems:'center', padding:'12px', border:'1px dashed rgba(255,255,255,0.08)', borderRadius:12, background:'var(--surface-2)' }}>
+                  <Icon name="devices" size={18} />
+                  <span style={{ fontSize:12.5, color:'var(--muted)' }}>
+                    {locale==='ar'?'الإصدارات تُدار من /app-releases — تتبع إصدارات Android و iOS':'Releases managed at /app-releases — tracks Android & iOS'}
+                  </span>
+                </div>
+                <small style={{ color:'var(--muted)', fontSize:11.5 }}>
+                  Phase 27 — {locale==='ar'?'تتبع إصدار الأندرويد/iOS والحدّ الأدنى المدعوم':'Tracks Android/iOS versions & minimum supported'}
+                </small>
+              </div>
+            </article>
+          </section>
+        </>
+      )}
+
+      {/* --- 9. Advanced Panels (Toggleable) --- */}
+      {!showAdvanced ? (
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={() => setShowAdvanced(true)}
+          style={{ alignSelf: 'center', borderRadius: 12, padding: '10px 20px', fontSize: 12.5 }}
+        >
+          <Icon name="arrow" size={13} />
+          {locale === 'ar'
+            ? 'عرض الأقسام المتقدّمة (تقويم النشر، الجودة، الترجمة، التسويق، القانوني)'
+            : 'Show advanced modules (Calendar, Quality, Translation, Marketing, Legal)'}
+        </button>
+      ) : (
+        <div style={{ display: 'grid', gap: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button className="button button--ghost button--small" type="button" onClick={() => setShowAdvanced(false)}>
+              {locale === 'ar' ? 'إخفاء الأقسام المتقدّمة' : 'Hide advanced modules'}
+            </button>
+          </div>
+          <AdvancedPanels teasers={teasers} locale={locale} />
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button className="button button--ghost button--small" type="button" onClick={() => setShowAdvanced(false)}>
+              {locale === 'ar' ? 'إخفاء الأقسام المتقدّمة' : 'Hide advanced modules'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- 10. Quick Command & Export Hub --- */}
+      <section className="quick-command-hub">
+        <article className="panel bento-card">
+          <header className="panel__header">
+            <div>
+              <span className="panel__kicker" style={{ color: 'var(--primary-strong)' }}>{locale==='ar'?'اختصارات الإدارة':'Shortcuts'}</span>
+              <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 2 }}>{locale==='ar'?'إجراءات سريعة':'Quick actions'}</h3>
+            </div>
+            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: 'var(--surface-3)', border: '1px solid var(--line)', color: 'var(--muted)', fontWeight: 700 }}>
+              Ctrl + K
+            </span>
+          </header>
+          <div style={{ padding: '16px 18px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            <Link className="quick-action-tile" to={adminPath('series')}>
+              <Icon name="plus" size={15} />
+              <span>{locale==='ar'?'سلسلة جديدة':'New series'}</span>
+            </Link>
+            <Link className="quick-action-tile" to={adminPath('stories')}>
+              <Icon name="books" size={15} />
+              <span>{locale==='ar'?'قصة جديدة':'New story'}</span>
+            </Link>
+            <Link className="quick-action-tile" to={adminPath('content-reviews')}>
+              <Icon name="reviews" size={15} />
+              <span>{locale==='ar'?'مركز المراجعات':'Reviews hub'}</span>
+            </Link>
+            <Link className="quick-action-tile" to={adminPath('production')}>
+              <Icon name="episodes" size={15} />
+              <span>{locale==='ar'?'لوحة الإنتاج':'Production board'}</span>
+            </Link>
           </div>
         </article>
-        <article className="panel">
-          <header className="panel__header"><div><span className="panel__kicker">{locale==='ar'?'التقارير':'Exports'}</span><h3>{locale==='ar'?'تصدير التقارير':'Export reports'}</h3></div></header>
-          <div style={{ padding:'12px 14px', display:'grid', gap:8 }}>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-              <a className="button button--ghost button--small" href={`${apiRoot}/admin/production/board?format=csv`} target="_blank" rel="noreferrer"><Icon name="upload" size={12} /> {locale==='ar'?'الإنتاج CSV':'Production CSV'}</a>
-              <a className="button button--ghost button--small" href={`${apiRoot}/admin/rights?format=csv`} target="_blank" rel="noreferrer"><Icon name="rights" size={12} /> Rights CSV</a>
-              <Link className="button button--ghost button--small" to={adminPath('revenue')}><Icon name="analytics" size={12} /> {locale==='ar'?'المالية':'Revenue'}</Link>
-              <Link className="button button--ghost button--small" to={adminPath('ops')}><Icon name="devices" size={12} /> Ops</Link>
+
+        <article className="panel bento-card">
+          <header className="panel__header">
+            <div>
+              <span className="panel__kicker" style={{ color: 'var(--cyan)' }}>{locale==='ar'?'التقارير المعتمدة':'Exports'}</span>
+              <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 2 }}>{locale==='ar'?'تصدير البيانات':'Export reports'}</h3>
             </div>
-            <small style={{ color:'var(--muted)', fontSize:11 }}>{locale==='ar'?'التصدير يحترم الصلاحيات ولا يكشف بيانات الأطفال':'Exports respect permissions and never expose child private data'}</small>
+          </header>
+          <div style={{ padding: '16px 18px', display: 'grid', gap: 12 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <a className="button button--ghost button--small" style={{ borderRadius: 10 }} href={`${apiRoot}/admin/production/board?format=csv`} target="_blank" rel="noreferrer">
+                <Icon name="upload" size={13} /> {locale==='ar'?'الإنتاج CSV':'Production CSV'}
+              </a>
+              <a className="button button--ghost button--small" style={{ borderRadius: 10 }} href={`${apiRoot}/admin/rights?format=csv`} target="_blank" rel="noreferrer">
+                <Icon name="rights" size={13} /> Rights CSV
+              </a>
+              <Link className="button button--ghost button--small" style={{ borderRadius: 10 }} to={adminPath('revenue')}>
+                <Icon name="analytics" size={13} /> {locale==='ar'?'المالية':'Revenue'}
+              </Link>
+              <Link className="button button--ghost button--small" style={{ borderRadius: 10 }} to={adminPath('ops')}>
+                <Icon name="devices" size={13} /> Ops
+              </Link>
+            </div>
+            <small style={{ color: 'var(--muted)', fontSize: 11.5, lineHeight: 1.4 }}>
+              {locale==='ar'?'جميع عمليات التصدير تحترم الصلاحيات المشفرة وتمنع كشف بيانات الأطفال':'Exports respect permissions and strictly isolate child data'}
+            </small>
           </div>
         </article>
       </section>
 
-      <footer className="panel" style={{ padding:'12px 16px', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:10, background:'var(--surface-3)' }}>
-        <span style={{ fontSize:11, color:'var(--muted)' }}>
-          Dashboard v{DASHBOARD_VERSION} · {new Date().toISOString().slice(0,10)} · <code style={{ fontSize:11, background:'var(--surface)', padding:'2px 6px', borderRadius:6, border:'1px solid var(--line)' }}>majarra-dashboard@{locale}</code>
-          {data?.generated_at && <> · generated {new Date(data.generated_at).toLocaleTimeString(locale==='ar'?'ar':'en-GB')}</>}
+      {/* --- 11. Bento Footer --- */}
+      <footer className="panel bento-card" style={{ padding: '14px 20px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderRadius: 16 }}>
+        <span style={{ fontSize: 12, color: 'var(--muted)', display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <strong>Majarra Dashboard</strong> v{DASHBOARD_VERSION} · {new Date().toISOString().slice(0,10)} · <code style={{ fontSize: 11, background: 'var(--surface)', padding: '2px 8px', borderRadius: 6, border: '1px solid var(--line)' }}>{readAdminUser()?.email || 'aboessa101@gmail.com'}</code>
+          {data?.generated_at && <span>· {locale === 'ar' ? 'حُدثت في' : 'Updated at'} {new Date(data.generated_at).toLocaleTimeString(locale==='ar'?'ar':'en-GB')}</span>}
         </span>
-        <button className="button button--ghost button--small" type="button" onClick={()=>window.scrollTo({top:0, behavior:'smooth'})}><span style={{ transform:'rotate(-90deg)', display:'inline-block' }}><Icon name="arrow" size={12} /></span> {locale==='ar'?'للأعلى':'Top'}</button>
+        <button className="button button--ghost button--small" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <span style={{ transform: 'rotate(-90deg)', display: 'inline-block' }}><Icon name="arrow" size={12} /></span>
+          {locale==='ar'?'للأعلى':'Top'}
+        </button>
       </footer>
     </div>
   )
 }
+

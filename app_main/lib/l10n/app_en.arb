@@ -248,11 +248,21 @@
   "consentStatusGranted": "Granted",
   "consentLoadErrorGeneric": "Could not load the consent status",
   "consentWriteErrorGeneric": "Could not save the change. Try again",
+  "consentWriteRequiresParentPin": "This change is a parent record, and your family already has a PIN. Enter it, then try again.",
+  "consentUnlockAction": "Enter the parent PIN",
   "consentContinueButton": "Continue",
   "onboardingBasicControlsStepTitle": "Basic controls",
   "onboardingBasicControlsStepIntro": "Set screen-time limits and permissions for your child's profile. You can change them later from the parent area.",
   "onboardingContinueButton": "Continue",
   "onboardingFinishTitle": "All set!",
   "onboardingFinishBody": "You created your child's profile and set the basic controls. You can start now, and change any setting later from the parent area.",
-  "onboardingFinishButton": "Start now"
+  "onboardingFinishButton": "Start now",
+  "studioBannerDrawLikeMeLabel": "Draw Like Me",
+  "studioBannerConnectDotsLabel": "Connect the Dots",
+  "studioBannerColoringLabel": "Colour",
+  "studioBannerCreativeStudioLabel": "Creative Studio",
+  "googlePlayUnavailableOnDevice": "Google Play is not available on this device.",
+  "parentDailyLimitTitle": "Daily screen-time limit",
+  "parentDailyLimitOff": "Off — no limit on screen time",
+  "parentDailyLimitOn": "On: {minutes} minutes a day"
 }

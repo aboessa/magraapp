@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/router/auth_guard.dart';
@@ -7,6 +8,7 @@ import '../../child/application/child_provider.dart';
 import '../../downloads/application/download_providers.dart';
 import '../../games/application/creation_cloud_service.dart';
 import '../../home/application/home_providers.dart';
+import '../../onboarding/application/onboarding_controller.dart';
 import '../../profile/data/watchlist_store.dart';
 import '../../search/data/recent_searches_store.dart';
 import '../data/parent_pin_store.dart';
@@ -281,6 +283,24 @@ class AuthController {
     }
     _throwIfTeardownFailed(failures);
 
+    // ‏`SEC-201`: ما يجوز أن يحجب مسح بيانات الاعتماد، وما لا يجوز.
+    //
+    // القائمة أعلاه **حاجبة** بقصد: كلّها بياناتُ أسرةٍ على القرص (مفضّلات،
+    // بحثٌ سابق، رسومات، رمز وليّ الأمر، كاش الكتالوج والقارئ)، وبقاءُ بيانات
+    // الاعتماد حتى تُمسَح هو ما يُتيح إعادة المحاولة بمعرّفَي الوالد والطفل.
+    //
+    // والقاعدة الناقصة التي أوقعت عطلًا: **مؤشّر واجهةٍ ليس بيانات أسرة.** موضع
+    // الرحلة (`onboarding_step_v1`) كان في القائمة الحاجبة، فصار فشلُ كتابةٍ في
+    // `SharedPreferences` يمنع `storage.clear()` — أي أن «تسجيل الخروج» يُعلن
+    // نجاحًا ويُبقي التوكنات على الجهاز. وهو لا يحمل بيانات أحد، فحجبُه لا يحمي
+    // شيئًا ويُكلّف كلّ شيء.
+    //
+    // فما كان أثرُ فشله تجربةً يُحاوَل هنا **بعد** مسح الاعتماد ولا يحجبه، وأثرُه
+    // الأسوأ أن يرى الحساب التالي شاشة الاحتفال مرّةً — لا أن يرث جلسةً.
+    final bestEffortWipes = <Future<void> Function()>[
+      () => _ref.read(onboardingControllerProvider.notifier).complete(),
+    ];
+
     // AuthStorage.clear itself attempts every credential key and deliberately
     // excludes the account-deletion receipt capability.
     try {
@@ -289,6 +309,16 @@ class AuthController {
       failures.add(error);
     }
     _throwIfTeardownFailed(failures);
+
+    for (final wipe in bestEffortWipes) {
+      try {
+        await wipe();
+      } catch (error) {
+        // يُسجَّل ولا يُرفَع: بيانات الاعتماد مُسِحت بالفعل في السطر أعلاه،
+        // ورفعُ الخطأ هنا كان سيُبلّغ فشل خروجٍ قد تمّ.
+        debugPrint('[AuthController] best-effort teardown wipe failed: $error');
+      }
+    }
 
     final memoryWipes = <void Function()>[
       () => _ref.read(childProvider.notifier).clear(),

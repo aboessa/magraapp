@@ -814,6 +814,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get consentWriteErrorGeneric => 'Could not save the change. Try again';
 
   @override
+  String get consentWriteRequiresParentPin =>
+      'This change is a parent record, and your family already has a PIN. Enter it, then try again.';
+
+  @override
+  String get consentUnlockAction => 'Enter the parent PIN';
+
+  @override
   String get consentContinueButton => 'Continue';
 
   @override
@@ -835,4 +842,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingFinishButton => 'Start now';
+
+  @override
+  String get studioBannerDrawLikeMeLabel => 'Draw Like Me';
+
+  @override
+  String get studioBannerConnectDotsLabel => 'Connect the Dots';
+
+  @override
+  String get studioBannerColoringLabel => 'Colour';
+
+  @override
+  String get studioBannerCreativeStudioLabel => 'Creative Studio';
+
+  @override
+  String get googlePlayUnavailableOnDevice =>
+      'Google Play is not available on this device.';
+
+  @override
+  String get parentDailyLimitTitle => 'Daily screen-time limit';
+
+  @override
+  String get parentDailyLimitOff => 'Off — no limit on screen time';
+
+  @override
+  String parentDailyLimitOn(int minutes) {
+    return 'On: $minutes minutes a day';
+  }
 }

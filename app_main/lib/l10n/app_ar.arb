@@ -336,11 +336,48 @@
   "consentStatusGranted": "ممنوحة",
   "consentLoadErrorGeneric": "تعذّر تحميل حالة الموافقات",
   "consentWriteErrorGeneric": "تعذّر حفظ التغيير. حاول مجددًا",
+  "consentWriteRequiresParentPin": "هذا التغيير سجلٌّ يخصّ وليّ الأمر، ولأسرتك رمز مُسجَّل فعلًا. أدخل الرمز ثم أعد المحاولة.",
+  "consentUnlockAction": "أدخل رمز ولي الأمر",
   "consentContinueButton": "متابعة",
   "onboardingBasicControlsStepTitle": "الضوابط الأساسية",
   "onboardingBasicControlsStepIntro": "اضبط حدود الوقت والسماحات لملف طفلك، ويمكنك تعديلها لاحقًا من منطقة ولي الأمر.",
   "onboardingContinueButton": "متابعة",
   "onboardingFinishTitle": "كل شيء جاهز!",
   "onboardingFinishBody": "أنشأت ملف طفلك وضبطت الضوابط الأساسية. يمكنك البدء الآن، وتعديل أي إعداد لاحقًا من منطقة ولي الأمر.",
-  "onboardingFinishButton": "ابدأ الآن"
+  "onboardingFinishButton": "ابدأ الآن",
+  "studioBannerDrawLikeMeLabel": "ارسم مثلي",
+  "@studioBannerDrawLikeMeLabel": {
+    "description": "Screen-reader label for the Draw Like Me catalogue banner image."
+  },
+  "studioBannerConnectDotsLabel": "صل النقاط",
+  "@studioBannerConnectDotsLabel": {
+    "description": "Screen-reader label for the Connect the Dots catalogue banner image."
+  },
+  "studioBannerColoringLabel": "لوّن",
+  "@studioBannerColoringLabel": {
+    "description": "Screen-reader label for the colouring home banner image."
+  },
+  "studioBannerCreativeStudioLabel": "الاستوديو الإبداعي",
+  "@studioBannerCreativeStudioLabel": {
+    "description": "Screen-reader label for the creative studio hero banner image."
+  },
+  "googlePlayUnavailableOnDevice": "Google Play غير متاح على هذا الجهاز.",
+  "@googlePlayUnavailableOnDevice": {
+    "description": "Shown to a parent when the device has no usable Google Play billing service."
+  },
+  "parentDailyLimitTitle": "حدّ وقت الشاشة اليومي",
+  "@parentDailyLimitTitle": {
+    "description": "Title of the opt-in switch for the daily screen-time limit (DECIDE-108)."
+  },
+  "parentDailyLimitOff": "غير مفعَّل — لا حدّ على وقت الشاشة",
+  "@parentDailyLimitOff": {
+    "description": "Subtitle when the parent has not enabled a daily screen-time limit."
+  },
+  "parentDailyLimitOn": "مفعَّل: {minutes} دقيقة يوميًّا",
+  "@parentDailyLimitOn": {
+    "description": "Subtitle showing the daily screen-time limit the parent enabled.",
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  }
 }

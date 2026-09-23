@@ -10,10 +10,15 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../../../app/theme/app_colors.dart';
+import '../../../../../core/images/heavy_assets.dart';
+import '../../../../../core/widgets/cinematic_image.dart';
+import '../../../../../l10n/app_localizations.dart';
+import '../../../../../l10n/app_localizations_ar.dart';
 import '../../../data/local_creation_store.dart';
 import '../../studio/studio_app_bar.dart';
 import '../../studio/studio_design.dart';
 import '../../studio/studio_home_widgets.dart';
+import '../../widgets/drawing_asset.dart';
 
 /// بيانات فئة تلوين واحدة — PNG فقط من assets/images/coloring/v2
 @immutable
@@ -85,7 +90,11 @@ class FeaturedColoringSpec {
   String get fallbackAsset => _pngFallbackForId(id);
 }
 
-/// فولباك محلي 5 صور فقط من v2 كما طلب العميل - احترافي
+/// فولباك: 5 صور WebP على R2 (كانت PNG مبندلة، رُحِّلت بتحويل WebP q82).
+///
+/// `DrawingAsset` يمرّر فرع الشبكة عبر `RemoteImageCache`: بعد أوّل تحميل تُقرأ
+/// من القرص دون شبكة. والمسار المبندل القديم يُستعمَل فقط حين لا توأم (لا يحدث
+/// للخمسة — كلّها على R2 — لكنّ السقوط الآمن يبقى بدل صورة مكسورة).
 const _kLocalFallback5 = [
   'assets/images/coloring/v2/bird.png',
   'assets/images/coloring/v2/cat.png',
@@ -94,21 +103,36 @@ const _kLocalFallback5 = [
   'assets/images/coloring/v2/flowers.png',
 ];
 
-/// يربط id الرسم بأحد الـ 5 PNG الاحترافية فقط
+/// رابط CDN للبديل، أو المسار المبندل حين لا توأم.
+String _fallbackUrlOrAsset(String bundledPath) =>
+    heavyCdnUrl(bundledPath) ?? bundledPath;
+
+/// يربط id الرسم بأحد الـ 5 الاحترافية فقط (روابط CDN لا مسارات مبندلة).
 String _pngFallbackForId(String id) {
   final lower = id.toLowerCase();
   // محاولة مطابقة مباشرة أولاً
-  if (lower.contains('bird')) return 'assets/images/coloring/v2/bird.png';
-  if (lower.contains('cat')) return 'assets/images/coloring/v2/cat.png';
-  if (lower.contains('fish')) return 'assets/images/coloring/v2/fish.png';
-  if (lower.contains('vehicle') || lower.contains('car')) return 'assets/images/coloring/v2/vehicles.png';
-  if (lower.contains('flower')) return 'assets/images/coloring/v2/flowers.png';
+  if (lower.contains('bird')) return _fallbackUrlOrAsset('assets/images/coloring/v2/bird.png');
+  if (lower.contains('cat')) return _fallbackUrlOrAsset('assets/images/coloring/v2/cat.png');
+  if (lower.contains('fish')) return _fallbackUrlOrAsset('assets/images/coloring/v2/fish.png');
+  if (lower.contains('vehicle') || lower.contains('car')) {
+    return _fallbackUrlOrAsset('assets/images/coloring/v2/vehicles.png');
+  }
+  if (lower.contains('flower')) {
+    return _fallbackUrlOrAsset('assets/images/coloring/v2/flowers.png');
+  }
   // الباقي يوزع على الـ 5 بالتساوي عبر hash
   final idx = id.hashCode.abs() % _kLocalFallback5.length;
-  return _kLocalFallback5[idx];
+  return _fallbackUrlOrAsset(_kLocalFallback5[idx]);
 }
 
-const kColoringCategoriesV2 = <ColoringCategorySpec>[
+/// رابط CDN المشتقّ لمسار مبندل، أو المسار نفسه حين لا توأم.
+///
+/// `const` مستحيلة هنا (اشتقاق وقت التشغيل)، والقوائم أدناه تحوَّلت من `const`
+/// إلى `final` لهذا السبب. التكلفة: بناء 8 روابط مرة واحدة عند بدء الصفحة.
+String _cdnOrBundled(String bundledPath) =>
+    heavyCdnUrl(bundledPath) ?? bundledPath;
+
+final kColoringCategoriesV2 = <ColoringCategorySpec>[
   ColoringCategorySpec(
     id: 'birds',
     label: 'طيور',
@@ -116,6 +140,7 @@ const kColoringCategoriesV2 = <ColoringCategorySpec>[
     gradientStart: Color(0xFFFFD34D),
     gradientEnd: Color(0xFFFF8A2A),
     assetPath: 'assets/images/coloring/v2/birds.png',
+    remoteThumbUrl: _cdnOrBundled('assets/images/coloring/v2/birds.png'),
   ),
   ColoringCategorySpec(
     id: 'animals',
@@ -124,6 +149,7 @@ const kColoringCategoriesV2 = <ColoringCategorySpec>[
     gradientStart: Color(0xFF9EE86F),
     gradientEnd: Color(0xFF2ECC71),
     assetPath: 'assets/images/coloring/v2/animals.png',
+    remoteThumbUrl: _cdnOrBundled('assets/images/coloring/v2/animals.png'),
   ),
   ColoringCategorySpec(
     id: 'vehicles',
@@ -132,6 +158,7 @@ const kColoringCategoriesV2 = <ColoringCategorySpec>[
     gradientStart: Color(0xFF6EE7FF),
     gradientEnd: Color(0xFF2856D8),
     assetPath: 'assets/images/coloring/v2/vehicles.png',
+    remoteThumbUrl: _cdnOrBundled('assets/images/coloring/v2/vehicles.png'),
   ),
   ColoringCategorySpec(
     id: 'space',
@@ -140,6 +167,7 @@ const kColoringCategoriesV2 = <ColoringCategorySpec>[
     gradientStart: Color(0xFF8B6CFF),
     gradientEnd: Color(0xFF3A1E7A),
     assetPath: 'assets/images/coloring/v2/space.png',
+    remoteThumbUrl: _cdnOrBundled('assets/images/coloring/v2/space.png'),
   ),
   ColoringCategorySpec(
     id: 'flowers',
@@ -148,6 +176,7 @@ const kColoringCategoriesV2 = <ColoringCategorySpec>[
     gradientStart: Color(0xFFFF7AB3),
     gradientEnd: Color(0xFFE23D7A),
     assetPath: 'assets/images/coloring/v2/flowers.png',
+    remoteThumbUrl: _cdnOrBundled('assets/images/coloring/v2/flowers.png'),
   ),
   ColoringCategorySpec(
     id: 'sea',
@@ -156,6 +185,7 @@ const kColoringCategoriesV2 = <ColoringCategorySpec>[
     gradientStart: Color(0xFF3BDDF5),
     gradientEnd: Color(0xFF0E7490),
     assetPath: 'assets/images/coloring/v2/sea.png',
+    remoteThumbUrl: _cdnOrBundled('assets/images/coloring/v2/sea.png'),
   ),
   ColoringCategorySpec(
     id: 'fruits',
@@ -164,6 +194,7 @@ const kColoringCategoriesV2 = <ColoringCategorySpec>[
     gradientStart: Color(0xFFFF8A65),
     gradientEnd: Color(0xFFE23D28),
     assetPath: 'assets/images/coloring/v2/fruits.png',
+    remoteThumbUrl: _cdnOrBundled('assets/images/coloring/v2/fruits.png'),
   ),
   ColoringCategorySpec(
     id: 'toys',
@@ -172,6 +203,7 @@ const kColoringCategoriesV2 = <ColoringCategorySpec>[
     gradientStart: Color(0xFF6A9BFF),
     gradientEnd: Color(0xFF6A3DF2),
     assetPath: 'assets/images/coloring/v2/toys.png',
+    remoteThumbUrl: _cdnOrBundled('assets/images/coloring/v2/toys.png'),
   ),
 ];
 
@@ -190,14 +222,6 @@ const kFeaturedColoringV2 = <FeaturedColoringSpec>[
   FeaturedColoringSpec(id: 'flowers-001', label: 'زهور', isNew: true, assetPath: 'assets/images/coloring/v2/flowers.png'),
   FeaturedColoringSpec(id: 'animals-001', label: 'حيوانات', isNew: false, assetPath: 'assets/images/coloring/v2/animals.png'),
 ];
-
-List<String> kKnownV2AssetCandidates(String specPath) => [
-      specPath,
-      // fallback chain: v2/<name>.png already checked, try legacy bird, then studio hero
-      'assets/images/coloring/bird.png',
-      'assets/images/drawing/coloring/bird.png',
-      'assets/images/studio/hero-start-drawing.webp',
-    ];
 
 class ColoringHomeV2Page extends StatelessWidget {
   const ColoringHomeV2Page({
@@ -305,7 +329,9 @@ class ColoringHomeV2Page extends StatelessWidget {
   }
 }
 
-/// New banner hero — uses coloring-banner.png asset as main header
+/// New banner hero — R2-first via `CinematicImage` (cached file ← network ←
+/// bundled). The old triple-`Image.asset` chain re-downloaded nothing but also
+/// cached nothing: every session re-read 300KB+ from the APK instead.
 class _HeroColoringV2 extends StatelessWidget {
   const _HeroColoringV2({
     required this.heroAsset,
@@ -333,23 +359,14 @@ class _HeroColoringV2 extends StatelessWidget {
       ),
       child: AspectRatio(
         aspectRatio: 2.2,
-        child: Image.asset(
-          'assets/images/studio/coloring-banner.webp',
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Image.asset(
+        child: CinematicImage(
+          assetPath: 'assets/images/studio/coloring-banner.webp',
+          networkUrl: heavyStudioBannerUrl(
             'assets/images/studio/coloring-banner.png',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Image.asset(
-              fallbackAsset,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: const Color(0xFF241A5E),
-                child: const Center(
-                  child: Icon(Icons.palette_rounded, size: 48, color: Colors.white24),
-                ),
-              ),
-            ),
           ),
+          semanticLabel: (AppLocalizations.of(context) ?? AppLocalizationsAr())
+              .studioBannerColoringLabel,
+          fit: BoxFit.cover,
         ),
       ),
     );
@@ -398,27 +415,14 @@ class _FeaturedTileV2 extends StatelessWidget {
             Positioned.fill(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 36),
-                child: Builder(builder: (_) {
-                  final url = spec.bestDisplayUrl;
-                  final fallback = spec.fallbackAsset;
-                  if (url == null) {
-                    return Image.asset(fallback, fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Icon(Icons.image_outlined, size: 48, color: Colors.black.withValues(alpha: 0.12)));
-                  }
-                  final isNet = url.startsWith('http://') || url.startsWith('https://');
-                  if (isNet) {
-                    return Image.network(url,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Image.asset(fallback, fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Icon(Icons.image_outlined, size: 48, color: Colors.black.withValues(alpha: 0.12))),
-                    );
-                  }
-                  return Image.asset(url,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Image.asset(fallback, fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Icon(Icons.image_outlined, size: 48, color: Colors.black.withValues(alpha: 0.12))),
-                  );
-                }),
+                // `DrawingAsset` يمرّر فرع الشبكة عبر `RemoteImageCache` (قرص
+                // بعد أوّل تحميل) وفرع الأصل المبندل مباشرة. `Image.network`
+                // العاري هنا كان يعيد التنزيل في كلّ جلسة ويتجاوز التثبيت.
+                child: DrawingAsset(
+                  assetIdOrPath:
+                      spec.bestDisplayUrl ?? spec.assetPath ?? spec.fallbackAsset,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             if (spec.isNew)
@@ -490,27 +494,14 @@ class _CategoryTileV2 extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [spec.gradientStart, spec.gradientEnd]),
                 ),
-                child: () {
-                  final u = spec.bestDisplayUrl ?? spec.fallbackAsset;
-                  if (u.startsWith('http')) {
-                    return Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: Image.network(u, fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: Image.asset(spec.fallbackAsset, fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => Icon(spec.icon, size: 26, color: Colors.white)),
-                        ),
-                      ),
-                    );
-                  }
-                  // PNG محلي من v2
-                  return Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: Image.asset(u, fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Icon(spec.icon, size: 26, color: Colors.white)),
-                  );
-                }(),
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: DrawingAsset(
+                    assetIdOrPath:
+                        spec.bestDisplayUrl ?? spec.assetPath ?? spec.fallbackAsset,
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ),
             ]),
             Expanded(

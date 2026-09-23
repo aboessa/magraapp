@@ -9,8 +9,8 @@ read from the source on every run. The **Status** column comes from
 `docs/FEATURE_MATRIX_VERDICTS.json`, where each verdict records how it was
 verified; a route with no recorded verdict is `UNVERIFIED` rather than assumed.
 
-Registered admin routes: **123**. Server routes parsed: **497**.
-API client functions parsed: **349**.
+Registered admin routes: **123**. Server routes parsed: **499**.
+API client functions parsed: **351**.
 
 | Status | Routes |
 |---|---|
@@ -23,50 +23,50 @@ API client functions parsed: **349**.
 
 | Route | Page | Status | API calls | Server endpoints | Permissions | Audit | Tests |
 |---|---|---|---|---|---|---|---|
-| `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 25 |
+| `/` | DashboardPage.tsx | PARTIAL | 4 | 4/4 | — | — | 26 |
 | `/settings` | SettingsPage.tsx | PARTIAL | 0 | 0/0 | — | — | 0 |
-| `/website/mode` | WebsiteModePage.tsx | UNVERIFIED | 2 | 2/2 | publish | ✅ | 83 |
+| `/website/mode` | WebsiteModePage.tsx | UNVERIFIED | 2 | 2/2 | publish | ✅ | 97 |
 | `/my-account` | MyAccountPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
 | `/security` | SecurityPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
-| `/sessions` | SessionsPage.tsx | UNVERIFIED | 3 | 3/3 | — | — | 6 |
+| `/sessions` | SessionsPage.tsx | UNVERIFIED | 3 | 3/3 | — | — | 7 |
 | `/app-releases` | AppReleasesPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
 | `/app-diagnostics` | AppDiagnosticsPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
-| `/taxonomy` | TaxonomyPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive | — | 6 |
-| `/planets` | PlanetsPage.tsx | COMPLETE | 3 | 3/3 | archive, edit_metadata | — | 6 |
+| `/taxonomy` | TaxonomyPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive | — | 8 |
+| `/planets` | PlanetsPage.tsx | COMPLETE | 3 | 3/3 | archive, edit_metadata | — | 8 |
 | `/availability` | AvailabilityPoliciesPage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 2 |
 | `/planets/:id` | PlanetWorkspacePage.tsx | COMPLETE | 5 | 5/5 | archive, edit_metadata | — | 1 |
-| `/skills` | SkillsPage.tsx | COMPLETE | 5 | 5/5 | create | — | 30 |
-| `/objectives` | LearningObjectivesPage.tsx | COMPLETE | 8 | 8/8 | edit_metadata, create, archive | — | 5 |
-| `/objectives/:id` | ObjectiveWorkspacePage.tsx | UNVERIFIED | 5 | 5/5 | — | — | 29 |
-| `/content-reviews` | ContentReviewsPage.tsx | PARTIAL | 9 | 9/9 | review | — | 58 |
-| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 83 |
+| `/skills` | SkillsPage.tsx | COMPLETE | 5 | 5/5 | create | — | 35 |
+| `/objectives` | LearningObjectivesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive | — | 6 |
+| `/objectives/:id` | ObjectiveWorkspacePage.tsx | UNVERIFIED | 5 | 5/5 | — | — | 34 |
+| `/content-reviews` | ContentReviewsPage.tsx | PARTIAL | 9 | 9/9 | review | — | 67 |
+| `/series` | SeriesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, create, archive, publish | ✅ | 97 |
 | `/series/:id` | SeriesDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
-| `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 28 |
+| `/seasons` | SeasonsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 31 |
 | `/seasons/:id` | SeasonDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
-| `/episodes` | EpisodesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive, publish | ✅ | 31 |
+| `/episodes` | EpisodesPage.tsx | COMPLETE | 6 | 6/6 | edit_metadata, create, archive, publish | ✅ | 37 |
 | `/episodes/:id` | EpisodeDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 0 |
-| `/characters` | CharactersPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 32 |
+| `/characters` | CharactersPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, create, archive | — | 35 |
 | `/characters/:id` | CharacterDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 13 |
 | `/stories` | StoriesPage.tsx | PARTIAL | 4 | 4/4 | edit_metadata, create, archive | — | 10 |
 | `/stories/:id` | StoryWorkspacePage.tsx | PARTIAL | 1 | 1/1 | — | — | 1 |
 | `/stories/:id/builder` | StoryBuilderPage.tsx | UNVERIFIED | 6 | 6/6 | edit_metadata, create, archive | ✅ | 1 |
-| `/library` | LibraryHubPage.tsx | UNVERIFIED | 3 | 3/3 | — | — | 25 |
-| `/library-content` | LibraryHubPage.tsx | COMPLETE | 3 | 3/3 | — | — | 25 |
-| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 46 |
-| `/books` | BooksPage.tsx | UNVERIFIED | 3 | 3/3 | — | — | 30 |
-| `/books/:id` | BookWorkspacePage.tsx | UNVERIFIED | 2 | 2/2 | — | — | 18 |
-| `/games` | GamesPage.tsx | UNVERIFIED | 3 | 3/3 | — | — | 18 |
-| `/projects` | ProjectsPage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 6 |
-| `/projects/:id` | ProjectWorkspacePage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 19 |
-| `/games/:id` | GameDetailPage.tsx | COMPLETE | 4 | 4/4 | — | — | 31 |
-| `/games-ops` | GamesOpsPage.tsx | COMPLETE | 3 | 3/3 | — | — | 18 |
+| `/library` | LibraryHubPage.tsx | UNVERIFIED | 3 | 3/3 | — | — | 28 |
+| `/library-content` | LibraryHubPage.tsx | COMPLETE | 3 | 3/3 | — | — | 28 |
+| `/library-content/:kind/:id` | LibraryContentDetailPage.tsx | COMPLETE | 3 | 3/3 | — | — | 53 |
+| `/books` | BooksPage.tsx | UNVERIFIED | 4 | 4/4 | create | — | 34 |
+| `/books/:id` | BookWorkspacePage.tsx | UNVERIFIED | 3 | 3/3 | edit_metadata | — | 21 |
+| `/games` | GamesPage.tsx | UNVERIFIED | 4 | 4/4 | create | — | 20 |
+| `/projects` | ProjectsPage.tsx | UNVERIFIED | 2 | 2/2 | create | — | 6 |
+| `/projects/:id` | ProjectWorkspacePage.tsx | UNVERIFIED | 2 | 2/2 | edit_metadata | — | 22 |
+| `/games/:id` | GameDetailPage.tsx | COMPLETE | 4 | 4/4 | — | — | 33 |
+| `/games-ops` | GamesOpsPage.tsx | COMPLETE | 3 | 3/3 | — | — | 20 |
 | `/games-audio-queue` | AudioProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/games-art-queue` | ArtProductionQueuePage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
-| `/media` | MediaLibraryPage.tsx | COMPLETE | 6 | 6/6 | upload_images, create | — | 25 |
-| `/media/:id` | AssetDetailPage.tsx | COMPLETE | 2 | 2/2 | — | — | 38 |
+| `/media` | MediaLibraryPage.tsx | COMPLETE | 7 | 7/7 | upload_images, create | — | 30 |
+| `/media/:id` | AssetDetailPage.tsx | COMPLETE | 1 | 1/1 | — | — | 43 |
 | `/visual-styles/compare` | VisualStyleComparePage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 0 |
-| `/visual-styles/:id` | VisualStyleWorkspacePage.tsx | UNVERIFIED | 2 | 2/2 | — | — | 28 |
-| `/visual-styles` | VisualStylesPage.tsx | COMPLETE | 4 | 4/4 | edit_metadata, create, archive | — | 0 |
+| `/visual-styles/:id` | VisualStyleWorkspacePage.tsx | UNVERIFIED | 2 | 2/2 | — | — | 31 |
+| `/visual-styles` | VisualStylesPage.tsx | COMPLETE | 3 | 3/3 | edit_metadata, create | — | 0 |
 | `/creative-studio` | CreativeStudioAdminPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
 | `/creative-studio/v2` | CreativeStudioAdminPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
 | `/creative-studio/coloring` | CreativeColoringAdminPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
@@ -74,26 +74,26 @@ API client functions parsed: **349**.
 | `/creative-studio/connect-dots` | CreativeConnectDotsAdminPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
 | `/creative-studio/complete` | CreativeCompleteAdminPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
 | `/creative-studio/trace` | CreativeTraceAdminPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
-| `/creative-studio/copy-pattern` | CreativeStudioAdminPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
+| `/creative-studio/copy-pattern` | CreativeCopyPatternAdminPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
 | `/creative-studio/reference` | CreativeStudioOverviewPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
 | `/creative-studio/reference/:id` | ReferenceDrawingDetailPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
 | `/creative-studio/authoring` | DrawingAuthoringPage.tsx | UI_ONLY | 0 | 0/0 | — | — | 0 |
-| `/parents` | ParentsPage.tsx | PARTIAL | 1 | 1/1 | — | — | 2 |
-| `/parents/:id` | ParentWorkspacePage.tsx | UNVERIFIED | 3 | 3/3 | — | — | 10 |
+| `/parents` | ParentsPage.tsx | PARTIAL | 1 | 1/1 | — | — | 5 |
+| `/parents/:id` | ParentWorkspacePage.tsx | UNVERIFIED | 3 | 3/3 | — | — | 11 |
 | `/customers` | CustomersPage.tsx | COMPLETE | 1 | 1/1 | — | — | 1 |
 | `/customers/:id` | CustomerDetailPage.tsx | COMPLETE | 4 | 4/4 | manage_permissions | ✅ | 0 |
-| `/children` | ChildrenPage.tsx | PARTIAL | 1 | 1/1 | — | — | 18 |
+| `/children` | ChildrenPage.tsx | PARTIAL | 1 | 1/1 | — | — | 21 |
 | `/children/:id` | ChildWorkspacePage.tsx | UNVERIFIED | 2 | 2/2 | — | — | 0 |
 | `/analytics` | AnalyticsPage.tsx | PARTIAL | 1 | 1/1 | — | — | 0 |
-| `/teams` | TeamsPage.tsx | COMPLETE | 3 | 3/3 | manage_team | — | 9 |
+| `/teams` | TeamsPage.tsx | COMPLETE | 3 | 3/3 | manage_team | — | 11 |
 | `/teams/:id` | TeamWorkspacePage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 6 |
-| `/roles` | RolesPage.tsx | PARTIAL | 4 | 4/4 | manage_permissions | — | 13 |
-| `/roles/:id` | RoleWorkspacePage.tsx | UNVERIFIED | 3 | 3/3 | manage_permissions | — | 13 |
-| `/grants` | GrantsPage.tsx | UNVERIFIED | 4 | 4/4 | manage_permissions | ✅ | 12 |
-| `/grants/:id` | GrantDetailPage.tsx | UNVERIFIED | 1 | 1/1 | manage_permissions | — | 6 |
-| `/team-access` | TeamAccessPage.tsx | COMPLETE | 6 | 6/6 | — | — | 11 |
-| `/team-access/:id` | EmployeeWorkspacePage.tsx | UNVERIFIED | 2 | 2/2 | — | — | 11 |
-| `/governance` | AccessGovernancePage.tsx | UNVERIFIED | 4 | 4/4 | manage_permissions | — | 12 |
+| `/roles` | RolesPage.tsx | PARTIAL | 4 | 4/4 | manage_permissions | — | 14 |
+| `/roles/:id` | RoleWorkspacePage.tsx | UNVERIFIED | 3 | 3/3 | manage_permissions | — | 14 |
+| `/grants` | GrantsPage.tsx | UNVERIFIED | 4 | 4/4 | manage_permissions | ✅ | 13 |
+| `/grants/:id` | GrantDetailPage.tsx | UNVERIFIED | 1 | 1/1 | manage_permissions | — | 7 |
+| `/team-access` | TeamAccessPage.tsx | COMPLETE | 6 | 6/6 | — | — | 12 |
+| `/team-access/:id` | EmployeeWorkspacePage.tsx | UNVERIFIED | 2 | 2/2 | — | — | 12 |
+| `/governance` | AccessGovernancePage.tsx | UNVERIFIED | 4 | 4/4 | manage_permissions | — | 13 |
 | `/tasks` | MyTasksPage.tsx | PARTIAL | 1 | 1/1 | — | — | 1 |
 | `/production` | ProductionPage.tsx | COMPLETE | 4 | 4/4 | assign_members | ✅ | 0 |
 | `/production/factory` | ContentFactoryPage.tsx | UNVERIFIED | 2 | 2/2 | create | ✅ | 1 |
@@ -103,22 +103,22 @@ API client functions parsed: **349**.
 | `/audit-logs/:id` | AuditEventDetailPage.tsx | UNVERIFIED | 1 | 1/1 | view_audit_log | — | 1 |
 | `/failed-events` | FailedEventsPage.tsx | COMPLETE | 3 | 3/3 | publish | — | 2 |
 | `/failed-events/:id` | FailedEventWorkspacePage.tsx | UNVERIFIED | 2 | 2/2 | publish | — | 2 |
-| `/narration` | NarrationPage.tsx | PARTIAL | 3 | 3/3 | upload_audio | — | 3 |
+| `/narration` | NarrationPage.tsx | PARTIAL | 4 | 4/4 | upload_audio | — | 3 |
 | `/ai-providers` | AiProvidersPage.tsx | UNVERIFIED | 10 | 10/10 | manage_ai_providers | ✅ | 1 |
-| `/quality` | QualityPage.tsx | PARTIAL | 7 | 7/7 | — | — | 44 |
-| `/mastery` | MasteryPage.tsx | PARTIAL | 3 | 3/3 | — | — | 13 |
+| `/quality` | QualityPage.tsx | PARTIAL | 8 | 8/8 | — | — | 52 |
+| `/mastery` | MasteryPage.tsx | PARTIAL | 3 | 3/3 | — | — | 16 |
 | `/app-experience` | AppExperiencePage.tsx | PARTIAL | 8 | 8/8 | edit_metadata, create, archive, publish | ✅ | 2 |
-| `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 9 |
-| `/devices/:id` | DeviceWorkspacePage.tsx | UNVERIFIED | 4 | 4/4 | manage_permissions | ✅ | 9 |
+| `/devices-admin` | DevicesAdminPage.tsx | PARTIAL | 1 | 1/1 | — | — | 10 |
+| `/devices/:id` | DeviceWorkspacePage.tsx | UNVERIFIED | 4 | 4/4 | manage_permissions | ✅ | 10 |
 | `/support-center` | SupportCenterPage.tsx | COMPLETE | 2 | 2/2 | — | ✅ | 2 |
 | `/workflows` | WorkflowPage.tsx | COMPLETE | 8 | 8/8 | assign_members, review | ✅ | 2 |
-| `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 13 |
+| `/rights` | RightsPage.tsx | PARTIAL | 2 | 2/2 | create | ✅ | 14 |
 | `/rights/:id` | RightsWorkspacePage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 0 |
 | `/remote-config` | RemoteConfigPage.tsx | PARTIAL | 4 | 4/4 | view_audit_log, publish | — | 2 |
 | `/packages` | PackagesPage.tsx | COMPLETE | 7 | 7/7 | edit_metadata, publish | ✅ | 5 |
 | `/plans/:id` | PlanWorkspacePage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 0 |
 | `/billing` | BillingPage.tsx | COMPLETE | 5 | 5/5 | manage_billing | ✅ | 1 |
-| `/billing/subscription/:id` | SubscriptionWorkspacePage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 3 |
+| `/billing/subscription/:id` | SubscriptionWorkspacePage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 4 |
 | `/billing/transaction/:id` | TransactionWorkspacePage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 4 |
 | `/ops` | OpsPage.tsx | PARTIAL | 0 | 0/0 | — | — | 0 |
 | `/ops/services/:id` | OpsServiceWorkspacePage.tsx | UNVERIFIED | 1 | 1/1 | — | — | 0 |
@@ -131,15 +131,15 @@ API client functions parsed: **349**.
 | `/campaigns/:id` | CampaignWorkspacePage.tsx | UNVERIFIED | 2 | 2/2 | edit_metadata | ✅ | 1 |
 | `/revenue` | RevenuePage.tsx | PARTIAL | 2 | 2/2 | — | — | 0 |
 | `/translation` | TranslationCenterPage.tsx | PARTIAL | 4 | 4/4 | create | ✅ | 0 |
-| `/translation/:id` | TranslationWorkspacePage.tsx | UNVERIFIED | 4 | 4/4 | edit_text, review | ✅ | 0 |
-| `/quiz` | QuizBuilderPage.tsx | PARTIAL | 5 | 5/5 | create | ✅ | 1 |
-| `/quiz/:id` | QuestionWorkspacePage.tsx | UNVERIFIED | 3 | 3/3 | edit_metadata, review | ✅ | 9 |
-| `/recommendations` | RecommendationsPage.tsx | PARTIAL | 4 | 4/4 | publish | ✅ | 3 |
+| `/translation/:id` | TranslationWorkspacePage.tsx | UNVERIFIED | 3 | 3/3 | edit_text, review | ✅ | 0 |
+| `/quiz` | QuizBuilderPage.tsx | PARTIAL | 5 | 5/5 | create | ✅ | 2 |
+| `/quiz/:id` | QuestionWorkspacePage.tsx | UNVERIFIED | 3 | 3/3 | edit_metadata, review | ✅ | 11 |
+| `/recommendations` | RecommendationsPage.tsx | PARTIAL | 4 | 4/4 | publish | ✅ | 4 |
 | `/school` | SchoolAccountsPage.tsx | PARTIAL | 6 | 6/6 | manage_team | ✅ | 16 |
 | `/finance-advanced` | AdvancedFinancePage.tsx | PARTIAL | 2 | 2/2 | edit_metadata | ✅ | 0 |
-| `/ops-sla` | OpsSlaPage.tsx | PARTIAL | 4 | 4/4 | manage_permissions | ✅ | 2 |
-| `/ops-sla/policy/:id` | OpsSlaPage.tsx | UNVERIFIED | 4 | 4/4 | manage_permissions | ✅ | 2 |
-| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 83 |
+| `/ops-sla` | OpsSlaPage.tsx | PARTIAL | 3 | 3/3 | manage_permissions | ✅ | 0 |
+| `/ops-sla/policy/:id` | OpsSlaPage.tsx | UNVERIFIED | 3 | 3/3 | manage_permissions | ✅ | 0 |
+| `/partnerships` | PartnershipsPage.tsx | COMPLETE | 5 | 5/5 | edit_metadata, publish | ✅ | 97 |
 | `/website/pages` | WebsitePagesPage.tsx | COMPLETE | 4 | 4/4 | publish, create | ✅ | 1 |
 | `/website/pages/:id` | WebsitePageEditor.tsx | COMPLETE | 7 | 7/7 | view_audit_log, edit_text, edit_metadata, publish | ✅ | 1 |
 | `/blog/posts` | BlogPostsPage.tsx | COMPLETE | 4 | 4/4 | create | ✅ | 0 |
@@ -164,19 +164,19 @@ that it behaves; behavioural findings belong in the verdict file.
 | `/app-diagnostics` | — | — | — | — | — | — | ✅ | — | — |
 | `/taxonomy` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/planets` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/availability` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
+| `/availability` | ✅ | — | ✅ | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/planets/:id` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/skills` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/objectives` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/objectives/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | `/content-reviews` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/series` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/series` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/series/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/seasons` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/seasons/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/episodes` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/seasons` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/seasons/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
+| `/episodes` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/episodes/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/characters` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/characters` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/characters/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | `/stories` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/stories/:id` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -184,16 +184,16 @@ that it behaves; behavioural findings belong in the verdict file.
 | `/library` | — | — | — | ✅ | ✅ | ✅ | — | — | — |
 | `/library-content` | — | — | — | ✅ | ✅ | ✅ | — | — | — |
 | `/library-content/:kind/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/books` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/books/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/games` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/projects` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/projects/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| `/books` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/books/:id` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/games` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/projects` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/projects/:id` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/games/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/games-ops` | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ | — |
+| `/games-ops` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | `/games-audio-queue` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | `/games-art-queue` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/media` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/media` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/media/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/visual-styles/compare` | ✅ | — | — | — | ✅ | — | — | — | — |
 | `/visual-styles/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -202,12 +202,12 @@ that it behaves; behavioural findings belong in the verdict file.
 | `/creative-studio/v2` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
 | `/creative-studio/coloring` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
 | `/creative-studio/draw-like-me` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| `/creative-studio/connect-dots` | — | — | — | — | — | ✅ | — | ✅ | ✅ |
+| `/creative-studio/connect-dots` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
 | `/creative-studio/complete` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
 | `/creative-studio/trace` | ✅ | — | — | — | — | — | — | ✅ | ✅ |
-| `/creative-studio/copy-pattern` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| `/creative-studio/reference` | ✅ | — | — | ✅ | ✅ | — | — | — | — |
-| `/creative-studio/reference/:id` | ✅ | — | ✅ | ✅ | — | — | — | — | — |
+| `/creative-studio/copy-pattern` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
+| `/creative-studio/reference` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | — | — |
+| `/creative-studio/reference/:id` | ✅ | — | ✅ | ✅ | ✅ | ✅ | — | — | — |
 | `/creative-studio/authoring` | ✅ | — | — | — | — | — | — | ✅ | — |
 | `/parents` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/parents/:id` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
@@ -215,24 +215,24 @@ that it behaves; behavioural findings belong in the verdict file.
 | `/customers/:id` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/children` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/children/:id` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/analytics` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
+| `/analytics` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
 | `/teams` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/teams/:id` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/roles` | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
+| `/roles` | — | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
 | `/roles/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/grants` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/grants/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/team-access` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
 | `/team-access/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | `/governance` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/tasks` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
+| `/tasks` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/production` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/production/factory` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/production/factory/:runId` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/calendar` | ✅ | — | — | — | ✅ | ✅ | — | ✅ | — |
 | `/audit-logs` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/audit-logs/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/failed-events` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | — |
+| `/failed-events` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | `/failed-events/:id` | — | — | — | — | ✅ | ✅ | — | ✅ | — |
 | `/narration` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | `/ai-providers` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
@@ -241,37 +241,37 @@ that it behaves; behavioural findings belong in the verdict file.
 | `/app-experience` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
 | `/devices-admin` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/devices/:id` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/support-center` | ✅ | — | — | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+| `/support-center` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/workflows` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| `/rights` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/rights/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
+| `/rights` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/rights/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | `/remote-config` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
 | `/packages` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/plans/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/billing` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/billing` | ✅ | — | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/billing/subscription/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/billing/transaction/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/ops` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/ops/services/:id` | — | — | — | — | ✅ | ✅ | — | ✅ | — |
-| `/ops/incidents` | — | — | — | — | ✅ | ✅ | — | ✅ | ✅ |
-| `/ops/incidents/:id` | — | — | — | — | ✅ | ✅ | — | ✅ | ✅ |
+| `/ops/services/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
+| `/ops/incidents` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/ops/incidents/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/ops/alerts` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/ops/queues/:name` | — | — | — | — | ✅ | ✅ | — | ✅ | — |
+| `/ops/queues/:name` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/ops/telemetry` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
 | `/campaigns` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/campaigns/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| `/revenue` | — | — | — | — | — | ✅ | ✅ | ✅ | — |
+| `/revenue` | ✅ | — | — | — | — | ✅ | ✅ | ✅ | — |
 | `/translation` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/translation/:id` | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/translation/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/quiz` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/quiz/:id` | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/recommendations` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/school` | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/school` | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/finance-advanced` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/ops-sla` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/ops-sla/policy/:id` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/partnerships` | ✅ | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| `/website/pages` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/partnerships` | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | ✅ | ✅ |
+| `/website/pages` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/website/pages/:id` | ✅ | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/blog/posts` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `/blog/posts/:id` | ✅ | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -820,6 +820,7 @@ operator surface. Listed so the second case cannot hide.
 | adminCatalogue.ts | GET | `/api/v1/admin/skills/:id` | — | — |
 | adminCatalogue.ts | PATCH | `/api/v1/admin/skills/:id` | edit_metadata | — |
 | adminCatalogue.ts | DELETE | `/api/v1/admin/skills/:id` | archive | — |
+| adminCatalogue.ts | POST | `/api/v1/admin/learning-objectives/:id/tracks/rederive` | edit_metadata | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/content-reviews/:id` | — | — |
 | adminCatalogue.ts | DELETE | `/api/v1/admin/content-reviews/:id` | review | — |
 | adminCatalogue.ts | GET | `/api/v1/admin/stories/:id/pages` | — | — |
@@ -842,14 +843,10 @@ operator surface. Listed so the second case cannot hide.
 | adminCommerce.ts | GET | `/api/v1/admin/content-costs/:entityType/:entityId` | — | — |
 | adminCommerce.ts | GET | `/api/v1/admin/commerce/integrity` | — | — |
 | adminContent.ts | PUT | `/api/v1/admin/series/:id/categories` | edit_metadata | — |
-| adminContent.ts | POST | `/api/v1/admin/books` | create | — |
-| adminContent.ts | PATCH | `/api/v1/admin/books/:id` | edit_metadata | — |
+| adminContent.ts | DELETE | `/api/v1/admin/visual-styles/:id` | archive | — |
 | adminContent.ts | DELETE | `/api/v1/admin/books/:id` | archive | — |
-| adminContent.ts | POST | `/api/v1/admin/games` | create | — |
 | adminContent.ts | PATCH | `/api/v1/admin/games/:id` | edit_metadata | — |
 | adminContent.ts | DELETE | `/api/v1/admin/games/:id` | archive | — |
-| adminContent.ts | POST | `/api/v1/admin/projects` | create | — |
-| adminContent.ts | PATCH | `/api/v1/admin/projects/:id` | edit_metadata | — |
 | adminContent.ts | DELETE | `/api/v1/admin/projects/:id` | archive | — |
 | adminContent.ts | GET | `/api/v1/admin/stories/:id` | — | — |
 | adminContent.ts | POST | `/api/v1/admin/story-pages/:id/bubbles` | create | — |
@@ -1032,7 +1029,7 @@ operator surface. Listed so the second case cannot hide.
 | stories.ts | GET | `/api/v1/stories/:id/pages` | — | — |
 | stories.ts | POST | `/api/v1/stories/:id/audio-sessions` | — | — |
 
-Orphan count: **248** of 497.
+Orphan count: **245** of 499.
 
 ## 5. API client functions the matrix could not resolve to a server route
 

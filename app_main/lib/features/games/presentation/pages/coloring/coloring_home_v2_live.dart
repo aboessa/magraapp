@@ -16,6 +16,10 @@ import '../../studio/studio_app_bar.dart';
 import '../../studio/studio_design.dart';
 import '../../studio/studio_home_widgets.dart';
 import '../../widgets/drawing_asset.dart';
+import '../../../../../core/images/heavy_assets.dart';
+import '../../../../../core/widgets/cinematic_image.dart';
+import '../../../../../l10n/app_localizations.dart';
+import '../../../../../l10n/app_localizations_ar.dart';
 import 'coloring_home_v2.dart';
 
 @immutable
@@ -233,8 +237,10 @@ class _ColoringHomeV2Dynamic extends StatelessWidget {
   final String? displayName;
   final List<StudioHeroResume> resumable;
 
-  static const _heroAsset = 'assets/images/studio/coloring-banner.png';
-  static const _heroFallback = 'assets/images/studio/coloring-banner.png';
+  // R2-first: bundled webp paints instantly, CDN twin via disk cache.
+  // The PNG rung is gone — never uploaded, never referenced.
+  static const _heroAsset = 'assets/images/studio/coloring-banner.webp';
+  static const _heroFallback = 'assets/images/studio/coloring-banner.webp';
 
   @override
   Widget build(BuildContext context) {
@@ -468,21 +474,14 @@ class _HeroColoringV2Live extends StatelessWidget {
       ),
       child: AspectRatio(
         aspectRatio: 2.2,
-        child: Image.asset(
-          'assets/images/studio/coloring-banner.webp',
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Image.asset(
+        child: CinematicImage(
+          assetPath: 'assets/images/studio/coloring-banner.webp',
+          networkUrl: heavyStudioBannerUrl(
             'assets/images/studio/coloring-banner.png',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Image.asset(
-              fallbackAsset,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: const Color(0xFF241A5E),
-                child: const Center(child: Icon(Icons.palette_rounded, size: 48, color: Colors.white24)),
-              ),
-            ),
           ),
+          semanticLabel: (AppLocalizations.of(context) ?? AppLocalizationsAr())
+              .studioBannerColoringLabel,
+          fit: BoxFit.cover,
         ),
       ),
     );
@@ -502,16 +501,9 @@ class _FeaturedTileV2Live extends StatelessWidget {
   final FeaturedColoringSpec spec; final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(18), child: Container(decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white.withValues(alpha:0.9)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.18), blurRadius:12, offset: const Offset(0,6))]), clipBehavior: Clip.antiAlias, child: Stack(children: [
-    Positioned.fill(child: Padding(padding: const EdgeInsets.fromLTRB(12,12,12,36), child: Builder(builder: (_) {
-      final url = spec.bestDisplayUrl;
-      final fallback = spec.fallbackAsset;
-      Widget fallbackW() => fallback.toLowerCase().endsWith('.svg') ? DrawingAsset(assetIdOrPath: fallback, fit: BoxFit.contain) : Image.asset(fallback, fit: BoxFit.contain, errorBuilder: (_,__,___) => Icon(Icons.image_outlined, size:48, color: Colors.black.withValues(alpha:0.12)));
-      if (url == null) return fallbackW();
-      final isNet = url.startsWith('http://') || url.startsWith('https://');
-      if (isNet) return Image.network(url, fit: BoxFit.contain, errorBuilder: (_,__,___) => fallbackW());
-      if (url.toLowerCase().endsWith('.svg')) return DrawingAsset(assetIdOrPath: url, fit: BoxFit.contain);
-      return Image.asset(url, fit: BoxFit.contain, errorBuilder: (_,__,___) => fallbackW());
-    }))),
+    // `DrawingAsset` routes network through `RemoteImageCache` — the bare
+    // `Image.network` here re-downloaded every session and bypassed pinning.
+    Positioned.fill(child: Padding(padding: const EdgeInsets.fromLTRB(12,12,12,36), child: DrawingAsset(assetIdOrPath: spec.bestDisplayUrl ?? spec.assetPath ?? spec.fallbackAsset, fit: BoxFit.contain))),
     if (spec.isNew) Positioned(top:8,right:8, child: Container(padding: const EdgeInsets.symmetric(horizontal:8, vertical:3), decoration: BoxDecoration(color: const Color(0xFF6A3DF2), borderRadius: BorderRadius.circular(999)), child: const Text('جديد', style: TextStyle(color: Colors.white, fontSize:10, fontWeight: FontWeight.w800)))),
     Positioned(top:8,left:8, child: Container(width:22,height:22,decoration: BoxDecoration(color: const Color(0xFFFFF3C2), shape: BoxShape.circle, border: Border.all(color: const Color(0xFFFFD34D), width:1.2)), child: const Icon(Icons.star_rounded, size:14, color: Color(0xFFFF9F1C)))),
     Positioned(bottom:0,left:0,right:0, child: Container(constraints: const BoxConstraints(minHeight: 36), padding: const EdgeInsets.fromLTRB(10, 7, 10, 7), color: const Color(0xFF0C1030), alignment: Alignment.center, child: Text(spec.label, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, softWrap: true, style: const TextStyle(color: Colors.white, fontSize:11, fontWeight: FontWeight.w700, height: 1.3)))),
@@ -523,12 +515,7 @@ class _CategoryTileV2Live extends StatelessWidget {
   final ColoringCategorySpec spec; final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(16), child: Container(decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.14), blurRadius:10, offset: const Offset(0,5))]), clipBehavior: Clip.antiAlias, child: Row(children: [
-    Container(width:56,height: double.infinity, decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [spec.gradientStart, spec.gradientEnd])), child: () {
-      final u = spec.bestDisplayUrl ?? spec.fallbackAsset;
-      if (u.startsWith('http')) return Padding(padding: const EdgeInsets.all(6), child: Image.network(u, fit: BoxFit.contain, errorBuilder: (_,__,___)=> Icon(spec.icon, size:26, color: Colors.white)));
-      if (u.toLowerCase().endsWith('.svg')) return Padding(padding: const EdgeInsets.all(6), child: DrawingAsset(assetIdOrPath: u, fit: BoxFit.contain));
-      return Icon(spec.icon, size:26, color: Colors.white);
-    }()),
+    Container(width:56,height: double.infinity, decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [spec.gradientStart, spec.gradientEnd])), child: Padding(padding: const EdgeInsets.all(6), child: DrawingAsset(assetIdOrPath: spec.bestDisplayUrl ?? spec.assetPath ?? spec.fallbackAsset, fit: BoxFit.contain))),
     Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal:10, vertical:8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text(spec.label, style: const TextStyle(color: Color(0xFF0C1030), fontSize:13, fontWeight: FontWeight.w800)), const SizedBox(height:2), Text('${spec.count} رسمة', style: TextStyle(color: const Color(0xFF0C1030).withValues(alpha:0.55), fontSize:10, fontWeight: FontWeight.w600))]))),
   ])));
 }

@@ -8,6 +8,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/creative_catalogue_provider.dart';
 import '../../data/local_creation_store.dart';
+import '../../../../core/images/heavy_assets.dart';
+import '../../../../core/widgets/cinematic_image.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations_ar.dart';
 import '../studio/studio_app_bar.dart';
 import '../widgets/drawing_asset.dart';
 import 'reference_drawing_page.dart';
@@ -201,19 +205,16 @@ class _ReferenceCataloguePageState extends State<ReferenceCataloguePage> {
       ),
       child: AspectRatio(
         aspectRatio: 2.3,
-        child: Image.asset(
-          'assets/images/studio/draw-like-me-banner.webp',
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Image.asset(
+        // R2-first: bundled webp paints instantly, CDN twin via disk cache
+        // after first load. The PNG rung is gone — never uploaded.
+        child: CinematicImage(
+          assetPath: 'assets/images/studio/draw-like-me-banner.webp',
+          networkUrl: heavyStudioBannerUrl(
             'assets/images/studio/draw-like-me-banner.png',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              color: const Color(0xFF1A0B3E),
-              child: const Center(
-                child: Icon(Icons.brush_rounded, size: 42, color: Colors.white24),
-              ),
-            ),
           ),
+          semanticLabel: (AppLocalizations.of(context) ?? AppLocalizationsAr())
+              .studioBannerDrawLikeMeLabel,
+          fit: BoxFit.cover,
         ),
       ),
     );

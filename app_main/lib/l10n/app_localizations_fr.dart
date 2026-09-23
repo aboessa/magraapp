@@ -818,6 +818,13 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible d\'enregistrer la modification. Réessaie';
 
   @override
+  String get consentWriteRequiresParentPin =>
+      'Cette modification est un registre parental, et votre famille a déjà un code. Saisissez-le, puis réessayez.';
+
+  @override
+  String get consentUnlockAction => 'Saisir le code parental';
+
+  @override
   String get consentContinueButton => 'Continuer';
 
   @override
@@ -839,4 +846,32 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboardingFinishButton => 'Commencer';
+
+  @override
+  String get studioBannerDrawLikeMeLabel => 'Dessine comme moi';
+
+  @override
+  String get studioBannerConnectDotsLabel => 'Relie les points';
+
+  @override
+  String get studioBannerColoringLabel => 'Colorie';
+
+  @override
+  String get studioBannerCreativeStudioLabel => 'Studio créatif';
+
+  @override
+  String get googlePlayUnavailableOnDevice =>
+      'Google Play n\'est pas disponible sur cet appareil.';
+
+  @override
+  String get parentDailyLimitTitle => 'Limite quotidienne de temps d\'écran';
+
+  @override
+  String get parentDailyLimitOff =>
+      'Désactivée — aucune limite de temps d\'écran';
+
+  @override
+  String parentDailyLimitOn(int minutes) {
+    return 'Activée : $minutes minutes par jour';
+  }
 }

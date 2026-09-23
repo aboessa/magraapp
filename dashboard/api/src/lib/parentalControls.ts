@@ -104,10 +104,20 @@ type SettingsRow = {
 /**
  * يقرأ سياسة الطفل من D1 ويحسب الأجزاء الزمنية في توقيت الأسرة.
  *
- * الصف الغائب يعني أن ولي الأمر لم يفتح الإعدادات بعد، ويُطبَّق عليه افتراضي
- * المخطط (`daily_minutes` = 30) لا «لا حدّ»: هذا هو الرقم الذي يعرضه
- * `GET /child-settings/:childId` نفسه عند إنشاء الصف بشكل بطيء، فالسلوك الوحيد
- * المتماسك أن يكون الفرض مطابقًا لما تعرضه الشاشة.
+ * ## الغياب يعني «لم يفعّله ولي الأمر» — قرار المالك 2026-09-23 (`DECIDE-108`)
+ *
+ * «لا وقت نوم وكدا، لازم ولي الأمر يفعّل الموضوع ده.» فضوابط الوقت اختيارية
+ * يفعّلها ولي الأمر، ولا تُفرَض بالافتراض.
+ *
+ * وكانت هذه الدالّة تستبدل **30 دقيقة** مكان الغياب، بحجّة مطابقة ما تعرضه
+ * الشاشة. والحجّة كانت متماسكة داخليًّا وخاطئة في نتيجتها: `GET /child-settings`
+ * يُدرج صفًّا بالافتراضات لمجرّد فتح الشاشة، و`PUT` لم يكن يقبل `null`،
+ * و`Slider` يبدأ من 5 — فكان ولي الأمر يُمنَح حدًّا لم يطلبه ثم **لا يملك
+ * إلغاءه**، ويُفرَض على الفيديو فعلًا في `startPlayback`/`heartbeatPlayback`.
+ *
+ * الآن: `daily_minutes IS NULL` (أو صفّ غائب) ⇒ `dailyMinutes = null` ⇒ لا فحص.
+ * و`0093_daily_limit_opt_in.sql` أزال `NOT NULL` و`DEFAULT 30` فصار الغياب
+ * قابلًا للتمثيل في القاعدة لا في هذه الدالّة وحدها.
  */
 export async function loadScreenTimePolicy(
   env: Env,
@@ -131,8 +141,9 @@ export async function loadScreenTimePolicy(
   const timezone = parent?.timezone?.trim() || DEFAULT_TIMEZONE;
   const { date, minutes } = localParts(now, timezone);
 
+  // نفس شكل `maxSessionMinutes` أدناه: رقمٌ موجب حدٌّ، وكل ما عداه «غير مفعَّل».
   const dailyRaw = settings?.daily_minutes;
-  const dailyMinutes = typeof dailyRaw === 'number' && dailyRaw > 0 ? dailyRaw : 30;
+  const dailyMinutes = typeof dailyRaw === 'number' && dailyRaw > 0 ? dailyRaw : null;
 
   const sessionRaw = settings?.max_session_minutes;
   const maxSessionMinutes = typeof sessionRaw === 'number' && sessionRaw > 0 ? sessionRaw : null;

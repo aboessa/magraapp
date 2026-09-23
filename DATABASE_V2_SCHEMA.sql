@@ -1,7 +1,25 @@
+-- sql-status: obsolete
 -- ============================================================
 -- DATABASE V2 - منصة مجرة | أعمار 3–12 وملفات أطفال متعددة
 -- PostgreSQL / Supabase conceptual schema
 -- المرجع: AGE_EXPERIENCE_PLAN_3_12.md
+-- ============================================================
+--
+-- ‏**هذا الملف لا يُشغَّل على أي قاعدة، ولا يوصف نظامًا قائمًا** (`DOCS-201`).
+--
+-- هو تصميم PostgreSQL/Supabase: `TIMESTAMPTZ` و`ENUM` وRow-Level Security
+-- و`auth.uid()` و`authenticated`/`service_role`. والنظام المُنفَّذ **Cloudflare
+-- D1 (SQLite)** وملكيّةُ العائلة مفروضة في كائن دائم (`do/FamilyState.ts`) لا
+-- بـRLS. وتشغيلُ هذا الملف على D1 يفشل نحويًّا من أول سطر.
+--
+-- مخطَّط القاعدة الحقيقي هو `dashboard/api/migrations/*.sql` وحدها، وسجلُّه
+-- `dashboard/api/migrations/LEDGER.md`. و`0085_drop_plan_limits_table.sql` يقول
+-- هذا صراحةً عن `subscription_plan_limits` أدناه: الجدول أُسقط من D1.
+--
+-- والوسم في السطر الأول ليس زينة: `tools/ci/content-sql-outside-migrations.mjs`
+-- يقرأه، فبدونه يفشل البناء على `INSERT INTO planets` في §6 — وهو سلوكٌ مقصود،
+-- لأن كتابةً في جدول كتالوج من خارج `migrations/` هي بالضبط ما أعطب الإنتاج في
+-- `DATA-201`.
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

@@ -32,6 +32,45 @@ const marker = (status) => `<!-- doc-status: ${status} -->`;
 
 const VALID = new Set(['source', 'historical', 'obsolete']);
 
+/// ‏`DOCS-201`: مصدرُ حقيقةٍ يصف منصّةً لا وجود لها.
+///
+/// ## الثغرة البنيوية التي يغلقها هذا الحرس
+///
+/// الحرس أعلاه يُثبت أن كل **لقطة منقضية** تُعلن نفسها. ولا شيء فيه يفحص
+/// تصنيف `source` مقابل أي شيء — السطر `if (status === 'source') continue;`
+/// أدناه يتخطّاها عن قصد. فالمنظومة تمنع القارئ من الثقة بلقطةٍ منقضية، ولا
+/// تمنعه من الثقة بـ**مرجعٍ** منقضٍ.
+///
+/// وقد وقع: `TECH_STACK.md` بقي `source` بلا تعديل من commit خطّ أساس المرحلة 0
+/// (2026-08-07) وهو يفرض Supabase وPostgres وRLS و`auth.uid()` وRevenueCat على
+/// نظامٍ يعمل بـCloudflare D1 وDurable Objects وGoogle Play. ومرّ شهرًا بـCI أخضر.
+///
+/// ## القاعدة، ولماذا هي بهذا الشكل
+///
+/// كلمةٌ من هذه الأسماء في وثيقة `source` **ليست خطأً بذاتها**: الوثيقة قد تشرح
+/// لماذا لم تُختَر المنصّة، أو تحمل وسمًا يقول إن القسم منقضٍ. فالمطلوب ليس غياب
+/// الكلمة بل **اعترافٌ في موضعها**: وسم `<!-- section-status: superseded -->` أو
+/// `waived` في نفس الوثيقة.
+///
+/// أي أن الحرس لا يمنع ذكر Supabase؛ يمنع ذكرها **بلا إقرار**. ومن يعيد المنصّة
+/// فعلًا يحذف الوسم ويحذف اسمه من هذه القائمة — وكلاهما فعلٌ صريح لا سهو.
+const ABSENT_PLATFORMS = [
+  // كلٌّ منها مقيس: صفر مطابقة في `package.json` ×3 و`app_main/pubspec.yaml`.
+  'supabase',
+  'revenuecat',
+  'purchases_flutter',
+  // Multi-DRM: تنازل مالك موثَّق في `AUDIT_FULL_2026.md:504-521`، ويعود ملزمًا
+  // فور نشر محتوى مرخَّص من غير مجرة.
+  'widevine',
+  'fairplay',
+  'playready',
+];
+
+const SECTION_WAIVERS = [
+  '<!-- section-status: superseded -->',
+  '<!-- section-status: waived -->',
+];
+
 /// يقرأ جدول التصنيف من `DOCS_INDEX.md`.
 ///
 /// الصيغة المتوقَّعة لكل صفّ: `| \`FILE.md\` | status | ... |`
@@ -73,6 +112,21 @@ for (const [file, status] of classified) {
   if (!head(file).includes(marker(status))) missingMarker.push(`${file} (${status})`);
 }
 
+/// ‏`DOCS-201`: وثيقة `source` تذكر منصّةً غائبة بلا وسمٍ يقرّ بذلك.
+const unacknowledged = [];
+for (const [file, status] of classified) {
+  if (status !== 'source' || !present.includes(file)) continue;
+  // هذا الملف والفهرس يذكران الأسماء لأنهما **يشرحان القاعدة**، فاستثناؤهما
+  // ليس مجاملة: حرسٌ يرصد شارحه يُطفَأ في أسبوع.
+  if (file === INDEX) continue;
+  const source = readFileSync(file, 'utf8');
+  if (SECTION_WAIVERS.some((waiver) => source.includes(waiver))) continue;
+  const mentioned = ABSENT_PLATFORMS.filter(
+    (name) => new RegExp(name, 'i').test(source),
+  );
+  if (mentioned.length) unacknowledged.push(`${file} → ${mentioned.join(', ')}`);
+}
+
 const counts = { source: 0, historical: 0, obsolete: 0 };
 for (const status of classified.values()) counts[status]++;
 
@@ -97,6 +151,16 @@ if (stale.length) {
 if (missingMarker.length) {
   console.error(
     `\nملفات لا تُعلن حالتها في رأسها (يلزم ${marker('historical')}):\n  ${missingMarker.join('\n  ')}`,
+  );
+  failed = true;
+}
+if (unacknowledged.length) {
+  console.error(
+    '\nوثائق `source` تذكر منصّةً غائبة عن المشروع بلا إقرار في موضعها:\n  '
+    + `${unacknowledged.join('\n  ')}\n`
+    + `\nأضف ${SECTION_WAIVERS[0]} (أو ${SECTION_WAIVERS[1]}) عند القسم المعنيّ`
+    + ' مع سطرٍ يقول ما المُنفَّذ فعلًا ودليله — أو أعد المنصّة واحذف اسمها من'
+    + ' ABSENT_PLATFORMS في هذا الملف.',
   );
   failed = true;
 }

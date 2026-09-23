@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { FamilyState } from '../src/do/FamilyState.ts';
 import { bedtimeCovers, loadScreenTimePolicy } from '../src/lib/parentalControls.ts';
 
@@ -64,15 +66,76 @@ function fakeDb({ settings = null, timezone = 'Africa/Cairo' } = {}) {
   };
 }
 
-test('a missing settings row applies the schema default rather than "no limit"', async () => {
-  // الصف الغائب يعني أن ولي الأمر لم يفتح الإعدادات. `GET /child-settings/:id`
-  // يُنشئ الصف بـ`daily_minutes = 30` (افتراضي المخطط)، فالفرض يطابق ما تعرضه
-  // الشاشة. اعتبار الغياب «بلا حدّ» كان سيجعل الحماية اختيارية بالصمت.
+test('a child with no configured control is under no limit at all', async () => {
+  /// ## قرار المالك (2026-09-23، `DECIDE-108`)
+  ///
+  /// «لا وقت نوم وكدا، لازم ولي الأمر يفعّل الموضوع ده.» فالغياب يعني **لم
+  /// يفعّله ولي الأمر**، لا «طبّق الافتراض».
+  ///
+  /// وهذا التوكيد كان معكوسًا: كان يثبّت `dailyMinutes === 30` بحجّة مطابقة ما
+  /// تعرضه الشاشة. والحجّة متماسكة داخليًّا وخاطئة في نتيجتها — `GET
+  /// /child-settings/:id` يُدرج الصفّ بالافتراضات لمجرّد **فتح الشاشة**، و`PUT`
+  /// لم يقبل `null`، و`Slider` يبدأ من 5. فكان ولي الأمر يُمنَح حدًّا لم يطلبه ثم
+  /// لا يملك إلغاءه، ويُفرَض على الفيديو فعلًا في `startPlayback`.
   const policy = await loadScreenTimePolicy({ DB: fakeDb() }, 'parent_1', 'child_1');
-  assert.equal(policy.dailyMinutes, 30);
+  assert.equal(policy.dailyMinutes, null, 'an unset daily limit must not be enforced');
   assert.equal(policy.maxSessionMinutes, null);
   assert.equal(policy.bedtimeActive, false);
   assert.equal(policy.bedtime, null);
+});
+
+test('an explicit daily limit is still enforced once the parent sets one', async () => {
+  // القرار «اختياري» لا «مُعطَّل»: ما يضبطه ولي الأمر يسري كاملًا.
+  const policy = await loadScreenTimePolicy(
+    {
+      DB: fakeDb({
+        settings: {
+          daily_minutes: 45,
+          max_session_minutes: null,
+          bedtime_start: null,
+          bedtime_end: null,
+        },
+      }),
+    },
+    'parent_1',
+    'child_1',
+  );
+  assert.equal(policy.dailyMinutes, 45);
+});
+
+test('the schema can represent "no daily limit", not only the lib', async () => {
+  /// ## لماذا يُفحَص المخطَّط لا الدالّة وحدها
+  ///
+  /// قبل `0093` كان العمود `NOT NULL DEFAULT 30 CHECK (BETWEEN 5 AND 180)` —
+  /// ثلاثة قيود تجعل «لا حدّ» **غير قابل للتمثيل في القاعدة**. فدالّةٌ تُرجع
+  /// `null` فوق مخطَّطٍ يرفض `null` تمرّ في الاختبار وتفشل عند أوّل كتابة حقيقية.
+  const migration = readFileSync(
+    fileURLToPath(new URL('../migrations/0093_daily_limit_opt_in.sql', import.meta.url)),
+    'utf8',
+  );
+  assert.match(
+    migration,
+    /daily_minutes INTEGER CHECK \(daily_minutes IS NULL OR daily_minutes BETWEEN 5 AND 180\)/,
+    'daily_minutes must be nullable with no default',
+  );
+  assert.doesNotMatch(
+    migration.split('child_settings_pre_0093')[1] ?? migration,
+    /daily_minutes INTEGER NOT NULL/,
+    'the rebuilt table must not reintroduce NOT NULL',
+  );
+  // والصفوف تُنقل لا تُصفَّر: صفٌّ يحمل 30 لا يُفرَّق عن صفٍّ اختاره ولي أمره.
+  assert.match(migration, /INSERT INTO child_settings \([\s\S]*?\)\s*SELECT/);
+
+  // ومسار الكتابة يقبل الإلغاء، وإلّا بقي الحدّ يُضبَط ولا يُلغى.
+  const settingsRoute = readFileSync(
+    fileURLToPath(new URL('../src/routes/childSettings.ts', import.meta.url)),
+    'utf8',
+  );
+  assert.match(
+    settingsRoute,
+    /daily_minutes: integer\(\{ min: 5, max: 180, optional: true, nullable: true \}\)/,
+    'PUT must accept daily_minutes: null so a parent can switch the limit off',
+  );
 });
 
 test('the policy reads the parent timezone and computes the local date', async () => {
@@ -219,6 +282,12 @@ const heartbeat = (object, leaseId) => call(object, post('/playback/heartbeat', 
   allowed_tracks: ['preschool', 'kids', 'junior'],
 }));
 
+/// `API-201`: بوابة الوقت لأسطح بلا عقد تشغيل (السرد الصوتي).
+const checkScreenTime = (object, childId) => call(object, post('/screen-time/check', {
+  session_id: 'session-1',
+  child_id: childId,
+}));
+
 test('bedtime refuses a new lease with a code the client can act on', async () => {
   // نافذة تغطّي كل ساعة إلا واحدة، فالاختبار لا يعتمد على وقت التشغيل.
   const { object, childId, db } = await seededFamily({
@@ -348,4 +417,226 @@ test('time already watched is credited even when the same heartbeat refuses', as
   const credited = db.prepare('SELECT watched_seconds FROM screen_time_daily WHERE child_id = ?')
     .all(childId)[0]?.watched_seconds ?? 0;
   assert.ok(credited >= 85, `credited ${credited}s before refusing`);
+});
+
+/* --------------------------------- `API-201`: السرد الصوتي تحت نفس الحدود */
+
+/// ## العطل الذي تحرس منه هذه المجموعة
+///
+/// `books.ts` و`stories.ts` يمنحان توكن وسائط للسرد **بلا عقد تشغيل**، وذلك
+/// قرارٌ صحيح: العقد وُجد لسقف التزامن، والسقف مقصورٌ على الفيديو في الخطة، فعدّ
+/// حكايةٍ قبل النوم عليه كان سيمنع أبًا يقرأ لطفل بينما يشاهد آخر.
+///
+/// لكن ترك العقد ترك معه **وقت النوم والحدّ اليومي**، وهما ليسا تزامنًا. فكان
+/// طفلٌ يُرفَض له الفيديو في التاسعة مساءً يحصل على الكتب المسموعة في التاسعة
+/// مساءً — والرقابة التي يضبطها ولي الأمر تُقرأ عامّةً وهي على ثلث المحتوى.
+
+test('bedtime refuses a narration session, not only a video lease', async () => {
+  // نافذة تغطّي كل ساعة إلا واحدة، فالاختبار لا يعتمد على وقت التشغيل.
+  const { object, childId } = await seededFamily({
+    daily_minutes: 60,
+    max_session_minutes: null,
+    bedtime_start: '00:00',
+    bedtime_end: '23:59',
+  });
+
+  const refused = await checkScreenTime(object, childId);
+  assert.equal(refused.status, 403);
+  // الرمز هو ما يجعل العميل يعرض «انتهى وقتك» لا «هذا المحتوى يتطلب اشتراكًا»:
+  // الثانية تدفع ولي الأمر إلى صفحة الدفع، وهي جواب خاطئ تمامًا لطفلٍ نام وقته.
+  assert.equal(refused.body.code, 'screen_time_bedtime');
+});
+
+test('a spent daily limit refuses narration and reports the numbers', async () => {
+  const { object, childId, db } = await seededFamily({
+    daily_minutes: 30,
+    max_session_minutes: null,
+    bedtime_start: null,
+    bedtime_end: null,
+  });
+
+  // قبل استهلاك الحدّ: مسموح.
+  const allowed = await checkScreenTime(object, childId);
+  assert.equal(allowed.status, 200, JSON.stringify(allowed.body));
+  assert.equal(allowed.body.data.allowed, true);
+
+  // الرصيد نفسه الذي يكتبه الفيديو: فحدٌّ استهلكه المشاهدة يمنع السرد.
+  // وهذا جوهر البند — لا رصيدان منفصلان لطفل واحد.
+  const today = new Date().toISOString().slice(0, 10);
+  db.prepare(
+    'INSERT INTO screen_time_daily (child_id, activity_date, watched_seconds, updated_at) VALUES (?, ?, ?, ?)',
+  ).run(childId, today, 30 * 60, Date.now());
+
+  const refused = await checkScreenTime(object, childId);
+  assert.equal(refused.status, 403);
+  assert.equal(refused.body.code, 'screen_time_daily_limit');
+  assert.equal(refused.body.data.limit_seconds, 30 * 60);
+  assert.ok(refused.body.data.used_seconds >= 30 * 60);
+});
+
+test('narration is allowed when no limit is configured', async () => {
+  const { object, childId } = await seededFamily({
+    daily_minutes: null,
+    max_session_minutes: null,
+    bedtime_start: null,
+    bedtime_end: null,
+  });
+  const allowed = await checkScreenTime(object, childId);
+  assert.equal(allowed.status, 200, JSON.stringify(allowed.body));
+});
+
+test('a family that never opened the settings screen is not gated at all', async () => {
+  /// هذا هو الشرط الذي يجعل ربط البوابة مطابقًا لقرار المالك لا تشديدًا عليه:
+  /// **لا صفّ إعدادات** — أي ولي أمرٍ لم يفعّل شيئًا — يمرّ من البوابة ومن عقد
+  /// الفيديو معًا.
+  ///
+  /// والحالة ليست نظرية: `fakeDb()` بلا `settings` يحاكي غياب الصفّ، وهو ما كان
+  /// يُنتج حدًّا 30 دقيقة قبل `0093`. فلو عاد ذلك الاستبدال يومًا، فشل هذا
+  /// الاختبار **وليس** ذاك الذي يفحص الدالّة وحدها: هنا يُقاس الأثر على الطفل.
+  const db = new DatabaseSync(':memory:');
+  const state = durableState(db);
+  const object = new FamilyState(state, {
+    DB: fakeDb(),
+    FAMILY_EVENTS: { async sendBatch() {} },
+  });
+  await call(object, post('/initialize', {
+    parent_id: 'parent_00000002',
+    display_name: 'أسرة بلا ضوابط',
+    identity_epoch: 1,
+  }));
+  await call(object, post('/sessions/create', {
+    session_id: 'session-1',
+    refresh_token_hash: 'hash-1',
+    installation_id_hash: 'install-1',
+    platform: 'android',
+    device_name: 'هاتف',
+    expires_at: Date.now() + 30 * 24 * 60 * 60 * 1000,
+  }));
+  const child = await call(object, post('/children', {
+    session_id: 'session-1',
+    nickname: 'ياسين',
+    birth_month: 3,
+    birth_year: new Date().getUTCFullYear() - 6,
+    avatar_id: 'avatar-2',
+  }));
+  assert.equal(child.status, 201, JSON.stringify(child.body));
+  const childId = child.body.data.id;
+
+  // عشر ساعات مُستهلَكة اليوم. الرقم مقصود: أي حدٍّ افتراضيّ مُتصوَّر (والقديم 30
+  // دقيقة) كان سيرفض هنا. فالتوكيد يقيس **غياب الفرض** لا مجرّد نجاح نداء.
+  const today = new Date().toISOString().slice(0, 10);
+  db.prepare(
+    'INSERT INTO screen_time_daily (child_id, activity_date, watched_seconds, updated_at) VALUES (?, ?, ?, ?)',
+  ).run(childId, today, 10 * 60 * 60, Date.now());
+
+  const narration = await checkScreenTime(object, childId);
+  assert.equal(narration.status, 200, JSON.stringify(narration.body));
+  assert.equal(narration.body.data.allowed, true);
+
+  const lease = await startPlayback(object, childId);
+  assert.equal(lease.status, 201, JSON.stringify(lease.body));
+});
+
+test('the narration gate creates no lease, so it cannot consume the concurrency cap', async () => {
+  // هذا هو الشرط الذي يجعل البند إصلاحًا لا انحدارًا: لو أنشأت البوابة عقدًا
+  // لعادت العلّة التي يشرحها `books.ts` — أبٌ يقرأ لطفل يمنع آخر من المشاهدة.
+  const { object, childId, db } = await seededFamily({
+    daily_minutes: 60,
+    max_session_minutes: null,
+    bedtime_start: null,
+    bedtime_end: null,
+  });
+
+  await checkScreenTime(object, childId);
+  const leases = db.prepare('SELECT COUNT(*) AS n FROM playback_leases').all()[0]?.n ?? 0;
+  assert.equal(leases, 0, 'a narration check must not create a playback lease');
+});
+
+test('the narration gate refuses a child outside the family', async () => {
+  // معرّف الطفل يأتي من جسم الطلب، فالتحقق **داخل الكائن** هو ما يجعل معرّفًا من
+  // أسرة أخرى غير قابل للتمثيل لا مرفوضًا فحسب.
+  const { object } = await seededFamily({
+    daily_minutes: 60,
+    max_session_minutes: null,
+    bedtime_start: null,
+    bedtime_end: null,
+  });
+  const refused = await checkScreenTime(object, 'child-from-another-family');
+  assert.equal(refused.status, 404);
+});
+
+test('the narration gate refuses an unknown session', async () => {
+  const { object, childId } = await seededFamily({
+    daily_minutes: 60,
+    max_session_minutes: null,
+    bedtime_start: null,
+    bedtime_end: null,
+  });
+  const refused = await call(object, post('/screen-time/check', {
+    session_id: 'session-does-not-exist',
+    child_id: childId,
+  }));
+  assert.equal(refused.status, 401);
+});
+
+test('both narration routes run the gate, and run it before minting a token', () => {
+  /// ## القرار، ولماذا صار الربط صحيحًا
+  ///
+  /// `DECIDE-108` كان سؤال منتج لا هندسة، فبقيت الآلة مبنيّة والربط محجوبًا،
+  /// وكان هنا توكيدٌ يُثبِّت **غياب** الربط حتى لا يُوصَل بالسهو.
+  ///
+  /// وقرار المالك (2026-09-23): الضوابط يفعّلها ولي الأمر، وما يفعّله يسري على
+  /// السرد كما يسري على الفيديو. فسؤال «هل حكاية قبل النوم ممنوعة في وقت النوم؟»
+  /// جوابه: نعم، إن فعّل ولي الأمر وقت النوم — ومن يريدها لا يفعّله. السلطة له لا
+  /// لتخمينٍ في الخادم.
+  ///
+  /// ## ما يُثبَّت هنا، ولماذا هذان الشرطان تحديدًا
+  ///
+  /// **الترتيب**: البوابة قبل `createMediaToken`. توكنٌ يُصدَر ثم يُرفَض الطلب
+  /// ليس رفضًا: التوكن صلاحيةٌ حاملة، ومن يملكه يقرأ الأصل مباشرةً من
+  /// `/media/assets/:id`.
+  ///
+  /// **الملفّان معًا**: سطحان يمنحان توكن وسائط لنفس الطفل، فربط أحدهما يُنتج
+  /// رقابةً تعمل على كتاب ولا تعمل على قصة — وهو أسوأ من لا رقابة، لأنه يُقرأ
+  /// عاملًا.
+  const strip = (source) => source
+    .replace(/^[ \t]*\/\/.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+
+  for (const file of ['books.ts', 'stories.ts']) {
+    const source = strip(readFileSync(
+      fileURLToPath(new URL(`../src/routes/${file}`, import.meta.url)),
+      'utf8',
+    ));
+
+    const gateAt = source.indexOf("'/screen-time/check'");
+    assert.notEqual(gateAt, -1, `${file}: the narration route must call /screen-time/check`);
+
+    const tokenAt = source.indexOf('createMediaToken(c.env');
+    assert.notEqual(tokenAt, -1, `${file}: expected a createMediaToken call to order against`);
+    assert.ok(
+      gateAt < tokenAt,
+      `${file}: the screen-time gate must run BEFORE createMediaToken — a token minted `
+      + 'then refused is still a bearer capability for the asset',
+    );
+
+    // ورفضُ البوابة يُمرَّر كما هو: `forward` يحفظ الرمز (`screen_time_bedtime`)
+    // الذي يعرض للطفل «وقت النوم» بدل «هذا المحتوى يتطلب اشتراكًا».
+    assert.match(
+      source.slice(gateAt, tokenAt),
+      /if \(!gate\.ok\) return forward\(gate\);/,
+      `${file}: a gate refusal must be forwarded with its code intact`,
+    );
+  }
+});
+
+test('the screen-time endpoint stays reachable, so the decision is a wiring line', () => {
+  // الآلة لا تُحذف بحجّة أنها غير موصولة: حذفُها يجعل القرار عملًا هندسيًّا من
+  // جديد بدل سطرٍ واحد.
+  const source = readFileSync(
+    fileURLToPath(new URL('../src/do/FamilyState.ts', import.meta.url)),
+    'utf8',
+  );
+  assert.match(source, /'POST \/screen-time\/check'/);
+  assert.match(source, /private async checkScreenTime\(/);
 });

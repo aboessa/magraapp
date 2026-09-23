@@ -90,6 +90,22 @@ void main() {
       expect(recorder.writes.first.path, contains('child-1'));
     });
 
+    test('إلغاء الحدّ اليومي يُرسل `null` صريحة لا حقلًا محذوفًا', () async {
+      // قرار المالك (`DECIDE-108`): الضوابط يفعّلها وليّ الأمر، فلا بدّ من طريق
+      // لإطفائها. و`null` هو ما يقرؤه الخادم إطفاءً — وحقلٌ **محذوف** من الجسم
+      // يعني «لا تغيّر هذا الحقل» في `PUT /child-settings/:id` (`'daily_minutes'
+      // in body`)، أي أن الحدّ يبقى ساريًا بلا أن يعلم أحد.
+      final recorder = _Recorder();
+      final container = _container(recorder);
+      await container
+          .read(childControlsControllerProvider('child-1').notifier)
+          .clearDailyLimit();
+
+      expect(recorder.writes, hasLength(1));
+      expect(recorder.writes.single.body, {'daily_minutes': null});
+      expect(recorder.writes.single.body.containsKey('daily_minutes'), isTrue);
+    });
+
     test('مسح نافذة النوم يُرسل الطرفين في طلب واحد', () async {
       // بطلبين تبقى نافذةٌ نصفها محدَّد إن فشل الثاني — حالةٌ لم يقصدها وليّ
       // الأمر ولا يراها.

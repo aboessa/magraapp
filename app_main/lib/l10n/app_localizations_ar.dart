@@ -805,6 +805,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get consentWriteErrorGeneric => 'تعذّر حفظ التغيير. حاول مجددًا';
 
   @override
+  String get consentWriteRequiresParentPin =>
+      'هذا التغيير سجلٌّ يخصّ وليّ الأمر، ولأسرتك رمز مُسجَّل فعلًا. أدخل الرمز ثم أعد المحاولة.';
+
+  @override
+  String get consentUnlockAction => 'أدخل رمز ولي الأمر';
+
+  @override
   String get consentContinueButton => 'متابعة';
 
   @override
@@ -826,4 +833,31 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboardingFinishButton => 'ابدأ الآن';
+
+  @override
+  String get studioBannerDrawLikeMeLabel => 'ارسم مثلي';
+
+  @override
+  String get studioBannerConnectDotsLabel => 'صل النقاط';
+
+  @override
+  String get studioBannerColoringLabel => 'لوّن';
+
+  @override
+  String get studioBannerCreativeStudioLabel => 'الاستوديو الإبداعي';
+
+  @override
+  String get googlePlayUnavailableOnDevice =>
+      'Google Play غير متاح على هذا الجهاز.';
+
+  @override
+  String get parentDailyLimitTitle => 'حدّ وقت الشاشة اليومي';
+
+  @override
+  String get parentDailyLimitOff => 'غير مفعَّل — لا حدّ على وقت الشاشة';
+
+  @override
+  String parentDailyLimitOn(int minutes) {
+    return 'مفعَّل: $minutes دقيقة يوميًّا';
+  }
 }
