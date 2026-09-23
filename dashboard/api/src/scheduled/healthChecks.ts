@@ -215,6 +215,39 @@ async function probeEventQueue(env: Env): Promise<Probe> {
       };
     }
 
+    /* ولا حدثَ **مُنتظَرًا** ليس عطلًا أيضًا — وهذه هي الحالة التي أطلقت تنبيهًا
+       كاذبًا عشرين يومًا على الإنتاج.
+
+       القاعدة أعلاه تُعفي «لم يُعالَج حدثٌ قطّ»، وهي القاعدة الصحيحة لكنها
+       مقيسة بالمؤشّر الخطأ: الإنتاج **عالج** أحداثًا في 2026-09-03 ثم أُفرِغ من
+       الأسر. فبقي `last` غير فارغ وشاخ، وبقي التنبيه يُرفَع كل خمس دقائق **إلى
+       الأبد** — لأن ما ينتج الأحداث لم يبق له وجود.
+
+       والمقيس في 2026-09-23: `parents` **صفر صفًّا**، و`ops_alerts` فيه 5,754
+       صفَّ `queue:stale` حيًّا (و5,820 لـ`dlq:pending`) عن حالتين. أي أحد عشر
+       ألف تنبيه عن مشكلتين، وهو ما أخفاهما عشرين يومًا.
+
+       والتأخّر يعني «عملٌ ينتظر ولا يُصرَف». وبلا حسابٍ واحد لا عمل يُنتَج، فلا
+       شيء يتأخّر. فالتعميم يتبع نيّة القاعدة الأصلية لا يخترع غيرها. */
+    const families = await env.DB.prepare('SELECT COUNT(*) AS n FROM parents')
+      .first<{ n: number }>()
+      .catch(() => null);
+
+    // ‏`null` تعني أن العدّ فشل، لا أنه صفر: عند الشكّ يبقى الفحص على سلوكه
+    // القديم فيُبلّغ عن التأخّر، لأن إسكات تنبيهٍ بسبب استعلامٍ فاشل أسوأ من
+    // تنبيهٍ كاذب.
+    if (families !== null && Number(families.n) === 0) {
+      await stampQueueHealth(env, row.last, 'unknown');
+      return {
+        serviceId: 'queue_family_events',
+        status: 'unknown',
+        latencyMs: null,
+        details: `idle: no family accounts exist, last processed ${row.last}`,
+        alert: null,
+        clears: 'queue:stale',
+      };
+    }
+
     const ageMinutes = Math.floor((Date.now() - Date.parse(`${row.last}Z`)) / 60_000);
     const stale = Number.isFinite(ageMinutes) && ageMinutes >= QUEUE_STALE_MINUTES;
     await stampQueueHealth(env, row.last, stale ? 'degraded' : 'healthy');

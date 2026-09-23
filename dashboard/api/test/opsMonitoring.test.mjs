@@ -36,6 +36,7 @@ function fakeDb(answers = {}, options = {}) {
             },
             async first() {
               if (options.failReads) throw new Error('D1 unavailable');
+              if (options.failFor && sql.includes(options.failFor)) throw new Error('D1 unavailable');
               return rowsFor(sql);
             },
           };
@@ -46,6 +47,9 @@ function fakeDb(answers = {}, options = {}) {
         },
         async first() {
           if (options.failReads) throw new Error('D1 unavailable');
+          // `failFor` يُسقط استعلامًا واحدًا بعينه: بعض القرارات تتغيّر حين يفشل
+          // **مسبارٌ فرعيّ** بينما الباقي سليم، ولا يمكن قياسها بـ`failReads`.
+          if (options.failFor && sql.includes(options.failFor)) throw new Error('D1 unavailable');
           return rowsFor(sql);
         },
       };
@@ -197,6 +201,75 @@ test('زوال الحالة يُغلق تنبيهها بلا تدخّل', async 
 
   const resolved = db.writes.filter((w) => /status = 'resolved'/.test(w.sql));
   assert.deepEqual(resolved.map((w) => w.params[0]).sort(), ['d1:slow', 'dlq:pending', 'queue:stale']);
+});
+
+/* ------------------- الخمول ليس تأخّرًا: `queue:stale` على منصّة فارغة */
+
+/// ## العطل الذي قيس على الإنتاج
+///
+/// الفحص كان يُعفي «لم يُعالَج حدثٌ قطّ» — وهي القاعدة الصحيحة بالمؤشّر الخطأ.
+/// الإنتاج **عالج** أحداثًا في 2026-09-03 ثم أُفرِغ من الأسر (`parents` = صفر).
+/// فبقي `last` غير فارغ وشاخ، وبقي التنبيه يُرفَع كل خمس دقائق إلى الأبد لأن ما
+/// يُنتج الأحداث لم يبق له وجود.
+///
+/// والمقيس في 2026-09-23: **5,754 صفَّ `queue:stale` حيًّا** (و5,820 لـ
+/// `dlq:pending`) عن حالتين — أحد عشر ألف تنبيه عن مشكلتين، وهو ما أخفاهما
+/// عشرين يومًا.
+const staleClock = () => new Date(Date.now() - 20 * 86_400_000)
+  .toISOString().replace('T', ' ').slice(0, 19);
+
+test('طابور قديم بلا أي أسرة خمولٌ لا تأخّر، فلا تنبيه', async () => {
+  const db = fakeDb({
+    'SELECT 1 AS ok': { ok: 1 },
+    'FROM failed_family_events': { pending: 0, oldest: null },
+    'FROM processed_family_events': { last: staleClock() },
+    'FROM parents': { n: 0 },
+  });
+  await withQuietConsole(() => runHealthChecks(quietEnv(db)));
+
+  const raised = db.writes
+    .filter((w) => /INSERT OR IGNORE INTO ops_alerts/.test(w.sql))
+    .map((w) => w.params[1]);
+  assert.equal(raised.includes('queue:stale'), false, 'منصّة بلا أسر لا شيء فيها يتأخّر');
+
+  const resolved = db.writes.filter((w) => /status = 'resolved'/.test(w.sql)).map((w) => w.params[0]);
+  assert.ok(resolved.includes('queue:stale'), 'وتنبيهٌ قديم يُغلَق لا يُترك مفتوحًا');
+
+  // والحالة `unknown` لا `healthy`: نحن لا نعرف أن الطابور يعمل، نعرف أن لا عمل له.
+  const stamps = db.writes.filter((w) => /UPDATE queue_health/.test(w.sql) && /family_events'\s*$/m.test(w.sql));
+  assert.ok(stamps.some((w) => w.params.includes('unknown')), 'الخمول يُكتب unknown لا healthy');
+});
+
+test('طابور قديم مع وجود أسرة تأخّرٌ حقيقيّ، فيُرفَع التنبيه', async () => {
+  // الشرط المقابل: الإعفاء لا يجوز أن يُسكِت تأخّرًا على منصّة حيّة.
+  const db = fakeDb({
+    'SELECT 1 AS ok': { ok: 1 },
+    'FROM failed_family_events': { pending: 0, oldest: null },
+    'FROM processed_family_events': { last: staleClock() },
+    'FROM parents': { n: 3 },
+  });
+  await withQuietConsole(() => runHealthChecks(quietEnv(db)));
+
+  const raised = db.writes
+    .filter((w) => /INSERT OR IGNORE INTO ops_alerts/.test(w.sql))
+    .map((w) => w.params[1]);
+  assert.ok(raised.includes('queue:stale'), 'ثلاث أسر وطابورٌ صامت عشرين يومًا عطل');
+});
+
+test('فشل عدّ الأسر يُبقي التنبيه، ولا يُسكته', async () => {
+  // إسكات تنبيهٍ بسبب استعلامٍ فاشل أسوأ من تنبيهٍ كاذب: الأوّل يُخفي عطلًا،
+  // والثاني يُزعج. فعند الشكّ يبقى الفحص على سلوكه القديم.
+  const db = fakeDb({
+    'SELECT 1 AS ok': { ok: 1 },
+    'FROM failed_family_events': { pending: 0, oldest: null },
+    'FROM processed_family_events': { last: staleClock() },
+  }, { failFor: 'FROM parents' });
+  await withQuietConsole(() => runHealthChecks(quietEnv(db)));
+
+  const raised = db.writes
+    .filter((w) => /INSERT OR IGNORE INTO ops_alerts/.test(w.sql))
+    .map((w) => w.params[1]);
+  assert.ok(raised.includes('queue:stale'));
 });
 
 test('قاعدة ساقطة تُنتج صفَّ انقطاع وتنبيهًا حرجًا ولا تُسقط الدورة', async () => {
