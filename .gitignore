@@ -194,6 +194,35 @@ _backups/
 # مسارًا غير متتبَّع، أي أن `git add -A` ليس افتراضًا نظريًّا.
 .backups/
 
+# ‏`GIT-201` (أودت 2026-09-23): 1.80 غيغابايت وسائط فيديو **غير مُتجاهَلة**.
+#
+# نفس عطل `.backups/` أعلاه، وأكبر منه بألف مرّة. إنتاج الفيديو في 2026-09-03
+# كتب أربعة مواضع، ولا واحد منها كان مشمولًا بقاعدة — أكّده `git check-ignore`
+# على الأربعة قبل كتابة هذا:
+#
+#   content/series/_video/        898.5 م.ب  ‏195 مقطعًا وحلقةً مُجمَّعة
+#   dashboard/api/private/        460.0 م.ب  ‏33 × 1080p.mp4 (نُسخ الرفع)
+#   tools/ops/faststart/          459.6 م.ب  ‏33 نسخة مُعاد ترتيبها لبدءٍ سريع
+#   tools/ops/thumbs-tmp/           3.3 م.ب  مصغَّرات مؤقتة
+#
+# والمصدر الوحيد بينها هو المقاطع الخام، وهي تُرفع إلى R2 ويُشار إليها بـCDN
+# (`PUBLIC_ASSET_BASE_URL`)، فالثلاثة الأخرى **مشتقّات** تُعاد توليدها بالأدوات
+# نفسها. أي أن وضعها في التاريخ يُثقل كل استنساخٍ للمستودع بما لا يُحتاج إليه
+# ولا يُسحَب بعد ذلك إلا بإعادة كتابة التاريخ.
+content/series/_video/
+content/**/*.mp4
+dashboard/api/private/
+tools/ops/faststart/
+tools/ops/thumbs-tmp/
+
+# واستثناءٌ صريح: `content/series/*.json` و`content/planets/*.json` **مصادر
+# تأليف** لا مشتقّات — 226 كيلوبايت تحمل نصوص الحلقات ومقاطعها وتوجيهات الصور،
+# وهي ما يقرؤه خطّا `tools/tts/` و`tools/playveo/`. المتتبَّع منها اليوم ملفٌ
+# واحد (`content/planets/episodes_ar.json`)، والأربعة الأخرى غير متتبَّعة
+# وتستحقّ أن تُرتكب. القاعدتان أعلاه تخصّان الفيديو وحده، وهذا السطر يحمي
+# الـJSON من أي قاعدةٍ أوسع تُكتب لاحقًا.
+!content/**/*.json
+
 # Generated media-pipeline intermediates and local review reports.
 # Runtime assets live under app_main/assets; these can be regenerated locally.
 tools/playveo/output/
