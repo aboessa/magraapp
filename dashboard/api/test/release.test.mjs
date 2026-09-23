@@ -105,9 +105,26 @@ test('النشر يحدث فعلًا حين يوجد التوكن، ولا يح�
   assert.match(workflow, /npx wrangler deploy --env production 2>&1/);
 });
 
-test('النشر لا يبدأ إلا بعد خضرة كل الوظائف ومن master وحدها', () => {
+test('النشر لا يبدأ إلا بعد خضرة كل الوظائف ومن فرع الإصدار وحده', () => {
   assert.match(workflow, /needs: \[flutter, worker, admin, migrations, content-pacing, secrets, dependencies\]/);
-  assert.match(workflow, /if: github\.ref == 'refs\/heads\/master' && github\.event_name == 'push'/);
+
+  /* ‏**الاسمان معًا، وهذا تصحيح لعطل مقيس (2026-09-23).**
+
+     كان التوكيد يثبّت `refs/heads/master` وحده. والمقيس على الخادم أن الفرع
+     البعيد الوحيد هو `main` (`origin/HEAD -> origin/main`)، و`master` محليٌّ فقط
+     يشير إلى نفس الـcommit. فوظيفة النشر كانت مشروطةً بمرجعٍ لا وجود له — أي
+     **نشرٌ لا يُطلَق أبدًا**، وكل الوظائف خضراء فوقه.
+
+     وهو نفس عطل `on:` معكوسًا: ذاك التعليق يقول إن القائمة كانت `main` وحدها
+     و`main` لا وجود له، فأضاف `master`. والواقع أن `main` هو الموجود. فالعلاج
+     الذي لا يتكرّر هو **قبول الاسمين في الموضعين**، لا اختيار أحدهما. */
+  assert.match(
+    workflow,
+    /if: \(github\.ref == 'refs\/heads\/master' \|\| github\.ref == 'refs\/heads\/main'\) && github\.event_name == 'push'/,
+  );
+
+  // والمُطلِقات تحمل الاسمين أيضًا، وإلّا فشرطُ النشر يقبل فرعًا لا يبنيه أحد.
+  assert.match(workflow, /branches: \[master, main\]/);
 });
 
 test('النشر يُتحقَّق منه بسؤال الإنتاج، ويُوسَم بربط الإصدار بالـcommit', () => {

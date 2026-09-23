@@ -158,7 +158,21 @@ test('the deploy gate cannot run on a red pipeline or off master', () => {
     'secrets', 'dependencies']) {
     assert.ok(declared.includes(name), `deploy does not wait for ${name}`);
   }
-  assert.match(job, /if: github\.ref == 'refs\/heads\/master' && github\.event_name == 'push'/);
+  /* Both branch names, and that is a fix for a measured defect (2026-09-23).
+
+     This pinned `refs/heads/master` alone. Measured on the remote: the only remote
+     branch is `main` (`origin/HEAD -> origin/main`); `master` is local-only and
+     points at the same commit. So the deploy job was conditioned on a ref that does
+     not exist on the server — a deploy that could never fire, under seven green
+     jobs that read as "shipped".
+
+     It is `OPS-001` inverted. That fix added `master` to the triggers because the
+     workflow listed only `main`; the truth is that `main` is the one that exists.
+     The remedy that does not recur is accepting both names in both places. */
+  assert.match(
+    job,
+    /if: \(github\.ref == 'refs\/heads\/master' \|\| github\.ref == 'refs\/heads\/main'\) && github\.event_name == 'push'/,
+  );
   assert.match(job, /--env production/);
   // `OPS-105`: it deploys for real when the credentials exist, and dry-runs when they
   // do not. Both paths must be present — a job that only ever dry-runs passes
@@ -202,6 +216,12 @@ test('no step masks a failure with a fallback', () => {
   for (const [index, line] of lines.entries()) {
     // Comments discussing the old masked command are not themselves steps.
     if (/^\s*#/.test(line)) continue;
+    // An `if:` condition is a GitHub expression, not a shell command: `||` there is
+    // boolean OR over refs and cannot mask an exit code. The deploy gate needs it to
+    // accept both `master` and `main` — see the branch-name defect above. Narrowed to
+    // `if:` specifically rather than tolerating the literal, so a future `run:` line
+    // with `||` still fails this test.
+    if (/^\s*if:/.test(line)) continue;
     if (!/\|\|/.test(line)) continue;
     if (tolerated.some((allowed) => line.includes(allowed))) continue;
     assert.match(

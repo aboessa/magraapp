@@ -326,9 +326,19 @@ jobs:
   #
   # Note that the Durable Object migration tag `v4` (RateLimiter) applies on the first
   # real deploy.
+  # `OPS-105` تصحيح (2026-09-23): الشرط كان `refs/heads/master` وحده، والقياس أن
+  # الفرع البعيد الوحيد هو **`main`** (`origin/HEAD -> origin/main`)، و`master`
+  # موجود محليًّا فقط ويشير إلى نفس الـcommit. فالوظيفة كانت مشروطةً بمرجعٍ لا
+  # وجود له على الخادم — أي **نشرٌ لا يمكن أن يُطلَق أبدًا**.
+  #
+  # وهذا نفس العطل الذي يصفه تعليق `on:` أعلاه ويقول إنه أصلحه، معكوسًا: ذاك
+  # أضاف `main` إلى المُطلِقات ولم يمسّ شرط النشر. فبوابة الجودة صارت تعمل والنشر
+  # وحده بقي ميّتًا — وهو أسوأ من تعطيلٍ صريح، لأن خضرة كل الوظائف تُقرأ «نُشر».
+  #
+  # الاسمان معًا لنفس سبب `on:`: إعادةُ تسميةٍ لاحقة لا تُعطّل النشر بصمت.
   deploy:
     needs: [flutter, worker, admin, migrations, content-pacing, secrets, dependencies]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       # The release tag is the durable version-to-commit record.
