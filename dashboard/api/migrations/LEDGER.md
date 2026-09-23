@@ -468,29 +468,66 @@ SELECT * FROM episode_renditions;
 
 **المقيس بعده: 134 → 9 مراجع مكسورة.**
 
-### استعلام القبول — يُعاد تشغيله
+
+
+### التسعة الباقية: لعبةٌ مسوَّدة واحدة، لا عطل
+
+قياسٌ أدقّ بعد `0096`، مصنَّفًا بحالة اللعبة:
+
+| حالة اللعبة | مراجع `voice_manifest` | مكسورة |
+|---|---:|---:|
+| `published` | 208 | **0** |
+| `ready` | 19 | **0** |
+| `draft` | 9 | 9 |
+
+**فكل لعبة يصلها طفل تنطق كاملة.** والتسعة كلّها لعبةٌ واحدة:
+`game-letter-tracing` («تتبع الحروف»، 3–5 سنوات) وحالتها **`draft`** — نداءاتها
+التسعة كلّها بلا أصل، ولا مجلد صوت لها في `assets/audio/games/` أصلًا.
+
+أي أنها **لعبة بانتظار إنتاج صوتها**، لا مرجعٌ انكسر. وهذا هو التدريج الصحيح.
+
+**ولم أوجّهها إلى صوت لعبةٍ أخرى** مع أن `trace-color` يملك نفس مفردات النداء
+(`vo-stroke-complete` و`vo-coloring-intro` …): كلماته عن الأشكال والتلوين لا عن
+الحروف. وصوتٌ يقول للطفل غير ما يفعله أسوأ من الصمت.
+
+### استعلام القبول الأدقّ
+
+المعيار ليس «صفر مكسور» بل **صفر مكسور في ما يُنشَر**:
 
 ```sql
-SELECT COUNT(*) AS refs_total,
-       SUM(CASE WHEN ca.id IS NULL THEN 1 ELSE 0 END) AS refs_broken
+SELECT g.status,
+       COUNT(*) AS refs,
+       SUM(CASE WHEN ca.id IS NULL THEN 1 ELSE 0 END) AS broken
   FROM games g, json_each(json_extract(g.content_pack, '$.voice_manifest')) vm
-  LEFT JOIN content_assets ca ON ca.id = vm.value;
+  LEFT JOIN content_assets ca ON ca.id = vm.value
+ GROUP BY g.status;
 ```
 
-### التسعة الباقية — سابقة لهذه الدفعة
+## `0097` — أحداث إسقاط لأسرةٍ لم تبق موجودة
 
-`asset-vo-glt-intro` · `asset-vo-glt-instruction` · `asset-vo-glt-instruction-slow`
-· `asset-vo-glt-hint` · `asset-vo-stroke-complete` · `asset-vo-coloring-intro` ·
-`asset-vo-level-complete` · `asset-vo-game-complete` · `asset-vo-exit-confirm`.
+`dlq:pending` كان التنبيه **الصادق** بين الاثنين: 51 صفًّا `pending` في
+`failed_family_events` بين 2026-09-03 و2026-09-07. والقياس كشف أنه صادق وغير قابل
+للحلّ في الوقت نفسه: الواحد والخمسون **لحسابٍ واحد حُذف بعدها** — `playback.started`
+(16) و`session.created` (14) و`playback.ended` (12) و`progress.updated` (8) و
+`content.completed` (1)، وفي كل نوع «الحساب ما زال موجودًا = **0**».
 
-مصدرها `0023_trace_color_runtime_packs.sql` وما بعده — مُطبَّقة منذ زمن، فهي دَينٌ
-قائم لا أثرُ هذه الدفعة. ولا ملف صوتي لها، فإغلاقها إمّا تسجيل ملفات، أو توجيه
-المراجع إلى أصلٍ قائم، أو حذف المفاتيح من الخرائط ليصمت المحرّك بدل أن يطلب معرّفًا
-معدومًا. وهو قرار محتوى.
+فإعادة تشغيل حدث إسقاط لأسرةٍ معدومة **مستحيلة** لا مؤجَّلة.
 
-## الملفات (99)
+و`discarded` مفردةُ المخطَّط نفسه (`CHECK (status IN ('pending','replayed',
+'discarded'))` مع `resolved_at`/`resolved_by`/`resolution_note`). ولم تُحذَف
+الصفوف: هي سجلٌّ بأن إسقاطًا فشل. و`replayed` كانت ستكون كذبة.
 
-آخر تحديث: 2026-09-23 · `DATA-201` و`DECIDE-108` و`0088`/`0094`/`0095`/`0096`.
+**والشرط هو ما يجعله قاعدة لا تنظيفًا:** `parent_id NOT IN (SELECT id FROM parents)`.
+فحدثٌ فاشل لأسرةٍ **قائمة** يبقى `pending` ويبقى يُنبّه — وذلك صحيح لأنه قابل
+للإصلاح. فلا يُسكِت هذا الترحيل تنبيهًا يستحقّ أن يُرى.
+
+**المقيس بعده على الإنتاج:** 51 `discarded` و**صفر `pending`**. والتنبيه يُغلق نفسه
+في الدورة التالية لأن `probeDeadLetterQueue` يستدعي `clears` حين يصير العدد صفرًا —
+بلا خطوة يدوية.
+
+## الملفات (100)
+
+آخر تحديث: 2026-09-23 · `DATA-201` و`DECIDE-108` و`0088` و`0094`–`0097`.
 
 <!-- MIGRATION-LIST:BEGIN — يُحدَّث بـ`node tools/ops/migration-ledger.mjs --list` -->
 0001_init.sql
@@ -592,6 +629,7 @@ SELECT COUNT(*) AS refs_total,
 0094_voice_asset_sizes.sql
 0095_ops_alert_dedupe.sql
 0096_voice_manifest_actual_ids.sql
+0097_discard_orphan_failed_events.sql
 <!-- MIGRATION-LIST:END -->
 
 ## ما حُذف
