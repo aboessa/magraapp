@@ -1,50 +1,126 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
+import { ViewSwitcher } from '../components/ViewSwitcher'
+import type { ViewMode } from '../components/ViewSwitcher'
 
 const copy = {
   ar: {
-    eyebrow: 'التجارة · الفوترة',
-    title: 'مركز الاشتراكات',
-    lede: 'مزوّد الدفع يثبت الشراء، و FamilyState يمثل الحقيقة التشغيلية. هذه الشاشة تكشف الفجوة ولا تخفيها.',
-    refresh: 'تحديث',
-    search: 'ابحث بالعائلة أو خطة أو مزوّد…',
+    eyebrow: 'التجارة وإدارة الاشتراكات',
+    title: 'مركز الفوترة وإدارة الاشتراكات',
+    lede: 'مزوّد الدفع يثبت الشراء، و FamilyState يمثل الحقيقة التشغيلية. نكشف الفجوات فوراً ونضمن تطابق الاستحقاق مع الفوترة.',
+    refresh: 'تحديث البيانات',
+    search: 'ابحث بالعائلة أو الخطة أو المزوّد…',
     metrics: {
-      active: 'نشطة', grace: 'فترة سماح', expired: 'منتهية', mismatch: 'تناقض', refunded: 'مستردة',
-      descActive: 'استحقاق فعّال الآن', descGrace: 'ستنتهي قريباً بدون تجديد', descExpired: 'لا وصول مدفوع', descMismatch: 'المزوّد ≠ الاستحقاق', descRefunded: 'أُلغي واستُرد'
+      active: 'اشتراكات نشطة',
+      grace: 'فترة سماح',
+      expired: 'منتهية الصلاحية',
+      mismatch: 'تناقضات استحقاق',
+      refunded: 'مبالغ مستردة',
+      descActive: 'استحقاق فعّال ومؤكد الآن',
+      descGrace: 'ستنتهي قريباً بدون تجديد',
+      descExpired: 'لا يوجد وصول مدفوع',
+      descMismatch: 'المزوّد ≠ الاستحقاق الفعلي',
+      descRefunded: 'أُلغي واستُرد مالياً',
     },
-    tabs: { overview: 'نظرة عامة', subscriptions: 'الاشتراكات', transactions: 'المعاملات', mismatches: 'التناقضات', refunds: 'المستردة' },
-    table: { family: 'العائلة', plan: 'الخطة', provider: 'المزوّد', providerState: 'حالة المزوّد', entitlement: 'الاستحقاق الفعلي', renewal: 'التجديد', alert: 'تنبيه', open: 'فتح' },
+    tabs: {
+      overview: 'نظرة عامة ومقاييس',
+      subscriptions: 'سجل الاشتراكات',
+      transactions: 'المعاملات المالية',
+      mismatches: 'التناقضات ومطابقة الحقوق',
+      refunds: 'المبالغ المستردة',
+    },
+    table: {
+      family: 'العائلة',
+      plan: 'الخطة',
+      provider: 'المزوّد',
+      providerState: 'حالة المزوّد',
+      entitlement: 'الاستحقاق الفعلي',
+      renewal: 'تاريخ التجديد',
+      alert: 'التنبيه',
+      open: 'مساحة العمل',
+    },
     overview: {
-      byPlan: 'التوزيع حسب الخطة', recent: 'آخر عمليات شراء', trust: 'نموذج الثقة', trustDesc: 'Google Play = إثبات الدفع · FamilyState = قرار الوصول. أي فجوة = مهمة مصالحة، ليست حالة طبيعية.',
-      match: 'متطابق', mismatchLabel: 'تناقض',
+      byPlan: 'توزيع الاشتراكات حسب الخطة',
+      recent: 'أحدث عمليات الشراء والتحقق',
+      trust: 'نموذج الثقة والمطابقة الثنائية',
+      trustDesc: 'Google Play يمثل إثبات الدفع المالي · FamilyState يمثل قرار الوصول التشغيلي. أي فجوة تتطلب مهمة تسوية فورية وموثقة.',
+      match: 'متطابق',
+      mismatchLabel: 'تناقض',
     },
-    empty: { subs: 'لا اشتراكات بعد', subsHint: 'عند أول عملية شراء ناجحة ستظهر هنا.', tx: 'لا معاملات معروضة', mis: 'لا تناقضات — المزوّد والاستحقاق متطابقان', misHint: 'عند وجود فجوة ستُدرج هنا كمهام تسوية', refund:'لا يوجد نموذج بيانات لاسترداد المبالغ بعد', refundHint:'حالة revoked تعني إلغاء استحقاق لكن لا يوجد جدول refunds منفصل بسجل مبالغ، سبب الاسترداد، وقناة الاسترداد. عند توفره سيُعرض هنا مع ربط بمعاملة أصلية.' },
-    kpis: 'مؤشرات حيّة'
+    empty: {
+      subs: 'لا توجد اشتراكات مسجلة',
+      subsHint: 'عند إتمام أول عملية شراء ناجحة من التطبيق ستظهر بياناتها هنا.',
+      tx: 'لا توجد معاملات مالية معروضة',
+      mis: 'لا توجد تناقضات — المزوّد والاستحقاق متطابقان تماماً',
+      misHint: 'عند وجود أي فجوة بين المزوّد وقاعدة البيانات ستُدرج هنا فوراً كمهام تسوية.',
+      refund: 'لا توجد سجلات استرداد مالي',
+      refundHint: 'عمليات الاسترداد المالي الموثقة ستظهر هنا مع ربطها بالمعاملة الأصلية.',
+    },
+    kpis: 'مؤشرات حيّة',
+    cardsView: 'بطاقات الاشتراكات',
+    tableView: 'الجدول الشامل',
   },
   en: {
-    eyebrow: 'Commerce · Billing',
-    title: 'Subscription Operations',
-    lede: 'Payment provider proves purchase, FamilyState is operational truth. This screen exposes the gap, never hides it.',
-    refresh: 'Refresh',
-    search: 'Search family, plan or provider…',
+    eyebrow: 'Commerce & Monetization',
+    title: 'Subscription & Billing Operations',
+    lede: 'Payment provider proves purchase, FamilyState represents operational truth. Exposing gaps, ensuring entitlement reconciliation.',
+    refresh: 'Refresh Data',
+    search: 'Search family, plan, or provider…',
     metrics: {
-      active: 'Active', grace: 'Grace', expired: 'Expired', mismatch: 'Mismatch', refunded: 'Refunded',
-      descActive: 'Entitlement active now', descGrace: 'Will expire without renewal', descExpired: 'No paid access', descMismatch: 'Provider ≠ Entitlement', descRefunded: 'Revoked & refunded'
+      active: 'Active Subs',
+      grace: 'Grace Period',
+      expired: 'Expired',
+      mismatch: 'Mismatches',
+      refunded: 'Refunded',
+      descActive: 'Active verified entitlement',
+      descGrace: 'Expiring soon without renewal',
+      descExpired: 'No paid access active',
+      descMismatch: 'Provider ≠ Entitlement gap',
+      descRefunded: 'Revoked & refunded',
     },
-    tabs: { overview: 'Overview', subscriptions: 'Subscriptions', transactions: 'Transactions', mismatches: 'Mismatches', refunds: 'Refunds' },
-    table: { family: 'Family', plan: 'Plan', provider: 'Provider', providerState: 'Provider state', entitlement: 'Effective entitlement', renewal: 'Renewal', alert: 'Alert', open: 'Open' },
+    tabs: {
+      overview: 'Overview & Analytics',
+      subscriptions: 'Subscriptions',
+      transactions: 'Transactions',
+      mismatches: 'Mismatches & Reconciliation',
+      refunds: 'Refunds',
+    },
+    table: {
+      family: 'Family',
+      plan: 'Plan',
+      provider: 'Provider',
+      providerState: 'Provider State',
+      entitlement: 'Effective Entitlement',
+      renewal: 'Renewal Date',
+      alert: 'Alert',
+      open: 'Workspace',
+    },
     overview: {
-      byPlan: 'Distribution by plan', recent: 'Recent purchases', trust: 'Trust model', trustDesc: 'Google Play = proof of payment · FamilyState = access decision. Any gap = reconciliation task, not normal state.',
-      match: 'MATCH', mismatchLabel: 'MISMATCH',
+      byPlan: 'Distribution by Plan',
+      recent: 'Recent Verified Purchases',
+      trust: 'Two-Tier Trust Model',
+      trustDesc: 'Google Play represents proof of payment · FamilyState represents real-time access. Any gap triggers audited reconciliation.',
+      match: 'MATCH',
+      mismatchLabel: 'MISMATCH',
     },
-    empty: { subs: 'No subscriptions yet', subsHint: 'First successful purchase appears here.', tx: 'No transactions', mis: 'No mismatches — provider and entitlement aligned', misHint: 'Gaps will be listed here as reconciliation tasks' },
-    kpis: 'Live indicators'
-  }
+    empty: {
+      subs: 'No subscriptions yet',
+      subsHint: 'First successful purchase will appear here in real-time.',
+      tx: 'No transactions found',
+      mis: 'No mismatches — provider and entitlements perfectly aligned',
+      misHint: 'Discrepancies will be listed here as audited reconciliation tasks.',
+      refund: 'No refund records found',
+      refundHint: 'Audited financial refunds will appear here linked to original transactions.',
+    },
+    kpis: 'Live Indicators',
+    cardsView: 'Subscription Cards',
+    tableView: 'Detailed Table',
+  },
 }
 
 function formatMs(v: unknown, locale: 'ar' | 'en') {
@@ -54,9 +130,10 @@ function formatMs(v: unknown, locale: 'ar' | 'en') {
 
 export function BillingPage() {
   const { locale } = usePreferences()
-  const text = copy[locale === 'ar' ? 'ar' : 'en'] as any
+  const text = copy[locale === 'ar' ? 'ar' : 'en']
   const [searchParams, setSearchParams] = useSearchParams()
-  const activeTab = (searchParams.get('tab') as any) || 'overview'
+  const activeTab = searchParams.get('tab') || 'overview'
+
   const [stats, setStats] = useState<any>(null)
   const [subs, setSubs] = useState<any[]>([])
   const [mismatches, setMismatches] = useState<any[]>([])
@@ -65,245 +142,1275 @@ export function BillingPage() {
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [filterPlan, setFilterPlan] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [viewMode, setViewMode] = useState<ViewMode>('cards')
+  const [selectedSub, setSelectedSub] = useState<any | null>(null)
+  const [copiedToken, setCopiedToken] = useState(false)
+
+  const copyToClipboard = (txt: string) => {
+    if (!txt) return
+    navigator.clipboard?.writeText(txt)
+    setCopiedToken(true)
+    setTimeout(() => setCopiedToken(false), 2200)
+  }
+
+  const exportCsv = () => {
+    if (!subs.length) return
+    const headers = ['ID', 'ParentID', 'FamilyName', 'Plan', 'Provider', 'ProviderState', 'Entitlement', 'RenewalDate']
+    const rows = subs.map((s: any) => [
+      `"${s.id ?? ''}"`,
+      `"${s.parent_id ?? ''}"`,
+      `"${s.family_name ?? ''}"`,
+      `"${s.plan ?? ''}"`,
+      `"${s.provider ?? ''}"`,
+      `"${s.provider_state ?? ''}"`,
+      `"${s.entitlement_status ?? ''}"`,
+      `"${s.expires_at_ms ? new Date(s.expires_at_ms).toISOString() : ''}"`,
+    ])
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `majarra-subscriptions-${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   const load = useCallback(async () => {
-    setLoading(true); setError('')
+    setLoading(true)
+    setError('')
     try {
       const [s, subRes, recon, refundsRes] = await Promise.all([
         api.billingStats(),
         api.subscriptions({ q: query || undefined, plan: filterPlan || undefined, limit: 50, offset: 0 } as any),
         api.commerceReconciliation().catch(() => ({ data: { mismatches: [] } }) as any),
-        api.billingRefunds({ limit: 50 } as any).catch(()=> ({ data: [] }) as any),
+        api.billingRefunds({ limit: 50 } as any).catch(() => ({ data: [] }) as any),
       ])
       setStats(s.data)
       setSubs((subRes as any).data ?? [])
       setMismatches((recon as any).data?.mismatches ?? [])
       setRefunds((refundsRes as any).data ?? [])
-    } catch (e) { setError(e instanceof Error ? e.message : text.loadError) } finally { setLoading(false) }
-  }, [query, filterPlan, text.loadError])
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error loading billing data')
+    } finally {
+      setLoading(false)
+    }
+  }, [query, filterPlan])
 
-  useEffect(() => { const t = setTimeout(() => void load(), query ? 220 : 0); return () => clearTimeout(t) }, [load])
-  const setTab = (t: string) => { const n = new URLSearchParams(searchParams); n.set('tab', t); setSearchParams(n) }
+  useEffect(() => {
+    const t = setTimeout(() => void load(), query ? 220 : 0)
+    return () => clearTimeout(t)
+  }, [load])
 
-  const metrics = useMemo(() => ({
-    active: (stats?.by_plan ?? []).reduce((a: any, c: any) => a + Number(c.count), 0),
-    grace: subs.filter((s: any) => s.entitlement_status === 'grace').length,
-    expired: subs.filter((s: any) => s.entitlement_status === 'expired').length,
-    mismatches: mismatches.length,
-    refunded: subs.filter((s: any) => s.entitlement_status === 'revoked').length,
-  }), [stats, subs, mismatches])
+  const setTab = (t: string) => {
+    const n = new URLSearchParams(searchParams)
+    n.set('tab', t)
+    setSearchParams(n)
+  }
+
+  const metrics = useMemo(
+    () => ({
+      active: (stats?.by_plan ?? []).reduce((a: any, c: any) => a + Number(c.count), 0),
+      grace: subs.filter((s: any) => s.entitlement_status === 'grace').length,
+      expired: subs.filter((s: any) => s.entitlement_status === 'expired').length,
+      mismatches: mismatches.length,
+      refunded: subs.filter((s: any) => s.entitlement_status === 'revoked').length,
+    }),
+    [stats, subs, mismatches],
+  )
+
+  const totalCount = metrics.active + metrics.grace + metrics.expired || 1
+  const activePct = Math.round((metrics.active / totalCount) * 100)
+  const gracePct = Math.round((metrics.grace / totalCount) * 100)
+  const expiredPct = Math.max(0, 100 - activePct - gracePct)
 
   const byPlanMax = Math.max(1, ...(stats?.by_plan ?? []).map((r: any) => Number(r.count) || 0))
 
-  return (
-    <div className="page-stack" style={{ gap: 20 }}>
-      <style>{`
-        .billing-hero{position:relative;overflow:hidden;border-radius:20px;border:1px solid var(--line);background:linear-gradient(165deg, color-mix(in srgb, var(--surface) 96%, #fff), var(--surface));padding:22px 22px 18px}
-        .billing-hero::before{content:'';position:absolute;inset:-1px;background:radial-gradient(520px 220px at 85% -10%, rgba(86,121,242,.18), transparent 60%), radial-gradient(380px 200px at 5% 110%, rgba(0,214,245,.12), transparent 70%)}
-        .billing-hero>*{position:relative;z-index:1}
-        .billing-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
-        .billing-title{margin-top:12px;font-size:clamp(22px, 2.6vw, 30px);letter-spacing:-.04em;line-height:1.1}
-        .billing-lede{margin-top:8px;max-width:680px;color:var(--text-soft);font-size:12px;line-height:1.7}
-        .kpi-grid{display:grid;grid-template-columns:repeat(5, minmax(0,1fr));gap:12px}
-        @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3, minmax(0,1fr))}}
-        @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2, minmax(0,1fr))}}
-        .kpi-card{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:linear-gradient(145deg, var(--surface), color-mix(in srgb, var(--surface) 92%, var(--surface-2)));padding:14px 14px 12px;transition:transform .18s, border-color .18s}
-        .kpi-card:hover{transform:translateY(-1px);border-color:var(--line-strong)}
-        .kpi-card__top{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.03em}
-        .kpi-card__icon{width:30px;height:30px;display:grid;place-items:center;border-radius:9px}
-        .kpi-card__value{margin-top:10px;font-size:26px;font-weight:800;letter-spacing:-.04em}
-        .kpi-card__desc{margin-top:4px;color:var(--muted);font-size:10px;line-height:1.5}
-        .kpi-card--active{--glow:var(--primary)} .kpi-card--active .kpi-card__icon{background:rgba(86,121,242,.12);color:var(--primary)}
-        .kpi-card--grace .kpi-card__icon{background:rgba(245,165,36,.12);color:#d48a00}
-        .kpi-card--expired .kpi-card__icon{background:rgba(161,161,161,.12);color:var(--muted)}
-        .kpi-card--mismatch{border-color:rgba(217,119,6,.35)} .kpi-card--mismatch .kpi-card__icon{background:rgba(217,119,6,.14);color:#b45309}
-        .kpi-card--refunded .kpi-card__icon{background:rgba(240,93,119,.10);color:#c43a54}
-        .seg{display:inline-flex;gap:4px;padding:4px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2)}
-        .seg button{min-height:34px;padding:0 14px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--text-soft);font-size:12px;font-weight:700;transition:all .16s}
-        .seg button[aria-selected="true"]{background:var(--surface);border-color:var(--line-strong);color:var(--text);box-shadow:0 2px 10px rgba(0,0,0,.06)}
-        .billing-panel{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden}
-        .billing-panel__head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-        .billing-panel__head h3{font-size:13px;letter-spacing:-.02em}
-        .billing-panel__note{color:var(--muted);font-size:10px;line-height:1.6}
-        .mini-bar{height:6px;border-radius:999px;background:var(--surface-3);overflow:hidden;margin-top:8px}
-        .mini-bar span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg, var(--primary), #6a3df2)}
-        .trust-callout{display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:linear-gradient(135deg, rgba(86,121,242,.08), rgba(0,214,245,.06));border:1px solid rgba(86,121,242,.14);color:var(--text-soft);font-size:11px;line-height:1.7}
-        .subs-toolbar{display:flex;gap:8px;align-items:center}
-        .subs-toolbar input,.subs-toolbar select{height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);padding:0 12px;font-size:12px}
-        .subs-toolbar input{width:260px}
-        @media(max-width:700px){.subs-toolbar input{width:100%}}
-        .status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-inline-end:6px}
-        .plan-pill{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em;border:1px solid var(--line);background:var(--surface-2)}
-        .plan-pill--family{color:#0a5766;background:rgba(0,214,245,.09);border-color:rgba(0,214,245,.18)}
-        .plan-pill--family_plus{color:#7a5600;background:rgba(255,211,77,.12);border-color:rgba(255,211,77,.22)}
-        .plan-pill--free{color:var(--muted)}
-      `}</style>
+  const filteredSubs = useMemo(() => {
+    return subs.filter((s: any) => {
+      if (filterStatus !== 'all' && s.entitlement_status !== filterStatus) return false
+      return true
+    })
+  }, [subs, filterStatus])
 
-      <section className="billing-hero">
-        <div style={{ display:'flex', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
-          <div>
-            <span className="billing-eyebrow"><Icon name="subscriptions" size={14}/> {text.eyebrow}</span>
-            <h2 className="billing-title">{text.title}</h2>
-            <p className="billing-lede">{text.lede}</p>
+  return (
+    <div className="content-studio-root">
+      {/* 1. Panoramic Command & Live Sync Hero Banner */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(99, 102, 241, 0.16) 55%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span
+              className="catalog-hero__status-badge"
+              style={{
+                borderColor: metrics.mismatches ? 'rgba(245, 158, 11, 0.35)' : 'rgba(16, 185, 129, 0.3)',
+                color: metrics.mismatches ? '#f59e0b' : '#10b981',
+                background: metrics.mismatches ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+              }}
+            >
+              <span
+                className="status-dot-pulse"
+                style={{ background: metrics.mismatches ? '#f59e0b' : '#10b981' }}
+              />
+              {metrics.mismatches ? `تنبيه: ${metrics.mismatches} فجوة تحتاج تسوية` : 'Google Play متطابق 100%'}
+            </span>
           </div>
-          <div style={{ display:'flex', alignItems:'start', gap:8 }}>
-            <button className="button button--secondary" onClick={() => void load()}><Icon name="refresh" size={16}/>{text.refresh}</button>
-            <Link className="button button--ghost" to={adminPath('customers')}><Icon name="sparkles" size={14}/> Customer 360</Link>
-          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.lede}</p>
+        </div>
+        <div className="catalog-hero__actions">
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={exportCsv}
+            title="تصدير كشف المشتركين CSV"
+          >
+            <Icon name="download" size={15} />
+            <span>تصدير CSV</span>
+          </button>
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={() => void load()}
+          >
+            <Icon name="refresh" size={15} />
+            <span>{text.refresh}</span>
+          </button>
+          <Link
+            className="button button--ghost"
+            to={adminPath('customers')}
+          >
+            <Icon name="parents" size={15} />
+            <span>Customer 360</span>
+          </Link>
         </div>
       </section>
 
-      <div className="kpi-grid">
-        <div className="kpi-card kpi-card--active"><div className="kpi-card__top"><span>{text.metrics.active}</span><span className="kpi-card__icon"><Icon name="check" size={14}/></span></div><strong className="kpi-card__value">{metrics.active}</strong><span className="kpi-card__desc">{text.metrics.descActive}</span></div>
-        <div className="kpi-card kpi-card--grace"><div className="kpi-card__top"><span>{text.metrics.grace}</span><span className="kpi-card__icon"><Icon name="clock" size={14}/></span></div><strong className="kpi-card__value">{metrics.grace}</strong><span className="kpi-card__desc">{text.metrics.descGrace}</span></div>
-        <div className="kpi-card kpi-card--expired"><div className="kpi-card__top"><span>{text.metrics.expired}</span><span className="kpi-card__icon"><Icon name="archive" size={14}/></span></div><strong className="kpi-card__value">{metrics.expired}</strong><span className="kpi-card__desc">{text.metrics.descExpired}</span></div>
-        <Link to={adminPath('billing?tab=mismatches')} className="kpi-card kpi-card--mismatch" style={{ textDecoration:'none' }}><div className="kpi-card__top"><span>{text.metrics.mismatch}</span><span className="kpi-card__icon"><Icon name="warning" size={14}/></span></div><strong className="kpi-card__value" style={{ color: metrics.mismatches ? '#b45309' : undefined }}>{metrics.mismatches}</strong><span className="kpi-card__desc">{text.metrics.descMismatch}</span></Link>
-        <div className="kpi-card kpi-card--refunded"><div className="kpi-card__top"><span>{text.metrics.refunded}</span><span className="kpi-card__icon"><Icon name="trash" size={14}/></span></div><strong className="kpi-card__value">{metrics.refunded}</strong><span className="kpi-card__desc">{text.metrics.descRefunded}</span></div>
+      {/* 2. Executive Financial Bento Matrix */}
+      <div className="hero-kpis" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+        {/* Bento 1: Active Entitlements & Plan Velocity */}
+        <div
+          className="kpi-glass-card"
+          onClick={() => setTab('subscriptions')}
+          style={{ cursor: 'pointer', borderColor: activeTab === 'subscriptions' ? 'var(--primary)' : undefined }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+            <div className="kpi-glass-card__icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', margin: 0 }}>
+              <Icon name="check" size={24} />
+            </div>
+            <span
+              className="catalog-hero__status-badge"
+              style={{ fontSize: 11, padding: '3px 10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.25)' }}
+            >
+              <span className="status-dot-pulse" style={{ background: '#10b981' }} />
+              قراءة حية
+            </span>
+          </div>
+          <div className="kpi-glass-card__info" style={{ marginTop: 12 }}>
+            <span className="kpi-glass-card__label">{text.metrics.active}</span>
+            <div className="kpi-glass-card__num">{metrics.active}</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+              {(stats?.by_plan ?? []).slice(0, 3).map((bp: any) => (
+                <span key={bp.plan} className={`plan-badge plan-badge--${bp.plan}`} style={{ fontSize: 10.5, padding: '2px 8px' }}>
+                  {bp.plan}: {bp.count}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Bento 2: Lifecycle & Retention Health (Segmented Bar) */}
+        <div className="kpi-glass-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+            <div className="kpi-glass-card__icon" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', margin: 0 }}>
+              <Icon name="clock" size={24} />
+            </div>
+            <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700 }}>
+              {activePct}% معدل النشاط
+            </span>
+          </div>
+          <div className="kpi-glass-card__info" style={{ marginTop: 12 }}>
+            <span className="kpi-glass-card__label">سلامة دورة الاشتراك</span>
+            <div className="billing-segmented-bar">
+              <div className="billing-segmented-bar__seg billing-segmented-bar__seg--active" style={{ width: `${activePct}%` }} title={`نشط: ${metrics.active}`} />
+              <div className="billing-segmented-bar__seg billing-segmented-bar__seg--grace" style={{ width: `${gracePct}%` }} title={`سماح: ${metrics.grace}`} />
+              <div className="billing-segmented-bar__seg billing-segmented-bar__seg--expired" style={{ width: `${expiredPct}%` }} title={`منتهي: ${metrics.expired}`} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, marginTop: 4 }}>
+              <span style={{ color: '#10b981' }}>{metrics.active} نشط</span>
+              <span style={{ color: '#f59e0b' }}>{metrics.grace} سماح</span>
+              <span style={{ color: '#94a3b8' }}>{metrics.expired} منتهي</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bento 3: Entitlement Reconciliation Radar (Google Play vs FamilyState) */}
+        <div
+          className="kpi-glass-card"
+          onClick={() => setTab('mismatches')}
+          style={{
+            cursor: 'pointer',
+            borderColor: metrics.mismatches ? 'rgba(239, 68, 68, 0.4)' : undefined,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+            <div
+              className="kpi-glass-card__icon"
+              style={{
+                background: metrics.mismatches ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                color: metrics.mismatches ? '#ef4444' : '#10b981',
+                margin: 0,
+              }}
+            >
+              <Icon name={metrics.mismatches ? 'warning' : 'shield'} size={24} />
+            </div>
+            <span
+              style={{
+                fontSize: 11,
+                padding: '3px 10px',
+                borderRadius: 999,
+                fontWeight: 800,
+                background: metrics.mismatches ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                color: metrics.mismatches ? '#ef4444' : '#10b981',
+              }}
+            >
+              {metrics.mismatches ? 'فجوة تتطلب حل' : 'تطابق 100%'}
+            </span>
+          </div>
+          <div className="kpi-glass-card__info" style={{ marginTop: 12 }}>
+            <span className="kpi-glass-card__label">{text.metrics.mismatch}</span>
+            <div className="kpi-glass-card__num" style={{ color: metrics.mismatches ? '#ef4444' : undefined }}>
+              {metrics.mismatches}
+            </div>
+            <span className="kpi-glass-card__trend" style={{ color: metrics.mismatches ? '#ef4444' : '#10b981' }}>
+              {metrics.mismatches ? 'تفاوت بين المزوّد والوصول الفعلي' : 'Google Play متطابق مع قاعدة البيانات'}
+            </span>
+          </div>
+        </div>
+
+        {/* Bento 4: Financial Refunds & Revocations */}
+        <div
+          className="kpi-glass-card"
+          onClick={() => setTab('refunds')}
+          style={{ cursor: 'pointer', borderColor: activeTab === 'refunds' ? 'var(--primary)' : undefined }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+            <div className="kpi-glass-card__icon" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#f87171', margin: 0 }}>
+              <Icon name="trash" size={24} />
+            </div>
+            <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700 }}>
+              {refunds.length} حركة مسجلة
+            </span>
+          </div>
+          <div className="kpi-glass-card__info" style={{ marginTop: 12 }}>
+            <span className="kpi-glass-card__label">{text.metrics.refunded}</span>
+            <div className="kpi-glass-card__num">{metrics.refunded}</div>
+            <span className="kpi-glass-card__trend" style={{ color: '#f87171' }}>
+              {text.metrics.descRefunded}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
-        <div className="seg" role="tablist">
-          {(['overview','subscriptions','transactions','mismatches','refunds'] as const).map(t => (
-            <button key={t} role="tab" aria-selected={activeTab===t} onClick={()=> setTab(t)}>{text.tabs[t] ?? t}</button>
+      {/* 2.5 Conditional Triage Attention Banner */}
+      {metrics.mismatches > 0 && (
+        <div className="billing-triage-banner">
+          <div className="billing-triage-banner__content">
+            <div className="billing-triage-banner__icon">
+              <Icon name="warning" size={24} />
+            </div>
+            <div className="billing-triage-banner__text">
+              <h4>رصد تفاوت في الاستحقاق: يوجد {metrics.mismatches} اشتراك يتطلب تسوية فورية</h4>
+              <p>حالة الشراء في Google Play لا تطابق الاستحقاق الفعلي المسجل في FamilyState. يرجى مراجعة التناقضات وتسويتها لضمان استمرار وصول الأطفال لحساباتهم.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="button button--primary"
+            onClick={() => setTab('mismatches')}
+            style={{ backdropFilter: 'blur(8px)' }}
+          >
+            <Icon name="sparkles" size={15} />
+            <span>فحص وحل التناقضات الآن</span>
+          </button>
+        </div>
+      )}
+
+      {/* 3. Studio Tab Control Strip */}
+      <div className="catalog-control-strip">
+        <div className="catalog-control-strip__filter-pills">
+          {(['overview', 'subscriptions', 'transactions', 'mismatches', 'refunds'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={`filter-pill ${activeTab === t ? 'filter-pill--active' : ''}`}
+              onClick={() => setTab(t)}
+            >
+              <span>{text.tabs[t] ?? t}</span>
+              {t === 'mismatches' && metrics.mismatches > 0 && (
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: '#ef4444',
+                    marginInlineStart: 6,
+                  }}
+                />
+              )}
+            </button>
           ))}
         </div>
-        <span className="billing-panel__note">{text.kpis} · {subs.length} row{subs.length!==1?'s':''}</span>
+
+        {activeTab === 'subscriptions' && (
+          <div className="catalog-control-strip__right">
+            <ViewSwitcher
+              modes={['cards', 'table']}
+              current={viewMode}
+              onChange={setViewMode}
+              labels={{ cards: text.cardsView, table: text.tableView }}
+            />
+          </div>
+        )}
       </div>
 
-      {loading ? <LoadingState/> : error ? <ErrorState message={error} onRetry={()=>void load()} /> : (
+      {/* 4. Tab Contents */}
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState message={error} onRetry={() => void load()} />
+      ) : (
         <>
-          {activeTab==='overview' && stats && (
-            <div style={{ display:'grid', gridTemplateColumns:'1.2fr .8fr', gap:14 }}>
-              <div className="billing-panel">
-                <div className="billing-panel__head"><h3>{text.overview.byPlan}</h3><span className="billing-panel__note">{text.overview.byPlan} · live</span></div>
-                <div style={{ padding:16, display:'grid', gap:14 }}>
-                  {(stats.by_plan??[]).map((r:any)=>{
-                    const count = Number(r.count)||0
-                    const pct = byPlanMax ? (count/byPlanMax)*100 : 0
-                    return <div key={r.plan}><div style={{ display:'flex', justifyContent:'space-between', gap:8 }}><span className={`plan-pill plan-pill--${r.plan}`}>{r.plan}</span><strong style={{ fontSize:12 }}>{count}</strong></div><div className="mini-bar"><span style={{ width:`${pct}%` }}/></div></div>
-                  })}
-                  <div className="trust-callout"><span style={{ width:28, height:28, display:'grid', placeItems:'center', borderRadius:8, background:'rgba(86,121,242,.12)', color:'var(--primary)' }}><Icon name="sparkles" size={16}/></span><div><strong style={{ display:'block', fontSize:11, marginBottom:2 }}>{text.overview.trust}</strong>{text.overview.trustDesc}</div></div>
-                </div>
-              </div>
-              <div className="billing-panel">
-                <div className="billing-panel__head"><h3>{text.overview.recent}</h3><Link className="text-link" to={adminPath('billing?tab=subscriptions')}>View all →</Link></div>
-                <div style={{ padding:0 }}>
-                  <div style={{ display:'grid' }}>
-                    {(stats.recent_purchases??[]).slice(0,6).map((p:any,i:number)=>(
-                      <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', borderBottom:'1px solid var(--line)', gap:10 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                          <span style={{ width:34, height:34, borderRadius:10, display:'grid', placeItems:'center', background:'var(--surface-2)', border:'1px solid var(--line)', fontSize:11, fontWeight:800 }}>{String(p.parent_id).slice(0,2).toUpperCase()}</span>
-                          <div><strong style={{ fontSize:11, display:'block' }} dir="ltr">{String(p.parent_id).slice(0,10)}…</strong><small style={{ color:'var(--muted)', fontSize:10 }}>{p.provider ?? 'google_play'}</small></div>
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === 'overview' && stats && (
+            <div className="page-stack" style={{ gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20 }}>
+                {/* Plans distribution card */}
+                <section className="catalog-filter-card" style={{ padding: 24 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{text.overview.byPlan}</h3>
+                    <span className="catalog-hero__status-badge">
+                      <span className="status-dot-pulse" style={{ background: '#10b981' }} />
+                      قراءة حية
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: 14 }}>
+                    {(stats.by_plan ?? []).map((r: any) => {
+                      const count = Number(r.count) || 0
+                      const pct = byPlanMax ? (count / byPlanMax) * 100 : 0
+                      return (
+                        <div key={r.plan} style={{ display: 'grid', gap: 6 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span className={`plan-badge plan-badge--${r.plan}`}>{r.plan}</span>
+                            <span style={{ fontSize: 13, fontWeight: 800 }}>{count} مشترك</span>
+                          </div>
+                          <div
+                            style={{
+                              height: 8,
+                              borderRadius: 999,
+                              background: 'var(--cs-glass-border)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${pct}%`,
+                                height: '100%',
+                                borderRadius: 'inherit',
+                                background: 'linear-gradient(90deg, #10b981, #0ea5e9)',
+                                transition: 'width 0.4s ease',
+                              }}
+                            />
+                          </div>
                         </div>
-                        <div style={{ textAlign:'end' }}>
-                          <span className={`account-status ${p.provider_state==='active'?'account-status--active':'account-status--archived'}`} style={{ fontSize:10 }}>{p.provider_state}</span>
-                          <small style={{ display:'block', marginTop:4, color:'var(--muted)', fontSize:10 }}>{p.entitlement_status}</small>
+                      )
+                    })}
+
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: 14,
+                        borderRadius: 12,
+                        background: 'rgba(14, 165, 233, 0.08)',
+                        border: '1px solid rgba(14, 165, 233, 0.2)',
+                        display: 'flex',
+                        gap: 12,
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <span style={{ color: '#0ea5e9', marginTop: 2 }}>
+                        <Icon name="sparkles" size={18} />
+                      </span>
+                      <div style={{ fontSize: 12, lineHeight: 1.6 }}>
+                        <strong style={{ display: 'block', color: 'var(--text)', marginBottom: 2 }}>
+                          {text.overview.trust}
+                        </strong>
+                        <span style={{ color: 'var(--text-secondary)' }}>{text.overview.trustDesc}</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Recent Purchases */}
+                <section className="catalog-filter-card" style={{ padding: 24 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{text.overview.recent}</h3>
+                    <button
+                      type="button"
+                      className="button button--ghost button--small"
+                      onClick={() => setTab('subscriptions')}
+                    >
+                      <span>عرض الكل</span>
+                      <Icon name="arrow" size={12} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    {(stats.recent_purchases ?? []).slice(0, 5).map((p: any, i: number) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 14px',
+                          borderRadius: 12,
+                          background: 'var(--cs-glass-surface)',
+                          border: '1px solid var(--cs-glass-border)',
+                          gap: 10,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div
+                            style={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: 10,
+                              background: 'rgba(99, 102, 241, 0.15)',
+                              color: '#818cf8',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 12,
+                              fontWeight: 800,
+                            }}
+                          >
+                            {String(p.parent_id).slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <strong style={{ fontSize: 13, display: 'block' }} dir="ltr">
+                              {String(p.parent_id).slice(0, 14)}…
+                            </strong>
+                            <small style={{ color: 'var(--text-secondary)', fontSize: 11 }}>
+                              {p.provider ?? 'Google Play'}
+                            </small>
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'end' }}>
+                          <span
+                            className={`account-status account-status--${
+                              p.provider_state === 'active' ? 'active' : 'archived'
+                            }`}
+                          >
+                            {p.provider_state}
+                          </span>
+                          <small style={{ display: 'block', marginTop: 4, color: 'var(--text-secondary)', fontSize: 10.5 }}>
+                            {p.entitlement_status}
+                          </small>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                </section>
               </div>
             </div>
           )}
 
-          {(activeTab==='subscriptions' || activeTab==='overview') && (
-            <section className="billing-panel">
-              <div className="billing-panel__head">
-                <h3>{text.tabs.subscriptions} <span className="title-count" style={{ marginInlineStart:8 }}>{subs.length}</span></h3>
-                <div className="subs-toolbar">
-                  {/* التنسيق على غلافٍ لا على `Icon`: المكوّن لا يقبل `style`،
-                      فكان يُلقى صامتًا وتبقى الأيقونة في مسار المحتوى بينما
-                      للمُدخَل حاشية 30px — فراغٌ ثم أيقونة في غير موضعها.
-                      و`insetInlineStart` لا `left`: اللوحة عربية أوّلًا. */}
-                  <div style={{ position:'relative' }}><span style={{ position:'absolute', insetInlineStart:10, top:'50%', transform:'translateY(-50%)', color:'var(--muted)', display:'inline-flex', pointerEvents:'none' }}><Icon name="search" size={14}/></span><input value={query} onChange={e=> setQuery(e.target.value)} placeholder={text.search} style={{ paddingInlineStart:30 }}/></div>
-                  <select value={filterPlan} onChange={e=> setFilterPlan(e.target.value)}><option value="">{text.table.plan}</option><option value="family">family</option><option value="family_plus">family_plus</option><option value="free">free</option></select>
+          {/* TAB 2: SUBSCRIPTIONS */}
+          {activeTab === 'subscriptions' && (
+            <div className="page-stack" style={{ gap: 16 }}>
+              {/* Filter Bar */}
+              <section className="catalog-filter-card" style={{ padding: 18 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 260, position: 'relative' }}>
+                    <span
+                      style={{
+                        position: 'absolute',
+                        insetInlineStart: 12,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: 'var(--muted)',
+                        pointerEvents: 'none',
+                        display: 'flex',
+                      }}
+                    >
+                      <Icon name="search" size={14} />
+                    </span>
+                    <input
+                      type="text"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder={text.search}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        paddingInlineStart: 36,
+                        borderRadius: 10,
+                        background: 'var(--cs-glass-surface)',
+                        border: '1px solid var(--cs-glass-border)',
+                        color: 'var(--text)',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <select
+                      value={filterPlan}
+                      onChange={(e) => setFilterPlan(e.target.value)}
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: 10,
+                        background: 'var(--cs-glass-surface)',
+                        border: '1px solid var(--cs-glass-border)',
+                        color: 'var(--text)',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    >
+                      <option value="">كل الخطط</option>
+                      <option value="family">خطة العائلة (Family)</option>
+                      <option value="family_plus">العائلة بلس (Family Plus)</option>
+                      <option value="free">المجانية (Free)</option>
+                    </select>
+
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: 10,
+                        background: 'var(--cs-glass-surface)',
+                        border: '1px solid var(--cs-glass-border)',
+                        color: 'var(--text)',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    >
+                      <option value="all">كل الحالات</option>
+                      <option value="active">استحقاق نشط (Active)</option>
+                      <option value="grace">فترة سماح (Grace)</option>
+                      <option value="expired">منتهي (Expired)</option>
+                      <option value="revoked">مسترد / ملغى (Revoked)</option>
+                    </select>
+
+                    <span className="badge-count">{filteredSubs.length} مشترك</span>
+                  </div>
                 </div>
-              </div>
-              {subs.length ? (
-                <div className="table-scroll" tabIndex={0}><table className="data-table data-table--wide"><thead><tr>
-                  <th>{text.table.family}</th><th>{text.table.plan}</th><th>{text.table.provider}</th><th>{text.table.providerState}</th><th>{text.table.entitlement}</th><th>{text.table.renewal}</th><th>{text.table.alert}</th><th></th>
-                </tr></thead><tbody>
-                  {subs.map((r:any)=>(
-                    <tr key={r.id}>
-                      <td><Link to={adminPath(`customers/${r.parent_id}`)} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:10 }}><span style={{ width:32, height:32, borderRadius:9, background:'var(--surface-2)', border:'1px solid var(--line)', display:'grid', placeItems:'center', fontSize:10, fontWeight:800 }}>{String(r.parent_id).slice(0,2).toUpperCase()}</span><span><strong style={{ display:'block', fontSize:11 }} dir="ltr">{String(r.parent_id).slice(0,12)}</strong><small style={{ color:'var(--muted)', fontSize:10 }}>{r.family_name ?? ''}</small></span></Link></td>
-                      <td><span className={`plan-pill plan-pill--${r.plan}`}>{r.plan}</span></td>
-                      <td style={{ fontSize:11 }}>{r.provider}</td>
-                      <td><span className={`status-badge ${r.provider_state==='active'?'status-badge--published':'status-badge--archived'}`}><span className="status-dot" style={{ background: r.provider_state==='active'?'var(--success)':'var(--muted)' }}/>{r.provider_state}</span></td>
-                      <td><span className={`status-badge ${r.entitlement_status==='active'?'status-badge--published':'status-badge--archived'}`}>{r.entitlement_status}</span></td>
-                      <td style={{ fontSize:11 }}>{formatMs(r.expires_at_ms, locale as any)}</td>
-                      <td>{r.has_mismatch ? <span className="status-badge status-badge--review">Mismatch</span> : <span style={{ color:'var(--muted)', fontSize:11 }}>—</span>}</td>
-                      <td><Link className="button button--ghost button--small" to={adminPath(`billing/subscription/${r.id}`)}>{text.table.open}</Link></td>
-                    </tr>
+              </section>
+
+              {filteredSubs.length === 0 ? (
+                <EmptyState title={text.empty.subs} description={text.empty.subsHint} />
+              ) : viewMode === 'cards' ? (
+                <div className="commerce-studio-grid">
+                  {filteredSubs.map((r: any) => (
+                    <article key={r.id} className="commerce-card-item">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 12,
+                              background: 'rgba(16, 185, 129, 0.15)',
+                              color: '#10b981',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 13,
+                              fontWeight: 800,
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                            }}
+                          >
+                            {String(r.parent_id).slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <Link
+                              to={adminPath(`customers/${r.parent_id}`)}
+                              style={{
+                                color: 'var(--text)',
+                                fontWeight: 800,
+                                fontSize: 13,
+                                textDecoration: 'none',
+                                display: 'block',
+                              }}
+                              dir="ltr"
+                            >
+                              {String(r.parent_id).slice(0, 16)}
+                            </Link>
+                            <small style={{ color: 'var(--text-secondary)', fontSize: 11 }}>
+                              {r.family_name || r.provider}
+                            </small>
+                          </div>
+                        </div>
+
+                        <span className={`plan-badge plan-badge--${r.plan}`}>{r.plan}</span>
+                      </div>
+
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: 8,
+                          padding: 10,
+                          borderRadius: 10,
+                          background: 'rgba(0, 0, 0, 0.03)',
+                        }}
+                      >
+                        <div>
+                          <span style={{ fontSize: 10.5, color: 'var(--text-secondary)', display: 'block' }}>
+                            {text.table.providerState}
+                          </span>
+                          <span
+                            className={`account-status account-status--${
+                              r.provider_state === 'active' ? 'active' : 'archived'
+                            }`}
+                            style={{ fontSize: 11 }}
+                          >
+                            {r.provider_state}
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: 10.5, color: 'var(--text-secondary)', display: 'block' }}>
+                            {text.table.entitlement}
+                          </span>
+                          <span
+                            className={`account-status account-status--${
+                              r.entitlement_status === 'active' ? 'active' : 'archived'
+                            }`}
+                            style={{ fontSize: 11 }}
+                          >
+                            {r.entitlement_status}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>
+                          تاريخ التجديد: <strong style={{ color: 'var(--text)' }}>{formatMs(r.expires_at_ms, locale as any)}</strong>
+                        </span>
+                        {r.has_mismatch && (
+                          <span className="track-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+                            تناقض
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 10, borderTop: '1px solid var(--cs-glass-border)' }}>
+                        <button
+                          type="button"
+                          className="button button--secondary button--small"
+                          onClick={() => setSelectedSub(r)}
+                          style={{ flex: 1, justifyContent: 'center' }}
+                        >
+                          <Icon name="search" size={13} />
+                          <span>فحص سريع</span>
+                        </button>
+                        <Link
+                          className="button button--ghost button--small"
+                          to={adminPath(`billing/subscription/${r.id}`)}
+                          title={text.table.open}
+                        >
+                          <Icon name="sparkles" size={13} />
+                        </Link>
+                        <Link
+                          className="button button--ghost button--small"
+                          to={adminPath(`customers/${r.parent_id}`)}
+                          title="ملف العائلة 360"
+                        >
+                          <Icon name="parents" size={13} />
+                        </Link>
+                      </div>
+                    </article>
                   ))}
-                </tbody></table></div>
-              ) : <div style={{ padding:28 }}><EmptyState title={text.empty.subs} description={text.empty.subsHint} /></div>}
+                </div>
+              ) : (
+                <section className="catalog-filter-card" style={{ padding: 0, overflow: 'hidden' }}>
+                  <div className="table-scroll" tabIndex={0}>
+                    <table className="data-table data-table--wide">
+                      <thead>
+                        <tr>
+                          <th>{text.table.family}</th>
+                          <th>{text.table.plan}</th>
+                          <th>{text.table.provider}</th>
+                          <th>{text.table.providerState}</th>
+                          <th>{text.table.entitlement}</th>
+                          <th>{text.table.renewal}</th>
+                          <th>{text.table.alert}</th>
+                          <th />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSubs.map((r: any) => (
+                          <tr key={r.id}>
+                            <td>
+                              <Link
+                                to={adminPath(`customers/${r.parent_id}`)}
+                                style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}
+                              >
+                                <span
+                                  style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 9,
+                                    background: 'var(--surface-2)',
+                                    border: '1px solid var(--line)',
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                    fontSize: 10,
+                                    fontWeight: 800,
+                                  }}
+                                >
+                                  {String(r.parent_id).slice(0, 2).toUpperCase()}
+                                </span>
+                                <span>
+                                  <strong style={{ display: 'block', fontSize: 11 }} dir="ltr">
+                                    {String(r.parent_id).slice(0, 12)}
+                                  </strong>
+                                  <small style={{ color: 'var(--muted)', fontSize: 10 }}>{r.family_name ?? ''}</small>
+                                </span>
+                              </Link>
+                            </td>
+                            <td>
+                              <span className={`plan-badge plan-badge--${r.plan}`}>{r.plan}</span>
+                            </td>
+                            <td style={{ fontSize: 11 }}>{r.provider}</td>
+                            <td>
+                              <span
+                                className={`account-status account-status--${
+                                  r.provider_state === 'active' ? 'active' : 'archived'
+                                }`}
+                              >
+                                {r.provider_state}
+                              </span>
+                            </td>
+                            <td>
+                              <span
+                                className={`account-status account-status--${
+                                  r.entitlement_status === 'active' ? 'active' : 'archived'
+                                }`}
+                              >
+                                {r.entitlement_status}
+                              </span>
+                            </td>
+                            <td style={{ fontSize: 11 }}>{formatMs(r.expires_at_ms, locale as any)}</td>
+                            <td>
+                              {r.has_mismatch ? (
+                                <span className="track-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+                                  Mismatch
+                                </span>
+                              ) : (
+                                <span style={{ color: 'var(--muted)', fontSize: 11 }}>—</span>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'end', whiteSpace: 'nowrap' }}>
+                              <button
+                                type="button"
+                                className="button button--secondary button--small"
+                                onClick={() => setSelectedSub(r)}
+                                style={{ marginInlineEnd: 6 }}
+                                title="فحص سريع للتوكن والبيانات"
+                              >
+                                <Icon name="search" size={13} />
+                                <span>فحص</span>
+                              </button>
+                              <Link
+                                className="button button--ghost button--small"
+                                to={adminPath(`billing/subscription/${r.id}`)}
+                              >
+                                {text.table.open}
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: TRANSACTIONS */}
+          {activeTab === 'transactions' && (
+            <section className="catalog-filter-card" style={{ padding: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{text.tabs.transactions}</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                    سجل المعاملات والتوكنات الموثقة مباشرة من مزودي الدفع ومسار التدقيق.
+                  </p>
+                </div>
+                <span className="catalog-hero__status-badge">
+                  <span className="status-dot-pulse" style={{ background: '#0ea5e9' }} />
+                  Billing Audit Log
+                </span>
+              </div>
+
+              <div className="table-scroll" tabIndex={0}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>معرف المعاملة</th>
+                      <th>{text.table.family}</th>
+                      <th>المنتج</th>
+                      <th>تاريخ التحقق</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(subs.length ? subs : [{ id: '—', parent_id: '—', product_id: '—', verified_at_ms: 0 }])
+                      .slice(0, 15)
+                      .map((r: any) => (
+                        <tr key={r.id}>
+                          <td dir="ltr" style={{ fontSize: 12, fontFamily: 'monospace' }}>
+                            {r.id.slice(0, 12)}
+                          </td>
+                          <td dir="ltr" style={{ fontSize: 12, fontFamily: 'monospace' }}>
+                            {r.parent_id.slice(0, 12)}
+                          </td>
+                          <td dir="ltr" style={{ fontSize: 12 }}>
+                            {r.product_id}
+                          </td>
+                          <td style={{ fontSize: 12 }}>{formatMs(r.verified_at_ms, locale as any)}</td>
+                          <td>
+                            <Link
+                              className="button button--ghost button--small"
+                              to={adminPath(`billing/transaction/${r.id}`)}
+                            >
+                              {text.table.open}
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </section>
           )}
 
-          {activeTab==='transactions' && (
-            <section className="billing-panel"><div style={{ padding:18 }}><div style={{ display:'flex', justifyContent:'space-between', gap:12, flexWrap:'wrap', marginBottom:12 }}><h3 style={{ fontSize:13 }}>{text.tabs.transactions}</h3><span className="billing-panel__note">Each row → Transaction Workspace (provider payload, billing_audit)</span></div>
-              <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>ID</th><th>{text.table.family}</th><th>Product</th><th>Verified</th><th></th></tr></thead><tbody>
-                {(subs.length ? subs : [{id:'—', parent_id:'—', product_id:'—', verified_at_ms:0}]).slice(0,12).map((r:any)=>(
-                  <tr key={r.id}><td dir="ltr" style={{ fontSize:11 }}>{r.id.slice(0,8)}</td><td dir="ltr" style={{ fontSize:11 }}>{r.parent_id.slice(0,8)}</td><td dir="ltr" style={{ fontSize:11 }}>{r.product_id}</td><td style={{ fontSize:11 }}>{formatMs(r.verified_at_ms, locale as any)}</td><td><Link className="button button--ghost button--small" to={adminPath(`billing/transaction/${r.id}`)}>{text.table.open}</Link></td></tr>
-                ))}
-              </tbody></table></div>
-              {!subs.length && <div style={{ padding:18 }}><EmptyState title={text.empty.tx} description={text.empty.subsHint} /></div>}
-            </div></section>
-          )}
-
-          {activeTab==='mismatches' && (
-            <section className="billing-panel"><div style={{ padding:18 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', gap:12, marginBottom:14, flexWrap:'wrap' }}>
-                <div><h3 style={{ fontSize:13 }}>Entitlement mismatches</h3><p className="billing-panel__note" style={{ marginTop:6 }}>Provider ACTIVE vs entitlement EXPIRED = reconciliation task. Silent fallback is banned.</p></div>
-                <span className={`status-badge ${mismatches.length?'status-badge--review':'status-badge--published'}`}>{mismatches.length} open</span>
+          {/* TAB 4: MISMATCHES */}
+          {activeTab === 'mismatches' && (
+            <section className="catalog-filter-card" style={{ padding: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>تناقضات وفجوات الاستحقاق</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                    حالة المزوّد نشطة ومسجلة في Google Play مقابل استحقاق غير مفعل في FamilyState — تتطلب مصالحة فورية.
+                  </p>
+                </div>
+                <span className="badge-count" style={{ background: mismatches.length ? '#ef4444' : '#10b981', color: '#fff' }}>
+                  {mismatches.length} مفتوحة
+                </span>
               </div>
+
               {mismatches.length ? (
-                <div style={{ display:'grid', gap:10 }}>
-                  {mismatches.map((m:any,i:number)=>(
-                    <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, padding:'12px 14px', borderRadius:12, border:'1px solid var(--line)', background:'var(--surface-2)' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                        <span style={{ width:32, height:32, borderRadius:9, background:'rgba(217,119,6,.14)', color:'#b45309', display:'grid', placeItems:'center' }}><Icon name="warning" size={14}/></span>
-                        <div><strong dir="ltr" style={{ fontSize:11 }}>{String(m.parent_id).slice(0,12)}</strong><div style={{ display:'flex', gap:6, marginTop:4 }}><span className="status-badge status-badge--archived" style={{ fontSize:10 }}>{m.provider_state}</span><span style={{ color:'var(--muted)' }}>→</span><span className="status-badge status-badge--review" style={{ fontSize:10 }}>{m.entitlement_status}</span></div></div>
+                <div style={{ display: 'grid', gap: 12 }}>
+                  {mismatches.map((m: any, i: number) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        padding: 16,
+                        borderRadius: 14,
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        background: 'rgba(239, 68, 68, 0.05)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            color: '#ef4444',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Icon name="warning" size={18} />
+                        </span>
+                        <div>
+                          <strong dir="ltr" style={{ fontSize: 13, display: 'block' }}>
+                            {String(m.parent_id).slice(0, 16)}
+                          </strong>
+                          <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
+                            <span className="account-status account-status--archived">
+                              المزود: {m.provider_state}
+                            </span>
+                            <span style={{ color: 'var(--muted)' }}>←</span>
+                            <span className="account-status account-status--active" style={{ background: '#ef4444' }}>
+                              الاستحقاق: {m.entitlement_status}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <Link className="button button--primary button--small" to={adminPath(`billing/subscription/${m.parent_id}`)}>Reconcile</Link>
+
+                      <Link
+                        className="button button--primary button--small"
+                        to={adminPath(`billing/subscription/${m.parent_id}`)}
+                      >
+                        إجراء التسوية
+                      </Link>
                     </div>
                   ))}
                 </div>
-              ) : <EmptyState title={text.empty.mis} description={text.empty.misHint} />}
-            </div></section>
+              ) : (
+                <EmptyState title={text.empty.mis} description={text.empty.misHint} />
+              )}
+            </section>
           )}
 
-          {activeTab==='refunds' && (
-            <section className="billing-panel"><div style={{ padding:18 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', gap:12, marginBottom:14, flexWrap:'wrap' }}>
-                <div><h3 style={{ fontSize:13 }}>{text.tabs.refunds}</h3><p className="billing-panel__note" style={{ marginTop:6 }}>Financial refunds with amount, reason, channel, original transaction linkage. Separate from entitlement revoked.</p></div>
-                <span className="status-badge status-badge--archived">{refunds.length} refunds · {metrics.refunded} revoked entitlements</span>
+          {/* TAB 5: REFUNDS */}
+          {activeTab === 'refunds' && (
+            <section className="catalog-filter-card" style={{ padding: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{text.tabs.refunds}</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                    سجل المبالغ المستردة مالياً مع القناة والسبب وربط المعاملة الأصلية.
+                  </p>
+                </div>
+                <span className="badge-count">
+                  {refunds.length} استرداد مالي · {metrics.refunded} استحقاق مسحوب
+                </span>
               </div>
+
               {refunds.length ? (
-                <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>ID</th><th>{text.table.family}</th><th>Amount</th><th>Reason</th><th>Channel</th><th>Status</th><th>Original Tx</th></tr></thead><tbody>
-                  {refunds.map((r:any)=>(
-                    <tr key={r.id}><td dir="ltr" style={{ fontSize:10 }} title={r.id}>{r.id.slice(0,12)}…</td><td dir="ltr" style={{ fontSize:11 }}>{String(r.parent_id).slice(0,10)}</td><td style={{ fontSize:11 }} dir="ltr">{r.currency} {(r.amount_minor/100).toFixed(2)}</td><td><span className="track-badge">{r.reason}</span><br/><small style={{ color:'var(--muted)', fontSize:10 }}>{r.reason_details ?? ''}</small></td><td><span className="plan-pill">{r.channel}</span></td><td><span className={`status-badge ${r.status==='completed'?'status-badge--published': r.status==='pending'?'status-badge--review':'status-badge--archived'}`}>{r.status}</span></td><td dir="ltr" style={{ fontSize:10 }}>{r.original_transaction_id?.slice(0,8) ?? '—'}</td></tr>
-                  ))}
-                </tbody></table></div>
+                <div className="table-scroll" tabIndex={0}>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>المعرف</th>
+                        <th>{text.table.family}</th>
+                        <th>المبلغ</th>
+                        <th>السبب</th>
+                        <th>القناة</th>
+                        <th>الحالة</th>
+                        <th>المعاملة الأصلية</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {refunds.map((r: any) => (
+                        <tr key={r.id}>
+                          <td dir="ltr" style={{ fontSize: 11, fontFamily: 'monospace' }} title={r.id}>
+                            {r.id.slice(0, 12)}…
+                          </td>
+                          <td dir="ltr" style={{ fontSize: 12 }}>
+                            {String(r.parent_id).slice(0, 12)}
+                          </td>
+                          <td style={{ fontSize: 12 }} dir="ltr">
+                            {r.currency} {(r.amount_minor / 100).toFixed(2)}
+                          </td>
+                          <td>
+                            <span className="track-badge">{r.reason}</span>
+                            {r.reason_details && (
+                              <small style={{ color: 'var(--text-secondary)', display: 'block', fontSize: 10 }}>
+                                {r.reason_details}
+                              </small>
+                            )}
+                          </td>
+                          <td>
+                            <span className="plan-badge">{r.channel}</span>
+                          </td>
+                          <td>
+                            <span
+                              className={`account-status account-status--${
+                                r.status === 'completed' ? 'active' : 'archived'
+                              }`}
+                            >
+                              {r.status}
+                            </span>
+                          </td>
+                          <td dir="ltr" style={{ fontSize: 11, fontFamily: 'monospace' }}>
+                            {r.original_transaction_id?.slice(0, 10) ?? '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <>
                   {metrics.refunded ? (
-                    <div style={{ display:'grid', gap:12 }}>
-                      <div className="inline-alert inline-alert--info">No financial refund records yet, but {metrics.refunded} entitlements are revoked. Create refund record below if financial return needed.</div>
-                      <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>{text.table.family}</th><th>{text.table.plan}</th><th>{text.table.entitlement}</th><th>Action</th></tr></thead><tbody>
-                        {subs.filter((s:any)=> s.entitlement_status==='revoked').slice(0,10).map((r:any)=>(
-                          <tr key={r.id}><td dir="ltr" style={{ fontSize:11 }}>{String(r.parent_id).slice(0,12)}</td><td><span className={`plan-pill plan-pill--${r.plan}`}>{r.plan}</span></td><td><span className="status-badge status-badge--archived">{r.entitlement_status}</span></td><td><button className="button button--ghost button--small" onClick={async()=>{ const amount=prompt('Amount minor (e.g. 1999 for 19.99)?'); const currency=prompt('Currency (EGP/USD)?','EGP'); const reason=prompt('Reason (requested_by_customer/duplicate_charge/fraud/service_issue/other)?','requested_by_customer'); if(!amount) return; try{ await api.createRefund({ parent_id: r.parent_id, amount_minor: Number(amount), currency: currency||'EGP', reason: reason||'requested_by_customer', original_transaction_id: r.id } as any); await load(); }catch(e){ alert(e instanceof Error? e.message:'Error') } }}>Create refund</button></td></tr>
-                        ))}
-                      </tbody></table></div>
+                    <div style={{ display: 'grid', gap: 14 }}>
+                      <div
+                        style={{
+                          padding: 14,
+                          borderRadius: 12,
+                          background: 'rgba(14, 165, 233, 0.08)',
+                          border: '1px solid rgba(14, 165, 233, 0.2)',
+                          color: 'var(--text)',
+                          fontSize: 13,
+                        }}
+                      >
+                        يوجد {metrics.refunded} اشتراك بحالة استحقاق ملغاة (Revoked). يمكنك إنشاء سجل مالي رسمي عند الحاجة أدناه.
+                      </div>
+                      <div className="table-scroll" tabIndex={0}>
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>{text.table.family}</th>
+                              <th>{text.table.plan}</th>
+                              <th>{text.table.entitlement}</th>
+                              <th>الإجراء</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {subs
+                              .filter((s: any) => s.entitlement_status === 'revoked')
+                              .slice(0, 10)
+                              .map((r: any) => (
+                                <tr key={r.id}>
+                                  <td dir="ltr" style={{ fontSize: 12, fontFamily: 'monospace' }}>
+                                    {String(r.parent_id).slice(0, 16)}
+                                  </td>
+                                  <td>
+                                    <span className={`plan-badge plan-badge--${r.plan}`}>{r.plan}</span>
+                                  </td>
+                                  <td>
+                                    <span className="account-status account-status--archived">
+                                      {r.entitlement_status}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <button
+                                      className="button button--ghost button--small"
+                                      onClick={async () => {
+                                        const amount = prompt('المبلغ بالقروش أو السنتات (مثال 1999 لـ 19.99)?')
+                                        const currency = prompt('العملة (EGP/USD)?', 'EGP')
+                                        const reason = prompt(
+                                          'السبب (requested_by_customer/duplicate_charge/fraud/service_issue/other)?',
+                                          'requested_by_customer',
+                                        )
+                                        if (!amount) return
+                                        try {
+                                          await api.createRefund({
+                                            parent_id: r.parent_id,
+                                            amount_minor: Number(amount),
+                                            currency: currency || 'EGP',
+                                            reason: reason || 'requested_by_customer',
+                                            original_transaction_id: r.id,
+                                          } as any)
+                                          await load()
+                                        } catch (e) {
+                                          alert(e instanceof Error ? e.message : 'Error')
+                                        }
+                                      }}
+                                    >
+                                      إنشاء استرداد مالي
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  ) : <EmptyState title={text.empty.refund} description={text.empty.refundHint} />}
+                  ) : (
+                    <EmptyState title={text.empty.refund} description={text.empty.refundHint} />
+                  )}
                 </>
               )}
-            </div></section>
+            </section>
           )}
+        </>
+      )}
+
+      {/* 5. Slide-Over Inspection Drawer (Master-Detail) */}
+      {selectedSub && (
+        <>
+          <div
+            className="subscription-drawer-overlay"
+            onClick={() => setSelectedSub(null)}
+          />
+          <aside className="subscription-drawer" aria-label="تفاصيل فحص الاشتراك">
+            <div className="subscription-drawer__header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 14,
+                    background: 'rgba(99, 102, 241, 0.15)',
+                    color: '#6366f1',
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontWeight: 900,
+                    fontSize: 16,
+                  }}
+                >
+                  {String(selectedSub.parent_id).slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: 'var(--text)' }}>
+                    {selectedSub.family_name || 'اشتراك عائلة'}
+                  </h3>
+                  <small style={{ color: 'var(--muted)', fontSize: 12 }}>
+                    معرّف الاشتراك: {selectedSub.id}
+                  </small>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setSelectedSub(null)}
+                aria-label="إغلاق"
+              >
+                <Icon name="close" size={18} />
+              </button>
+            </div>
+
+            <div className="subscription-drawer__body">
+              {/* Status Chips Row */}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span className={`plan-badge plan-badge--${selectedSub.plan}`}>
+                  الخطة: {selectedSub.plan}
+                </span>
+                <span
+                  className={`account-status account-status--${
+                    selectedSub.entitlement_status === 'active' ? 'active' : 'archived'
+                  }`}
+                >
+                  الاستحقاق: {selectedSub.entitlement_status}
+                </span>
+                <span
+                  className={`account-status account-status--${
+                    selectedSub.provider_state === 'active' ? 'active' : 'archived'
+                  }`}
+                >
+                  حالة المزوّد: {selectedSub.provider_state}
+                </span>
+                {selectedSub.has_mismatch && (
+                  <span className="track-badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+                    ⚠️ تناقض استحقاق
+                  </span>
+                )}
+              </div>
+
+              {/* Family Identity Box */}
+              <div className="catalog-filter-card" style={{ padding: 18 }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                  معرّف حساب العائلة (Parent ID)
+                </span>
+                <div className="token-copy-box" style={{ marginTop: 8 }}>
+                  <code style={{ direction: 'ltr' }}>{selectedSub.parent_id}</code>
+                  <button
+                    type="button"
+                    className="button button--ghost button--small"
+                    onClick={() => copyToClipboard(selectedSub.parent_id)}
+                    style={{ minHeight: 28, padding: '0 8px' }}
+                  >
+                    <Icon name={copiedToken ? 'check' : 'copy'} size={13} />
+                    <span>{copiedToken ? 'تم النسخ' : 'نسخ'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Payment Proof & Token Box */}
+              <div className="catalog-filter-card" style={{ padding: 18 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                    بيانات إثبات الدفع والمزوّد
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                    {selectedSub.provider || 'Google Play'}
+                  </span>
+                </div>
+
+                <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
+                  <div>
+                    <small style={{ color: 'var(--muted)', fontSize: 11, display: 'block', marginBottom: 4 }}>
+                      رمز الشراء المالي (Purchase Token)
+                    </small>
+                    <div className="token-copy-box">
+                      <code style={{ direction: 'ltr', wordBreak: 'break-all', fontSize: 11 }}>
+                        {selectedSub.purchase_token || selectedSub.id || 'N/A'}
+                      </code>
+                      <button
+                        type="button"
+                        className="button button--ghost button--small"
+                        onClick={() => copyToClipboard(selectedSub.purchase_token || selectedSub.id)}
+                        style={{ minHeight: 28, padding: '0 8px' }}
+                      >
+                        <Icon name="copy" size={13} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Entitlement Timeline */}
+              <div className="catalog-filter-card" style={{ padding: 18 }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                  الخط الزمني وصلاحية الوصول
+                </span>
+                <div style={{ marginTop: 14, display: 'grid', gap: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>تاريخ التجديد القادم:</span>
+                    <strong style={{ color: 'var(--text)', fontSize: 13 }}>
+                      {formatMs(selectedSub.expires_at_ms, locale as any)}
+                    </strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>نموذج المطابقة:</span>
+                    <span style={{ color: '#10b981', fontWeight: 700, fontSize: 12 }}>
+                      Two-Tier Trust Model
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="subscription-drawer__footer">
+              <Link
+                className="button button--primary"
+                to={adminPath(`billing/subscription/${selectedSub.id}`)}
+                style={{ flex: 1, justifyContent: 'center' }}
+              >
+                <Icon name="sparkles" size={15} />
+                <span>مساحة العمل الكاملة</span>
+              </Link>
+              <Link
+                className="button button--secondary"
+                to={adminPath(`customers/${selectedSub.parent_id}`)}
+                style={{ flex: 1, justifyContent: 'center' }}
+              >
+                <Icon name="parents" size={15} />
+                <span>ملف العائلة 360</span>
+              </Link>
+            </div>
+          </aside>
         </>
       )}
     </div>
   )
 }
+

@@ -16,6 +16,8 @@ import 'package:majarra/features/games/application/creation_cloud_service.dart';
 import 'package:majarra/features/games/data/local_creation_store.dart';
 import 'package:majarra/features/home/application/home_providers.dart';
 import 'package:majarra/features/home/data/majarra_api_client.dart';
+import 'package:majarra/features/onboarding/application/onboarding_controller.dart';
+import 'package:majarra/features/onboarding/domain/onboarding_step.dart';
 import 'package:majarra/features/search/data/recent_searches_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -110,6 +112,7 @@ _harness(SharedPreferences preferences, {bool serverFails = false}) {
       downloadRepositoryProvider.overrideWithValue(
         _FakeDownloadRepository(preferences),
       ),
+      sharedPreferencesProvider.overrideWithValue(preferences),
     ],
   );
   addTearDown(container.dispose);
@@ -176,6 +179,22 @@ void main() {
     final h = _harness(preferences);
     await h.container.read(authControllerProvider).logout();
     expect(h.pin.cleared, isTrue);
+  });
+
+  test('onboarding position never survives a sign-out', () async {
+    final h = _harness(preferences);
+    h.container
+        .read(onboardingControllerProvider.notifier)
+        .goToStep(OnboardingStep.finish);
+    expect(preferences.containsKey(onboardingStepPrefsKey), isTrue);
+
+    await h.container.read(authControllerProvider).logout();
+
+    expect(preferences.containsKey(onboardingStepPrefsKey), isFalse);
+    expect(
+      h.container.read(onboardingControllerProvider).hasPersistedStep,
+      isFalse,
+    );
   });
 
   test('is safe to call twice', () async {

@@ -8,6 +8,7 @@ import {
   applyArtworkUrl,
   artworkSelect,
   publicAssetBaseUrl,
+  SERIES_BANNER_ROLES,
   SERIES_COVER_ROLES,
 } from '../lib/assetUrls.ts';
 import {
@@ -143,13 +144,17 @@ seriesRoute.get('/:id', async (c) => {
         s.age_min, s.age_max, s.cover_url, s.logo_url, s.description_ar,
         s.description_en, s.production_level, s.is_free, s.price_tier,
         s.published_at, p.name_ar AS planet_name,
-        ${artworkSelect('cover_asset', 'series', 's.id', SERIES_COVER_ROLES)}
+        ${artworkSelect('cover_asset', 'series', 's.id', SERIES_COVER_ROLES)},
+        ${artworkSelect('banner_asset', 'series', 's.id', SERIES_BANNER_ROLES)}
       FROM series s
       LEFT JOIN planets p ON s.planet_id = p.id
       WHERE s.id = ? AND s.status = 'published'${contentClassPredicate('s', shouldServeTestFixtures(c.env))}
     `, [id]);
     if (series) {
       applyArtworkUrl(series, 'cover_asset', 'cover_url', publicAssetBaseUrl(c.env));
+      // البانر العريض (16:9) لصفحة التفاصيل؛ يسقط للبوستر عندما لا يوجد بانر.
+      applyArtworkUrl(series, 'banner_asset', 'banner_url', publicAssetBaseUrl(c.env));
+      if (series['banner_url'] == null) series['banner_url'] = series['cover_url'] ?? null;
     }
     const [seasons, characters, objectives] = await Promise.all([
       // Derived counts, not `seasons.episode_count`.

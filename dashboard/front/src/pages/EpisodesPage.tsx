@@ -204,9 +204,123 @@ export function EpisodesPage() {
     finally { setBusyId('') }
   }
 
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
+
   return (
     <div className="page-stack">
-      <section className="page-intro"><div><span className="eyebrow">{text.level}</span><h2>{text.headline}</h2><p>{text.intro}</p></div><button className="button button--primary" type="button" onClick={openCreate} disabled={!series.length}><Icon name="plus" size={17} />{text.newEpisode}</button></section>
+      <section className="page-intro">
+        <div>
+          <span className="eyebrow">{text.level}</span>
+          <h2>{text.headline}</h2>
+          <p>{text.intro}</p>
+        </div>
+        <button className="button button--primary" type="button" onClick={openCreate} disabled={!series.length}>
+          <Icon name="plus" size={17} />
+          {text.newEpisode}
+        </button>
+      </section>
+
+      <section className="hero-kpis" aria-label="Episodes KPIs">
+        <div className="kpi-glass-card kpi-glass-card--primary">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{text.allEpisodes}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="media" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{formatNumber(total, locale)}</div>
+          <div className="kpi-glass-card__caption">{text.library}</div>
+        </div>
+        <div className="kpi-glass-card kpi-glass-card--success">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{statusLabels[locale].published}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="check" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{formatNumber(records.filter(r => r.status === 'published').length, locale)}</div>
+          <div className="kpi-glass-card__caption">{locale === 'ar' ? 'حلقة منشورة ومتاحة' : 'Published and live'}</div>
+        </div>
+        <div className="kpi-glass-card kpi-glass-card--warn">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{locale === 'ar' ? 'قيد العمل' : 'In pipeline'}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="clock" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{formatNumber(records.filter(r => r.status !== 'published').length, locale)}</div>
+          <div className="kpi-glass-card__caption">{locale === 'ar' ? 'مسودات وإنتاج ومراجعة' : 'Drafts, prod, review'}</div>
+        </div>
+        <div className="kpi-glass-card kpi-glass-card--purple">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{text.series}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="series" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{formatNumber(series.length, locale)}</div>
+          <div className="kpi-glass-card__caption">{locale === 'ar' ? 'سلاسل متاحة للربط' : 'Available series'}</div>
+        </div>
+      </section>
+
+      {/* Modern Catalog Control Strip */}
+      <section className="catalog-control-strip">
+        <div className="catalog-control-strip__left">
+          <div className="filter-pill-group" aria-label="Status filters">
+            <button
+              type="button"
+              className={`filter-pill ${!status ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', '')}
+            >
+              {locale === 'ar' ? 'كل الحالات ✨' : 'All status'}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${status === 'published' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', 'published')}
+            >
+              🟢 {statusLabels[locale].published}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${status === 'ready' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', 'ready')}
+            >
+              ✨ {statusLabels[locale].ready}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${status === 'production' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', 'production')}
+            >
+              🟡 {statusLabels[locale].production}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${status === 'draft' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', 'draft')}
+            >
+              ⚪ {statusLabels[locale].draft}
+            </button>
+          </div>
+        </div>
+
+        <div className="catalog-control-strip__right">
+          <div className="view-mode-toggle" aria-label="View mode">
+            <button
+              type="button"
+              className={`view-mode-btn ${viewMode === 'grid' ? 'view-mode-btn--active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title={locale === 'ar' ? 'عرض شبكي تفاعلي' : 'Grid view'}
+            >
+              <Icon name="grid" size={15} />
+              <span>{locale === 'ar' ? 'بطاقات' : 'Cards'}</span>
+            </button>
+            <button
+              type="button"
+              className={`view-mode-btn ${viewMode === 'table' ? 'view-mode-btn--active' : ''}`}
+              onClick={() => setViewMode('table')}
+              title={locale === 'ar' ? 'عرض جدول تفصيلي' : 'Table view'}
+            >
+              <Icon name="bars" size={15} />
+              <span>{locale === 'ar' ? 'جدول' : 'Table'}</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       {!series.length && !loading && <div className="inline-alert inline-alert--info">{text.needsSeries}</div>}
       <section className="panel panel--table">
         <header className="panel__header panel__header--filters">
@@ -240,49 +354,121 @@ export function EpisodesPage() {
         </header>
         {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? (
           <>
-            <div className="table-scroll" tabIndex={0}>
-              <table className="data-table data-table--wide">
-                <thead>
-                  <tr>
-                    <th>{text.episode}</th>
-                    {columns.isVisible('series') && <th>{text.series}</th>}
-                    {columns.isVisible('track') && <th>{text.track}</th>}
-                    {columns.isVisible('objective') && <th>{text.objective}</th>}
-                    {columns.isVisible('familyActivity') && <th>{text.familyActivity}</th>}
-                    {columns.isVisible('duration') && <th>{text.duration}</th>}
-                    {columns.isVisible('status') && <th>{text.status}</th>}
-                    <th>{text.actions}</th>
-                  </tr>
-                </thead>
-                <tbody>
+            {viewMode === 'grid' ? (
+              /* EPISODES STUDIO GRID VIEW */
+              <div style={{ padding: '20px' }}>
+                <div className="episodes-studio-grid">
                   {records.map((episode) => (
-                    <tr key={episode.id}>
-                      <td>
-                        <Link className="entity-cell entity-cell--button" to={adminPath(`episodes/${episode.id}`)}>
-                          <EntityThumbnail src={episode.thumbnail_url} alt={episode.title_ar} icon="play" />
-                          <div><strong>{episode.title_ar}</strong><small>{episode.episode_number ? text.episodeNumber(episode.episode_number) : text.noNumber}</small></div>
-                        </Link>
-                      </td>
-                      {columns.isVisible('series') && <td>{episode.series_title}</td>}
-                      {columns.isVisible('track') && <td><div className="badge-list">{trackList(episode.track_ids).map((item) => <TrackBadge track={item} key={item}/>)}</div></td>}
-                      {columns.isVisible('objective') && <td className="cell-wrap">{episode.objective_title || text.unspecified}</td>}
-                      {columns.isVisible('familyActivity') && <td className="cell-wrap">{episode.family_activity_ar || '—'}</td>}
-                      {columns.isVisible('duration') && <td>{durationLabel(episode.duration_seconds, locale)}</td>}
-                      {columns.isVisible('status') && (
-                        <td>{episode.status === 'published' ? <StatusBadge status={episode.status}/> : <><select className="status-select" value={episode.status} disabled={busyId === episode.id} aria-label={`${text.status}: ${episode.title_ar}`} onChange={(event) => void changeStatus(episode.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={episode.status}/></>}</td>
-                      )}
-                      <td>
-                        <div className="table-actions">
-                          {episode.status !== 'published' ? <button className="icon-button icon-button--small" type="button" onClick={() => void publish(episode)} disabled={busyId === episode.id} title={locale === 'ar' ? 'نشر' : 'Publish'}><Icon name="upload" size={16}/></button> : null}
-                          <button className="icon-button icon-button--small" type="button" onClick={() => openEdit(episode)} title={text.edit}><Icon name="edit" size={16}/></button>
-                          <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(episode)} disabled={busyId === episode.id} title={text.archive}><Icon name="archive" size={16}/></button>
+                    <article className="episode-studio-card" key={episode.id}>
+                      <div className="episode-studio-card__thumb">
+                        {episode.thumbnail_url ? (
+                          <img src={episode.thumbnail_url} alt={episode.title_ar} loading="lazy" />
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: 'var(--muted)' }}>
+                            <div className="episode-studio-card__play">
+                              <Icon name="play" size={18} />
+                            </div>
+                          </div>
+                        )}
+                        {episode.duration_seconds ? (
+                          <span className="episode-studio-card__duration">
+                            {durationLabel(episode.duration_seconds, locale)}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)', background: 'rgba(99, 102, 241, 0.12)', padding: '2px 8px', borderRadius: '6px' }}>
+                            {episode.series_title || (locale === 'ar' ? 'سلسلة عامة' : 'Series')}
+                          </span>
+                          <StatusBadge status={episode.status} />
                         </div>
-                      </td>
-                    </tr>
+
+                        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>
+                          <Link to={adminPath(`episodes/${episode.id}`)} style={{ color: 'inherit', textDecoration: 'none' }}>
+                            {episode.episode_number ? `${text.episodeNumber(episode.episode_number)}: ` : ''}{episode.title_ar}
+                          </Link>
+                        </h3>
+
+                        {episode.objective_title && (
+                          <div style={{ fontSize: '12px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Icon name="check" size={13} style={{ color: 'var(--success)' }} />
+                            <span>{episode.objective_title}</span>
+                          </div>
+                        )}
+
+                        <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid var(--cs-glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Link to={adminPath(`episodes/${episode.id}`)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 800, color: 'var(--primary)', textDecoration: 'none' }}>
+                            <span>{locale === 'ar' ? 'مساحة العمل' : 'Workspace'}</span>
+                            <Icon name="arrow" size={13} />
+                          </Link>
+
+                          <div className="table-actions">
+                            {episode.status !== 'published' && (
+                              <button className="icon-button icon-button--small" type="button" onClick={() => void publish(episode)} disabled={busyId === episode.id} title={locale === 'ar' ? 'نشر' : 'Publish'}>
+                                <Icon name="upload" size={15} />
+                              </button>
+                            )}
+                            <button className="icon-button icon-button--small" type="button" onClick={() => openEdit(episode)} title={text.edit}>
+                              <Icon name="edit" size={15} />
+                            </button>
+                            <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(episode)} disabled={busyId === episode.id} title={text.archive}>
+                              <Icon name="archive" size={15} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+            ) : (
+              /* DENSE TABLE VIEW */
+              <div className="table-scroll" tabIndex={0}>
+                <table className="data-table data-table--wide">
+                  <thead>
+                    <tr>
+                      <th>{text.episode}</th>
+                      {columns.isVisible('series') && <th>{text.series}</th>}
+                      {columns.isVisible('track') && <th>{text.track}</th>}
+                      {columns.isVisible('objective') && <th>{text.objective}</th>}
+                      {columns.isVisible('familyActivity') && <th>{text.familyActivity}</th>}
+                      {columns.isVisible('duration') && <th>{text.duration}</th>}
+                      {columns.isVisible('status') && <th>{text.status}</th>}
+                      <th>{text.actions}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {records.map((episode) => (
+                      <tr key={episode.id}>
+                        <td>
+                          <Link className="entity-cell entity-cell--button" to={adminPath(`episodes/${episode.id}`)}>
+                            <EntityThumbnail src={episode.thumbnail_url} alt={episode.title_ar} icon="play" />
+                            <div><strong>{episode.title_ar}</strong><small>{episode.episode_number ? text.episodeNumber(episode.episode_number) : text.noNumber}</small></div>
+                          </Link>
+                        </td>
+                        {columns.isVisible('series') && <td>{episode.series_title}</td>}
+                        {columns.isVisible('track') && <td><div className="badge-list">{trackList(episode.track_ids).map((item) => <TrackBadge track={item} key={item}/>)}</div></td>}
+                        {columns.isVisible('objective') && <td className="cell-wrap">{episode.objective_title || text.unspecified}</td>}
+                        {columns.isVisible('familyActivity') && <td className="cell-wrap">{episode.family_activity_ar || '—'}</td>}
+                        {columns.isVisible('duration') && <td>{durationLabel(episode.duration_seconds, locale)}</td>}
+                        {columns.isVisible('status') && (
+                          <td>{episode.status === 'published' ? <StatusBadge status={episode.status}/> : <><select className="status-select" value={episode.status} disabled={busyId === episode.id} aria-label={`${text.status}: ${episode.title_ar}`} onChange={(event) => void changeStatus(episode.id, event.target.value as ContentStatus)}>{editableStatuses.map((item) => <option value={item} key={item}>{statusLabels[locale][item]}</option>)}</select><StatusBadge status={episode.status}/></>}</td>
+                        )}
+                        <td>
+                          <div className="table-actions">
+                            {episode.status !== 'published' ? <button className="icon-button icon-button--small" type="button" onClick={() => void publish(episode)} disabled={busyId === episode.id} title={locale === 'ar' ? 'نشر' : 'Publish'}><Icon name="upload" size={16}/></button> : null}
+                            <button className="icon-button icon-button--small" type="button" onClick={() => openEdit(episode)} title={text.edit}><Icon name="edit" size={16}/></button>
+                            <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(episode)} disabled={busyId === episode.id} title={text.archive}><Icon name="archive" size={16}/></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
             <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
           </>
         ) : <EmptyState title={text.empty} description={text.emptyDesc} action={series.length ? <button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17}/>{text.addEpisode}</button> : undefined}/>}

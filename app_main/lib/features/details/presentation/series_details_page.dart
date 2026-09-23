@@ -177,7 +177,13 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
                                 fit: StackFit.expand,
                                 children: [
                                   CinematicImage(
-                                    networkUrl: widget.series.coverUrl,
+                                    // البانر العريض (16:9) يناسب إطار الهيرو
+                                    // العريض؛ البوستر الطولي (3:4) كان يُضغَط
+                                    // فيه فيبدو مضغوطًا. يسقط للبوستر عند
+                                    // غياب البانر.
+                                    networkUrl:
+                                        widget.series.bannerUrl ??
+                                        widget.series.coverUrl,
                                     assetPath: widget.series.bannerAsset,
                                     semanticLabel: widget.series.title,
                                   ),

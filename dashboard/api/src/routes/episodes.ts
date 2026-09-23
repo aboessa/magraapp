@@ -333,14 +333,15 @@ episodesRoute.post('/:id/playback-sessions', async (c) => {
   if (!created.ok || !lease) return forward(created);
 
   const token = await issueMediaToken(c.env, auth.principal, lease.lease_id, catalog.media);
-  // If renditions exist, advertise HLS master. The lease travels in the URL
-  // because the manifest revalidates it: the manifest no longer creates a lease
-  // of its own, so it has to be told which authorised one it belongs to. A client
-  // that follows `stream_url` verbatim needs no change.
-  const hasRenditions = await queryFirst<{ c: number }>(c.env.DB, `SELECT COUNT(*) as c FROM episode_renditions WHERE episode_id=? AND status='ready'`, [c.req.param('id')]);
-  const streamUrl = hasRenditions && hasRenditions.c > 0
-    ? `/api/v1/episodes/${c.req.param('id')}/hls/master.m3u8?lease_id=${encodeURIComponent(lease.lease_id)}`
-    : `/api/v1/media/assets/${catalog.media.asset_id}`;
+  // `episode_renditions` contains progressive MP4 quality alternatives, not HLS
+  // media playlists. Treating the mere presence of those rows as HLS produced a
+  // master whose variants pointed directly at MP4 files; Flutter Web then fetched
+  // the parent-authenticated manifest without an access-token header and received
+  // 401 before playback could start. Until the encoding pipeline stores genuine
+  // HLS playlists and segments, the browser-safe contract is the primary MP4
+  // capability endpoint below. It supports byte ranges and accepts the short-lived
+  // capability in `?token=`, which is required by the HTML video element.
+  const streamUrl = `/api/v1/media/assets/${catalog.media.asset_id}`;
   return c.json({
     success: true,
     data: {
@@ -477,7 +478,9 @@ episodesRoute.post('/:id/progress', async (c) => {
 /// The manifest now **requires an existing lease** rather than inventing one.
 /// `/playback/start` remains the only place a lease is created, and this endpoint
 /// revalidates it through the same DO call the heartbeat uses, so plan and
-/// concurrency are re-checked on every manifest fetch.
+/// concurrency are re-checked on every manifest fetch. Playback sessions do not
+/// currently advertise this endpoint: normalized renditions are progressive MP4
+/// assets, not HLS media playlists. It remains gated for future genuine HLS output.
 episodesRoute.get('/:id/hls/master.m3u8', async (c) => {
   if (!mediaIsConfigured(c.env)) return c.text('#EXTM3U\n', 503);
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));

@@ -14,42 +14,15 @@ import { useUrlListState } from '../hooks/useUrlListState'
 import { formatDate, formatNumber } from '../lib/labels'
 import type { FailedEventStatus, FailedFamilyEventRecord } from '../types/api'
 
-/**
- * أحداث العائلة الفاشلة.
- *
- * ## لماذا هذه الصفحة موجودة
- *
- * `queue/dlq.ts` كان يـ`ack()` كل رسالة فاشلة بعد سطر سجل، والـack يعني للطابور
- * أن الرسالة عُولجت فتُحذف. أي أن حدث عائلة استنفد محاولاته كان يُفقَد نهائيًا،
- * ويبقى إسقاط `family_projection` لتلك العائلة متأخّرًا بلا طريقة لملاحظته.
- *
- * صار يُكتب في `failed_family_events` (المهاجرة 0021)، وبُنيت له ثلاثة مسارات.
- * لكن جدولًا يُقرأ بـcurl فقط لا يختلف عمليًّا عن سطر سجل: هذه الصفحة هي ما
- * يجعل الإصلاح قابلًا للاستخدام.
- *
- * ## قواعد من الخادم تُحترم هنا
- *
- * ١. **الاستبعاد يتطلّب سببًا مكتوبًا.** الخادم يرفض بـ400 بلا `note`، لأن صفًّا
- *    مُستبعَدًا بلا سبب يُعيد المشكلة الأصلية: فقدان المعلومة عن سبب الفقدان.
- *
- * ٢. **النائب لا يُعاد تشغيله.** `payload` قد يكون
- *    `{ error: 'payload_truncated' }` عندما تعذّر حفظ الجسم كاملًا. الخادم يرفض
- *    بـ422، فيُعطَّل الزرّ هنا ويُشرح السبب بدل انتظار الرفض.
- *
- * ٣. **إعادة التشغيل قد تكون «مكرَّرة» ولا تعني فشلًا.** `processFamilyEvent`
- *    يفحص `processed_family_events` أولًا، فحدث نجح لاحقًا بطريق آخر يُعَدّ
- *    مكرَّرًا ويُوسَم `replayed` بلا تطبيق مزدوج.
- */
-
 const copy = {
   ar: {
-    eyebrow: 'سلامة البيانات',
-    title: 'أحداث العائلة الفاشلة',
+    eyebrow: 'سلامة البيانات والتعافي من الأعطال',
+    title: 'أحداث العائلة المتعثرة (DLQ Recovery)',
     intro: 'أحداث استنفدت محاولاتها وسقطت في طابور الرسائل الميتة. كل صفّ يعني إسقاط عائلة متأخّرًا عن حالتها الحقيقية.',
-    refresh: 'تحديث',
+    refresh: 'تحديث البيانات',
     list: 'الأحداث',
-    total: 'الإجمالي',
-    pendingCount: 'معلَّقة',
+    total: 'إجمالي الأحداث',
+    pendingCount: 'أحداث معلَّقة',
     allStatuses: 'كل الحالات',
     parentFilter: 'معرّف ولي الأمر...',
     when: 'وقت الفشل',
@@ -61,7 +34,7 @@ const copy = {
     payload: 'الجسم المحفوظ',
     replay: 'إعادة تشغيل',
     discard: 'استبعاد',
-    inspect: 'فحص الجسم',
+    inspect: 'فحص وتدقيق الجسم',
     loading: 'جارٍ تحميل الأحداث...',
     loadError: 'تعذر تحميل الأحداث الفاشلة',
     empty: 'لا أحداث فاشلة',
@@ -85,19 +58,27 @@ const copy = {
     replaying: 'جارٍ إعادة التشغيل...',
     replayedOk: 'أُعيد تشغيل الحدث بنجاح.',
     replayedDuplicate: 'الحدث كان مُسقَطًا سلفًا، فوُسم كمُعاد تشغيله بلا تطبيق مزدوج.',
-    discardedOk: 'استُبعد الحدث.',
+    discardedOk: 'استُبعد الحدث بنجاح.',
     actionError: 'تعذر تنفيذ الإجراء',
     close: 'إغلاق',
     resolvedBy: 'بواسطة',
-    pendingNote: 'الأحداث المعلَّقة تحتاج قرارًا: إعادة تشغيل بعد إصلاح السبب، أو استبعاد بسبب مكتوب.',
+    pendingNote: 'الأحداث المعلَّقة تحتاج قرارًا: إعادة تشغيل بعد إصلاح السبب، أو استبعاد بسبب مكتوب وموثق.',
+    systemBeacon: 'طابور الرسائل الميتة (DLQ)',
+    beaconSub: 'حماية متقدمة من فقدان إسقاط بيانات العائلات',
+    eventId: 'معرّف الحدث',
+    drawerTitle: 'فحص الحدث والجسم المشفر',
+    copied: 'تم النسخ!',
+    copyId: 'نسخ المعرّف',
+    replayedCount: 'تمت إعادة تشغيلها',
+    discardedCount: 'مُستبعدة بقرار',
   },
   en: {
-    eyebrow: 'Data integrity',
-    title: 'Failed family events',
+    eyebrow: 'Data Integrity & DLQ Recovery',
+    title: 'Failed Family Events & DLQ Recovery',
     intro: 'Events that exhausted every retry and landed in the dead-letter queue. Each row means one family\u2019s projection is behind its true state.',
-    refresh: 'Refresh',
+    refresh: 'Refresh Data',
     list: 'Events',
-    total: 'Total',
+    total: 'Total Events',
     pendingCount: 'Pending',
     allStatuses: 'All statuses',
     parentFilter: 'Parent id...',
@@ -110,7 +91,7 @@ const copy = {
     payload: 'Stored payload',
     replay: 'Replay',
     discard: 'Discard',
-    inspect: 'Inspect payload',
+    inspect: 'Inspect Payload',
     loading: 'Loading failed events...',
     loadError: 'Unable to load failed events',
     empty: 'No failed events',
@@ -139,6 +120,14 @@ const copy = {
     close: 'Close',
     resolvedBy: 'by',
     pendingNote: 'Pending events need a decision: replay after fixing the cause, or discard with a written reason.',
+    systemBeacon: 'Dead-Letter Queue (DLQ)',
+    beaconSub: 'Guaranteed projection recovery & event auditing',
+    eventId: 'Event ID',
+    drawerTitle: 'Stored Payload Forensic Dossier',
+    copied: 'Copied!',
+    copyId: 'Copy ID',
+    replayedCount: 'Replayed',
+    discardedCount: 'Discarded',
   },
 }
 
@@ -149,26 +138,11 @@ const statusLabels: Record<'ar' | 'en', Record<FailedEventStatus, string>> = {
   en: { pending: 'Pending', replayed: 'Replayed', discarded: 'Discarded' },
 }
 
-/// تعيين الحالة إلى صنف شارة موجود في dashboard.css
-const statusBadge: Record<FailedEventStatus, string> = {
-  pending: 'status-badge--review',
-  replayed: 'status-badge--published',
-  discarded: 'status-badge--archived',
-}
-
-/**
- * يفحص الجسم المحفوظ: هل هو حدث حقيقي أم نائب حفظٍ؟
- *
- * الخادم يحفظ `{ error: 'payload_truncated' | 'payload_not_serializable' }` عندما
- * تعذّر حفظ الجسم كاملًا، ويرفض إعادة تشغيله بـ422. يُفحص هنا ليُعطَّل الزرّ
- * بسبب معروض بدل نداءٍ يُرفض.
- */
 function inspectPayload(raw: string): { replayable: boolean; placeholder?: 'truncated' | 'unserializable' | 'invalid' } {
   let parsed: unknown
   try {
     parsed = JSON.parse(raw)
   } catch {
-    // الخادم يرفض بـ422 عند تعذّر التحليل
     return { replayable: false, placeholder: 'invalid' }
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
@@ -181,7 +155,6 @@ function inspectPayload(raw: string): { replayable: boolean; placeholder?: 'trun
   return { replayable: true }
 }
 
-/// تنسيق الجسم للعرض. يُترك كما هو عند تعذّر التحليل: النصّ الخام معلومة.
 function prettyPayload(raw: string) {
   try {
     return JSON.stringify(JSON.parse(raw), null, 2)
@@ -191,16 +164,6 @@ function prettyPayload(raw: string) {
 }
 
 const LIMIT = 50
-
-/// مفاتيح الفلاتر هي أسماء معاملات `GET /admin/failed-family-events` بالحرف:
-/// `status` و`parent_id` (مع `limit` و`offset`) كما في
-/// `api/src/routes/adminFamilyProjection.ts`.
-///
-/// الافتراض `pending` لا فراغ، لأن الصفحة تُفتح على ما يحتاج قرارًا. ولأن القيمة
-/// الافتراضية لا تُكتب في العنوان، لا يمكن التعبير عن «كل الحالات» بقيمة فارغة —
-/// فتلك تُقرأ افتراضًا أي `pending`. لذلك «الكل» قيمةٌ صريحة `all` في العنوان
-/// تُترجَم إلى غياب المعامل عند النداء: الخادم يرفض `status=all` بـ400 فلا يُرسَل
-/// إليه أبدًا.
 const ANY_STATUS = 'all'
 const DEFAULT_FILTERS = { status: 'pending', parent_id: '' }
 
@@ -230,12 +193,9 @@ export function FailedEventsPage() {
   const text = copy[locale]
   const navigate = useNavigate()
 
-  // حالة القائمة في العنوان: «الأحداث المعلَّقة لهذه العائلة» رابطٌ يُلصق في
-  // التذكرة، وزرّ الرجوع لا يُعيدك إلى قائمة غير مفلترة.
   const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
   const { filters, offset, limit } = list
   const { status, parent_id: parentId } = filters
-  /// ما يُرسَل فعلًا إلى الخادم: `all` تعني غياب المعامل لا قيمة يفهمها.
   const serverStatus = status === ANY_STATUS ? '' : status
   const [records, setRecords] = useState<FailedFamilyEventRecord[]>([])
   const [total, setTotal] = useState(0)
@@ -249,6 +209,7 @@ export function FailedEventsPage() {
   const [discarding, setDiscarding] = useState<FailedFamilyEventRecord | null>(null)
   const [note, setNote] = useState('')
   const [formError, setFormError] = useState('')
+  const [copiedId, setCopiedId] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -281,7 +242,6 @@ export function FailedEventsPage() {
     setNotice('')
     try {
       const response = await api.replayFailedFamilyEvent(row.id)
-      // «مكرَّر» ليس فشلًا: الحدث كان مُسقَطًا سلفًا فلم يُطبَّق مرتين
       setNotice(response.data.duplicate ? text.replayedDuplicate : text.replayedOk)
       await load()
     } catch (caught) {
@@ -300,8 +260,10 @@ export function FailedEventsPage() {
   async function confirmDiscard() {
     if (!discarding) return
     const reason = note.trim()
-    // نفس شرط الخادم، فيُمنع نداء يُرفض بـ400
-    if (!reason) { setFormError(text.noteRequired); return }
+    if (!reason) {
+      setFormError(text.noteRequired)
+      return
+    }
 
     setBusyId(discarding.id)
     setFormError('')
@@ -317,45 +279,174 @@ export function FailedEventsPage() {
     }
   }
 
-  const filtered = Boolean(serverStatus || parentId.trim())
+  const copyToClipboard = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy)
+    setCopiedId(true)
+    setTimeout(() => setCopiedId(false), 2000)
+  }
 
-  if (loading && !records.length) return <LoadingState label={text.loading} />
-  if (error && !records.length) return <ErrorState message={error} onRetry={() => void load()} />
+  const replayedCount = records.filter((r) => r.status === 'replayed').length
+  const discardedCount = records.filter((r) => r.status === 'discarded').length
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.intro}</p>
+    <div className="content-studio-root">
+      {/* 1. Master Command Strip */}
+      <section className="commercial-command-strip">
+        <div className="commercial-command-strip__left">
+          <div className="status-beacon">
+            <span className={`status-beacon__dot ${pending > 0 ? 'status-beacon__dot--rose' : 'status-beacon__dot--emerald'}`} />
+            <div className="status-beacon__meta">
+              <span className="status-beacon__title">{text.systemBeacon}</span>
+              <span className="status-beacon__sub">{text.beaconSub}</span>
+            </div>
+          </div>
+
+          <div className="filter-pill-group" style={{ marginInlineStart: 12 }}>
+            <button
+              className={`filter-pill ${status === ANY_STATUS ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', ANY_STATUS)}
+            >
+              {text.allStatuses}
+            </button>
+            <button
+              className={`filter-pill ${status === 'pending' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', 'pending')}
+            >
+              {statusLabels[locale].pending} ({pending})
+            </button>
+            <button
+              className={`filter-pill ${status === 'replayed' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', 'replayed')}
+            >
+              {statusLabels[locale].replayed}
+            </button>
+            <button
+              className={`filter-pill ${status === 'discarded' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', 'discarded')}
+            >
+              {statusLabels[locale].discarded}
+            </button>
+          </div>
         </div>
-        <div className="page-intro__actions">
-          <button className="button button--secondary" type="button" onClick={() => void load()}>
-            <Icon name="refresh" size={17} />{text.refresh}
+
+        <div className="commercial-command-strip__right">
+          <button className="button button--secondary button--small" onClick={() => void load()}>
+            <Icon name="refresh" size={14} />
+            <span>{text.refresh}</span>
           </button>
         </div>
       </section>
 
-      {error && <div className="inline-alert inline-alert--error">{error}</div>}
-      {notice && <div className="inline-alert inline-alert--info">{notice}</div>}
+      {/* 2. Executive Panoramic Hero */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: 'radial-gradient(circle, rgba(239, 68, 68, 0.28) 0%, rgba(245, 158, 11, 0.16) 60%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span className="catalog-hero__status-badge">
+              <span className="status-dot-pulse" style={{ background: '#ef4444' }} />
+              {formatNumber(pending, locale)} {text.pendingCount}
+            </span>
+          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.intro}</p>
+        </div>
+      </section>
 
-      {/* العدد المعلَّق أبرز من الإجمالي: هو وحده ما يحتاج تصرّفًا */}
-      {pending > 0 && (
-        <section className="panel panel--notice">
-          <strong>{text.pendingCount}: {formatNumber(pending, locale)}</strong>
-          <p>{text.pendingNote}</p>
-        </section>
+      {/* 3. Executive Bento Live Metrics Matrix */}
+      <div className="commercial-bento-grid">
+        <div className="commercial-bento-card commercial-bento-card--indigo" onClick={() => list.setFilter('status', ANY_STATUS)} style={{ cursor: 'pointer' }}>
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.total}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="objectives" size={20} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{formatNumber(total, locale)}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend commercial-bento-card__trend--up">
+              {locale === 'ar' ? 'سجل الأحداث الكلي' : 'All recorded DLQ events'}
+            </span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--rose" onClick={() => list.setFilter('status', 'pending')} style={{ cursor: 'pointer' }}>
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.pendingCount}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="warning" size={20} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{formatNumber(pending, locale)}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">
+              {locale === 'ar' ? 'تحتاج قرار إعادة أو استبعاد' : 'Awaiting operator decision'}
+            </span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--emerald" onClick={() => list.setFilter('status', 'replayed')} style={{ cursor: 'pointer' }}>
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.replayedCount}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="check" size={20} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{formatNumber(replayedCount, locale)}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend commercial-bento-card__trend--up">
+              <Icon name="check" size={12} /> {locale === 'ar' ? 'أُعيد تطبيقها بنجاح' : 'Replayed to projection'}
+            </span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--amber" onClick={() => list.setFilter('status', 'discarded')} style={{ cursor: 'pointer' }}>
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.discardedCount}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="clock" size={20} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{formatNumber(discardedCount, locale)}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">
+              {locale === 'ar' ? 'استُبعدت مع تدوين السبب' : 'Audited discards'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Operational Notification Banners */}
+      {notice && (
+        <div
+          style={{
+            margin: '20px 0 0',
+            padding: '14px 18px',
+            borderRadius: 14,
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            color: '#10b981',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            fontWeight: 700,
+          }}
+        >
+          <Icon name="check" size={18} />
+          <span>{notice}</span>
+        </div>
       )}
 
-      <section className="panel panel--table">
-        <header className="panel__header panel__header--filters">
-          <div>
-            <span className="panel__kicker">{text.list}</span>
-            <h3>{text.total} <span className="title-count">{formatNumber(total, locale)}</span></h3>
-          </div>
+      {/* 5. Catalog Control Strip & Filter Tools */}
+      <section className="catalog-control-strip" style={{ marginTop: 24 }}>
+        <div className="catalog-control-strip__left">
           <ListToolbar
-            searchValue={parentId}
+            searchValue={list.filters.parent_id}
             onSearchChange={(value) => list.setFilter('parent_id', value)}
             searchPlaceholder={text.parentFilter}
             fields={FILTER_FIELDS(text, locale)}
@@ -363,197 +454,331 @@ export function FailedEventsPage() {
             defaults={DEFAULT_FILTERS}
             onApply={(next) => list.setFilters(next)}
             onClear={list.clearFilters}
-            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, '')}
+            onRemove={(key) => list.setFilter(key as keyof typeof DEFAULT_FILTERS, DEFAULT_FILTERS[key as keyof typeof DEFAULT_FILTERS])}
             trailing={
               <SavedViewsMenu
-                storageKey="failed-events"
+                storageKey="failed-family-events"
                 currentSearch={list.search}
                 onApply={(search) => navigate(`${adminPath('failed-events')}${search}`)}
               />
             }
           />
-        </header>
-
-        {records.length ? (
-          <>
-            <div className="table-scroll" tabIndex={0}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>{text.when}</th>
-                    <th>{text.event}</th>
-                    <th>{text.family}</th>
-                    <th>{text.attempts}</th>
-                    <th>{text.status}</th>
-                    <th>{text.resolution}</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {records.map((row) => {
-                    const payload = inspectPayload(row.payload)
-                    const isPending = row.status === 'pending'
-                    const busy = busyId === row.id
-                    return (
-                      <tr key={row.id}>
-                        <td><span className="table-secondary">{formatDate(row.failed_at, locale, true)}</span></td>
-                        <td>
-                          {row.event_type || row.event_id ? (
-                            <div>
-                              <strong dir="ltr">{row.event_type ?? '—'}</strong>
-                              {row.event_id && <small className="table-secondary" dir="ltr">{row.event_id}</small>}
-                            </div>
-                          ) : (
-                            // رسالة مشوّهة بلا هوية: تُعلَن كذلك بدل عرض شُرَط فارغة
-                            <span className="table-secondary" title={text.unknownHint}>{text.unknownEvent}</span>
-                          )}
-                        </td>
-                        <td>
-                          {row.parent_id
-                            ? <span className="table-primary" dir="ltr">{row.parent_id}</span>
-                            : <span className="table-secondary">{text.noParent}</span>}
-                        </td>
-                        <td dir="ltr">{formatNumber(row.attempts, locale)}</td>
-                        <td>
-                          <span className={`status-badge ${statusBadge[row.status]}`}>
-                            {statusLabels[locale][row.status]}
-                          </span>
-                        </td>
-                        <td>
-                          {row.resolved_at ? (
-                            <div>
-                              <small className="table-secondary">{formatDate(row.resolved_at, locale, true)}</small>
-                              {row.resolved_by && (
-                                <small className="table-secondary" dir="ltr">
-                                  {text.resolvedBy} {row.resolved_by}
-                                </small>
-                              )}
-                              {row.resolution_note && (
-                                <small className="table-secondary">{row.resolution_note}</small>
-                              )}
-                            </div>
-                          ) : <span className="table-secondary">—</span>}
-                        </td>
-                        <td>
-                          <div className="table-actions">
-                            <Link className="icon-button icon-button--small" to={adminPath(`failed-events/${row.id}`)} title="Workspace"><Icon name="arrow" size={12}/></Link>
-                            <button
-                              className="icon-button icon-button--small"
-                              type="button"
-                              title={text.inspect}
-                              onClick={() => setInspecting(row)}
-                            >
-                              <Icon name="search" size={15} />
-                            </button>
-                            {isPending && (
-                              <>
-                                <button
-                                  className="icon-button icon-button--small"
-                                  type="button"
-                                  // النائب يُرفض بـ422 في الخادم، فيُعطَّل بسبب معروض
-                                  title={payload.replayable ? text.replay : text.cannotReplay}
-                                  disabled={busy || !payload.replayable}
-                                  onClick={() => void replay(row)}
-                                >
-                                  <Icon name="refresh" size={15} />
-                                </button>
-                                <button
-                                  className="icon-button icon-button--small icon-button--danger"
-                                  type="button"
-                                  title={text.discard}
-                                  disabled={busy}
-                                  onClick={() => openDiscard(row)}
-                                >
-                                  <Icon name="archive" size={15} />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {/* ترقيم صفحة صفحة بعد أن صار `offset` في العنوان: «تحميل المزيد»
-                التراكمي كان يجعل الرابط المنسوخ يصف مجموعة لا تُطابق ما رآه
-                صاحبه. */}
-            <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
-          </>
-        ) : (
-          <EmptyState
-            title={filtered ? text.emptyFiltered : text.empty}
-            description={filtered ? text.emptyFilteredDesc : text.emptyDesc}
-          />
-        )}
+        </div>
       </section>
 
-      <Modal
-        open={Boolean(inspecting)}
-        onClose={() => setInspecting(null)}
-        title={text.payload}
-        description={inspecting?.event_id ?? inspecting?.id}
-      >
-        {inspecting && (
-          <div className="entity-form">
-            {(() => {
-              const payload = inspectPayload(inspecting.payload)
-              if (payload.replayable) return null
-              const reason = payload.placeholder === 'truncated'
-                ? text.truncated
-                : payload.placeholder === 'unserializable'
-                  ? text.unserializable
-                  : text.placeholderPayload
-              return (
-                <div className="inline-alert inline-alert--error">
-                  <strong>{text.placeholderPayload}</strong> — {reason}
-                </div>
-              )
-            })()}
-            <pre className="payload-view" dir="ltr">{prettyPayload(inspecting.payload)}</pre>
-            <div className="form-actions">
-              <button className="button button--ghost" type="button" onClick={() => setInspecting(null)}>
-                {text.close}
+      {/* 6. Main Events Table View */}
+      {loading && !records.length ? (
+        <LoadingState label={text.loading} />
+      ) : error && !records.length ? (
+        <ErrorState message={error} onRetry={() => void load()} />
+      ) : records.length === 0 ? (
+        <EmptyState
+          title={serverStatus || parentId ? text.emptyFiltered : text.empty}
+          description={serverStatus || parentId ? text.emptyFilteredDesc : text.emptyDesc}
+        />
+      ) : (
+        <section
+          className="panel panel--table"
+          style={{
+            marginTop: 20,
+            background: 'var(--surface-1)',
+            borderRadius: 16,
+            border: '1px solid var(--cs-glass-border)',
+            overflow: 'hidden',
+          }}
+        >
+          <div className="table-scroll" tabIndex={0}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>{text.when}</th>
+                  <th>{text.event}</th>
+                  <th>{text.family}</th>
+                  <th>{text.attempts}</th>
+                  <th>{text.status}</th>
+                  <th>{text.resolution}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((row) => {
+                  const check = inspectPayload(row.payload)
+                  const isBusy = busyId === row.id
+                  return (
+                    <tr key={row.id}>
+                      <td style={{ whiteSpace: 'nowrap', fontSize: 12 }}>
+                        {formatDate(row.failed_at, locale)}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <strong style={{ color: 'var(--text)' }}>{row.event_type || text.unknownEvent}</strong>
+                          <code dir="ltr" style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>
+                            {row.id.slice(0, 16)}…
+                          </code>
+                        </div>
+                      </td>
+                      <td>
+                        {row.parent_id ? (
+                          <Link
+                            to={adminPath(`customers/${row.parent_id}`)}
+                            style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}
+                          >
+                            {row.parent_id.slice(0, 12)}…
+                          </Link>
+                        ) : (
+                          <span style={{ color: 'var(--muted)' }}>{text.noParent}</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className="counter-badge counter-badge--muted">{row.attempts}</span>
+                      </td>
+                      <td>
+                        <span
+                          className={`account-status account-status--${
+                            row.status === 'pending' ? 'suspended' : row.status === 'replayed' ? 'active' : 'archived'
+                          }`}
+                        >
+                          {statusLabels[locale][row.status]}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: 12, color: 'var(--text-soft)' }}>
+                        {row.resolved_at ? (
+                          <div>
+                            <span>{formatDate(row.resolved_at, locale)}</span>
+                            {row.resolved_by && (
+                              <small style={{ display: 'block', color: 'var(--muted)' }}>
+                                {text.resolvedBy}: {row.resolved_by}
+                              </small>
+                            )}
+                            {row.resolution_note && (
+                              <small style={{ display: 'block', color: 'var(--text)', fontStyle: 'italic' }}>
+                                &ldquo;{row.resolution_note}&rdquo;
+                              </small>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--muted)' }}>—</span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="table-actions">
+                          <button
+                            type="button"
+                            className="button button--ghost button--small"
+                            onClick={() => setInspecting(row)}
+                          >
+                            <Icon name="objectives" size={13} />
+                            <span>{text.inspect}</span>
+                          </button>
+                          {row.status === 'pending' && (
+                            <>
+                              <button
+                                type="button"
+                                className="button button--primary button--small"
+                                disabled={isBusy || !check.replayable}
+                                onClick={() => void replay(row)}
+                                title={!check.replayable ? text.cannotReplay : undefined}
+                              >
+                                {isBusy ? text.replaying : text.replay}
+                              </button>
+                              <button
+                                type="button"
+                                className="button button--secondary button--small"
+                                disabled={isBusy}
+                                onClick={() => openDiscard(row)}
+                              >
+                                {text.discard}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ padding: '12px 16px', borderTop: '1px solid var(--cs-glass-border)' }}>
+            <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
+          </div>
+        </section>
+      )}
+
+      {/* 7. Slide-Over Payload Inspection Drawer */}
+      {inspecting && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => setInspecting(null)}
+        >
+          <aside
+            className="commercial-slide-drawer"
+            style={{
+              width: '100%',
+              maxWidth: 540,
+              height: '100%',
+              background: 'var(--surface-1)',
+              borderInlineStart: '1px solid var(--cs-glass-border)',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.3)',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div
+              style={{
+                padding: '24px 24px 20px',
+                borderBottom: '1px solid var(--cs-glass-border)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, transparent 100%)',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
+                  {inspecting.event_type || text.unknownEvent}
+                </h3>
+                <span style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginTop: 2 }}>
+                  {text.drawerTitle}
+                </span>
+              </div>
+              <button
+                className="button button--ghost button--small"
+                onClick={() => setInspecting(null)}
+                style={{ padding: '6px 10px' }}
+              >
+                ✕
               </button>
             </div>
-          </div>
-        )}
-      </Modal>
 
-      <Modal
-        open={Boolean(discarding)}
-        onClose={() => !busyId && setDiscarding(null)}
-        title={text.discardTitle}
-        description={text.discardLede}
-      >
-        <div className="entity-form">
-          {formError && <div className="inline-alert inline-alert--error">{formError}</div>}
+            {/* Drawer Body */}
+            <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Event ID Box */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+                  {text.eventId}
+                </label>
+                <div className="token-copy-box">
+                  <code style={{ fontSize: 12, color: 'var(--text)', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                    {inspecting.id}
+                  </code>
+                  <button
+                    className="button button--ghost button--small"
+                    onClick={() => copyToClipboard(inspecting.id)}
+                    style={{ flexShrink: 0, padding: '4px 8px' }}
+                  >
+                    {copiedId ? text.copied : text.copyId}
+                  </button>
+                </div>
+              </div>
+
+              {/* Status and Attempts */}
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span
+                  className={`account-status account-status--${
+                    inspecting.status === 'pending' ? 'suspended' : inspecting.status === 'replayed' ? 'active' : 'archived'
+                  }`}
+                  style={{ padding: '6px 14px', fontSize: 12 }}
+                >
+                  {statusLabels[locale][inspecting.status]}
+                </span>
+                <span className="counter-badge" style={{ padding: '6px 12px', fontSize: 12 }}>
+                  {text.attempts}: {inspecting.attempts}
+                </span>
+              </div>
+
+              {/* Payload View */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+                  {text.payload}
+                </label>
+                <pre
+                  dir="ltr"
+                  style={{
+                    margin: 0,
+                    padding: 16,
+                    borderRadius: 12,
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--cs-glass-border)',
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                    color: 'var(--text)',
+                    maxHeight: 280,
+                    overflow: 'auto',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {prettyPayload(inspecting.payload)}
+                </pre>
+              </div>
+
+              {/* Actions */}
+              {inspecting.status === 'pending' && (
+                <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    style={{ flex: 1, padding: '12px 16px', justifyContent: 'center' }}
+                    disabled={busyId === inspecting.id || !inspectPayload(inspecting.payload).replayable}
+                    onClick={() => void replay(inspecting)}
+                  >
+                    <Icon name="refresh" size={15} />
+                    <span>{busyId === inspecting.id ? text.replaying : text.replay}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    style={{ flex: 1, padding: '12px 16px', justifyContent: 'center' }}
+                    disabled={busyId === inspecting.id}
+                    onClick={() => openDiscard(inspecting)}
+                  >
+                    <span>{text.discard}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* 8. Discard Confirmation Modal */}
+      <Modal open={Boolean(discarding)} onClose={() => setDiscarding(null)} title={text.discardTitle}>
+        <div style={{ display: 'grid', gap: 14 }}>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.6 }}>
+            {text.discardLede}
+          </p>
           <label className="field">
             <span>{text.noteField}</span>
             <textarea
-              autoFocus
-              rows={4}
+              rows={3}
               value={note}
-              onChange={(event) => setNote(event.target.value)}
+              onChange={(e) => setNote(e.target.value)}
               placeholder={text.notePlaceholder}
+              style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--cs-glass-border)' }}
             />
           </label>
-          <div className="form-actions">
-            <button
-              className="button button--ghost"
-              type="button"
-              disabled={Boolean(busyId)}
-              onClick={() => setDiscarding(null)}
-            >
+          {formError && (
+            <p className="form-error" role="alert" style={{ margin: 0 }}>
+              {formError}
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+            <button className="button button--secondary" onClick={() => setDiscarding(null)}>
               {text.cancel}
             </button>
-            <button
-              className="button button--primary"
-              type="button"
-              disabled={Boolean(busyId)}
-              onClick={() => void confirmDiscard()}
-            >
+            <button className="button button--primary" onClick={() => void confirmDiscard()}>
               {text.confirmDiscard}
             </button>
           </div>

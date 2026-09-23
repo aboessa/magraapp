@@ -224,7 +224,10 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
       final response = await ref.read(majarraApiClientProvider).verifyParentPin(pin: pin);
       if (!mounted) return;
 
-      // Immediate UX – stop spinner and navigate before expensive local KDF
+      // نوقف المؤشّر وننتقل قبل الكتابة المحلية، لا لأنها ثقيلة — صارت تجري
+      // عبر `PinKdf.deriveVerifierAsync` خارج خيط الواجهة — بل لأن الانتقال
+      // لا يعتمد عليها أصلًا: الخادم هو المرجع، والمخزن المحلي مرآةٌ لقفل
+      // الطفل. فلا معنى لجعل المستخدم ينتظرها.
       final enteredPin = pin;
       setState(() => _busy = false);
       _pin.clear();
@@ -256,11 +259,16 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
       }
       if (msg.contains('404') || msg.contains('No PIN')) {
         // The server, not this screen, is authoritative on enrolment state.
-        // Route to `/parent-pin` again so `_PinGatePage` re-checks
-        // `ParentPinStore.hasPin()` and lands on setup instead of unlock.
+        // Route to `/parent-pin` with the server's answer carried in `stage`
+        // so `_PinGatePage` lands on setup.
+        //
+        // كان يعود بلا مُعامِل، فيُعيد المُوزِّع سؤال `ParentPinStore.hasPin()`
+        // — وهو من قال «يوجد رمز» فأوصلَنا إلى هنا — فيُعيد بناء هذه الصفحة
+        // نفسها ويُعاد 404: حلقة لا تطبيبٌ ذاتي. و`stage=setup` يكسرها.
         setState(() => _busy = false);
         context.go(Uri(path: '/parent-pin', queryParameters: {
           if (widget.returnTo != null) 'from': widget.returnTo,
+          'stage': 'setup',
         }).toString());
         return;
       }

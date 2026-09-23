@@ -45,6 +45,11 @@ export function resolveAllowedOrigin(
   // Development: Flutter Web binds a random localhost port on every run.
   if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return origin;
 
+  // Flutter Web production plus Cloudflare Pages branch/deployment previews.
+  // Keep this project-specific: allowing all `*.pages.dev` origins would grant
+  // unrelated Cloudflare Pages projects access to the authenticated API.
+  if (/^https:\/\/(?:[a-z0-9-]+\.)?majarra-app\.pages\.dev$/.test(origin)) return origin;
+
   // Production and preview Majarra hosts.
   if (/^https:\/\/(.*\.)?majarra\.app$/.test(origin)) return origin;
   if (origin === 'https://majarra.app' || origin === 'https://www.majarra.app' || origin === 'https://api.majarra.app') return origin;

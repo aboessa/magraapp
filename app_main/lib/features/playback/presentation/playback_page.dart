@@ -328,6 +328,24 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
   static const _progressInterval = Duration(seconds: 15);
   static const _seekDebounce = Duration(milliseconds: 300);
 
+  /// Verifies that the protected endpoint is returning media rather than an
+  /// API error body. Chrome reports both cases as a vague demux failure, so the
+  /// probe deliberately logs only non-sensitive response metadata — never the
+  /// signed URL or capability token.
+  ///
+  /// `APP-102`: الشبكة في `data/` (`MediaProbeRepository` بالعميل المثبَّت)،
+  /// لا `http.Client()` عاريًا هنا — وهو ما كان يكسر
+  /// `presentation_network_layering_test.dart`.
+  Future<void> _probeNetworkVideo(Uri uri) async {
+    final rejection = await ref
+        .read(mediaProbeRepositoryProvider)
+        .probe(uri);
+    if (rejection != null) {
+      debugPrint('[playback] media_probe rejected: $rejection');
+      throw StateError('Invalid media response: $rejection');
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Lifecycle
   // -------------------------------------------------------------------------
@@ -700,18 +718,31 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     }
 
     // ENC-004: التشغيل من ملف صريح انتهى. المصدر المحلي صار رابطًا على
-    // `127.0.0.1` يفكّ الأجزاء عند الطلب، فالفرع الوحيد الباقي هو ترويسة
-    // التخويل: المصدر المحلي لا يحتاجها، والشبكي يحملها.
-    final controller = VideoPlayerController.networkUrl(
-      Uri.parse(playbackUrl),
-      httpHeaders: offline == null && token != null && token.isNotEmpty
-          ? {'Authorization': token}
-          : const {},
-      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
-      closedCaptionFile: _captionsLoader(episode),
-    );
+    // `127.0.0.1` يفكّ الأجزاء عند الطلب، فالفرع الوحيد الباقي هو القدرة:
+    // المصدر المحلي لا يحتاجها، والشبكي يحملها.
+    //
+    // القدرة في سلسلة الاستعلام لا في ترويسة: `video_player` على الويب يجلب
+    // الملف عبر عنصر `<video>` في المتصفح، وهو لا يرسل ترويسات مخصصة —
+    // فترويسة `Authorization` تُسقَط صامتًا ويرد الخادم 401 فيفشل `initialize`.
+    // `routes/media.ts` يقبل القدرة من `?token=` لهذا السبب نفسه (وهو ما
+    // تستخدمه الألعاب في `game_route.dart`)، والتوكن قصير العمر ومربوط بأصل
+    // واحد، والاستجابة `no-store` فلا يتسرّب عبر `Referer`.
+    final playbackUri = offline == null && token != null && token.isNotEmpty
+        ? Uri.parse(playbackUrl).replace(queryParameters: {
+            ...Uri.parse(playbackUrl).queryParameters,
+            'token': token.replaceFirst(RegExp(r'^Bearer\s+'), ''),
+          })
+        : Uri.parse(playbackUrl);
+    VideoPlayerController? controller;
 
     try {
+      if (offline == null) await _probeNetworkVideo(playbackUri);
+      controller = VideoPlayerController.networkUrl(
+        playbackUri,
+        httpHeaders: const {},
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
+        closedCaptionFile: _captionsLoader(episode),
+      );
       await controller.initialize();
       if (!mounted) {
         await controller.dispose();
@@ -757,9 +788,23 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
         params: {'content_type': 'episode', 'content_id': episode.id},
       );
     } catch (e) {
-      await controller.dispose();
+      await controller?.dispose();
       if (!mounted) return;
       final failure = AppFailure.fromException(e);
+      // سجّل الخطأ الفعلي لا `init_failed` وحده: بدونه كل فشل (401 توكن،
+      // 404 ملف، CORS، ترميز) يظهر سببًا واحدًا لا يدل على شيء.
+      MajarraAnalytics.log(
+        'playback_error',
+        params: {
+          'content_id': episode.id,
+          'reason': 'init_failed:${failure.kind.name}',
+          'detail': e.toString().substring(
+            0,
+            e.toString().length > 300 ? 300 : e.toString().length,
+          ),
+        },
+      );
+      debugPrint('[playback] init_failed for ${episode.id}: $e');
       setState(() {
         _initialising = false;
         if (failure.kind == FailureKind.network) {
@@ -768,10 +813,6 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
           _error = _PlaybackError.unknown;
         }
       });
-      MajarraAnalytics.log(
-        'playback_error',
-        params: {'content_id': episode.id, 'reason': 'init_failed'},
-      );
     }
   }
 

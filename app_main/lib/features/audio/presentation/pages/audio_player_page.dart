@@ -246,12 +246,18 @@ class _AudioPlayerPageState extends ConsumerState<AudioPlayerPage> {
 
     // `stream_url` is worker-relative; the media worker never returns an R2 URL,
     // per `تشفير المحتوي.md:1192`.
-    final uri = Uri.parse(ApiEnvironment.baseUrl).resolve(streamUrl);
+    //
+    // القدرة في سلسلة الاستعلام لا في ترويسة: `video_player` على الويب يجلب
+    // الملف عبر عنصر `<video>` بلا ترويسات مخصصة، فالترويسة تُسقَط صامتًا
+    // ويرد الخادم 401 (`routes/media.ts` يقبل `?token=`).
+    final baseUri = Uri.parse(ApiEnvironment.baseUrl).resolve(streamUrl);
+    final uri = baseUri.replace(queryParameters: {
+      ...baseUri.queryParameters,
+      'token': authorization.replaceFirst(RegExp(r'^Bearer\s+'), ''),
+    });
     return VideoPlayerController.networkUrl(
       uri,
-      // The capability token travels as a header, never in the query string, so
-      // it cannot leak through logs or a referrer (`تشفير المحتوي.md:253-262`).
-      httpHeaders: {'Authorization': authorization},
+      httpHeaders: const {},
     );
   }
 

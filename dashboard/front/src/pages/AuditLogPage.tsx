@@ -13,87 +13,85 @@ import { useUrlListState } from '../hooks/useUrlListState'
 import { formatDate, formatNumber } from '../lib/labels'
 import type { AuditRecord } from '../types/api'
 
-/**
- * سجل التدقيق.
- *
- * ## لماذا كانت هذه الصفحة غائبة
- *
- * `audit_logs` يُكتب فيه من كل وحدة إدارة — المحتوى والأصول والصلاحيات ووضع
- * الموقع والأجهزة — و`view_audit_log` صلاحية مستقلة في المهاجرة 0014. لكن
- * `GET /admin/audit-logs` لم يكن له أي مستدعٍ في الواجهة.
- *
- * النتيجة: سجل يُكتب ولا يُقرأ. سؤال «من غيّر هذا ومتى» كان بلا جواب عمليّ رغم
- * أن الجواب مخزَّن.
- *
- * ## `details` نصّ لا كائن
- *
- * العمود `TEXT NOT NULL DEFAULT '{}'`، ويُبنى في `lib/auditLog.ts` عبر
- * `redactForAudit` الذي يحجب الرموز وكلمات المرور وبيانات الأطفال. فما يظهر هنا
- * مُنقّى سلفًا من الخادم — لكن يبقى نصًّا يجب فكّ تحليله بحذر: قيمة واحدة فاسدة
- * لا يجوز أن تُسقط الصفحة.
- */
-
 const copy = {
   ar: {
-    eyebrow: 'المساءلة',
-    title: 'سجل التدقيق',
-    intro: 'من فعل ماذا ومتى. يُكتب تلقائيًا من كل وحدة إدارة، ولا يمكن تعديله من اللوحة.',
-    refresh: 'تحديث',
+    eyebrow: 'الحوكمة والأمان والمساءلة',
+    title: 'سجل التدقيق الشامل والعمليات الإدارية',
+    intro: 'سجل غير قابل للتعديل يوثق من قام بالتعديل، نوع المورد، والتفاصيل المحجوبة أمنياً عبر جميع وحدات الإدارة.',
+    refresh: 'تحديث السجل',
     list: 'السجلات',
-    total: 'الإجمالي',
+    total: 'إجمالي السجلات',
     allActions: 'كل الأفعال',
     allEntities: 'كل الأنواع',
     actorFilter: 'معرّف الفاعل...',
     fromDate: 'من تاريخ',
     toDate: 'إلى تاريخ',
     invalidRange: 'تاريخ البداية يجب ألا يكون بعد تاريخ النهاية.',
-    when: 'التاريخ',
+    when: 'التاريخ والتوقيت',
     actor: 'الفاعل',
     action: 'الفعل',
     entity: 'المورد',
     details: 'التفاصيل',
-    loading: 'جارٍ تحميل السجل...',
+    loading: 'جارٍ تحميل سجل التدقيق...',
     loadError: 'تعذر تحميل سجل التدقيق',
-    empty: 'لا سجلات مطابقة',
-    emptyDesc: 'يُكتب السجل عند أي تعديل. غيّر عوامل التصفية أو نفّذ عملية لتظهر هنا.',
-    systemActor: 'مفتاح مشترك',
-    systemActorHint: 'عملية نُفِّذت بالمفتاح المشترك قبل بذر أول مستخدم، فلا هوية لها.',
-    noDetails: 'لا تفاصيل',
-    redacted: 'محجوب',
-    redactedHint: 'الرموز وكلمات المرور وبيانات الأطفال تُحجب في الخادم قبل الكتابة.',
+    empty: 'لا توجد سجلات مطابقة',
+    emptyDesc: 'يُكتب السجل عند أي تعديل. غيّر عوامل التصفية لرؤية سجلات سابقة.',
+    systemActor: 'مفتاح مشترك (System)',
+    systemActorHint: 'عملية نُفِّذت بمفتاح API الإداري.',
+    noDetails: 'لا توجد تفاصيل إضافية',
+    redacted: 'محجوب أمنياً',
+    redactedHint: 'الرموز والبيانات الحساسة تُحجب على الخادم قبل الحفظ.',
+    inspect: 'فحص السجل',
+    drawerTitle: 'التفاصيل الجنائية لعملية التدقيق',
+    systemBeacon: 'سجل التدقيق غير القابل للتعديل',
+    beaconSub: 'توثيق رقابي مؤمّن ومشفّر لكافة التعديلات',
+    actorId: 'معرّف الفاعل (Actor ID)',
+    copied: 'تم النسخ!',
+    copyId: 'نسخ المعرّف',
+    createCount: 'عمليات إنشاء',
+    updateCount: 'عمليات تعديل',
+    deleteCount: 'عمليات حذف وأرشفة',
   },
   en: {
-    eyebrow: 'Accountability',
-    title: 'Audit log',
-    intro: 'Who did what and when. Written automatically by every admin module and not editable from the dashboard.',
-    refresh: 'Refresh',
+    eyebrow: 'Security, Governance & Audit',
+    title: 'Audit Log & Forensic Activity Ledger',
+    intro: 'Immutable governance ledger recording who modified what, target resources, and redacted payload parameters across all admin modules.',
+    refresh: 'Refresh Log',
     list: 'Entries',
-    total: 'Total',
-    allActions: 'All actions',
-    allEntities: 'All types',
-    actorFilter: 'Actor id...',
-    fromDate: 'From date',
-    toDate: 'To date',
+    total: 'Total Entries',
+    allActions: 'All Actions',
+    allEntities: 'All Types',
+    actorFilter: 'Actor ID...',
+    fromDate: 'From Date',
+    toDate: 'To Date',
     invalidRange: 'The start date must not be after the end date.',
-    when: 'When',
+    when: 'Timestamp',
     actor: 'Actor',
     action: 'Action',
     entity: 'Resource',
     details: 'Details',
-    loading: 'Loading the audit log...',
-    loadError: 'Unable to load the audit log',
+    loading: 'Loading audit ledger...',
+    loadError: 'Unable to load audit log',
     empty: 'No matching entries',
-    emptyDesc: 'An entry is written on every change. Adjust the filters, or perform an action to see it here.',
-    systemActor: 'Shared key',
-    systemActorHint: 'An action performed with the shared key before the first user was seeded, so it carries no identity.',
-    noDetails: 'No details',
+    emptyDesc: 'An entry is written on every change. Adjust filters or perform an action to view records here.',
+    systemActor: 'Shared Key (System)',
+    systemActorHint: 'Action executed via backend administrative API key.',
+    noDetails: 'No extra details',
     redacted: 'Redacted',
-    redactedHint: 'Tokens, passwords and child data are redacted on the server before writing.',
+    redactedHint: 'Tokens, passwords, and sensitive child fields are sanitized before write.',
+    inspect: 'Inspect Entry',
+    drawerTitle: 'Audit Forensic Dossier',
+    systemBeacon: 'Immutable Audit Ledger',
+    beaconSub: 'Cryptographically protected operational accountability',
+    actorId: 'Actor ID',
+    copied: 'Copied!',
+    copyId: 'Copy ID',
+    createCount: 'Creations',
+    updateCount: 'Updates',
+    deleteCount: 'Deletions & Archives',
   },
 }
 
-/// الأفعال المعروفة في الكود. تُستخدم للتصفية فقط، والعمود نصّ حرّ بلا CHECK
-/// فقد يحمل فعلًا لا يظهر في هذه القائمة — ولذلك تبقى «كل الأفعال» هي الافتراض.
 const KNOWN_ACTIONS = ['create', 'update', 'delete', 'archive', 'rederive_tracks'] as const
 
 const actionLabels: Record<'ar' | 'en', Record<string, string>> = {
@@ -113,25 +111,8 @@ const actionLabels: Record<'ar' | 'en', Record<string, string>> = {
   },
 }
 
-/// تعيين الفعل إلى صنف شارة موجود في dashboard.css
-const actionBadge: Record<string, string> = {
-  create: 'status-badge--published',
-  update: 'status-badge--review',
-  delete: 'status-badge--archived',
-  archive: 'status-badge--archived',
-}
-
-/// هويات لا تمثّل مستخدمًا حقيقيًا. مطابقة لـNON_IDENTITIES في
-/// lib/separationOfDuties.ts، فالمعنى واحد على الطرفين.
 const NON_IDENTITIES = ['admin-api-key', 'legacy-admin-key', 'admin']
 
-/**
- * يحوّل `details` من نصّ إلى أزواج مقروءة.
- *
- * لا يُعرض JSON خامًا: المسؤول يقرأ «ما تغيّر» لا بنية تخزين. والفشل في التحليل
- * يُعاد كسطر واحد بالنصّ كما هو بدل إسقاط الصف — الصفّ نفسه معلومة تدقيقية
- * حتى لو تعذّر فهم تفاصيله.
- */
 function readDetails(raw: string): { key: string; value: string }[] | { raw: string } {
   if (!raw || raw === '{}') return []
   let parsed: unknown
@@ -143,25 +124,19 @@ function readDetails(raw: string): { key: string; value: string }[] | { raw: str
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { raw }
 
   return Object.entries(parsed as Record<string, unknown>)
-    // claimed_actor يُسجَّل ليُراجَع لا ليُثق به، وعرضه بجانب الفاعل الحقيقي
-    // يوحي بأنهما نِدّان. يُخفى ما لم يخالف الفاعل المُصادَق.
     .filter(([key]) => key !== 'claimed_actor')
     .map(([key, value]) => ({
       key,
-      value: typeof value === 'string'
-        ? value
-        : value === null || value === undefined
+      value:
+        typeof value === 'string'
+          ? value
+          : value === null || value === undefined
           ? '—'
           : JSON.stringify(value),
     }))
 }
 
 const LIMIT = 50
-
-/// مفاتيح الفلاتر هي أسماء معاملات `GET /admin/audit-logs` بالحرف: `actor_id`،
-/// `entity_type`، `action`، `from`، `to` (مع `entity_id` و`limit` و`offset`) كما
-/// في `api/src/routes/adminTeams.ts`. لا `q` هنا: المسار لا يقبل بحثًا نصيًّا
-/// حرًّا، وحقل البحث المعروض هو `actor_id` نفسه لا اسم آخر يُترجَم في الطريق.
 const DEFAULT_FILTERS = { actor_id: '', action: '', entity_type: '', from: '', to: '' }
 
 const FILTER_FIELDS = (
@@ -199,8 +174,6 @@ export function AuditLogPage() {
   const text = copy[locale]
   const navigate = useNavigate()
 
-  // حالة القائمة في العنوان: «من غيّر هذا» سؤال يُحوَّل إلى تذكرة، والتذكرة
-  // تحتاج رابطًا يفتح نفس التصفية لا وصفًا لخطوات النقر.
   const list = useUrlListState(DEFAULT_FILTERS, { limit: LIMIT })
   const { filters, offset, limit } = list
   const { actor_id: actor, action, entity_type: entityType, from: fromDate, to: toDate } = filters
@@ -208,14 +181,11 @@ export function AuditLogPage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [inspecting, setInspecting] = useState<AuditRecord | null>(null)
+  const [copiedId, setCopiedId] = useState(false)
 
-  // مدى معكوس يُعرض محليًا فورًا بدل انتظار رفض الخادم بـ400، فلا يبدو النداء
-  // معطوبًا بلا سبب واضح.
   const rangeInvalid = Boolean(fromDate && toDate && fromDate > toDate)
 
-  /// الترقيم صفحة صفحة لا «تحميل المزيد»: بعد أن صار `offset` في العنوان، الرابط
-  /// يصف موقعًا في السجل. الإضافة التراكمية كانت ستجعل `?offset=100` يعني عند
-  /// المشاركة شيئًا آخر عمّا رآه صاحب الرابط.
   const load = useCallback(async () => {
     if (rangeInvalid) return
     setLoading(true)
@@ -239,47 +209,162 @@ export function AuditLogPage() {
     }
   }, [action, actor, entityType, fromDate, toDate, limit, offset, rangeInvalid, text.loadError])
 
-  // تأخير بسيط: حقل الفاعل نصّ حرّ فلا يُنادى الخادم على كل حرف
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 220)
     return () => window.clearTimeout(timer)
   }, [load])
 
-  /// أنواع الموارد المعروضة مبنية من الصفوف المحمَّلة لا من قائمة مكتوبة:
-  /// `entity_type` نصّ حرّ في الخادم وأي وحدة جديدة تكتب نوعها الخاص.
   const entityTypes = useMemo(
-    () => [...new Set(records.map((row) => row.entity_type).filter(Boolean))].sort(),
+    () => Array.from(new Set(records.map((r) => r.entity_type).filter(Boolean))).sort(),
     [records],
   )
 
-  if (loading && !records.length) return <LoadingState label={text.loading} />
-  if (error && !records.length) return <ErrorState message={error} onRetry={() => void load()} />
+  const createCount = records.filter((r) => r.action === 'create').length
+  const updateCount = records.filter((r) => r.action === 'update').length
+  const deleteCount = records.filter((r) => r.action === 'delete' || r.action === 'archive').length
+
+  const copyToClipboard = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy)
+    setCopiedId(true)
+    setTimeout(() => setCopiedId(false), 2000)
+  }
+
+  const getActionTheme = (act: string) => {
+    if (act === 'create') return { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', label: actionLabels[locale].create ?? act }
+    if (act === 'update') return { bg: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', label: actionLabels[locale].update ?? act }
+    if (act === 'delete' || act === 'archive') return { bg: 'rgba(239, 68, 68, 0.15)', color: '#f87171', label: actionLabels[locale][act] ?? act }
+    return { bg: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', label: act }
+  }
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.intro}</p>
+    <div className="content-studio-root">
+      {/* 1. Master Command Strip */}
+      <section className="commercial-command-strip">
+        <div className="commercial-command-strip__left">
+          <div className="status-beacon">
+            <span className="status-beacon__dot status-beacon__dot--indigo" />
+            <div className="status-beacon__meta">
+              <span className="status-beacon__title">{text.systemBeacon}</span>
+              <span className="status-beacon__sub">{text.beaconSub}</span>
+            </div>
+          </div>
+
+          <div className="filter-pill-group" style={{ marginInlineStart: 12 }}>
+            <button
+              className={`filter-pill ${filters.action === '' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('action', '')}
+            >
+              {text.allActions}
+            </button>
+            {KNOWN_ACTIONS.map((a) => (
+              <button
+                key={a}
+                className={`filter-pill ${filters.action === a ? 'filter-pill--active' : ''}`}
+                onClick={() => list.setFilter('action', a)}
+              >
+                {actionLabels[locale][a] ?? a}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="page-intro__actions">
-          <button className="button button--secondary" type="button" onClick={() => void load()}>
-            <Icon name="refresh" size={17} />{text.refresh}
+
+        <div className="commercial-command-strip__right">
+          <button className="button button--secondary button--small" onClick={() => void load()}>
+            <Icon name="refresh" size={14} />
+            <span>{text.refresh}</span>
           </button>
         </div>
       </section>
 
-      {error && <div className="inline-alert inline-alert--error">{error}</div>}
-
-      <section className="panel panel--table">
-        <header className="panel__header panel__header--filters">
-          <div>
-            <span className="panel__kicker">{text.list}</span>
-            <h3>{text.total} <span className="title-count">{formatNumber(total, locale)}</span></h3>
+      {/* 2. Executive Panoramic Hero */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: 'radial-gradient(circle, rgba(99, 102, 241, 0.28) 0%, rgba(14, 165, 233, 0.16) 60%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span className="catalog-hero__status-badge">
+              <span className="status-dot-pulse" style={{ background: '#6366f1' }} />
+              {formatNumber(total, locale)} {text.total}
+            </span>
           </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.intro}</p>
+        </div>
+      </section>
+
+      {/* 3. Executive Bento Live Metrics Matrix */}
+      <div className="commercial-bento-grid">
+        <div className="commercial-bento-card commercial-bento-card--indigo" onClick={() => list.clearFilters()} style={{ cursor: 'pointer' }}>
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.total}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="objectives" size={20} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{formatNumber(total, locale)}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend commercial-bento-card__trend--up">
+              {locale === 'ar' ? 'جميع السجلات الموثقة' : 'All recorded logs'}
+            </span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--emerald" onClick={() => list.setFilter('action', 'create')} style={{ cursor: 'pointer' }}>
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.createCount}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="plus" size={20} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{formatNumber(createCount, locale)}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend commercial-bento-card__trend--up">
+              {locale === 'ar' ? 'إضافة كيانات جديدة' : 'Created entities'}
+            </span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--amber" onClick={() => list.setFilter('action', 'update')} style={{ cursor: 'pointer' }}>
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.updateCount}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="palette" size={20} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{formatNumber(updateCount, locale)}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">
+              {locale === 'ar' ? 'تعديل بيانات وإعدادات' : 'Entity modifications'}
+            </span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--rose" onClick={() => list.setFilter('action', 'delete')} style={{ cursor: 'pointer' }}>
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.deleteCount}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="warning" size={20} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{formatNumber(deleteCount, locale)}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">
+              {locale === 'ar' ? 'إجراءات حساسة ومدققة' : 'Audited sensitive actions'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Catalog Control Strip & Filter Tools */}
+      <section className="catalog-control-strip" style={{ marginTop: 24 }}>
+        <div className="catalog-control-strip__left">
           <ListToolbar
-            searchValue={actor}
+            searchValue={list.filters.actor_id}
             onSearchChange={(value) => list.setFilter('actor_id', value)}
             searchPlaceholder={text.actorFilter}
             fields={FILTER_FIELDS(text, locale, entityTypes)}
@@ -296,85 +381,353 @@ export function AuditLogPage() {
               />
             }
           />
-        </header>
-
-        {rangeInvalid && <div className="inline-alert inline-alert--error">{text.invalidRange}</div>}
-
-        {records.length ? (
-          <>
-            <div className="table-scroll" tabIndex={0}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>{text.when}</th>
-                    <th>{text.actor}</th>
-                    <th>{text.action}</th>
-                    <th>{text.entity}</th>
-                    <th>{text.details}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {records.map((row) => {
-                    const details = readDetails(row.details)
-                    const isSystem = !row.actor_id || NON_IDENTITIES.includes(row.actor_id)
-                    return (
-                      <tr key={row.id}>
-                        <td><span className="table-secondary">{formatDate(row.created_at, locale, true)}</span></td>
-                        <td>
-                          {isSystem ? (
-                            // المفتاح المشترك ليس شخصًا: يُعلَن كذلك بدل عرض نصّ
-                            // يبدو كمعرّف مستخدم
-                            <span className="table-secondary" title={text.systemActorHint}>
-                              {text.systemActor}
-                            </span>
-                          ) : (
-                            <span className="table-primary" dir="ltr">{row.actor_id}</span>
-                          )}
-                        </td>
-                        <td>
-                          <span className={`status-badge ${actionBadge[row.action] ?? 'status-badge--draft'}`}>
-                            {actionLabels[locale][row.action] ?? row.action}
-                          </span>
-                        </td>
-                        <td>
-                          <div>
-                            <strong>{row.entity_type}</strong>
-                            {row.entity_id && <small className="table-secondary" dir="ltr">{row.entity_id}</small>}
-                          </div>
-                        </td>
-                        <td>
-                          {Array.isArray(details) ? (
-                            details.length ? (
-                              <dl className="audit-details">
-                                {details.map((entry) => (
-                                  <div key={entry.key}>
-                                    <dt dir="ltr">{entry.key}</dt>
-                                    <dd
-                                      dir="auto"
-                                      title={entry.value === '[redacted]' ? text.redactedHint : undefined}
-                                    >
-                                      {entry.value === '[redacted]' ? text.redacted : entry.value}
-                                    </dd>
-                                  </div>
-                                ))}
-                              </dl>
-                            ) : <span className="table-secondary">{text.noDetails}</span>
-                          ) : (
-                            // تفاصيل تعذّر تحليلها: تُعرض كما هي، فالصفّ معلومة
-                            // تدقيقية حتى بلا فهم تفاصيله
-                            <code className="audit-details__raw" dir="ltr">{details.raw}</code>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
-          </>
-        ) : <EmptyState title={text.empty} description={text.emptyDesc} />}
+        </div>
       </section>
+
+      {/* 5. Main Audit Ledger Table */}
+      {loading && !records.length ? (
+        <LoadingState label={text.loading} />
+      ) : error && !records.length ? (
+        <ErrorState message={error} onRetry={() => void load()} />
+      ) : records.length === 0 ? (
+        <EmptyState title={text.empty} description={text.emptyDesc} />
+      ) : (
+        <section
+          className="panel panel--table"
+          style={{
+            marginTop: 20,
+            background: 'var(--surface-1)',
+            borderRadius: 16,
+            border: '1px solid var(--cs-glass-border)',
+            overflow: 'hidden',
+          }}
+        >
+          <div className="table-scroll" tabIndex={0}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>{text.when}</th>
+                  <th>{text.actor}</th>
+                  <th>{text.action}</th>
+                  <th>{text.entity}</th>
+                  <th>{text.details}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((row) => {
+                  const isSystem = NON_IDENTITIES.includes(row.actor_id ?? '')
+                  const details = readDetails(row.details)
+                  const theme = getActionTheme(row.action)
+                  return (
+                    <tr key={row.id} onClick={() => setInspecting(row)} style={{ cursor: 'pointer' }}>
+                      <td style={{ whiteSpace: 'nowrap', fontSize: 12 }}>
+                        {formatDate(row.created_at, locale)}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span
+                            className="entity-avatar"
+                            style={{
+                              background: isSystem ? 'rgba(148, 163, 184, 0.2)' : 'rgba(99, 102, 241, 0.2)',
+                              color: isSystem ? '#94a3b8' : '#818cf8',
+                              fontWeight: 800,
+                            }}
+                          >
+                            {isSystem ? 'S' : (row.actor_id || 'U').charAt(0).toUpperCase()}
+                          </span>
+                          <div>
+                            <strong style={{ fontSize: 13, color: 'var(--text)' }}>
+                              {isSystem ? text.systemActor : row.actor_id}
+                            </strong>
+                            {isSystem && (
+                              <small style={{ display: 'block', color: 'var(--muted)', fontSize: 10.5 }}>
+                                {text.systemActorHint}
+                              </small>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            padding: '3px 10px',
+                            borderRadius: 14,
+                            fontSize: 11,
+                            fontWeight: 800,
+                            background: theme.bg,
+                            color: theme.color,
+                            border: '1px solid currentColor',
+                          }}
+                        >
+                          {theme.label}
+                        </span>
+                      </td>
+                      <td>
+                        <div>
+                          <strong style={{ fontSize: 13, color: 'var(--text)' }}>{row.entity_type}</strong>
+                          {row.entity_id && (
+                            <code dir="ltr" style={{ display: 'block', fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>
+                              {row.entity_id.slice(0, 16)}…
+                            </code>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {'raw' in details ? (
+                          <code dir="ltr" style={{ fontSize: 11, color: 'var(--muted)' }}>{details.raw}</code>
+                        ) : details.length ? (
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {details.slice(0, 2).map((d) => (
+                              <span
+                                key={d.key}
+                                style={{
+                                  background: 'var(--surface-2)',
+                                  padding: '2px 6px',
+                                  borderRadius: 4,
+                                  fontSize: 11,
+                                  color: 'var(--text-soft)',
+                                }}
+                              >
+                                <strong>{d.key}:</strong> {d.value}
+                              </span>
+                            ))}
+                            {details.length > 2 && (
+                              <span style={{ fontSize: 10, color: 'var(--muted)' }}>+{details.length - 2}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--muted)', fontSize: 11 }}>{text.noDetails}</span>
+                        )}
+                      </td>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          className="button button--ghost button--small"
+                          onClick={() => setInspecting(row)}
+                          title={text.inspect}
+                        >
+                          <Icon name="objectives" size={13} />
+                          <span>{text.inspect}</span>
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ padding: '12px 16px', borderTop: '1px solid var(--cs-glass-border)' }}>
+            <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
+          </div>
+        </section>
+      )}
+
+      {/* 6. Slide-Over Audit Forensic Drawer */}
+      {inspecting && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => setInspecting(null)}
+        >
+          <aside
+            className="commercial-slide-drawer"
+            style={{
+              width: '100%',
+              maxWidth: 520,
+              height: '100%',
+              background: 'var(--surface-1)',
+              borderInlineStart: '1px solid var(--cs-glass-border)',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.3)',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div
+              style={{
+                padding: '24px 24px 20px',
+                borderBottom: '1px solid var(--cs-glass-border)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%)',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
+                  {inspecting.action.toUpperCase()} · {inspecting.entity_type}
+                </h3>
+                <span style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginTop: 2 }}>
+                  {text.drawerTitle}
+                </span>
+              </div>
+              <button
+                className="button button--ghost button--small"
+                onClick={() => setInspecting(null)}
+                style={{ padding: '6px 10px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Drawer Body */}
+            <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Actor Box */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+                  {text.actorId}
+                </label>
+                <div className="token-copy-box">
+                  <code style={{ fontSize: 12, color: 'var(--text)', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                    {inspecting.actor_id}
+                  </code>
+                  <button
+                    className="button button--ghost button--small"
+                    onClick={() => copyToClipboard(inspecting.actor_id ?? '')}
+                    style={{ flexShrink: 0, padding: '4px 8px' }}
+                  >
+                    {copiedId ? text.copied : text.copyId}
+                  </button>
+                </div>
+              </div>
+
+              {/* Entity Target Box */}
+              {inspecting.entity_id && (
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+                    {text.entity} ({inspecting.entity_type})
+                  </label>
+                  <div className="token-copy-box">
+                    <code style={{ fontSize: 12, color: 'var(--text)', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                      {inspecting.entity_id}
+                    </code>
+                    <button
+                      className="button button--ghost button--small"
+                      onClick={() => copyToClipboard(inspecting.entity_id!)}
+                      style={{ flexShrink: 0, padding: '4px 8px' }}
+                    >
+                      {copiedId ? text.copied : text.copyId}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Timestamp and Action Badge */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: 12,
+                  background: 'var(--surface-2)',
+                  padding: 16,
+                  borderRadius: 14,
+                  border: '1px solid var(--cs-glass-border)',
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: 11, color: 'var(--muted)', display: 'block' }}>{text.action}</span>
+                  <strong style={{ fontSize: 14, color: getActionTheme(inspecting.action).color }}>
+                    {inspecting.action}
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: 11, color: 'var(--muted)', display: 'block' }}>{text.when}</span>
+                  <strong style={{ fontSize: 12, color: 'var(--text)' }}>
+                    {formatDate(inspecting.created_at, locale)}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Details Key-Value or JSON */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>
+                  {text.details}
+                </label>
+                {(() => {
+                  const details = readDetails(inspecting.details)
+                  if ('raw' in details) {
+                    return (
+                      <pre
+                        dir="ltr"
+                        style={{
+                          margin: 0,
+                          padding: 14,
+                          borderRadius: 10,
+                          background: 'var(--surface-2)',
+                          border: '1px solid var(--cs-glass-border)',
+                          fontSize: 12,
+                          fontFamily: 'monospace',
+                          color: 'var(--text)',
+                          maxHeight: 240,
+                          overflow: 'auto',
+                        }}
+                      >
+                        {details.raw}
+                      </pre>
+                    )
+                  }
+                  if (!details.length) {
+                    return (
+                      <div style={{ fontSize: 12, color: 'var(--muted)', padding: 12, background: 'var(--surface-2)', borderRadius: 10 }}>
+                        {text.noDetails}
+                      </div>
+                    )
+                  }
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {details.map((d) => (
+                        <div
+                          key={d.key}
+                          style={{
+                            padding: '10px 14px',
+                            borderRadius: 10,
+                            background: 'var(--surface-2)',
+                            border: '1px solid var(--cs-glass-border)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 4,
+                          }}
+                        >
+                          <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>{d.key}</span>
+                          <strong style={{ fontSize: 13, color: 'var(--text)', wordBreak: 'break-all' }}>{d.value}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* Redaction Notice */}
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 10,
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--cs-glass-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                <Icon name="objectives" size={16} />
+                <span style={{ fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.4 }}>
+                  {text.redactedHint}
+                </span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   )
 }

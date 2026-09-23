@@ -27,4 +27,29 @@ void main() {
     expect(PinKdf.constantTimeEquals([1, 2, 3], [1, 2, 4]), isFalse);
     expect(PinKdf.constantTimeEquals([1, 2], [1, 2, 3]), isFalse);
   });
+
+  // المسار غير المتزامن أُدخل لأن التنفيذ الخالص يحجز خيط الواجهة ثوانٍ.
+  // وشرط قبوله الوحيد أن يكون **مكافئًا بايتًا ببايت**: أي فرق يعني أن كل
+  // جهاز سُجِّل بالتنفيذ القديم يصير رمزه غير صالح فجأة. فالتكافؤ يُثبَت هنا
+  // ولا يُفترَض.
+  test('deriveVerifierAsync يُطابق deriveVerifier بايتًا ببايت', () async {
+    // ملح ثابت لا عشوائي: نقارن تنفيذين، لا نختبر العشوائية.
+    final salt = List<int>.generate(PinKdf.saltLengthBytes, (i) => i * 7 % 256);
+    for (final pin in ['1223', '90210', '478215']) {
+      final sync = PinKdf.deriveVerifier(pin, salt);
+      final async = await PinKdf.deriveVerifierAsync(pin, salt);
+      expect(
+        PinKdf.toHex(async),
+        PinKdf.toHex(sync),
+        reason: 'اختلاف المُخرَج للرمز $pin يُبطل المُتحقِّقات المخزونة',
+      );
+      expect(async, hasLength(PinKdf.keyLengthBytes));
+    }
+  });
+
+  test('deriveVerifierAsync يختلف باختلاف الملح', () async {
+    final a = await PinKdf.deriveVerifierAsync('1223', List.filled(16, 1));
+    final b = await PinKdf.deriveVerifierAsync('1223', List.filled(16, 2));
+    expect(PinKdf.constantTimeEquals(a, b), isFalse);
+  });
 }

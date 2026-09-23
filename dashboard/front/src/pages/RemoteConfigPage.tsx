@@ -1,6 +1,7 @@
-﻿import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { Modal } from '../components/Modal'
+import { Icon } from '../components/Icon'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
 import type { FeatureFlagRecord, RemoteConfigRecord } from '../types/api'
@@ -133,54 +134,280 @@ export function RemoteConfigPage(){
   if(error) return <ErrorState message={error} onRetry={()=> void load()}/>
 
   return (
-    <div className="page-stack">
-      <section className="page-intro"><div><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2><p>{text.lede}</p>
-        <div style={{display:'inline-flex', gap:6, marginTop:8, padding:'4px 8px', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:6, fontSize:12}}><span style={{width:8, height:8, background:'#dc2626', borderRadius:999, display:'inline-block'}}></span> {text.env}: {text.prod} — {text.noSecrets}</div>
-      </div></section>
-      {notice && <section className="panel panel--notice" role="status">{notice}</section>}
+    <div className="content-studio-root">
+      {/* 1. Commercial Command Strip */}
+      <section className="commercial-command-strip">
+        <div className="commercial-command-strip__left">
+          <div className="status-beacon">
+            <span className="status-beacon__dot status-beacon__dot--rose" />
+            <div className="status-beacon__meta">
+              <span className="status-beacon__title">
+                {text.env}: {text.prod}
+              </span>
+              <span className="status-beacon__sub">{text.noSecrets}</span>
+            </div>
+          </div>
 
-      <div style={{display:'flex', gap:8, overflowX:'auto'}}>
-        {(['config','flags','rollouts','history'] as const).map(t=>(
-          <button key={t} className={`button ${activeTab===t?'button--primary':'button--ghost'} button--small`} onClick={()=> setActiveTab(t)}>{(text as any)[t==='config'?'tabConfig': t==='flags'?'tabFlags': t==='rollouts'?'tabRollouts':'tabHistory']}</button>
-        ))}
+          <div className="filter-pill-group" role="group" aria-label="remote-config-tabs">
+            {(['config', 'flags', 'rollouts', 'history'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={`filter-pill ${activeTab === t ? 'filter-pill--active' : ''}`}
+                onClick={() => setActiveTab(t)}
+              >
+                <Icon name={t === 'config' ? 'settings' : t === 'flags' ? 'sparkles' : t === 'rollouts' ? 'analytics' : 'clock'} size={13} />
+                <span>{(text as any)[t === 'config' ? 'tabConfig' : t === 'flags' ? 'tabFlags' : t === 'rollouts' ? 'tabRollouts' : 'tabHistory']}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Executive Panoramic Hero */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: 'radial-gradient(circle, rgba(225, 29, 72, 0.22) 0%, rgba(99, 102, 241, 0.14) 60%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span className="catalog-hero__status-badge" style={{ borderColor: 'rgba(239, 68, 68, 0.3)', color: '#f87171' }}>
+              <span className="status-dot-pulse" style={{ background: '#ef4444' }} />
+              {text.prod} · {entries.length} {locale === 'ar' ? 'إعداد فوري' : 'live keys'}
+            </span>
+          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.lede}</p>
+        </div>
+      </section>
+
+      {/* 3. Executive Bento Grid Matrix */}
+      <div className="commercial-bento-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
+        <div
+          className="commercial-bento-card commercial-bento-card--indigo"
+          onClick={() => setActiveTab('config')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.tabConfig}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="settings" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{entries.length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'مفاتيح التكوين الحي' : 'Config keys'}</span>
+          </div>
+        </div>
+
+        <div
+          className="commercial-bento-card commercial-bento-card--cyan"
+          onClick={() => setActiveTab('flags')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.tabFlags}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="sparkles" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{flags.length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'أعلام تشغيل الميزات' : 'Active flags'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--rose">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'مفاتيح الإيقاف الفوري' : 'Kill Switches'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="alert-triangle" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{KILL_SWITCHES.length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend" style={{ color: '#f43f5e' }}>
+              {locale === 'ar' ? 'عمليات عالية الخطورة' : 'Safety switches'}
+            </span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--emerald">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'إطلاق كامل 100%' : '100% Rollout'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="check" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{entries.filter((e) => Number(e.rollout_percent) === 100).length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend commercial-bento-card__trend--up">
+              {locale === 'ar' ? 'متاحة لجميع الأطفال' : 'Reaches all users'}
+            </span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--amber">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'إطلاق تجريبي (كناري)' : 'Canary / Staged'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="analytics" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{entries.filter((e) => Number(e.rollout_percent) > 0 && Number(e.rollout_percent) < 100).length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'نسب جزئية مستقرة' : 'Partial rollout'}</span>
+          </div>
+        </div>
+
+        <div
+          className="commercial-bento-card commercial-bento-card--purple"
+          onClick={() => setActiveTab('history')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.tabHistory}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="clock" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{history.length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'سجلات تدقيق سابقة' : 'Audit events'}</span>
+          </div>
+        </div>
       </div>
 
-      {activeTab==='config' && (
-        <section className="panel panel--table">
-          <div className="panel__header"><h3>{text.tabConfig}</h3><span className="panel__kicker">{entries.length}</span></div>
-          {entries.length? <div className="table-scroll" tabIndex={0}><table className="data-table"><thead><tr><th>{text.human}</th><th>{text.key}</th><th>{text.type}</th><th>{text.value}</th><th>{text.rollout}</th><th>{text.targeting}</th><th>{text.updated}</th><th></th></tr></thead><tbody>
-            {entries.map(e=>{
-              const meta=TYPE_META[e.key]
-              const isKill=KILL_SWITCHES.includes(e.key)
-              return <tr key={e.key} style={isKill? {background:'#fff7ed'}: undefined}>
-                <td><strong>{meta? (locale==='ar'? meta.ar: meta.en): e.key}</strong><br/><small style={{color:'var(--muted)'}}>{meta?.type ?? 'string'}</small>{isKill && <span className="status-badge status-badge--review" style={{marginInlineStart:6}}>{text.kill}</span>}</td>
-                <td dir="ltr"><span className="table-primary">{e.key}</span></td>
-                <td>{meta?.type ?? 'json'}</td>
-                <td><span className={isTruthy(e.value)?'track-badge':'status-badge status-badge--draft'}>{displayValue(e.value, text)}</span></td>
-                <td dir="ltr">{e.rollout_percent}%</td>
-                <td><span className="table-secondary">{Object.keys(e.targeting??{}).length? JSON.stringify(e.targeting): text.everyone}</span></td>
-                <td dir="ltr">{String(e.updated_at??'').slice(0,16)}</td>
-                <td><button className="button button--ghost button--small" onClick={()=> openEdit(e)}>{text.edit}</button></td>
-              </tr>
-            })}
-          </tbody></table></div> : <EmptyState title={text.empty} description={text.empty} />}
-          <div style={{padding:12, fontSize:12, color:'var(--muted)'}}>
-            <h4>{text.preview}</h4><p>{text.previewHint}</p>
-            <div style={{display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:8, marginTop:8}}>
-              <select defaultValue="EG" id="rc-country"><option value="EG">EG</option><option value="SA">SA</option><option value="CA">CA</option></select>
-              <select defaultValue="android" id="rc-platform"><option value="android">Android</option><option value="ios">iOS</option></select>
-              <input placeholder="app version 2.4" defaultValue="2.4.0" id="rc-version"/>
-              <select defaultValue="family"><option value="free">free</option><option value="family">family</option></select>
-              <select defaultValue="ar"><option value="ar">ar</option><option value="en">en</option></select>
+      {notice && (
+        <section className="panel panel--notice" role="status" style={{ margin: '14px 0' }}>
+          <Icon name="check" size={16} />
+          <span>{notice}</span>
+        </section>
+      )}
+
+      {activeTab === 'config' && (
+        <section className="panel panel--table" style={{ marginTop: 12 }}>
+          <div className="panel__header">
+            <h3>{text.tabConfig}</h3>
+            <span className="panel__kicker">{entries.length}</span>
+          </div>
+          {entries.length ? (
+            <div className="table-scroll" tabIndex={0}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>{text.human}</th>
+                    <th>{text.key}</th>
+                    <th>{text.type}</th>
+                    <th>{text.value}</th>
+                    <th>{text.rollout}</th>
+                    <th>{text.targeting}</th>
+                    <th>{text.updated}</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((e) => {
+                    const meta = TYPE_META[e.key]
+                    const isKill = KILL_SWITCHES.includes(e.key)
+                    return (
+                      <tr key={e.key} style={isKill ? { background: 'rgba(239, 68, 68, 0.05)' } : undefined}>
+                        <td>
+                          <strong>{meta ? (locale === 'ar' ? meta.ar : meta.en) : e.key}</strong>
+                          <br />
+                          <small style={{ color: 'var(--muted)' }}>{meta?.type ?? 'string'}</small>
+                          {isKill && (
+                            <span className="status-badge status-badge--danger" style={{ marginInlineStart: 6 }}>
+                              {text.kill}
+                            </span>
+                          )}
+                        </td>
+                        <td dir="ltr">
+                          <span className="table-primary" style={{ fontWeight: 600 }}>
+                            {e.key}
+                          </span>
+                        </td>
+                        <td>{meta?.type ?? 'json'}</td>
+                        <td>
+                          <span className={isTruthy(e.value) ? 'track-badge' : 'status-badge status-badge--draft'}>
+                            {displayValue(e.value, text)}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 80 }}>
+                            <div className="progress-meter-bar" style={{ flex: 1, maxWidth: 60 }}>
+                              <i style={{ width: `${e.rollout_percent}%`, background: isKill ? '#f43f5e' : '#10b981' }} />
+                            </div>
+                            <span style={{ fontSize: 11, fontWeight: 700 }} dir="ltr">
+                              {e.rollout_percent}%
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="table-secondary">
+                            {Object.keys(e.targeting ?? {}).length ? JSON.stringify(e.targeting) : text.everyone}
+                          </span>
+                        </td>
+                        <td dir="ltr">{String(e.updated_at ?? '').slice(0, 16)}</td>
+                        <td>
+                          <button className="button button--secondary button--small" onClick={() => openEdit(e)}>
+                            {text.edit}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
-            <button className="button button--ghost button--small" style={{marginTop:8}} onClick={async()=>{
-              const c=(document.getElementById('rc-country') as HTMLSelectElement)?.value??'EG'
-              const p=(document.getElementById('rc-platform') as HTMLSelectElement)?.value??'android'
-              const v=(document.getElementById('rc-version') as HTMLInputElement)?.value??'2.4.0'
-              // simulate resolver: find first matching entry with rollout 100
-              setPreview({ country:c, platform:p, version:v, resolved: entries.filter(e=> Number(e.rollout_percent)>0).map(e=> e.key).slice(0,3) })
-            }}>{text.preview}</button>
-            {preview && <pre style={{background:'#f6f8fa', padding:8, borderRadius:6, marginTop:8, fontSize:12}}>{JSON.stringify(preview,null,2)}</pre>}
+          ) : (
+            <EmptyState title={text.empty} description={text.empty} />
+          )}
+
+          <div style={{ padding: 16, background: 'var(--surface-2)', borderRadius: 10, margin: 12, fontSize: 12, color: 'var(--muted)' }}>
+            <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: 'var(--text)' }}>{text.preview}</h4>
+            <p style={{ margin: 0 }}>{text.previewHint}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginTop: 10 }}>
+              <select defaultValue="EG" id="rc-country" style={{ background: 'var(--surface)', border: '1px solid var(--cs-glass-border)', color: 'var(--text)', padding: '6px 10px', borderRadius: 6 }}>
+                <option value="EG">EG</option>
+                <option value="SA">SA</option>
+                <option value="CA">CA</option>
+              </select>
+              <select defaultValue="android" id="rc-platform" style={{ background: 'var(--surface)', border: '1px solid var(--cs-glass-border)', color: 'var(--text)', padding: '6px 10px', borderRadius: 6 }}>
+                <option value="android">Android</option>
+                <option value="ios">iOS</option>
+              </select>
+              <input placeholder="app version 2.4" defaultValue="2.4.0" id="rc-version" style={{ background: 'var(--surface)', border: '1px solid var(--cs-glass-border)', color: 'var(--text)', padding: '6px 10px', borderRadius: 6 }} />
+              <select defaultValue="family" style={{ background: 'var(--surface)', border: '1px solid var(--cs-glass-border)', color: 'var(--text)', padding: '6px 10px', borderRadius: 6 }}>
+                <option value="free">free</option>
+                <option value="family">family</option>
+              </select>
+              <select defaultValue="ar" style={{ background: 'var(--surface)', border: '1px solid var(--cs-glass-border)', color: 'var(--text)', padding: '6px 10px', borderRadius: 6 }}>
+                <option value="ar">ar</option>
+                <option value="en">en</option>
+              </select>
+            </div>
+            <button
+              className="button button--ghost button--small"
+              style={{ marginTop: 10 }}
+              onClick={() => {
+                const c = (document.getElementById('rc-country') as HTMLSelectElement)?.value ?? 'EG'
+                const p = (document.getElementById('rc-platform') as HTMLSelectElement)?.value ?? 'android'
+                const v = (document.getElementById('rc-version') as HTMLInputElement)?.value ?? '2.4.0'
+                setPreview({ country: c, platform: p, version: v, resolved: entries.filter((e) => Number(e.rollout_percent) > 0).map((e) => e.key).slice(0, 3) })
+              }}
+            >
+              {text.preview}
+            </button>
+            {preview && (
+              <pre style={{ background: 'var(--surface)', border: '1px solid var(--cs-glass-border)', padding: 10, borderRadius: 6, marginTop: 10, fontSize: 12 }}>
+                {JSON.stringify(preview, null, 2)}
+              </pre>
+            )}
           </div>
         </section>
       )}

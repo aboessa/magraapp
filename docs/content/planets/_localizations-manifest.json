@@ -1,0 +1,4801 @@
+{
+  "generated_at": "2026-09-04T09:17:32.667Z",
+  "generator": "tools/content/build-localization-index.mjs",
+  "locales": [
+    "en",
+    "fr"
+  ],
+  "total_units": 208,
+  "expected_editions": 416,
+  "coverage": {
+    "en": 7,
+    "fr": 0,
+    "total": 208
+  },
+  "units": [
+    {
+      "id": "01-abjad/abni-kalima/ep-01-two-syllables.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/abni-kalima/ep-01-two-syllables.md",
+        "sha256": "64eb8815473661b2d9230ce602d6023707d52d66abe2311544ac037ea38d34cc"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/abni-kalima/_localizations/en/ep-01-two-syllables.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/abni-kalima/_localizations/fr/ep-01-two-syllables.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/abni-kalima/ep-02-build-a-word.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/abni-kalima/ep-02-build-a-word.md",
+        "sha256": "fff54f8dfc15a9c6858c94b36eaa27bbe98afd61b46dcb37ae43d9b4999db401"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/abni-kalima/_localizations/en/ep-02-build-a-word.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/abni-kalima/_localizations/fr/ep-02-build-a-word.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/abni-kalima/ep-03-word-family.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/abni-kalima/ep-03-word-family.md",
+        "sha256": "141c0776e3cbc144df7e986910a8e5715a9bf442776221fe8c9faa09a950aaf3"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/abni-kalima/_localizations/en/ep-03-word-family.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/abni-kalima/_localizations/fr/ep-03-word-family.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/abni-kalima/ep-04-read-a-sentence.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/abni-kalima/ep-04-read-a-sentence.md",
+        "sha256": "8859fcd72e7e12fddcf0f6cd5e45ee7b998fcc67270bee7fb8cdfbf9c286144f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/abni-kalima/_localizations/en/ep-04-read-a-sentence.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/abni-kalima/_localizations/fr/ep-04-read-a-sentence.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/abni-kalima/ep-05-dot-or-question.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/abni-kalima/ep-05-dot-or-question.md",
+        "sha256": "ae066d924e2f9483e9ba08b46b64c890361aae29760916c2ccc7fc4fd0b59d14"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/abni-kalima/_localizations/en/ep-05-dot-or-question.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/abni-kalima/_localizations/fr/ep-05-dot-or-question.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/abni-kalima/ep-06-read-smoothly.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/abni-kalima/ep-06-read-smoothly.md",
+        "sha256": "9489085b5c4ccc183ac0873af35550e6214dd33854a64d71dfca4cbeac905e87"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/abni-kalima/_localizations/en/ep-06-read-smoothly.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/abni-kalima/_localizations/fr/ep-06-read-smoothly.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/luna-discovers-words/ep-01-picture-and-thing.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/luna-discovers-words/ep-01-picture-and-thing.md",
+        "sha256": "fdd2b0bf03f62c84fccc3e5443387cb52c53fc683310449811db10425e056d5a"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/en/ep-01-picture-and-thing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/fr/ep-01-picture-and-thing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/luna-discovers-words/ep-02-listen-and-find.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/luna-discovers-words/ep-02-listen-and-find.md",
+        "sha256": "01b6c0f7b040dfda85a89563886b7d52e22ddaa15ac561b3578b262a19e55419"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/en/ep-02-listen-and-find.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/fr/ep-02-listen-and-find.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/luna-discovers-words/ep-03-first-sound.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/luna-discovers-words/ep-03-first-sound.md",
+        "sha256": "26a794cfaf9d6dc77973fa6247333d81cd1cc61e73e81e60048d08daec9caa2a"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/en/ep-03-first-sound.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/fr/ep-03-first-sound.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/luna-discovers-words/ep-04-my-name-letters.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/luna-discovers-words/ep-04-my-name-letters.md",
+        "sha256": "b875902fb26bee5fa0bf80d0603bb5150157c8654b301118ef4513cc98dfe7a8"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/en/ep-04-my-name-letters.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/fr/ep-04-my-name-letters.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/luna-discovers-words/ep-05-words-from-home.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/luna-discovers-words/ep-05-words-from-home.md",
+        "sha256": "62a8d07d2d2421639b8361c34057dbeef12cf406a889a1dce4248d7918e00d73"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/en/ep-05-words-from-home.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/fr/ep-05-words-from-home.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "01-abjad/luna-discovers-words/ep-06-i-name-what-i-see.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "01-abjad/luna-discovers-words/ep-06-i-name-what-i-see.md",
+        "sha256": "a70d7c5762b22ca2922aa1ee45c51ff6e6c0d2cc64e32572abbaeda07f34c74f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/en/ep-06-i-name-what-i-see.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "01-abjad/luna-discovers-words/_localizations/fr/ep-06-i-name-what-i-see.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/adventures-of-numbers/ep-01-counting-stars.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/adventures-of-numbers/ep-01-counting-stars.md",
+        "sha256": "2522390e34f81a3217d25a10cd4c7ba33dc9004126ff3ced57c6e302b15a10b4"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/en/ep-01-counting-stars.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/fr/ep-01-counting-stars.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/adventures-of-numbers/ep-02-more-or-less.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/adventures-of-numbers/ep-02-more-or-less.md",
+        "sha256": "46cdd0cd7d9a0cf6401da1ee2ee247df3ea46839d1b8e9de9e4210e00d0bcd70"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/en/ep-02-more-or-less.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/fr/ep-02-more-or-less.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/adventures-of-numbers/ep-03-shapes-bridge.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/adventures-of-numbers/ep-03-shapes-bridge.md",
+        "sha256": "c9e9a8d6ebdb277b04974fe851c0d7e1af2772ac0a561df9a2bd8e1b459c4f03"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/en/ep-03-shapes-bridge.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/fr/ep-03-shapes-bridge.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/adventures-of-numbers/ep-04-adding-groups.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/adventures-of-numbers/ep-04-adding-groups.md",
+        "sha256": "dfac77a8806c4eafaa5747c681aab6320c7e1262917aa1780e1db0bfa887519c"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/en/ep-04-adding-groups.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/fr/ep-04-adding-groups.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/adventures-of-numbers/ep-05-subtract-share.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/adventures-of-numbers/ep-05-subtract-share.md",
+        "sha256": "49462718216cf762b3e6435765473adab2fa649a854043faab51c7494f8fd480"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/en/ep-05-subtract-share.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/fr/ep-05-subtract-share.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/adventures-of-numbers/ep-06-missing-number.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/adventures-of-numbers/ep-06-missing-number.md",
+        "sha256": "f4977c525d71aa94fc9b13f4bf8c025e1b309264df3809297ccc10f571e0bbef"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/en/ep-06-missing-number.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/adventures-of-numbers/_localizations/fr/ep-06-missing-number.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/al-arqam-fi-hayati/ep-01-part-of-what.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/al-arqam-fi-hayati/ep-01-part-of-what.md",
+        "sha256": "c840d43319de910338616973684f0f1bf887b73ab53b4247ca2697c852b5549a"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/en/ep-01-part-of-what.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/fr/ep-01-part-of-what.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/al-arqam-fi-hayati/ep-02-which-unit.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/al-arqam-fi-hayati/ep-02-which-unit.md",
+        "sha256": "c84e476eb2884fca371bb7d963f07df52aa023b8ef66303f5d50d207f27ffd27"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/en/ep-02-which-unit.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/fr/ep-02-which-unit.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/al-arqam-fi-hayati/ep-03-is-it-reasonable.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/al-arqam-fi-hayati/ep-03-is-it-reasonable.md",
+        "sha256": "669063364ac6cf1502145380658e7ad7ea7fcf30acdce8c387f6742a5b61d27e"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/en/ep-03-is-it-reasonable.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/fr/ep-03-is-it-reasonable.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/al-arqam-fi-hayati/ep-04-read-the-chart.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/al-arqam-fi-hayati/ep-04-read-the-chart.md",
+        "sha256": "34f9df0665cf8d082e90c3d37021d71e59fe6455a064bba7af2067ac70ac5d0b"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/en/ep-04-read-the-chart.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/fr/ep-04-read-the-chart.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/al-arqam-fi-hayati/ep-05-ratio-not-difference.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/al-arqam-fi-hayati/ep-05-ratio-not-difference.md",
+        "sha256": "4c09bd0cb7484941f298b8922c441fd1c94389d7a3bcdbb757120658d2139c4b"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/en/ep-05-ratio-not-difference.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/fr/ep-05-ratio-not-difference.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/al-arqam-fi-hayati/ep-06-small-budget.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/al-arqam-fi-hayati/ep-06-small-budget.md",
+        "sha256": "2658cab4842a28ee55f4494425b52b02a0259471c2ee5135451da256b8935700"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/en/ep-06-small-budget.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/al-arqam-fi-hayati/_localizations/fr/ep-06-small-budget.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/count-with-me/ep-01-one-for-one.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/count-with-me/ep-01-one-for-one.md",
+        "sha256": "2e110ddbfab67292e4e455c06ffe00e7ceaf5a014bf39af1efc45214b5041458"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/count-with-me/_localizations/en/ep-01-one-for-one.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/count-with-me/_localizations/fr/ep-01-one-for-one.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/count-with-me/ep-02-three-friends.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/count-with-me/ep-02-three-friends.md",
+        "sha256": "a93350ee4c7cb651c4ab3bce0b29356b2fe72b15e5fbd0c91002b191fe224d88"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/count-with-me/_localizations/en/ep-02-three-friends.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/count-with-me/_localizations/fr/ep-02-three-friends.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/count-with-me/ep-03-five-stars.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/count-with-me/ep-03-five-stars.md",
+        "sha256": "ffd8a59fa5fa8f1be8a62d20a90292288512397923488ac844f2d8da26a55560"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/count-with-me/_localizations/en/ep-03-five-stars.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/count-with-me/_localizations/fr/ep-03-five-stars.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/count-with-me/ep-04-more-or-less.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/count-with-me/ep-04-more-or-less.md",
+        "sha256": "9889a9917d84cee09082231a9d2342bcab17dfd2a1ec13234c631a893bbb2fce"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/count-with-me/_localizations/en/ep-04-more-or-less.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/count-with-me/_localizations/fr/ep-04-more-or-less.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "02-arqam/count-with-me/ep-05-simple-pattern.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "02-arqam/count-with-me/ep-05-simple-pattern.md",
+        "sha256": "1aa6f98f2eef62fb7a31858556221829611ec97f2653e59a1c8699c9c8a79ad6"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "02-arqam/count-with-me/_localizations/en/ep-05-simple-pattern.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "02-arqam/count-with-me/_localizations/fr/ep-05-simple-pattern.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/alahiz-wa-ataajjab/ep-01-which-sense.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/alahiz-wa-ataajjab/ep-01-which-sense.md",
+        "sha256": "7ff257b5a8a0674296939cd2ba25719a2aaba7c60b6f67be9d5ea049704c2458"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/alahiz-wa-ataajjab/_localizations/en/ep-01-which-sense.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/alahiz-wa-ataajjab/_localizations/fr/ep-01-which-sense.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/alahiz-wa-ataajjab/ep-02-rough-smooth.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/alahiz-wa-ataajjab/ep-02-rough-smooth.md",
+        "sha256": "c20be7d3548e64f3b6aa973c1bdde847727f18f090f8900a6eb63180ae19ff5a"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/alahiz-wa-ataajjab/_localizations/en/ep-02-rough-smooth.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/alahiz-wa-ataajjab/_localizations/fr/ep-02-rough-smooth.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/alahiz-wa-ataajjab/ep-03-loud-quiet.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/alahiz-wa-ataajjab/ep-03-loud-quiet.md",
+        "sha256": "27f1c3238654c2ff03bbe95a6d4eab33203281b870ffd64b3fc6f33bbb6ada6d"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/alahiz-wa-ataajjab/_localizations/en/ep-03-loud-quiet.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/alahiz-wa-ataajjab/_localizations/fr/ep-03-loud-quiet.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/alahiz-wa-ataajjab/ep-04-warm-cool.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/alahiz-wa-ataajjab/ep-04-warm-cool.md",
+        "sha256": "9f518859b37c5d205fe708e7520a72baf6ac130bb6084cd8aa783ff9c93a444f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/alahiz-wa-ataajjab/_localizations/en/ep-04-warm-cool.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/alahiz-wa-ataajjab/_localizations/fr/ep-04-warm-cool.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/alahiz-wa-ataajjab/ep-05-living-thing.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/alahiz-wa-ataajjab/ep-05-living-thing.md",
+        "sha256": "424f8bde822204de40802e361b72859d358a46f7622ba0ca73f0a39917a6b416"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/alahiz-wa-ataajjab/_localizations/en/ep-05-living-thing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/alahiz-wa-ataajjab/_localizations/fr/ep-05-living-thing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/discover-your-body/ep-01-heart.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/discover-your-body/ep-01-heart.md",
+        "sha256": "5917545f1bf91b6b5e32b77d97da726046856ff4fe43cc046b85e432bcec5cce"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/discover-your-body/_localizations/en/ep-01-heart.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/discover-your-body/_localizations/fr/ep-01-heart.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/discover-your-body/ep-02-five-senses.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/discover-your-body/ep-02-five-senses.md",
+        "sha256": "642e29351dcd7edc761083faab14aead7e8877291ecc06d24c97529615cc42c8"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/discover-your-body/_localizations/en/ep-02-five-senses.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/discover-your-body/_localizations/fr/ep-02-five-senses.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/discover-your-body/ep-03-breathing.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/discover-your-body/ep-03-breathing.md",
+        "sha256": "e07936c2e037c533ff1aa25ae45fd56a026b944d15ffb3f18a7806b6f0123273"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/discover-your-body/_localizations/en/ep-03-breathing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/discover-your-body/_localizations/fr/ep-03-breathing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/discover-your-body/ep-04-bones-movement.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/discover-your-body/ep-04-bones-movement.md",
+        "sha256": "4cd8dc0aed3c972b3b1d979f1e8caaec1b24963e264b45f294bc5e8113b0c2ed"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/discover-your-body/_localizations/en/ep-04-bones-movement.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/discover-your-body/_localizations/fr/ep-04-bones-movement.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/discover-your-body/ep-05-food-energy.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/discover-your-body/ep-05-food-energy.md",
+        "sha256": "3bad7c29a509f697fee09d3082cf260f0af539ef46658acfae7cbe78df122ce9"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/discover-your-body/_localizations/en/ep-05-food-energy.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/discover-your-body/_localizations/fr/ep-05-food-energy.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/discover-your-body/ep-06-hygiene.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/discover-your-body/ep-06-hygiene.md",
+        "sha256": "dd4a7b3f41a185c7390e9781dd04edcdc6e03930c148d730a99fb1d1470362ae"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/discover-your-body/_localizations/en/ep-06-hygiene.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/discover-your-body/_localizations/fr/ep-06-hygiene.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/future-lab/ep-01-solar-vehicle.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/future-lab/ep-01-solar-vehicle.md",
+        "sha256": "bc12ce89d5ff90dce2a1bdf5c99e699f1cfb28e2b7f029c81fada82c873fc0e5"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/future-lab/_localizations/en/ep-01-solar-vehicle.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/future-lab/_localizations/fr/ep-01-solar-vehicle.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/future-lab/ep-02-strong-bridge.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/future-lab/ep-02-strong-bridge.md",
+        "sha256": "65172e68fce240fc697c8d2c9695bf2ef5761ca5b8cd1e98d9984550e11e8095"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/future-lab/_localizations/en/ep-02-strong-bridge.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/future-lab/_localizations/fr/ep-02-strong-bridge.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/future-lab/ep-03-circuit.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/future-lab/ep-03-circuit.md",
+        "sha256": "a64479b1554e1aa573d9a1ee52c8bbf87cfc19bf60ed6f366d6cf5d34d0bae83"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/future-lab/_localizations/en/ep-03-circuit.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/future-lab/_localizations/fr/ep-03-circuit.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/future-lab/ep-04-pendulum.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/future-lab/ep-04-pendulum.md",
+        "sha256": "99fc963bb0684fa2ceea7ca2767f3c40ff7c68a1517420f4406f99c25c9a8e5c"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/future-lab/_localizations/en/ep-04-pendulum.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/future-lab/_localizations/fr/ep-04-pendulum.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/future-lab/ep-05-balance.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/future-lab/ep-05-balance.md",
+        "sha256": "76fc69b3dda7bddb3d88a8225a781f925229180eac696035adb6fdf730c10c0f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/future-lab/_localizations/en/ep-05-balance.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/future-lab/_localizations/fr/ep-05-balance.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/future-lab/ep-06-my-experiment.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/future-lab/ep-06-my-experiment.md",
+        "sha256": "dfae018215eae633a12a566b91b9ac9274690cddb5e38d1c5fc4366a6b7bca50"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/future-lab/_localizations/en/ep-06-my-experiment.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/future-lab/_localizations/fr/ep-06-my-experiment.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/science-in-a-minute/ep-01-light-refraction.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/science-in-a-minute/ep-01-light-refraction.md",
+        "sha256": "e1838dab255c124524f09d30e9f626af0301188fe92a281f34274dfc2e112164"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/en/ep-01-light-refraction.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/fr/ep-01-light-refraction.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/science-in-a-minute/ep-02-air-pressure.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/science-in-a-minute/ep-02-air-pressure.md",
+        "sha256": "7d109c8f546648f0d9097102384105bcdff7eb3cc1070b677ba88009fff8f2c7"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/en/ep-02-air-pressure.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/fr/ep-02-air-pressure.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/science-in-a-minute/ep-03-moon-phases.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/science-in-a-minute/ep-03-moon-phases.md",
+        "sha256": "1863eb6d958e9ec3a9f9a08eedf34be98689d0c14e4ba758c39b6ec700ed8373"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/en/ep-03-moon-phases.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/fr/ep-03-moon-phases.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/science-in-a-minute/ep-04-electricity.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/science-in-a-minute/ep-04-electricity.md",
+        "sha256": "0bb4fbd57abb731fe915ff1327618f25a1ccdca6e9d50c1ff960cfe5938f77ee"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/en/ep-04-electricity.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/fr/ep-04-electricity.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/science-in-a-minute/ep-05-water-cycle.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/science-in-a-minute/ep-05-water-cycle.md",
+        "sha256": "cbacb9f6f5131d027e73a389eed476c36b201e910ab6d08d5223649ffc3124ac"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/en/ep-05-water-cycle.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/fr/ep-05-water-cycle.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/science-in-a-minute/ep-06-why-sleep.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/science-in-a-minute/ep-06-why-sleep.md",
+        "sha256": "8937c8fb21de14e63dfce60cefb5479a271c33175b21917cf74e9198214f8fd5"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/en/ep-06-why-sleep.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/science-in-a-minute/_localizations/fr/ep-06-why-sleep.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/try-it-at-home/ep-01-walking-water.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/try-it-at-home/ep-01-walking-water.md",
+        "sha256": "43f4117fef197e9e0aaa868de1d8d24b210d88fa1c26b643655e24bb4c3a4e15"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/en/ep-01-walking-water.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/fr/ep-01-walking-water.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/try-it-at-home/ep-02-magnet-test.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/try-it-at-home/ep-02-magnet-test.md",
+        "sha256": "502a6c71eaf670552f2a870273300954488542375e738033b64b1ccd26842e31"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/en/ep-02-magnet-test.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/fr/ep-02-magnet-test.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/try-it-at-home/ep-03-float-or-sink.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/try-it-at-home/ep-03-float-or-sink.md",
+        "sha256": "cd9383f4eefd8d733b3ea7f6961ebcc7e6124e9d55a9557de6d144dc61f2a658"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/en/ep-03-float-or-sink.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/fr/ep-03-float-or-sink.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/try-it-at-home/ep-04-seed-grows.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/try-it-at-home/ep-04-seed-grows.md",
+        "sha256": "5d85f685b90868e14b4a64fc957ecdb4bbab6d6f599d90b7c60c26e5ad2b1d37"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/en/ep-04-seed-grows.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/fr/ep-04-seed-grows.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/try-it-at-home/ep-05-shadow-light.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/try-it-at-home/ep-05-shadow-light.md",
+        "sha256": "3c5a8160d3b277a92550e957bdfbc8383eddcb64153f959ad67236ece79da397"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/en/ep-05-shadow-light.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/fr/ep-05-shadow-light.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "03-oloom/try-it-at-home/ep-06-invisible-air.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "03-oloom/try-it-at-home/ep-06-invisible-air.md",
+        "sha256": "934523f56461e0e5520fea8354bb2ca9d68d3ed2f724c5cfe1512668b6aa4ec1"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/en/ep-06-invisible-air.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "03-oloom/try-it-at-home/_localizations/fr/ep-06-invisible-air.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/hekaya-wa-hikma/ep-01-lost-bag.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/hekaya-wa-hikma/ep-01-lost-bag.md",
+        "sha256": "b48721afd641d1b2660424677f377b9aa9415f4eb4ba834c25288c612e1ada8d"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/en/ep-01-lost-bag.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/fr/ep-01-lost-bag.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/hekaya-wa-hikma/ep-02-sharing-colors.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/hekaya-wa-hikma/ep-02-sharing-colors.md",
+        "sha256": "f3765a7fc09803d9116cdd6b63a62d575ef7b728d375829d6ace645bbc035cbc"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/en/ep-02-sharing-colors.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/fr/ep-02-sharing-colors.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/hekaya-wa-hikma/ep-03-waiting-turn.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/hekaya-wa-hikma/ep-03-waiting-turn.md",
+        "sha256": "0576d4f4e3d850ec77da94bb642c2ec4ac96e14592f27f0b91a93ff113862419"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/en/ep-03-waiting-turn.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/fr/ep-03-waiting-turn.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/hekaya-wa-hikma/ep-04-plant-responsibility.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/hekaya-wa-hikma/ep-04-plant-responsibility.md",
+        "sha256": "2572ed1d8c87e6567d0ad729f9244755107b9cd4f135fa6d9dd33d4330abe625"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/en/ep-04-plant-responsibility.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/fr/ep-04-plant-responsibility.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/hekaya-wa-hikma/ep-05-kind-word.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/hekaya-wa-hikma/ep-05-kind-word.md",
+        "sha256": "eec34a653fdd78d882ff63af33b0501f5d81dc4fbf3ea5daf2c9d5fde214d332"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/en/ep-05-kind-word.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/fr/ep-05-kind-word.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/hekaya-wa-hikma/ep-06-i-apologize.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/hekaya-wa-hikma/ep-06-i-apologize.md",
+        "sha256": "dcbc352b34fdc3cb2ea657d5087635120878a663be4b022bd26ae736649f0836"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/en/ep-06-i-apologize.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/hekaya-wa-hikma/_localizations/fr/ep-06-i-apologize.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/mawaqif-wa-qararat/ep-01-six-devices.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/mawaqif-wa-qararat/ep-01-six-devices.md",
+        "sha256": "eccdc52fc9b37c9adbcba524d3f0562e522f79d85ff654d7070fd2ae3ee66da5"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/mawaqif-wa-qararat/_localizations/en/ep-01-six-devices.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/mawaqif-wa-qararat/_localizations/fr/ep-01-six-devices.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/mawaqif-wa-qararat/ep-02-the-number-i-wrote.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/mawaqif-wa-qararat/ep-02-the-number-i-wrote.md",
+        "sha256": "021144952126b9402137ab5e0c6b2ef74c6c0031ea6b789e695b57a248981d81"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/mawaqif-wa-qararat/_localizations/en/ep-02-the-number-i-wrote.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/mawaqif-wa-qararat/_localizations/fr/ep-02-the-number-i-wrote.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/mawaqif-wa-qararat/ep-03-before-i-reply.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/mawaqif-wa-qararat/ep-03-before-i-reply.md",
+        "sha256": "91d6ad5dd27fe52c9a7589ae6e42bd90f5f625fba08861761dbafe6233920dfd"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/mawaqif-wa-qararat/_localizations/en/ep-03-before-i-reply.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/mawaqif-wa-qararat/_localizations/fr/ep-03-before-i-reply.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/mawaqif-wa-qararat/ep-04-saturday.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/mawaqif-wa-qararat/ep-04-saturday.md",
+        "sha256": "c5e9044af9736d2a6f04e468a4cd6ee578ca2051f8edc0c601d6bc72522c7d02"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/mawaqif-wa-qararat/_localizations/en/ep-04-saturday.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/mawaqif-wa-qararat/_localizations/fr/ep-04-saturday.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/mawaqif-wa-qararat/ep-05-a-picture-in-the-group.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/mawaqif-wa-qararat/ep-05-a-picture-in-the-group.md",
+        "sha256": "5977b9997840398e9f574274305bb58d932eecd0f0b65989b7704e21af6b33d8"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/mawaqif-wa-qararat/_localizations/en/ep-05-a-picture-in-the-group.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/mawaqif-wa-qararat/_localizations/fr/ep-05-a-picture-in-the-group.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/qiyami-alsaghira/ep-01-one-swing.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/qiyami-alsaghira/ep-01-one-swing.md",
+        "sha256": "eec937ab5db20385e12f4777d63a0ae8cacda761f8d83e6526e0d9aceebf8d05"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/qiyami-alsaghira/_localizations/en/ep-01-one-swing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/qiyami-alsaghira/_localizations/fr/ep-01-one-swing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/qiyami-alsaghira/ep-02-water-on-the-paper.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/qiyami-alsaghira/ep-02-water-on-the-paper.md",
+        "sha256": "80908425ae2d26a525971f128b300359eb7ae131d885a74427824b89e354b108"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/qiyami-alsaghira/_localizations/en/ep-02-water-on-the-paper.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/qiyami-alsaghira/_localizations/fr/ep-02-water-on-the-paper.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/qiyami-alsaghira/ep-03-the-high-shelf.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/qiyami-alsaghira/ep-03-the-high-shelf.md",
+        "sha256": "6d8225e1dd07d92d150f7006009fe8689ee8d631cd6c17234ff84bf24e6f76c3"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/qiyami-alsaghira/_localizations/en/ep-03-the-high-shelf.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/qiyami-alsaghira/_localizations/fr/ep-03-the-high-shelf.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "04-qiyam/qiyami-alsaghira/ep-04-the-bud.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "04-qiyam/qiyami-alsaghira/ep-04-the-bud.md",
+        "sha256": "a962db0a4262e87e2e5d2b845d37e48daaae69510f4b9a2a75ccfae1db2fc1cc"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "04-qiyam/qiyami-alsaghira/_localizations/en/ep-04-the-bud.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "04-qiyam/qiyami-alsaghira/_localizations/fr/ep-04-the-bud.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/a-calm-tale/story-01-bird-home.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/a-calm-tale/story-01-bird-home.md",
+        "sha256": "6aa9308bb7ca276b594f2d261f8f24b3ede53d9d3f8cdc897909a4fe8c5aca8e"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/a-calm-tale/_localizations/en/story-01-bird-home.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/a-calm-tale/_localizations/fr/story-01-bird-home.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/a-calm-tale/story-02-goodnight-toys.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/a-calm-tale/story-02-goodnight-toys.md",
+        "sha256": "3b07602a9ed1acef36cf447f1098b823d316fb5b9ff73967d41ad934f39bbed3"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/a-calm-tale/_localizations/en/story-02-goodnight-toys.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/a-calm-tale/_localizations/fr/story-02-goodnight-toys.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/a-calm-tale/story-03-moon-sleeps.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/a-calm-tale/story-03-moon-sleeps.md",
+        "sha256": "fef0e1e97caafd721b89e2cd3e575f6c4e355e8ae7fcbb72b7d47e4baa07e467"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/a-calm-tale/_localizations/en/story-03-moon-sleeps.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/a-calm-tale/_localizations/fr/story-03-moon-sleeps.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/a-calm-tale/story-04-warm-hugs.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/a-calm-tale/story-04-warm-hugs.md",
+        "sha256": "47e002bba68d648e7a44b4b87ded357054764fae35a99cd9fd45f6aa890fa98d"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/a-calm-tale/_localizations/en/story-04-warm-hugs.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/a-calm-tale/_localizations/fr/story-04-warm-hugs.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/audio-only-stories/story-01-small-sounds-box.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/audio-only-stories/story-01-small-sounds-box.md",
+        "sha256": "c8baadb5f15f8dd10addb54278ce6442a77d18d288a47cf4abf20dd21471b7e6"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/en/story-01-small-sounds-box.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/fr/story-01-small-sounds-box.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/audio-only-stories/story-02-moonlight-blanket.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/audio-only-stories/story-02-moonlight-blanket.md",
+        "sha256": "7a65fa99fbe571080b65060d5fb22c08907a2bb574c666cd6332ed77bb8e078f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/en/story-02-moonlight-blanket.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/fr/story-02-moonlight-blanket.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/audio-only-stories/story-03-late-raindrop.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/audio-only-stories/story-03-late-raindrop.md",
+        "sha256": "ee2ba6f479b8bad813dd8feab1d8993de7f4e875a7530708e148bb84e52bcf5f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/en/story-03-late-raindrop.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/fr/story-03-late-raindrop.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/audio-only-stories/story-04-empty-chair.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/audio-only-stories/story-04-empty-chair.md",
+        "sha256": "bac49f87f074a4d7065191333145dd966efd04477b071c39814c2c63d85ba113"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/en/story-04-empty-chair.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/fr/story-04-empty-chair.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/audio-only-stories/story-05-day-without-rushing.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/audio-only-stories/story-05-day-without-rushing.md",
+        "sha256": "4e96ccf85c94d99256e6f6967ab7244aaea3c087d06c5dcdd9e6fc246456ae5d"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/en/story-05-day-without-rushing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/fr/story-05-day-without-rushing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/audio-only-stories/story-06-blue-door.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/audio-only-stories/story-06-blue-door.md",
+        "sha256": "06da88ccf384a7344b9b744a44ee140addbb91d8b62412911fb08ac359696999"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/en/story-06-blue-door.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/fr/story-06-blue-door.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/audio-only-stories/story-07-building-orchestra.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/audio-only-stories/story-07-building-orchestra.md",
+        "sha256": "36aa1a5a7af1a59ba63193c9fb6ac8d4467f6550c40362edeafeded650462260"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/en/story-07-building-orchestra.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/fr/story-07-building-orchestra.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/audio-only-stories/story-08-last-library-lamp.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/audio-only-stories/story-08-last-library-lamp.md",
+        "sha256": "fe34917b859d84e3f089ff6bc72b36a2d65cc75c796184533a0fe9427459312d"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/en/story-08-last-library-lamp.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/fr/story-08-last-library-lamp.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/audio-only-stories/story-09-the-minute-that-grew.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/audio-only-stories/story-09-the-minute-that-grew.md",
+        "sha256": "772f483d634119bbcd0658090aaa6198cdd2cf8c6414d3ccf64c070c9f0f1a95"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/en/story-09-the-minute-that-grew.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/fr/story-09-the-minute-that-grew.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/audio-only-stories/story-10-map-of-old-sounds.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/audio-only-stories/story-10-map-of-old-sounds.md",
+        "sha256": "0d4d2c370f3daeb90ba81eee439f9b8329782d812b26d5c6df562d832be6d592"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/en/story-10-map-of-old-sounds.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/audio-only-stories/_localizations/fr/story-10-map-of-old-sounds.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/bedtime-stories/story-01-ant-journey.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/bedtime-stories/story-01-ant-journey.md",
+        "sha256": "8f876cff466736346d2c650d1c90e978d6bdd7d6b65594a19eb86aeeccba5f97"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/en/story-01-ant-journey.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/fr/story-01-ant-journey.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/bedtime-stories/story-02-garden-secret.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/bedtime-stories/story-02-garden-secret.md",
+        "sha256": "9359ff376af2947b60d3b357982a49cd6b6837d5f487a06f67beeb62f3cb427a"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/en/story-02-garden-secret.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/fr/story-02-garden-secret.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/bedtime-stories/story-03-new-friend.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/bedtime-stories/story-03-new-friend.md",
+        "sha256": "24052dc51efde24d9e35371237c8914673a21e5374ef43df603f5d159f8375e9"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/en/story-03-new-friend.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/fr/story-03-new-friend.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/bedtime-stories/story-04-rainy-night.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/bedtime-stories/story-04-rainy-night.md",
+        "sha256": "0b040239b9f8016ca94f753f343b0b625de305ba139167f77fab7782caf54ff0"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/en/story-04-rainy-night.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/fr/story-04-rainy-night.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/bedtime-stories/story-05-old-lantern.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/bedtime-stories/story-05-old-lantern.md",
+        "sha256": "49eb7ed4c3cfc1995659ada99974d65cee83f04adeea6874c83e84c701f87278"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/en/story-05-old-lantern.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/fr/story-05-old-lantern.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/bedtime-stories/story-06-lost-star.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/bedtime-stories/story-06-lost-star.md",
+        "sha256": "4b26744e633085756c15ea236ad212aacea8c3c12805bc101e6d332148c93932"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/en/story-06-lost-star.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/bedtime-stories/_localizations/fr/story-06-lost-star.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/qisas-min-alhayat/story-01-the-promised-friday.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/qisas-min-alhayat/story-01-the-promised-friday.md",
+        "sha256": "7c3a93eba7e50e52506df52f529dce4fcf43a048d8631fd99e8ec27f7a05cbe3"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/qisas-min-alhayat/_localizations/en/story-01-the-promised-friday.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/qisas-min-alhayat/_localizations/fr/story-01-the-promised-friday.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/qisas-min-alhayat/story-02-nine-metres.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/qisas-min-alhayat/story-02-nine-metres.md",
+        "sha256": "e3fb5938ca6ba9e9323c1cb50ce4028ea9e9e20f5f4fca98077fe533d46fe833"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/qisas-min-alhayat/_localizations/en/story-02-nine-metres.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/qisas-min-alhayat/_localizations/fr/story-02-nine-metres.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/qisas-min-alhayat/story-03-taller-than-me.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/qisas-min-alhayat/story-03-taller-than-me.md",
+        "sha256": "dc11ca9116c6857adc799c1d1145e4f445aa9a09a3ad610430f0c8d1eb0009e5"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/qisas-min-alhayat/_localizations/en/story-03-taller-than-me.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/qisas-min-alhayat/_localizations/fr/story-03-taller-than-me.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/qisas-min-alhayat/story-04-the-key-that-was-left.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/qisas-min-alhayat/story-04-the-key-that-was-left.md",
+        "sha256": "96b811967483fe64bfc7de48ec9f8cbfcd3095012cd7105a5ffb21c81eaee94f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/qisas-min-alhayat/_localizations/en/story-04-the-key-that-was-left.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/qisas-min-alhayat/_localizations/fr/story-04-the-key-that-was-left.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "05-qisas/qisas-min-alhayat/story-05-the-extra-page.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "05-qisas/qisas-min-alhayat/story-05-the-extra-page.md",
+        "sha256": "960cd7ece865b03bbd4e2bc0232d51b4b656ba835dbf57f0ff4ea8791c35baab"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "05-qisas/qisas-min-alhayat/_localizations/en/story-05-the-extra-page.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "05-qisas/qisas-min-alhayat/_localizations/fr/story-05-the-extra-page.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/robo-codes/ep-01-sequence-path.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/robo-codes/ep-01-sequence-path.md",
+        "sha256": "915148aea81824ba165fb6f4ad14783211166166ac9d05521537d544199efc37"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/robo-codes/_localizations/en/ep-01-sequence-path.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/robo-codes/_localizations/fr/ep-01-sequence-path.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/robo-codes/ep-02-debug-path.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/robo-codes/ep-02-debug-path.md",
+        "sha256": "7317b26170753b4134a27cdce42ef57cf22a0ab3f658ed8a91d2753906a35b60"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/robo-codes/_localizations/en/ep-02-debug-path.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/robo-codes/_localizations/fr/ep-02-debug-path.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/robo-codes/ep-03-repeat-with-me.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/robo-codes/ep-03-repeat-with-me.md",
+        "sha256": "ef7b00a9ed5a2f9ee686dcb6ce01997f80f110e01ab9410c05a6ea85bea3d952"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/robo-codes/_localizations/en/ep-03-repeat-with-me.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/robo-codes/_localizations/fr/ep-03-repeat-with-me.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/robo-codes/ep-04-if-else.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/robo-codes/ep-04-if-else.md",
+        "sha256": "b806d10bb7c2fc1c18bd03a9aa6d4206047e8cefe970c7807dd2c12fbff892a0"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/robo-codes/_localizations/en/ep-04-if-else.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/robo-codes/_localizations/fr/ep-04-if-else.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/robo-codes/ep-05-one-function.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/robo-codes/ep-05-one-function.md",
+        "sha256": "bb4c748d505788de247768760cd7108dc31b53e1e5e81e09a45d0e7c3e71d952"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/robo-codes/_localizations/en/ep-05-one-function.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/robo-codes/_localizations/fr/ep-05-one-function.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/robo-codes/ep-06-first-project.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/robo-codes/ep-06-first-project.md",
+        "sha256": "232628e3c0da0de58885b72de636f9295b583b73309a1e3a4c9465cc3287950c"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/robo-codes/_localizations/en/ep-06-first-project.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/robo-codes/_localizations/fr/ep-06-first-project.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/ufakkir-khutwa-khutwa/ep-01-exactly-as-written.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/ufakkir-khutwa-khutwa/ep-01-exactly-as-written.md",
+        "sha256": "1f20aa18ee4e574884dd70d3408af030c196c71aade62a23bd7a3c4c5587d6c1"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/en/ep-01-exactly-as-written.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/fr/ep-01-exactly-as-written.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/ufakkir-khutwa-khutwa/ep-02-swap-two-steps.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/ufakkir-khutwa-khutwa/ep-02-swap-two-steps.md",
+        "sha256": "261539261b82034be90503d16a79ec7ed9e7a6cf871436b177ed0ac23baa7d98"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/en/ep-02-swap-two-steps.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/fr/ep-02-swap-two-steps.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/ufakkir-khutwa-khutwa/ep-03-which-step-went-wrong.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/ufakkir-khutwa-khutwa/ep-03-which-step-went-wrong.md",
+        "sha256": "d6b8684f32f9397b02ae7c9d3aaca87ded1f6abe995ad4453e9d04473a374453"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/en/ep-03-which-step-went-wrong.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/fr/ep-03-which-step-went-wrong.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/ufakkir-khutwa-khutwa/ep-04-spread-it-into-steps.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/ufakkir-khutwa-khutwa/ep-04-spread-it-into-steps.md",
+        "sha256": "1fb40463f0d3f400cef14cea8bef8722365dcadbd2abba5e53282b86cb37a7ae"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/en/ep-04-spread-it-into-steps.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/fr/ep-04-spread-it-into-steps.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/ufakkir-khutwa-khutwa/ep-05-again-and-again.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/ufakkir-khutwa-khutwa/ep-05-again-and-again.md",
+        "sha256": "789506572aa436ee35c48a4bf2be9650ce4fbad7a904a3388f12f142ae0cc52e"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/en/ep-05-again-and-again.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/fr/ep-05-again-and-again.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/ufakkir-khutwa-khutwa/ep-06-the-plan-comes-first.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/ufakkir-khutwa-khutwa/ep-06-the-plan-comes-first.md",
+        "sha256": "9c96b2152b710f3a1c15cf8dd0088ae0f794d03c200dbc6d90f71e17d034f0b7"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/en/ep-06-the-plan-comes-first.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/ufakkir-khutwa-khutwa/_localizations/fr/ep-06-the-plan-comes-first.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/yadi-tasnaa/ep-01-two-fingers.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/yadi-tasnaa/ep-01-two-fingers.md",
+        "sha256": "06e7cb488cc0973da4d1940601a7ce9d274e6aa5d7ef98c8475ae91f49311d70"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/yadi-tasnaa/_localizations/en/ep-01-two-fingers.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/yadi-tasnaa/_localizations/fr/ep-01-two-fingers.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/yadi-tasnaa/ep-02-first-then.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/yadi-tasnaa/ep-02-first-then.md",
+        "sha256": "db966a91d37d25e3283446edd5f61c69c18bc73569cd3201676355a74b95457b"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/yadi-tasnaa/_localizations/en/ep-02-first-then.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/yadi-tasnaa/_localizations/fr/ep-02-first-then.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/yadi-tasnaa/ep-03-each-with-its-own.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/yadi-tasnaa/ep-03-each-with-its-own.md",
+        "sha256": "38d989f3ff14d05b03f534252a7f60fb5013b532ea2d4aec73447abed01c09b4"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/yadi-tasnaa/_localizations/en/ep-03-each-with-its-own.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/yadi-tasnaa/_localizations/fr/ep-03-each-with-its-own.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/yadi-tasnaa/ep-04-everything-has-a-home.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/yadi-tasnaa/ep-04-everything-has-a-home.md",
+        "sha256": "3446efc73f9976899e547b772cc878dfb821771cb8333789bed5b03c750863db"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/yadi-tasnaa/_localizations/en/ep-04-everything-has-a-home.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/yadi-tasnaa/_localizations/fr/ep-04-everything-has-a-home.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "06-maharat/yadi-tasnaa/ep-05-i-made-and-i-tell.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "06-maharat/yadi-tasnaa/ep-05-i-made-and-i-tell.md",
+        "sha256": "3381b7a4dcb14ae163dcf3105d65d41f0bcde2cc7d19cf3888d77950cf289f84"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "06-maharat/yadi-tasnaa/_localizations/en/ep-05-i-made-and-i-tell.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "06-maharat/yadi-tasnaa/_localizations/fr/ep-05-i-made-and-i-tell.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "07-tarikh/ashyaa-laha-hikaya/ep-01-clay-water-jar.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "07-tarikh/ashyaa-laha-hikaya/ep-01-clay-water-jar.md",
+        "sha256": "cbcd5a9e4572c345d0cc98ecd93eb5eea1257125058afe0986af9742f3e885ab"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "07-tarikh/ashyaa-laha-hikaya/_localizations/en/ep-01-clay-water-jar.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "07-tarikh/ashyaa-laha-hikaya/_localizations/fr/ep-01-clay-water-jar.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "07-tarikh/ashyaa-laha-hikaya/ep-02-oil-lamp.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "07-tarikh/ashyaa-laha-hikaya/ep-02-oil-lamp.md",
+        "sha256": "b7a050834369dc4e70fd0142b42cb1f742d33667e583e9af577c71afaf4d2a66"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "07-tarikh/ashyaa-laha-hikaya/_localizations/en/ep-02-oil-lamp.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "07-tarikh/ashyaa-laha-hikaya/_localizations/fr/ep-02-oil-lamp.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "07-tarikh/ashyaa-laha-hikaya/ep-03-reed-pen.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "07-tarikh/ashyaa-laha-hikaya/ep-03-reed-pen.md",
+        "sha256": "2f1fa35a3abda75f4ed9bd2ec85d347920e472e8bd40d00c2dc2809facd06898"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "07-tarikh/ashyaa-laha-hikaya/_localizations/en/ep-03-reed-pen.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "07-tarikh/ashyaa-laha-hikaya/_localizations/fr/ep-03-reed-pen.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "07-tarikh/ashyaa-laha-hikaya/ep-04-woven-cloth.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "07-tarikh/ashyaa-laha-hikaya/ep-04-woven-cloth.md",
+        "sha256": "3602163aaa68db1931fe589d453285bbbb2b5a7de3da9db68ce377fe4bf9b860"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "07-tarikh/ashyaa-laha-hikaya/_localizations/en/ep-04-woven-cloth.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "07-tarikh/ashyaa-laha-hikaya/_localizations/fr/ep-04-woven-cloth.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "07-tarikh/ashyaa-laha-hikaya/ep-05-grinding-stone.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "07-tarikh/ashyaa-laha-hikaya/ep-05-grinding-stone.md",
+        "sha256": "7f82f27ce8508b54ca92e6d07f7887e0a61340fbdc696f1245e34c2a9a13dc47"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "07-tarikh/ashyaa-laha-hikaya/_localizations/en/ep-05-grinding-stone.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "07-tarikh/ashyaa-laha-hikaya/_localizations/fr/ep-05-grinding-stone.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "07-tarikh/journey-of-civilizations/ep-01-water-engineering.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "07-tarikh/journey-of-civilizations/ep-01-water-engineering.md",
+        "sha256": "ad06975400abc4c1851fffb9df17ea66fd260c192cff1aa02896e7e8636da075"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "07-tarikh/journey-of-civilizations/_localizations/en/ep-01-water-engineering.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "07-tarikh/journey-of-civilizations/_localizations/fr/ep-01-water-engineering.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "07-tarikh/journey-of-civilizations/ep-02-observatory.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "07-tarikh/journey-of-civilizations/ep-02-observatory.md",
+        "sha256": "a57eb518aad2d18d73ec00c9dfdbd94cd91e639146fcaf3d058e96139295b20f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "07-tarikh/journey-of-civilizations/_localizations/en/ep-02-observatory.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "07-tarikh/journey-of-civilizations/_localizations/fr/ep-02-observatory.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "07-tarikh/journey-of-civilizations/ep-03-house-of-wisdom.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "07-tarikh/journey-of-civilizations/ep-03-house-of-wisdom.md",
+        "sha256": "2137706e25fd41969a5f7d2eb1b05d398c9ad491f9413efc8372c61b40361bf7"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "07-tarikh/journey-of-civilizations/_localizations/en/ep-03-house-of-wisdom.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "07-tarikh/journey-of-civilizations/_localizations/fr/ep-03-house-of-wisdom.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "07-tarikh/journey-of-civilizations/ep-04-trade-routes.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "07-tarikh/journey-of-civilizations/ep-04-trade-routes.md",
+        "sha256": "22ba9fff66e1c2761925a0367be01fa78fc4a53ff0cf5da7f9de616014f233e8"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "07-tarikh/journey-of-civilizations/_localizations/en/ep-04-trade-routes.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "07-tarikh/journey-of-civilizations/_localizations/fr/ep-04-trade-routes.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "07-tarikh/journey-of-civilizations/ep-05-paper-and-writing.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "07-tarikh/journey-of-civilizations/ep-05-paper-and-writing.md",
+        "sha256": "df9d7c77bcbc6a6b23615fed8127870b6d663b004dbd4b7200101a3ae0a21bc9"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "07-tarikh/journey-of-civilizations/_localizations/en/ep-05-paper-and-writing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "07-tarikh/journey-of-civilizations/_localizations/fr/ep-05-paper-and-writing.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/aalami-akbar/ep-01-how-far-which-way.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/aalami-akbar/ep-01-how-far-which-way.md",
+        "sha256": "d51a940b79fb49dcc3cdd7b1aa3bae170f5bd82e01392707934ef670b186892b"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/aalami-akbar/_localizations/en/ep-01-how-far-which-way.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/aalami-akbar/_localizations/fr/ep-01-how-far-which-way.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/aalami-akbar/ep-02-why-weather-differs.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/aalami-akbar/ep-02-why-weather-differs.md",
+        "sha256": "b227a6931edb6704629be542857b3d6595741a4fd57461e00b408078f2882afb"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/aalami-akbar/_localizations/en/ep-02-why-weather-differs.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/aalami-akbar/_localizations/fr/ep-02-why-weather-differs.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/aalami-akbar/ep-03-water-there-and-back.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/aalami-akbar/ep-03-water-there-and-back.md",
+        "sha256": "420541bbb20eb8ca92ab14de6e1e1d0d275029cef845afc725b647bae0954ef8"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/aalami-akbar/_localizations/en/ep-03-water-there-and-back.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/aalami-akbar/_localizations/fr/ep-03-water-there-and-back.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/aalami-akbar/ep-04-city-service-system.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/aalami-akbar/ep-04-city-service-system.md",
+        "sha256": "db42d05310ed97779e8a04f1876d084cd4f360d8c996e9dabcc28951e1f6abfb"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/aalami-akbar/_localizations/en/ep-04-city-service-system.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/aalami-akbar/_localizations/fr/ep-04-city-service-system.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/aalami-akbar/ep-05-where-my-shirt-came-from.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/aalami-akbar/ep-05-where-my-shirt-came-from.md",
+        "sha256": "22c4c28431631a81f77b9d28dea7a5fa03d874c862a4d16fdaa7bd10df83a6e8"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/aalami-akbar/_localizations/en/ep-05-where-my-shirt-came-from.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/aalami-akbar/_localizations/fr/ep-05-where-my-shirt-came-from.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/aalami-akbar/ep-06-one-local-action.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/aalami-akbar/ep-06-one-local-action.md",
+        "sha256": "e0b782f3ed1a82569a4e7d63a7fd13f4398d083fd74ecce635193087ef2c72e4"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/aalami-akbar/_localizations/en/ep-06-one-local-action.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/aalami-akbar/_localizations/fr/ep-06-one-local-action.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/colors-around-us/ep-01-find-yellow.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/colors-around-us/ep-01-find-yellow.md",
+        "sha256": "9de1353af90ba3e661f1771eccf140f86d8376217c721eff9d9dae03074d2b46"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/colors-around-us/_localizations/en/ep-01-find-yellow.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/colors-around-us/_localizations/fr/ep-01-find-yellow.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/colors-around-us/ep-02-sort-two-colors.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/colors-around-us/ep-02-sort-two-colors.md",
+        "sha256": "cb2125686a3ef9cc5a761c85cf61f0a5f0872b4c0c710506ddd020fee25b2787"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/colors-around-us/_localizations/en/ep-02-sort-two-colors.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/colors-around-us/_localizations/fr/ep-02-sort-two-colors.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/colors-around-us/ep-03-circle-and-square.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/colors-around-us/ep-03-circle-and-square.md",
+        "sha256": "f686680818224c49bb11172547816856e428982a904fde97c06c0b184fa3f8ab"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/colors-around-us/_localizations/en/ep-03-circle-and-square.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/colors-around-us/_localizations/fr/ep-03-circle-and-square.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/colors-around-us/ep-04-big-and-small.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/colors-around-us/ep-04-big-and-small.md",
+        "sha256": "bd21ea62c9a48ab4f8b4afa8077eefef053ed8f41198d443a350dd8d9b590ecd"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/colors-around-us/_localizations/en/ep-04-big-and-small.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/colors-around-us/_localizations/fr/ep-04-big-and-small.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/colors-around-us/ep-05-color-pattern.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/colors-around-us/ep-05-color-pattern.md",
+        "sha256": "ae01219bfc8fb0f77c8b000ef2ebaeae3776c56579550eb09ded0db7aad4ffbe"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/colors-around-us/_localizations/en/ep-05-color-pattern.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/colors-around-us/_localizations/fr/ep-05-color-pattern.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/explorers-adventures/ep-01-picture-clues.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/explorers-adventures/ep-01-picture-clues.md",
+        "sha256": "93146088e55ac896dce5402e8d6b5ca38dbf6e7260fb057e8dcba0f9348cf878"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/explorers-adventures/_localizations/en/ep-01-picture-clues.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/explorers-adventures/_localizations/fr/ep-01-picture-clues.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/explorers-adventures/ep-02-teamwork-bridge.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/explorers-adventures/ep-02-teamwork-bridge.md",
+        "sha256": "8267110b972e1771081919d597c50f7ad3165625412eb7ef1daed628b047883c"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/explorers-adventures/_localizations/en/ep-02-teamwork-bridge.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/explorers-adventures/_localizations/fr/ep-02-teamwork-bridge.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/explorers-adventures/ep-03-neighborhood-map.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/explorers-adventures/ep-03-neighborhood-map.md",
+        "sha256": "e0483d7cd00ec1ee4d8c01aa4e3dbb49d32a03e2a6bc7ecdea2312cfb4dbfc8c"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/explorers-adventures/_localizations/en/ep-03-neighborhood-map.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/explorers-adventures/_localizations/fr/ep-03-neighborhood-map.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/explorers-adventures/ep-04-nature-sounds.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/explorers-adventures/ep-04-nature-sounds.md",
+        "sha256": "56b33ed8d2e59dd2a7bce2bdb4fc293bbf961100c68a74d1f27ed2031faac1dc"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/explorers-adventures/_localizations/en/ep-04-nature-sounds.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/explorers-adventures/_localizations/fr/ep-04-nature-sounds.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/explorers-adventures/ep-05-garden-mystery.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/explorers-adventures/ep-05-garden-mystery.md",
+        "sha256": "83be504c5fb97852a29daae4d5f77c89bd93eaab022cc3ecf2d65286805ad73f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/explorers-adventures/_localizations/en/ep-05-garden-mystery.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/explorers-adventures/_localizations/fr/ep-05-garden-mystery.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "08-alam/explorers-adventures/ep-06-water-journey.md",
+      "edition_type": "standard",
+      "review_state": "review_lang",
+      "source": {
+        "rel_path": "08-alam/explorers-adventures/ep-06-water-journey.md",
+        "sha256": "c4c409d566337fda664c0ce53f667315155ab0e7b71a625d4585bba548fbd7f5"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "08-alam/explorers-adventures/_localizations/en/ep-06-water-journey.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "08-alam/explorers-adventures/_localizations/fr/ep-06-water-journey.md",
+          "status": "review_lang",
+          "review_state": "review_lang"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/daily-adhkar-kids/ep-01-leaving-home.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/daily-adhkar-kids/ep-01-leaving-home.md",
+        "sha256": "da45f3d6e037e222a413ffee53ca7535265c72a64492ae0c87d610c38d7452ac"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/en/ep-01-leaving-home.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/fr/ep-01-leaving-home.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/daily-adhkar-kids/ep-02-entering-the-mosque.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/daily-adhkar-kids/ep-02-entering-the-mosque.md",
+        "sha256": "67e800376b38b2ee35b8b4ab8694d659fb1a63b76c87e0abe2e9de3810ab5dfa"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/en/ep-02-entering-the-mosque.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/fr/ep-02-entering-the-mosque.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/daily-adhkar-kids/ep-03-leaving-the-mosque.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/daily-adhkar-kids/ep-03-leaving-the-mosque.md",
+        "sha256": "4f034740d066ac15b7798fad6c8b96f3148dc70237550385e7eb1449acdce13c"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/en/ep-03-leaving-the-mosque.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/fr/ep-03-leaving-the-mosque.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/daily-adhkar-kids/ep-04-sneezing-response.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/daily-adhkar-kids/ep-04-sneezing-response.md",
+        "sha256": "ff4d145333d4a2f619f878892f997a440a48a458cd722c759fd103116ea8653e"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/en/ep-04-sneezing-response.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/fr/ep-04-sneezing-response.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/daily-adhkar-kids/ep-05-morning-remembrance.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/daily-adhkar-kids/ep-05-morning-remembrance.md",
+        "sha256": "5e714c5406a8f7ca5e7280015ab6b6c648465755ad518eeac471e1307b653ae7"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/en/ep-05-morning-remembrance.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/fr/ep-05-morning-remembrance.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/daily-adhkar-kids/ep-06-evening-remembrance.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/daily-adhkar-kids/ep-06-evening-remembrance.md",
+        "sha256": "58309c445b13ad78be5cf87393e39306c4ce7aa5462dd74d205ebf703b8fb751"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/en/ep-06-evening-remembrance.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/fr/ep-06-evening-remembrance.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/daily-adhkar-kids/ep-07-tasbih-after-prayer.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/daily-adhkar-kids/ep-07-tasbih-after-prayer.md",
+        "sha256": "794d6b4275fe184fe993ebbeb6adfb701c2fdda54de4fbbb7d77c98aa9597e99"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/en/ep-07-tasbih-after-prayer.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/fr/ep-07-tasbih-after-prayer.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/daily-adhkar-kids/ep-08-when-i-get-angry.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/daily-adhkar-kids/ep-08-when-i-get-angry.md",
+        "sha256": "c8960790a814bcdaa21df0bf312a429991cbf7524585785a246a902c26377116"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/en/ep-08-when-i-get-angry.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/daily-adhkar-kids/_localizations/fr/ep-08-when-i-get-angry.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/identity-ethics-junior/ep-01-truth-and-repair.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/identity-ethics-junior/ep-01-truth-and-repair.md",
+        "sha256": "512f10f5879afcfcbbfa07eaf0b2713b5defef005d27557ae780bbe49eeffb37"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/identity-ethics-junior/_localizations/en/ep-01-truth-and-repair.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/identity-ethics-junior/_localizations/fr/ep-01-truth-and-repair.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/identity-ethics-junior/ep-02-trust-and-promise.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/identity-ethics-junior/ep-02-trust-and-promise.md",
+        "sha256": "234b13085b49f329ff422b66338724387fb932295f5fcf75a0777e15969071b5"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/identity-ethics-junior/_localizations/en/ep-02-trust-and-promise.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/identity-ethics-junior/_localizations/fr/ep-02-trust-and-promise.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/identity-ethics-junior/ep-03-knowing-not-superiority.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/identity-ethics-junior/ep-03-knowing-not-superiority.md",
+        "sha256": "070fcd7ddb7bc1a310ef431e1a8491700d675c12e970a983529791345b391729"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/identity-ethics-junior/_localizations/en/ep-03-knowing-not-superiority.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/identity-ethics-junior/_localizations/fr/ep-03-knowing-not-superiority.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/identity-ethics-junior/ep-04-verify-and-privacy.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/identity-ethics-junior/ep-04-verify-and-privacy.md",
+        "sha256": "63c383975c606b8a46af303511605c1fc137fccad98b8427592f8561dec99ff2"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/identity-ethics-junior/_localizations/en/ep-04-verify-and-privacy.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/identity-ethics-junior/_localizations/fr/ep-04-verify-and-privacy.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/noor-qalbi/ep-01-praise-and-guidance.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/noor-qalbi/ep-01-praise-and-guidance.md",
+        "sha256": "b4535a4b61249afb7d728007ac6e7503281b436055ee0450dfd2a01e30cff57a"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/noor-qalbi/_localizations/en/ep-01-praise-and-guidance.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/noor-qalbi/_localizations/fr/ep-01-praise-and-guidance.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/noor-qalbi/ep-02-the-one-god.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/noor-qalbi/ep-02-the-one-god.md",
+        "sha256": "28dd8f6170f45ab0fb88c5279339c0b6ebe94ac9e4fae1c2dac1e352e57ca406"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/noor-qalbi/_localizations/en/ep-02-the-one-god.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/noor-qalbi/_localizations/fr/ep-02-the-one-god.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/noor-qalbi/ep-03-seeking-protection-from-harm.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/noor-qalbi/ep-03-seeking-protection-from-harm.md",
+        "sha256": "f245617f2b6d56c9617769daec204d5e644702b9a1de854d3a52a953a4f10942"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/noor-qalbi/_localizations/en/ep-03-seeking-protection-from-harm.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/noor-qalbi/_localizations/fr/ep-03-seeking-protection-from-harm.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/noor-qalbi/ep-04-seeking-refuge-from-whispers.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/noor-qalbi/ep-04-seeking-refuge-from-whispers.md",
+        "sha256": "c7ca752a657944200bb1d5b1a31d88c4cc6b010c48255abd3f6fdf31c81ceb0e"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/noor-qalbi/_localizations/en/ep-04-seeking-refuge-from-whispers.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/noor-qalbi/_localizations/fr/ep-04-seeking-refuge-from-whispers.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prayer-step-by-step/ep-01-know-the-time-and-prepare.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prayer-step-by-step/ep-01-know-the-time-and-prepare.md",
+        "sha256": "eb649d23b74cb41be8e39bb6baeb8c73d56457ddc922b34f8b4f5b8323b68b2e"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prayer-step-by-step/_localizations/en/ep-01-know-the-time-and-prepare.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prayer-step-by-step/_localizations/fr/ep-01-know-the-time-and-prepare.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prayer-step-by-step/ep-02-wudu-without-waste.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prayer-step-by-step/ep-02-wudu-without-waste.md",
+        "sha256": "e8935e6651602d7531119851e824e590abf410071aeb5f462cdd93c03aad943a"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prayer-step-by-step/_localizations/en/ep-02-wudu-without-waste.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prayer-step-by-step/_localizations/fr/ep-02-wudu-without-waste.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prayer-step-by-step/ep-03-standing-bowing-prostrating-with-calm.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prayer-step-by-step/ep-03-standing-bowing-prostrating-with-calm.md",
+        "sha256": "d3216752d7264f09de87bac752f8e16cc00ed03d245e8a02106eda35969dc3bc"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prayer-step-by-step/_localizations/en/ep-03-standing-bowing-prostrating-with-calm.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prayer-step-by-step/_localizations/fr/ep-03-standing-bowing-prostrating-with-calm.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prayer-step-by-step/ep-04-ending-prayer-keeping-calm.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prayer-step-by-step/ep-04-ending-prayer-keeping-calm.md",
+        "sha256": "6a1d29ef6cac878809e605c1cf4aca6b938f07cf996afa87ce320461c54e44ba"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prayer-step-by-step/_localizations/en/ep-04-ending-prayer-keeping-calm.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prayer-step-by-step/_localizations/fr/ep-04-ending-prayer-keeping-calm.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-01-bismillah-before-eating.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-01-bismillah-before-eating.md",
+        "sha256": "0ddc2e8cba93b0e004505f57543b845b818e6722f7b0c37cf309fcdceeaadb4c"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-01-bismillah-before-eating.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-01-bismillah-before-eating.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-02-praise-after-eating.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-02-praise-after-eating.md",
+        "sha256": "3f0e58d1b344903240f6a468a54ccf95802e1b76192619e20c68f57bb417caf0"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-02-praise-after-eating.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-02-praise-after-eating.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-03-before-sleep-remembrance.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-03-before-sleep-remembrance.md",
+        "sha256": "d050898e9b6dfe00b3190cf96420fa206ebe524cb583da4576bde49c05c7a141"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-03-before-sleep-remembrance.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-03-before-sleep-remembrance.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-04-waking-remembrance.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-04-waking-remembrance.md",
+        "sha256": "998ddfbf44fcb74144239bc9b9c5963efc233aa805b52b68976e13c08acca662"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-04-waking-remembrance.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-04-waking-remembrance.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-05-before-entering-restroom.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-05-before-entering-restroom.md",
+        "sha256": "ebc0ee4d5c1d8f788e61956c823256363fbfb0592e192b4f505ab3c7cd2fd85a"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-05-before-entering-restroom.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-05-before-entering-restroom.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-06-after-leaving-restroom.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-06-after-leaving-restroom.md",
+        "sha256": "f5eef351b62c90df4401b6a6cb3dd22c70b3cfe6a440932ebab0303fb5c0b51a"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-06-after-leaving-restroom.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-06-after-leaving-restroom.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-07-greeting-with-salam.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-07-greeting-with-salam.md",
+        "sha256": "c9db362132f9e06fd30309094da9fcefa79222b85e4b13c1b0a0b06331a0bbd7"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-07-greeting-with-salam.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-07-greeting-with-salam.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-08-gentle-voice-with-parents.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-08-gentle-voice-with-parents.md",
+        "sha256": "1f91fc201983789b2294b60d439eda8134a69f76a99901c5aba011b2341e90f8"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-08-gentle-voice-with-parents.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-08-gentle-voice-with-parents.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-09-asking-permission.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-09-asking-permission.md",
+        "sha256": "6037ebae4e46fdb1c48fccddc37e72ebdb3705bcffcbed2bc04f76b45d1f3cd3"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-09-asking-permission.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-09-asking-permission.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-10-cleanliness-is-beautiful.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-10-cleanliness-is-beautiful.md",
+        "sha256": "30d8b476f02f352f4f863c69e88f01b789735c0b40d03ec1645cfcd6c3ac0b23"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-10-cleanliness-is-beautiful.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-10-cleanliness-is-beautiful.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-11-calm-wudu-preparation.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-11-calm-wudu-preparation.md",
+        "sha256": "9d32b3cedc1e2b01f2422670443cf7e3423ec1973b9e19afd08f3a8ccde92c80"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-11-calm-wudu-preparation.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-11-calm-wudu-preparation.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/preschool-adhkar-manners-prayer/ep-12-standing-ready-for-prayer.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/preschool-adhkar-manners-prayer/ep-12-standing-ready-for-prayer.md",
+        "sha256": "23025bcb9e02ddd8bfef86a826d080933a78351264ee511191681097d25162f7"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/en/ep-12-standing-ready-for-prayer.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/preschool-adhkar-manners-prayer/_localizations/fr/ep-12-standing-ready-for-prayer.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prophetic-guidance-kids/ep-01-gentleness-beautifies.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prophetic-guidance-kids/ep-01-gentleness-beautifies.md",
+        "sha256": "bd8367e0dafcf2cea8b1410faad580f193e6ecbcc2f8c5709daa0d559ad0c820"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prophetic-guidance-kids/_localizations/en/ep-01-gentleness-beautifies.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prophetic-guidance-kids/_localizations/fr/ep-01-gentleness-beautifies.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prophetic-guidance-kids/ep-02-truthfulness-leads-to-good.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prophetic-guidance-kids/ep-02-truthfulness-leads-to-good.md",
+        "sha256": "86b6e38b722e6c497cd4b8860a5ded2f901de71f1752f8e73d4766a7889e61b7"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prophetic-guidance-kids/_localizations/en/ep-02-truthfulness-leads-to-good.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prophetic-guidance-kids/_localizations/fr/ep-02-truthfulness-leads-to-good.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prophetic-guidance-kids/ep-03-mercy-at-home.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prophetic-guidance-kids/ep-03-mercy-at-home.md",
+        "sha256": "ce0dd6449cde12213f6e0411659cc7220436b0eb6ea74356f6e0f90b2eb90bcf"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prophetic-guidance-kids/_localizations/en/ep-03-mercy-at-home.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prophetic-guidance-kids/_localizations/fr/ep-03-mercy-at-home.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prophetic-guidance-kids/ep-04-good-word-is-charity.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prophetic-guidance-kids/ep-04-good-word-is-charity.md",
+        "sha256": "6f8c4eba49fcff0198ffa2af5d11fc96534b1adf3573e11f4d930b9acb8d83b0"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prophetic-guidance-kids/_localizations/en/ep-04-good-word-is-charity.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prophetic-guidance-kids/_localizations/fr/ep-04-good-word-is-charity.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prophets-stories-kids/ep-01-nuh-patience-in-calling.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prophets-stories-kids/ep-01-nuh-patience-in-calling.md",
+        "sha256": "5455bad033f97f44314b1c6fd21ebf7c1918a5bfafad47149275d76a2a58e707"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prophets-stories-kids/_localizations/en/ep-01-nuh-patience-in-calling.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prophets-stories-kids/_localizations/fr/ep-01-nuh-patience-in-calling.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prophets-stories-kids/ep-02-ibrahim-honest-question-courage.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prophets-stories-kids/ep-02-ibrahim-honest-question-courage.md",
+        "sha256": "6c56566f2bd59c3d86a13d189ae591c3f0de4834f2f84ba965754e769c4cb2f4"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prophets-stories-kids/_localizations/en/ep-02-ibrahim-honest-question-courage.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prophets-stories-kids/_localizations/fr/ep-02-ibrahim-honest-question-courage.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prophets-stories-kids/ep-03-musa-help-without-expecting.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prophets-stories-kids/ep-03-musa-help-without-expecting.md",
+        "sha256": "df9e4078e08aadf83ce7bf35e0e09a82de973d312f21e569a96a0a40508006f9"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prophets-stories-kids/_localizations/en/ep-03-musa-help-without-expecting.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prophets-stories-kids/_localizations/fr/ep-03-musa-help-without-expecting.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/prophets-stories-kids/ep-04-yunus-return-and-hope.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/prophets-stories-kids/ep-04-yunus-return-and-hope.md",
+        "sha256": "c1c67403cb5037aa462afe060410823f4309f2e1071a107f5bf043db7a0c546d"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/prophets-stories-kids/_localizations/en/ep-04-yunus-return-and-hope.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/prophets-stories-kids/_localizations/fr/ep-04-yunus-return-and-hope.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-treasures/ep-01-time-is-a-treasure.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-treasures/ep-01-time-is-a-treasure.md",
+        "sha256": "7c300c491587fa5bbd6e83e341e245c7d773a0bce17847da2755c1fdf5e3e48d"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-treasures/_localizations/en/ep-01-time-is-a-treasure.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-treasures/_localizations/fr/ep-01-time-is-a-treasure.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-treasures/ep-02-small-help-matters.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-treasures/ep-02-small-help-matters.md",
+        "sha256": "cca432e3c6fecebd48a332ac5583e6333c34153b94fccd09941482a39ad6d6e3"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-treasures/_localizations/en/ep-02-small-help-matters.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-treasures/_localizations/fr/ep-02-small-help-matters.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-treasures/ep-03-thankful-for-blessings.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-treasures/ep-03-thankful-for-blessings.md",
+        "sha256": "56782aeee1059ea67e35e26d6e1df2512c298aec8af57b64571b969db23f542d"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-treasures/_localizations/en/ep-03-thankful-for-blessings.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-treasures/_localizations/fr/ep-03-thankful-for-blessings.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-treasures/ep-04-power-does-not-justify-wrong.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-treasures/ep-04-power-does-not-justify-wrong.md",
+        "sha256": "055ce929b52a8c396d6716128b2e6c2b87eab2c95140d86d245d37539776d7c9"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-treasures/_localizations/en/ep-04-power-does-not-justify-wrong.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-treasures/_localizations/fr/ep-04-power-does-not-justify-wrong.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-treasures/ep-05-safety-and-food-gratitude.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-treasures/ep-05-safety-and-food-gratitude.md",
+        "sha256": "6c61f2c6a47a2fd1e99ebaeb463ca71a6a5c737568a5afe2f71f49fa24e44bba"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-treasures/_localizations/en/ep-05-safety-and-food-gratitude.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-treasures/_localizations/fr/ep-05-safety-and-food-gratitude.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-treasures/ep-06-small-good-never-lost.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-treasures/ep-06-small-good-never-lost.md",
+        "sha256": "00652f7ee0127da4db865f5e305d41c69a1d6e3014c93a2d11acf12c204c6161"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-treasures/_localizations/en/ep-06-small-good-never-lost.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-treasures/_localizations/fr/ep-06-small-good-never-lost.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-understanding-junior/ep-01-righteousness-full-picture.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-understanding-junior/ep-01-righteousness-full-picture.md",
+        "sha256": "3d1f7a8a76a029d2e0e03482ad379a64ab8fd8be3841ff3a7cf93b8c7ef889f8"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/en/ep-01-righteousness-full-picture.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/fr/ep-01-righteousness-full-picture.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-understanding-junior/ep-02-luqman-wisdom-for-life.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-understanding-junior/ep-02-luqman-wisdom-for-life.md",
+        "sha256": "50573cea900a17a9cf6072b87275b88581e72cb921f2bd05849add3abc6af0e0"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/en/ep-02-luqman-wisdom-for-life.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/fr/ep-02-luqman-wisdom-for-life.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-understanding-junior/ep-03-human-dignity-and-knowing-each-other.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-understanding-junior/ep-03-human-dignity-and-knowing-each-other.md",
+        "sha256": "67e1063505fee1bdbf4bf807f4576bdff84697eb0e1bd875a0f10c45ce5d587c"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/en/ep-03-human-dignity-and-knowing-each-other.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/fr/ep-03-human-dignity-and-knowing-each-other.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-understanding-junior/ep-04-daily-ethics-map-al-isra.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-understanding-junior/ep-04-daily-ethics-map-al-isra.md",
+        "sha256": "17746929332caeba43f6c507c15fcb33b0907f264bf9a984f225c73ceb77d47e"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/en/ep-04-daily-ethics-map-al-isra.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/fr/ep-04-daily-ethics-map-al-isra.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-understanding-junior/ep-05-privacy-and-asking-permission.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-understanding-junior/ep-05-privacy-and-asking-permission.md",
+        "sha256": "f6b0853789da9aaca9220283fedb2b45876b02f0f3d299d95831aa71b959b79f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/en/ep-05-privacy-and-asking-permission.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/fr/ep-05-privacy-and-asking-permission.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/quran-understanding-junior/ep-06-learning-and-gratitude-ar-rahman.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/quran-understanding-junior/ep-06-learning-and-gratitude-ar-rahman.md",
+        "sha256": "b0e78697da46e302bda1d635b7bdd4fe8554974baed15d878dfe39c0e789ea9b"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/en/ep-06-learning-and-gratitude-ar-rahman.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/quran-understanding-junior/_localizations/fr/ep-06-learning-and-gratitude-ar-rahman.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/seasons-of-goodness/ep-01-ramadan-month-of-quran-and-fasting.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/seasons-of-goodness/ep-01-ramadan-month-of-quran-and-fasting.md",
+        "sha256": "0c442af5dc4792ed0a09e805bb3a5cfa4a90eb6570f594df0fafce5f4b7f99da"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/seasons-of-goodness/_localizations/en/ep-01-ramadan-month-of-quran-and-fasting.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/seasons-of-goodness/_localizations/fr/ep-01-ramadan-month-of-quran-and-fasting.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/seasons-of-goodness/ep-02-laylat-al-qadr-worship-without-claim.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/seasons-of-goodness/ep-02-laylat-al-qadr-worship-without-claim.md",
+        "sha256": "fe8ea72b0a5d2088f6d8221c772fa0a8f9f069d0362d8cc61ef026557735fbc3"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/seasons-of-goodness/_localizations/en/ep-02-laylat-al-qadr-worship-without-claim.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/seasons-of-goodness/_localizations/fr/ep-02-laylat-al-qadr-worship-without-claim.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/seasons-of-goodness/ep-03-eid-al-fitr-gratitude-joy-and-mercy.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/seasons-of-goodness/ep-03-eid-al-fitr-gratitude-joy-and-mercy.md",
+        "sha256": "992f258237e1a653f06e075ad330dda2732428547498c8b1c5957cf16f830ee4"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/seasons-of-goodness/_localizations/en/ep-03-eid-al-fitr-gratitude-joy-and-mercy.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/seasons-of-goodness/_localizations/fr/ep-03-eid-al-fitr-gratitude-joy-and-mercy.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/seasons-of-goodness/ep-04-eid-al-adha-piety-and-giving.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/seasons-of-goodness/ep-04-eid-al-adha-piety-and-giving.md",
+        "sha256": "f167066d29892f9570bac917e977257beca2681d262af1f9166128cabcc09da6"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/seasons-of-goodness/_localizations/en/ep-04-eid-al-adha-piety-and-giving.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/seasons-of-goodness/_localizations/fr/ep-04-eid-al-adha-piety-and-giving.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/seerah-journey-junior/ep-01-beginning-of-revelation.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/seerah-journey-junior/ep-01-beginning-of-revelation.md",
+        "sha256": "804a6a6a44b604033807cc48b57d651f723b2f2b926f295d94b0baf1a7fd297f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/seerah-journey-junior/_localizations/en/ep-01-beginning-of-revelation.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/seerah-journey-junior/_localizations/fr/ep-01-beginning-of-revelation.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/seerah-journey-junior/ep-02-dawah-in-makkah.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/seerah-journey-junior/ep-02-dawah-in-makkah.md",
+        "sha256": "1ffaff556986ed3b88ac217e608133231e4dd86df07bdace7e69cb8669ae8732"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/seerah-journey-junior/_localizations/en/ep-02-dawah-in-makkah.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/seerah-journey-junior/_localizations/fr/ep-02-dawah-in-makkah.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/seerah-journey-junior/ep-03-hijrah-planning-and-trust.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/seerah-journey-junior/ep-03-hijrah-planning-and-trust.md",
+        "sha256": "5350e56726146b23f1acf08c400f3581667eacd0adc4874f0788fe065c4d322c"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/seerah-journey-junior/_localizations/en/ep-03-hijrah-planning-and-trust.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/seerah-journey-junior/_localizations/fr/ep-03-hijrah-planning-and-trust.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/seerah-journey-junior/ep-04-madinah-brotherhood.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/seerah-journey-junior/ep-04-madinah-brotherhood.md",
+        "sha256": "ea9025e3349e31ca1f85486e5011593b8a8789f0b8b0cd85ad825934f076b2b5"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/seerah-journey-junior/_localizations/en/ep-04-madinah-brotherhood.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/seerah-journey-junior/_localizations/fr/ep-04-madinah-brotherhood.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/seerah-journey-junior/ep-05-hudaybiyyah-treaty.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/seerah-journey-junior/ep-05-hudaybiyyah-treaty.md",
+        "sha256": "22a04db0d580af6d7893fe97659fe5ed21a9b758cba2b7d37e112399efc9894f"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/seerah-journey-junior/_localizations/en/ep-05-hudaybiyyah-treaty.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/seerah-journey-junior/_localizations/fr/ep-05-hudaybiyyah-treaty.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/worship-with-knowledge/ep-01-purity-without-waste.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/worship-with-knowledge/ep-01-purity-without-waste.md",
+        "sha256": "dba1433f2419d168b66215a5ba6e53bc62b47d5f5d7b597d3c127135d90091b2"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/worship-with-knowledge/_localizations/en/ep-01-purity-without-waste.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/worship-with-knowledge/_localizations/fr/ep-01-purity-without-waste.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/worship-with-knowledge/ep-02-prayer-appointment-with-god.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/worship-with-knowledge/ep-02-prayer-appointment-with-god.md",
+        "sha256": "e9383eb93b25aefe042f9ce6ddba2b5332d49105360cb060b88c657e5bcfc7b2"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/worship-with-knowledge/_localizations/en/ep-02-prayer-appointment-with-god.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/worship-with-knowledge/_localizations/fr/ep-02-prayer-appointment-with-god.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/worship-with-knowledge/ep-03-zakah-a-right-and-a-system.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/worship-with-knowledge/ep-03-zakah-a-right-and-a-system.md",
+        "sha256": "d02c4b61cb29dc6aa3559ca11d09bcc7cd0e3ec0f26b6e848a1b1617a3f48482"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/worship-with-knowledge/_localizations/en/ep-03-zakah-a-right-and-a-system.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/worship-with-knowledge/_localizations/fr/ep-03-zakah-a-right-and-a-system.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/worship-with-knowledge/ep-04-fasting-training-in-mindfulness.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/worship-with-knowledge/ep-04-fasting-training-in-mindfulness.md",
+        "sha256": "a66e2f7e71982801291294e0a00442c90beedc31a03c5ee2b3915d73e8908614"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/worship-with-knowledge/_localizations/en/ep-04-fasting-training-in-mindfulness.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/worship-with-knowledge/_localizations/fr/ep-04-fasting-training-in-mindfulness.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    },
+    {
+      "id": "09-islamic/worship-with-knowledge/ep-05-hajj-intention-and-rites.md",
+      "edition_type": "islamic",
+      "review_state": "review_sharia",
+      "source": {
+        "rel_path": "09-islamic/worship-with-knowledge/ep-05-hajj-intention-and-rites.md",
+        "sha256": "78342305e387ce0438d74dd8a2fc872812d40cdacfdc8a081a672c6303cbd08d"
+      },
+      "localizations": {
+        "en": {
+          "locale": "en",
+          "rel_path": "09-islamic/worship-with-knowledge/_localizations/en/ep-05-hajj-intention-and-rites.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        },
+        "fr": {
+          "locale": "fr",
+          "rel_path": "09-islamic/worship-with-knowledge/_localizations/fr/ep-05-hajj-intention-and-rites.md",
+          "status": "review_sharia",
+          "review_state": "review_sharia"
+        }
+      }
+    }
+  ]
+}

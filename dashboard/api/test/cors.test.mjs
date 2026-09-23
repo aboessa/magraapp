@@ -97,6 +97,25 @@ test('production, api and dashboard origins are allowed', async () => {
   }
 });
 
+test('the Flutter Pages production host and its deployment previews are allowed', async () => {
+  for (const origin of ['https://majarra-app.pages.dev', 'https://e7b4eeb3.majarra-app.pages.dev']) {
+    const res = await preflight(origin, '/api/v1/app-config');
+    assert.equal(res.status, 204, `${origin} preflight failed`);
+    assert.equal(res.headers.get('Access-Control-Allow-Origin'), origin);
+  }
+});
+
+test('unrelated and lookalike Pages hosts are refused', () => {
+  for (const origin of [
+    'https://majarra-dashboard.pages.dev',
+    'https://evil.pages.dev',
+    'https://majarra-app.pages.dev.evil.com',
+    'https://evil.majarra-app.pages.dev.evil.com',
+  ]) {
+    assert.equal(resolveAllowedOrigin(origin, {}), null, `${origin} must be refused`);
+  }
+});
+
 test('an unrelated origin receives no allow-origin header', async () => {
   const res = await preflight('https://evil.com', '/api/v1/series');
   assert.equal(res.headers.get('Access-Control-Allow-Origin'), null);

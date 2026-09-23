@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/env/app_environment.dart';
+import '../../../core/images/heavy_assets.dart';
 import '../../../core/network/secure_http_client.dart';
 import '../presentation/pages/coloring/coloring_home_v2.dart';
 
@@ -75,7 +76,11 @@ class RemoteDrawing {
     return bestImageUrl;
   }
 
-  // فولباك 5 صور فقط كما طلب العميل
+  // فولباك 5 صور فقط كما طلب العميل — روابط CDN (كانت PNG مبندلة).
+  //
+  // `assetPath` في `FeaturedColoringSpec`/`ColoringCategorySpec` هو آخر سقوط
+  // قبل الأيقونة، و`DrawingAsset` يمرّر أيّ `http` عبر `RemoteImageCache`.
+  // فالبديل نفسه يُقرأ من القرص بعد أوّل تحميل — لا مبندل، لا إعادة تنزيل.
   static const _kFallback5 = [
     'assets/images/coloring/v2/bird.png',
     'assets/images/coloring/v2/cat.png',
@@ -84,16 +89,27 @@ class RemoteDrawing {
     'assets/images/coloring/v2/flowers.png',
   ];
 
-  String _fallbackPngPathForId() {
+  /// رابط CDN للبديل، أو المسار المبندل حين لا توأم (لا يحدث للخمسة).
+  String _fallbackCdnForId() {
     final lower = id.toLowerCase();
-    if (lower.contains('bird')) return 'assets/images/coloring/v2/bird.png';
-    if (lower.contains('cat')) return 'assets/images/coloring/v2/cat.png';
-    if (lower.contains('fish')) return 'assets/images/coloring/v2/fish.png';
-    if (lower.contains('vehicle') || lower.contains('car')) return 'assets/images/coloring/v2/vehicles.png';
-    if (lower.contains('flower')) return 'assets/images/coloring/v2/flowers.png';
-    final idx = id.hashCode.abs() % _kFallback5.length;
-    return _kFallback5[idx];
+    String bundled;
+    if (lower.contains('bird')) {
+      bundled = 'assets/images/coloring/v2/bird.png';
+    } else if (lower.contains('cat')) {
+      bundled = 'assets/images/coloring/v2/cat.png';
+    } else if (lower.contains('fish')) {
+      bundled = 'assets/images/coloring/v2/fish.png';
+    } else if (lower.contains('vehicle') || lower.contains('car')) {
+      bundled = 'assets/images/coloring/v2/vehicles.png';
+    } else if (lower.contains('flower')) {
+      bundled = 'assets/images/coloring/v2/flowers.png';
+    } else {
+      bundled = _kFallback5[id.hashCode.abs() % _kFallback5.length];
+    }
+    return heavyCdnUrl(bundled) ?? bundled;
   }
+
+  String _fallbackPngPathForId() => _fallbackCdnForId();
 
   FeaturedColoringSpec toFeaturedV2() => FeaturedColoringSpec(
         id: id,

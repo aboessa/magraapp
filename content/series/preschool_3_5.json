@@ -1,0 +1,114 @@
+[
+  {
+    "ep_id": "episode-preschool-words-01-picture-to-object",
+    "planet": "abjad",
+    "series_title": "لونا تكتشف الكلمات",
+    "episode_title": "الصورة والشيء",
+    "age": "3-5",
+    "segments": [
+      {"index":1,"duration_sec":8,"narration":"أهلاً يا أصدقائي الصغار! أنا لونا، واليوم سنلعب معاً لعبة الصور الجميلة والممتعة.","word_count":13,"visual_prompt":"Luna the little space girl waving cheerfully in a bright playroom with big colorful picture cards floating around her, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":2,"duration_sec":8,"narration":"انظروا! هذه صورة تفاحة حمراء لذيذة، وهنا تفاحة حقيقية على الطاولة أمامنا.","word_count":12,"visual_prompt":"A picture card of a red apple next to a real red apple on a wooden table, soft bright colors, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":3,"duration_sec":10,"narration":"نضع الصورة بجانب الشيء الذي يشبهها تماماً، فالصورة تحكي لنا عن شيء نعرفه في بيتنا.","word_count":16,"visual_prompt":"Luna gently placing a picture card beside the matching real object, a soft glowing line connecting them, warm playroom, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":4,"duration_sec":8,"narration":"هيا نطابق صورة الكرة مع الكرة، وصورة القطة مع القطة الصغيرة الظريفة.","word_count":12,"visual_prompt":"Two matching pairs shown: a ball picture with a real ball, a cat picture with a cute kitten, playful arrangement, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":5,"duration_sec":6,"narration":"أحسنتم يا أبطال! إلى اللقاء في لعبة جديدة وممتعة.","word_count":8,"visual_prompt":"Luna clapping and waving happily with sparkles and matched picture pairs behind her, joyful ending, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."}
+    ]
+  },
+  {
+    "ep_id": "episode-preschool-words-02-listen-and-find",
+    "planet": "abjad",
+    "series_title": "لونا تكتشف الكلمات",
+    "episode_title": "استمع وابحث",
+    "age": "3-5",
+    "segments": [
+      {"index":1,"duration_sec":8,"narration":"مرحباً يا أحبائي! أنا لونا، واليوم سنستمع جيداً بآذاننا ثم نبحث معاً.","word_count":12,"visual_prompt":"Luna smiling and pointing to her ear in a cozy bright room with colorful objects around, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":2,"duration_sec":8,"narration":"أنصتوا معي إلى الكلمة، ثم ننظر حولنا لنجد الشيء الذي سمعنا اسمه.","word_count":12,"visual_prompt":"Luna cupping her ear with sound wave sparkles, several colorful objects on a shelf waiting to be found, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":3,"duration_sec":10,"narration":"سمعنا كلمة موزة، فلنبحث بأعيننا الصغيرة عن الموزة الصفراء بين كل هذه الأشياء الجميلة.","word_count":15,"visual_prompt":"A yellow banana glowing softly among other objects as Luna searches with wide curious eyes, warm colors, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":4,"duration_sec":8,"narration":"وجدناها! الموزة الصفراء هنا. أحسنتم، آذانكم وعيونكم تعمل معاً بشكل رائع.","word_count":11,"visual_prompt":"Luna joyfully holding up the found yellow banana, celebration sparkles around her, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":5,"duration_sec":6,"narration":"لعبنا وتعلمنا! إلى اللقاء يا أصدقائي الأذكياء.","word_count":7,"visual_prompt":"Luna waving goodbye with the banana and a happy sun in a bright window behind her, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."}
+    ]
+  },
+  {
+    "ep_id": "episode-preschool-count-01-one-for-each",
+    "planet": "arqam",
+    "series_title": "عدّ معي",
+    "episode_title": "واحد لكل واحد",
+    "age": "3-5",
+    "segments": [
+      {"index":1,"duration_sec":8,"narration":"أهلاً يا أصدقائي! أنا لونا، واليوم سنتعلم أن لكل شيء مكاناً واحداً.","word_count":11,"visual_prompt":"Luna waving beside a small table set with plates and cups, cheerful kitchen scene, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":2,"duration_sec":8,"narration":"عندنا ثلاثة أطباق صغيرة، ونريد أن نضع تفاحة واحدة فوق كل طبق منها.","word_count":12,"visual_prompt":"Three small plates in a row and three apples nearby, bright and simple, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":3,"duration_sec":10,"narration":"تفاحة لهذا الطبق، وتفاحة لهذا الطبق، وتفاحة لهذا الطبق، فصار لكل طبق تفاحة واحدة.","word_count":15,"visual_prompt":"One apple gently placed on each of the three plates, a soft glow linking each pair, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":4,"duration_sec":8,"narration":"انظروا، لا يوجد طبق فارغ، ولا تفاحة زائدة. كل واحد له مكانه تماماً.","word_count":12,"visual_prompt":"All three plates each holding exactly one apple, balanced and neat, Luna smiling proudly, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":5,"duration_sec":6,"narration":"أحسنتم يا أبطال العدّ! إلى اللقاء قريباً.","word_count":6,"visual_prompt":"Luna clapping happily beside the neatly matched plates and apples, sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."}
+    ]
+  },
+  {
+    "ep_id": "episode-preschool-count-02-three-friends",
+    "planet": "arqam",
+    "series_title": "عدّ معي",
+    "episode_title": "ثلاثة أصدقاء",
+    "age": "3-5",
+    "segments": [
+      {"index":1,"duration_sec":8,"narration":"مرحباً يا أصدقائي! أنا لونا، واليوم سنعدّ معاً ثلاثة أصدقاء لطفاء.","word_count":11,"visual_prompt":"Luna waving with three cute cartoon animal friends standing beside her in a sunny park, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":2,"duration_sec":8,"narration":"هيا نعدّ ببطء: أرنب واحد، ثم قطة اثنان، ثم بطة ثلاثة.","word_count":11,"visual_prompt":"A rabbit, a cat, and a duck appearing one after another, each glowing softly as it is counted, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":3,"duration_sec":10,"narration":"نلمس كل صديق مرة واحدة ونقول رقمه بصوت واضح، فيصبح عندنا ثلاثة أصدقاء بالضبط.","word_count":14,"visual_prompt":"Luna gently tapping each of the three animal friends in turn, a friendly number sparkle popping over each, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":4,"duration_sec":8,"narration":"ثلاثة أصدقاء يلعبون معاً بسعادة، ويحبون بعضهم كثيراً كثيراً في الحديقة.","word_count":11,"visual_prompt":"The three animal friends holding hands and playing joyfully together in the sunny park, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":5,"duration_sec":6,"narration":"عددنا حتى ثلاثة! إلى اللقاء يا أصدقائي.","word_count":6,"visual_prompt":"Luna waving with the three happy friends, sparkles and a warm sun, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."}
+    ]
+  },
+  {
+    "ep_id": "episode-preschool-calm-01-bird-home",
+    "planet": "qisas",
+    "series_title": "حكاية هادئة",
+    "episode_title": "بيت الطائر",
+    "age": "3-5",
+    "segments": [
+      {"index":1,"duration_sec":8,"narration":"أهلاً يا أحبائي! أنا لونا، واليوم أحكي لكم حكاية هادئة عن عصفور صغير.","word_count":12,"visual_prompt":"Luna sitting calmly under a big tree at soft golden sunset, a tiny bird nearby, gentle warm colors, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":2,"duration_sec":8,"narration":"طار العصفور الصغير بعيداً في السماء، ولعب طوال النهار بين الغيوم الناعمة.","word_count":12,"visual_prompt":"A small bird flying gently among soft fluffy clouds in a calm evening sky, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":3,"duration_sec":10,"narration":"وعندما جاء المساء الهادئ، اشتاق العصفور إلى بيته الدافئ فوق الشجرة الكبيرة العالية.","word_count":13,"visual_prompt":"The little bird looking toward a cozy nest high in a big tree as the sky turns soft purple, calm mood, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":4,"duration_sec":8,"narration":"عاد العصفور إلى عشه الصغير، واحتضنته أمه بحنان تحت ضوء القمر الهادئ.","word_count":12,"visual_prompt":"The bird settling into a warm nest beside its mother under a gentle glowing moon, peaceful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":5,"duration_sec":6,"narration":"نام العصفور بسلام. تصبحون على خير يا أحبائي.","word_count":7,"visual_prompt":"The little bird sleeping peacefully in the nest, soft stars twinkling, calm night, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."}
+    ]
+  },
+  {
+    "ep_id": "episode-preschool-calm-02-goodnight-toys",
+    "planet": "qisas",
+    "series_title": "حكاية هادئة",
+    "episode_title": "تصبح على خير يا ألعابي",
+    "age": "3-5",
+    "segments": [
+      {"index":1,"duration_sec":8,"narration":"مرحباً يا أحبائي! أنا لونا، وحان وقت النوم الهادئ الجميل بعد يوم طويل.","word_count":12,"visual_prompt":"Luna in soft pajamas in a cozy bedroom at night with toys scattered on the floor, warm lamp glow, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":2,"duration_sec":8,"narration":"قبل النوم نرتب ألعابنا بهدوء، فنضع كل لعبة في مكانها المريح.","word_count":11,"visual_prompt":"Luna gently placing toys into a soft basket and on a shelf, calm tidy room, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":3,"duration_sec":10,"narration":"نقول للدمية تصبحين على خير، وللسيارة الصغيرة تصبح على خير، ولكل لعبة نتمنى نوماً هادئاً.","word_count":15,"visual_prompt":"Luna softly waving goodnight to a doll and a little toy car tucked in their places, dim cozy light, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":4,"duration_sec":8,"narration":"نطفئ النور بلطف، ونتمدد في السرير الدافئ، ونغمض أعيننا الصغيرة بهدوء.","word_count":11,"visual_prompt":"Luna lying in a warm bed pulling up a soft blanket, a small dim night lamp, peaceful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":5,"duration_sec":6,"narration":"تصبحون على خير يا أحبائي. أحلاماً سعيدة.","word_count":6,"visual_prompt":"Luna sleeping peacefully with a gentle smile, soft moon and stars through the window, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."}
+    ]
+  },
+  {
+    "ep_id": "episode-preschool-colors-01-find-yellow",
+    "planet": "alam",
+    "series_title": "ألوان حولنا",
+    "episode_title": "ابحث عن الأصفر",
+    "age": "3-5",
+    "segments": [
+      {"index":1,"duration_sec":8,"narration":"أهلاً يا أصدقائي! أنا لونا، واليوم سنبحث معاً عن اللون الأصفر المشرق.","word_count":11,"visual_prompt":"Luna waving in a bright cheerful room full of colorful objects, a big sunny window, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":2,"duration_sec":8,"narration":"اللون الأصفر مثل الشمس الدافئة، ومثل الموزة اللذيذة، ومثل الزهرة الجميلة.","word_count":11,"visual_prompt":"A warm sun, a banana, and a yellow flower glowing softly side by side, cheerful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":3,"duration_sec":10,"narration":"لننظر حولنا بأعيننا الصغيرة، ونبحث عن كل شيء أصفر جميل في هذه الغرفة الملونة.","word_count":14,"visual_prompt":"Luna looking around the colorful room with curious eyes, several yellow items softly highlighted among others, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":4,"duration_sec":8,"narration":"وجدنا البطة الصفراء والكرة الصفراء! أحسنتم، عيونكم تعرف اللون الأصفر جيداً.","word_count":11,"visual_prompt":"Luna joyfully gathering a yellow rubber duck and a yellow ball, celebration sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":5,"duration_sec":6,"narration":"عرفنا الأصفر! إلى اللقاء مع لون جديد.","word_count":6,"visual_prompt":"Luna waving happily holding the yellow objects, a bright sun behind her, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."}
+    ]
+  },
+  {
+    "ep_id": "episode-preschool-colors-02-sort-two-colors",
+    "planet": "alam",
+    "series_title": "ألوان حولنا",
+    "episode_title": "صنّف لونين",
+    "age": "3-5",
+    "segments": [
+      {"index":1,"duration_sec":8,"narration":"مرحباً يا أحبائي! أنا لونا، واليوم سنرتب الأشياء حسب لونها الجميل.","word_count":11,"visual_prompt":"Luna waving beside two empty baskets, one red and one blue, with mixed colorful balls nearby, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":2,"duration_sec":8,"narration":"عندنا سلة حمراء وسلة زرقاء، وأمامنا كرات كثيرة حمراء وزرقاء مختلطة.","word_count":11,"visual_prompt":"A pile of mixed red and blue balls in front of a red basket and a blue basket, bright and clear, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":3,"duration_sec":10,"narration":"نضع كل كرة حمراء في السلة الحمراء، وكل كرة زرقاء في السلة الزرقاء بهدوء.","word_count":14,"visual_prompt":"Luna sorting red balls into the red basket and blue balls into the blue basket, tidy and satisfying, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":4,"duration_sec":8,"narration":"انظروا، كل لون صار مع أصدقائه من نفس اللون. رتبنا كل شيء بنجاح.","word_count":12,"visual_prompt":"Two neat baskets, one full of red balls and one full of blue balls, Luna smiling proudly, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."},
+      {"index":5,"duration_sec":6,"narration":"صنّفنا الألوان! إلى اللقاء يا أبطال.","word_count":5,"visual_prompt":"Luna waving happily between the two sorted color baskets, sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."}
+    ]
+  }
+]

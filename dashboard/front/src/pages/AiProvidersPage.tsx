@@ -574,24 +574,205 @@ export function AiProvidersPage() {
     )
   }
 
+  const wiredTasksCount = registry?.tasks.filter((t) => t.is_wired).length ?? 0
+  const unroutedTasksCount = registry?.tasks.filter((t) => !t.resolved_model_id).length ?? 0
+  const totalCalls = usage?.by_task.reduce((acc, r) => acc + r.calls, 0) ?? 0
+  const totalSpendMicros = usage?.by_task.reduce((acc, r) => acc + r.spend_micros, 0) ?? 0
+
   return (
-    <div className="page-stack ai-page">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.intro}</p>
+    <div className="content-studio-root ai-page">
+      {/* 1. Commercial Command Strip */}
+      <section className="commercial-command-strip">
+        <div className="commercial-command-strip__left">
+          <div className="status-beacon">
+            <span className="status-beacon__dot status-beacon__dot--emerald" />
+            <div className="status-beacon__meta">
+              <span className="status-beacon__title">
+                {locale === 'ar' ? 'بوابة الذكاء الاصطناعي والتوجيه نشطة' : 'AI Gateway & Routing Live'}
+              </span>
+              <span className="status-beacon__sub">
+                {locale === 'ar' ? 'تحكّم في المزوّدين وتوجيه المهام وحدود الصرف' : 'Multi-provider routing & daily caps active'}
+              </span>
+            </div>
+          </div>
+
+          <div className="filter-pill-group" role="group" aria-label={text.title}>
+            {PANELS.map((key) => (
+              <button
+                key={key}
+                type="button"
+                className={`filter-pill ${panel === key ? 'filter-pill--active' : ''}`}
+                onClick={() => setPanel(key)}
+              >
+                <span>{text.panels[key]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="commercial-command-strip__right">
+          {panel === 'providers' && (
+            <button className="button button--primary button--small" type="button" onClick={openProviderCreate} disabled={!canManage || busy}>
+              <Icon name="plus" size={14} />
+              <span>{text.addProvider}</span>
+            </button>
+          )}
+          {panel === 'models' && (
+            <button
+              className="button button--primary button--small"
+              type="button"
+              onClick={openModelCreate}
+              disabled={!canManage || busy || (registry?.providers.length ?? 0) === 0}
+            >
+              <Icon name="plus" size={14} />
+              <span>{text.addModel}</span>
+            </button>
+          )}
+          <button className="button button--ghost button--small" type="button" onClick={() => void load()} disabled={busy}>
+            <Icon name="refresh" size={14} />
+            <span>{locale === 'ar' ? 'تحديث' : 'Refresh'}</span>
+          </button>
         </div>
       </section>
 
-      {/* حقيقة معمارية تُقال قبل أن يُبحث عن حقل غير موجود */}
-      <section className="panel panel--notice">
+      {/* 2. Executive Panoramic Hero */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: 'radial-gradient(circle, rgba(168, 85, 247, 0.28) 0%, rgba(59, 130, 246, 0.16) 60%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span className="catalog-hero__status-badge">
+              <span className="status-dot-pulse" />
+              {registry?.providers.length ?? 0} {locale === 'ar' ? 'مزوّدين مسجلين' : 'providers registered'}
+            </span>
+          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.intro}</p>
+        </div>
+      </section>
+
+      {/* 3. Executive Bento Grid Matrix */}
+      <div className="commercial-bento-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+        <div
+          className="commercial-bento-card commercial-bento-card--indigo"
+          onClick={() => setPanel('providers')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.panels.providers}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="globe" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{registry?.providers.length ?? 0}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'مزوّدو النماذج المعتمدون' : 'Active vendors'}</span>
+          </div>
+        </div>
+
+        <div
+          className="commercial-bento-card commercial-bento-card--purple"
+          onClick={() => setPanel('models')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.panels.models}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="layers" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{registry?.models.length ?? 0}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'موديلات نص وصوت ورؤية' : 'Registered models'}</span>
+          </div>
+        </div>
+
+        <div
+          className="commercial-bento-card commercial-bento-card--emerald"
+          onClick={() => setPanel('tasks')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'مهام موصولة' : 'Wired Tasks'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="check" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{wiredTasksCount}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend commercial-bento-card__trend--up">
+              {locale === 'ar' ? 'مربوطة بكود الإنتاج الفعلي' : 'Connected in production'}
+            </span>
+          </div>
+        </div>
+
+        <div
+          className={`commercial-bento-card ${unroutedTasksCount > 0 ? 'commercial-bento-card--rose' : 'commercial-bento-card--slate'}`}
+          onClick={() => setPanel('tasks')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'مهام بلا مسار' : 'Unrouted Tasks'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="alert-triangle" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{unroutedTasksCount}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend" style={{ color: unroutedTasksCount > 0 ? '#f43f5e' : undefined }}>
+              {unroutedTasksCount > 0 ? (locale === 'ar' ? 'يتطلب توجيه لموديل' : 'No route configured') : (locale === 'ar' ? 'كل المهام موجهة' : 'All routed')}
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="commercial-bento-card commercial-bento-card--cyan"
+          onClick={() => setPanel('usage')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'نداءات آخر 7 أيام' : 'Calls (7d)'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="clock" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{totalCalls}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'إجمالي الاستدعاءات' : 'Total calls logged'}</span>
+          </div>
+        </div>
+
+        <div
+          className="commercial-bento-card commercial-bento-card--amber"
+          onClick={() => setPanel('usage')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'الصرف التقديري' : 'Spend (micros)'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="dollar" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{totalSpendMicros}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">micros</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Architectural Security Note */}
+      <section className="panel panel--notice" style={{ margin: '16px 0 12px 0' }}>
         <strong>{text.secretNotice}</strong>
         <p>{text.secretBody}</p>
       </section>
 
       {!canManage && (
-        <section className="panel panel--notice" role="status">
+        <section className="panel panel--notice" role="status" style={{ margin: '0 0 12px 0' }}>
           <strong>{text.readOnly}</strong>
         </section>
       )}
@@ -600,25 +781,27 @@ export function AiProvidersPage() {
         <section
           className={`panel panel--notice panel--notice--${notice.tone}`}
           role={notice.tone === 'bad' ? 'alert' : 'status'}
+          style={{ margin: '0 0 12px 0' }}
         >
           <strong>{notice.tone === 'ok' ? '✓' : '!'}</strong>
           <p>{notice.message}</p>
         </section>
       )}
 
-      <nav className="ai-tabs" aria-label={text.title}>
+      {/* 5. Luxury Panel Tabs */}
+      <div className="detail-tabs" role="tablist" style={{ margin: '16px 0 12px 0' }}>
         {PANELS.map((key) => (
           <button
             key={key}
-            type="button"
-            className={`ai-tab${panel === key ? ' ai-tab--active' : ''}`}
-            aria-current={panel === key}
+            role="tab"
+            aria-selected={panel === key}
+            className={`detail-tab ${panel === key ? 'detail-tab--active' : ''}`}
             onClick={() => setPanel(key)}
           >
             {text.panels[key]}
           </button>
         ))}
-      </nav>
+      </div>
 
       {/* ------------------------------------------------------ providers */}
       {panel === 'providers' && (

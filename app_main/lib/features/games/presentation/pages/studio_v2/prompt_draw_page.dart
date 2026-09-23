@@ -188,7 +188,7 @@ class _PromptDrawPageState extends State<PromptDrawPage> {
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10))]),
             clipBehavior: Clip.antiAlias,
             child: Stack(children: [
-              if (widget.promptImageUrl != null) Positioned.fill(child: Opacity(opacity: 0.15, child: smartImage(widget.promptImageUrl, w: double.infinity, h: double.infinity, fit: BoxFit.cover, fallbackAsset: 'assets/images/coloring/v2/bird.png'))),
+              if (widget.promptImageUrl != null) Positioned.fill(child: Opacity(opacity: 0.15, child: smartImage(widget.promptImageUrl, w: double.infinity, h: double.infinity, fit: BoxFit.cover, fallbackAsset: birdFallbackCdnUrl))),
               FreeDrawSurface(
                 controller: _gameCtrl,
                 drawController: _drawController,

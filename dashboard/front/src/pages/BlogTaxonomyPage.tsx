@@ -143,14 +143,69 @@ export function BlogTaxonomyPage() {
   if (!taxonomy) return null
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.lede}</p>
+    <div className="content-studio-root">
+      {/* 1. Panoramic Studio Hero */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: 'radial-gradient(circle, rgba(168, 85, 247, 0.22) 0%, rgba(236, 72, 153, 0.16) 50%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span className="catalog-hero__status-badge" style={{ borderColor: 'rgba(168, 85, 247, 0.3)', color: '#a855f7' }}>
+              <span className="status-dot-pulse" style={{ background: '#a855f7' }} />
+              {taxonomy.authors.length} {text.authors} · {taxonomy.categories.length} {text.categories} · {taxonomy.tags.length} {text.tags}
+            </span>
+          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.lede}</p>
         </div>
       </section>
+
+      {/* 2. Bento Glass KPI Cards */}
+      <div className="hero-kpis">
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>
+            <Icon name="users" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{text.tabAuthors}</span>
+            <div className="kpi-glass-card__num">{taxonomy.authors.length}</div>
+            <span className="kpi-glass-card__trend" style={{ color: '#3b82f6' }}>
+              {locale === 'ar' ? 'كتّاب معتمدون' : 'Verified writers'}
+            </span>
+          </div>
+        </div>
+
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
+            <Icon name="series" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{text.tabCategories}</span>
+            <div className="kpi-glass-card__num">{taxonomy.categories.length}</div>
+            <span className="kpi-glass-card__trend" style={{ color: '#a855f7' }}>
+              {locale === 'ar' ? 'تصنيفات متعددة اللغات' : 'Multilingual taxonomy'}
+            </span>
+          </div>
+        </div>
+
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(236, 72, 153, 0.15)', color: '#ec4899' }}>
+            <Icon name="tag" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{text.tabTags}</span>
+            <div className="kpi-glass-card__num">{taxonomy.tags.length}</div>
+            <span className="kpi-glass-card__trend" style={{ color: '#ec4899' }}>
+              {locale === 'ar' ? 'وسوم المقالات المشتركة' : 'Shared post tags'}
+            </span>
+          </div>
+        </div>
+      </div>
 
       {formError && <p className="panel panel--notice field__error" role="alert">{formError}</p>}
 

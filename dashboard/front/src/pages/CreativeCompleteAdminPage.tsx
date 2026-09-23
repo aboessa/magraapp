@@ -16,7 +16,16 @@ type Drawing = {
 };
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || 'https://api.majarra.app/api/v1';
-const groups = ['animals', 'space', 'nature', 'vehicles', 'home', 'food', 'fantasy'];
+const groups = [
+  { id: 'all', label: 'الكل' },
+  { id: 'animals', label: 'حيوانات 🦁' },
+  { id: 'space', label: 'فضاء 🚀' },
+  { id: 'nature', label: 'طبيعة 🌿' },
+  { id: 'vehicles', label: 'مركبات 🚗' },
+  { id: 'home', label: 'أدوات منزلية 🏠' },
+  { id: 'food', label: 'أطعمة 🍎' },
+  { id: 'fantasy', label: 'خيال وأساطير 🦄' },
+];
 
 const admin = creativeStudioAdmin;
 
@@ -25,6 +34,9 @@ export default function CreativeCompleteAdminPage() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState('all');
+  const [search, setSearch] = useState('');
+  const [showDrawer, setShowDrawer] = useState(false);
   const [form, setForm] = useState({ title: '', group: 'animals', difficulty: 'سهل', ageMin: 4, ageMax: 6 });
 
   async function load() {
@@ -54,7 +66,7 @@ export default function CreativeCompleteAdminPage() {
       setNotice(`فشل الرفع: ${result.error || 'خطأ غير معروف'}`);
       return;
     }
-    setNotice('تم الرفع. تظهر المعاينة بعد التحديث.');
+    setNotice(`تم رفع ملف ${kind === 'main' ? 'التحدي' : kind === 'reference' ? 'المرجع' : 'المصغرة'} بنجاح ✅`);
     await load();
   }
 
@@ -87,77 +99,311 @@ export default function CreativeCompleteAdminPage() {
       return;
     }
     setForm({ title: '', group: 'animals', difficulty: 'سهل', ageMin: 4, ageMax: 6 });
-    setNotice('تم إنشاء النشاط. ارفع الصور الثلاث الآن.');
+    setShowDrawer(false);
+    setNotice('تم إنشاء النشاط بنجاح! يمكنك الآن رفع ملفات التحدي والمرجع.');
     await load();
   }
 
+  async function setItemStatus(id: string, status: string) {
+    const res = await admin(`/creative-studio/drawings/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+    if (res.success) {
+      setNotice(`تم تغيير الحالة إلى ${status}`);
+      await load();
+    } else {
+      setNotice(`فشل التحديث: ${res.error}`);
+    }
+  }
+
+  const filteredItems = items.filter(item => {
+    const matchesGroup = selectedGroup === 'all' || item.extra?.group === selectedGroup;
+    const matchesSearch = !search.trim() || item.title_ar.includes(search) || item.id.includes(search.toLowerCase());
+    return matchesGroup && matchesSearch;
+  });
+
   return (
-    <div className="page-stack" dir="rtl">
-      <div className="cs-hero">
-        <h1>أكمل الرسمة<span className="cs-hero__tag">زوج تحدي + مرجع مكتمل</span></h1>
-        <p>كل نشاط يحتاج تحدياً يرسم عليه الطفل، مرجعاً كاملاً، وصورة مصغرة. تحفظ الصور في R2 وتصل للتطبيق فور التحديث.</p>
-      </div>
+    <div className="studio-page" dir="rtl">
+      <div className="studio-ambient" />
 
-      <div className="creative-studio-panel">
-        <h3>نشاط جديد</h3>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="العنوان العربي" style={{ minWidth: 160 }} />
-          <select value={form.group} onChange={(event) => setForm({ ...form, group: event.target.value })} style={{ minWidth: 120 }}>{groups.map((group) => <option key={group}>{group}</option>)}</select>
-          <select value={form.difficulty} onChange={(event) => setForm({ ...form, difficulty: event.target.value })} style={{ minWidth: 120 }}><option>سهل</option><option>متوسط</option><option>مفصل</option></select>
-          <input type="number" value={form.ageMin} onChange={(event) => setForm({ ...form, ageMin: Number(event.target.value) || 3 })} aria-label="العمر من" style={{ width: 82 }} />
-          <input type="number" value={form.ageMax} onChange={(event) => setForm({ ...form, ageMax: Number(event.target.value) || 12 })} aria-label="العمر إلى" style={{ width: 82 }} />
-          <button onClick={() => void create()} disabled={creating} className="button button--primary">{creating ? 'جارٍ الإنشاء...' : 'إنشاء النشاط'}</button>
+      {/* Hero Header */}
+      <header className="studio-hero">
+        <div className="studio-hero__header">
+          <div className="studio-hero__brand">
+            <div className="studio-hero__icon-badge">🧩</div>
+            <div className="studio-hero__title-wrap">
+              <h1>
+                استوديو أكمل الرسمة (Complete the Drawing)
+                <span className="studio-hero__pill">ثنائية التحدي والمرجع</span>
+              </h1>
+              <p className="studio-hero__desc">
+                كل نشاط يحتوي على صورة «تحدي» ناقصة يرسم عليها الطفل ليكملها، وصورة «مرجع» كاملة يُعرض عليها الحل، وصورة مصغرة للعرض.
+              </p>
+            </div>
+          </div>
+          <div className="studio-hero__actions">
+            <button className="studio-btn studio-btn--primary" onClick={() => setShowDrawer(true)}>
+              <span>✨</span>
+              <span>نشاط جديد</span>
+            </button>
+            <button className="studio-btn studio-btn--secondary studio-btn--sm" onClick={load} title="تحديث">
+              <span>🔄</span>
+            </button>
+          </div>
         </div>
-      </div>
 
-      {notice && <div className="creative-studio-notice"><span>{notice}</span><button className="creative-studio-notice__close" onClick={()=>setNotice(null)}>إغلاق</button></div>}
+        {/* Bento Metrics */}
+        <div className="studio-metrics">
+          <div className="studio-metric-card">
+            <div className="studio-metric-card__label">إجمالي الأنشطة</div>
+            <div className="studio-metric-card__value">{items.length}</div>
+            <div className="studio-metric-card__sub">نشاط إكمال رسم</div>
+          </div>
+          <div className="studio-metric-card">
+            <div className="studio-metric-card__label">أنشطة منشورة</div>
+            <div className="studio-metric-card__value studio-metric-card__value--success">
+              {items.filter(i => i.status === 'published' || i.status === 'ready').length}
+            </div>
+            <div className="studio-metric-card__sub">متاحة في التطبيق</div>
+          </div>
+          <div className="studio-metric-card">
+            <div className="studio-metric-card__label">المجموعات المصنفة</div>
+            <div className="studio-metric-card__value">{groups.length - 1}</div>
+            <div className="studio-metric-card__sub">فئات موضوعية</div>
+          </div>
+        </div>
+      </header>
 
+      {/* Notice Bar */}
+      {notice && (
+        <div className="studio-notice">
+          <span>{notice}</span>
+          <button className="studio-btn studio-btn--secondary studio-btn--sm" onClick={() => setNotice(null)}>إغلاق</button>
+        </div>
+      )}
+
+      {/* Filter Bar */}
+      <section className="studio-bar">
+        <div className="studio-bar__row1">
+          <div className="studio-chips">
+            {groups.map(g => (
+              <button
+                key={g.id}
+                onClick={() => setSelectedGroup(g.id)}
+                className={`studio-chip ${selectedGroup === g.id ? 'studio-chip--active' : ''}`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="studio-search">
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="بحث في الأنشطة..."
+            />
+            <span className="studio-search__icon">🔍</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Grid of Dual-Viewport Cards */}
       {loading ? (
-        <div className="cs-grid">
-          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="cs-skeleton" />)}
+        <div className="studio-grid">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="studio-card" style={{ height: 350, opacity: 0.5 }} />
+          ))}
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="studio-card" style={{ padding: '60px 20px', textAlign: 'center', alignItems: 'center' }}>
+          <div style={{ fontSize: 50, marginBottom: 12 }}>🧩</div>
+          <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 800 }}>لا توجد أنشطة إكمال رسم حالياً</h3>
+          <p style={{ margin: '0 0 18px', color: 'var(--studio-text-muted)', fontSize: 13 }}>
+            أنشئ أول نشاط يتحدى الطفل لإكمال الرسمة!
+          </p>
+          <button onClick={() => setShowDrawer(true)} className="studio-btn studio-btn--primary">
+            إنشاء نشاط
+          </button>
         </div>
       ) : (
-        <div className="cs-grid">
-          {items.map((item) => (
-            <article key={item.id} className="cs-card">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#fff', minHeight: 130 }}>
-                <Preview label="التحدي" url={item.urls?.main} />
-                <Preview label="المرجع" url={item.reference_full_url} />
+        <div className="studio-grid">
+          {filteredItems.map(item => (
+            <article key={item.id} className="studio-card">
+              {/* Dual Viewport Split Screen */}
+              <div className="studio-split-view">
+                <div className="studio-split-pane">
+                  {item.urls?.main ? (
+                    <img src={item.urls.main} alt="التحدي" />
+                  ) : (
+                    <span style={{ color: '#94a3b8', fontSize: 12 }}>لا توجد صورة</span>
+                  )}
+                  <span className="studio-split-label">✏️ التحدي الناقص</span>
+                </div>
+
+                <div className="studio-split-pane" style={{ borderInlineStart: '1px solid var(--studio-border)' }}>
+                  {item.reference_full_url ? (
+                    <img src={item.reference_full_url} alt="المرجع" />
+                  ) : (
+                    <span style={{ color: '#94a3b8', fontSize: 12 }}>لا توجد صورة</span>
+                  )}
+                  <span className="studio-split-label">🌟 المرجع المكتمل</span>
+                </div>
               </div>
-              <div className="cs-card__body">
-                <div>
-                  <div className="cs-card__title">{item.title_ar}</div>
-                  <div className="cs-card__meta">{item.extra?.group || 'uncategorized'} · {item.difficulty} · {item.age_min}-{item.age_max}</div>
+
+              {/* Card Body */}
+              <div className="studio-card__body">
+                <div className="studio-card__title-row">
+                  <div>
+                    <h4 className="studio-card__title">{item.title_ar}</h4>
+                    <span className="studio-card__id">{item.id}</span>
+                  </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
-                  <UploadLabel label="التحدي" accept=".png,image/png" onFile={(file) => void upload(item, 'main', file)} />
-                  <UploadLabel label="المرجع" accept=".png,image/png" onFile={(file) => void upload(item, 'reference', file)} />
-                  <UploadLabel label="المصغرة" accept=".jpg,.jpeg,image/jpeg" onFile={(file) => void upload(item, 'thumb', file)} />
+
+                <div className="studio-card__meta">
+                  <span className="studio-card__tag">📁 {item.extra?.group || 'عام'}</span>
+                  <span className="studio-card__tag">🎯 {item.difficulty}</span>
+                  <span className="studio-card__tag">👶 {item.age_min}-{item.age_max} سنوات</span>
                 </div>
-                <span className={`creative-studio-status creative-studio-status--${item.status}`}>{item.status} · {item.id}</span>
+
+                {/* Upload Buttons for Challenge, Reference, Thumbnail */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, margin: '6px 0' }}>
+                  <label className="studio-btn studio-btn--secondary studio-btn--sm" style={{ cursor: 'pointer', fontSize: 11, padding: '0 6px' }}>
+                    <span>✏️ التحدي</span>
+                    <input
+                      hidden
+                      type="file"
+                      accept=".png,image/png"
+                      onChange={event => {
+                        void upload(item, 'main', event.target.files?.[0]);
+                        event.currentTarget.value = '';
+                      }}
+                    />
+                  </label>
+                  <label className="studio-btn studio-btn--secondary studio-btn--sm" style={{ cursor: 'pointer', fontSize: 11, padding: '0 6px' }}>
+                    <span>🌟 المرجع</span>
+                    <input
+                      hidden
+                      type="file"
+                      accept=".png,image/png"
+                      onChange={event => {
+                        void upload(item, 'reference', event.target.files?.[0]);
+                        event.currentTarget.value = '';
+                      }}
+                    />
+                  </label>
+                  <label className="studio-btn studio-btn--secondary studio-btn--sm" style={{ cursor: 'pointer', fontSize: 11, padding: '0 6px' }}>
+                    <span>🖼️ المصغرة</span>
+                    <input
+                      hidden
+                      type="file"
+                      accept=".jpg,.jpeg,.webp,image/jpeg"
+                      onChange={event => {
+                        void upload(item, 'thumb', event.target.files?.[0]);
+                        event.currentTarget.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* Status Switcher */}
+                <div style={{ display: 'flex', gap: 6, marginTop: 'auto', paddingTop: 8, borderTop: '1px solid var(--studio-border)' }}>
+                  <select
+                    value={item.status}
+                    onChange={e => void setItemStatus(item.id, e.target.value)}
+                    className="studio-select"
+                    style={{ height: 32, fontSize: 11, flex: 1 }}
+                  >
+                    <option value="draft">مسودة (draft)</option>
+                    <option value="ready">جاهز (ready)</option>
+                    <option value="published">منشور (published)</option>
+                  </select>
+                </div>
               </div>
             </article>
           ))}
         </div>
       )}
-    </div>
-  );
-}
 
-function Preview({ label, url }: { label: string; url?: string | null }) {
-  return (
-    <div style={{ position: 'relative', display: 'grid', placeItems: 'center', borderInlineStart: label === 'المرجع' ? '1px solid #ddd' : undefined }}>
-      {url ? <img src={url} alt={label} style={{ width: '100%', height: 130, objectFit: 'contain', padding: 7 }} /> : <span style={{ color: '#94a3b8' }}>لا توجد صورة</span>}
-      <small style={{ position: 'absolute', top: 5, insetInlineEnd: 5, color: '#fff', background: 'rgba(0,0,0,.55)', padding: '2px 6px', borderRadius: 999 }}>{label}</small>
-    </div>
-  );
-}
+      {/* Create Modal Drawer */}
+      {showDrawer && (
+        <div className="studio-drawer">
+          <div onClick={() => setShowDrawer(false)} className="studio-drawer__backdrop" />
+          <div className="studio-drawer__panel">
+            <div className="studio-drawer__header">
+              <h3>إضافة نشاط أكمل الرسمة جديد</h3>
+              <button onClick={() => setShowDrawer(false)} className="studio-btn studio-btn--secondary studio-btn--sm">✕</button>
+            </div>
 
-function UploadLabel({ label, accept, onFile }: { label: string; accept: string; onFile: (file: File | undefined) => void }) {
-  return (
-    <label className="button button--secondary" style={{ fontSize: 11, cursor: 'pointer', justifyContent: 'center' }}>
-      {label}
-      <input hidden type="file" accept={accept} onChange={(event) => { onFile(event.target.files?.[0]); event.currentTarget.value = ''; }} />
-    </label>
+            <div className="studio-drawer__body">
+              <div className="studio-field-group">
+                <label>العنوان العربي *</label>
+                <input
+                  className="studio-input"
+                  value={form.title}
+                  onChange={e => setForm({ ...form, title: e.target.value })}
+                  placeholder="مثال: أكمل وجه الدب"
+                />
+              </div>
+
+              <div className="studio-field-group">
+                <label>المجموعة</label>
+                <select
+                  className="studio-select"
+                  value={form.group}
+                  onChange={e => setForm({ ...form, group: e.target.value })}
+                >
+                  {groups.filter(g => g.id !== 'all').map(g => (
+                    <option key={g.id} value={g.id}>{g.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="studio-field-group">
+                <label>الصعوبة</label>
+                <select
+                  className="studio-select"
+                  value={form.difficulty}
+                  onChange={e => setForm({ ...form, difficulty: e.target.value })}
+                >
+                  <option>سهل</option>
+                  <option>متوسط</option>
+                  <option>مفصل</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="studio-field-group">
+                  <label>العمر من</label>
+                  <input
+                    type="number"
+                    className="studio-input"
+                    value={form.ageMin}
+                    onChange={e => setForm({ ...form, ageMin: Number(e.target.value) || 3 })}
+                  />
+                </div>
+                <div className="studio-field-group">
+                  <label>العمر إلى</label>
+                  <input
+                    type="number"
+                    className="studio-input"
+                    value={form.ageMax}
+                    onChange={e => setForm({ ...form, ageMax: Number(e.target.value) || 12 })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="studio-drawer__footer">
+              <button onClick={() => void create()} disabled={creating} className="studio-btn studio-btn--primary" style={{ flex: 1 }}>
+                {creating ? 'جارٍ الإنشاء...' : 'إنشاء النشاط'}
+              </button>
+              <button onClick={() => setShowDrawer(false)} className="studio-btn studio-btn--secondary">إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

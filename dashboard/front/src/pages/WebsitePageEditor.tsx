@@ -358,16 +358,44 @@ export function WebsitePageEditor() {
         ]}
       />
 
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow} · {detail.page.language}</span>
-          <h2>{detail.page.title}</h2>
-          <p><code dir="ltr">{detail.page.path}</code> · {sections.length} {text.sectionCount} ({activeSections} {text.activeCount})</p>
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: isPublished
+              ? 'radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(14, 165, 233, 0.16) 50%, transparent 80%)'
+              : 'radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(99, 102, 241, 0.16) 50%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow} · {detail.page.language}</span>
+            <span
+              className="catalog-hero__status-badge"
+              style={{
+                borderColor: isPublished ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)',
+                color: isPublished ? '#10b981' : '#f59e0b',
+              }}
+            >
+              <span
+                className="status-dot-pulse"
+                style={{ background: isPublished ? '#10b981' : '#f59e0b' }}
+              />
+              <span className={`account-status account-status--${isPublished ? 'active' : 'draft'}`} style={{ background: 'transparent', padding: 0 }}>
+                {detail.page.status}
+              </span>
+            </span>
+          </div>
+          <h2 className="catalog-hero__title">{detail.page.title}</h2>
+          <p className="catalog-hero__desc">
+            <code dir="ltr">{detail.page.path}</code> · {sections.length} {text.sectionCount} ({activeSections} {text.activeCount})
+          </p>
         </div>
-        <div className="page-intro__actions">
-          <span className={`account-status account-status--${isPublished ? 'active' : 'draft'}`}>{detail.page.status}</span>
+
+        <div className="catalog-hero__actions">
           <button className="button button--primary" type="button" disabled={publishing} onClick={() => void publish()}>
-            <Icon name="upload" size={15} />{publishing ? text.publishing : text.publish}
+            <Icon name="upload" size={15} />
+            <span>{publishing ? text.publishing : text.publish}</span>
           </button>
         </div>
       </section>

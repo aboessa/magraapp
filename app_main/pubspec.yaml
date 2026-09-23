@@ -77,7 +77,12 @@ flutter:
   assets:
     - assets/fonts/OFL.txt
     - assets/brand/
-    - assets/images/landing/
+    # شاشة الدخول: bundled webp فقط (24–44KB) يرسم فورًا، وCDN WebP عبر
+    # `CinematicImage` بعده. الـPNG (317–824KB) والـJPG القديمة أُسقطت: لم
+    # تُرفَع إلى R2 ولا مرجع لها في الكود بعد الترحيل.
+    - assets/images/landing/login-bg-landscape.webp
+    - assets/images/landing/login-bg-mobile.webp
+    - assets/images/landing/landing-family-learning-scene.webp
     - assets/images/series/posters/
     - assets/images/series/banners/
     - assets/images/planets/
@@ -85,6 +90,10 @@ flutter:
     - assets/images/episodes/
     - assets/images/explore/
     - assets/images/seasonal/
+    # الكتب: R2 أوّلًا عبر `heavyCdnUrl` (16 webp على
+    # `public/catalog/assets/images/books/`)، و`posterAsset` المبندل بديل عدم
+    # الاتصال. تُبندل لسبب واحد: كتالوج عدم الاتصال (`local_catalog.dart`)
+    # يَعِد بها، والوعد بلا ملفّ كذبٌ على طفل دون شبكة.
     - assets/images/books/
     # Story artwork is API/R2-only. Never bundle story pages, covers, or audio
     # in an APK: this keeps the binary small and ensures readers use the
@@ -94,26 +103,53 @@ flutter:
     - assets/images/drawing/covers/
     # Creative Studio chrome — R2-first zero-bloat policy:
     # لا نبندل أي رسومات تلوين/وصل/أكمل/تتبع/حروف/أرقام كبيرة في APK.
-    # كلها تحمل من R2 THUMBS_BUCKET عبر CDN https://cdn.majarra.app/public/studio/{category}/{id}.png
-    # المحتوى الشفاف (transparent PNG) ناتج POST /v1/images/remove-background { url: JPEG } sync → PNG 10 days
+    # المحتوى (coloring/v2, draw_like_me, connect_dots, landing, books) تحمَّل
+    # من R2 THUMBS_BUCKET عبر `heavyCdnUrl` (سكربت `tools/upload_heavy_r2.mjs`:
+    # 49.8MB ← 5.5MB بتحويل WebP q82)، ويمرّ عبر `RemoteImageCache`.
     # فقط bird.png كـ placeholder 8KB fallback offline + studio hero webp fallback.
-    # المهم: لا نعلن - assets/images/coloring/ لأنها ستجر v2/ (12 صورة) → 30MB bloat.
-    # نعلن فقط ملفات محددة صغيرة جداً.
     - assets/images/coloring/bird.png
-    - assets/images/coloring/v2/
-    - assets/images/connect_dots/
-    - assets/images/draw_like_me/v2/
-    - assets/images/draw_like_me/v2-final/
-    - assets/images/draw_like_me/heroes/
-    # dev fallback فقط: لا يُبندل في release لأننا نحذفه قبل build، يبقى للـ IDE
-    # للإبقاء على المحرر يرى الصور. في CI نستخدم R2-only.
-    #- assets/images/studio/v2/
     # chrome الاستوديو نفسه (hero + أغلفة الأنشطة + أيقونات الاختصارات) يُبندل:
-    # 13 ملف WebP بمجموع ~150KB، وليس محتوى قابل للتحديث من R2 بل جزء من الواجهة.
+    # بطاقات 8–20KB لكلّ واحدة تُرسم في شبكة الأنشطة فور فتحها — رحلة شبكة لكلّ
+    # بطاقة تشتري صفر ميغابايت عمليًّا وتكسر الفتح الفوري دون اتصال.
+    # اللافتات الستّ PNG (~1MB) أُسقطت: توأمها WebP على R2
+    # (`tools/upload_studio_banners_r2.mjs`)، والـwebp المبندل (33–130KB)
+    # يرسم فورًا بينما CDN يأتي عبر `CinematicImage`.
     # إعلان المجلد غير تعاودي في Flutter، فلن يجرّ studio/v2/ إن عاد للظهور.
-    - assets/images/studio/
-    - assets/avatars/characters/
-    - assets/avatars/planets/
+    - assets/images/studio/card-coloring.webp
+    - assets/images/studio/card-complete.webp
+    - assets/images/studio/card-connect-dots.webp
+    - assets/images/studio/card-copy-pattern.webp
+    - assets/images/studio/card-draw-like-me.webp
+    - assets/images/studio/card-free-draw.webp
+    - assets/images/studio/card-letters.webp
+    - assets/images/studio/card-numbers.webp
+    - assets/images/studio/card-prompt-draw.webp
+    - assets/images/studio/card-trace.webp
+    - assets/images/studio/coloring-banner.webp
+    - assets/images/studio/connect-dots-banner.webp
+    - assets/images/studio/draw-like-me-banner.webp
+    - assets/images/studio/studio-main-banner.webp
+    - assets/images/studio/homebgaart.webp
+    - assets/images/studio/hero-start-drawing.webp
+    - assets/images/studio/hero-connect-dots-small.webp
+    - assets/images/studio/icon-new-canvas.webp
+    - assets/images/studio/icon-draw-like-me.webp
+    # الأڤاتارات: R2 أوّلًا، مبندلٌ واحد احتياطي.
+    #
+    # كلّ أڤاتار في `ChildAvatars.all` يُحمَّل من
+    # `{AppConfig.assetBaseUrl}/public/avatars/<sub>/<id>.webp` عبر
+    # `RemoteImageCache` (رُفع بـ`tools/upload_avatars_r2.mjs`: ‏25.5MB ‏← 0.9MB
+    # بتحويل PNG ‏← WebP q85). `assetPath` في الكود هو بديل عدم الاتصال فقط.
+    #
+    # المبندل الوحيد `luna-full.png`: هو `_fallback` في `byId(null)` — يظهر لكلّ
+    # طفل بلا أڤاتار محفوظ، بما فيه التشغيل الأوّل دون شبكة. إزالته تعني شاشة
+    # اختيار طفل بلا أيّ صورة قبل أوّل تحميل.
+    #
+    # ولا يُعاد إعلان مجلّدٍ أبدًا: إعلان المجلّد جارفٌ وكان يحزم 47.5MB لا
+    # يبلغها أيّ سطر في `lib/` (انظر `test/avatar_bundle_test.dart`).
+    # عند إضافة أڤاتار جديد: أضف WebP إلى R2 بالسكربت، و`assetPath` هنا فقط إن
+    # كان بديل عدم اتصال، ويحرس ذلك `test/avatar_r2_test.dart`.
+    - assets/avatars/characters/luna-full.webp
     # Activity metadata remains app chrome. Story reader JSON is deliberately
     # excluded; it is fetched from /api/v1/stories/:id/pages only.
     - assets/data/coloring_pages.json

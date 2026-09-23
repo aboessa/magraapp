@@ -798,6 +798,7 @@ class _PlanetPortalCardState extends State<_PlanetPortalCard> {
                   size: 68,
                   selected: _focused,
                   imageAsset: planet.imageAsset,
+                  networkUrl: planet.iconUrl,
                 ),
                 const SizedBox(height: 10),
                 Text(

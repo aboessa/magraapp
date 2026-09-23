@@ -25,6 +25,7 @@ class OnboardingState {
   const OnboardingState({
     required this.currentStep,
     this.completed = false,
+    this.hasPersistedStep = false,
   });
 
   /// The step to resume at, restored from `SharedPreferences` at
@@ -39,6 +40,11 @@ class OnboardingState {
   /// legitimately has no way to distinguish that case from "never started".
   /// See the class-level boundary note on [OnboardingController].
   final bool completed;
+
+  /// Whether a step key exists locally, proving that this family has already
+  /// entered (but not finished) the journey. Used to survive a full refresh
+  /// after the server stamps completion during first-child creation.
+  final bool hasPersistedStep;
 }
 
 /// Persists and restores which step of the first-run onboarding journey the
@@ -65,7 +71,12 @@ class OnboardingState {
 /// `onboardingCompletedAt`, not by asking this controller.
 class OnboardingController extends StateNotifier<OnboardingState> {
   OnboardingController(this._preferences)
-    : super(OnboardingState(currentStep: _restoreStep(_preferences)));
+    : super(
+        OnboardingState(
+          currentStep: _restoreStep(_preferences),
+          hasPersistedStep: _preferences.containsKey(onboardingStepPrefsKey),
+        ),
+      );
 
   final SharedPreferences _preferences;
 
@@ -84,7 +95,11 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   /// index would silently point at the wrong step if a step is ever
   /// inserted into [OnboardingStep] later.
   void goToStep(OnboardingStep step) {
-    state = OnboardingState(currentStep: step, completed: state.completed);
+    state = OnboardingState(
+      currentStep: step,
+      completed: state.completed,
+      hasPersistedStep: true,
+    );
     unawaited(_preferences.setString(onboardingStepPrefsKey, step.name));
   }
 
@@ -104,7 +119,11 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   /// no key at all — the "in-progress vs done" distinction the hosting
   /// screen relies on together with `onboardingCompletedAt`.
   Future<void> complete() async {
-    state = OnboardingState(currentStep: state.currentStep, completed: true);
+    state = OnboardingState(
+      currentStep: state.currentStep,
+      completed: true,
+      hasPersistedStep: false,
+    );
     await _preferences.remove(onboardingStepPrefsKey);
   }
 }

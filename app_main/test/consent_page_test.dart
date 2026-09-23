@@ -77,6 +77,46 @@ class _FakeApiClient extends MajarraApiClient {
   }
 }
 
+/// Rejects every write the way the live API does when the family already has
+/// a parent PIN and the request carries no parent proof:
+/// `POST /api/v1/family/consents -> 403 "A current parent proof is required"`.
+///
+/// The server only waives `manage_consents` for a family with **no** PIN yet
+/// (the consent step precedes PIN setup during onboarding), so any family
+/// past that point hits this branch.
+class _ProofRequiredApiClient extends _FakeApiClient {
+  _ProofRequiredApiClient({required super.decisionsByType});
+
+  @override
+  Future<Map<String, dynamic>> setConsent({
+    required String consentType,
+    required String version,
+    String? childId,
+    bool revoke = false,
+  }) async {
+    throw const MajarraApiException(
+      'HTTP 403: {"success":false,"error":"A current parent proof is required"}',
+      statusCode: 403,
+    );
+  }
+}
+
+/// Fails writes with something that is *not* a proof problem, to prove the
+/// 403 branch is not swallowing every error into the PIN message.
+class _OfflineApiClient extends _FakeApiClient {
+  _OfflineApiClient({required super.decisionsByType});
+
+  @override
+  Future<Map<String, dynamic>> setConsent({
+    required String consentType,
+    required String version,
+    String? childId,
+    bool revoke = false,
+  }) async {
+    throw const MajarraApiException('HTTP 500: boom', statusCode: 500);
+  }
+}
+
 Map<String, Map<String, dynamic>> _defaultDecisions() => {
       'data_collection': const {
         'granted': true,
@@ -279,4 +319,66 @@ void main() {
       );
     },
   );
+
+  group('ConsentPage — 403 يعني «الرمز مطلوب» لا فشلًا عامًّا', () {
+    testWidgets(
+      'رفض الإثبات يعرض رسالة الرمز مع إجراء فتحٍ بدل رسالة عامة',
+      (tester) async {
+        final api = _ProofRequiredApiClient(
+          decisionsByType: _defaultDecisions(),
+        );
+        await _pumpPage(tester, api);
+
+        final l10n = lookupAppLocalizations(const Locale('ar'));
+        const analyticsIndex = 1;
+        await tester.tap(find.byType(Switch).at(analyticsIndex));
+        await tester.pumpAndSettle();
+
+        // الرسالة الخاصة، لا العامة التي تدعو لإعادة محاولة لا تنجح أبدًا.
+        expect(find.text(l10n.consentWriteRequiresParentPin), findsOneWidget);
+        expect(find.text(l10n.consentWriteErrorGeneric), findsNothing);
+        // ومعها طريق إلى شاشة الرمز.
+        expect(find.text(l10n.consentUnlockAction), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'الفشل غير المتعلق بالإثبات يبقى على الرسالة العامة بلا إجراء رمز',
+      (tester) async {
+        final api = _OfflineApiClient(decisionsByType: _defaultDecisions());
+        await _pumpPage(tester, api);
+
+        final l10n = lookupAppLocalizations(const Locale('ar'));
+        const analyticsIndex = 1;
+        await tester.tap(find.byType(Switch).at(analyticsIndex));
+        await tester.pumpAndSettle();
+
+        expect(find.text(l10n.consentWriteErrorGeneric), findsOneWidget);
+        expect(find.text(l10n.consentWriteRequiresParentPin), findsNothing);
+        expect(find.text(l10n.consentUnlockAction), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'الفشل لا يقلب المفتاح: يبقى العرض على آخر حالة أكّدها الخادم',
+      (tester) async {
+        final api = _ProofRequiredApiClient(
+          decisionsByType: _defaultDecisions(),
+        );
+        await _pumpPage(tester, api);
+
+        final l10n = lookupAppLocalizations(const Locale('ar'));
+        // قبل المحاولة: ممنوح واحد فقط (data_collection).
+        expect(find.text(l10n.consentStatusGranted), findsOneWidget);
+
+        const analyticsIndex = 1;
+        await tester.tap(find.byType(Switch).at(analyticsIndex));
+        await tester.pumpAndSettle();
+
+        // وبعد الرفض: ما زال واحدًا — لا تفاؤل بنجاحٍ لم يحدث (المتطلب 9.7).
+        expect(find.text(l10n.consentStatusGranted), findsOneWidget);
+        expect(api.fetchCount, 1); // لا إعادة جلب بعد كتابة فاشلة
+      },
+    );
+  });
 }

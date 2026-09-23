@@ -32,25 +32,30 @@ export function HeroKpis({ locale, range }: { locale: 'ar'|'en'; range: Dashboar
   const failedEvents = health?.failed_queue_events ?? null
   const overall = health?.overall_health ?? 'unknown'
 
-  const Card = ({ title, value, sub, tone, href }: { title:string; value:string; sub:string; tone?:string; href:string }) => (
+  const Card = ({ title, value, sub, tone, href, icon }: { title:string; value:string; sub:string; tone?: 'blue'|'cyan'|'yellow'|'purple'; href:string; icon: any }) => (
     <Link to={adminPath(href)} style={{ textDecoration:'none', color:'inherit' }}>
-      <article className={`stat-card stat-card--${tone ?? 'blue'}`} style={{ minHeight: 122, padding:'14px 16px', display:'flex', flexDirection:'column', gap:6, textDecoration:'none' }}>
-        <div className="stat-card__top" style={{ fontSize:11, fontWeight:700, letterSpacing:'.04em', textTransform:'uppercase' as any }}>
-          <span>{title}</span>
-          <span style={{ opacity:.6 }}><Icon name="arrow" size={12} /></span>
+      <article className={`stat-card kpi-glass-card kpi-glass-card--${tone ?? 'blue'}`}>
+        <div className="kpi-card__top">
+          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.03em' }}>{title}</span>
+          <span className="kpi-icon-bubble">
+            <Icon name={icon} size={16} />
+          </span>
         </div>
-        <strong className="stat-card__value" style={{ fontSize:22, marginTop:4 }}>{value}</strong>
-        <span style={{ fontSize:11, color:'var(--muted)', lineHeight:1.5 }}>{sub}</span>
+        <div>
+          <strong className="kpi-card__value">{value}</strong>
+          <div className="kpi-card__sub">{sub}</div>
+        </div>
       </article>
     </Link>
   )
 
   return (
-    <section className="stats-grid" aria-label="Hero KPIs">
-      <Card title={t.mrr} value={mrrVal!=null ? `$${(mrrVal/100).toFixed(2)}` : (mrrAvail ? '—' : t.noData)} sub={mrrAvail ?? (rev? t.revNote : t.noData)} tone="blue" href="revenue" />
-      <Card title={t.paid} value={paid!=null ? String(paid) : '—'} sub={`${t.trials}: ${trials ?? '—'} · ${t.churn}: ${churn ?? '—'}`} tone="cyan" href="billing" />
-      <Card title={t.sla} value={slaBreaches!=null ? String(slaBreaches) : '—'} sub={locale==='ar' ? 'تذاكر متأخرة / تجاوزات' : 'Overdue / breaches'} tone={slaBreaches && slaBreaches>0 ? 'yellow' : 'purple'} href="ops-sla" />
-      <Card title={t.health} value={overall==='healthy'?t.healthy:overall} sub={`${t.failed}: ${failedEvents ?? '—'} · ${t.billing}: ${bill?.by_plan?.length ?? '—'} plans`} tone={overall==='healthy'?'purple':'yellow'} href="ops" />
+    <section className="stats-grid kpi-bento-grid" aria-label="Hero KPIs">
+      <Card title={t.mrr} value={mrrVal!=null ? `$${(mrrVal/100).toFixed(2)}` : (mrrAvail ? '—' : t.noData)} sub={mrrAvail ?? (rev? t.revNote : t.noData)} tone="blue" href="revenue" icon="analytics" />
+      <Card title={t.paid} value={paid!=null ? String(paid) : '—'} sub={`${t.trials}: ${trials ?? '—'} · ${t.churn}: ${churn ?? '—'}`} tone="cyan" href="billing" icon="parents" />
+      <Card title={t.sla} value={slaBreaches!=null ? String(slaBreaches) : '—'} sub={locale==='ar' ? 'تذاكر متأخرة / تجاوزات' : 'Overdue / breaches'} tone={slaBreaches && slaBreaches>0 ? 'yellow' : 'purple'} href="ops-sla" icon="clock" />
+      <Card title={t.health} value={overall==='healthy'?t.healthy:overall} sub={`${t.failed}: ${failedEvents ?? '—'} · ${t.billing}: ${bill?.by_plan?.length ?? '—'} plans`} tone={overall==='healthy'?'purple':'yellow'} href="ops" icon="devices" />
     </section>
   )
 }
+

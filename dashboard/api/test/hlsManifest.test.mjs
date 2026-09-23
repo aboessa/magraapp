@@ -88,13 +88,17 @@ test('rendition assets are read in one query rather than one per rendition', () 
   assert.match(handler, /new Map\(assetRows\.map/);
 });
 
-test('the playback session hands the lease to the manifest URL', () => {
-  // The manifest no longer invents a lease, so the session has to say which
-  // authorised one the client should present. A client that follows `stream_url`
-  // verbatim therefore needs no change.
+test('the playback session uses progressive media until genuine HLS playlists exist', () => {
+  // `episode_renditions` currently stores MP4 quality alternatives. Counting
+  // those rows and advertising an HLS master made its EXT-X-STREAM-INF entries
+  // point directly at MP4 files, while Flutter Web could not attach parent auth
+  // to the manifest request. The protected progressive endpoint is the valid
+  // browser contract until the encoder produces media playlists and segments.
   const sessionStart = source.indexOf("episodesRoute.post('/:id/playback-sessions'");
   const session = source.slice(sessionStart, source.indexOf("episodesRoute.post('/:id/playback-sessions/:leaseId/heartbeat'"));
-  assert.match(session, /hls\/master\.m3u8\?lease_id=\$\{encodeURIComponent\(lease\.lease_id\)\}/);
+  assert.match(session, /const streamUrl = `\/api\/v1\/media\/assets\/\$\{catalog\.media\.asset_id\}`/);
+  assert.doesNotMatch(session, /hasRenditions/);
+  assert.doesNotMatch(session, /hls\/master\.m3u8/);
 });
 
 test('the progressive playback path keeps all four checks', () => {

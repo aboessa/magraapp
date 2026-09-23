@@ -19,6 +19,7 @@ import '../../domain/feed_blocks.dart';
 import 'cinematic_hero.dart';
 import 'content_cards.dart';
 import 'content_rail.dart';
+import '../../../../core/images/heavy_assets.dart';
 import '../../../../core/widgets/cinematic_image.dart';
 import '../../../../core/widgets/focusable_scale.dart';
 
@@ -667,19 +668,16 @@ class _CreativeStudioEntry extends StatelessWidget {
                   0xFF1A1040,
                 ), // matches image gradient, no black bleed
               ),
-              child: Image.asset(
-                'assets/images/studio/homebgaart.webp',
-                fit: BoxFit.contain,
-                width: double.infinity,
-                alignment: Alignment.center,
-                excludeFromSemantics: true,
-                errorBuilder: (_, __, ___) => Image.asset(
+              // R2-first: bundled webp paints instantly, CDN twin via disk
+              // cache after first load. The PNG rung is gone — never uploaded.
+              child: CinematicImage(
+                assetPath: 'assets/images/studio/homebgaart.webp',
+                networkUrl: heavyStudioBannerUrl(
                   'assets/images/studio/homebgaart.png',
-                  fit: BoxFit.contain,
-                  width: double.infinity,
-                  alignment: Alignment.center,
-                  excludeFromSemantics: true,
                 ),
+                semanticLabel: '',
+                fit: BoxFit.contain,
+                alignment: Alignment.center,
               ),
             ),
           ),
@@ -1187,7 +1185,9 @@ class _BlockSliver extends StatelessWidget {
                 title: block.title ?? 'العب وتعلّم',
                 subtitle: block.subtitle ?? 'ألعاب وتحديات تناسب عمرك',
                 items: sqItems,
-                height: isTelevision ? 322 : 266,
+                // الكارت العريض 4:3 + شريط عنوان (~184×200 على الموبايل)
+                // + عنوان السكة وحشوها.
+                height: isTelevision ? 330 : 268,
                 horizontalPadding: padding,
                 isTelevision: isTelevision,
                 onSeeAll: () => context.push('/play'),

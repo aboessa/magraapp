@@ -55,7 +55,7 @@ class _CategoryInsideState extends State<CategoryInsideColoringPage> {
       appBar: deepAppBar(context, widget.title, actions: [Padding(padding: const EdgeInsetsDirectional.only(end: 8), child: _circle(Icons.search_rounded))]),
       body: ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 20), children: [
         if (widget.heroUrl != null)
-          Container(height: 120, decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), gradient: const LinearGradient(colors: [Color(0xFF6A3DF2), Color(0xFF241A5E)])), child: ClipRRect(borderRadius: BorderRadius.circular(18), child: smartImage(widget.heroUrl, w: double.infinity, h: 120, fit: BoxFit.cover, fallbackAsset: 'assets/images/coloring/v2/bird.png'))),
+          Container(height: 120, decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), gradient: const LinearGradient(colors: [Color(0xFF6A3DF2), Color(0xFF241A5E)])), child: ClipRRect(borderRadius: BorderRadius.circular(18), child: smartImage(widget.heroUrl, w: double.infinity, h: 120, fit: BoxFit.cover, fallbackAsset: birdFallbackCdnUrl))),
         const SizedBox(height: 12),
         SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
           _filterChip<AgeBand>(label: 'العمر', values: AgeBand.values, current: _age, labelFor: (value) => switch (value) { AgeBand.all => 'الكل', AgeBand.age3_5 => '3-5', AgeBand.age6_8 => '6-8', AgeBand.age9_12 => '9-12' }, onPick: (value) => setState(() => _age = value)),

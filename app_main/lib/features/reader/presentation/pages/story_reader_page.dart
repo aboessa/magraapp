@@ -335,10 +335,16 @@ class _StoryReaderPageState extends ConsumerState<StoryReaderPage>
           return;
         }
         final playable = source as NarrationPlayable;
-        final uri = Uri.parse(AppConfig.baseUrl).resolve(playable.streamUrl);
+        // القدرة في سلسلة الاستعلام لا في ترويسة: `video_player` على الويب
+        // يجلب الملف عبر عنصر `<video>` بلا ترويسات مخصصة، فالترويسة تُسقَط
+        // صامتًا ويرد الخادم 401 (`routes/media.ts` يقبل `?token=`).
+        final narrationUri = Uri.parse(AppConfig.baseUrl).resolve(playable.streamUrl).replace(queryParameters: {
+          ...Uri.parse(AppConfig.baseUrl).resolve(playable.streamUrl).queryParameters,
+          'token': playable.authorization.replaceFirst(RegExp(r'^Bearer\s+'), ''),
+        });
         controller = VideoPlayerController.networkUrl(
-          uri,
-          httpHeaders: {'Authorization': playable.authorization},
+          narrationUri,
+          httpHeaders: const {},
         );
       } else {
         throw _NarrationPrecondition(

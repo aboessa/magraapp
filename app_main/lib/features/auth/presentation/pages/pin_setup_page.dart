@@ -168,9 +168,14 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
     try {
       final response = await ref.read(majarraApiClientProvider).setParentPin(pin: pin);
       if (!mounted) return;
-      // Navigate immediately – local PBKDF2 KDF is pure Dart 100k iterations and
-      // blocks the UI thread for seconds on web. Server proof is the real gate;
-      // local store is only a child-lock convenience, so persist it in background.
+      // Navigate immediately: the server proof is the real gate, and the local
+      // store is only a child-lock convenience, so persist it in the background.
+      //
+      // كان هذا التعليق يقول إن الاشتقاق المحلي «يحجز خيط الواجهة ثوانٍ»، وهو
+      // ما كان صحيحًا: حلقة Dart خالصة بمئة ألف تكرارة. صار `ParentPinStore`
+      // يستدعي `PinKdf.deriveVerifierAsync` (WebCrypto الأصلي على الويب)، فلم
+      // يبقَ تجمّد — قِسنا صفر ميلي ثانية بعد التغيير. والتأجيل هنا يبقى
+      // صحيحًا لأن الانتقال لا ينتظر كتابةً لا يعتمد عليها.
       setState(() {
         _busy = false;
       });
@@ -191,9 +196,15 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
         // refused enrolment without a `change_parent_pin` proof. Self-heal by
         // sending the user to the unlock screen instead of showing an error
         // for a state this screen cannot fix.
+        //
+        // و`stage=unlock` **لازم** لا زينة: بلا مُعامِل يعود `_PinGatePage`
+        // إلى `hasPin()` — وهو المصدر الذي أخطأ قبل قليل — فيُعيد بناء هذه
+        // الصفحة نفسها، ويُعاد الطلب، ويُعاد 403 بلا نهاية. وهذه هي الحلقة
+        // التي ظهرت في المتصفّح: `POST .../family/parent-pin 403`.
         setState(() => _busy = false);
         context.go(Uri(path: '/parent-pin', queryParameters: {
           if (widget.returnTo != null) 'from': widget.returnTo,
+          'stage': 'unlock',
         }).toString());
         return;
       }

@@ -79,7 +79,7 @@ class TraceHomeWrapper extends ConsumerWidget {
       // `coloring/v2/bird.png` — عصفورُ التلوين في رأس شاشة التتبّع. صار الأصل
       // المُبندَل هو المُمرَّر (`PERF-101`).
       heroAsset: 'assets/images/studio/hero-start-drawing.webp',
-      fallbackHeroAsset: 'assets/images/coloring/v2/bird.png',
+      fallbackHeroAsset: birdFallbackCdnUrl,
       specs: specs,
       onOpenCategory: (cat) {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => TraceLevelEntryPage(childId: childId, cat: cat)));

@@ -411,77 +411,217 @@ export function AppExperiencePage() {
   const blockTypes = meta?.block_types ?? []
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.lede}</p>
+    <div className="content-studio-root">
+      {/* 1. Commercial Command Strip */}
+      <section className="commercial-command-strip">
+        <div className="commercial-command-strip__left">
+          <div className="status-beacon">
+            <span className="status-beacon__dot status-beacon__dot--emerald" />
+            <div className="status-beacon__meta">
+              <span className="status-beacon__title">{locale === 'ar' ? 'محلل تجربة التطبيق المباشر' : 'Live App Experience Engine'}</span>
+              <span className="status-beacon__sub">/api/v1/home/resolved · Flutter SDK Contract</span>
+            </div>
+          </div>
         </div>
-        <div className="page-intro__actions">
-          <button className="button button--secondary" type="button" onClick={() => void openVersions()} disabled={!selected}>
-            <Icon name="clock" size={14} />{text.versions}
+
+        <div className="commercial-command-strip__right">
+          <button className="button button--secondary button--small" type="button" onClick={() => void openVersions()} disabled={!selected}>
+            <Icon name="clock" size={14} />
+            <span>{text.versions}</span>
           </button>
-          <button className="button button--primary" type="button" onClick={() => setShowAdd(true)}>
-            <Icon name="plus" size={14} />{text.addSection}
+          <button className="button button--primary button--small" type="button" onClick={() => setShowAdd(true)}>
+            <Icon name="plus" size={14} />
+            <span>{text.addSection}</span>
           </button>
         </div>
       </section>
 
-      <div className="panel panel--notice" role="status">
-        <Icon name="eye" size={16} /><span>{text.liveNote}</span>
+      {/* 2. Executive Panoramic Hero */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(59, 130, 246, 0.14) 60%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span className="catalog-hero__status-badge">
+              <span className="status-dot-pulse" />
+              {blocks.length} {locale === 'ar' ? 'أقسام مخصصة' : 'custom blocks'}
+            </span>
+          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.lede}</p>
+        </div>
+      </section>
+
+      {/* 3. Executive Bento Grid Matrix */}
+      <div className="commercial-bento-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
+        <div className="commercial-bento-card commercial-bento-card--indigo">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'إجمالي الأقسام' : 'Total Blocks'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="grid" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{blocks.length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'في مسار الهوم' : 'In home feed'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--emerald">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'أقسام تحريرية' : 'Editorial'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="palette" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{blocks.filter((b) => !b.is_system).length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend commercial-bento-card__trend--up">{locale === 'ar' ? 'قابلة للترتيب والتحكم' : 'Curated rows'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--blue">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'أقسام النظام' : 'System Rows'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="settings" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{blocks.filter((b) => b.is_system).length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'تُحسب من حالة الطفل' : 'Automated state'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--cyan">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'مطابقة للمعاينة' : 'Matched Preview'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="check" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{preview?.meta.matched ?? 0}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'للشخصية المختارة' : 'For current persona'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--amber">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'أقسام مجدولة' : 'Scheduled'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="calendar" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{blocks.filter((b) => b.scheduled_at || b.expires_at).length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'لها توقيت نشر/انتهاء' : 'Time-gated'}</span>
+          </div>
+        </div>
+
+        <div className={`commercial-bento-card ${blocks.filter((b) => !b.is_active || b.is_draft).length > 0 ? 'commercial-bento-card--purple' : 'commercial-bento-card--slate'}`}>
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'مسودة / معطل' : 'Draft / Disabled'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="edit" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{blocks.filter((b) => !b.is_active || b.is_draft).length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'غير ظاهرة للأطفال' : 'Hidden from feed'}</span>
+          </div>
+        </div>
       </div>
 
-      {error && <div className="panel panel--notice" role="alert"><Icon name="warning" size={16} /><span>{error}</span></div>}
-      {notice && !error && <div className="panel panel--notice" role="status"><Icon name="check" size={16} /><span>{notice}</span></div>}
+      {/* Preserve Exact Required Live Notice for test contracts */}
+      <div className="panel panel--notice" role="status" style={{ margin: '14px 0' }}>
+        <Icon name="eye" size={16} />
+        <span>{text.liveNote}</span>
+      </div>
 
-      <div className="home-builder">
+      {error && (
+        <div className="panel panel--notice" role="alert" style={{ margin: '12px 0' }}>
+          <Icon name="warning" size={16} />
+          <span>{error}</span>
+        </div>
+      )}
+      {notice && !error && (
+        <div className="panel panel--notice" role="status" style={{ margin: '12px 0' }}>
+          <Icon name="check" size={16} />
+          <span>{notice}</span>
+        </div>
+      )}
+
+      <div className="home-builder" style={{ marginTop: 8 }}>
         {/* LEFT: the ordered section list */}
         <div className="panel">
           <div className="panel__header">
-            <h3>{text.sections} ({blocks.length})</h3>
+            <h3>
+              {text.sections} ({blocks.length})
+            </h3>
           </div>
           <div className="home-builder__list">
-            {blocks.length ? blocks.map((block, index) => (
-              <div
-                key={block.id}
-                className={`panel home-builder__row ${selectedId === block.id ? 'panel--active' : ''}`}
-              >
-                <button
-                  type="button"
-                  className="home-builder__select"
-                  aria-pressed={selectedId === block.id}
-                  onClick={() => setSelectedId(block.id)}
+            {blocks.length ? (
+              blocks.map((block, index) => (
+                <div
+                  key={block.id}
+                  className={`panel home-builder__row ${selectedId === block.id ? 'panel--active' : ''}`}
                 >
-                  <strong>{block.title_ar || blockLabel(block.block_type, locale)}</strong>
-                  <span className={`status-badge ${Number(block.is_active) ? 'status-badge--published' : 'status-badge--draft'}`}>
-                    {Number(block.is_active) ? text.enabled : text.disabled}
-                  </span>
-                  <small dir="ltr">{block.block_type}</small>
-                  <small>
-                    <span className="track-badge">{block.is_system ? text.system : text.editorial}</span>
-                    {' '}{targetingSentence(block.targeting, locale, text.everyone)}
-                  </small>
-                  {Number(block.is_draft ?? 0) === 1 && <small>{text.draft}</small>}
-                  {/* APP-104: an existing row whose type no app renders. Said
-                      plainly, because the row otherwise looks enabled and
-                      targeted while never appearing on any device. */}
-                  {(meta?.retired_block_types ?? []).includes(block.block_type) && (
-                    <small role="alert">{text.retiredType}</small>
-                  )}
-                  {(block.targeting_invalid || block.config_invalid) && (
-                    <small role="alert">{block.targeting_invalid || block.config_invalid}</small>
-                  )}
-                </button>
-                <div className="home-builder__row-actions">
-                  <button className="icon-button icon-button--small" type="button" aria-label={text.moveUp}
-                    disabled={busy || index === 0} onClick={() => void move(block.id, -1)}>↑</button>
-                  <button className="icon-button icon-button--small" type="button" aria-label={text.moveDown}
-                    disabled={busy || index === blocks.length - 1} onClick={() => void move(block.id, 1)}>↓</button>
-                  <span className="home-builder__position">#{index + 1}</span>
+                  <button
+                    type="button"
+                    className="home-builder__select"
+                    aria-pressed={selectedId === block.id}
+                    onClick={() => setSelectedId(block.id)}
+                  >
+                    <strong>{block.title_ar || blockLabel(block.block_type, locale)}</strong>
+                    <span className={`status-badge ${Number(block.is_active) ? 'status-badge--published' : 'status-badge--draft'}`}>
+                      {Number(block.is_active) ? text.enabled : text.disabled}
+                    </span>
+                    <small dir="ltr">{block.block_type}</small>
+                    <small>
+                      <span className="track-badge">{block.is_system ? text.system : text.editorial}</span>{' '}
+                      {targetingSentence(block.targeting, locale, text.everyone)}
+                    </small>
+                    {Number(block.is_draft ?? 0) === 1 && <small>{text.draft}</small>}
+                    {/* APP-104: an existing row whose type no app renders */}
+                    {(meta?.retired_block_types ?? []).includes(block.block_type) && (
+                      <small role="alert">{text.retiredType}</small>
+                    )}
+                    {(block.targeting_invalid || block.config_invalid) && (
+                      <small role="alert">{block.targeting_invalid || block.config_invalid}</small>
+                    )}
+                  </button>
+                  <div className="home-builder__row-actions">
+                    <button
+                      className="icon-button icon-button--small"
+                      type="button"
+                      aria-label={text.moveUp}
+                      disabled={busy || index === 0}
+                      onClick={() => void move(block.id, -1)}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      className="icon-button icon-button--small"
+                      type="button"
+                      aria-label={text.moveDown}
+                      disabled={busy || index === blocks.length - 1}
+                      onClick={() => void move(block.id, 1)}
+                    >
+                      ↓
+                    </button>
+                    <span className="home-builder__position">#{index + 1}</span>
+                  </div>
                 </div>
-              </div>
-            )) : <EmptyState title={text.empty} description={text.emptyHint} />}
+              ))
+            ) : (
+              <EmptyState title={text.empty} description={text.emptyHint} />
+            )}
           </div>
         </div>
 
@@ -492,33 +632,71 @@ export function AppExperiencePage() {
             <div className="home-builder__persona">
               <label className="field">
                 <span>{text.persona}</span>
-                <select value={persona.id} onChange={(event) => setPersona(PERSONAS.find((item) => item.id === event.target.value) ?? PERSONAS[1])}>
-                  {PERSONAS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                <select
+                  value={persona.id}
+                  onChange={(event) =>
+                    setPersona(PERSONAS.find((item) => item.id === event.target.value) ?? PERSONAS[1])
+                  }
+                >
+                  {PERSONAS.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="field">
                 <span>platform</span>
                 <select value={platform} onChange={(event) => setPlatform(event.target.value)}>
-                  {PLATFORMS.map((item) => <option key={item} value={item}>{item}</option>)}
+                  {PLATFORMS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
           </div>
           <div className="home-builder__preview">
             {previewError && <ErrorState message={previewError} onRetry={() => void runPreview()} />}
-            {!previewError && preview && (preview.blocks.length ? preview.blocks.map((block) => (
-              <div key={block.id} className="home-builder__preview-row">
-                <strong>{block.title || blockLabel(block.type, locale)}</strong>
-                <small dir="ltr">{block.type} · {block.source}</small>
-              </div>
-            )) : <EmptyState title={text.empty} description={text.emptyHint} />)}
+            {!previewError && preview && (
+              preview.blocks.length ? (
+                preview.blocks.map((block) => (
+                  <div key={block.id} className="home-builder__preview-row">
+                    <strong>{block.title || blockLabel(block.type, locale)}</strong>
+                    <small dir="ltr">
+                      {block.type} · {block.source}
+                    </small>
+                  </div>
+                ))
+              ) : (
+                <EmptyState title={text.empty} description={text.emptyHint} />
+              )
+            )}
             {!previewError && preview && (
               <dl className="home-builder__diagnostics">
-                <div><dt>{text.matched}</dt><dd>{preview.meta.matched}/{preview.meta.total_blocks}</dd></div>
-                <div><dt>{text.excluded}</dt><dd>{preview.meta.excluded}</dd></div>
-                <div><dt>{text.inactive}</dt><dd>{preview.meta.excluded_inactive}</dd></div>
-                <div><dt>{text.draftCount}</dt><dd>{preview.meta.excluded_draft}</dd></div>
-                <div><dt>{text.schedule2}</dt><dd>{preview.meta.excluded_schedule}</dd></div>
+                <div>
+                  <dt>{text.matched}</dt>
+                  <dd>
+                    {preview.meta.matched}/{preview.meta.total_blocks}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{text.excluded}</dt>
+                  <dd>{preview.meta.excluded}</dd>
+                </div>
+                <div>
+                  <dt>{text.inactive}</dt>
+                  <dd>{preview.meta.excluded_inactive}</dd>
+                </div>
+                <div>
+                  <dt>{text.draftCount}</dt>
+                  <dd>{preview.meta.excluded_draft}</dd>
+                </div>
+                <div>
+                  <dt>{text.schedule2}</dt>
+                  <dd>{preview.meta.excluded_schedule}</dd>
+                </div>
               </dl>
             )}
           </div>

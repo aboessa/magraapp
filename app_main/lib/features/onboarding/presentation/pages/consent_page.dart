@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/analytics/analytics.dart';
@@ -8,6 +9,7 @@ import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../l10n/app_localizations_ar.dart';
 import '../../../home/application/home_providers.dart';
+import '../../../home/data/majarra_api_client.dart';
 import '../../domain/consent_types.dart';
 
 /// Localized label for one of the five consent types (Requirement 9.1).
@@ -88,6 +90,14 @@ class _ConsentPageState extends ConsumerState<ConsentPage> {
 
   String? _writeError;
 
+  /// هل آخر فشلٍ كان 403 «الإثبات مطلوب»؟
+  ///
+  /// يُميَّز عن الفشل العامّ لأن مخرجه مختلف: العامّ تُعاد المحاولة فيه، وهذا
+  /// **لا مخرج منه بإعادة المحاولة أصلًا** — الخادم يطلب إثبات
+  /// `manage_consents`، ولا يُصدَر إلا بمبادلة إثبات `parent_area` الذي لا
+  /// يُمنَح إلا بإدخال رمز وليّ الأمر. فيُعرض إجراء يفتح شاشة الرمز.
+  bool _writeNeedsParentPin = false;
+
   @override
   void initState() {
     super.initState();
@@ -152,6 +162,7 @@ class _ConsentPageState extends ConsumerState<ConsentPage> {
     setState(() {
       _pendingTypes.add(type);
       _writeError = null;
+      _writeNeedsParentPin = false;
     });
     final api = ref.read(majarraApiClientProvider);
     try {
@@ -168,14 +179,27 @@ class _ConsentPageState extends ConsumerState<ConsentPage> {
         _pendingTypes.remove(type);
         _consentsFuture = Future.value(fresh);
       });
-    } catch (_) {
+    } catch (error) {
       // The write (or the re-fetch after it) failed: the display must stay
       // on the last server-confirmed state, not flip to what the parent
       // asked for (Requirement 9.7 — no success shown that did not happen).
       if (!mounted) return;
+      // ‏403 ليس فشلًا عامًّا: الخادم يقول «هذه الكتابة تلزمها موافقة وليّ أمر
+      // مُتحقَّق منه». وإعادة المحاولة لا تُجدي شيئًا لأن الإثبات لا يُصنَع في
+      // هذه الصفحة — يُمنَح بإدخال الرمز. فعرضُ «حاول مجددًا» هنا كان يدعو
+      // المستخدم إلى تكرار ما لا ينجح أبدًا، وهو ما ظهر في المتصفّح:
+      // ‏`POST /api/v1/family/consents 403` بلا مخرج.
+      //
+      // والإعفاء في الخادم مقصور على أسرة **لا رمز لها بعد** (خطوة الموافقات
+      // تسبق إنشاء الرمز في التهيئة). فمتى وُجد رمز — كحساب الأسرة التجريبي
+      // المزروع برمز — يُطلَب الإثبات، ولا بدّ من طريق إلى شاشة الرمز.
+      final needsPin = error is MajarraApiException && error.statusCode == 403;
       setState(() {
         _pendingTypes.remove(type);
-        _writeError = l10n.consentWriteErrorGeneric;
+        _writeNeedsParentPin = needsPin;
+        _writeError = needsPin
+            ? l10n.consentWriteRequiresParentPin
+            : l10n.consentWriteErrorGeneric;
       });
     }
   }
@@ -259,12 +283,41 @@ class _ConsentPageState extends ConsumerState<ConsentPage> {
                                     ),
                                   ),
                                 ),
-                                child: Text(
-                                  _writeError!,
-                                  style: const TextStyle(
-                                    color: AppColors.danger,
-                                    fontSize: 12,
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Text(
+                                      _writeError!,
+                                      style: const TextStyle(
+                                        color: AppColors.danger,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    // إجراء لا نصّ فقط: الرسالة وحدها تُخبر
+                                    // المستخدم أن الرمز مطلوب ثم تتركه بلا
+                                    // طريق إليه — وهو عين المأزق الذي ظهر في
+                                    // المتصفّح. و`push` لا `go` كي تبقى خطوة
+                                    // الموافقات تحت الشاشة، فيعود إليها
+                                    // زرّ الرجوع.
+                                    //
+                                    // و`stage=unlock` ليس تخمينًا: الـ403 نفسه
+                                    // **دليلٌ من الخادم** أن للأسرة رمزًا
+                                    // مُسجَّلًا (الإعفاء مقصور على من لا رمز
+                                    // له). فلا يُترَك الموزِّع يستدلّ من
+                                    // المخزن المحلي، إذ استدلاله على متصفّح
+                                    // جديد يُخطئ فيُفتَح «إنشاء رمز» فيردّ
+                                    // الخادم 403 من جديد.
+                                    if (_writeNeedsParentPin) ...[
+                                      const SizedBox(height: 8),
+                                      TextButton(
+                                        onPressed: () => context.push(
+                                          '/parent-pin?stage=unlock',
+                                        ),
+                                        child: Text(l10n.consentUnlockAction),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                             ],

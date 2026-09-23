@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
@@ -130,51 +130,141 @@ export function RecommendationsPage(){
   if(error && !rows.length) return <ErrorState message={error} onRetry={()=>void load()} />
 
   return (
-    <div className="page-stack" style={{ gap:18 }}>
-      <style>{`
-        .rec-hero{position:relative;border-radius:20px;border:1px solid var(--line);background:linear-gradient(160deg, var(--surface), color-mix(in srgb, var(--surface-2) 88%, var(--surface)));padding:22px;overflow:hidden}
-        .rec-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(520px 220px at 85% -10%, rgba(86,121,242,.12), transparent 60%), radial-gradient(380px 200px at 5% 110%, rgba(255,211,77,.10), transparent 70%)}
-        .rec-hero>*{position:relative}
-        .rec-kicker{display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);font-size:10px;font-weight:700;color:var(--muted)}
-        .rec-title{margin-top:12px;font-size:clamp(22px,2.6vw,30px);letter-spacing:-.04em}
-        .rec-lede{margin-top:8px;max-width:720px;color:var(--text-soft);font-size:11px;line-height:1.8}
-        .stat-grid{display:grid;grid-template-columns:repeat(5, minmax(0,1fr));gap:12px}
-        @media(max-width:1100px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
-        @media(max-width:640px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
-        .s-card{border-radius:16px;border:1px solid var(--line);background:linear-gradient(180deg, var(--surface), var(--surface-2));padding:14px;transition:transform .16s}
-        .s-card:hover{transform:translateY(-1px)}
-        .s-card__top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:10px;font-weight:700}
-        .s-card__icon{width:28px;height:28px;border-radius:9px;display:grid;place-items:center}
-        .s-card__value{margin-top:10px;font-size:22px;font-weight:800}
-        .s-card--pinned .s-card__icon{background:rgba(86,121,242,.12);color:var(--primary)}
-        .s-card--hidden .s-card__icon{background:rgba(161,161,161,.12);color:var(--muted)}
-        .s-card--global .s-card__icon{background:rgba(34,184,120,.10);color:#0e7a4d}
-        .rec-panel{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden}
-        .rec-panel__head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
-        .rule-grid{display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:12px;padding:14px}
-        @media(max-width:800px){.rule-grid{grid-template-columns:1fr}}
-        .rule{padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2)}
-        .rule h4{font-size:11px;margin-bottom:6px}
-        .rule p{font-size:11px;color:var(--muted);line-height:1.6}
-      `}</style>
+    <div className="content-studio-root">
+      {/* 1. Commercial Command Strip */}
+      <section className="commercial-command-strip">
+        <div className="commercial-command-strip__left">
+          <div className="status-beacon">
+            <span className="status-beacon__dot status-beacon__dot--emerald" />
+            <div className="status-beacon__meta">
+              <span className="status-beacon__title">
+                {locale === 'ar' ? 'محرك التوصيات التحريرية الشفاف' : 'Transparent Editorial Recommendation Engine'}
+              </span>
+              <span className="status-beacon__sub">
+                {locale === 'ar' ? 'قواعد الأهلية تسبق الترتيب · لا خوارزميات غامضة' : 'Eligibility before ranking · Deterministic rules'}
+              </span>
+            </div>
+          </div>
+        </div>
 
-      <section className="rec-hero">
-        <div style={{ display:'flex', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
-          <div><span className="rec-kicker"><Icon name="sparkles" size={12}/>{text.eyebrow}</span><h2 className="rec-title">{text.title}</h2><p className="rec-lede">{text.lede}</p></div>
-          <div style={{ display:'flex', gap:8, alignItems:'start' }}><button className="button button--secondary" onClick={()=>void load()}><Icon name="refresh" size={14}/>{text.refresh}</button><button className="button button--primary" onClick={()=> setShowAdd(true)}><Icon name="plus" size={14}/>{text.add}</button></div>
+        <div className="commercial-command-strip__right">
+          <button className="button button--secondary button--small" onClick={() => void load()}>
+            <Icon name="refresh" size={14} />
+            <span>{text.refresh}</span>
+          </button>
+          <button className="button button--primary button--small" onClick={() => setShowAdd(true)}>
+            <Icon name="plus" size={14} />
+            <span>{text.add}</span>
+          </button>
         </div>
       </section>
 
-      <div className="stat-grid">
-        <div className="s-card"><div className="s-card__top"><span>{text.stats.total}</span><span className="s-card__icon" style={{ background:'rgba(86,121,242,.12)', color:'var(--primary)' }}><Icon name="text" size={14}/></span></div><strong className="s-card__value">{stats.total}</strong></div>
-        <div className="s-card s-card--pinned"><div className="s-card__top"><span>{text.stats.pinned}</span><span className="s-card__icon"><Icon name="sparkles" size={14}/></span></div><strong className="s-card__value">{stats.pinned}</strong></div>
-        <div className="s-card s-card--hidden"><div className="s-card__top"><span>{text.stats.hidden}</span><span className="s-card__icon"><Icon name="eye" size={14}/></span></div><strong className="s-card__value">{stats.hidden}</strong></div>
-        <div className="s-card s-card--global"><div className="s-card__top"><span>{text.stats.global}</span><span className="s-card__icon"><Icon name="globe" size={14}/></span></div><strong className="s-card__value">{stats.global}</strong></div>
-        <div className="s-card"><div className="s-card__top"><span>{text.stats.personalized}</span><span className="s-card__icon" style={{ background:'rgba(245,165,36,.12)', color:'#b47800' }}><Icon name="children" size={14}/></span></div><strong className="s-card__value">{stats.personalized}</strong></div>
+      {/* 2. Executive Panoramic Hero */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: 'radial-gradient(circle, rgba(168, 85, 247, 0.22) 0%, rgba(59, 130, 246, 0.14) 60%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span className="catalog-hero__status-badge">
+              <span className="status-dot-pulse" />
+              {rows.length} {locale === 'ar' ? 'توصية نشطة' : 'active pins'}
+            </span>
+          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.lede}</p>
+        </div>
+      </section>
+
+      {/* 3. Executive Bento Grid Matrix */}
+      <div className="commercial-bento-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
+        <div className="commercial-bento-card commercial-bento-card--indigo">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.stats.total}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="grid" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{stats.total}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'كل التوصيات التحريرية' : 'All pins'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--purple">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.stats.pinned}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="sparkles" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{stats.pinned}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend commercial-bento-card__trend--up">
+              {locale === 'ar' ? 'مثبتة في صدارة الشريط' : 'Top of rail'}
+            </span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--emerald">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.stats.global}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="globe" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{stats.global}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'تظهر لجميع الأطفال' : 'Global rail'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--amber">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.stats.personalized}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="children" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{stats.personalized}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'مستهدفة لطفل محدد' : 'Child specific'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--slate">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{text.stats.hidden}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="eye" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{stats.hidden}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'مستبعدة مؤقتاً' : 'Temporarily muted'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--cyan">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'مرشحو المعاينة' : 'Candidates'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="check" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{preview.length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'مؤهلون للشخصية الحالية' : 'Persona qualified'}</span>
+          </div>
+        </div>
       </div>
 
-      {notice && <div className="inline-alert inline-alert--success">{notice}</div>}
-      {error && <div className="inline-alert inline-alert--error">{error}</div>}
+      {notice && <div className="inline-alert inline-alert--success" style={{ margin: '12px 0' }}>{notice}</div>}
+      {error && <div className="inline-alert inline-alert--error" style={{ margin: '12px 0' }}>{error}</div>}
 
       <section className="rec-panel">
         <div className="rec-panel__head"><h3 style={{ fontSize:13 }}>Editorial pins <span className="title-count">{rows.length}</span></h3><span style={{ color:'var(--muted)', fontSize:10 }}>is_pinned DESC, priority DESC, created DESC — served to child home rail</span></div>

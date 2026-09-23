@@ -264,25 +264,117 @@ export function SeoOperationsPage() {
   if (!audit) return null
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.lede}</p>
+    <div className="content-studio-root">
+      {/* 1. Panoramic Studio Hero */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: 'radial-gradient(circle, rgba(14, 165, 233, 0.22) 0%, rgba(16, 185, 129, 0.16) 50%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span
+              className="catalog-hero__status-badge"
+              style={{
+                borderColor: audit.summary.errors > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+                color: audit.summary.errors > 0 ? '#ef4444' : '#10b981',
+              }}
+            >
+              <span
+                className="status-dot-pulse"
+                style={{ background: audit.summary.errors > 0 ? '#ef4444' : '#10b981' }}
+              />
+              {audit.summary.errors > 0
+                ? `${audit.summary.errors} ${text.errors}`
+                : locale === 'ar'
+                ? 'التدقيق سليم'
+                : 'Clean Audit'}
+            </span>
+          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.lede}</p>
         </div>
-        <button className="button button--secondary" type="button" onClick={() => void load()}>
-          <Icon name="refresh" size={15} />{text.refresh}
-        </button>
+
+        <div className="catalog-hero__actions">
+          <button className="button button--ghost" type="button" onClick={() => void load()}>
+            <Icon name="refresh" size={15} />
+            <span>{text.refresh}</span>
+          </button>
+        </div>
       </section>
 
-      <section className="stat-row">
-        <div className="stat-card stat-card--danger"><span>{text.errors}</span><strong>{audit.summary.errors}</strong></div>
-        <div className="stat-card stat-card--warn"><span>{text.warnings}</span><strong>{audit.summary.warnings}</strong></div>
-        <div className="stat-card"><span>{text.auditedPages}</span><strong>{audit.summary.audited_pages}</strong></div>
-        <div className="stat-card"><span>{text.auditedPosts}</span><strong>{audit.summary.audited_posts}</strong></div>
-        <div className="stat-card"><span>{text.redirects}</span><strong>{audit.summary.redirects}</strong></div>
-      </section>
+      {/* 2. Bento Glass KPI Strip */}
+      <div className="hero-kpis" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+            <Icon name="alert-triangle" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{text.errors}</span>
+            <div className="kpi-glass-card__num" style={{ color: audit.summary.errors > 0 ? '#ef4444' : undefined }}>
+              {audit.summary.errors}
+            </div>
+            <span className="kpi-glass-card__trend" style={{ color: '#ef4444' }}>
+              {locale === 'ar' ? 'أخطاء حرجة تتطلب معالجة' : 'Critical blockers'}
+            </span>
+          </div>
+        </div>
+
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
+            <Icon name="warning" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{text.warnings}</span>
+            <div className="kpi-glass-card__num">{audit.summary.warnings}</div>
+            <span className="kpi-glass-card__trend" style={{ color: '#f59e0b' }}>
+              {locale === 'ar' ? 'تحسينات موصى بها' : 'Recommended'}
+            </span>
+          </div>
+        </div>
+
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9' }}>
+            <Icon name="web-pages" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{text.auditedPages}</span>
+            <div className="kpi-glass-card__num">{audit.summary.audited_pages}</div>
+            <span className="kpi-glass-card__trend" style={{ color: '#0ea5e9' }}>
+              {locale === 'ar' ? 'صفحات موقع عام' : 'Public pages'}
+            </span>
+          </div>
+        </div>
+
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
+            <Icon name="pen" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{text.auditedPosts}</span>
+            <div className="kpi-glass-card__num">{audit.summary.audited_posts}</div>
+            <span className="kpi-glass-card__trend" style={{ color: '#a855f7' }}>
+              {locale === 'ar' ? 'مقالات المدوّنة' : 'Blog posts'}
+            </span>
+          </div>
+        </div>
+
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+            <Icon name="refresh" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{text.redirects}</span>
+            <div className="kpi-glass-card__num">{audit.summary.redirects}</div>
+            <span className="kpi-glass-card__trend" style={{ color: '#10b981' }}>
+              {locale === 'ar' ? 'تحويلات 301 نشطة' : 'Active 301 rules'}
+            </span>
+          </div>
+        </div>
+      </div>
 
       <p className="panel panel--notice">
         <Icon name="warning" size={15} />

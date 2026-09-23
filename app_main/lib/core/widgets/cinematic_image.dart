@@ -1,9 +1,23 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
+import '../images/remote_image_cache.dart';
 import 'decode_cap.dart';
 
-class CinematicImage extends StatelessWidget {
+/// صورة سينمائية هجينة: شبكة عبر تخزين محلّي، وبديل مبندل.
+///
+/// ترتيب المصادر: ملفّ مخزّن محلّيًّا ← شبكة ← بديل مبندل. `Image.network` وحده
+/// يُخبّئ في الذاكرة فقط، فكلّ صورة أُخرجت من الـAPK كانت ستُعاد تنزيلها في
+/// كلّ جلسة. هذا العارض يقرأ `RemoteImageCache` أوّلًا: بعد أوّل تحميل لا
+/// يغادر أيّ بايت الجهاز.
+///
+/// يُبقَى `Image.network` مسارَ التحميل الأوّل (لا `Image.file` مباشرةً بعد
+/// الجلب) لسببين: على الويب يُرسَم عبر عنصر DOM فيتجاوز غياب بيانات CORS في
+/// R2، و`frameBuilder` يمنح الظهور التدريجي 260ms. بعد نجاح الجلب يُستبدَل
+/// بملفّ محلّي في البناء التالي.
+class CinematicImage extends StatefulWidget {
   const CinematicImage({
     required this.assetPath,
     required this.semanticLabel,
@@ -25,9 +39,54 @@ class CinematicImage extends StatelessWidget {
   /// for a 148px card. Leave null when the slot size is unknown.
   final double? decodeWidth;
 
+  @visibleForTesting
+  static RemoteImageCache? testCache;
+
+  @override
+  State<CinematicImage> createState() => _CinematicImageState();
+}
+
+class _CinematicImageState extends State<CinematicImage> {
+  File? _cachedFile;
+  bool _lookupDone = false;
+
   bool get _hasSafeNetworkUrl {
-    final uri = Uri.tryParse(networkUrl ?? '');
+    final uri = Uri.tryParse(widget.networkUrl ?? '');
     return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _lookupCache();
+  }
+
+  @override
+  void didUpdateWidget(CinematicImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.networkUrl != widget.networkUrl) {
+      _cachedFile = null;
+      _lookupDone = false;
+      _lookupCache();
+    }
+  }
+
+  Future<void> _lookupCache() async {
+    final url = widget.networkUrl;
+    if (!_hasSafeNetworkUrl || !RemoteImageCache.isCacheableUrl(url!)) {
+      if (mounted) setState(() => _lookupDone = true);
+      return;
+    }
+    final file = await (CinematicImage.testCache ?? RemoteImageCache())
+        .fetch(url)
+        .then((hit) => hit?.file);
+    if (!mounted) return;
+    // `fetch` تُعيد الملفّ سواء قُرئ من القرص أو نُزّل الآن: في الحالين هو
+    // نسخة محلّية صالحة للعرض بلا شبكة في المرّة التالية.
+    setState(() {
+      _cachedFile = file;
+      _lookupDone = true;
+    });
   }
 
   @override
@@ -35,56 +94,84 @@ class CinematicImage extends StatelessWidget {
     // Decode at display size rather than source size. This is the single largest
     // memory win on rail-heavy screens where dozens of posters are alive at once.
     final ratio = MediaQuery.devicePixelRatioOf(context);
-    final cacheWidth = decodeWidth == null
+    final cacheWidth = widget.decodeWidth == null
         ? null
-        : (decodeWidth! * ratio).round();
+        : (widget.decodeWidth! * ratio).round();
 
     // Story artwork and game covers are CDN-only to keep APK small.
     // assetPath may be empty when coverUrl CDN is the only source (no local duplicate per user request).
-    final fallbackAssetPath = assetPath.startsWith('assets/')
-        ? assetPath
-        : assetPath.isEmpty
+    final fallbackAssetPath = widget.assetPath.startsWith('assets/')
+        ? widget.assetPath
+        : widget.assetPath.isEmpty
         ? 'assets/brand/majarra-logo.png'
         : 'assets/brand/majarra-logo.png';
 
     final fallback = Image.asset(
       fallbackAssetPath,
-      fit: fit,
-      alignment: alignment,
+      fit: widget.fit,
+      alignment: widget.alignment,
       cacheWidth: cacheWidth,
       filterQuality: FilterQuality.medium,
       errorBuilder: (context, error, stackTrace) => const _ImageFallback(),
     );
 
+    Widget networkChild;
+    if (_cachedFile != null) {
+      // `ResizeImage` هو ما يفحصه `decode_cap_test.dart`: `cacheWidth` غير
+      // صفريّة تلفّ المزوّد فيه. مسار `Image.file` يُبقي السقف تحت سيطرتنا.
+      networkChild = Image.file(
+        _cachedFile!,
+        fit: widget.fit,
+        alignment: widget.alignment,
+        cacheWidth: cacheWidth,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (context, error, stackTrace) => fallback,
+        frameBuilder: (context, child, frame, syncLoaded) {
+          if (syncLoaded || MediaQuery.disableAnimationsOf(context)) {
+            return child;
+          }
+          return AnimatedOpacity(
+            opacity: frame == null ? 0 : 1,
+            duration: const Duration(milliseconds: 260),
+            child: child,
+          );
+        },
+      );
+    } else if (!_lookupDone) {
+      // البحث في التخزين جارٍ: شبكة مباشرة مؤقتًا بدل شاشة فارغة. عند اكتمال
+      // البحث يُعاد البناء بالملفّ المحلّي إن وُجد.
+      networkChild = Image.network(
+        widget.networkUrl!,
+        // The public CDN is intentionally anonymous. On web, render
+        // through a DOM image so absent R2 CORS metadata cannot turn a
+        // valid public image into an XHR statusCode 0 failure.
+        webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+        fit: widget.fit,
+        alignment: widget.alignment,
+        cacheWidth: cacheWidth,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (context, error, stackTrace) => fallback,
+        frameBuilder: (context, child, frame, syncLoaded) {
+          if (syncLoaded || MediaQuery.disableAnimationsOf(context)) {
+            return child;
+          }
+          return AnimatedOpacity(
+            opacity: frame == null ? 0 : 1,
+            duration: const Duration(milliseconds: 260),
+            child: child,
+          );
+        },
+      );
+    } else {
+      networkChild = fallback;
+    }
+
     return Semantics(
       image: true,
-      label: semanticLabel,
+      label: widget.semanticLabel,
       child: ExcludeSemantics(
         child: RepaintBoundary(
-          child: _hasSafeNetworkUrl
-              ? Image.network(
-                  networkUrl!,
-                  // The public CDN is intentionally anonymous. On web, render
-                  // through a DOM image so absent R2 CORS metadata cannot turn a
-                  // valid public image into an XHR statusCode 0 failure.
-                  webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
-                  fit: fit,
-                  alignment: alignment,
-                  cacheWidth: cacheWidth,
-                  filterQuality: FilterQuality.medium,
-                  errorBuilder: (context, error, stackTrace) => fallback,
-                  frameBuilder: (context, child, frame, syncLoaded) {
-                    if (syncLoaded || MediaQuery.disableAnimationsOf(context)) {
-                      return child;
-                    }
-                    return AnimatedOpacity(
-                      opacity: frame == null ? 0 : 1,
-                      duration: const Duration(milliseconds: 260),
-                      child: child,
-                    );
-                  },
-                )
-              : fallback,
+          child: _hasSafeNetworkUrl ? networkChild : fallback,
         ),
       ),
     );
@@ -177,6 +264,7 @@ class PlanetSymbol extends StatelessWidget {
     this.showOrbit = true,
     this.selected = false,
     this.imageAsset,
+    this.networkUrl,
     super.key,
   });
 
@@ -187,6 +275,10 @@ class PlanetSymbol extends StatelessWidget {
   final bool showOrbit;
   final bool selected;
   final String? imageAsset;
+
+  /// CDN twin of [imageAsset]: R2-first via disk cache, bundled instant paint.
+  /// Null keeps the legacy bundled-only path (offline-safe by construction).
+  final String? networkUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -240,18 +332,26 @@ class PlanetSymbol extends StatelessWidget {
                   ],
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  imageAsset!,
-                  width: size,
-                  height: size,
-                  // `width` تخطيطٌ لا فكّ ترميز: صور الكواكب 768×768 (2.25 MB
-                  // مفكوكة) كانت تُفكّ بكاملها لدائرةٍ بعرض 58 (`PERF-102`).
-                  cacheWidth: decodeCapFor(context, size),
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.high,
-                  errorBuilder: (_, __, ___) =>
-                      _fallbackSphere(accent, lightAccent, selected, size),
-                ),
+                child: networkUrl == null
+                    ? Image.asset(
+                        imageAsset!,
+                        width: size,
+                        height: size,
+                        // `width` تخطيطٌ لا فكّ ترميز: صور الكواكب 768×768 (2.25 MB
+                        // مفكوكة) كانت تُفكّ بكاملها لدائرةٍ بعرض 58 (`PERF-102`).
+                        cacheWidth: decodeCapFor(context, size),
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                        errorBuilder: (_, __, ___) =>
+                            _fallbackSphere(accent, lightAccent, selected, size),
+                      )
+                    : CinematicImage(
+                        assetPath: imageAsset!,
+                        networkUrl: networkUrl,
+                        semanticLabel: semanticLabel,
+                        fit: BoxFit.cover,
+                        decodeWidth: size,
+                      ),
               ),
               if (showOrbit)
                 Positioned.fill(

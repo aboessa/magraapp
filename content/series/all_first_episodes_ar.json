@@ -1,0 +1,1454 @@
+﻿[
+    {
+        "ep_id":  "episode-preschool-words-01-picture-to-object",
+        "planet":  "abjad",
+        "series_title":  "لونا تكتشف الكلمات",
+        "episode_title":  "الصورة والشيء",
+        "age":  "3-5",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي الصغار! أنا لونا، واليوم سنلعب معاً لعبة الصور الجميلة والممتعة.",
+                             "word_count":  13,
+                             "visual_prompt":  "Luna the little space girl waving cheerfully in a bright playroom with big colorful picture cards floating around her, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "انظروا! هذه صورة تفاحة حمراء لذيذة، وهنا تفاحة حقيقية على الطاولة أمامنا.",
+                             "word_count":  12,
+                             "visual_prompt":  "A picture card of a red apple next to a real red apple on a wooden table, soft bright colors, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "نضع الصورة بجانب الشيء الذي يشبهها تماماً، فالصورة تحكي لنا عن شيء نعرفه في بيتنا.",
+                             "word_count":  16,
+                             "visual_prompt":  "Luna gently placing a picture card beside the matching real object, a soft glowing line connecting them, warm playroom, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "هيا نطابق صورة الكرة مع الكرة، وصورة القطة مع القطة الصغيرة الظريفة.",
+                             "word_count":  12,
+                             "visual_prompt":  "Two matching pairs shown: a ball picture with a real ball, a cat picture with a cute kitten, playful arrangement, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  6,
+                             "narration":  "أحسنتم يا أبطال! إلى اللقاء في لعبة جديدة وممتعة.",
+                             "word_count":  8,
+                             "visual_prompt":  "Luna clapping and waving happily with sparkles and matched picture pairs behind her, joyful ending, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-preschool-words-02-listen-and-find",
+        "planet":  "abjad",
+        "series_title":  "لونا تكتشف الكلمات",
+        "episode_title":  "استمع وابحث",
+        "age":  "3-5",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أحبائي! أنا لونا، واليوم سنستمع جيداً بآذاننا ثم نبحث معاً.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna smiling and pointing to her ear in a cozy bright room with colorful objects around, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "أنصتوا معي إلى الكلمة، ثم ننظر حولنا لنجد الشيء الذي سمعنا اسمه.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna cupping her ear with sound wave sparkles, several colorful objects on a shelf waiting to be found, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "سمعنا كلمة موزة، فلنبحث بأعيننا الصغيرة عن الموزة الصفراء بين كل هذه الأشياء الجميلة.",
+                             "word_count":  15,
+                             "visual_prompt":  "A yellow banana glowing softly among other objects as Luna searches with wide curious eyes, warm colors, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "وجدناها! الموزة الصفراء هنا. أحسنتم، آذانكم وعيونكم تعمل معاً بشكل رائع.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna joyfully holding up the found yellow banana, celebration sparkles around her, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  6,
+                             "narration":  "لعبنا وتعلمنا! إلى اللقاء يا أصدقائي الأذكياء.",
+                             "word_count":  7,
+                             "visual_prompt":  "Luna waving goodbye with the banana and a happy sun in a bright window behind her, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-preschool-count-01-one-for-each",
+        "planet":  "arqam",
+        "series_title":  "عدّ معي",
+        "episode_title":  "واحد لكل واحد",
+        "age":  "3-5",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، واليوم سنتعلم أن لكل شيء مكاناً واحداً.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna waving beside a small table set with plates and cups, cheerful kitchen scene, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "عندنا ثلاثة أطباق صغيرة، ونريد أن نضع تفاحة واحدة فوق كل طبق منها.",
+                             "word_count":  12,
+                             "visual_prompt":  "Three small plates in a row and three apples nearby, bright and simple, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "تفاحة لهذا الطبق، وتفاحة لهذا الطبق، وتفاحة لهذا الطبق، فصار لكل طبق تفاحة واحدة.",
+                             "word_count":  15,
+                             "visual_prompt":  "One apple gently placed on each of the three plates, a soft glow linking each pair, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "انظروا، لا يوجد طبق فارغ، ولا تفاحة زائدة. كل واحد له مكانه تماماً.",
+                             "word_count":  12,
+                             "visual_prompt":  "All three plates each holding exactly one apple, balanced and neat, Luna smiling proudly, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  6,
+                             "narration":  "أحسنتم يا أبطال العدّ! إلى اللقاء قريباً.",
+                             "word_count":  6,
+                             "visual_prompt":  "Luna clapping happily beside the neatly matched plates and apples, sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-preschool-count-02-three-friends",
+        "planet":  "arqam",
+        "series_title":  "عدّ معي",
+        "episode_title":  "ثلاثة أصدقاء",
+        "age":  "3-5",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أصدقائي! أنا لونا، واليوم سنعدّ معاً ثلاثة أصدقاء لطفاء.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna waving with three cute cartoon animal friends standing beside her in a sunny park, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "هيا نعدّ ببطء: أرنب واحد، ثم قطة اثنان، ثم بطة ثلاثة.",
+                             "word_count":  11,
+                             "visual_prompt":  "A rabbit, a cat, and a duck appearing one after another, each glowing softly as it is counted, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "نلمس كل صديق مرة واحدة ونقول رقمه بصوت واضح، فيصبح عندنا ثلاثة أصدقاء بالضبط.",
+                             "word_count":  14,
+                             "visual_prompt":  "Luna gently tapping each of the three animal friends in turn, a friendly number sparkle popping over each, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "ثلاثة أصدقاء يلعبون معاً بسعادة، ويحبون بعضهم كثيراً كثيراً في الحديقة.",
+                             "word_count":  11,
+                             "visual_prompt":  "The three animal friends holding hands and playing joyfully together in the sunny park, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  6,
+                             "narration":  "عددنا حتى ثلاثة! إلى اللقاء يا أصدقائي.",
+                             "word_count":  6,
+                             "visual_prompt":  "Luna waving with the three happy friends, sparkles and a warm sun, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-preschool-calm-01-bird-home",
+        "planet":  "qisas",
+        "series_title":  "حكاية هادئة",
+        "episode_title":  "بيت الطائر",
+        "age":  "3-5",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أحبائي! أنا لونا، واليوم أحكي لكم حكاية هادئة عن عصفور صغير.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna sitting calmly under a big tree at soft golden sunset, a tiny bird nearby, gentle warm colors, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "طار العصفور الصغير بعيداً في السماء، ولعب طوال النهار بين الغيوم الناعمة.",
+                             "word_count":  12,
+                             "visual_prompt":  "A small bird flying gently among soft fluffy clouds in a calm evening sky, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "وعندما جاء المساء الهادئ، اشتاق العصفور إلى بيته الدافئ فوق الشجرة الكبيرة العالية.",
+                             "word_count":  13,
+                             "visual_prompt":  "The little bird looking toward a cozy nest high in a big tree as the sky turns soft purple, calm mood, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "عاد العصفور إلى عشه الصغير، واحتضنته أمه بحنان تحت ضوء القمر الهادئ.",
+                             "word_count":  12,
+                             "visual_prompt":  "The bird settling into a warm nest beside its mother under a gentle glowing moon, peaceful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  6,
+                             "narration":  "نام العصفور بسلام. تصبحون على خير يا أحبائي.",
+                             "word_count":  7,
+                             "visual_prompt":  "The little bird sleeping peacefully in the nest, soft stars twinkling, calm night, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-preschool-calm-02-goodnight-toys",
+        "planet":  "qisas",
+        "series_title":  "حكاية هادئة",
+        "episode_title":  "تصبح على خير يا ألعابي",
+        "age":  "3-5",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أحبائي! أنا لونا، وحان وقت النوم الهادئ الجميل بعد يوم طويل.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna in soft pajamas in a cozy bedroom at night with toys scattered on the floor, warm lamp glow, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "قبل النوم نرتب ألعابنا بهدوء، فنضع كل لعبة في مكانها المريح.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna gently placing toys into a soft basket and on a shelf, calm tidy room, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "نقول للدمية تصبحين على خير، وللسيارة الصغيرة تصبح على خير، ولكل لعبة نتمنى نوماً هادئاً.",
+                             "word_count":  15,
+                             "visual_prompt":  "Luna softly waving goodnight to a doll and a little toy car tucked in their places, dim cozy light, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "نطفئ النور بلطف، ونتمدد في السرير الدافئ، ونغمض أعيننا الصغيرة بهدوء.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna lying in a warm bed pulling up a soft blanket, a small dim night lamp, peaceful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  6,
+                             "narration":  "تصبحون على خير يا أحبائي. أحلاماً سعيدة.",
+                             "word_count":  6,
+                             "visual_prompt":  "Luna sleeping peacefully with a gentle smile, soft moon and stars through the window, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-preschool-colors-01-find-yellow",
+        "planet":  "alam",
+        "series_title":  "ألوان حولنا",
+        "episode_title":  "ابحث عن الأصفر",
+        "age":  "3-5",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، واليوم سنبحث معاً عن اللون الأصفر المشرق.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna waving in a bright cheerful room full of colorful objects, a big sunny window, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "اللون الأصفر مثل الشمس الدافئة، ومثل الموزة اللذيذة، ومثل الزهرة الجميلة.",
+                             "word_count":  11,
+                             "visual_prompt":  "A warm sun, a banana, and a yellow flower glowing softly side by side, cheerful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "لننظر حولنا بأعيننا الصغيرة، ونبحث عن كل شيء أصفر جميل في هذه الغرفة الملونة.",
+                             "word_count":  14,
+                             "visual_prompt":  "Luna looking around the colorful room with curious eyes, several yellow items softly highlighted among others, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "وجدنا البطة الصفراء والكرة الصفراء! أحسنتم، عيونكم تعرف اللون الأصفر جيداً.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna joyfully gathering a yellow rubber duck and a yellow ball, celebration sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  6,
+                             "narration":  "عرفنا الأصفر! إلى اللقاء مع لون جديد.",
+                             "word_count":  6,
+                             "visual_prompt":  "Luna waving happily holding the yellow objects, a bright sun behind her, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-preschool-colors-02-sort-two-colors",
+        "planet":  "alam",
+        "series_title":  "ألوان حولنا",
+        "episode_title":  "صنّف لونين",
+        "age":  "3-5",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أحبائي! أنا لونا، واليوم سنرتب الأشياء حسب لونها الجميل.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna waving beside two empty baskets, one red and one blue, with mixed colorful balls nearby, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "عندنا سلة حمراء وسلة زرقاء، وأمامنا كرات كثيرة حمراء وزرقاء مختلطة.",
+                             "word_count":  11,
+                             "visual_prompt":  "A pile of mixed red and blue balls in front of a red basket and a blue basket, bright and clear, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "نضع كل كرة حمراء في السلة الحمراء، وكل كرة زرقاء في السلة الزرقاء بهدوء.",
+                             "word_count":  14,
+                             "visual_prompt":  "Luna sorting red balls into the red basket and blue balls into the blue basket, tidy and satisfying, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "انظروا، كل لون صار مع أصدقائه من نفس اللون. رتبنا كل شيء بنجاح.",
+                             "word_count":  12,
+                             "visual_prompt":  "Two neat baskets, one full of red balls and one full of blue balls, Luna smiling proudly, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  6,
+                             "narration":  "صنّفنا الألوان! إلى اللقاء يا أبطال.",
+                             "word_count":  5,
+                             "visual_prompt":  "Luna waving happily between the two sorted color baskets, sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-numbers-01-counting-stars",
+        "planet":  "arqam",
+        "series_title":  "مغامرات الأرقام",
+        "episode_title":  "عدّ النجوم",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، واليوم سنعدّ النجوم اللامعة معاً في سماء الليل.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna floating happily in space pointing at a sky full of bright stars, cheerful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "قبل أن نعدّ، ننظر بسرعة ونخمّن: هل النجوم قليلة أم كثيرة يا ترى؟",
+                             "word_count":  13,
+                             "visual_prompt":  "A small cluster of glowing stars grouped together, Luna tilting her head guessing, thought sparkle above her, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "الآن نعدّ كل نجمة مرة واحدة بهدوء، ونلمسها بإصبعنا حتى لا ننسى أياً منها أبداً.",
+                             "word_count":  14,
+                             "visual_prompt":  "Luna gently touching each star one by one as it brightens when counted, soft glowing trail, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "عددنا كل النجوم، فعرفنا كميتها بالضبط. التخمين أولاً ثم العدّ يجعلنا نتأكد من الإجابة الصحيحة.",
+                             "word_count":  14,
+                             "visual_prompt":  "All the stars now lit and grouped neatly, Luna smiling proudly with a happy checkmark sparkle, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "عدّ النجوم ممتع، وفي كل مرة نتعلم رقماً جديداً. إلى اللقاء يا أبطال!",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna waving goodbye among twinkling stars in a calm night sky, warm ending, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-numbers-02-more-or-less",
+        "planet":  "arqam",
+        "series_title":  "مغامرات الأرقام",
+        "episode_title":  "أكثر أم أقل؟",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أصدقائي! أنا لونا، واليوم سنتعلم كيف نعرف أيّ مجموعة أكثر عدداً.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna standing between two baskets of colorful apples, one fuller than the other, curious pose, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "عندنا مجموعتان من الكرات، مجموعة زرقاء ومجموعة حمراء، فأيّهما فيها كرات أكثر؟",
+                             "word_count":  12,
+                             "visual_prompt":  "Two rows of balls, a blue group and a red group, side by side for comparison, clear layout, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "نصفّ كل كرة زرقاء أمام كرة حمراء، فنرى بوضوح أيّ صف يبقى فيه كرات بلا شريك.",
+                             "word_count":  15,
+                             "visual_prompt":  "Blue balls lined up one-to-one facing red balls, one extra ball left without a pair glowing softly, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "الصف الذي بقيت فيه كرة بلا شريك هو الأكثر، والآخر هو الأقل عدداً.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna pointing at the longer row with the extra ball, a big friendly arrow indicating \u0027more\u0027, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "المطابقة واحداً بواحد تساعدنا نعرف الأكثر والأقل بسهولة. إلى اللقاء!",
+                             "word_count":  10,
+                             "visual_prompt":  "Luna waving happily beside the two compared groups, sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-numbers-03-shape-bridge",
+        "planet":  "arqam",
+        "series_title":  "مغامرات الأرقام",
+        "episode_title":  "جسر الأشكال",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، واليوم سنكمل جسراً ناقصاً باختيار الشكل المناسب.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna standing before a bridge made of shapes with one gap, a few loose shapes nearby, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "في الجسر فجوة فارغة، وأمامنا مربع ودائرة ومثلث، فأيّها يملأ الفجوة تماماً؟",
+                             "word_count":  12,
+                             "visual_prompt":  "A square-shaped gap in the bridge, with a square, a circle and a triangle waiting to be tried, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "نجرّب الدائرة فلا تناسب، ونجرّب المثلث فلا يناسب، لكن المربع يملأ الفجوة بشكل مثالي.",
+                             "word_count":  14,
+                             "visual_prompt":  "A circle and triangle failing to fit the square gap, then a square sliding in perfectly, satisfying fit, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "اكتمل الجسر بالشكل الصحيح، والآن نعبر عليه بأمان وسعادة كبيرة.",
+                             "word_count":  10,
+                             "visual_prompt":  "The completed shape bridge, Luna happily walking across it, bright cheerful scene, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "كل شكل له مكانه الخاص. أحسنتم يا مهندسين صغار، إلى اللقاء!",
+                             "word_count":  10,
+                             "visual_prompt":  "Luna waving from the middle of the finished shape bridge, celebration sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-numbers-04-combining-groups",
+        "planet":  "arqam",
+        "series_title":  "مغامرات الأرقام",
+        "episode_title":  "نجمع المجموعات",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أصدقائي! أنا لونا، واليوم سنتعلم كيف نجمع مجموعتين لتصبحا مجموعة واحدة.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna beside two small groups of colorful blocks on a table, ready to combine, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "هنا مجموعة فيها كرتان، وهنا مجموعة أخرى فيها ثلاث كرات ملونة جميلة.",
+                             "word_count":  11,
+                             "visual_prompt":  "A group of two balls and a separate group of three balls, clearly spaced apart, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "نقرّب المجموعتين من بعضهما، ونضعهما معاً في سلة واحدة، ثم نعدّ الكرات كلها من جديد.",
+                             "word_count":  15,
+                             "visual_prompt":  "The two ball groups sliding together into one basket, Luna counting the combined balls, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "صار عندنا خمس كرات في مجموعة واحدة. هكذا يجمع الأصدقاء أشياءهم معاً.",
+                             "word_count":  11,
+                             "visual_prompt":  "One basket now holding all five balls together, Luna smiling proudly, warm colors, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "الجمع يعني نضم الأشياء معاً ونعدّها. أحسنتم يا أبطال، إلى اللقاء!",
+                             "word_count":  10,
+                             "visual_prompt":  "Luna waving beside the full basket of five balls, celebration sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-body-01-heart",
+        "planet":  "oloom",
+        "series_title":  "اكتشف جسمك",
+        "episode_title":  "القلب",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، واليوم سنكتشف عضواً مهماً جداً في أجسامنا، إنه القلب.",
+                             "word_count":  13,
+                             "visual_prompt":  "Luna pointing to the center of her chest with a soft glowing heart shape, friendly science setting, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "القلب عضلة صغيرة قوية في صدرنا، تنبض ليل نهار دون أن تتعب أبداً.",
+                             "word_count":  12,
+                             "visual_prompt":  "A friendly cartoon heart gently beating inside a chest outline, soft pulsing glow, cute and safe, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "القلب يشبه مضخة لطيفة، يدفع الدم في كل جسمنا ليصل الغذاء والأكسجين إلى كل مكان.",
+                             "word_count":  14,
+                             "visual_prompt":  "The cartoon heart pumping soft glowing streams gently flowing along simple body pathways, calm and clean, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "عندما نجري ونلعب يخفق القلب أسرع، لأنه يعمل بجد ليمنحنا الطاقة.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna happily running while the friendly heart beats a little faster with cheerful motion sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "نحب قلبنا ونعتني به بالحركة والغذاء الصحي. إلى اللقاء يا أصدقائي!",
+                             "word_count":  10,
+                             "visual_prompt":  "Luna waving beside a happy healthy heart eating fruit and exercising, warm ending, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-body-02-five-senses",
+        "planet":  "oloom",
+        "series_title":  "اكتشف جسمك",
+        "episode_title":  "الحواس الخمس",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أصدقائي! أنا لونا، واليوم سنكتشف حواسنا الخمس التي نعرف بها العالم.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna surrounded by soft icons of an eye, ear, nose, hand and mouth glowing gently, cheerful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "بأعيننا نرى الألوان، وبآذاننا نسمع الأصوات الجميلة من حولنا كل يوم.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna looking at colorful balloons then listening to singing birds, eye and ear softly highlighted, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "وبأنفنا نشمّ رائحة الزهور، وبألسنتنا نتذوّق الطعام اللذيذ، وبأيدينا نلمس الأشياء الناعمة والخشنة.",
+                             "word_count":  13,
+                             "visual_prompt":  "Luna smelling a flower, tasting fruit, and touching a soft teddy, each action with a gentle glow, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "حواسنا الخمس تعمل معاً، فتساعدنا نفهم كل ما يحدث في عالمنا الجميل.",
+                             "word_count":  11,
+                             "visual_prompt":  "All five sense icons glowing together around a happy Luna in a colorful garden, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "حواسنا هدية جميلة، فلنعتنِ بها دائماً. إلى اللقاء يا أصدقائي!",
+                             "word_count":  9,
+                             "visual_prompt":  "Luna waving happily with the five glowing sense icons around her, warm ending, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-body-03-breathing",
+        "planet":  "oloom",
+        "series_title":  "اكتشف جسمك",
+        "episode_title":  "كيف نتنفس؟",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، واليوم سنكتشف كيف نتنفس الهواء في كل لحظة.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna taking a gentle deep breath with soft blue air swirls entering, calm friendly setting, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "عندما نشهق، يدخل الهواء من أنفنا وينزل بلطف إلى رئتينا الكبيرتين.",
+                             "word_count":  11,
+                             "visual_prompt":  "Soft blue air flowing in through a nose down to two gentle glowing lungs inside a chest outline, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "الرئتان تشبهان بالونين ناعمين، تمتلئان بالهواء عند الشهيق، وتفرغان بلطف عند الزفير الهادئ.",
+                             "word_count":  13,
+                             "visual_prompt":  "Two lungs shown like soft balloons gently inflating then deflating with the breath, calm animation, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "الهواء يحمل الأكسجين الذي يمنح أجسامنا الطاقة لنلعب ونتحرك بنشاط.",
+                             "word_count":  10,
+                             "visual_prompt":  "Gentle glowing oxygen sparkles spreading from the lungs giving energy, Luna playing happily, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "لنأخذ نفساً عميقاً هادئاً معاً. أحسنتم، إلى اللقاء يا أصدقائي!",
+                             "word_count":  9,
+                             "visual_prompt":  "Luna and children taking a calm deep breath together in fresh air, peaceful ending, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-home-01-walking-water",
+        "planet":  "oloom",
+        "series_title":  "جرّب في البيت",
+        "episode_title":  "الماء الذي يمشي",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، واليوم سنجرّب تجربة عجيبة: ماء يمشي بين الأكواب.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna beside a row of clear cups with colored water and folded paper towels connecting them, home table, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "نطلب من والدنا مساعدتنا، ونصف أكواباً، ونملأ بعضها بماء ملوّن جميل.",
+                             "word_count":  11,
+                             "visual_prompt":  "A parent\u0027s hand helping fill alternate cups with colored water beside empty cups, warm kitchen, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "نضع طرف منديل ورقي مطوي في كوب مملوء، وطرفه الآخر في الكوب الفارغ المجاور.",
+                             "word_count":  14,
+                             "visual_prompt":  "Folded paper towel bridges dipping between a full colored cup and an empty cup, close-up, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "ننتظر قليلاً، فنرى الماء يتسلق المنديل ببطء ويمشي إلى الكوب الفارغ وكأنه سحر جميل.",
+                             "word_count":  14,
+                             "visual_prompt":  "Colored water slowly climbing up the paper towel and filling the empty cup, amazed Luna watching, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "الماء يتسلق الألياف الصغيرة في الورق. تجربة رائعة، إلى اللقاء!",
+                             "word_count":  9,
+                             "visual_prompt":  "All cups now with water evenly spread and blended colors, Luna waving happily, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-home-02-magnet-test",
+        "planet":  "oloom",
+        "series_title":  "جرّب في البيت",
+        "episode_title":  "اختبار المغناطيس",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أصدقائي! أنا لونا، واليوم سنختبر بالمغناطيس أيّ الأشياء يجذبها وأيّها لا.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna holding a friendly horseshoe magnet beside a tray of mixed objects, home table, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "أمامنا ملعقة معدنية، وقلم خشبي، ومشبك حديدي، وقطعة بلاستيك ملوّنة.",
+                             "word_count":  10,
+                             "visual_prompt":  "A metal spoon, a wooden pencil, an iron paperclip, and a plastic piece laid out on a tray, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "قبل الاختبار نخمّن معاً: المغناطيس يجذب الحديد، لكنه لا يجذب الخشب ولا البلاستيك أبداً.",
+                             "word_count":  14,
+                             "visual_prompt":  "Luna guessing with a thought bubble showing the magnet attracting metal items and ignoring wood and plastic, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "نقرّب المغناطيس، فيقفز إليه المشبك والملعقة بسرعة، بينما يبقى القلم والبلاستيك في مكانهما ثابتين.",
+                             "word_count":  14,
+                             "visual_prompt":  "The magnet pulling the paperclip and spoon toward it while the pencil and plastic stay still, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "المغناطيس يحب الحديد فقط. تخميننا كان صحيحاً، إلى اللقاء يا أبطال!",
+                             "word_count":  10,
+                             "visual_prompt":  "Luna waving beside the sorted objects, metal ones stuck to the magnet, cheerful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-home-03-float-or-sink",
+        "planet":  "oloom",
+        "series_title":  "جرّب في البيت",
+        "episode_title":  "يطفو أم يغوص؟",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، واليوم سنعرف أيّ الأشياء يطفو فوق الماء وأيّها يغوص.",
+                             "word_count":  13,
+                             "visual_prompt":  "Luna beside a big bowl of water with a cork, a stone, an apple and a coin ready to test, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "نطلب مساعدة والدنا، ونخمّن معاً: هل ستطفو التفاحة أم ستغوص إلى القاع؟",
+                             "word_count":  12,
+                             "visual_prompt":  "A parent hand nearby as Luna guesses, a thought bubble of an apple floating, water bowl in front, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "نضع الأشياء واحداً واحداً في الماء بهدوء، ونلاحظ: الفلينة تطفو، والحجر يغوص إلى القاع بسرعة.",
+                             "word_count":  15,
+                             "visual_prompt":  "A cork floating on top of the water while a stone sinks to the bottom of the clear bowl, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "الأشياء الخفيفة الممتلئة بالهواء تطفو، والأشياء الثقيلة الكثيفة تغوص. ملاحظتنا علّمتنا شيئاً جديداً ورائعاً.",
+                             "word_count":  14,
+                             "visual_prompt":  "Split view of floating light objects on top and heavy objects at the bottom, Luna observing happily, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "جرّبنا ولاحظنا وتعلّمنا. أحسنتم يا علماء صغار، إلى اللقاء!",
+                             "word_count":  8,
+                             "visual_prompt":  "Luna waving beside the water bowl with floating and sunken items sorted, cheerful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-home-04-growing-seed",
+        "planet":  "oloom",
+        "series_title":  "جرّب في البيت",
+        "episode_title":  "بذرة تنمو",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أصدقائي! أنا لونا، واليوم سنزرع بذرة صغيرة ونتابع نموها بحب.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna holding a tiny seed above a small pot of soil near a sunny window, warm home, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "نضع البذرة في التراب، ونسقيها قليلاً من الماء، ونضعها قرب ضوء الشمس الدافئ.",
+                             "word_count":  13,
+                             "visual_prompt":  "Luna gently placing a seed in soil, watering it lightly, pot sitting in warm sunlight, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "نصبر أياماً ونتابع كل يوم بلطف، حتى تخرج من التراب برعمة خضراء صغيرة جميلة.",
+                             "word_count":  14,
+                             "visual_prompt":  "A tiny green sprout emerging from the soil over days, Luna checking it happily each day, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "البذرة احتاجت ماءً وضوءاً وصبراً لتنمو، تماماً كما نحتاج نحن الغذاء والوقت لنكبر أقوياء.",
+                             "word_count":  14,
+                             "visual_prompt":  "The small sprout growing taller with sun and water symbols, Luna smiling proudly beside it, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "رعينا بذرتنا فنمت. أحسنتم يا مزارعين صغار، إلى اللقاء!",
+                             "word_count":  8,
+                             "visual_prompt":  "Luna waving beside a healthy little green plant in a pot on a sunny windowsill, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-hekaya-01-lost-bag",
+        "planet":  "qiyam",
+        "series_title":  "حكاية وحكمة",
+        "episode_title":  "الحقيبة المفقودة",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، وأحكي لكم اليوم حكاية عن الأمانة الجميلة.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna in a friendly neighborhood park introducing a story, a small lost bag on a bench nearby, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "وجد الطفل سامي حقيبة صغيرة على المقعد، وبداخلها نقود ولعبة جميلة.",
+                             "word_count":  11,
+                             "visual_prompt":  "A cartoon boy Sami finding a small bag on a park bench, peeking inside curiously, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "فكّر سامي قليلاً، وقرر أن يفعل الصواب، فأخذ الحقيبة إلى والده ليبحثا عن صاحبها معاً.",
+                             "word_count":  15,
+                             "visual_prompt":  "Sami thoughtfully carrying the bag to his father, both looking caring and honest, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "وجدا صاحب الحقيبة، طفلاً حزيناً، فابتسم بسعادة كبيرة وشكر سامي على أمانته.",
+                             "word_count":  11,
+                             "visual_prompt":  "A happy child reunited with the bag, warmly thanking Sami, everyone smiling, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "الأمانة تجعل الجميع سعداء. كونوا أمناء دائماً يا أصدقائي، إلى اللقاء!",
+                             "word_count":  10,
+                             "visual_prompt":  "Luna waving with Sami and the happy child together, warm heart sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-hekaya-02-sharing-colors",
+        "planet":  "qiyam",
+        "series_title":  "حكاية وحكمة",
+        "episode_title":  "مشاركة الألوان",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أصدقائي! أنا لونا، وحكايتنا اليوم عن جمال المشاركة بين الأصدقاء.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna introducing a story with two children at a drawing table, boxes of crayons, cheerful classroom, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "أرادت ليلى أن ترسم شمساً، لكن لم يكن معها اللون الأصفر أبداً.",
+                             "word_count":  11,
+                             "visual_prompt":  "A girl Layla looking at her drawing of a sun with no yellow crayon, a little sad, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "رأى صديقها يوسف حزنها، فأعطاها لونه الأصفر بكل سرور، وقال: هيا نرسم ونتشارك ألواننا معاً.",
+                             "word_count":  15,
+                             "visual_prompt":  "A boy Yusuf happily handing his yellow crayon to Layla, both smiling and drawing together, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "رسما معاً شمساً جميلة، وفرحا كثيراً، لأن المشاركة جعلت اللعب أحلى وأمتع.",
+                             "word_count":  11,
+                             "visual_prompt":  "Layla and Yusuf proudly showing a bright colorful sun drawing they made together, joyful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "المشاركة تصنع الفرح والصداقة. تشاركوا دائماً يا أحبائي، إلى اللقاء!",
+                             "word_count":  9,
+                             "visual_prompt":  "Luna waving with the two happy friends holding their shared drawing, heart sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-hekaya-03-waiting-turn",
+        "planet":  "qiyam",
+        "series_title":  "حكاية وحكمة",
+        "episode_title":  "انتظار الدور",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، وحكايتنا اليوم عن الصبر واحترام دور الآخرين.",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna introducing a story at a playground with a slide and children lined up, cheerful, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "أراد كريم أن يلعب على الزحليقة، لكن كان أمامه أصدقاء كثيرون ينتظرون أدوارهم.",
+                             "word_count":  12,
+                             "visual_prompt":  "A boy Karim at the back of a happy queue waiting for the slide, other kids ahead, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "فكّر كريم أن يتقدّم بسرعة، لكنه تذكّر أن الانتظار بأدب أجمل، فوقف في مكانه صابراً.",
+                             "word_count":  14,
+                             "visual_prompt":  "Karim patiently waiting his turn with a calm smile while a friend slides down happily, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "وأخيراً جاء دوره، فلعب على الزحليقة بسعادة، وشعر بالفخر لأنه صبر واحترم الجميع.",
+                             "word_count":  12,
+                             "visual_prompt":  "Karim joyfully sliding down as his friends cheer for him, proud happy moment, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "الصبر واحترام الدور يجعلان اللعب ممتعاً للجميع. إلى اللقاء يا أصدقائي!",
+                             "word_count":  10,
+                             "visual_prompt":  "Luna waving with happy children taking turns fairly on the playground, warm ending, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-hekaya-04-plant-responsibility",
+        "planet":  "qiyam",
+        "series_title":  "حكاية وحكمة",
+        "episode_title":  "مسؤولية النبتة",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أصدقائي! أنا لونا، وحكايتنا اليوم عن تحمّل المسؤولية برعاية كائن حي.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna introducing a story with a girl receiving a small potted plant as a gift, warm home, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "أهدت المعلمة سلمى نبتة صغيرة، وطلبت منها أن تعتني بها كل يوم بحب.",
+                             "word_count":  12,
+                             "visual_prompt":  "A teacher handing a small plant to a girl Salma who holds it carefully and gladly, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "كانت سلمى تسقي نبتتها كل صباح، وتضعها في الشمس، ولا تنساها مهما انشغلت باللعب.",
+                             "word_count":  14,
+                             "visual_prompt":  "Salma watering her plant each morning and moving it into sunlight, caring and responsible, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "كبرت النبتة وأزهرت بزهرة جميلة، فسعدت سلمى لأن اهتمامها ومسؤوليتها أثمرا شيئاً رائعاً.",
+                             "word_count":  12,
+                             "visual_prompt":  "The plant now blooming a beautiful flower, Salma smiling proudly beside it, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "المسؤولية تعني أن نعتني بما نحب. كونوا مسؤولين يا أحبائي، إلى اللقاء!",
+                             "word_count":  11,
+                             "visual_prompt":  "Luna waving with Salma holding her blooming plant, warm proud ending, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-kids-explorers-01-picture-clues",
+        "planet":  "alam",
+        "series_title":  "مغامرات المستكشفين",
+        "episode_title":  "دلائل الصور",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً يا أصدقائي! أنا لونا، واليوم يجمع المستكشفان زينة وياسين دلائل الصور لحل لغز.",
+                             "word_count":  13,
+                             "visual_prompt":  "Luna with two child explorers Zeina and Yassin holding a map and picture clue cards, adventure mood, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "وجدا صورة شجرة كبيرة، وصورة صخرة، وصورة نهر صغير قرب المكان.",
+                             "word_count":  11,
+                             "visual_prompt":  "Three picture clue cards showing a big tree, a rock, and a small river, laid out clearly, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "يقارن المستكشفان الصور بالمكان حولهما، فيمشيان نحو الشجرة الكبيرة ثم يتبعان النهر الصغير بحذر.",
+                             "word_count":  14,
+                             "visual_prompt":  "Zeina and Yassin walking toward a big tree then following a small river matching their clue cards, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "عند الصخرة وجدا صندوق الكنز الصغير! الدلائل البصرية قادتهما إلى المكان الصحيح بذكاء.",
+                             "word_count":  12,
+                             "visual_prompt":  "The two explorers happily discovering a small treasure chest beside the rock, sparkles, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "الملاحظة الجيدة تحل الألغاز. أحسنتم يا مستكشفين، إلى اللقاء!",
+                             "word_count":  8,
+                             "visual_prompt":  "Luna waving with Zeina and Yassin celebrating beside the open treasure chest, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-kids-explorers-02-teamwork-bridge",
+        "planet":  "alam",
+        "series_title":  "مغامرات المستكشفين",
+        "episode_title":  "جسر العمل الجماعي",
+        "age":  "6-8",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً يا أصدقائي! أنا لونا، واليوم يواجه المستكشفون نهراً، ويحتاجون التعاون لعبوره بأمان.",
+                             "word_count":  12,
+                             "visual_prompt":  "Luna with a small team of child explorers standing at the edge of a river needing to cross, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  8,
+                             "narration":  "لا يستطيع طفل واحد بناء جسر بمفرده، لكن معاً يمكنهم أن يفعلوا الكثير.",
+                             "word_count":  12,
+                             "visual_prompt":  "One child struggling to move a big log alone, looking tired, river in the background, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  10,
+                             "narration":  "قسّموا المهام: بعضهم يحمل الأخشاب، وبعضهم يرتبها، وبعضهم يثبّتها، فبنوا جسراً قوياً بتعاونهم الجميل.",
+                             "word_count":  14,
+                             "visual_prompt":  "Children working together, some carrying logs, some arranging, some tying, building a sturdy bridge, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  8,
+                             "narration":  "عبروا النهر جميعاً بأمان على جسرهم، وفرحوا لأن التعاون جعل المستحيل ممكناً.",
+                             "word_count":  11,
+                             "visual_prompt":  "The team happily crossing their finished log bridge over the river together, cheering, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "العمل الجماعي يصنع العجائب. تعاونوا دائماً يا أصدقائي، إلى اللقاء!",
+                             "word_count":  9,
+                             "visual_prompt":  "Luna waving with the happy explorer team standing on their bridge, warm ending, 3D cartoon style for kids. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-junior-future-01-solar-rover",
+        "planet":  "oloom",
+        "series_title":  "مختبر المستقبل",
+        "episode_title":  "المركبة الشمسية",
+        "age":  "9-12",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً بكم! أنا لونا، واليوم نصمم مركبة تسير بطاقة الشمس المدهشة.",
+                             "word_count":  12,
+                             "visual_prompt":  "3D cartoon style for kids, cheerful little space girl Luna in a shiny suit waving inside a bright futuristic lab, a small solar rover model on the table beside her. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  10,
+                             "narration":  "الألواح الشمسية تلتقط ضوء الشمس الساطع، ثم تحوله بذكاء إلى طاقة كهربائية نظيفة ومفيدة.",
+                             "word_count":  14,
+                             "visual_prompt":  "3D cartoon style for kids, close-up of a blue solar panel on the rover glowing as sunlight rays hit it, animated energy sparkles flowing toward a small motor. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  8,
+                             "narration":  "هذه الطاقة تدير محركاً صغيراً، فتدور العجلات وتنطلق مركبتنا بسلاسة تامة.",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, a cute solar rover with big wheels starting to roll across a smooth surface, tiny motor spinning, Luna watching happily. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "نضع اللوح بزاوية مواجهة للشمس تماماً، فتزداد الطاقة الملتقطة، وتسير المركبة أسرع وأقوى بكثير.",
+                             "word_count":  15,
+                             "visual_prompt":  "3D cartoon style for kids, Luna tilting the solar panel to face the bright sun directly, the rover speeding up with motion lines, sun beaming in a clear sky. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "هكذا تسير سيارات المستقبل بطاقة نظيفة، لنحمي كوكبنا معاً. إلى اللقاء!",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, Luna waving goodbye beside a fleet of colorful solar cars driving on a green futuristic city road under a bright sun. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-junior-future-02-strong-bridge",
+        "planet":  "oloom",
+        "series_title":  "مختبر المستقبل",
+        "episode_title":  "الجسر القوي",
+        "age":  "9-12",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً أصدقائي! أنا لونا، واليوم نكتشف سر الأشكال التي تصنع جسراً قوياً.",
+                             "word_count":  12,
+                             "visual_prompt":  "3D cartoon style for kids, Luna standing in a workshop with small model bridges made of sticks and paper on a table, one flat and one arched. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  10,
+                             "narration":  "نبني جسراً مسطحاً بسيطاً، ثم نضع عليه أوزاناً صغيرة، فنراه ينحني بسرعة ثم ينهار.",
+                             "word_count":  14,
+                             "visual_prompt":  "3D cartoon style for kids, a flat paper bridge between two blocks bending under small colorful weights until it collapses, Luna observing with a curious face. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  8,
+                             "narration":  "نجرب الآن شكل القوس المنحني، فيوزع الوزن على جانبيه بذكاء لافت.",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, a sturdy arch-shaped bridge holding weights firmly, glowing arrows showing force spreading along the curve to both sides. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "شكل المثلث ثابت جداً ولا يتغير، لذلك يستخدمه المهندسون في الجسور والأبراج العالية.",
+                             "word_count":  13,
+                             "visual_prompt":  "3D cartoon style for kids, a bridge built from many connected triangles staying rigid under heavy weights, Luna pointing at the triangle pattern excitedly. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  10,
+                             "narration":  "إذاً الأقواس والمثلثات تجعل الجسور أقوى، وهكذا تُبنى أعظم الجسور حول العالم. وداعاً!",
+                             "word_count":  13,
+                             "visual_prompt":  "3D cartoon style for kids, Luna waving in front of a magnificent real-looking bridge with arches and triangular trusses spanning a wide river at sunset. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-junior-minute-01-light-refraction",
+        "planet":  "oloom",
+        "series_title":  "علوم في دقيقة",
+        "episode_title":  "انكسار الضوء",
+        "age":  "9-12",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً! أنا لونا، وفي دقيقة واحدة سنفهم لماذا ينكسر الضوء في الماء.",
+                             "word_count":  12,
+                             "visual_prompt":  "3D cartoon style for kids, Luna beside a clear glass of water with a pencil dipped inside looking bent, warm cozy science corner. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  10,
+                             "narration":  "الضوء يسير بسرعة كبيرة في الهواء، لكنه يتباطأ قليلاً عندما يدخل إلى داخل الماء.",
+                             "word_count":  14,
+                             "visual_prompt":  "3D cartoon style for kids, animated glowing light rays traveling fast through air then slowing as they enter a body of blue water, gentle wavy surface. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  8,
+                             "narration":  "هذا التباطؤ يجعل شعاع الضوء ينحرف عن مساره المستقيم فجأة.",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, close-up of a light ray visibly bending at the boundary between air and water, glowing angle lines showing the change of direction. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "لهذا يبدو القلم مكسوراً داخل الكوب، مع أنه سليم تماماً ولم يُصبه شيء أبداً.",
+                             "word_count":  14,
+                             "visual_prompt":  "3D cartoon style for kids, a straight pencil in a water glass appearing broken at the water line, then Luna lifting it out fully intact and smiling. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "انكسار الضوء نفسه يصنع قوس المطر الجميل في السماء. وداعاً!",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, Luna waving under a bright rainbow arcing across the sky after rain, sunlight splitting into colorful bands. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-junior-minute-02-air-pressure",
+        "planet":  "oloom",
+        "series_title":  "علوم في دقيقة",
+        "episode_title":  "ضغط الهواء",
+        "age":  "9-12",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً! أنا لونا، وفي دقيقة سنكتشف قوة الهواء الخفية من حولنا.",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, Luna holding an empty plastic cup and a sheet of paper over a full glass of water, bright kitchen table setting. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  10,
+                             "narration":  "الهواء من حولنا لا نراه، لكنه يضغط على كل شيء في كل اتجاه باستمرار.",
+                             "word_count":  14,
+                             "visual_prompt":  "3D cartoon style for kids, animated translucent arrows pressing gently on objects from every direction in a room, Luna surrounded by soft blue air particles. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  8,
+                             "narration":  "نملأ الكوب بالماء، ونغطيه بورقة، ثم نقلبه رأساً على عقب بحذر.",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, hands covering a full water glass with a card and carefully flipping it upside down over a tray, close-up view. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "عجيب! تبقى الورقة ملتصقة والماء لا يسقط، لأن ضغط الهواء يدفعها إلى الأعلى بقوة.",
+                             "word_count":  14,
+                             "visual_prompt":  "3D cartoon style for kids, the card staying stuck to the inverted glass with water held inside, upward glowing arrows showing air pressure, Luna amazed with wide eyes. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "ضغط الهواء نفسه يساعد الطائرات على الطيران في السماء العالية. وداعاً!",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, Luna waving as a cartoon airplane soars through blue sky with soft clouds, air flowing over its wings. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-junior-code-01-sequence-path",
+        "planet":  "maharat",
+        "series_title":  "روبو يبرمج",
+        "episode_title":  "مسار التسلسل",
+        "age":  "9-12",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً بكم! أنا لونا، واليوم نرتب أوامر لنوصل الروبوت روبو إلى هدفه.",
+                             "word_count":  12,
+                             "visual_prompt":  "3D cartoon style for kids, Luna beside a cute friendly robot named Robo on a colorful grid floor with a shining star target at the far corner. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  10,
+                             "narration":  "البرمجة هي ترتيب خطوات واضحة، ينفذها الروبوت واحدة تلو الأخرى بالترتيب الصحيح تماماً.",
+                             "word_count":  13,
+                             "visual_prompt":  "3D cartoon style for kids, a vertical stack of colorful arrow command blocks pointing forward and turning, Robo waiting to follow them in order on the grid. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  8,
+                             "narration":  "نأمر روبو: تقدّم خطوتين، ثم انعطف يميناً، ثم تقدّم خطوة أخرى.",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, Robo moving two squares forward then turning right then one square forward along a glowing dotted path on the grid. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "كل أمر في مكانه الصحيح، فيسير روبو بثقة خطوة بخطوة حتى يصل إلى النجمة.",
+                             "word_count":  14,
+                             "visual_prompt":  "3D cartoon style for kids, Robo reaching the glowing star target on the grid, Luna cheering with raised arms, confetti sparkles in the air. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "بترتيب الأوامر نصنع كل الألعاب والتطبيقات حولنا. إلى اللقاء يا أصدقائي!",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, Luna waving beside Robo while floating screens show colorful games and apps, glowing command blocks around them. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-junior-code-02-debug-the-route",
+        "planet":  "maharat",
+        "series_title":  "روبو يبرمج",
+        "episode_title":  "صحح المسار",
+        "age":  "9-12",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً! أنا لونا، واليوم نبحث عن خطأ صغير في أوامر روبو ونصلحه.",
+                             "word_count":  12,
+                             "visual_prompt":  "3D cartoon style for kids, Luna and Robo looking puzzled at a stack of command blocks on a grid, one block glowing red with a question mark shape. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  10,
+                             "narration":  "نشغل الأوامر، فيسير روبو ثم ينعطف في الاتجاه الخاطئ، ويبتعد كثيراً عن نجمته المضيئة.",
+                             "word_count":  14,
+                             "visual_prompt":  "3D cartoon style for kids, Robo following the path but turning the wrong way and moving away from the glowing star, a small confused cloud above its head. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  8,
+                             "narration":  "نتتبع الخطوات بهدوء واحدة واحدة، حتى نكتشف الأمر المعطوب في التسلسل.",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, Luna tracing the command blocks one by one with a magnifying glass, the faulty turn-left block highlighted red on the grid. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "نستبدل الانعطاف الخاطئ بالانعطاف الصحيح، ونشغل البرنامج مجدداً، فيصل روبو بسعادة إلى نجمته أخيراً.",
+                             "word_count":  14,
+                             "visual_prompt":  "3D cartoon style for kids, the corrected green command block replacing the red one, Robo now reaching the glowing star, Luna and Robo celebrating happily. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "تصحيح الأخطاء مهارة يستخدمها كل مبرمج ماهر يومياً. إلى اللقاء!",
+                             "word_count":  10,
+                             "visual_prompt":  "3D cartoon style for kids, Luna waving beside a confident Robo with a fixed glowing path behind them, small gears and check-mark sparkles floating. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-junior-civilizations-01-water-engineering",
+        "planet":  "tarikh",
+        "series_title":  "رحلة الحضارات",
+        "episode_title":  "هندسة المياه",
+        "age":  "9-12",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "أهلاً أصدقائي! أنا لونا، واليوم نسافر لنرى كيف نقل الأجداد الماء ببراعة.",
+                             "word_count":  12,
+                             "visual_prompt":  "3D cartoon style for kids, Luna standing near an ancient stone water channel in a warm desert valley, palm trees and old buildings in the background. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  10,
+                             "narration":  "بنى القدماء قنوات طويلة تنقل ماء الأنهار إلى المدن والحقول البعيدة عبر مسافات شاسعة.",
+                             "word_count":  13,
+                             "visual_prompt":  "3D cartoon style for kids, long ancient stone aqueduct with graceful arches carrying flowing water across a green valley toward a distant town. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  8,
+                             "narration":  "وفي الصحراء حفروا قنوات تحت الأرض تسمى الأفلاج لتحفظ الماء بارداً.",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, cross-section view of an underground desert water tunnel with clear cool water flowing, small access shafts leading up to the sandy surface. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "واستخدموا السدود والنواعير الدوارة لرفع الماء من النهر وسقاية الأراضي المرتفعة بذكاء هندسي مذهل.",
+                             "word_count":  14,
+                             "visual_prompt":  "3D cartoon style for kids, a large wooden waterwheel turning beside a river lifting water into a channel that flows toward raised green farmland. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "هذه الابتكارات القديمة ما زالت تُلهم مهندسي المياه اليوم. وداعاً!",
+                             "word_count":  10,
+                             "visual_prompt":  "3D cartoon style for kids, Luna waving between an ancient aqueduct and a modern water treatment plant, connecting past and present under a bright sky. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    },
+    {
+        "ep_id":  "episode-junior-civilizations-02-observatory",
+        "planet":  "tarikh",
+        "series_title":  "رحلة الحضارات",
+        "episode_title":  "المرصد",
+        "age":  "9-12",
+        "segments":  [
+                         {
+                             "index":  1,
+                             "duration_sec":  8,
+                             "narration":  "مرحباً بكم! أنا لونا، واليوم نزور مرصداً قديماً راقب فيه الأجداد النجوم.",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, Luna standing on the rooftop of an ancient stone observatory at night, brass astronomical instruments and a sky full of stars. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  2,
+                             "duration_sec":  10,
+                             "narration":  "في الماضي راقب العلماء حركة الشمس والنجوم بعناية شديدة، ليعرفوا الفصول ومواعيد الزراعة بدقة.",
+                             "word_count":  13,
+                             "visual_prompt":  "3D cartoon style for kids, ancient astronomers looking up and tracking the sun and stars, glowing lines mapping their paths across a deep blue sky. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  3,
+                             "duration_sec":  8,
+                             "narration":  "استخدموا أدوات نحاسية دقيقة كالإسطرلاب لقياس زوايا النجوم في السماء.",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, close-up of an ornate brass astrolabe in hands measuring the angle of a bright star, warm candlelight glow. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  4,
+                             "duration_sec":  10,
+                             "narration":  "ومن حركة الشمس والظلال صنعوا تقاويم دقيقة تحدد الأيام والشهور ومواسم السنة كاملة.",
+                             "word_count":  13,
+                             "visual_prompt":  "3D cartoon style for kids, a large stone sundial casting a clear shadow, and an ancient calendar wheel turning through seasons, Luna observing with wonder. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         },
+                         {
+                             "index":  5,
+                             "duration_sec":  8,
+                             "narration":  "من تلك المراصد القديمة وُلد علم الفلك الذي نطوره اليوم. وداعاً!",
+                             "word_count":  11,
+                             "visual_prompt":  "3D cartoon style for kids, Luna waving as the scene blends an ancient stone observatory into a modern domed telescope under a starry galaxy sky. No logo, no watermark, no text, no letters, no numbers, no captions, no subtitles, no brand marks, no signage, no UI overlay anywhere in the frame."
+                         }
+                     ]
+    }
+]

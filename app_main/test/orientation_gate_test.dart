@@ -103,8 +103,27 @@ void main() {
     test('الحاجز يُعاد بناؤه عند التنقّل', () {
       // بلا الاستماع إلى المُفوِّض يبقى القرار معلَّقًا على `MediaQuery` وحده،
       // فيتأخّر إلى أوّل تغيّر حجمٍ بعد التنقّل.
-      expect(appSource, contains('listenable: router.routerDelegate'));
-      expect(appSource, contains('routeAllowsLandscape(router)'));
+      expect(appSource, contains('routerDelegate.addListener'));
+      expect(appSource, contains('routeAllowsLandscape(widget.router)'));
+    });
+
+    test('الإخطار يُؤجَّل خارج طور البناء', () {
+      // `ListenableBuilder` على `router.routerDelegate` كان **سلفًا** لودجت
+      // `Router` (لأن `MaterialApp.router(builder:)` فوق الـNavigator). فأوّل
+      // إعادة توجيه (`/` → `/login`) يُخطر المُفوِّض مستمعيه **أثناء** بناء
+      // الشجرة تحته، فيُوسم السلف قذرًا في منتصف بنائه ويسقط
+      // `assert(!_dirty)` — وظهر كـ
+      // `(building _EnvironmentBanner) Assertion failed: !_dirty`.
+      //
+      // والشرط هنا هو نفس شرط `AuthGuard._scheduleNotify`: إن جاء الإخطار وسط
+      // إطارٍ جارٍ يُؤجَّل إلى ما بعده.
+      final executable = appSource
+          .split('\n')
+          .where((line) => !line.trimLeft().startsWith('//'))
+          .join('\n');
+      expect(executable.contains('ListenableBuilder'), isFalse);
+      expect(executable, contains('SchedulerPhase.idle'));
+      expect(executable, contains('addPostFrameCallback'));
     });
 
     test('مسار المُشغِّل مُعلَن في مجموعة واحدة', () {

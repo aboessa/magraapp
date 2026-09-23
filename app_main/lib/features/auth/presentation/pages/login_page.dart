@@ -9,6 +9,8 @@ import '../../../../app/router/auth_guard.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/device/device_profile.dart';
 import '../../../../core/failures/app_failure.dart';
+import '../../../../core/images/heavy_assets.dart';
+import '../../../../core/widgets/cinematic_image.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../l10n/app_localizations_ar.dart';
 import '../../../home/application/home_providers.dart';
@@ -308,42 +310,41 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final isTablet = width >= 600 && width < 1024 && !isTelevision;
     final isDesktopTv = width >= 1024 || isTelevision;
 
-    // Responsive background mapping:
-    // Mobile portrait (<600): loginbg.png.png (phone tall) -> login-bg-mobile.webp 44KB / 824KB png
-    // Tablet landscape (600-1023): loginbglancsapce.png (wide) -> login-bg-landscape.webp 24KB / 317KB png
-    // TV/Desktop (>=1024 or isTelevision): same landscape but with stronger scrim
-    String bgPrimary;
-    String bgFallbackPng;
-    String bgLegacyJpg;
+    // Responsive background mapping (R2-first, bundled webp instant):
+    // Mobile portrait (<600): login-bg-mobile — CDN WebP, bundled 44KB webp
+    // Tablet landscape (600-1023) / TV / Desktop: login-bg-landscape — CDN,
+    // bundled 24KB webp. The PNG (317–824KB) and JPG legacy rungs are GONE:
+    // they were never uploaded to R2 (only the webp twins were), and the
+    // bundled webp is already the sharpest instant paint. `CinematicImage`
+    // shows the bundled webp immediately, then swaps to the cached CDN file
+    // when the lookup completes — no blank first paint, no 800KB PNG.
+    String bgBundled;
+    String? bgNetwork;
     BoxFit bgFit;
     Alignment bgAlign;
 
     if (isTelevision) {
       // TV: wide landscape, center, cover
-      bgPrimary = 'assets/images/landing/login-bg-landscape.webp';
-      bgFallbackPng = 'assets/images/landing/login-bg-landscape.png';
-      bgLegacyJpg = 'assets/images/landing/login-tv.jpg';
+      bgBundled = 'assets/images/landing/login-bg-landscape.webp';
+      bgNetwork = heavyCdnUrl('assets/images/landing/login-bg-landscape.png');
       bgFit = BoxFit.cover;
       bgAlign = Alignment.center;
     } else if (isDesktopTv) {
       // Desktop / big tablet
-      bgPrimary = 'assets/images/landing/login-bg-landscape.webp';
-      bgFallbackPng = 'assets/images/landing/login-bg-landscape.png';
-      bgLegacyJpg = 'assets/images/landing/login-tv.jpg';
+      bgBundled = 'assets/images/landing/login-bg-landscape.webp';
+      bgNetwork = heavyCdnUrl('assets/images/landing/login-bg-landscape.png');
       bgFit = BoxFit.cover;
       bgAlign = Alignment.center;
     } else if (isTablet) {
       // Tablet: landscape wide
-      bgPrimary = 'assets/images/landing/login-bg-landscape.webp';
-      bgFallbackPng = 'assets/images/landing/login-bg-landscape.png';
-      bgLegacyJpg = 'assets/images/landing/login-tablet.jpg';
+      bgBundled = 'assets/images/landing/login-bg-landscape.webp';
+      bgNetwork = heavyCdnUrl('assets/images/landing/login-bg-landscape.png');
       bgFit = BoxFit.cover;
       bgAlign = Alignment.center;
     } else {
       // Mobile portrait
-      bgPrimary = 'assets/images/landing/login-bg-mobile.webp';
-      bgFallbackPng = 'assets/images/landing/login-bg-mobile.png';
-      bgLegacyJpg = 'assets/images/landing/login-phone.jpg';
+      bgBundled = 'assets/images/landing/login-bg-mobile.webp';
+      bgNetwork = heavyCdnUrl('assets/images/landing/login-bg-mobile.png');
       bgFit = BoxFit.cover;
       bgAlign = Alignment.topCenter;
     }
@@ -353,29 +354,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Responsive background: mobile portrait vs tablet/tv landscape
-          // webp primary (44KB mobile, 24KB landscape) -> png fallback -> jpg legacy
-          Image.asset(
-            bgPrimary,
+          // Responsive background: bundled webp paints instantly, CDN WebP
+          // (same bytes, via disk cache after first load) swaps in behind it.
+          CinematicImage(
+            assetPath: bgBundled,
+            networkUrl: bgNetwork,
+            semanticLabel: '',
             fit: bgFit,
             alignment: bgAlign,
-            filterQuality: FilterQuality.high,
-            semanticLabel: '',
-            excludeFromSemantics: true,
-            errorBuilder: (_, __, ___) => Image.asset(
-              bgFallbackPng,
-              fit: bgFit,
-              alignment: bgAlign,
-              filterQuality: FilterQuality.high,
-              excludeFromSemantics: true,
-              errorBuilder: (_, __, ___) => Image.asset(
-                bgLegacyJpg,
-                fit: bgFit,
-                alignment: bgAlign,
-                filterQuality: FilterQuality.high,
-                excludeFromSemantics: true,
-              ),
-            ),
           ),
           // Scrim adapts per device: TV needs stronger scrim for readability over wide landscape
           DecoratedBox(

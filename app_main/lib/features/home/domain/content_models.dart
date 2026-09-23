@@ -97,6 +97,7 @@ class SeriesItem {
     required this.isFree,
     this.planetId,
     this.coverUrl,
+    this.bannerUrl,
   });
 
   final String id;
@@ -107,6 +108,9 @@ class SeriesItem {
   final String posterAsset;
   final String bannerAsset;
   final String? coverUrl;
+
+  /// البانر العريض (16:9) لصفحة التفاصيل. عند غيابه يُستخدم البوستر.
+  final String? bannerUrl;
   final int ageMin;
   final int ageMax;
   final int episodesCount;
@@ -196,7 +200,13 @@ class EpisodeItem {
   final String? previewSpriteVttUrl;
   final List<Map<String, Object?>> qualityRenditions;
 
-  bool get isPlayable => (videoUrl ?? '').isNotEmpty;
+  /// Whether the episode can be opened for playback.
+  ///
+  /// `videoUrl` لا يصل أبدًا في القائمة — الفيديو يُسلَّم عبر جلسة تشغيل
+  /// (`POST /episodes/:id/playback-sessions`) بعد فتح الصفحة، فاشتراطه هنا
+  /// كان يجعل **كل** الحلقات «غير قابلة للتشغيل» ويعطّل زر «شاهد الآن».
+  /// القائمة تُرجع المنشور فقط، فالوجود في الكتالوج هو القابلية.
+  bool get isPlayable => true;
 
   /// The measured length, or `null` when nobody measured it (`CNT-108`).
   ///

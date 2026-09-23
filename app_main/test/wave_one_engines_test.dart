@@ -10,6 +10,7 @@ import 'package:majarra/features/games/engine/game_pack.dart';
 import 'package:majarra/features/games/engine/game_services.dart';
 import 'package:majarra/features/games/engine/game_session_controller.dart';
 import 'package:majarra/features/games/presentation/pages/game_screen.dart';
+import 'package:majarra/features/games/presentation/widgets/drawing_asset.dart';
 
 Map<String, dynamic> packOf({
   required String engineId,
@@ -150,6 +151,57 @@ void main() {
       expect(attempt.maxScore, 0, reason: 'memory_flip must not produce a mark');
       expect(attempt.score, 0);
       expect(attempt.gameId, 'game-under-test');
+    });
+
+    // البطاقة المكشوفة كانت تعرض **نصّ** المعرّف بدل الصورة، مع أنّ الفنّ مرفَق
+    // في الحزمة ومربوط في `kDrawingAssetMap`. الاختبارات السابقة كلّها تستخدم
+    // معرّفات وهمية (`asset-moon`) فلم يمرّ أيٌّ منها بمسار الفنّ إطلاقًا،
+    // ولذلك ظلّ العطل غير مرئي. الاختباران التاليان يُغلقان الثغرة من طرفيها.
+    testWidgets('معرّف مربوط يُعرض فنًّا لا نصًّا', (tester) async {
+      // `asset-color-cat` مربوط في `kDrawingAssetMap` وملفه على القرص.
+      Map<String, dynamic> artLevel() => {
+            'level': 1,
+            'grid': [2, 2],
+            'pair_type': 'identical',
+            'pairs': [
+              {'a': 'asset-color-cat', 'b': 'asset-color-cat'},
+              {'a': 'asset-color-bird', 'b': 'asset-color-bird'},
+            ],
+            'flip_back_delay_ms': 900,
+          };
+      final harness = Harness(packOf(engineId: 'memory_flip', levels: [artLevel()]));
+      await pumpBig(tester, harness.widget());
+
+      await tester.tap(find.byKey(const ValueKey('memory_tile_0')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DrawingAsset), findsOneWidget);
+      // المعرّف نفسه لا يجوز أن يظهر للطفل بعد اليوم.
+      expect(find.textContaining('asset-color-'), findsNothing);
+    });
+
+    testWidgets('معرّف غير مربوط يبقى نصًّا مميّزًا لا أيقونة موحّدة', (tester) async {
+      // حِزم `wave4` تُشير إلى ٢٠ معرّفًا لم يُنتَج فنّها بعد. لو استُبدلت بأيقونة
+      // `DrawingAsset` الاحتياطية الموحّدة لتشابهت البطاقات وصار المطابَقة
+      // تخمينًا أعمى — أي عطلٌ في اللعب لا مجرّد نقص في الشكل.
+      Map<String, dynamic> pendingLevel() => {
+            'level': 1,
+            'grid': [2, 2],
+            'pair_type': 'identical',
+            'pairs': [
+              {'a': 'asset-wave4-cat', 'b': 'asset-wave4-cat'},
+              {'a': 'asset-wave4-dog', 'b': 'asset-wave4-dog'},
+            ],
+            'flip_back_delay_ms': 900,
+          };
+      final harness = Harness(packOf(engineId: 'memory_flip', levels: [pendingLevel()]));
+      await pumpBig(tester, harness.widget());
+
+      await tester.tap(find.byKey(const ValueKey('memory_tile_0')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DrawingAsset), findsNothing);
+      expect(find.textContaining('asset-wave4-'), findsOneWidget);
     });
   });
 

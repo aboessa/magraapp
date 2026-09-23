@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/creative_providers.dart';
 import '../../data/creative_remote_assets.dart';
 import '../../data/local_creation_store.dart';
+import '../../../../core/images/heavy_assets.dart';
 import '../studio/studio_app_bar.dart';
 import '../studio/studio_design.dart';
 import '../widgets/drawing_asset.dart';
@@ -44,68 +45,81 @@ class _ReferenceCataloguePageLiveWrapperState
   bool _loading = true;
   String? _cdnBase;
 
-  static const _fallbackLocal = <ReferenceActivity>[
-    ReferenceActivity(
-        id: 'ref-animal-01',
-        titleAr: 'عصفور على فرع',
-        titleEn: 'Bird on Branch',
-        category: 'حيوانات',
-        ageLabel: '4-6',
-        difficulty: 'سهل',
-        referenceAssetId: 'assets/images/draw_like_me/v2-final/animal-01-bird-branch.png',
-        thumbnailAssetId: 'assets/images/draw_like_me/v2-final/animal-01-bird-branch.png',
-        bg: Color(0xFF0B1220)),
-    ReferenceActivity(
-        id: 'ref-animal-04',
-        titleAr: 'قطة صغيرة',
-        titleEn: 'Small Kitten',
-        category: 'حيوانات',
-        ageLabel: '4-6',
-        difficulty: 'سهل',
-        referenceAssetId: 'assets/images/draw_like_me/v2-final/animal-04-kitten-small.png',
-        thumbnailAssetId: 'assets/images/draw_like_me/v2-final/animal-04-kitten-small.png',
-        bg: Color(0xFF0B1220)),
-    ReferenceActivity(
-        id: 'ref-animal-09',
-        titleAr: 'سلحفاة بحرية',
-        titleEn: 'Sea Turtle',
-        category: 'حيوانات',
-        ageLabel: '6-8',
-        difficulty: 'متوسط',
-        referenceAssetId: 'assets/images/draw_like_me/v2-final/animal-09-turtle-sea.png',
-        thumbnailAssetId: 'assets/images/draw_like_me/v2-final/animal-09-turtle-sea.png',
-        bg: Color(0xFF14532D)),
-    ReferenceActivity(
-        id: 'ref-space-11',
-        titleAr: 'صاروخ',
-        titleEn: 'Rocket',
-        category: 'فضاء',
-        ageLabel: '4-6',
-        difficulty: 'سهل',
-        referenceAssetId: 'assets/images/draw_like_me/v2-final/space-11-rocket.png',
-        thumbnailAssetId: 'assets/images/draw_like_me/v2-final/space-11-rocket.png',
-        bg: Color(0xFF1A0B2E)),
-    ReferenceActivity(
-        id: 'ref-nature-21',
-        titleAr: 'فراشة',
-        titleEn: 'Butterfly',
-        category: 'طبيعة',
-        ageLabel: '4-6',
-        difficulty: 'سهل',
-        referenceAssetId: 'assets/images/draw_like_me/v2-final/nature-21-butterfly.png',
-        thumbnailAssetId: 'assets/images/draw_like_me/v2-final/nature-21-butterfly.png',
-        bg: Color(0xFF831843)),
-    ReferenceActivity(
-        id: 'ref-vehicle-27',
-        titleAr: 'سيارة صغيرة',
-        titleEn: 'Small Car',
-        category: 'مركبات',
-        ageLabel: '4-6',
-        difficulty: 'سهل',
-        referenceAssetId: 'assets/images/draw_like_me/v2-final/vehicle-27-car-small.png',
-        thumbnailAssetId: 'assets/images/draw_like_me/v2-final/vehicle-27-car-small.png',
-        bg: Color(0xFF1D4ED8)),
+  // بديل عدم الاتصال: ستّة عناوين CDN (لا مبندل). `DrawingAsset` يمرّر فرع
+  // الشبكة عبر `RemoteImageCache`، فبعد أوّل تحميل تُقرأ من القرص دون شبكة.
+  // ليست `const`: الاشتقاق من `heavyCdnUrl` يعمل وقت التشغيل.
+  static List<ReferenceActivity> get _fallbackLocal => [
+    for (final e in const [
+      (
+        'ref-animal-01',
+        'عصفور على فرع',
+        'Bird on Branch',
+        'assets/images/draw_like_me/v2-final/animal-01-bird-branch.png',
+      ),
+      (
+        'ref-animal-04',
+        'قطة صغيرة',
+        'Small Kitten',
+        'assets/images/draw_like_me/v2-final/animal-04-kitten-small.png',
+      ),
+      (
+        'ref-animal-09',
+        'سلحفاة بحرية',
+        'Sea Turtle',
+        'assets/images/draw_like_me/v2-final/animal-09-turtle-sea.png',
+      ),
+      (
+        'ref-space-11',
+        'صاروخ',
+        'Rocket',
+        'assets/images/draw_like_me/v2-final/space-11-rocket.png',
+      ),
+      (
+        'ref-nature-21',
+        'فراشة',
+        'Butterfly',
+        'assets/images/draw_like_me/v2-final/nature-21-butterfly.png',
+      ),
+      (
+        'ref-vehicle-27',
+        'سيارة صغيرة',
+        'Small Car',
+        'assets/images/draw_like_me/v2-final/vehicle-27-car-small.png',
+      ),
+    ])
+      ReferenceActivity(
+        id: e.$1,
+        titleAr: e.$2,
+        titleEn: e.$3,
+        category: _categoryForFallback(e.$1),
+        ageLabel: _ageForFallback(e.$1),
+        difficulty: _difficultyForFallback(e.$1),
+        referenceAssetId: heavyCdnUrl(e.$4) ?? e.$4,
+        thumbnailAssetId: heavyCdnUrl(e.$4) ?? e.$4,
+        bg: _bgForFallback(e.$1),
+      ),
   ];
+
+  static String _categoryForFallback(String id) => switch (id) {
+    'ref-space-11' => 'فضاء',
+    'ref-nature-21' => 'طبيعة',
+    'ref-vehicle-27' => 'مركبات',
+    _ => 'حيوانات',
+  };
+
+  static String _ageForFallback(String id) =>
+      id == 'ref-animal-09' ? '6-8' : '4-6';
+
+  static String _difficultyForFallback(String id) =>
+      id == 'ref-animal-09' ? 'متوسط' : 'سهل';
+
+  static Color _bgForFallback(String id) => switch (id) {
+    'ref-animal-09' => const Color(0xFF14532D),
+    'ref-space-11' => const Color(0xFF1A0B2E),
+    'ref-nature-21' => const Color(0xFF831843),
+    'ref-vehicle-27' => const Color(0xFF1D4ED8),
+    _ => const Color(0xFF0B1220),
+  };
 
   @override
   void initState() {
@@ -245,60 +259,119 @@ class _ReferenceCataloguePageLiveWrapperState
         _ => const Color(0xFF0F172A),
       };
 
+  /// بديل الرسم: مسار مبندل يُحوَّل إلى CDN عند الاستعمال.
+  ///
+  /// تُبقي الخريطة اللفظية (50 نمطًا) لأنّ اختيار الصورة المناسبة للمعرّف
+  /// منطقُ منتجٍ لا اشتقاقَ آليًّا. لكنّ القيمة المُعادة رابط CDN لا مسارٌ
+  /// مبندل: `heavyCdnUrl` يشتقّ التوأم WebP، والسقوط للمسار عند غياب التوأم.
   static String _fallbackPathForId(String id) {
     final lower = id.toLowerCase();
+    String bundled;
     // v2-final premium fallback - check existence of pattern
-    if (lower.contains('bird')) return 'assets/images/draw_like_me/v2-final/animal-01-bird-branch.png';
-    if (lower.contains('fish')) return 'assets/images/draw_like_me/v2-final/animal-02-fish-colorful.png';
-    if (lower.contains('rabbit')) return 'assets/images/draw_like_me/v2-final/animal-03-rabbit-carrot.png';
-    if (lower.contains('cat') || lower.contains('kitten')) return 'assets/images/draw_like_me/v2-final/animal-04-kitten-small.png';
-    if (lower.contains('penguin')) return 'assets/images/draw_like_me/v2-final/animal-05-penguin-baby.png';
-    if (lower.contains('panda')) return 'assets/images/draw_like_me/v2-final/animal-06-panda-bamboo.png';
-    if (lower.contains('lion')) return 'assets/images/draw_like_me/v2-final/animal-07-lion-baby.png';
-    if (lower.contains('giraffe')) return 'assets/images/draw_like_me/v2-final/animal-08-giraffe-young.png';
-    if (lower.contains('turtle')) return 'assets/images/draw_like_me/v2-final/animal-09-turtle-sea.png';
-    if (lower.contains('fox')) return 'assets/images/draw_like_me/v2-final/animal-10-fox-forest.png';
-    if (lower.contains('rocket')) return 'assets/images/draw_like_me/v2-final/space-11-rocket.png';
-    if (lower.contains('planet-rings') || lower.contains('rings')) return 'assets/images/draw_like_me/v2-final/space-12-planet-rings.png';
-    if (lower.contains('moon')) return 'assets/images/draw_like_me/v2-final/space-13-moon-smiling.png';
-    if (lower.contains('astronaut')) return 'assets/images/draw_like_me/v2-final/space-14-astronaut-small.png';
-    if (lower.contains('saucer')) return 'assets/images/draw_like_me/v2-final/space-15-saucer.png';
-    if (lower.contains('rover') || lower.contains('lunar')) return 'assets/images/draw_like_me/v2-final/space-16-lunar-rover.png';
-    if (lower.contains('alien')) return 'assets/images/draw_like_me/v2-final/space-17-alien-planet.png';
-    if (lower.contains('station')) return 'assets/images/draw_like_me/v2-final/space-18-station.png';
-    if (lower.contains('flower-large')) return 'assets/images/draw_like_me/v2-final/nature-19-flower-large.png';
-    if (lower.contains('apple-tree')) return 'assets/images/draw_like_me/v2-final/nature-20-apple-tree.png';
-    if (lower.contains('butterfly')) return 'assets/images/draw_like_me/v2-final/nature-21-butterfly.png';
-    if (lower.contains('mushroom')) return 'assets/images/draw_like_me/v2-final/nature-22-mushroom-cute.png';
-    if (lower.contains('cottage')) return 'assets/images/draw_like_me/v2-final/nature-23-cottage-nature.png';
-    if (lower.contains('mountains')) return 'assets/images/draw_like_me/v2-final/nature-24-mountains-view.png';
-    if (lower.contains('waterfall')) return 'assets/images/draw_like_me/v2-final/nature-25-waterfall.png';
-    if (lower.contains('garden')) return 'assets/images/draw_like_me/v2-final/nature-26-garden-flowers.png';
-    if (lower.contains('car-small')) return 'assets/images/draw_like_me/v2-final/vehicle-27-car-small.png';
-    if (lower.contains('bus')) return 'assets/images/draw_like_me/v2-final/vehicle-28-bus-school.png';
-    if (lower.contains('sailboat')) return 'assets/images/draw_like_me/v2-final/vehicle-29-sailboat.png';
-    if (lower.contains('airplane')) return 'assets/images/draw_like_me/v2-final/vehicle-30-airplane.png';
-    if (lower.contains('train')) return 'assets/images/draw_like_me/v2-final/vehicle-31-train.png';
-    if (lower.contains('fire-truck')) return 'assets/images/draw_like_me/v2-final/vehicle-32-fire-truck.png';
-    if (lower.contains('excavator')) return 'assets/images/draw_like_me/v2-final/vehicle-33-excavator.png';
-    if (lower.contains('submarine')) return 'assets/images/draw_like_me/v2-final/vehicle-34-submarine.png';
-    if (lower.contains('juice')) return 'assets/images/draw_like_me/v2-final/everyday-35-juice-cup.png';
-    if (lower.contains('cupcake')) return 'assets/images/draw_like_me/v2-final/everyday-36-cupcake.png';
-    if (lower.contains('backpack')) return 'assets/images/draw_like_me/v2-final/everyday-37-backpack.png';
-    if (lower.contains('teddy')) return 'assets/images/draw_like_me/v2-final/everyday-38-teddy-bear.png';
-    if (lower.contains('kids-room')) return 'assets/images/draw_like_me/v2-final/everyday-39-kids-room.png';
-    if (lower.contains('breakfast')) return 'assets/images/draw_like_me/v2-final/everyday-40-breakfast-simple.png';
-    if (lower.contains('art-desk')) return 'assets/images/draw_like_me/v2-final/everyday-41-art-desk.png';
-    if (lower.contains('playground')) return 'assets/images/draw_like_me/v2-final/everyday-42-playground.png';
-    if (lower.contains('unicorn')) return 'assets/images/draw_like_me/v2-final/fantasy-43-unicorn.png';
-    if (lower.contains('dragon')) return 'assets/images/draw_like_me/v2-final/fantasy-44-dragon-baby.png';
-    if (lower.contains('castle')) return 'assets/images/draw_like_me/v2-final/fantasy-45-castle-small.png';
-    if (lower.contains('robot')) return 'assets/images/draw_like_me/v2-final/fantasy-46-robot-cute.png';
-    if (lower.contains('pirate')) return 'assets/images/draw_like_me/v2-final/fantasy-47-pirate-ship.png';
-    if (lower.contains('house-cloud')) return 'assets/images/draw_like_me/v2-final/fantasy-48-house-cloud.png';
-    if (lower.contains('island')) return 'assets/images/draw_like_me/v2-final/fantasy-49-island-floating.png';
-    if (lower.contains('explorer')) return 'assets/images/draw_like_me/v2-final/fantasy-50-explorer-planet.png';
-    return 'assets/images/draw_like_me/v2-final/animal-01-bird-branch.png';
+    if (lower.contains('bird')) {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-01-bird-branch.png';
+    } else if (lower.contains('fish')) {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-02-fish-colorful.png';
+    } else if (lower.contains('rabbit')) {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-03-rabbit-carrot.png';
+    } else if (lower.contains('cat') || lower.contains('kitten')) {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-04-kitten-small.png';
+    } else if (lower.contains('penguin')) {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-05-penguin-baby.png';
+    } else if (lower.contains('panda')) {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-06-panda-bamboo.png';
+    } else if (lower.contains('lion')) {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-07-lion-baby.png';
+    } else if (lower.contains('giraffe')) {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-08-giraffe-young.png';
+    } else if (lower.contains('turtle')) {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-09-turtle-sea.png';
+    } else if (lower.contains('fox')) {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-10-fox-forest.png';
+    } else if (lower.contains('rocket')) {
+      bundled = 'assets/images/draw_like_me/v2-final/space-11-rocket.png';
+    } else if (lower.contains('planet-rings') || lower.contains('rings')) {
+      bundled = 'assets/images/draw_like_me/v2-final/space-12-planet-rings.png';
+    } else if (lower.contains('moon')) {
+      bundled = 'assets/images/draw_like_me/v2-final/space-13-moon-smiling.png';
+    } else if (lower.contains('astronaut')) {
+      bundled = 'assets/images/draw_like_me/v2-final/space-14-astronaut-small.png';
+    } else if (lower.contains('saucer')) {
+      bundled = 'assets/images/draw_like_me/v2-final/space-15-saucer.png';
+    } else if (lower.contains('rover') || lower.contains('lunar')) {
+      bundled = 'assets/images/draw_like_me/v2-final/space-16-lunar-rover.png';
+    } else if (lower.contains('alien')) {
+      bundled = 'assets/images/draw_like_me/v2-final/space-17-alien-planet.png';
+    } else if (lower.contains('station')) {
+      bundled = 'assets/images/draw_like_me/v2-final/space-18-station.png';
+    } else if (lower.contains('flower-large')) {
+      bundled = 'assets/images/draw_like_me/v2-final/nature-19-flower-large.png';
+    } else if (lower.contains('apple-tree')) {
+      bundled = 'assets/images/draw_like_me/v2-final/nature-20-apple-tree.png';
+    } else if (lower.contains('butterfly')) {
+      bundled = 'assets/images/draw_like_me/v2-final/nature-21-butterfly.png';
+    } else if (lower.contains('mushroom')) {
+      bundled = 'assets/images/draw_like_me/v2-final/nature-22-mushroom-cute.png';
+    } else if (lower.contains('cottage')) {
+      bundled = 'assets/images/draw_like_me/v2-final/nature-23-cottage-nature.png';
+    } else if (lower.contains('mountains')) {
+      bundled = 'assets/images/draw_like_me/v2-final/nature-24-mountains-view.png';
+    } else if (lower.contains('waterfall')) {
+      bundled = 'assets/images/draw_like_me/v2-final/nature-25-waterfall.png';
+    } else if (lower.contains('garden')) {
+      bundled = 'assets/images/draw_like_me/v2-final/nature-26-garden-flowers.png';
+    } else if (lower.contains('car-small')) {
+      bundled = 'assets/images/draw_like_me/v2-final/vehicle-27-car-small.png';
+    } else if (lower.contains('bus')) {
+      bundled = 'assets/images/draw_like_me/v2-final/vehicle-28-bus-school.png';
+    } else if (lower.contains('sailboat')) {
+      bundled = 'assets/images/draw_like_me/v2-final/vehicle-29-sailboat.png';
+    } else if (lower.contains('airplane')) {
+      bundled = 'assets/images/draw_like_me/v2-final/vehicle-30-airplane.png';
+    } else if (lower.contains('train')) {
+      bundled = 'assets/images/draw_like_me/v2-final/vehicle-31-train.png';
+    } else if (lower.contains('fire-truck')) {
+      bundled = 'assets/images/draw_like_me/v2-final/vehicle-32-fire-truck.png';
+    } else if (lower.contains('excavator')) {
+      bundled = 'assets/images/draw_like_me/v2-final/vehicle-33-excavator.png';
+    } else if (lower.contains('submarine')) {
+      bundled = 'assets/images/draw_like_me/v2-final/vehicle-34-submarine.png';
+    } else if (lower.contains('juice')) {
+      bundled = 'assets/images/draw_like_me/v2-final/everyday-35-juice-cup.png';
+    } else if (lower.contains('cupcake')) {
+      bundled = 'assets/images/draw_like_me/v2-final/everyday-36-cupcake.png';
+    } else if (lower.contains('backpack')) {
+      bundled = 'assets/images/draw_like_me/v2-final/everyday-37-backpack.png';
+    } else if (lower.contains('teddy')) {
+      bundled = 'assets/images/draw_like_me/v2-final/everyday-38-teddy-bear.png';
+    } else if (lower.contains('kids-room')) {
+      bundled = 'assets/images/draw_like_me/v2-final/everyday-39-kids-room.png';
+    } else if (lower.contains('breakfast')) {
+      bundled = 'assets/images/draw_like_me/v2-final/everyday-40-breakfast-simple.png';
+    } else if (lower.contains('art-desk')) {
+      bundled = 'assets/images/draw_like_me/v2-final/everyday-41-art-desk.png';
+    } else if (lower.contains('playground')) {
+      bundled = 'assets/images/draw_like_me/v2-final/everyday-42-playground.png';
+    } else if (lower.contains('unicorn')) {
+      bundled = 'assets/images/draw_like_me/v2-final/fantasy-43-unicorn.png';
+    } else if (lower.contains('dragon')) {
+      bundled = 'assets/images/draw_like_me/v2-final/fantasy-44-dragon-baby.png';
+    } else if (lower.contains('castle')) {
+      bundled = 'assets/images/draw_like_me/v2-final/fantasy-45-castle-small.png';
+    } else if (lower.contains('robot')) {
+      bundled = 'assets/images/draw_like_me/v2-final/fantasy-46-robot-cute.png';
+    } else if (lower.contains('pirate')) {
+      bundled = 'assets/images/draw_like_me/v2-final/fantasy-47-pirate-ship.png';
+    } else if (lower.contains('house-cloud')) {
+      bundled = 'assets/images/draw_like_me/v2-final/fantasy-48-house-cloud.png';
+    } else if (lower.contains('island')) {
+      bundled = 'assets/images/draw_like_me/v2-final/fantasy-49-island-floating.png';
+    } else if (lower.contains('explorer')) {
+      bundled = 'assets/images/draw_like_me/v2-final/fantasy-50-explorer-planet.png';
+    } else {
+      bundled = 'assets/images/draw_like_me/v2-final/animal-01-bird-branch.png';
+    }
+    return heavyCdnUrl(bundled) ?? bundled;
   }
 
   @override

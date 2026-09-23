@@ -180,9 +180,149 @@ export function SeriesPage() {
   async function publish(series: SeriesRecord) { setPublishTarget(series) }
   async function archive(series: SeriesRecord) { const title = locale==='en'? series.title_en||series.title_ar: series.title_ar; if(!window.confirm(text.confirmArchive(title))) return; setBusyId(series.id); try{ await api.archiveSeries(series.id); await load() } catch(c){ setError(c instanceof Error? c.message: text.archiveError)} finally{ setBusyId('') } }
 
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
+
   return (
     <div className="page-stack">
-      <section className="page-intro"><div><span className="eyebrow">{text.network}</span><h2>{text.headline}</h2><p>{text.intro}</p></div><button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17}/>{text.newSeries}</button></section>
+      <section className="page-intro">
+        <div>
+          <span className="eyebrow">{text.network}</span>
+          <h2>{text.headline}</h2>
+          <p>{text.intro}</p>
+        </div>
+        <button className="button button--primary" type="button" onClick={openCreate}>
+          <Icon name="plus" size={17}/>
+          {text.newSeries}
+        </button>
+      </section>
+
+      <section className="hero-kpis" aria-label="Series KPIs">
+        <div className="kpi-glass-card kpi-glass-card--primary">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{text.allSeries}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="series" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{formatNumber(total, locale)}</div>
+          <div className="kpi-glass-card__caption">{text.catalog}</div>
+        </div>
+        <div className="kpi-glass-card kpi-glass-card--success">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{statusLabels[locale].published}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="check" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{formatNumber(records.filter(r => r.status === 'published').length, locale)}</div>
+          <div className="kpi-glass-card__caption">{locale === 'ar' ? 'سلسلة منشورة ومتاحة' : 'Published and live'}</div>
+        </div>
+        <div className="kpi-glass-card kpi-glass-card--warn">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{text.production}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="clock" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{formatNumber(records.filter(r => r.status !== 'published').length, locale)}</div>
+          <div className="kpi-glass-card__caption">{locale === 'ar' ? 'قيد العمل والمراجعة' : 'In pipeline / review'}</div>
+        </div>
+        <div className="kpi-glass-card kpi-glass-card--purple">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{text.episodes}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="media" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{formatNumber(records.reduce((sum, r) => sum + (Number(r.episodes_count) || 0), 0), locale)}</div>
+          <div className="kpi-glass-card__caption">{locale === 'ar' ? 'إجمالي الحلقات التابعة' : 'Total linked episodes'}</div>
+        </div>
+      </section>
+
+      {/* Modern Catalog Control Strip */}
+      <section className="catalog-control-strip">
+        <div className="catalog-control-strip__left">
+          {/* Quick Track Filter Pills */}
+          <div className="filter-pill-group" aria-label="Track filters">
+            <button
+              type="button"
+              className={`filter-pill ${!track ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('track', '')}
+            >
+              {locale === 'ar' ? 'كل المسارات ✨' : 'All tracks'}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${track === 'preschool' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('track', 'preschool')}
+            >
+              {locale === 'ar' ? '👶 براعم (3-5)' : 'Preschool'}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${track === 'kids' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('track', 'kids')}
+            >
+              {locale === 'ar' ? '🧒 أطفال (6-8)' : 'Kids'}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${track === 'junior' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('track', 'junior')}
+            >
+              {locale === 'ar' ? '👦 يافعين (9-12)' : 'Junior'}
+            </button>
+          </div>
+
+          {/* Quick Status Filter Pills */}
+          <div className="filter-pill-group" aria-label="Status filters">
+            <button
+              type="button"
+              className={`filter-pill ${!status ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', '')}
+            >
+              {locale === 'ar' ? 'كل الحالات' : 'All status'}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${status === 'published' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', 'published')}
+            >
+              🟢 {statusLabels[locale].published}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${status === 'production' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', 'production')}
+            >
+              🟡 {statusLabels[locale].production}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${status === 'draft' ? 'filter-pill--active' : ''}`}
+              onClick={() => list.setFilter('status', 'draft')}
+            >
+              ⚪ {statusLabels[locale].draft}
+            </button>
+          </div>
+        </div>
+
+        <div className="catalog-control-strip__right">
+          {/* View Mode Switcher: Grid vs Table */}
+          <div className="view-mode-toggle" aria-label="View mode">
+            <button
+              type="button"
+              className={`view-mode-btn ${viewMode === 'grid' ? 'view-mode-btn--active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title={locale === 'ar' ? 'عرض شبكي سينمائي' : 'Grid view'}
+            >
+              <Icon name="grid" size={15} />
+              <span>{locale === 'ar' ? 'بطاقات' : 'Cards'}</span>
+            </button>
+            <button
+              type="button"
+              className={`view-mode-btn ${viewMode === 'table' ? 'view-mode-btn--active' : ''}`}
+              onClick={() => setViewMode('table')}
+              title={locale === 'ar' ? 'عرض جدول تفصيلي' : 'Table view'}
+            >
+              <Icon name="bars" size={15} />
+              <span>{locale === 'ar' ? 'جدول' : 'Table'}</span>
+            </button>
+          </div>
+        </div>
+      </section>
 
       <section className="panel panel--table">
         <header className="panel__header panel__header--filters">
@@ -197,39 +337,199 @@ export function SeriesPage() {
 
         {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={()=>void load()} /> : records.length ? (
           <>
-            <div className="table-scroll" tabIndex={0}>
-              <table className="data-table data-table--wide">
-                <thead><tr><th><input type="checkbox" checked={selected.size===records.length && records.length>0} onChange={e=> setSelected(e.target.checked ? new Set(records.map((r:any)=>r.id)) : new Set())} /></th><th>{text.series}</th><th>{text.planet}</th><th>{text.type}</th><th>{text.track}</th><th>{text.production}</th><th>{text.episodes}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead>
-                <tbody>
-                  {records.map((series)=>{ const title=locale==='en'? series.title_en||series.title_ar: series.title_ar; return (
-                    <tr key={series.id}>
-                      <td><input type="checkbox" checked={selected.has(series.id)} onChange={e=>{ const next=new Set(selected); if(e.target.checked) next.add(series.id); else next.delete(series.id); setSelected(next) }} /></td>
-                      <td><Link className="entity-cell entity-cell--button" to={adminPath(`series/${series.id}`)}><EntityThumbnail src={series.cover_url} alt={title} label={title} color={series.planet_color} icon="series"/><div><strong>{title}</strong><small>{series.slug}</small></div></Link></td>
-                      <td>{series.planet_name||'—'}</td>
-                      <td>{typeLabels[locale][series.type]}</td>
-                      <td><div className="badge-list">{trackList(series.track_ids).map(item=> <TrackBadge track={item} key={item}/>)}</div></td>
-                      <td>{productionLabels[locale][series.production_level]}</td>
-                      <td>{formatNumber(Number(series.episodes_count??0), locale)}</td>
-                      <td>{series.status==='published'? <StatusBadge status={series.status}/> : <><select className="status-select" value={series.status} disabled={busyId===series.id} onChange={e=> void changeStatus(series.id, e.target.value as ContentStatus)}>{editableStatuses.map(i=> <option value={i} key={i}>{statusLabels[locale][i]}</option>)}</select><StatusBadge status={series.status}/></>}</td>
-                      <td><div className="table-actions">{series.status!=='published'&& <button className="icon-button icon-button--small" type="button" onClick={()=>void publish(series)} disabled={busyId===series.id} title={text.publish}><Icon name="upload" size={16}/></button>}<button className="icon-button icon-button--small" type="button" onClick={()=> openEdit(series)} title={text.edit}><Icon name="edit" size={16}/></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={()=>void archive(series)} disabled={busyId===series.id} title={text.archive}><Icon name="archive" size={16}/></button></div></td>
-                    </tr>
-                  )})}
-                </tbody>
-              </table>
-            </div>
+            {viewMode === 'grid' ? (
+              /* CINEMATIC CARDS GRID VIEW */
+              <div style={{ padding: '20px' }}>
+                <div className="series-studio-grid">
+                  {records.map((series) => {
+                    const title = locale === 'en' ? series.title_en || series.title_ar : series.title_ar
+                    const isIslamic = series.planet_id === 'islamic' || series.planet_id === 'iman' || Boolean((series as any).source_type)
+                    return (
+                      <article className="series-studio-card" key={series.id}>
+                        <div className="series-studio-card__poster">
+                          {series.cover_url ? (
+                            <img src={series.cover_url} alt={title} className="series-studio-card__poster-img" loading="lazy" />
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                              <Icon name="series" size={44} style={{ color: series.planet_color || '#818cf8', opacity: 0.8 }} />
+                              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>{title}</span>
+                            </div>
+                          )}
+                          <div className="series-studio-card__poster-overlay" />
+                          <div className="series-studio-card__badges-top">
+                            <span className="series-planet-badge">
+                              <span className="series-planet-badge__dot" style={{ background: series.planet_color || '#6366f1' }} />
+                              {series.planet_name || (locale === 'ar' ? 'كوكب عام' : 'General')}
+                            </span>
+                            <StatusBadge status={series.status} />
+                          </div>
+                          <span className="series-episodes-badge">
+                            <Icon name="media" size={13} />
+                            {formatNumber(Number(series.episodes_count ?? 0), locale)} {text.episodes}
+                          </span>
+                        </div>
+
+                        <div className="series-studio-card__body">
+                          <div className="series-studio-card__title-row">
+                            <div>
+                              <h3 className="series-studio-card__title">
+                                <Link to={adminPath(`series/${series.id}`)} style={{ color: 'inherit', textDecoration: 'none' }}>
+                                  {title}
+                                </Link>
+                              </h3>
+                              <small style={{ color: 'var(--muted)', fontSize: 11.5, fontFamily: 'monospace' }}>{series.slug}</small>
+                            </div>
+                          </div>
+
+                          <div className="series-studio-card__tags">
+                            {trackList(series.track_ids).map(item => <TrackBadge track={item} key={item} />)}
+                            <span className="series-tag">{typeLabels[locale][series.type]}</span>
+                            <span className="series-tag">{productionLabels[locale][series.production_level]}</span>
+                            {isIslamic && <span className="series-tag series-tag--islamic">📖 {locale === 'ar' ? 'إسلامي وقيمي' : 'Faith & Values'}</span>}
+                          </div>
+
+                          <p className="series-studio-card__desc">
+                            {series.description_ar || (locale === 'ar' ? 'لا يوجد وصف مضاف لهذه السلسلة بعد. يمكنك إضافة الأهداف والوصف عبر التعديل.' : 'No description provided yet.')}
+                          </p>
+
+                          <div className="series-studio-card__footer">
+                            <Link to={adminPath(`series/${series.id}`)} className="series-studio-card__link">
+                              <span>{locale === 'ar' ? 'مساحة العمل' : 'Workspace'}</span>
+                              <Icon name="arrow" size={14} />
+                            </Link>
+
+                            <div className="table-actions">
+                              {series.status !== 'published' && (
+                                <button className="icon-button icon-button--small" type="button" onClick={() => void publish(series)} disabled={busyId === series.id} title={text.publish}>
+                                  <Icon name="upload" size={16} />
+                                </button>
+                              )}
+                              <button className="icon-button icon-button--small" type="button" onClick={() => openEdit(series)} title={text.edit}>
+                                <Icon name="edit" size={16} />
+                              </button>
+                              <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(series)} disabled={busyId === series.id} title={text.archive}>
+                                <Icon name="archive" size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              /* DENSE TABLE VIEW */
+              <div className="table-scroll" tabIndex={0}>
+                <table className="data-table data-table--wide">
+                  <thead><tr><th><input type="checkbox" checked={selected.size===records.length && records.length>0} onChange={e=> setSelected(e.target.checked ? new Set(records.map((r:any)=>r.id)) : new Set())} /></th><th>{text.series}</th><th>{text.planet}</th><th>{text.type}</th><th>{text.track}</th><th>{text.production}</th><th>{text.episodes}</th><th>{text.status}</th><th>{text.actions}</th></tr></thead>
+                  <tbody>
+                    {records.map((series)=>{ const title=locale==='en'? series.title_en||series.title_ar: series.title_ar; return (
+                      <tr key={series.id}>
+                        <td><input type="checkbox" checked={selected.has(series.id)} onChange={e=>{ const next=new Set(selected); if(e.target.checked) next.add(series.id); else next.delete(series.id); setSelected(next) }} /></td>
+                        <td><Link className="entity-cell entity-cell--button" to={adminPath(`series/${series.id}`)}><EntityThumbnail src={series.cover_url} alt={title} label={title} color={series.planet_color} icon="series"/><div><strong>{title}</strong><small>{series.slug}</small></div></Link></td>
+                        <td>{series.planet_name||'—'}</td>
+                        <td>{typeLabels[locale][series.type]}</td>
+                        <td><div className="badge-list">{trackList(series.track_ids).map(item=> <TrackBadge track={item} key={item}/>)}</div></td>
+                        <td>{productionLabels[locale][series.production_level]}</td>
+                        <td>{formatNumber(Number(series.episodes_count??0), locale)}</td>
+                        <td>{series.status==='published'? <StatusBadge status={series.status}/> : <><select className="status-select" value={series.status} disabled={busyId===series.id} onChange={e=> void changeStatus(series.id, e.target.value as ContentStatus)}>{editableStatuses.map(i=> <option value={i} key={i}>{statusLabels[locale][i]}</option>)}</select><StatusBadge status={series.status}/></>}</td>
+                        <td><div className="table-actions">{series.status!=='published'&& <button className="icon-button icon-button--small" type="button" onClick={()=>void publish(series)} disabled={busyId===series.id} title={text.publish}><Icon name="upload" size={16}/></button>}<button className="icon-button icon-button--small" type="button" onClick={()=> openEdit(series)} title={text.edit}><Icon name="edit" size={16}/></button><button className="icon-button icon-button--small icon-button--danger" type="button" onClick={()=>void archive(series)} disabled={busyId===series.id} title={text.archive}><Icon name="archive" size={16}/></button></div></td>
+                      </tr>
+                    )})}
+                  </tbody>
+                </table>
+              </div>
+            )}
             <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale}/>
           </>
         ) : <EmptyState title={text.empty} description={text.emptyDesc} action={<button className="button button--primary" type="button" onClick={openCreate}><Icon name="plus" size={17}/>{text.addSeries}</button>} />}
       </section>
 
+      {/* Advanced Liquid Glass Modal */}
       <Modal open={modalOpen} onClose={()=>!saving && setModalOpen(false)} title={editing? text.editTitle: text.createTitle} description={text.modalDesc}>
         <form className="entity-form" onSubmit={submit}>
           {formError && <div className="inline-alert inline-alert--error">{formError}</div>}
-          <div className="form-grid"><label className="field"><span>{text.titleAr}</span><input autoFocus value={form.title_ar} onChange={e=> setForm({...form, title_ar:e.target.value})} placeholder={text.titlePlaceholder}/></label><label className="field"><span>{text.planetRequired}</span><select value={form.planet_id} onChange={e=> setForm({...form, planet_id:e.target.value})}><option value="">{text.selectPlanet}</option>{planets.map(p=> <option value={p.id} key={p.id}>{locale==='en'? p.name_en||p.name_ar: p.name_ar}</option>)}</select></label></div>
-          <div className="form-grid"><label className="field"><span>{text.seriesType}</span><select value={form.type} onChange={e=> setForm({...form, type:e.target.value as any})}>{Object.entries(typeLabels[locale]).map(([v,l])=> <option value={v} key={v}>{l}</option>)}</select></label><label className="field"><span>{text.ageTrack}</span><select value={form.track} onChange={e=> setForm({...form, track:e.target.value as any})}>{Object.entries(trackLabels[locale]).map(([v,l])=> <option value={v} key={v}>{l}</option>)}</select></label></div>
-          <div className="form-grid"><label className="field"><span>{text.productionLevel}</span><select value={form.production_level} onChange={e=> setForm({...form, production_level:e.target.value as any})}>{Object.entries(productionLabels[locale]).map(([v,l])=> <option value={v} key={v}>{l}</option>)}</select></label><label className="field"><span>{text.visualStyle}</span><select value={form.visual_style_id} onChange={e=>{ const s=visualStyles.find(i=>i.id===e.target.value); setForm({...form, visual_style_id:e.target.value, visual_style:s?.name_en?? form.visual_style}) }}><option value="">{locale==='ar'? 'بدون قالب محدد':'No preset'}</option>{visualStyles.map(i=> <option value={i.id} key={i.id}>{locale==='ar'? i.name_ar: i.name_en}</option>)}</select></label></div>
-          <label className="field"><span>{text.description}</span><textarea rows={4} value={form.description_ar} onChange={e=> setForm({...form, description_ar:e.target.value})} placeholder={text.descriptionPlaceholder}/></label>
-          <div className="form-actions"><button className="button button--ghost" type="button" onClick={()=> setModalOpen(false)} disabled={saving}>{text.cancel}</button><button className="button button--primary" type="submit" disabled={saving}>{saving? text.saving: editing? text.save: text.createDraft}</button></div>
+          
+          <div className="form-grid">
+            <label className="field">
+              <span>{text.titleAr}</span>
+              <input autoFocus value={form.title_ar} onChange={e=> setForm({...form, title_ar:e.target.value})} placeholder={text.titlePlaceholder}/>
+            </label>
+            <label className="field">
+              <span>{text.planetRequired}</span>
+              <select value={form.planet_id} onChange={e=> setForm({...form, planet_id:e.target.value})}>
+                <option value="">{text.selectPlanet}</option>
+                {planets.map(p=> <option value={p.id} key={p.id}>{locale==='en'? p.name_en||p.name_ar: p.name_ar}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <div className="form-grid">
+            <label className="field">
+              <span>{text.seriesType}</span>
+              <select value={form.type} onChange={e=> setForm({...form, type:e.target.value as any})}>
+                {Object.entries(typeLabels[locale]).map(([v,l])=> <option value={v} key={v}>{l}</option>)}
+              </select>
+            </label>
+            <label className="field">
+              <span>{text.ageTrack}</span>
+              <select value={form.track} onChange={e=> setForm({...form, track:e.target.value as any})}>
+                {Object.entries(trackLabels[locale]).map(([v,l])=> <option value={v} key={v}>{l}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <div className="form-grid">
+            <label className="field">
+              <span>{text.productionLevel}</span>
+              <select value={form.production_level} onChange={e=> setForm({...form, production_level:e.target.value as any})}>
+                {Object.entries(productionLabels[locale]).map(([v,l])=> <option value={v} key={v}>{l}</option>)}
+              </select>
+            </label>
+            <label className="field">
+              <span>{text.visualStyle}</span>
+              <select value={form.visual_style_id} onChange={e=>{ const s=visualStyles.find(i=>i.id===e.target.value); setForm({...form, visual_style_id:e.target.value, visual_style:s?.name_en?? form.visual_style}) }}>
+                <option value="">{locale==='ar'? 'بدون قالب محدد':'No preset'}</option>
+                {visualStyles.map(i=> <option value={i.id} key={i.id}>{locale==='ar'? i.name_ar: i.name_en}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <label className="field">
+            <span>{text.description}</span>
+            <textarea rows={4} value={form.description_ar} onChange={e=> setForm({...form, description_ar:e.target.value})} placeholder={text.descriptionPlaceholder}/>
+          </label>
+
+          {(form.planet_id === 'islamic' || form.planet_id === 'iman' || Boolean(form.source_type)) && (
+            <div style={{ padding: '16px', borderRadius: '14px', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#fbbf24', fontWeight: 800, fontSize: 13 }}>
+                <Icon name="check" size={16} />
+                <span>{locale === 'ar' ? 'التوثيق الشرعي والقيمي (كوكب الإيمان والآداب)' : 'Religious & Values Verification'}</span>
+              </div>
+              <div className="form-grid">
+                <label className="field">
+                  <span>{locale === 'ar' ? 'نوع المصدر' : 'Source type'}</span>
+                  <select value={form.source_type} onChange={e => setForm({...form, source_type: e.target.value})}>
+                    <option value="">{locale === 'ar' ? 'اختر المصدر' : 'Select source'}</option>
+                    <option value="quran">{locale === 'ar' ? 'قرآن كريم' : 'Quran'}</option>
+                    <option value="hadith">{locale === 'ar' ? 'حديث شريف' : 'Hadith'}</option>
+                    <option value="seerah">{locale === 'ar' ? 'سيرة نبوية' : 'Seerah'}</option>
+                    <option value="general_value">{locale === 'ar' ? 'قيمة أخلاقية عامة' : 'General value'}</option>
+                  </select>
+                </label>
+                <label className="field">
+                  <span>{locale === 'ar' ? 'المرجع التوثيقي' : 'Reference note'}</span>
+                  <input value={form.source_reference} onChange={e => setForm({...form, source_reference: e.target.value})} placeholder={locale === 'ar' ? 'مثال: صحيح البخاري رقم 123' : 'Reference'} />
+                </label>
+              </div>
+            </div>
+          )}
+
+          <div className="form-actions">
+            <button className="button button--ghost" type="button" onClick={()=> setModalOpen(false)} disabled={saving}>{text.cancel}</button>
+            <button className="button button--primary" type="submit" disabled={saving}>{saving? text.saving: editing? text.save: text.createDraft}</button>
+          </div>
         </form>
       </Modal>
 

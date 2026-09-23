@@ -1,4 +1,4 @@
-﻿import { lazy, useEffect, useState } from 'react'
+import { lazy, useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { AdminLayout } from './components/AdminLayout'
 import { AdminLoginPage } from './pages/AdminLoginPage'
@@ -17,6 +17,10 @@ import './styles/adminUx.css'
 import './styles/contentFactory.css'
 // بريميوم ريديزاين كامل للـ admin والـ sidebar مع أنيميشن احترافي
 import './styles/adminPremium.css'
+// ثيم استوديو الرسم والإبداع (تلوين، ارسم مثلي، وصل النقاط، أكمل الرسمة، تتبع، انسخ النمط)
+import './styles/creativeStudioTheme.css'
+// ثيم استوديو المحتوى الشامل (الكواكب، السلاسل، المواسم، الحلقات، الشخصيات، القصص، الألعاب، النوافذ والأدراج)
+import './styles/contentStudioTheme.css'
 
 /**
  * كل مسارات لوحة الإدارة في وحدة واحدة تُحمّل عند الطلب فقط،
@@ -71,6 +75,7 @@ const CreativeDrawLikeMeAdminPage = lazy(() => import('./pages/CreativeDrawLikeM
 const CreativeCompleteAdminPage = lazy(() => import('./pages/CreativeCompleteAdminPage').then((m) => ({ default: m.default })));
 const CreativeConnectDotsAdminPage = lazy(() => import('./pages/CreativeConnectDotsAdminPage').then((m) => ({ default: m.default })));
 const CreativeTraceAdminPage = lazy(() => import('./pages/CreativeTraceAdminPage').then((m) => ({ default: m.default })));
+const CreativeCopyPatternAdminPage = lazy(() => import('./pages/CreativeCopyPatternAdminPage').then((m) => ({ default: m.default })));
 
 // --- المحتوى ---------------------------------------------------------------
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
@@ -294,7 +299,7 @@ export default function AdminRoutes() {
         <Route path="creative-studio/connect-dots" element={<CreativeConnectDotsAdminPage />} />
         <Route path="creative-studio/complete" element={<CreativeCompleteAdminPage />} />
         <Route path="creative-studio/trace" element={<CreativeTraceAdminPage />} />
-        <Route path="creative-studio/copy-pattern" element={<CreativeStudioAdminPage />} />
+        <Route path="creative-studio/copy-pattern" element={<CreativeCopyPatternAdminPage />} />
         <Route path="creative-studio/reference" element={<CreativeStudioOverviewPage />} />
         <Route path="creative-studio/reference/:id" element={<ReferenceDrawingDetailPage />} />
         <Route path="creative-studio/authoring" element={<DrawingAuthoringPage />} />

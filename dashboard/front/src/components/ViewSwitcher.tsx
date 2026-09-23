@@ -26,29 +26,37 @@ const modeLabel = {
  */
 export function ViewSwitcher({
   value,
+  current,
   onChange,
   modes,
-  locale,
+  locale = 'ar',
+  labels,
 }: {
-  value: ViewMode
+  value?: ViewMode
+  current?: ViewMode
   onChange: (mode: ViewMode) => void
   modes: ViewMode[]
-  locale: 'ar' | 'en'
+  locale?: 'ar' | 'en'
+  labels?: Partial<Record<ViewMode, string>>
 }) {
   if (modes.length < 2) return null
+  const activeMode = value ?? current ?? modes[0]
+  const lang = locale === 'en' ? 'en' : 'ar'
+  const getLabel = (mode: ViewMode) => labels?.[mode] ?? modeLabel[lang]?.[mode] ?? mode
+
   return (
-    <div className="view-switcher" role="group" aria-label={locale === 'ar' ? 'طريقة العرض' : 'View mode'}>
+    <div className="view-switcher" role="group" aria-label={lang === 'ar' ? 'طريقة العرض' : 'View mode'}>
       {modes.map((mode) => (
         <button
           key={mode}
           type="button"
-          className={`view-switcher__button ${value === mode ? 'view-switcher__button--active' : ''}`}
+          className={`view-switcher__button ${activeMode === mode ? 'view-switcher__button--active' : ''}`}
           onClick={() => onChange(mode)}
-          aria-pressed={value === mode}
-          title={modeLabel[locale][mode]}
+          aria-pressed={activeMode === mode}
+          title={getLabel(mode)}
         >
           <Icon name={modeIcon[mode]} size={16} />
-          <span>{modeLabel[locale][mode]}</span>
+          <span>{getLabel(mode)}</span>
         </button>
       ))}
     </div>

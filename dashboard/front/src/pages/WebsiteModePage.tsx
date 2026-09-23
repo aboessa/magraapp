@@ -381,16 +381,68 @@ export function WebsiteModePage() {
     && new Date(draft.site_launch_at).getTime() < now
 
   return (
-    <div className="page-stack mode-page">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.lede}</p>
+    <div className="content-studio-root mode-page">
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background:
+              visitorMode === 'live'
+                ? 'radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(14, 165, 233, 0.16) 50%, transparent 80%)'
+                : visitorMode === 'construction'
+                ? 'radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(168, 85, 247, 0.16) 50%, transparent 80%)'
+                : 'radial-gradient(circle, rgba(239, 68, 68, 0.22) 0%, rgba(245, 158, 11, 0.16) 50%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span
+              className="catalog-hero__status-badge"
+              style={{
+                borderColor:
+                  visitorMode === 'live'
+                    ? 'rgba(16, 185, 129, 0.3)'
+                    : visitorMode === 'construction'
+                    ? 'rgba(245, 158, 11, 0.3)'
+                    : 'rgba(239, 68, 68, 0.3)',
+                color:
+                  visitorMode === 'live'
+                    ? '#10b981'
+                    : visitorMode === 'construction'
+                    ? '#f59e0b'
+                    : '#ef4444',
+              }}
+            >
+              <span
+                className="status-dot-pulse"
+                style={{
+                  background:
+                    visitorMode === 'live'
+                      ? '#10b981'
+                      : visitorMode === 'construction'
+                      ? '#f59e0b'
+                      : '#ef4444',
+                }}
+              />
+              {text.visitorSees}: {visitorCopy.title}
+            </span>
+          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.lede}</p>
         </div>
-        <div className="page-intro__actions">
-          <button className="icon-button" type="button" onClick={() => void load()} disabled={saving} title={text.refresh} aria-label={text.refresh}>
-            <Icon name="refresh" size={17} />
+
+        <div className="catalog-hero__actions">
+          <button
+            className="button button--ghost"
+            type="button"
+            onClick={() => void load()}
+            disabled={saving}
+            title={text.refresh}
+            aria-label={text.refresh}
+          >
+            <Icon name="refresh" size={16} />
+            <span>{locale === 'ar' ? 'تحديث الحالة' : 'Refresh'}</span>
           </button>
         </div>
       </section>

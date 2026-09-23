@@ -480,6 +480,7 @@ class _PlanetChoice extends StatelessWidget {
                           size: isTelevision ? 72 : 58,
                           selected: selected,
                           imageAsset: planet.imageAsset,
+                          networkUrl: planet.iconUrl,
                         ),
                       ),
                     ),
@@ -579,6 +580,7 @@ class _PlanetIntroduction extends StatelessWidget {
                   size: 64,
                   selected: true,
                   imageAsset: planet.imageAsset,
+                  networkUrl: planet.iconUrl,
                 ),
                 const SizedBox(width: 14),
                 Expanded(

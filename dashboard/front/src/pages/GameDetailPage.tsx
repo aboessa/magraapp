@@ -410,7 +410,7 @@ export function GameDetailPage() {
     <div className="page-stack">
       <EntityHeader
         breadcrumbs={[
-          { label: text.breadcrumb, to: adminPath('library-content') },
+          { label: locale === 'ar' ? 'الألعاب' : 'Games', to: adminPath('games') },
           { label: text.kind },
           { label: game.title_ar },
         ]}
@@ -425,9 +425,11 @@ export function GameDetailPage() {
         </>}
         status={<StatusBadge status={game.status} />}
         actions={
-          <Link className="button button--secondary" to={adminPath(`library-content/games/${game.id}`)}>
-            <Icon name="arrow" size={16} />{text.openLibrary}
-          </Link>
+          <>
+            <Link className="button button--secondary" to={adminPath(`library-content/games/${game.id}`)}>
+              <Icon name="arrow" size={16} />{text.openLibrary}
+            </Link>
+          </>
         }
       />
 

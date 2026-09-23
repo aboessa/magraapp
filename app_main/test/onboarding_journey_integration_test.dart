@@ -25,6 +25,8 @@
 ///    without touching `app_router.dart`'s private `_guardRedirect` — this
 ///    is the approach used below, matching the "prefer the real router if
 ///    feasible" guidance for this task.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -100,7 +102,250 @@ class _OnboardedFamilyApiClient extends MajarraApiClient {
       ];
 }
 
+class _PendingFamilyApiClient extends MajarraApiClient {
+  _PendingFamilyApiClient() : super(http.Client());
+
+  final completer = Completer<List<Map<String, Object?>>>();
+
+  @override
+  Future<List<Map<String, Object?>>> fetchChildren() => completer.future;
+}
+
+class _FailingFamilyApiClient extends MajarraApiClient {
+  _FailingFamilyApiClient() : super(http.Client());
+
+  @override
+  Future<List<Map<String, Object?>>> fetchChildren() async {
+    throw StateError('offline');
+  }
+}
+
+class _IncompleteFamilyApiClient extends _ConsentOnlyFakeApiClient {
+  @override
+  Future<List<Map<String, Object?>>> fetchChildren() async => const [];
+}
+
+class _LegacyFamilyApiClient extends _ConsentOnlyFakeApiClient {
+  @override
+  Future<List<Map<String, Object?>>> fetchChildren() async => const [
+        {
+          'id': 'legacy-child-1',
+          'nickname': 'نور',
+          'age_track': 'kids',
+          'birth_month': 5,
+          'birth_year': 2018,
+          'avatar_id': 'avatar-1',
+          'interests': <String>[],
+          'language': 'ar',
+          'onboarding_completed_at': null,
+        },
+      ];
+}
+
+Future<void> _pumpRealRouter(
+  WidgetTester tester, {
+  required MajarraApiClient api,
+  required AuthGuard guard,
+  required SharedPreferences preferences,
+}) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        majarraApiClientProvider.overrideWithValue(api),
+        authGuardProvider.overrideWithValue(guard),
+        sharedPreferencesProvider.overrideWithValue(preferences),
+      ],
+      child: Consumer(
+        builder: (context, ref, _) => MaterialApp.router(
+          routerConfig: ref.watch(routerProvider),
+          locale: const Locale('ar'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
+      ),
+    ),
+  );
+}
+
 void main() {
+  group('حسم التهيئة لا يخلط التحميل أو الخطأ مع أسرة جديدة', () {
+    testWidgets('أثناء تحميل القائمة تظهر شاشة الأطفال لا onboarding', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      final preferences = await SharedPreferences.getInstance();
+      final guard = AuthGuard()..setAuthenticated(true, parentId: 'p1');
+      addTearDown(guard.dispose);
+      final api = _PendingFamilyApiClient();
+
+      await _pumpRealRouter(
+        tester,
+        api: api,
+        guard: guard,
+        preferences: preferences,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.byType(ChildSwitcherPage), findsOneWidget);
+      expect(find.byType(OnboardingFlowPage), findsNothing);
+      expect(guard.familyOnboardingStatus, FamilyOnboardingStatus.loading);
+
+      api.completer.complete(const []);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets(
+      'فشل القائمة يبقى في شاشة قابلة لإعادة المحاولة ولا يفتح onboarding',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final preferences = await SharedPreferences.getInstance();
+        final guard = AuthGuard()..setAuthenticated(true, parentId: 'p1');
+        addTearDown(guard.dispose);
+
+        await _pumpRealRouter(
+          tester,
+          api: _FailingFamilyApiClient(),
+          guard: guard,
+          preferences: preferences,
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ChildSwitcherPage), findsOneWidget);
+        expect(find.byType(OnboardingFlowPage), findsNothing);
+        expect(find.text('إعادة المحاولة'), findsOneWidget);
+        expect(guard.familyOnboardingStatus, FamilyOnboardingStatus.error);
+      },
+    );
+
+    testWidgets('الاستجابة الفارغة الناجحة وحدها تبدأ onboarding', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(900, 2000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      SharedPreferences.setMockInitialValues({});
+      final preferences = await SharedPreferences.getInstance();
+      final guard = AuthGuard()..setAuthenticated(true, parentId: 'p1');
+      addTearDown(guard.dispose);
+
+      await _pumpRealRouter(
+        tester,
+        api: _IncompleteFamilyApiClient(),
+        guard: guard,
+        preferences: preferences,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OnboardingFlowPage), findsOneWidget);
+      expect(guard.familyOnboardingStatus, FamilyOnboardingStatus.incomplete);
+      expect(guard.onboardingJourneyInProgress, isTrue);
+    });
+
+    testWidgets('حساب قديم لديه طفل بلا ختم onboarding لا يبدأ الرحلة مجددًا', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      final preferences = await SharedPreferences.getInstance();
+      final guard = AuthGuard()..setAuthenticated(true, parentId: 'p1');
+      addTearDown(guard.dispose);
+
+      await _pumpRealRouter(
+        tester,
+        api: _LegacyFamilyApiClient(),
+        guard: guard,
+        preferences: preferences,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChildSwitcherPage), findsOneWidget);
+      expect(find.byType(OnboardingFlowPage), findsNothing);
+      expect(guard.familyOnboardingStatus, FamilyOnboardingStatus.complete);
+      expect(guard.onboardingJourneyInProgress, isFalse);
+    });
+
+    for (final staleStep in OnboardingStep.values) {
+      testWidgets(
+        'الحساب القديم يمسح خطوة ${staleStep.name} العالقة ولا يعيد onboarding',
+        (tester) async {
+          SharedPreferences.setMockInitialValues({
+            onboardingStepPrefsKey: staleStep.name,
+          });
+          final preferences = await SharedPreferences.getInstance();
+          final guard = AuthGuard()..setAuthenticated(true, parentId: 'p1');
+          addTearDown(guard.dispose);
+
+          await _pumpRealRouter(
+            tester,
+            api: _LegacyFamilyApiClient(),
+            guard: guard,
+            preferences: preferences,
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.byType(ChildSwitcherPage), findsOneWidget);
+          expect(find.byType(OnboardingFlowPage), findsNothing);
+          expect(preferences.containsKey(onboardingStepPrefsKey), isFalse);
+          expect(guard.familyOnboardingStatus, FamilyOnboardingStatus.complete);
+          expect(guard.onboardingJourneyInProgress, isFalse);
+        },
+      );
+    }
+
+    testWidgets('خطوة finish المحفوظة تستمر بعد إنشاء أول طفل', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({
+        onboardingStepPrefsKey: OnboardingStep.finish.name,
+      });
+      final preferences = await SharedPreferences.getInstance();
+      final guard = AuthGuard()..setAuthenticated(true, parentId: 'p1');
+      addTearDown(guard.dispose);
+
+      await _pumpRealRouter(
+        tester,
+        api: _OnboardedFamilyApiClient(),
+        guard: guard,
+        preferences: preferences,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OnboardingFlowPage), findsOneWidget);
+      expect(guard.familyOnboardingStatus, FamilyOnboardingStatus.complete);
+      expect(guard.onboardingJourneyInProgress, isTrue);
+      final l10n = lookupAppLocalizations(const Locale('ar'));
+      expect(find.text(l10n.onboardingFinishTitle), findsOneWidget);
+    });
+
+    testWidgets('الخطوة المحفوظة تستأنف onboarding حتى لو كان الجلب معلقًا', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({
+        onboardingStepPrefsKey: OnboardingStep.finish.name,
+      });
+      final preferences = await SharedPreferences.getInstance();
+      final guard = AuthGuard()..setAuthenticated(true, parentId: 'p1');
+      addTearDown(guard.dispose);
+      final api = _PendingFamilyApiClient();
+
+      await _pumpRealRouter(
+        tester,
+        api: api,
+        guard: guard,
+        preferences: preferences,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.byType(OnboardingFlowPage), findsOneWidget);
+      expect(guard.onboardingJourneyInProgress, isTrue);
+      final l10n = lookupAppLocalizations(const Locale('ar'));
+      expect(find.text(l10n.onboardingFinishTitle), findsOneWidget);
+
+      api.completer.complete(const []);
+      await tester.pumpAndSettle();
+    });
+  });
+
   group(
     'خروج ورجوع في كل خطوة من الست (Requirement 8.3)',
     () {

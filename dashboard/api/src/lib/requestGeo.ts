@@ -170,20 +170,33 @@ export async function availabilityAncestors(
 }
 
 /// Loads every policy that could apply to a set of (scope, id) pairs in one query.
+///
+/// D1 caps bound parameters per statement (100), and a catalogue page of N rows
+/// fans out to ~4N pairs (row + season + series + planet). A 33-episode page is
+/// ~100 pairs = ~200 parameters, which fails the whole request with a 500. So
+/// pairs are chunked into batches of 40 (80 parameters) and the results merged.
+/// The chunk size is a transport concern only: callers still issue one logical
+/// policy lookup per page, and the merge preserves no ordering (callers re-key
+/// by scope:id themselves).
 export async function loadPolicies(
   env: Env,
   pairs: Array<{ entity_type: AvailabilityScope; entity_id: string }>,
 ): Promise<AvailabilityPolicy[]> {
   if (!pairs.length) return [];
-  const clauses = pairs.map(() => '(entity_type = ? AND entity_id = ?)').join(' OR ');
-  const params = pairs.flatMap((pair) => [pair.entity_type, pair.entity_id]);
-  const rows = await queryAll<AvailabilityRow>(env.DB, `
+  const out: AvailabilityPolicy[] = [];
+  for (let i = 0; i < pairs.length; i += 40) {
+    const chunk = pairs.slice(i, i + 40);
+    const clauses = chunk.map(() => '(entity_type = ? AND entity_id = ?)').join(' OR ');
+    const params = chunk.flatMap((pair) => [pair.entity_type, pair.entity_id]);
+    const rows = await queryAll<AvailabilityRow>(env.DB, `
     SELECT entity_type, entity_id, mode, countries, languages, platforms,
            starts_at, ends_at, reason, note
       FROM content_availability
      WHERE ${clauses}
   `, params);
-  return rows.map(rowToPolicy);
+    for (const row of rows) out.push(rowToPolicy(row));
+  }
+  return out;
 }
 
 /// Resolves availability for one entity, including its inherited policies.

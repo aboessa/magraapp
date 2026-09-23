@@ -28,6 +28,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/drawing_asset_map.dart';
+import '../presentation/widgets/drawing_asset.dart';
 import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
@@ -200,12 +202,9 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
                 ),
                 alignment: Alignment.center,
                 child: isUp
-                    // Artwork is referenced by asset id; until packs ship art the
-                    // id itself is shown rather than a fabricated picture.
-                    ? Text(
-                        _deck[index].assetId,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelSmall,
+                    ? Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: _CardFace(assetId: _deck[index].assetId),
                       )
                     : const Icon(Icons.question_mark, size: 28),
               ),
@@ -221,6 +220,43 @@ class _MemoryTile {
   const _MemoryTile({required this.pairIndex, required this.assetId});
   final int pairIndex;
   final String assetId;
+}
+
+/// وجه البطاقة المكشوفة: فنٌّ حقيقي متى تحلّل المعرّف، ونصٌّ مميِّز متى لم يتحلّل.
+///
+/// ## لماذا لا يُنادى `DrawingAsset` مباشرةً
+///
+/// بديل `DrawingAsset` عند تعذّر التحليل أيقونة **واحدة** موحّدة
+/// (`Icons.image_outlined`, انظر `_placeholder`). وهذا مقبول في التلوين — صورة
+/// واحدة على الشاشة — لكنه **يُفسد لعبة الذاكرة**: البطاقات تتشابه فيصير
+/// المطابَقة تخمينًا أعمى لا تذكُّرًا، وهو أسوأ من عرض المعرّف نصًّا.
+///
+/// ولأن حِزم `wave4` تُشير إلى معرّفات لم يُنتَج فنّها بعد
+/// (`asset-wave4-cat` وأمثاله، ٢٠ معرّفًا)، فالحالتان **قائمتان معًا** في نفس
+/// اللعبة اليوم. فالفحص هنا شرطٌ للصحة لا احتياطًا.
+class _CardFace extends StatelessWidget {
+  const _CardFace({required this.assetId});
+
+  final String assetId;
+
+  @override
+  Widget build(BuildContext context) {
+    if (drawingAssetPath(assetId) == null) {
+      // المعرّف بلا فنّ: يبقى النصّ لأنه يُميّز البطاقات فيبقى اللعب ممكنًا.
+      return Text(
+        assetId,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.labelSmall,
+      );
+    }
+    return DrawingAsset(
+      assetIdOrPath: assetId,
+      fit: BoxFit.contain,
+      // التسمية تُترك للأب: `Semantics` أعلاه يُعلن «بطاقة مكشوفة/مقلوبة»،
+      // وإعلان اسم الأصل هنا يُفشي الجواب لقارئ الشاشة.
+      fallbackIsShrink: true,
+    );
+  }
 }
 
 // --------------------------------------------------------------- match_pairs

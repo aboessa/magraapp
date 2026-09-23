@@ -64,6 +64,11 @@ export function CharactersPage() {
   async function submit(event: FormEvent) { event.preventDefault(); if (!form.series_id || !form.name_ar.trim()) return; setSaving(true); const payload = { ...form, age: form.age ? Number(form.age) : null, traits: form.traits.split(/[,،]/).map((item) => item.trim()).filter(Boolean), languages: ['ar'] }; try { if (editing) await api.updateCharacter(editing.id, payload); else await api.createCharacter(payload); setOpen(false); await load() } catch (caught) { setError(caught instanceof Error ? caught.message : ar ? 'تعذر الحفظ' : 'Unable to save') } finally { setSaving(false) } }
   async function archive(id: string) { if (!window.confirm(ar ? 'أرشفة الشخصية؟' : 'Archive character?')) return; await api.archiveCharacter(id); await load() }
 
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
+  const [roleFilter, setRoleFilter] = useState<string>('')
+
+  const displayedItems = roleFilter ? paged.filter(item => item.role === roleFilter) : paged
+
   return (
     <div className="page-stack">
       <section className="page-intro">
@@ -77,12 +82,113 @@ export function CharactersPage() {
         </button>
       </section>
 
+      {/* Hero KPIs */}
+      <section className="hero-kpis" aria-label="Characters KPIs">
+        <div className="kpi-glass-card kpi-glass-card--primary">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{ar ? 'إجمالي الشخصيات' : 'Total characters'}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="characters" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{total}</div>
+          <div className="kpi-glass-card__caption">{ar ? 'مسجلة في النظام' : 'In production bible'}</div>
+        </div>
+        <div className="kpi-glass-card kpi-glass-card--success">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{ar ? 'أبطال السلاسل' : 'Heroes'}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="check" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{items.filter(i => i.role === 'hero').length}</div>
+          <div className="kpi-glass-card__caption">{ar ? 'شخصيات رئيسية' : 'Lead characters'}</div>
+        </div>
+        <div className="kpi-glass-card kpi-glass-card--warn">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{ar ? 'أدوار مساندة' : 'Supporting'}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="clock" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{items.filter(i => i.role === 'side').length}</div>
+          <div className="kpi-glass-card__caption">{ar ? 'شخصيات ثانوية' : 'Side characters'}</div>
+        </div>
+        <div className="kpi-glass-card kpi-glass-card--purple">
+          <div className="kpi-glass-card__top">
+            <span className="kpi-glass-card__label">{ar ? 'السلاسل المرتبطة' : 'Linked series'}</span>
+            <div className="kpi-glass-card__icon-bubble"><Icon name="series" size={18} /></div>
+          </div>
+          <div className="kpi-glass-card__value">{series.length}</div>
+          <div className="kpi-glass-card__caption">{ar ? 'عالم الإنتاج' : 'Active universes'}</div>
+        </div>
+      </section>
+
+      {/* Modern Catalog Control Strip */}
+      <section className="catalog-control-strip">
+        <div className="catalog-control-strip__left">
+          <div className="filter-pill-group" aria-label="Role filters">
+            <button
+              type="button"
+              className={`filter-pill ${!roleFilter ? 'filter-pill--active' : ''}`}
+              onClick={() => setRoleFilter('')}
+            >
+              {ar ? 'الكل 🎭' : 'All'}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${roleFilter === 'hero' ? 'filter-pill--active' : ''}`}
+              onClick={() => setRoleFilter('hero')}
+            >
+              🌟 {labels[locale].hero}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${roleFilter === 'side' ? 'filter-pill--active' : ''}`}
+              onClick={() => setRoleFilter('side')}
+            >
+              🤝 {labels[locale].side}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${roleFilter === 'narrator' ? 'filter-pill--active' : ''}`}
+              onClick={() => setRoleFilter('narrator')}
+            >
+              🎙️ {labels[locale].narrator}
+            </button>
+            <button
+              type="button"
+              className={`filter-pill ${roleFilter === 'presenter' ? 'filter-pill--active' : ''}`}
+              onClick={() => setRoleFilter('presenter')}
+            >
+              🎤 {labels[locale].presenter}
+            </button>
+          </div>
+        </div>
+
+        <div className="catalog-control-strip__right">
+          <div className="view-mode-toggle" aria-label="View mode">
+            <button
+              type="button"
+              className={`view-mode-btn ${viewMode === 'grid' ? 'view-mode-btn--active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title={ar ? 'معرض الشخصيات' : 'Gallery view'}
+            >
+              <Icon name="grid" size={15} />
+              <span>{ar ? 'معرض' : 'Gallery'}</span>
+            </button>
+            <button
+              type="button"
+              className={`view-mode-btn ${viewMode === 'table' ? 'view-mode-btn--active' : ''}`}
+              onClick={() => setViewMode('table')}
+              title={ar ? 'عرض جدول' : 'Table view'}
+            >
+              <Icon name="bars" size={15} />
+              <span>{ar ? 'جدول' : 'Table'}</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section className="panel panel--table">
         <header className="panel__header panel__header--filters">
           <div>
             <span className="panel__kicker">{ar ? 'كل الشخصيات' : 'All characters'}</span>
             <h3>{total}</h3>
-            {/* حدّ الخادم مُعلَن: قائمة مقتطعة بلا إعلان تُقرأ كأنها كل ما هناك */}
             <p className="panel__note">
               {ar
                 ? `يُعيد المسار أول ${SERVER_PAGE} شخصية لكل استعلام؛ ضيّق بالسلسلة لرؤية البقية.`
@@ -108,42 +214,114 @@ export function CharactersPage() {
 
         {loading ? <LoadingState label={ar ? 'جارٍ التحميل...' : 'Loading...'}/> : error && !items.length ? <ErrorState message={error} onRetry={() => void load()}/> : items.length ? (
           <>
-            <div className="table-scroll" tabIndex={0}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>{ar ? 'الشخصية' : 'Character'}</th>
-                    <th>{ar ? 'السلسلة' : 'Series'}</th>
-                    <th>{ar ? 'الدور' : 'Role'}</th>
-                    <th>{ar ? 'السمات' : 'Traits'}</th>
-                    <th>{ar ? 'الصوت' : 'Voice'}</th>
-                    <th/>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paged.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        <Link className="entity-cell entity-cell--button" to={adminPath(`characters/${item.id}`)}>
-                          <EntityThumbnail src={item.reference_images[0]} alt={item.name_ar} label={item.name_ar} icon="characters" size={34}/>
-                          <div><strong>{item.name_ar}</strong><small>{item.age ? `${item.age} ${ar ? 'سنوات' : 'years'}` : '—'}</small></div>
-                        </Link>
-                      </td>
-                      <td>{item.series_title}</td>
-                      <td>{item.role ? labels[locale][item.role] : '—'}</td>
-                      <td className="cell-wrap">{item.traits.join('، ') || '—'}</td>
-                      <td>{item.voice_actor || '—'}</td>
-                      <td>
-                        <div className="table-actions">
-                          <button className="icon-button icon-button--small" type="button" onClick={() => edit(item)} title={ar ? 'تعديل' : 'Edit'}><Icon name="edit" size={15}/></button>
-                          <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(item.id)} title={ar ? 'أرشفة' : 'Archive'}><Icon name="archive" size={15}/></button>
+            {viewMode === 'grid' ? (
+              /* CHARACTERS CAST GALLERY */
+              <div style={{ padding: '20px' }}>
+                <div className="characters-cast-grid">
+                  {displayedItems.map((item) => (
+                    <article className="character-cast-card" key={item.id}>
+                      <div className="character-cast-card__avatar">
+                        {item.reference_images[0] ? (
+                          <img src={item.reference_images[0]} alt={item.name_ar} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        ) : (
+                          item.name_ar.slice(0, 1)
+                        )}
+                      </div>
+
+                      <div>
+                        <h3 className="character-cast-card__name">
+                          <Link to={adminPath(`characters/${item.id}`)} style={{ color: 'inherit', textDecoration: 'none' }}>
+                            {item.name_ar}
+                          </Link>
+                        </h3>
+                        <div className="character-cast-card__series">{item.series_title}</div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {item.role && (
+                          <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary)' }}>
+                            {labels[locale][item.role]}
+                          </span>
+                        )}
+                        {item.age && (
+                          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
+                            {item.age} {ar ? 'سنوات' : 'years'}
+                          </span>
+                        )}
+                      </div>
+
+                      {item.traits.length > 0 && (
+                        <div className="character-traits-list">
+                          {item.traits.slice(0, 3).map((t, i) => (
+                            <span className="character-trait-pill" key={i}>{t}</span>
+                          ))}
                         </div>
-                      </td>
-                    </tr>
+                      )}
+
+                      {item.voice_actor && (
+                        <div style={{ fontSize: '11.5px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>🎙️</span>
+                          <span>{item.voice_actor}</span>
+                        </div>
+                      )}
+
+                      <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid var(--cs-glass-border)', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Link to={adminPath(`characters/${item.id}`)} style={{ fontSize: '12px', fontWeight: 800, color: 'var(--primary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <span>{ar ? 'التفاصيل' : 'Details'}</span>
+                          <Icon name="arrow" size={13} />
+                        </Link>
+                        <div className="table-actions">
+                          <button className="icon-button icon-button--small" type="button" onClick={() => edit(item)} title={ar ? 'تعديل' : 'Edit'}>
+                            <Icon name="edit" size={15}/>
+                          </button>
+                          <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(item.id)} title={ar ? 'أرشفة' : 'Archive'}>
+                            <Icon name="archive" size={15}/>
+                          </button>
+                        </div>
+                      </div>
+                    </article>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+            ) : (
+              /* DENSE TABLE VIEW */
+              <div className="table-scroll" tabIndex={0}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>{ar ? 'الشخصية' : 'Character'}</th>
+                      <th>{ar ? 'السلسلة' : 'Series'}</th>
+                      <th>{ar ? 'الدور' : 'Role'}</th>
+                      <th>{ar ? 'السمات' : 'Traits'}</th>
+                      <th>{ar ? 'الصوت' : 'Voice'}</th>
+                      <th/>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paged.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <Link className="entity-cell entity-cell--button" to={adminPath(`characters/${item.id}`)}>
+                            <EntityThumbnail src={item.reference_images[0]} alt={item.name_ar} label={item.name_ar} icon="characters" size={34}/>
+                            <div><strong>{item.name_ar}</strong><small>{item.age ? `${item.age} ${ar ? 'سنوات' : 'years'}` : '—'}</small></div>
+                          </Link>
+                        </td>
+                        <td>{item.series_title}</td>
+                        <td>{item.role ? labels[locale][item.role] : '—'}</td>
+                        <td className="cell-wrap">{item.traits.join('، ') || '—'}</td>
+                        <td>{item.voice_actor || '—'}</td>
+                        <td>
+                          <div className="table-actions">
+                            <button className="icon-button icon-button--small" type="button" onClick={() => edit(item)} title={ar ? 'تعديل' : 'Edit'}><Icon name="edit" size={15}/></button>
+                            <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(item.id)} title={ar ? 'أرشفة' : 'Archive'}><Icon name="archive" size={15}/></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
             <Pagination total={total} limit={limit} offset={offset} onOffsetChange={list.setOffset} locale={locale} />
           </>
         ) : <EmptyState title={ar ? 'لا توجد شخصيات' : 'No characters'} description={ar ? 'أضف الشخصيات الثابتة ومقدمي البرامج.' : 'Add recurring characters and presenters.'}/>}

@@ -159,7 +159,11 @@ class ParentPinStore {
     if (problem != null) throw ArgumentError(problem);
 
     final salt = PinKdf.randomSalt();
-    final verifier = PinKdf.deriveVerifier(pin, salt);
+    // ‏`Async` لا `deriveVerifier`: النسخة التزامنية حلقة Dart خالصة بمئة ألف
+    // تكرارة تحجز خيط الواجهة — قِسنا 2.75 ثانية تجمّدًا على الويب بعد إدخال
+    // الرمز. والمُخرَج متطابق بايتًا ببايت (مُثبَت في `pin_kdf_test.dart`)،
+    // فلا يُبطل هذا التبديل أي مُتحقِّق مخزون على جهازٍ سُجِّل قبله.
+    final verifier = await PinKdf.deriveVerifierAsync(pin, salt);
 
     if (ownerId != null && ownerId.isNotEmpty) {
       await _safeWrite(_ownerKey, ownerId);
@@ -192,7 +196,10 @@ class ParentPinStore {
     }
 
     final expected = PinKdf.fromHex(verifierHex);
-    final actual = PinKdf.deriveVerifier(pin, PinKdf.fromHex(saltHex));
+    // كذلك هنا: هذه الدالة تُستدعى من قفل المشغّل (`playback_page.dart`)، أي
+    // من خيط الواجهة مباشرةً. النسخة التزامنية كانت تُجمّد الصورة أثناء
+    // التحقّق.
+    final actual = await PinKdf.deriveVerifierAsync(pin, PinKdf.fromHex(saltHex));
 
     if (PinKdf.constantTimeEquals(expected, actual)) {
       await _safeDelete(_failuresKey);

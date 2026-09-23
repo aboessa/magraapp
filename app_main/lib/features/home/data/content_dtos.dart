@@ -1,6 +1,7 @@
 ﻿import 'dart:convert';
 
 import '../../../core/env/app_environment.dart';
+import '../../../core/images/heavy_assets.dart';
 import '../domain/content_models.dart';
 
 String _text(Object? value, {String fallback = ''}) {
@@ -130,7 +131,10 @@ class PlanetDto {
       description: description,
       colorHex: colorHex,
       imageAsset: imageAsset,
-      iconUrl: iconUrl,
+      // R2-first: the server's `icon_url` wins when present; the bundled
+      // `imageAsset` stays the offline fallback. Before this, the server
+      // field was parsed and then ignored — every planet rendered bundled.
+      iconUrl: iconUrl ?? heavyCdnUrl(imageAsset),
       publishedSeries: publishedSeries,
       publishedOpenable: publishedOpenable,
     );
@@ -150,6 +154,7 @@ class SeriesDto {
     required this.isFree,
     this.planetId,
     this.coverUrl,
+    this.bannerUrl,
   });
 
   factory SeriesDto.fromJson(Map<String, Object?> json) {
@@ -166,6 +171,7 @@ class SeriesDto {
       type: _text(json['type'], fallback: 'knowledge'),
       isFree: _boolean(json['is_free']),
       coverUrl: _nullableText(json['cover_url']),
+      bannerUrl: _nullableText(json['banner_url']),
     );
   }
 
@@ -181,6 +187,9 @@ class SeriesDto {
   final bool isFree;
   final String? coverUrl;
 
+  /// البانر العريض (16:9) لصفحة التفاصيل. يسقط للبوستر عند غيابه.
+  final String? bannerUrl;
+
   SeriesItem toDomain({required SeriesItem fallback}) {
     return SeriesItem(
       id: id,
@@ -191,6 +200,7 @@ class SeriesDto {
       posterAsset: fallback.posterAsset,
       bannerAsset: fallback.bannerAsset,
       coverUrl: coverUrl,
+      bannerUrl: bannerUrl ?? coverUrl,
       ageMin: ageMin,
       ageMax: ageMax < ageMin ? ageMin : ageMax,
       episodesCount: episodesCount,

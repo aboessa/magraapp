@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
+import 'package:cryptography/cryptography.dart' as cryptography;
 
 /// Pure key-derivation and PIN-policy helpers.
 ///
@@ -69,6 +70,17 @@ abstract final class PinKdf {
   }
 
   /// Derives the stored verifier for [pin] using [salt].
+  ///
+  /// ## لا تستخدمها في مسار واجهة
+  ///
+  /// حلقة Dart خالصة بـ [iterations] تكرارة، تزامنية تمامًا: لا `await` داخلها
+  /// يُفلت الخيط. فاستدعاؤها من زرٍّ يحجز خيط الواجهة ثوانٍ — قِسنا 2.75 ثانية
+  /// تجمّدًا متّصلًا في بناء تصحيح على الويب بعد إدخال الرمز، يتوقّف فيها
+  /// مؤشّر التحميل نفسه عن الدوران فيبدو التطبيق معلّقًا لا محمّلًا.
+  ///
+  /// و`compute()` **لا تُنجي** هنا: لا عوازل على الويب، فتُنفَّذ الدالة على
+  /// الخيط نفسه. استخدم [deriveVerifierAsync] في كل مسار يراه المستخدم، وأبقِ
+  /// هذه مرجعًا صريحًا تُقاس عليه متجهات RFC 8018 في `pin_kdf_test.dart`.
   static List<int> deriveVerifier(String pin, List<int> salt) {
     return pbkdf2Sha256(
       password: pin.codeUnits,
@@ -76,6 +88,32 @@ abstract final class PinKdf {
       iterations: iterations,
       keyLengthBytes: keyLengthBytes,
     );
+  }
+
+  /// نفس مُخرَج [deriveVerifier] بايتًا ببايت، لكن بلا حجز خيط الواجهة.
+  ///
+  /// ‏PBKDF2 دالة حتمية: النتيجة تتحدّد بالرمز والملح وعدد التكرارات وطول
+  /// المفتاح فقط، لا بالتنفيذ. فالتبديل هنا **لا يُبطل** أي مُتحقِّق مخزون على
+  /// جهازٍ سُجِّل بالتنفيذ القديم — وهذا مُثبَت باختبار تكافؤ في
+  /// `pin_kdf_test.dart`، لا مُفترَض.
+  ///
+  /// وعلى الويب يُفوّض `package:cryptography` إلى `crypto.subtle.deriveBits`
+  /// الأصلي، فيجري الاشتقاق خارج الخيط الرئيسي وبسرعة الكود الأصلي بدل JS
+  /// مُترجَم من Dart. وعلى المنصّات الأخرى يعمل على عازل.
+  static Future<List<int>> deriveVerifierAsync(
+    String pin,
+    List<int> salt,
+  ) async {
+    final algorithm = cryptography.Pbkdf2(
+      macAlgorithm: cryptography.Hmac.sha256(),
+      iterations: iterations,
+      bits: keyLengthBytes * 8,
+    );
+    final derived = await algorithm.deriveKey(
+      secretKey: cryptography.SecretKey(pin.codeUnits),
+      nonce: salt,
+    );
+    return derived.extractBytes();
   }
 
   static List<int> randomSalt() => randomBytes(saltLengthBytes);

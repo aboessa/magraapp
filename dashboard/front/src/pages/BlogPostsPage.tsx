@@ -265,17 +265,95 @@ export function BlogPostsPage() {
   const view = state.view as ViewMode | 'calendar'
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.lede}</p>
+    <div className="content-studio-root">
+      {/* 1. Panoramic Studio Hero */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: 'radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, rgba(168, 85, 247, 0.16) 50%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span className="catalog-hero__status-badge" style={{ borderColor: 'rgba(236, 72, 153, 0.3)', color: '#ec4899' }}>
+              <span className="status-dot-pulse" style={{ background: '#ec4899' }} />
+              {rows.length} {locale === 'ar' ? 'مقال مسجل' : 'articles'}
+            </span>
+          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.lede}</p>
         </div>
-        <button className="button button--primary" type="button" onClick={() => setCreating(true)}>
-          <Icon name="plus" size={16} />{text.create}
-        </button>
+
+        <div className="catalog-hero__actions">
+          <button className="button button--primary" type="button" onClick={() => setCreating(true)}>
+            <Icon name="plus" size={16} />
+            <span>{text.create}</span>
+          </button>
+        </div>
       </section>
+
+      {/* 2. Bento Glass KPI Strip */}
+      <div className="hero-kpis">
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(236, 72, 153, 0.15)', color: '#ec4899' }}>
+            <Icon name="pen" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{locale === 'ar' ? 'إجمالي المقالات' : 'Total Posts'}</span>
+            <div className="kpi-glass-card__num">{rows.length}</div>
+            <span className="kpi-glass-card__trend" style={{ color: '#ec4899' }}>
+              {locale === 'ar' ? 'كل اللغات والأقسام' : 'All languages'}
+            </span>
+          </div>
+        </div>
+
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+            <Icon name="globe" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{locale === 'ar' ? 'مقالات منشورة' : 'Published'}</span>
+            <div className="kpi-glass-card__num">
+              {rows.filter((r) => r.status === 'published').length}
+            </div>
+            <span className="kpi-glass-card__trend" style={{ color: '#10b981' }}>
+              {locale === 'ar' ? 'مباشرة على المدوّنة' : 'Live on blog'}
+            </span>
+          </div>
+        </div>
+
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
+            <Icon name="calendar" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{locale === 'ar' ? 'مسودات ومجدولة' : 'Drafts & Scheduled'}</span>
+            <div className="kpi-glass-card__num">
+              {rows.filter((r) => r.status === 'draft' || r.status === 'scheduled').length}
+            </div>
+            <span className="kpi-glass-card__trend" style={{ color: '#f59e0b' }}>
+              {locale === 'ar' ? 'قيد التحرير والجدولة' : 'In production'}
+            </span>
+          </div>
+        </div>
+
+        <div className="kpi-glass-card">
+          <div className="kpi-glass-card__icon" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
+            <Icon name="users" size={24} />
+          </div>
+          <div className="kpi-glass-card__info">
+            <span className="kpi-glass-card__label">{locale === 'ar' ? 'الكتّاب والمحررون' : 'Authors'}</span>
+            <div className="kpi-glass-card__num">
+              {new Set(rows.map((r) => r.author_name).filter(Boolean)).size}
+            </div>
+            <span className="kpi-glass-card__trend" style={{ color: '#a855f7' }}>
+              {locale === 'ar' ? 'مشاركون في التحرير' : 'Contributors'}
+            </span>
+          </div>
+        </div>
+      </div>
 
       <section className="panel panel--table">
         <header className="panel__header panel__header--filters">

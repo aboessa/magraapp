@@ -332,17 +332,119 @@ export function WebsitePagesPage() {
   const view = state.view as ViewMode | 'calendar' | 'tree'
 
   return (
-    <div className="page-stack">
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow}</span>
-          <h2>{text.title}</h2>
-          <p>{text.lede}</p>
+    <div className="content-studio-root">
+      {/* 1. Panoramic Studio Hero */}
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: 'radial-gradient(circle, rgba(14, 165, 233, 0.22) 0%, rgba(99, 102, 241, 0.16) 50%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow}</span>
+            <span className="catalog-hero__status-badge" style={{ borderColor: 'rgba(14, 165, 233, 0.3)', color: '#0ea5e9' }}>
+              <span className="status-dot-pulse" style={{ background: '#0ea5e9' }} />
+              {rows.length} {locale === 'ar' ? 'صفحة مسجلة' : 'pages'}
+            </span>
+          </div>
+          <h1 className="catalog-hero__title">{text.title}</h1>
+          <p className="catalog-hero__desc">{text.lede}</p>
         </div>
-        <button className="button button--primary" type="button" onClick={() => setCreating(true)}>
-          <Icon name="plus" size={16} />{text.create}
-        </button>
+
+        <div className="catalog-hero__actions">
+          <button className="button button--primary" type="button" onClick={() => setCreating(true)}>
+            <Icon name="plus" size={16} />
+            <span>{text.create}</span>
+          </button>
+        </div>
       </section>
+
+      {/* 2. Bento Glass KPI Strip (6 Cards) */}
+      <div className="commercial-bento-grid">
+        <div className="commercial-bento-card commercial-bento-card--indigo">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'إجمالي الصفحات' : 'Total Pages'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="web-pages" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{rows.length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'عبر جميع اللغات المعتمدة' : 'All CMS languages'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--emerald">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'صفحات منشورة' : 'Published Live'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="check" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{rows.filter((r) => r.status === 'published').length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend commercial-bento-card__trend--up">
+              {locale === 'ar' ? 'مباشرة على الويب' : 'Live in production'}
+            </span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--amber">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'مسودات ومراجعة' : 'Drafts & Review'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="review" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{rows.filter((r) => r.status === 'draft' || r.status === 'review').length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'تنتظر النشر والاعتماد' : 'Pending release'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--purple">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'جاهزية SEO' : 'SEO Ready'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="search" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{rows.filter((r) => r.has_seo > 0).length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'بيانات وصفية متوفرة' : 'With metadata'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--cyan">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'مجموعات الترجمة' : 'Translation Sets'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="globe" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">
+            {new Set(rows.map((r) => r.translation_group)).size}
+          </div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'تغطية متعددة اللغات' : 'Multi-language parity'}</span>
+          </div>
+        </div>
+
+        <div className="commercial-bento-card commercial-bento-card--rose">
+          <div className="commercial-bento-card__header">
+            <span className="commercial-bento-card__title">{locale === 'ar' ? 'إصدارات مجدولة' : 'Scheduled Queue'}</span>
+            <div className="commercial-bento-card__icon">
+              <Icon name="calendar" size={18} />
+            </div>
+          </div>
+          <div className="commercial-bento-card__metric">{rows.filter((r) => r.status === 'scheduled').length}</div>
+          <div className="commercial-bento-card__footer">
+            <span className="commercial-bento-card__trend">{locale === 'ar' ? 'مؤتمتة عبر Cron' : 'Automated release'}</span>
+          </div>
+        </div>
+      </div>
 
       <section className="panel panel--table">
         <header className="panel__header panel__header--filters">
@@ -505,6 +607,74 @@ export function WebsitePagesPage() {
               </table>
             </div>
             <Pagination total={filtered.length} limit={LIMIT} offset={state.offset} onOffsetChange={state.setOffset} locale={locale} />
+
+            {/* Bottom Mini-Analytics Grid */}
+            <div className="mini-analytics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '16px', padding: '16px' }}>
+              <div className="panel" style={{ padding: '16px', margin: 0 }}>
+                <h4 style={{ margin: '0 0 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Icon name="analytics" size={16} />
+                  <span>{locale === 'ar' ? 'توزيع الصفحات حسب اللغة' : 'Pages by Language'}</span>
+                </h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                  <div style={{ position: 'relative', width: '70px', height: '70px' }}>
+                    <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                      <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="14"
+                        fill="none"
+                        stroke="#0ea5e9"
+                        strokeWidth="4"
+                        strokeDasharray={`${rows.length > 0 ? (rows.filter(r => r.language === 'ar').length / rows.length) * 88 : 50} 100`}
+                      />
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="14"
+                        fill="none"
+                        stroke="#a855f7"
+                        strokeWidth="4"
+                        strokeDasharray={`${rows.length > 0 ? (rows.filter(r => r.language === 'en').length / rows.length) * 88 : 30} 100`}
+                        strokeDashoffset={`-${rows.length > 0 ? (rows.filter(r => r.language === 'ar').length / rows.length) * 88 : 50}`}
+                      />
+                    </svg>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px' }}>
+                    <div><span style={{ color: '#0ea5e9', fontWeight: 600 }}>العربية (ar):</span> {rows.filter(r => r.language === 'ar').length}</div>
+                    <div><span style={{ color: '#a855f7', fontWeight: 600 }}>English (en):</span> {rows.filter(r => r.language === 'en').length}</div>
+                    <div><span style={{ color: '#10b981', fontWeight: 600 }}>Français (fr):</span> {rows.filter(r => r.language === 'fr').length}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="panel" style={{ padding: '16px', margin: 0 }}>
+                <h4 style={{ margin: '0 0 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Icon name="check" size={16} />
+                  <span>{locale === 'ar' ? 'مؤشرات جاهزية النشر ومحركات البحث' : 'Release & SEO Readiness'}</span>
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <span>{locale === 'ar' ? 'صفحات مهيأة لـ SEO' : 'SEO Ready Pages'}</span>
+                      <strong style={{ color: '#10b981' }}>{rows.length > 0 ? Math.round((rows.filter(r => r.has_seo > 0).length / rows.length) * 100) : 100}%</strong>
+                    </div>
+                    <div className="progress-meter-bar">
+                      <i style={{ width: `${rows.length > 0 ? Math.round((rows.filter(r => r.has_seo > 0).length / rows.length) * 100) : 100}%`, background: '#10b981' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <span>{locale === 'ar' ? 'صفحات بأقسام نشطة' : 'Active Section Coverage'}</span>
+                      <strong style={{ color: '#0ea5e9' }}>{rows.length > 0 ? Math.round((rows.filter(r => r.active_sections > 0).length / rows.length) * 100) : 100}%</strong>
+                    </div>
+                    <div className="progress-meter-bar">
+                      <i style={{ width: `${rows.length > 0 ? Math.round((rows.filter(r => r.active_sections > 0).length / rows.length) * 100) : 100}%`, background: '#0ea5e9' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </section>
@@ -536,6 +706,27 @@ export function WebsitePagesPage() {
       >
         {quickLoading ? <p className="data-unavailable">{text.loading}</p> : quick ? (
           <div className="entity-form">
+            <div className="progress-meter-group" style={{ marginBottom: '14px' }}>
+              <div className="progress-meter-row">
+                <div className="progress-meter-row__meta">
+                  <span>{locale === 'ar' ? 'اكتمال الأقسام النشطة' : 'Section Completeness'}</span>
+                  <span>{quick.sections.length > 0 ? Math.round((quick.sections.filter(s => s.is_active === 1).length / quick.sections.length) * 100) : 0}%</span>
+                </div>
+                <div className="progress-meter-bar">
+                  <i style={{ width: `${quick.sections.length > 0 ? Math.round((quick.sections.filter(s => s.is_active === 1).length / quick.sections.length) * 100) : 0}%`, background: '#0ea5e9' }} />
+                </div>
+              </div>
+              <div className="progress-meter-row">
+                <div className="progress-meter-row__meta">
+                  <span>{locale === 'ar' ? 'جاهزية الفهرسة وSEO' : 'SEO & Index Readiness'}</span>
+                  <span>{quick.page.is_indexable ? 100 : 50}%</span>
+                </div>
+                <div className="progress-meter-bar">
+                  <i style={{ width: `${quick.page.is_indexable ? 100 : 50}%`, background: '#10b981' }} />
+                </div>
+              </div>
+            </div>
+
             <ul className="kv-list">
               <li><span>{text.path}</span><code dir="ltr">{quick.page.path}</code></li>
               <li><span>{text.language}</span><span dir="ltr">{quick.page.language}</span></li>
@@ -545,6 +736,7 @@ export function WebsitePagesPage() {
               <li><span>{text.group}</span><code dir="ltr">{quick.page.translation_group}</code></li>
               <li><span>{text.indexable}</span><span>{quick.page.is_indexable ? text.yes : text.no}</span></li>
             </ul>
+
             <h4>{text.readiness}</h4>
             {quick.readiness.length ? (
               <ul className="readiness-list">
@@ -555,6 +747,22 @@ export function WebsitePagesPage() {
                 ))}
               </ul>
             ) : <p className="field__ok">{text.noBlockers}</p>}
+
+            <div className="ai-copilot-banner" style={{ marginTop: '16px' }}>
+              <div className="ai-copilot-banner__icon">
+                <Icon name="sparkles" size={18} />
+              </div>
+              <div>
+                <h5 style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700 }}>
+                  {locale === 'ar' ? 'توصيات نشر المحتوى' : 'CMS Copilot Suggestion'}
+                </h5>
+                <p style={{ margin: 0, fontSize: '11px', lineHeight: 1.5, opacity: 0.9 }}>
+                  {locale === 'ar'
+                    ? 'تأكد من مطابقة الكلمات المفتاحية في العنوان مع النسخ الإنجليزية والفرنسية لنفس مجموعة الترجمة للحفاظ على سلامة الـ hreflang.'
+                    : 'Ensure title keywords match translations across ar/en/fr within the same translation group for clean hreflang tags.'}
+                </p>
+              </div>
+            </div>
           </div>
         ) : null}
       </QuickView>

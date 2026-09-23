@@ -26,7 +26,9 @@ class ChildSwitcherPage extends ConsumerWidget {
         child: SafeArea(
           child: children.when(
             loading: () => const Center(child: CircularProgressIndicator(color: AppColors.starGold)),
-            error: (_, __) => _AuthRequired(onLogin: () => context.go('/login')),
+            error: (_, __) => _RosterLoadError(
+              onRetry: () => ref.invalidate(familyChildrenProvider),
+            ),
             data: (items) => _ProfilesView(
               items: items,
               isDemo: auth.isDemo,
@@ -393,9 +395,9 @@ class _GhostAction extends StatelessWidget {
   }
 }
 
-class _AuthRequired extends StatelessWidget {
-  const _AuthRequired({required this.onLogin});
-  final VoidCallback onLogin;
+class _RosterLoadError extends StatelessWidget {
+  const _RosterLoadError({required this.onRetry});
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -406,14 +408,14 @@ class _AuthRequired extends StatelessWidget {
           Container(
             width: 64, height: 64,
             decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.06), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
-            child: const Icon(Icons.lock_outline_rounded, color: AppColors.mutedText, size: 28),
+            child: const Icon(Icons.cloud_off_rounded, color: AppColors.mutedText, size: 28),
           ),
           const SizedBox(height: 18),
-          const Text('يتطلب تسجيل الدخول', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+          const Text('تعذّر تحميل ملفات الأطفال', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          const Text('ملفات الأطفال مرتبطة بحساب الأسرة', style: TextStyle(color: AppColors.mutedText, fontSize: 12)),
+          const Text('تحقق من الاتصال ثم حاول مرة أخرى', style: TextStyle(color: AppColors.mutedText, fontSize: 12)),
           const SizedBox(height: 20),
-          FilledButton(onPressed: onLogin, style: FilledButton.styleFrom(backgroundColor: AppColors.starGold, foregroundColor: AppColors.deepSpace, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('تسجيل الدخول', style: TextStyle(fontWeight: FontWeight.w800))),
+          FilledButton(onPressed: onRetry, style: FilledButton.styleFrom(backgroundColor: AppColors.starGold, foregroundColor: AppColors.deepSpace, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('إعادة المحاولة', style: TextStyle(fontWeight: FontWeight.w800))),
         ]),
       ),
     );

@@ -76,7 +76,8 @@ class SeriesCard extends StatelessWidget {
                 semanticLabel: 'غلاف ${item.title}',
                 decodeWidth: width,
               ),
-              // Cinematic scrim: dark gradient from middle to bottom
+              // Cinematic scrim: تدرج سفلي ضيق يُبقي الصورة ظاهرة ويُبرز
+              // العنوان فقط. كان يبدأ من 32% بقتامة 90% فيأكل الصورة.
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -84,11 +85,9 @@ class SeriesCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Color(0x00000000),
-                      Color(0x00000000),
-                      Color(0x3306091A),
-                      Color(0xE606091A),
+                      Color(0xC609091A),
                     ],
-                    stops: [0, 0.32, 0.62, 1],
+                    stops: [0.68, 1],
                   ),
                 ),
               ),
@@ -204,7 +203,10 @@ class BookCard extends StatelessWidget {
                 semanticLabel: item.title,
                 decodeWidth: width,
               ),
-              const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Color(0x3306091A), Color(0xE606091A)], stops: [0, 0.32, 0.62]))),
+              // تدرج سفلي ضيق: يبدأ عند 68% ويصل لقتامة 78% عند القاع،
+              // فيُقرأ العنوان دون أن يأكل الصورة. السابق كان يبدأ من 32%
+              // بقتامة 90% فيغطي أكثر من ثلثي الكارت.
+              const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Color(0xC609091A)], stops: [0.68, 1]))),
               PositionedDirectional(top: 8, start: 8, child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: const Color(0xFF9D68FF).withValues(alpha: 0.88), borderRadius: BorderRadius.circular(6)), child: Text(item.type == 'comic' ? 'كوميكس' : item.type == 'audio_story' ? 'صوتي' : 'قصة', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)))),
               PositionedDirectional(start: 10, end: 10, bottom: 10, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white, fontSize: isTelevision ? 15 : 13.5, fontWeight: FontWeight.w700, shadows: [Shadow(color: Colors.black.withValues(alpha: 0.85), blurRadius: 8)])), const SizedBox(height: 2), Text(item.ageLabel, style: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.88), fontSize: 10.5))]))],
           ),
@@ -514,8 +516,7 @@ class PlanetCard extends StatelessWidget {
                     semanticLabel: item.name,
                     size: isTelevision ? 116 : 88,
                     selected: false,
-                    imageAsset: item.imageAsset,
-                  ),
+                    imageAsset: item.imageAsset,                    networkUrl: item.iconUrl,                  ),
                 ),
               ),
               // Bottom text - like screenshot: name bold + description
@@ -588,7 +589,12 @@ class ExperienceCard extends StatelessWidget {
             AppLayoutClass.medium => 184.0,
             AppLayoutClass.expanded => 200.0,
           };
-    final height = width * 1.296;
+    // أغلفة الألعاب عريضة 4:3 (1200×896)، فالكارت الطولي السابق
+    // (`width * 1.296` مع `BoxFit.cover`) كان يقصّ ~60% من العرض فيبدو
+    // مطوطًا. الكارت الآن عريض بنفس نسبة الغلاف + شريط عنوان.
+    final imageHeight = width * 0.75;
+    const labelHeight = 62.0;
+    final height = imageHeight + labelHeight;
 
     return SizedBox(
       width: width,
@@ -600,57 +606,57 @@ class ExperienceCard extends StatelessWidget {
         child: Container(
           decoration: CinematicCardDecoration.premiumCard(borderRadius: 14),
           clipBehavior: Clip.antiAlias,
-          child: Stack(
-            fit: StackFit.expand,
+          child: Column(
             children: [
-              CinematicImage(
-                networkUrl: item.coverUrl,
-                assetPath: item.imageAsset,
-                semanticLabel: item.title,
-                decodeWidth: width,
-              ),
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Color(0xE606091A)],
-                    stops: [0.38, 1],
-                  ),
-                ),
-              ),
-              PositionedDirectional(
-                top: 8,
-                end: 8,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.14),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.18),
+              SizedBox(
+                width: width,
+                height: imageHeight,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CinematicImage(
+                      networkUrl: item.coverUrl,
+                      assetPath: item.imageAsset,
+                      semanticLabel: item.title,
+                      decodeWidth: width,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.22),
-                        blurRadius: 8,
+                    PositionedDirectional(
+                      top: 8,
+                      end: 8,
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.14),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.18),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.22),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.sports_esports_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
                       ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.sports_esports_rounded,
-                    size: 16,
-                    color: Colors.white,
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              PositionedDirectional(
-                start: 10,
-                end: 10,
-                bottom: 10,
+              Container(
+                width: width,
+                height: labelHeight,
+                padding: const EdgeInsetsDirectional.fromSTEB(10, 8, 10, 8),
+                decoration: const BoxDecoration(color: Color(0xFF0B1026)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       item.title,

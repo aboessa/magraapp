@@ -411,19 +411,48 @@ export function BlogPostEditor() {
     <div className="page-stack">
       <Breadcrumbs items={[{ label: text.breadcrumb, to: adminPath('blog/posts') }, { label: detail.post.title }]} />
 
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">{text.eyebrow} · {detail.post.language}</span>
-          <h2>{detail.post.title}</h2>
-          <p><code dir="ltr">{detail.post.path}</code> · {blockWordCount(blocks)} {text.words}</p>
+      <section className="catalog-hero">
+        <div
+          className="catalog-hero__glow"
+          style={{
+            background: isPublished
+              ? 'radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(14, 165, 233, 0.16) 50%, transparent 80%)'
+              : 'radial-gradient(circle, rgba(236, 72, 153, 0.22) 0%, rgba(168, 85, 247, 0.16) 50%, transparent 80%)',
+          }}
+        />
+        <div className="catalog-hero__content">
+          <div className="catalog-hero__meta">
+            <span className="catalog-hero__eyebrow">{text.eyebrow} · {detail.post.language}</span>
+            <span
+              className="catalog-hero__status-badge"
+              style={{
+                borderColor: isPublished ? 'rgba(16, 185, 129, 0.3)' : 'rgba(236, 72, 153, 0.3)',
+                color: isPublished ? '#10b981' : '#ec4899',
+              }}
+            >
+              <span
+                className="status-dot-pulse"
+                style={{ background: isPublished ? '#10b981' : '#ec4899' }}
+              />
+              <span className={`account-status account-status--${isPublished ? 'active' : 'draft'}`} style={{ background: 'transparent', padding: 0 }}>
+                {detail.post.status}
+              </span>
+            </span>
+          </div>
+          <h2 className="catalog-hero__title">{detail.post.title}</h2>
+          <p className="catalog-hero__desc">
+            <code dir="ltr">{detail.post.path}</code> · {blockWordCount(blocks)} {text.words}
+          </p>
         </div>
-        <div className="page-intro__actions">
-          <span className={`account-status account-status--${isPublished ? 'active' : 'draft'}`}>{detail.post.status}</span>
+
+        <div className="catalog-hero__actions">
           <button className="button button--secondary" type="button" disabled={saving} onClick={() => void save()}>
-            <Icon name="check" size={15} />{saving ? text.saving : text.save}
+            <Icon name="check" size={15} />
+            <span>{saving ? text.saving : text.save}</span>
           </button>
           <button className="button button--primary" type="button" disabled={publishing} onClick={() => void publish()}>
-            <Icon name="upload" size={15} />{publishing ? text.publishing : text.publish}
+            <Icon name="upload" size={15} />
+            <span>{publishing ? text.publishing : text.publish}</span>
           </button>
         </div>
       </section>
