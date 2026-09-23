@@ -288,6 +288,31 @@ const checkScreenTime = (object, childId) => call(object, post('/screen-time/che
   child_id: childId,
 }));
 
+/**
+ * تاريخ اليوم **في توقيت الأسرة**، وهو مفتاح `screen_time_daily`.
+ *
+ * ## العطل الذي يمنعه
+ *
+ * كان توكيدان أدناه يكتبان صفّ الاستهلاك بـ`new Date().toISOString()` — أي
+ * **تاريخ UTC**. و`loadScreenTimePolicy` يقرأ تاريخ الأسرة (`Africa/Cairo`،
+ * ‏UTC+3)، فبين 21:00 و24:00 بتوقيت UTC يختلف التاريخان: الصفّ يُكتب ليومٍ
+ * والبوابة تقرأ يومًا آخر.
+ *
+ * وأثره مزدوج، والأسوأ منه الثاني:
+ *
+ *   * «حدٌّ يومي مُستهلَك يرفض السرد» **يفشل** في تلك الساعات الثلاث — وقد فشل
+ *     فعلًا في 2026-09-23T21:59Z.
+ *   * و«أسرةٌ لم تفتح الإعدادات لا تُمنَع» **ينجح لسببٍ خاطئ**: العشر ساعات
+ *     تُكتب على يومٍ لا يقرؤه أحد، فيمرّ التوكيد بلا أن يقيس شيئًا.
+ *
+ * والتاريخ يُشتقّ من **`loadScreenTimePolicy` نفسها** لا بحسابٍ ثانٍ: هي صاحبة
+ * القاعدة، فلو تغيّرت المنطقة الافتراضية تبعها الاختبار بلا تعديل. وهذا نفس ما
+ * يفعله توكيد الفيديو الأقدم في هذا الملف، وقد كان صحيحًا من أوّله.
+ */
+const familyLocalDate = async () => (
+  await loadScreenTimePolicy({ DB: fakeDb() }, 'parent_local_date', 'child_local_date')
+).localDate;
+
 test('bedtime refuses a new lease with a code the client can act on', async () => {
   // نافذة تغطّي كل ساعة إلا واحدة، فالاختبار لا يعتمد على وقت التشغيل.
   const { object, childId, db } = await seededFamily({
@@ -462,10 +487,11 @@ test('a spent daily limit refuses narration and reports the numbers', async () =
 
   // الرصيد نفسه الذي يكتبه الفيديو: فحدٌّ استهلكه المشاهدة يمنع السرد.
   // وهذا جوهر البند — لا رصيدان منفصلان لطفل واحد.
-  const today = new Date().toISOString().slice(0, 10);
+  //
+  // والتاريخ بتوقيت الأسرة لا UTC — انظر `familyLocalDate`.
   db.prepare(
     'INSERT INTO screen_time_daily (child_id, activity_date, watched_seconds, updated_at) VALUES (?, ?, ?, ?)',
-  ).run(childId, today, 30 * 60, Date.now());
+  ).run(childId, await familyLocalDate(), 30 * 60, Date.now());
 
   const refused = await checkScreenTime(object, childId);
   assert.equal(refused.status, 403);
@@ -524,10 +550,12 @@ test('a family that never opened the settings screen is not gated at all', async
 
   // عشر ساعات مُستهلَكة اليوم. الرقم مقصود: أي حدٍّ افتراضيّ مُتصوَّر (والقديم 30
   // دقيقة) كان سيرفض هنا. فالتوكيد يقيس **غياب الفرض** لا مجرّد نجاح نداء.
-  const today = new Date().toISOString().slice(0, 10);
+  //
+  // وبتوقيت الأسرة لا UTC: بتاريخ UTC كانت العشر ساعات تُكتب على يومٍ لا يقرؤه
+  // أحد، فيمرّ هذا التوكيد بلا أن يقيس شيئًا — وهو أخطر من فشلٍ ظاهر.
   db.prepare(
     'INSERT INTO screen_time_daily (child_id, activity_date, watched_seconds, updated_at) VALUES (?, ?, ?, ?)',
-  ).run(childId, today, 10 * 60 * 60, Date.now());
+  ).run(childId, await familyLocalDate(), 10 * 60 * 60, Date.now());
 
   const narration = await checkScreenTime(object, childId);
   assert.equal(narration.status, 200, JSON.stringify(narration.body));
