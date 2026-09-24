@@ -12,6 +12,9 @@
     "typecheck:types": "tsc --noEmit",
     "types": "wrangler types",
 
+    "deploy:prod": "node tools/ci/deploy-prod.mjs",
+    "deploy:prod:dry": "node tools/ci/deploy-prod.mjs --dry-run",
+
     "migrate:local": "wrangler d1 migrations apply majarra-db --local",
     "migrate:remote": "wrangler d1 migrations apply majarra-db --remote --env production",
     "migrate:triggers:local": "wrangler d1 execute majarra-db --local --file=scripts/child-profile-limit-triggers.sql",
