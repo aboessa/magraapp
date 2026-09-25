@@ -20,6 +20,20 @@
     <uses-feature
         android:name="android.hardware.gamepad"
         android:required="false" />
+    <!-- RECORD_AUDIO above *implies* android.hardware.microphone, and an implied
+         feature is REQUIRED unless it is declared optional here. Measured with
+         `aapt2 dump badging`, which reported:
+           uses-feature: name='android.hardware.microphone'
+           uses-implied-feature: reason='requested android.permission.RECORD_AUDIO permission'
+         Most Android TV boxes have no microphone, so leaving it implied makes
+         Play filter the app away from every TV device and makes some boxes
+         refuse the sideload outright — while leanback, touchscreen and gamepad
+         above were already made optional for exactly that reason. Voice search
+         is a convenience, never a requirement: it is reached only by an explicit
+         tap, so a device without a mic simply does not offer it. -->
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
 
     <application
         android:label="مجرة"

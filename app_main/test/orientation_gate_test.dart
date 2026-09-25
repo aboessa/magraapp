@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -82,6 +83,108 @@ void main() {
       router.go('/read');
       await tester.pumpAndSettle();
       expect(routeAllowsLandscape(router), isFalse);
+    });
+  });
+
+  group('المُشغِّل يُفتَح بـpush لا بـgo', () {
+    // ## لماذا هذه المجموعة موجودة
+    //
+    // المجموعة أعلاها تستعمل `router.go` **حصرًا**، وتمرّ. والتطبيق لا يفتح
+    // المُشغِّل بـ`go` **قطّ**: أحد عشر موضعًا كلّها `context.push('/playback/…')`
+    // (‏`watch_page.dart:172`، `home_feed.dart:321,997,1116,1421`،
+    // `series_details_page.dart:767`، `planets_page.dart:170`،
+    // `library_page.dart:58`، `downloads_page.dart:423`،
+    // `shorts_page.dart:119,135`).
+    //
+    // والفرق ليس تجميليًّا. `context.push` يُنتج `ImperativeRouteMatch`، و
+    // `RouteMatchList._generateFullPath` في go_router 14.6.2
+    // (‏`lib/src/match.dart:558-561`) **يستثني هذا النوع بالتصميم**:
+    //
+    // ```dart
+    // for (final RouteMatchBase match in matches
+    //     .where((RouteMatchBase match) => match is! ImperativeRouteMatch)) {
+    // ```
+    //
+    // فـ`fullPath` بعد `push` يبقى نمطَ المسار **الذي تحت** المُشغِّل — `/` —
+    // و`routeAllowsLandscape` تُعيد `false` على شاشة المُشغِّل دائمًا.
+    //
+    // وأثره حلقةٌ لا نهاية لها يراها الطفل: `PlaybackPage.initState` يفتح الأفقي
+    // (`playback_page.dart:364`) ← الحاجز يرى أفقيًّا بلا إذن فيُرجع
+    // `_PortraitRequiredScreen` **بدل الـNavigator كلّه** ← `PlaybackPage`
+    // يُفكَّك فيُعيد `dispose` القفل العمودي (`:378`) ← الشرط يسقط فيعود
+    // الـNavigator ← والمسار ما زال في المكدّس فيُبنى المُشغِّل من جديد ←
+    // `initState` يفتح الأفقي ← وهكذا. «أدِر الجهاز» تظهر وتختفي بلا توقّف.
+    //
+    // أي أن الحرس السابق أثبت العكس: أثبت أن الآلية تعمل في مسارٍ لا يستعمله
+    // التطبيق.
+
+    testWidgets('push إلى المُشغِّل يسمح بالأفقي', (tester) async {
+      final router = await pumpRouter(tester);
+
+      // `push` تُعيد Future لا تكتمل إلّا عند الـpop، فانتظارها يُعلّق الاختبار.
+      unawaited(router.push('/playback/ep-1'));
+      await tester.pumpAndSettle();
+      expect(find.text('PLAY ep-1'), findsOneWidget);
+
+      expect(
+        routeAllowsLandscape(router),
+        isTrue,
+        reason: 'المُشغِّل مفتوح بـpush، وهو الطريق الوحيد في التطبيق',
+      );
+    });
+
+    testWidgets('fullPath وحدها لا تكفي بعد push', (tester) async {
+      // يُثبّت **سبب** العطل لا أثره فقط: لو غيّر go_router هذا السلوك يومًا
+      // سقط هذا الاختبار، وهو الإشعار الصحيح بأن الحلّ يمكن تبسيطه.
+      final router = await pumpRouter(tester);
+
+      // `push` تُعيد Future لا تكتمل إلّا عند الـpop، فانتظارها يُعلّق الاختبار.
+      unawaited(router.push('/playback/ep-1'));
+      await tester.pumpAndSettle();
+
+      expect(
+        router.routerDelegate.currentConfiguration.fullPath,
+        '/',
+        reason: 'ImperativeRouteMatch مُستثنى من _generateFullPath',
+      );
+    });
+
+    testWidgets('العودة من المُشغِّل تسحب الإذن', (tester) async {
+      final router = await pumpRouter(tester);
+
+      // `push` تُعيد Future لا تكتمل إلّا عند الـpop، فانتظارها يُعلّق الاختبار.
+      unawaited(router.push('/playback/ep-1'));
+      await tester.pumpAndSettle();
+      expect(routeAllowsLandscape(router), isTrue);
+
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('HOME'), findsOneWidget);
+      expect(
+        routeAllowsLandscape(router),
+        isFalse,
+        reason: 'إذنٌ يُمنَح ولا يُسحَب يترك كل شاشةٍ بعده بتخطيط مكسور',
+      );
+    });
+
+    testWidgets('push فوق push: الأعلى هو ما يحكم', (tester) async {
+      final router = await pumpRouter(tester);
+
+      unawaited(router.push('/read'));
+      await tester.pumpAndSettle();
+      expect(routeAllowsLandscape(router), isFalse);
+
+      unawaited(router.push('/playback/ep-2'));
+      await tester.pumpAndSettle();
+      expect(routeAllowsLandscape(router), isTrue);
+
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(
+        routeAllowsLandscape(router),
+        isFalse,
+        reason: 'العودة إلى /read المدفوعة تحت المُشغِّل',
+      );
     });
   });
 

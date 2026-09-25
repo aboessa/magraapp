@@ -261,11 +261,48 @@ const landscapeCapableRoutes = <String>{'/playback/:episodeId'};
 ///    الذي يفتحه المُشغِّل بنفسه لمشاهدة الفيديو.
 /// 2. `contains('playback')` مطابقةٌ نصّية تُصيب أي مسار يحوي الكلمة.
 ///
-/// والقرار يُشتقّ الآن من `RouteMatchList.fullPath` — نمطُ المسار الذي طابقه
-/// `go_router` فعلًا، لا نصًّا يُخمَّن.
+/// والقرار يُشتقّ الآن من نمط المسار الذي طابقه `go_router` فعلًا، لا نصًّا
+/// يُخمَّن.
+///
+/// ## ولماذا ليس `fullPath` وحدها
+///
+/// كان هذا السطر `currentConfiguration.fullPath`، وكان **مكسورًا في كل فتحةٍ
+/// حقيقية للمُشغِّل**. السبب أن `RouteMatchList._generateFullPath` في
+/// go_router 14.6.2 (‏`lib/src/match.dart:558-561`) يستثني المسارات المدفوعة
+/// بالتصميم:
+///
+/// ```dart
+/// for (final RouteMatchBase match in matches
+///     .where((RouteMatchBase match) => match is! ImperativeRouteMatch)) {
+/// ```
+///
+/// و`context.push` يُنتج `ImperativeRouteMatch` بعينه. والتطبيق لا يفتح
+/// المُشغِّل إلّا بـ`push` — أحد عشر موضعًا، صفر `go`. فـ`fullPath` على شاشة
+/// المُشغِّل تبقى نمطَ ما تحته (`/`)، فتُمنع الشاشة الوحيدة المستثناة.
+///
+/// وأثره حلقةٌ يراها الطفل: المُشغِّل يفتح الأفقي في `initState` ← الحاجز يرى
+/// أفقيًّا بلا إذن فيستبدل الـNavigator بـ«أدِر الجهاز» ← المُشغِّل يُفكَّك
+/// فيُعيد `dispose` القفل العمودي ← الشرط يسقط فيعود الـNavigator ← والمسار ما
+/// زال في المكدّس فيُبنى المُشغِّل من جديد ← وهكذا بلا توقّف.
+///
+/// والاختبار السابق مرّ لأنه كان يستعمل `go` حصرًا: أثبت أن الآلية تعمل في
+/// طريقٍ لا يسلكه التطبيق.
 bool routeAllowsLandscape(GoRouter router) {
-  final fullPath = router.routerDelegate.currentConfiguration.fullPath;
-  return landscapeCapableRoutes.contains(fullPath);
+  final pattern = _topRoutePattern(router.routerDelegate.currentConfiguration);
+  return landscapeCapableRoutes.contains(pattern);
+}
+
+/// نمط المسار **الأعلى** في المكدّس، نازلًا في المسارات المدفوعة.
+///
+/// `ImperativeRouteMatch.matches` قائمةٌ ناتجة عن تحليلٍ تصريحيّ للموقع
+/// المدفوع، فـ`fullPath` **داخلها** صحيحة. والنزول يعالج `push` فوق `push`:
+/// الأعلى وحده يحكم، فالعودة تسحب الإذن تلقائيًّا.
+String _topRoutePattern(RouteMatchList configuration) {
+  final matches = configuration.matches;
+  if (matches.isEmpty) return configuration.fullPath;
+  final last = matches.last;
+  if (last is ImperativeRouteMatch) return _topRoutePattern(last.matches);
+  return configuration.fullPath;
 }
 
 /// مسارٌ سطحُه لا يُدار بلا مؤشّر: يُغلَّف بـ[TouchOnlySurface] **بالبناء**.
