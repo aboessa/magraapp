@@ -47,8 +47,12 @@ class CinematicImage extends StatefulWidget {
 }
 
 class _CinematicImageState extends State<CinematicImage> {
+  /// النسخة المحلّية إن وُجدت. `null` تعني «اعرض من الشبكة» لا «لا صورة».
+  ///
+  /// كان معها علَمٌ ثانٍ `_lookupDone` يفرّق «انتهى البحث» عن «لم يبدأ»، وكان
+  /// هو مصدر العطل: انتهاءُ البحث بلا ملفّ كان يُنهي المحاولة كلّها. وبعد أن
+  /// صارت الشبكة هي حالة الغياب، لم يبقَ للعلَم ما يقرّره فحُذف.
   File? _cachedFile;
-  bool _lookupDone = false;
 
   bool get _hasSafeNetworkUrl {
     final uri = Uri.tryParse(widget.networkUrl ?? '');
@@ -66,27 +70,23 @@ class _CinematicImageState extends State<CinematicImage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.networkUrl != widget.networkUrl) {
       _cachedFile = null;
-      _lookupDone = false;
       _lookupCache();
     }
   }
 
   Future<void> _lookupCache() async {
     final url = widget.networkUrl;
-    if (!_hasSafeNetworkUrl || !RemoteImageCache.isCacheableUrl(url!)) {
-      if (mounted) setState(() => _lookupDone = true);
-      return;
-    }
+    // رابطٌ غير قابل للتخزين (مضيف آخر، أو امتداد مجهول): لا شيء يُسأل عنه
+    // القرص، وتبقى `_cachedFile` فارغة فيُرسَم من الشبكة. ولا `setState` هنا:
+    // لا حالة تغيّرت.
+    if (!_hasSafeNetworkUrl || !RemoteImageCache.isCacheableUrl(url!)) return;
     final file = await (CinematicImage.testCache ?? RemoteImageCache())
         .fetch(url)
         .then((hit) => hit?.file);
-    if (!mounted) return;
+    if (!mounted || file == null) return;
     // `fetch` تُعيد الملفّ سواء قُرئ من القرص أو نُزّل الآن: في الحالين هو
     // نسخة محلّية صالحة للعرض بلا شبكة في المرّة التالية.
-    setState(() {
-      _cachedFile = file;
-      _lookupDone = true;
-    });
+    setState(() => _cachedFile = file);
   }
 
   @override
@@ -98,12 +98,13 @@ class _CinematicImageState extends State<CinematicImage> {
         ? null
         : (widget.decodeWidth! * ratio).round();
 
-    // Story artwork and game covers are CDN-only to keep APK small.
-    // assetPath may be empty when coverUrl CDN is the only source (no local duplicate per user request).
+    // Story artwork and game covers are CDN-only to keep APK small, so
+    // `assetPath` is often empty and the brand mark is the last resort.
+    //
+    // كان هذا فرعًا ثلاثيًّا طرفاه الأخيران **متطابقان** (شعار مجرة في الحالتين)،
+    // فيقرأ كأنه يفرّق بين حالتين وهو لا يفرّق.
     final fallbackAssetPath = widget.assetPath.startsWith('assets/')
         ? widget.assetPath
-        : widget.assetPath.isEmpty
-        ? 'assets/brand/majarra-logo.png'
         : 'assets/brand/majarra-logo.png';
 
     final fallback = Image.asset(
@@ -137,9 +138,35 @@ class _CinematicImageState extends State<CinematicImage> {
           );
         },
       );
-    } else if (!_lookupDone) {
-      // البحث في التخزين جارٍ: شبكة مباشرة مؤقتًا بدل شاشة فارغة. عند اكتمال
-      // البحث يُعاد البناء بالملفّ المحلّي إن وُجد.
+    } else if (_hasSafeNetworkUrl) {
+      // لا ملفّ محلّي ورابطٌ صالح: **شبكة**، لا بديلًا مبندلًا.
+      //
+      // الشرط `_hasSafeNetworkUrl` هنا لا في الترتيب النهائي وحده: هذا الفرع
+      // يُبنى **مباشرةً** لا تأجيلًا، فـ`widget.networkUrl!` تُنفَّذ حتى لو كان
+      // الحارس أدناه سيرمي الناتج. (‏`search_page_test.dart` أوقع هذا بالضبط.)
+      //
+      // ## العطل الذي كان هنا
+      //
+      // كان الفرع `else if (!_lookupDone)` — أي أن الشبكة تُجرَّب في نافذة
+      // البحث عن الملفّ وحدها، ثم `else` يرسم البديل المبندل. فـ«بحثتُ ولم أجد
+      // ملفًّا» كانت تُقرأ «لا صورة»، وهي في الحقيقة «لم أصل إلى القرص».
+      //
+      // وأثره كامل على الويب: `RemoteImageCache._root()` يستدعي
+      // `getApplicationSupportDirectory()`، ولا نظام ملفّات في المتصفّح، فترمي
+      // و`fetch` تلتقط وتُعيد `null` (`remote_image_cache.dart:196-200`). فكل
+      // صورة CDN على الويب كانت تنتهي إلى `assets/brand/majarra-logo.png` —
+      // الشعار نفسه مكرّرًا في كل كارت — بينما الأندرويد سليم لأن القرص يعمل.
+      //
+      // ويشمل الأثر حالةً ثانية على كل المنصّات: `fetch` تُعيد `null` أيضًا
+      // لأيّ رابط خارج `AppConfig.assetHost` (‏`isCacheableUrl`)، فصورةٌ صالحة
+      // على مضيف آخر كانت تُستبدَل بالشعار بلا محاولة.
+      //
+      // وترتيب المصادر المُعلَن في رأس هذا الملف وفي `remote_image_cache.dart`
+      // هو «قرص ← شبكة ← بديل مبندل». والكود كان ينفّذ «قرص ← بديل». فهذا
+      // ليس تغييرًا في السياسة، بل تنفيذٌ لها.
+      //
+      // والبديل المبندل يبقى موجودًا، لكن عبر `errorBuilder` أدناه: يُرسَم حين
+      // **تفشل الشبكة فعلًا**، لا حين نعجز عن قراءة القرص.
       networkChild = Image.network(
         widget.networkUrl!,
         // The public CDN is intentionally anonymous. On web, render
@@ -163,6 +190,7 @@ class _CinematicImageState extends State<CinematicImage> {
         },
       );
     } else {
+      // لا رابط صالح إطلاقًا: البديل المبندل هو الصواب — لا شيء يُجلَب.
       networkChild = fallback;
     }
 
@@ -170,9 +198,7 @@ class _CinematicImageState extends State<CinematicImage> {
       image: true,
       label: widget.semanticLabel,
       child: ExcludeSemantics(
-        child: RepaintBoundary(
-          child: _hasSafeNetworkUrl ? networkChild : fallback,
-        ),
+        child: RepaintBoundary(child: networkChild),
       ),
     );
   }
