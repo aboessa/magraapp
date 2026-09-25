@@ -63,6 +63,7 @@ seriesRoute.get('/', async (c) => {
       s.production_level, s.is_free, s.price_tier, s.sort_order, s.published_at,
       p.name_ar AS planet_name, p.color_hex AS planet_color,
       ${artworkSelect('cover_asset', 'series', 's.id', SERIES_COVER_ROLES)},
+      ${artworkSelect('banner_asset', 'series', 's.id', SERIES_BANNER_ROLES)},
       (SELECT COUNT(*) FROM seasons WHERE series_id = s.id AND status = 'published') AS seasons_count,
       (SELECT COUNT(*) FROM episodes WHERE series_id = s.id AND status = 'published' AND is_published = 1) AS episodes_count
       FROM series s
@@ -101,7 +102,17 @@ seriesRoute.get('/', async (c) => {
     const visible = series.filter((row) => decisions.get(String(row.id))?.available !== false);
 
     const base = publicAssetBaseUrl(c.env);
-    for (const row of visible) applyArtworkUrl(row, 'cover_asset', 'cover_url', base);
+    for (const row of visible) {
+      applyArtworkUrl(row, 'cover_asset', 'cover_url', base);
+      // البانر العريض (16:9) — نفس ما تفعله نقطة التفاصيل أدناه (`:148-157`).
+      //
+      // كان مفقودًا هنا وحده، وهذه القائمة هي ما تبني منه الشاشة الرئيسية
+      // هيروَها. فكان الهيرو يرسم **البوستر الطولي** ممدودًا في صندوقٍ عريض،
+      // وهو سبب أن الشاشة لا تبدو كتطبيق بثّ. والبانر موجود في `asset_links`
+      // لكل السلاسل المنشورة الخمس عشرة، فالنقص كان في الاستعلام لا في المحتوى.
+      applyArtworkUrl(row, 'banner_asset', 'banner_url', base);
+      if (row['banner_url'] == null) row['banner_url'] = row['cover_url'] ?? null;
+    }
     return {
       success: true,
       data: visible,

@@ -23,6 +23,18 @@ import '../../../../core/images/heavy_assets.dart';
 import '../../../../core/widgets/cinematic_image.dart';
 import '../../../../core/widgets/focusable_scale.dart';
 
+/// أقصى عدد شرائح في هيرو الشاشة الرئيسية.
+///
+/// سقفٌ لا هدف: يأخذ الهيرو كل ما هو صالح حتى هذا الحدّ. والصلاحية شرطها حلقةٌ
+/// منشورة واحدة على الأقل، فلا يُعرَض عملٌ يفتح على صفحةٍ فارغة.
+///
+/// ثمانية لأن الشرائح تُحمَّل صورًا كبيرة ومسبقًا (`allowImplicitScrolling`)،
+/// ولأن دوّارًا أطول لا يُرى آخرُه: التقدّم التلقائي ثماني ثوانٍ للشريحة، فثمانية
+/// تعني دورةً كاملة في دقيقة تقريبًا. وبعد الفلترة العمرية يبقى في كل مسارٍ
+/// عمريّ أقلّ من ذلك عادةً، فالسقف لا يقطع شيئًا اليوم — وُضع ليمنع نموًّا غير
+/// محدود مع نموّ الكتالوج.
+const int _kHeroMaxSlides = 8;
+
 class HomeFeed extends ConsumerWidget {
   const HomeFeed({
     required this.catalog,
@@ -898,14 +910,42 @@ class _BlockSliver extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (block.type) {
       case BlockType.heroSlider:
-        // Fix: For demo child (ليلى تجريبي), spotlights can be filtered out by ageTrack
-        // if series don't match preschool filter. Fallback to LocalCatalog spotlights
-        // to ensure hero is always visible, especially for demo.
-        final effectiveSpotlights = catalog.spotlights.isEmpty
-            ? catalog.series.isNotEmpty
-                ? [for (final s in catalog.series.take(3)) HomeSpotlight(id: 'fallback-${s.id}', seriesId: s.id, eyebrow: 'مجرة • ${s.planetName}', primaryActionLabel: 'شاهد الآن')]
-                : const <HomeSpotlight>[]
-            : catalog.spotlights;
+        // الهيرو: قائمةٌ تحريرية إن وُجدت، وإلّا **اختيارٌ مُعلَن** من الكتالوج.
+        //
+        // ## لماذا لا توجد قائمة تحريرية في الإنتاج
+        //
+        // `catalog.spotlights` تُملأ من `LocalCatalog.spotlights` **للكتالوج
+        // المحزوم وحده** (`content_repository.dart:194-197`)، والمحتوى الحيّ
+        // يأخذ `const []` — لأن الخادم لا يعرف spotlights إطلاقًا: لا جدول ولا
+        // نقطة نهاية، ولا ذكر للكلمة في كود الـAPI. فمسار الاصطناع هذا هو
+        // **الحالة العادية في الإنتاج**، لا حالة طرفية.
+        //
+        // ## ما كان
+        //
+        // `catalog.series.take(3)` — ثلاثة أوائل بلا شرط. وفيه عطلان مقيسان على
+        // الإنتاج: أوّلًا `take(3)` رقمٌ حرفيّ يحجب اثنتي عشرة سلسلة صالحة،
+        // وثانيًا لا يسأل عن الحلقات — و`series-qisas-min-alhayat` (‏`sort_order`
+        // **صفر**، أي أوّل المصطفى) و`series-kids-bedtime` منشورتان بـ**صفر
+        // حلقة**. فالهيرو كان يعرض عملًا يفتح على صفحةٍ لا شيء فيها.
+        //
+        // والترتيب ليس عشوائيًّا: `/api/v1/series` يرتّب بـ`sort_order ASC,
+        // published_at DESC`، وهو ترتيب تحريريّ حقيقي. فالاختيار هنا «أوائل ما
+        // رتّبه المحرّر **مما يُفتح فعلًا**»، وهذا ما يُقال للطفل.
+        final heroCandidates = [
+          for (final s in catalog.series)
+            if (s.episodesCount > 0) s,
+        ];
+        final effectiveSpotlights = catalog.spotlights.isNotEmpty
+            ? catalog.spotlights
+            : [
+                for (final s in heroCandidates.take(_kHeroMaxSlides))
+                  HomeSpotlight(
+                    id: 'catalogue-${s.id}',
+                    seriesId: s.id,
+                    eyebrow: 'مجرة • ${s.planetName}',
+                    primaryActionLabel: 'شاهد الآن',
+                  ),
+              ];
         if (effectiveSpotlights.isEmpty || catalog.series.isEmpty) {
           // Absolute fallback – show welcome card instead of empty space
           return SliverToBoxAdapter(
@@ -921,7 +961,13 @@ class _BlockSliver extends StatelessWidget {
             series: catalog.series,
             isTelevision: isTelevision,
             onOpenSeries: (item) {
-              final spotlight = catalog.spotlights.where((s) => s.seriesId == item.id).firstOrNull;
+              // `effectiveSpotlights` لا `catalog.spotlights`: الثانية **فارغة
+              // دائمًا** في الإنتاج (انظر أعلاه)، فكان هذا السطر يجعل
+              // `heroAction` لا يُسجَّل ولا مرّة — كل نقرة على الهيرو تضيع من
+              // التحليلات بينما الكود يبدو أنه يقيسها.
+              final spotlight = effectiveSpotlights
+                  .where((s) => s.seriesId == item.id)
+                  .firstOrNull;
               if (spotlight != null) MajarraAnalytics.heroAction(spotlight.id);
               context.push('/series/${item.id}');
             },

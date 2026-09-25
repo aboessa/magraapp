@@ -3,10 +3,12 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/layout/app_layout.dart';
 import '../../../../core/widgets/cinematic_image.dart';
+import '../../../profile/data/watchlist_store.dart';
 import '../../domain/content_models.dart';
 
 /// A curated home hero. Randomness is limited to the enabled editorial
@@ -168,6 +170,12 @@ class _CinematicHeroSliderState extends State<CinematicHeroSlider> {
                   child: _SliderProgress(
                     count: _items.length,
                     activeIndex: _activeIndex,
+                    // مدّة التقدّم التلقائي، أو `null` حين لا تقدّم — فالشريط
+                    // يمتلئ فعلًا بقدر ما بقي، ولا يكذب امتلاءً حين يكون
+                    // الدوّار متوقّفًا (حركة مُقلَّلة، أو شريحة واحدة).
+                    autoAdvance: _autoAdvanceTimer != null
+                        ? _autoAdvanceDelay
+                        : null,
                     onSelected: (index) {
                       _pageController.animateToPage(
                         index,
@@ -306,26 +314,7 @@ class _CinematicSlide extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.22),
-                      ),
-                    ),
-                    child: IconButton(
-                      onPressed: onOpenSeries,
-                      icon: const Icon(
-                        Icons.add_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
+                  _WatchlistButton(seriesId: series.id, title: series.title),
                 ],
               ),
             ],
@@ -365,12 +354,24 @@ class _CinematicSlide extends StatelessWidget {
                 ),
               ),
             ),
+            // `bannerUrl` لا `coverUrl`.
+            //
+            // البانر عريض 16:9 والبوستر طوليّ. وكان هذا السطر يقرأ البوستر
+            // فيُمَدّ في صندوقٍ عريض — وهو سبب أن الهيرو لا يبدو كتطبيق بثّ:
+            // وجهٌ مقطوع، وتكوينٌ مُزاح، وتفاصيل مفقودة خارج الإطار.
+            //
+            // و`SeriesItem.bannerUrl` يسقط إلى `coverUrl` عند غياب البانر
+            // (`content_dtos.dart:203`)، فالحالة الأسوأ هي ما كان يحدث دائمًا،
+            // والأفضل صار هو المعتاد: الخمس عشرة سلسلة المنشورة كلّها لها بانر
+            // في `asset_links`.
             ExcludeSemantics(
               child: CinematicImage(
-                networkUrl: series.coverUrl,
+                networkUrl: series.bannerUrl ?? series.coverUrl,
                 assetPath: series.bannerAsset,
                 semanticLabel: 'مشهد من ${series.title}',
-                alignment: const Alignment(0.15, 0),
+                // البانر مُؤلَّف ليُقرأ كاملًا، فلا إزاحة: التوسيط يحفظ التكوين
+                // الذي رسمه الفنّان. الإزاحة `0.15` كانت تعويضًا عن قصّ البوستر.
+                alignment: Alignment.center,
               ),
             ),
             // Premium cinematic scrim - like Haikyu banner
@@ -426,19 +427,81 @@ class _CinematicSlide extends StatelessWidget {
   }
 }
 
+/// زرّ «في قائمتي» في الهيرو.
+///
+/// ## ما كان
+///
+/// دائرةٌ بعلامة `+` مُسنَدة إلى `onOpenSeries` — أي **نفس فعل زرّ التشغيل**
+/// بجوارها. علامةُ زائد تعني «أضِف»، وكانت تنقل إلى صفحة السلسلة: زرٌّ يقول غير
+/// ما يفعل. وهو نفس العطل الذي رُصد في «أكمل الرسمة» (زرّان بنصَّين مختلفَين
+/// وفعلٍ واحد)، فلا يصحّ إصلاحه هناك وتركه في أبرز موضعٍ في التطبيق.
+///
+/// ## وما صار
+///
+/// `WatchlistNotifier.toggle` الحقيقي، والأيقونة تتبع الحالة — فالزرّ يفعل ما
+/// تقوله صورته، ويُخبر بالنتيجة.
+class _WatchlistButton extends ConsumerWidget {
+  const _WatchlistButton({required this.seriesId, required this.title});
+
+  final String seriesId;
+  final String title;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final saved = ref.watch(watchlistProvider).contains(seriesId);
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: saved ? 0.24 : 0.14),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: saved ? 0.42 : 0.22),
+        ),
+      ),
+      child: IconButton(
+        // النصّ يذكر العمل والحالة، فقارئ الشاشة لا يحتاج أن يرى الأيقونة.
+        tooltip: saved ? 'إزالة من قائمتي' : 'إضافة إلى قائمتي',
+        onPressed: () => ref.read(watchlistProvider.notifier).toggle(seriesId),
+        icon: Icon(
+          saved ? Icons.check_rounded : Icons.add_rounded,
+          color: Colors.white,
+          size: 22,
+        ),
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
+}
+
+/// مؤشّر الشرائح.
+///
+/// الشريحة النشطة شريطٌ يمتلئ بمقدار ما بقي من التقدّم التلقائي، وبقيتها نقاط.
+/// وهذا هو النمط الذي تستعمله تطبيقات البثّ لأنه يجيب سؤالًا يسأله المشاهد
+/// فعلًا: «هل سينتقل عنّي الآن؟». والنقاط الساكنة كانت تقول العدد والموضع فقط.
+///
+/// و[autoAdvance] يساوي `null` حين لا تقدّم — حركةٌ مُقلَّلة أو شريحة واحدة —
+/// فيبقى الشريط ممتلئًا بلا حركة بدل أن يوهم بعدٍّ تنازليّ لا يحدث.
 class _SliderProgress extends StatelessWidget {
   const _SliderProgress({
     required this.count,
     required this.activeIndex,
+    required this.autoAdvance,
     required this.onSelected,
   });
 
   final int count;
   final int activeIndex;
+  final Duration? autoAdvance;
   final ValueChanged<int> onSelected;
+
+  static const double _activeWidth = 30;
+  static const double _dotWidth = 7;
+  static const double _trackHeight = 5;
 
   @override
   Widget build(BuildContext context) {
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       label: 'اختيار القصة المعروضة',
       child: Row(
@@ -452,23 +515,67 @@ class _SliderProgress extends StatelessWidget {
             child: GestureDetector(
               onTap: () => onSelected(index),
               child: AnimatedContainer(
-                duration: MediaQuery.disableAnimationsOf(context)
+                duration: reducedMotion
                     ? Duration.zero
-                    : const Duration(milliseconds: 220),
+                    : const Duration(milliseconds: 260),
                 curve: Curves.easeOutCubic,
-                width: selected ? 23 : 7,
-                height: 7,
+                width: selected ? _activeWidth : _dotWidth,
+                height: _trackHeight,
                 margin: const EdgeInsetsDirectional.only(start: 5),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(99),
-                  color: selected
-                      ? AppColors.starGold
-                      : AppColors.starlight.withValues(alpha: 0.45),
+                  color: AppColors.starlight.withValues(
+                    alpha: selected ? 0.3 : 0.45,
+                  ),
                 ),
+                // المِلء داخل المسار: `Align` بـ`widthFactor` يتجنّب حساب عرضٍ
+                // بالبكسل، فيبقى صحيحًا مع أي قيمة لـ`_activeWidth`.
+                child: selected
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(99),
+                        child: _AutoAdvanceFill(
+                          // المفتاح يُعيد تشغيل المِلء من الصفر عند كل شريحة،
+                          // وإلّا لاستمرّ من موضع الشريحة السابقة.
+                          key: ValueKey(activeIndex),
+                          duration: reducedMotion ? null : autoAdvance,
+                        ),
+                      )
+                    : null,
               ),
             ),
           );
         }),
+      ),
+    );
+  }
+}
+
+class _AutoAdvanceFill extends StatelessWidget {
+  const _AutoAdvanceFill({required this.duration, super.key});
+
+  /// `null` تعني «لا تقدّم»: يُرسَم ممتلئًا بلا حركة.
+  final Duration? duration;
+
+  @override
+  Widget build(BuildContext context) {
+    final bar = Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: FractionallySizedBox(
+        widthFactor: 1,
+        child: ColoredBox(color: AppColors.starGold),
+      ),
+    );
+    if (duration == null) return bar;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: duration!,
+      curve: Curves.linear,
+      builder: (context, value, _) => Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: FractionallySizedBox(
+          widthFactor: value.clamp(0.0, 1.0),
+          child: const ColoredBox(color: AppColors.starGold),
+        ),
       ),
     );
   }
