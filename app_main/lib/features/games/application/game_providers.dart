@@ -156,7 +156,9 @@ final gameCatalogProvider = FutureProvider<List<ExperienceItem>>((ref) async {
   //
   // فالفشل يُرفَع الآن، وتقرّر الشاشة: تعرض المكتبة المبندلة **مع إشعار صريح**
   // بدل أن تُقدّمها كأنها ما نشره الخادم.
-  final rows = await ref.watch(majarraApiClientProvider).fetchGames(childId: childId);
+  final rows = await ref
+      .watch(majarraApiClientProvider)
+      .fetchGames(childId: childId);
   // وردٌّ فارغ صحيح يبقى فارغًا: الطفل التجريبي يُعيد `[]` بقصد، وهذا ليس انقطاعًا.
   return List<ExperienceItem>.unmodifiable(rows.map((row) => row.toDomain()));
 });
@@ -200,8 +202,12 @@ ResolvedGame resolvedGameFromEnvelope(
   final tokensRaw = _asMap(assets?['tokens']);
   final assetTokens = <String, String>{};
   if (tokensRaw != null) {
-    for (final e in tokensRaw.entries) {
-      if (e.value is String) assetTokens[e.key] = e.value as String;
+    for (final entry in tokensRaw.entries) {
+      final assetId = entry.key.trim();
+      final token = entry.value is String ? (entry.value as String).trim() : '';
+      if (assetId.isNotEmpty && token.isNotEmpty) {
+        assetTokens[assetId] = token;
+      }
     }
   }
   final unavailable = _stringList(assets?['unavailable']);
@@ -210,10 +216,7 @@ ResolvedGame resolvedGameFromEnvelope(
     gameId: data['id'] as String? ?? fallbackGameId,
     pack: pack,
     title: data['title'] as String? ?? '',
-    ageTrack: ageTrackForRange(
-      (data['age_min'] as num?)?.toInt() ?? 3,
-      (data['age_max'] as num?)?.toInt() ?? 12,
-    ),
+    ageTrack: ageTrackForRange(data['age_min'], data['age_max']),
     engineVersion: (data['engine_version'] as num?)?.toInt() ?? 1,
     objectiveId: objective?['id'] as String?,
     episodeId: data['episode_id'] as String?,
@@ -308,7 +311,9 @@ final gameAudioServiceProvider = Provider<GameAudioService>((ref) {
 ///   final audio = tokens != null
 ///     ? CapTokenGameAudioService(player: ..., assetTokens: tokens, ...)
 ///     : SilentGameAudioService();
-final gameAssetTokensProvider = StateProvider<Map<String, String>?>((ref) => null);
+final gameAssetTokensProvider = StateProvider<Map<String, String>?>(
+  (ref) => null,
+);
 
 /// A stable-per-attempt id for the idempotent progress write.
 ///

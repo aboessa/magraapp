@@ -40,8 +40,8 @@ class RealGameAudioService implements GameAudioService {
     required GameAudioPlayer player,
     required Future<String?> Function(String assetId) urlResolver,
     this.onMissingKey,
-  })  : _player = player,
-        _urlResolver = urlResolver;
+  }) : _player = player,
+       _urlResolver = urlResolver;
 
   final GameAudioPlayer _player;
   final Future<String?> Function(String assetId) _urlResolver;
@@ -60,6 +60,7 @@ class RealGameAudioService implements GameAudioService {
     _manifest = Map<String, String>.from(voiceManifest);
     _resolvedUrls.clear();
     _missing.clear();
+    _played.clear();
 
     // Preload is best-effort. We resolve URLs for the mandatory keys only
     // to avoid N parallel capability requests on every level load.
@@ -72,19 +73,21 @@ class RealGameAudioService implements GameAudioService {
 
     for (final key in mandatory) {
       final assetId = _manifest[key];
-      if (assetId == null || assetId.isEmpty) {
+      if (assetId == null || assetId.trim().isEmpty) {
         _missing.add(key);
         continue;
       }
       try {
         final url = await _urlResolver(assetId);
-        if (url != null && url.isNotEmpty) {
-          _resolvedUrls[key] = url;
-          // Background preload without blocking
-          unawaited(_player.preload(url));
+        if (url == null || url.trim().isEmpty) {
+          _missing.add(key);
+          continue;
         }
-      } catch (e) {
-        debugPrint('RealGameAudioService preload failed for $key ($assetId): $e');
+        _resolvedUrls[key] = url;
+        await _player.preload(url);
+      } catch (_) {
+        _missing.add(key);
+        debugPrint('[GameAudio] media preload failed.');
       }
     }
   }
@@ -96,14 +99,14 @@ class RealGameAudioService implements GameAudioService {
     if (cached != null) {
       try {
         await _player.playUrl(cached);
-        return;
-      } catch (e) {
-        debugPrint('RealGameAudioService play cached failed $voiceKey: $e');
+      } catch (_) {
+        debugPrint('[GameAudio] media playback failed.');
       }
+      return;
     }
 
     final assetId = _manifest[voiceKey];
-    if (assetId == null || assetId.isEmpty) {
+    if (assetId == null || assetId.trim().isEmpty) {
       _missing.add(voiceKey);
       onMissingKey?.call(voiceKey);
       return;
@@ -111,14 +114,15 @@ class RealGameAudioService implements GameAudioService {
 
     try {
       final url = await _urlResolver(assetId);
-      if (url == null || url.isEmpty) {
+      if (url == null || url.trim().isEmpty) {
         _missing.add(voiceKey);
         return;
       }
       _resolvedUrls[voiceKey] = url;
       await _player.playUrl(url);
-    } catch (e) {
-      debugPrint('RealGameAudioService play failed $voiceKey ($assetId): $e');
+    } catch (_) {
+      _missing.add(voiceKey);
+      debugPrint('[GameAudio] media playback failed.');
     }
   }
 
@@ -135,8 +139,8 @@ class RealGameAudioService implements GameAudioService {
   }
 }
 
-/// Adapter that uses just_audio if available at runtime.
-/// This indirection keeps `pubspec.yaml` clean until just_audio is added.
+/// Legacy no-op adapter retained for callers that explicitly request it.
+/// Production capability-token playback is implemented by `JustAudioAdapter`.
 class JustAudioGameAudioPlayer implements GameAudioPlayer {
   JustAudioGameAudioPlayer();
 
@@ -146,30 +150,19 @@ class JustAudioGameAudioPlayer implements GameAudioPlayer {
   Future<void> _ensure() async {
     if (_initialized) return;
     _initialized = true;
-    try {
-      // Dynamic import via conditional would need dependency.
-      // For now, this is a placeholder that will be wired when
-      // just_audio is added to pubspec.yaml.
-      // The actual instantiation is in `createJustAudioPlayer()` below.
-    } catch (_) {}
   }
 
   @override
   Future<void> preload(String url) async {
     await _ensure();
-    // Pre-caching handled by player
   }
 
   @override
   Future<void> playUrl(String url) async {
     await _ensure();
     if (_internalPlayer == null) return;
-    try {
-      await _internalPlayer.setUrl(url);
-      await _internalPlayer.play();
-    } catch (e) {
-      debugPrint('JustAudio playUrl failed: $e');
-    }
+    await _internalPlayer.setUrl(url);
+    await _internalPlayer.play();
   }
 
   @override
@@ -187,12 +180,5 @@ class JustAudioGameAudioPlayer implements GameAudioPlayer {
   }
 }
 
-/// Factory: tries to create just_audio player if package present,
-/// otherwise returns null player.
-GameAudioPlayer createDefaultAudioPlayer() {
-  // Will return NullGameAudioPlayer until just_audio added to pubspec.
-  // After adding: return JustAudioGameAudioPlayer() wrapping AudioPlayer.
-  return NullGameAudioPlayer();
-}
-
-void unawaited(Future<void> future) {}
+/// Returns a silent player for legacy callers.
+GameAudioPlayer createDefaultAudioPlayer() => NullGameAudioPlayer();

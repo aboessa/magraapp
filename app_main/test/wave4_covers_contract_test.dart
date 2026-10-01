@@ -33,6 +33,22 @@ const _verifiedWave4Slugs = [
 ];
 
 void main() {
+  group('عقد الكتالوج المحزوم', () {
+    test('كل المعرّفات canonical ولا يحتوي ألعاب legacy', () {
+      const legacyIds = {
+        'letter-tracing',
+        'number-maze',
+        'animal-memory',
+        'shape-matching',
+        'butterfly-sequence',
+      };
+      final ids = LocalCatalog.experiences.map((game) => game.id).toList();
+
+      expect(ids, everyElement(startsWith('game-')));
+      expect(ids.where(legacyIds.contains), isEmpty);
+    });
+  });
+
   group('عقد أغلفة wave4 على R2', () {
     test('الأحد عشر غلافًا مُشار إليها في الكتالوج المحزوم', () {
       final urls = LocalCatalog.experiences

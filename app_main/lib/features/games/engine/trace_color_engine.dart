@@ -2,10 +2,13 @@
 library;
 
 import 'package:flutter/material.dart';
+
+import '../../../app/theme/app_colors.dart';
 import '../data/creation_document.dart';
 import '../presentation/widgets/drawing_asset.dart';
 import 'coloring_regions.dart';
 import 'free_draw_surface.dart';
+import 'game_art.dart';
 import 'game_engine_registry.dart';
 import 'game_pack.dart';
 import 'game_services.dart';
@@ -113,7 +116,10 @@ class _TraceColorSurfaceState extends State<TraceColorSurface> {
             child: Semantics(
               liveRegion: true,
               child: Text(
-                level.prompt!,
+                safeChildFacingLabel(
+                  authoredText: level.prompt,
+                  arabicFallback: 'ابدأ الرسم واتبع التعليمة.',
+                ),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
@@ -307,13 +313,13 @@ class _TraceColorSurfaceState extends State<TraceColorSurface> {
         spacing: 12,
         runSpacing: 12,
         children: [
-          for (final hex in palette)
+          for (var index = 0; index < palette.length; index++)
             Semantics(
-              selected: _selectedColor == hex,
+              selected: _selectedColor == palette[index],
               button: true,
-              label: 'اختيار اللون $hex',
+              label: 'اختيار ${arabicPaletteColorLabel(palette[index], index)}',
               child: InkResponse(
-                onTap: () => setState(() => _selectedColor = hex),
+                onTap: () => setState(() => _selectedColor = palette[index]),
                 containedInkWell: true,
                 customBorder: const CircleBorder(),
                 radius: target / 2,
@@ -321,10 +327,10 @@ class _TraceColorSurfaceState extends State<TraceColorSurface> {
                   width: target,
                   height: target,
                   decoration: BoxDecoration(
-                    color: _parseHex(hex),
+                    color: _parseHex(palette[index]),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: _selectedColor == hex
+                      color: _selectedColor == palette[index]
                           ? Theme.of(context).colorScheme.onSurface
                           : Colors.transparent,
                       width: 3,
@@ -449,7 +455,7 @@ class _ControlButton extends StatelessWidget {
 Color _parseHex(String hex) {
   final cleaned = hex.replaceFirst('#', '');
   final v = int.tryParse(cleaned, radix: 16);
-  if (v == null) return Colors.grey;
+  if (v == null) return AppColors.dimText;
   return Color(0xFF000000 | v);
 }
 
@@ -523,7 +529,7 @@ class _TracePainter extends CustomPainter {
         canvas.drawPath(
           entry.$2,
           Paint()
-            ..color = Colors.black.withValues(alpha: 0.35)
+            ..color = colorScheme.onSurface.withValues(alpha: 0.35)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.5
             ..strokeJoin = StrokeJoin.round,

@@ -22,8 +22,11 @@
 /// purpose.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import 'game_art.dart';
 import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
@@ -63,6 +66,10 @@ ItemHelpRung rungForWrongAttempts(int wrongAttempts) {
   if (wrongAttempts == 2) return ItemHelpRung.second;
   if (wrongAttempts == 3) return ItemHelpRung.third;
   return ItemHelpRung.answerShown;
+}
+
+int _stableVisualIndex(String value) {
+  return value.codeUnits.fold<int>(0, (sum, code) => sum + code);
 }
 
 // ------------------------------------------------------------- count_quantity
@@ -105,6 +112,42 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
 
   /// One fewer element to count, applied at the third rung.
   int _countReduction = 0;
+  late int _activeLevelIndex;
+  int _levelGeneration = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeLevelIndex = widget.controller.levelIndex;
+  }
+
+  @override
+  void didUpdateWidget(covariant _CountQuantityBoard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final nextLevelIndex = widget.controller.levelIndex;
+    if (nextLevelIndex != _activeLevelIndex) {
+      _levelGeneration++;
+      _activeLevelIndex = nextLevelIndex;
+      _itemIndex = 0;
+      _wrongAttempts = 0;
+      _correctFirstTry = 0;
+      _anyHelpUsed = false;
+      _countingHighlight = null;
+      _inBox = 0;
+      _countReduction = 0;
+    }
+  }
+
+  bool _isCurrentLevel(int generation) =>
+      mounted &&
+      generation == _levelGeneration &&
+      _activeLevelIndex == widget.controller.levelIndex;
+
+  @override
+  void dispose() {
+    _levelGeneration++;
+    super.dispose();
+  }
 
   Map<String, dynamic> get _level => widget.controller.rawLevel;
   String get _mode => str(_level, 'mode');
@@ -155,40 +198,49 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
   }
 
   bool _isEliminated(Map<String, dynamic> item, Object? option) {
-    if (rungForWrongAttempts(_wrongAttempts).index < ItemHelpRung.second.index) {
+    if (rungForWrongAttempts(_wrongAttempts).index <
+        ItemHelpRung.second.index) {
       return false;
     }
     return option != _expectedAnswer(item);
   }
 
-  Future<void> _countAloud(Map<String, dynamic> item) async {
-    if (!_countAloudOnError) return;
+  Future<void> _countAloud(
+    Map<String, dynamic> item,
+    int generation,
+  ) async {
+    if (!_countAloudOnError || !_isCurrentLevel(generation)) return;
     final total = _shownCount(item);
     for (var index = 0; index < total; index++) {
-      if (!mounted) return;
+      if (!_isCurrentLevel(generation)) return;
       setState(() => _countingHighlight = index);
       await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.count(index + 1));
     }
-    if (!mounted) return;
+    if (!_isCurrentLevel(generation)) return;
     setState(() => _countingHighlight = null);
   }
 
   Future<void> _recount() async {
     final item = _item;
     if (item == null) return;
+    final generation = _levelGeneration;
     _anyHelpUsed = true;
     await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.recount);
-    await _countAloud(item);
+    if (!_isCurrentLevel(generation)) return;
+    await _countAloud(item, generation);
   }
 
   Future<void> _answer(Object? option) async {
     final item = _item;
     if (item == null) return;
+    final generation = _levelGeneration;
     if (option == _expectedAnswer(item)) {
       if (_wrongAttempts == 0 && _countReduction == 0) _correctFirstTry++;
-      widget.controller.feedback
-          .emit(FeedbackEvent.strokeComplete, track: widget.controller.ageTrack);
-      await _nextItem();
+      widget.controller.feedback.emit(
+        FeedbackEvent.strokeComplete,
+        track: widget.controller.ageTrack,
+      );
+      await _nextItem(generation);
       return;
     }
 
@@ -201,25 +253,30 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
     switch (rung) {
       case ItemHelpRung.first:
         await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.recount);
-        await _countAloud(item);
+        if (!_isCurrentLevel(generation)) return;
+        await _countAloud(item, generation);
       case ItemHelpRung.second:
         // Only the correct numbers remain among the options.
         await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.hint);
       case ItemHelpRung.third:
+        if (!_isCurrentLevel(generation)) return;
         setState(() => _countReduction = 1);
-        await _countAloud(item);
+        await _countAloud(item, generation);
       case ItemHelpRung.answerShown:
-        await _countAloud(item);
+        await _countAloud(item, generation);
+        if (!_isCurrentLevel(generation)) return;
         await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.explainAnswer);
-        await _nextItem();
+        if (!_isCurrentLevel(generation)) return;
+        await _nextItem(generation);
       case ItemHelpRung.none:
         break;
     }
   }
 
-  Future<void> _nextItem() async {
+  Future<void> _nextItem(int generation) async {
+    if (!_isCurrentLevel(generation)) return;
     if (_itemIndex + 1 >= _items.length) {
-      await _finish();
+      await _finish(generation);
       return;
     }
     setState(() {
@@ -231,7 +288,8 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
     });
   }
 
-  Future<void> _finish() async {
+  Future<void> _finish(int generation) async {
+    if (!_isCurrentLevel(generation)) return;
     await widget.controller.reportEngineAttempt(
       // The contract: items correct on the first attempt, out of the item count.
       score: _correctFirstTry,
@@ -245,6 +303,7 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
         },
       ],
     );
+    if (!_isCurrentLevel(generation)) return;
     await widget.controller.finishLevelFromEngine();
   }
 
@@ -256,7 +315,13 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
       return BoardScaffold(
         controller: widget.controller,
         prompt: widget.controller.prompt,
-        child: const Center(child: Text('لا توجد بنود في هذا المستوى')),
+        child: const Center(
+          child: GameStatePanel(
+            kind: GameStateKind.empty,
+            title: 'هذا المستوى فارغ الآن',
+            message: 'لا توجد عناصر للعد هنا. جرّب مستوى آخر.',
+          ),
+        ),
       );
     }
 
@@ -288,13 +353,19 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
     );
   }
 
+  /// The picture being counted in this item (`items[0].image`), if any.
+  String? _setImage(Map<String, dynamic> item) {
+    final sets = mapList(item['items']);
+    final image = sets.isEmpty ? '' : str(sets.first, 'image');
+    return image.isEmpty ? null : image;
+  }
+
   /// A fixed grid of identical elements.
   ///
   /// Laid out in a grid with a stable order and no animation: the contract
   /// requires that elements do not move while a child is counting them.
   Widget _elementGrid(Map<String, dynamic> item, {required int count}) {
-    final sets = mapList(item['items']);
-    final asset = sets.isEmpty ? '' : str(sets.first, 'image');
+    final asset = _setImage(item);
     return GridView.builder(
       key: const Key('count_element_grid'),
       shrinkWrap: true,
@@ -307,24 +378,52 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
       itemCount: count,
       itemBuilder: (context, index) {
         final highlighted = _countingHighlight == index;
+        final tokenLabel = safeChildFacingLabel(
+          artId: asset,
+          arabicFallback: 'عنصر العدّ',
+        );
         return Semantics(
-          label: '$asset ${index + 1}',
+          label: '$tokenLabel ${formatNumeral(index + 1, 'arabic_indic')}',
           child: Container(
             key: ValueKey('count_element_$index'),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: highlighted
                   ? Theme.of(context).colorScheme.primaryContainer
                   : Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
               border: highlighted
-                  ? Border.all(color: Theme.of(context).colorScheme.primary, width: 3)
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 3,
+                    )
                   : null,
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.star_outline),
+            child: _countToken(asset),
           ),
         );
       },
+    );
+  }
+
+  /// One countable picture. Every element is the same picture, so the only thing
+  /// that varies is how many there are — which is the point of the exercise.
+  Widget _countToken(String? asset, {double? size}) {
+    if (gameArtPath(asset) == null) {
+      return Icon(
+        nonColourGlyph(_stableVisualIndex(asset ?? 'count-token')),
+        size: size ?? 28,
+      );
+    }
+    return GameArt(assetId: asset, size: size);
+  }
+
+  String _optionLabel(Object? option, int index) {
+    if (option is int) return formatNumeral(option, _numeralSystem);
+    return safeChildFacingLabel(
+      technicalId: option?.toString(),
+      arabicFallback: 'الخيار ${formatNumeral(index + 1, 'arabic_indic')}',
     );
   }
 
@@ -347,19 +446,17 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
       runSpacing: 12,
       alignment: WrapAlignment.center,
       children: [
-        for (final option in options)
+        for (var index = 0; index < options.length; index++)
           SizedBox(
             width: target + 24,
             child: ChoiceTile(
-              key: ValueKey('count_option_$option'),
-              label: option is int
-                  ? formatNumeral(option, _numeralSystem)
-                  : option.toString(),
-              semanticsLabel: option.toString(),
+              key: ValueKey('count_option_${options[index]}'),
+              label: _optionLabel(options[index], index),
+              semanticsLabel: _optionLabel(options[index], index),
               selected: false,
-              eliminated: _isEliminated(item, option),
+              eliminated: _isEliminated(item, options[index]),
               touchTarget: target,
-              onPressed: () => _answer(option),
+              onPressed: () => _answer(options[index]),
             ),
           ),
       ],
@@ -381,6 +478,10 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
   Widget _buildDragAmount(Map<String, dynamic> item, double target) {
     final available = _shownCount(item);
     final required = _expectedAnswer(item);
+    final tokenLabel = safeChildFacingLabel(
+      artId: _setImage(item),
+      arabicFallback: 'عنصر العدّ',
+    );
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -393,18 +494,27 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
             alignment: WrapAlignment.center,
             children: [
               for (var index = 0; index < available - _inBox; index++)
-                InkWell(
-                  key: ValueKey('drag_source_$index'),
-                  onTap: () => setState(() => _inBox++),
-                  child: Container(
-                    width: target,
-                    height: target,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
+                Semantics(
+                  button: true,
+                  excludeSemantics: true,
+                  label:
+                      '$tokenLabel رقم ${formatNumeral(index + 1, 'arabic_indic')}',
+                  child: InkWell(
+                    key: ValueKey('drag_source_$index'),
+                    onTap: () => setState(() => _inBox++),
+                    child: Container(
+                      width: target,
+                      height: target,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: _countToken(_setImage(item)),
                     ),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.star_outline),
                   ),
                 ),
             ],
@@ -423,6 +533,8 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
             alignment: Alignment.center,
             child: Semantics(
               liveRegion: true,
+              label: 'عدد العناصر في الصندوق',
+              value: formatNumeral(_inBox, 'arabic_indic'),
               child: _numberLabel(_inBox),
             ),
           ),
@@ -450,7 +562,13 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
   Widget _buildCompare(Map<String, dynamic> item, double target) {
     Widget setColumn(String key, String label) {
       final set = item[key];
-      final count = set is Map ? intOr(Map<String, dynamic>.from(set), 'count', 0) : 0;
+      final setMap = set is Map
+          ? Map<String, dynamic>.from(set)
+          : const <String, dynamic>{};
+      final count = intOr(setMap, 'count', 0);
+      final image = str(setMap, 'image').isEmpty
+          ? _setImage(item)
+          : str(setMap, 'image');
       return Expanded(
         child: Column(
           children: [
@@ -462,7 +580,10 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
               alignment: WrapAlignment.center,
               children: [
                 for (var index = 0; index < count; index++)
-                  const Icon(Icons.star_outline, size: 24),
+                  SizedBox.square(
+                    dimension: 36,
+                    child: _countToken(image, size: 36),
+                  ),
               ],
             ),
           ],
@@ -470,6 +591,7 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
       );
     }
 
+    final options = _visibleOptions(item);
     final labels = {
       'set_a': 'المجموعة الأولى',
       'set_b': 'المجموعة الثانية',
@@ -493,16 +615,22 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
             runSpacing: 12,
             alignment: WrapAlignment.center,
             children: [
-              for (final option in _visibleOptions(item))
+              for (var index = 0; index < options.length; index++)
                 SizedBox(
                   width: target * 2,
                   child: ChoiceTile(
-                    key: ValueKey('compare_option_$option'),
-                    label: labels[option] ?? option.toString(),
+                    key: ValueKey('compare_option_${options[index]}'),
+                    label:
+                        labels[options[index]] ??
+                        safeChildFacingLabel(
+                          technicalId: options[index]?.toString(),
+                          arabicFallback:
+                              'المجموعة ${formatNumeral(index + 1, 'arabic_indic')}',
+                        ),
                     selected: false,
-                    eliminated: _isEliminated(item, option),
+                    eliminated: _isEliminated(item, options[index]),
                     touchTarget: target,
-                    onPressed: () => _answer(option),
+                    onPressed: () => _answer(options[index]),
                   ),
                 ),
             ],
@@ -527,7 +655,9 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
                   width: target,
                   height: target,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                     border: sequence[index] == null
                         ? Border.all(
@@ -586,20 +716,59 @@ class _LogicPatternBoardState extends State<_LogicPatternBoard> {
   bool _anyHelpUsed = false;
   bool _dimensionsHighlighted = false;
   final Set<String> _eliminated = {};
+  late int _activeLevelIndex;
+  int _levelGeneration = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeLevelIndex = widget.controller.levelIndex;
+  }
+
+  @override
+  void didUpdateWidget(covariant _LogicPatternBoard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final nextLevelIndex = widget.controller.levelIndex;
+    if (nextLevelIndex != _activeLevelIndex) {
+      _levelGeneration++;
+      _activeLevelIndex = nextLevelIndex;
+      _stage = _LogicStage.choose;
+      _wrongAttempts = 0;
+      _answerCorrectFirstTry = false;
+      _explanationCorrect = false;
+      _anyHelpUsed = false;
+      _dimensionsHighlighted = false;
+      _eliminated.clear();
+    }
+  }
+
+  bool _isCurrentLevel(int generation) =>
+      mounted &&
+      generation == _levelGeneration &&
+      _activeLevelIndex == widget.controller.levelIndex;
+
+  @override
+  void dispose() {
+    _levelGeneration++;
+    super.dispose();
+  }
 
   Map<String, dynamic> get _level => widget.controller.rawLevel;
   String get _mode => str(_level, 'mode');
-  List<String> get _options =>
-      (_level['options'] as List<dynamic>? ?? const []).whereType<String>().toList();
-  String get _answer => str(_level, 'answer');
-  List<String> get _changingDimensions => (_level['changing_dimensions'] as List<dynamic>? ?? const [])
+  List<String> get _options => (_level['options'] as List<dynamic>? ?? const [])
       .whereType<String>()
       .toList();
+  String get _answer => str(_level, 'answer');
+  List<String> get _changingDimensions =>
+      (_level['changing_dimensions'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList();
 
   bool get _requiresExplanation => _level['require_explanation'] == true;
-  List<String> get _explainOptions => (_level['explain_options'] as List<dynamic>? ?? const [])
-      .whereType<String>()
-      .toList();
+  List<String> get _explainOptions =>
+      (_level['explain_options'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList();
   String get _explainAnswer => str(_level, 'explain_answer');
 
   /// `max_score` is 1 without an explanation stage and 2 with one.
@@ -611,16 +780,21 @@ class _LogicPatternBoardState extends State<_LogicPatternBoard> {
   int get _maxScore => _requiresExplanation ? 2 : 1;
 
   Future<void> _choose(String option) async {
+    final generation = _levelGeneration;
     if (option == _answer) {
       if (_wrongAttempts == 0) _answerCorrectFirstTry = true;
-      widget.controller.feedback
-          .emit(FeedbackEvent.strokeComplete, track: widget.controller.ageTrack);
+      widget.controller.feedback.emit(
+        FeedbackEvent.strokeComplete,
+        track: widget.controller.ageTrack,
+      );
       if (_requiresExplanation) {
         setState(() => _stage = _LogicStage.explain);
-        await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.instructionExplain);
+        await widget.controller.speakVoiceKey(
+          WaveTwoVoiceKeys.instructionExplain,
+        );
         return;
       }
-      await _finish();
+      await _finish(generation);
       return;
     }
 
@@ -631,34 +805,43 @@ class _LogicPatternBoardState extends State<_LogicPatternBoard> {
       case ItemHelpRung.first:
         await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.retry);
       case ItemHelpRung.second:
+        if (!_isCurrentLevel(generation)) return;
         setState(() => _dimensionsHighlighted = true);
         await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.hint2);
       case ItemHelpRung.third:
+        if (!_isCurrentLevel(generation)) return;
         final wrong = _options.where((o) => o != _answer).take(2);
         setState(() => _eliminated.addAll(wrong));
         await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.hint2);
       case ItemHelpRung.answerShown:
         await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.explainRule);
-        setState(() => _eliminated
-          ..clear()
-          ..addAll(_options.where((o) => o != _answer)));
+        if (!_isCurrentLevel(generation)) return;
+        setState(
+          () => _eliminated
+            ..clear()
+            ..addAll(_options.where((o) => o != _answer)),
+        );
       case ItemHelpRung.none:
         break;
     }
   }
 
   Future<void> _explain(String option) async {
+    final generation = _levelGeneration;
     _explanationCorrect = option == _explainAnswer;
     if (!_explanationCorrect) {
       _anyHelpUsed = true;
       await widget.controller.speakVoiceKey(WaveTwoVoiceKeys.explainRule);
+      if (!_isCurrentLevel(generation)) return;
     }
-    await _finish();
+    await _finish(generation);
   }
 
-  Future<void> _finish() async {
+  Future<void> _finish(int generation) async {
+    if (!_isCurrentLevel(generation)) return;
     setState(() => _stage = _LogicStage.done);
-    final score = (_answerCorrectFirstTry ? 1 : 0) +
+    final score =
+        (_answerCorrectFirstTry ? 1 : 0) +
         (_requiresExplanation && _explanationCorrect ? 1 : 0);
     await widget.controller.reportEngineAttempt(
       score: score,
@@ -669,55 +852,71 @@ class _LogicPatternBoardState extends State<_LogicPatternBoard> {
           'mode': _mode,
           'answer_correct_first_try': _answerCorrectFirstTry,
           'explanation_required': _requiresExplanation,
-          'explanation_correct': _requiresExplanation ? _explanationCorrect : null,
+          'explanation_correct': _requiresExplanation
+              ? _explanationCorrect
+              : null,
           'changing_dimensions': _changingDimensions.length,
         },
       ],
     );
+    if (!_isCurrentLevel(generation)) return;
     await widget.controller.finishLevelFromEngine();
   }
 
   /// A cell, distinguished by glyph and text rather than by colour.
-  Widget _cell(String? assetId, {required int patternSeed}) {
+  Widget _cell(String? assetId, {required int ordinal}) {
     final scheme = Theme.of(context).colorScheme;
+    final label = assetId == null
+        ? 'الخلية الناقصة'
+        : safeChildFacingLabel(
+            artId: assetId,
+            arabicFallback:
+                'الشكل ${formatNumeral(ordinal + 1, 'arabic_indic')}',
+          );
     return Semantics(
-      // Every cell has a text alternative, which the contract requires.
-      label: assetId ?? 'الخلية الناقصة',
+      // Every cell has a child-safe text alternative; technical ids stay hidden.
+      label: label,
       child: Container(
         width: 72,
         height: 72,
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: assetId == null
               ? Border.all(color: scheme.primary, width: 3)
               : _dimensionsHighlighted
-                  ? Border.all(color: scheme.tertiary, width: 2)
-                  : null,
+              ? Border.all(color: scheme.tertiary, width: 2)
+              : null,
         ),
         alignment: Alignment.center,
         child: assetId == null
             ? const Text('؟', style: TextStyle(fontSize: 24))
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(nonColourGlyph(patternSeed), size: 22),
-                  Text(
-                    assetId,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.labelSmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+            : gameArtPath(assetId) != null
+            // Real art already differs by shape, not colour alone.
+            ? GameArt(assetId: assetId)
+            : Icon(nonColourGlyph(_stableVisualIndex(assetId)), size: 32),
       ),
     );
   }
 
   Widget _buildPuzzle() {
-    final grid = _level['grid'];
+    var grid = _level['grid'];
+    // Packs may give `grid` as dimensions (`[rows, cols]`) with the cells in a
+    // flat `items` list. Turn that into rows so the puzzle is not empty.
+    if (grid is List &&
+        grid.length == 2 &&
+        grid.every((v) => v is num) &&
+        _level['items'] is List) {
+      final cells = nullableStrings(_level['items']);
+      final cols = (grid[1] as num).toInt().clamp(1, 6);
+      grid = [
+        for (var start = 0; start < cells.length; start += cols)
+          cells.sublist(start, math.min(start + cols, cells.length)),
+      ];
+    }
     if (grid is List && grid.isNotEmpty) {
+      var ordinal = 0;
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -730,7 +929,7 @@ class _LogicPatternBoardState extends State<_LogicPatternBoard> {
                   for (final cell in nullableStrings(grid[row]))
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: _cell(cell, patternSeed: cell?.hashCode ?? row),
+                      child: _cell(cell, ordinal: ordinal++),
                     ),
                 ],
               ),
@@ -746,8 +945,15 @@ class _LogicPatternBoardState extends State<_LogicPatternBoard> {
       alignment: WrapAlignment.center,
       children: [
         for (var index = 0; index < sequence.length; index++)
-          _cell(sequence[index], patternSeed: sequence[index]?.hashCode ?? index),
+          _cell(sequence[index], ordinal: index),
       ],
+    );
+  }
+
+  String _ruleLabel(String option, int index) {
+    return safeChildFacingLabel(
+      technicalId: option,
+      arabicFallback: 'القاعدة ${formatNumeral(index + 1, 'arabic_indic')}',
     );
   }
 
@@ -772,15 +978,21 @@ class _LogicPatternBoardState extends State<_LogicPatternBoard> {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 12),
-                  for (final option in _explainOptions)
+                  for (var index = 0; index < _explainOptions.length; index++)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: ChoiceTile(
-                        key: ValueKey('logic_explain_$option'),
-                        label: option,
+                        key: ValueKey(
+                          'logic_explain_${_explainOptions[index]}',
+                        ),
+                        label: _ruleLabel(_explainOptions[index], index),
+                        semanticsLabel: _ruleLabel(
+                          _explainOptions[index],
+                          index,
+                        ),
                         selected: false,
                         touchTarget: target,
-                        onPressed: () => _explain(option),
+                        onPressed: () => _explain(_explainOptions[index]),
                       ),
                     ),
                 ],
@@ -796,8 +1008,17 @@ class _LogicPatternBoardState extends State<_LogicPatternBoard> {
                       width: 96,
                       child: ChoiceTile(
                         key: ValueKey('logic_option_${_options[index]}'),
-                        label: _options[index],
-                        patternIndex: _options[index].hashCode,
+                        label:
+                            'الخيار ${formatNumeral(index + 1, 'arabic_indic')}',
+                        semanticsLabel:
+                            arabicNameFor(_options[index]) ??
+                            'الخيار ${formatNumeral(index + 1, 'arabic_indic')}',
+                        art: gameArtPath(_options[index]) != null
+                            ? GameArt(assetId: _options[index])
+                            : null,
+                        patternIndex: gameArtPath(_options[index]) != null
+                            ? null
+                            : _options[index].hashCode,
                         selected: false,
                         eliminated: _eliminated.contains(_options[index]),
                         touchTarget: target,
@@ -883,21 +1104,26 @@ class _WordBuildBoardState extends State<_WordBuildBoard> {
 
   Map<String, dynamic> get _level => widget.controller.rawLevel;
   String get _word => str(_level, 'word');
+  String? get _wordImage {
+    final image = str(_level, 'word_image');
+    return image.isEmpty ? null : image;
+  }
+
   int get _slots => intOr(_level, 'slots', _word.characters.length);
   bool get _isRtl => str(_level, 'writing_direction') != 'ltr';
   String get _language => str(_level, 'language');
 
   void _buildTray() {
-    final letters = mapList(_level['letters'])
-        .map((json) => _LetterTile.fromJson(json, isDistractor: false))
-        .toList();
-    final distractors = mapList(_level['distractors'])
-        .map((json) => _LetterTile.fromJson(json, isDistractor: true))
-        .toList();
-    _tray = seededShuffle(
-      [...letters, ...distractors],
-      widget.controller.gameId.hashCode + widget.controller.levelIndex,
-    );
+    final letters = mapList(
+      _level['letters'],
+    ).map((json) => _LetterTile.fromJson(json, isDistractor: false)).toList();
+    final distractors = mapList(
+      _level['distractors'],
+    ).map((json) => _LetterTile.fromJson(json, isDistractor: true)).toList();
+    _tray = seededShuffle([
+      ...letters,
+      ...distractors,
+    ], widget.controller.gameId.hashCode + widget.controller.levelIndex);
   }
 
   List<_LetterTile> get _visibleTray {
@@ -971,8 +1197,10 @@ class _WordBuildBoardState extends State<_WordBuildBoard> {
       _selected = null;
       _glowingSlot = null;
     });
-    widget.controller.feedback
-        .emit(FeedbackEvent.strokeComplete, track: widget.controller.ageTrack);
+    widget.controller.feedback.emit(
+      FeedbackEvent.strokeComplete,
+      track: widget.controller.ageTrack,
+    );
     await _checkComplete();
   }
 
@@ -1023,7 +1251,8 @@ class _WordBuildBoardState extends State<_WordBuildBoard> {
             const SizedBox(width: 12),
             IconButton(
               key: const Key('word_play_audio_button'),
-              onPressed: () => widget.controller.speakVoiceKey(WaveTwoVoiceKeys.word),
+              onPressed: () =>
+                  widget.controller.speakVoiceKey(WaveTwoVoiceKeys.word),
               icon: const Icon(Icons.volume_up_outlined),
               tooltip: 'اسمع الكلمة',
             ),
@@ -1033,6 +1262,26 @@ class _WordBuildBoardState extends State<_WordBuildBoard> {
       child: SingleChildScrollView(
         child: Column(
           children: [
+            if (_wordImage != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Semantics(
+                  image: true,
+                  label: safeChildFacingLabel(
+                    artId: _wordImage,
+                    arabicFallback: 'صورة الكلمة',
+                  ),
+                  child: ExcludeSemantics(
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: SizedBox.square(
+                        dimension: 112,
+                        child: GameArt(assetId: _wordImage),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             if (_showWordText)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -1041,7 +1290,10 @@ class _WordBuildBoardState extends State<_WordBuildBoard> {
                   key: const Key('word_text_reveal'),
                   // Scalable to 2.0x per the accessibility section; the theme's
                   // text scaler applies on top of this size.
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             // The slot row follows the *word's* direction, from the pack, never
@@ -1065,8 +1317,7 @@ class _WordBuildBoardState extends State<_WordBuildBoard> {
               runSpacing: 10,
               alignment: WrapAlignment.center,
               children: [
-                for (final tile in _visibleTray)
-                  _trayTile(tile, target),
+                for (final tile in _visibleTray) _trayTile(tile, target),
               ],
             ),
           ],
@@ -1171,11 +1422,16 @@ class _LetterTile {
     this.position,
   });
 
-  factory _LetterTile.fromJson(Map<String, dynamic> json, {required bool isDistractor}) {
+  factory _LetterTile.fromJson(
+    Map<String, dynamic> json, {
+    required bool isDistractor,
+  }) {
     return _LetterTile(
       char: str(json, 'char'),
       form: json['form'] is String ? json['form'] as String : null,
-      position: json['position'] is num ? (json['position'] as num).toInt() : null,
+      position: json['position'] is num
+          ? (json['position'] as num).toInt()
+          : null,
       audioKey: str(json, 'audio'),
       isDistractor: isDistractor,
     );

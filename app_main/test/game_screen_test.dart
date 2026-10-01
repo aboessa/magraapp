@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:majarra/features/games/engine/game_board_kit.dart';
 import 'package:majarra/features/games/engine/game_pack.dart';
 import 'package:majarra/features/games/engine/game_services.dart';
 import 'package:majarra/features/games/engine/game_session_controller.dart';
@@ -13,53 +14,65 @@ import 'package:majarra/features/games/presentation/pages/game_screen.dart';
 /// The shapes pack shipped by migration 0026: a single closed circle stroke, so a
 /// drag around the ring should complete it.
 Map<String, dynamic> shapesPack() => {
-      'pack_version': 1,
-      'engine_id': 'trace_color',
-      'pack_id': 'tc-shapes-basic',
-      'localization': 'language_neutral',
-      'supports_dpad': false,
-      'progression': {'levels_to_finish': 1, 'advance_on': 'level_complete'},
-      'accessibility': {
-        'simplified_motor': {'tolerance_dp': 44, 'coverage_required': 0.6},
-        'sequential_tap_alternative': true,
-        'reduced_motion_supported': true,
-        'min_touch_target_dp': 64,
-      },
-      'levels': [
+  'pack_version': 1,
+  'engine_id': 'trace_color',
+  'pack_id': 'tc-shapes-basic',
+  'localization': 'language_neutral',
+  'supports_dpad': false,
+  'progression': {'levels_to_finish': 1, 'advance_on': 'level_complete'},
+  'accessibility': {
+    'simplified_motor': {'tolerance_dp': 44, 'coverage_required': 0.6},
+    'sequential_tap_alternative': true,
+    'reduced_motion_supported': true,
+    'min_touch_target_dp': 64,
+  },
+  'levels': [
+    {
+      'level': 1,
+      'mode': 'shape',
+      'scoring': 'geometric',
+      'prompt_key': 'game.shapes_basic.circle.prompt',
+      'prompt': 'هذه دائرة. اتبع الطريق.',
+      'completion': {'rule': 'all_strokes_complete'},
+      'tolerance_dp': 28,
+      'coverage_required': 0.8,
+      'stroke_paths': [
         {
-          'level': 1,
-          'mode': 'shape',
-          'scoring': 'geometric',
-          'prompt_key': 'game.shapes_basic.circle.prompt',
-          'prompt': 'هذه دائرة. اتبع الطريق.',
-          'completion': {'rule': 'all_strokes_complete'},
-          'tolerance_dp': 28,
-          'coverage_required': 0.8,
-          'stroke_paths': [
-            {
-              'id': 's1', 'order': 1, 'type': 'stroke', 'direction': 'forward',
-              'points': [
-                [0.50, 0.15], [0.68, 0.22], [0.80, 0.38], [0.85, 0.50],
-                [0.80, 0.62], [0.68, 0.78], [0.50, 0.85], [0.32, 0.78],
-                [0.20, 0.62], [0.15, 0.50], [0.20, 0.38], [0.32, 0.22],
-                [0.50, 0.15],
-              ],
-            }
+          'id': 's1',
+          'order': 1,
+          'type': 'stroke',
+          'direction': 'forward',
+          'points': [
+            [0.50, 0.15],
+            [0.68, 0.22],
+            [0.80, 0.38],
+            [0.85, 0.50],
+            [0.80, 0.62],
+            [0.68, 0.78],
+            [0.50, 0.85],
+            [0.32, 0.78],
+            [0.20, 0.62],
+            [0.15, 0.50],
+            [0.20, 0.38],
+            [0.32, 0.22],
+            [0.50, 0.15],
           ],
-          'coloring': {
-            'enabled': true,
-            'regions': ['r1'],
-            'palette': ['#FFD34D', '#00D6F5', '#FF6FAE'],
-          },
-        }
+        },
       ],
-      'assets': {'images': [], 'audio': []},
-      'voice_manifest': {'vo.intro': 'asset-vo-intro'},
-    };
+      'coloring': {
+        'enabled': true,
+        'regions': ['r1'],
+        'palette': ['#FFD34D', '#00D6F5', '#FF6FAE'],
+      },
+    },
+  ],
+  'assets': {'images': [], 'audio': []},
+  'voice_manifest': {'vo.intro': 'asset-vo-intro'},
+};
 
 class _Harness {
   _Harness(Map<String, dynamic> json, {GameAccessibilitySettings? settings})
-      : pack = GamePack.fromJson(json) {
+    : pack = GamePack.fromJson(json) {
     audio = SilentGameAudioService();
     reporter = RecordingAttemptReporter();
     controller = GameSessionController(
@@ -81,29 +94,39 @@ class _Harness {
   late final GameSessionController controller;
 
   Widget widget({bool isTelevision = false}) => MaterialApp(
-        home: GameScreen(
-          pack: pack,
-          controller: controller,
-          registry: buildDefaultRegistry(),
-          isTelevision: isTelevision,
-        ),
-      );
+    home: GameScreen(
+      pack: pack,
+      controller: controller,
+      registry: buildDefaultRegistry(),
+      isTelevision: isTelevision,
+    ),
+  );
 }
 
 /// The drawing surface, addressed by key rather than by type: Flutter uses
 /// `Listener` internally, so finding it by type is ambiguous.
 final canvasFinder = find.byKey(const Key('trace_canvas'));
+
 Future<void> traceCircle(WidgetTester tester, Rect canvas) async {
   const ring = [
-    Offset(0.50, 0.15), Offset(0.68, 0.22), Offset(0.80, 0.38), Offset(0.85, 0.50),
-    Offset(0.80, 0.62), Offset(0.68, 0.78), Offset(0.50, 0.85), Offset(0.32, 0.78),
-    Offset(0.20, 0.62), Offset(0.15, 0.50), Offset(0.20, 0.38), Offset(0.32, 0.22),
+    Offset(0.50, 0.15),
+    Offset(0.68, 0.22),
+    Offset(0.80, 0.38),
+    Offset(0.85, 0.50),
+    Offset(0.80, 0.62),
+    Offset(0.68, 0.78),
+    Offset(0.50, 0.85),
+    Offset(0.32, 0.78),
+    Offset(0.20, 0.62),
+    Offset(0.15, 0.50),
+    Offset(0.20, 0.38),
+    Offset(0.32, 0.22),
     Offset(0.50, 0.15),
   ];
   Offset at(Offset normalised) => Offset(
-        canvas.left + normalised.dx * canvas.width,
-        canvas.top + normalised.dy * canvas.height,
-      );
+    canvas.left + normalised.dx * canvas.width,
+    canvas.top + normalised.dy * canvas.height,
+  );
 
   final gesture = await tester.startGesture(at(ring.first));
   for (var i = 1; i < ring.length; i++) {
@@ -122,7 +145,9 @@ Future<void> traceCircle(WidgetTester tester, Rect canvas) async {
 }
 
 void main() {
-  testWidgets('the engine renders the prompt and a drawing surface', (tester) async {
+  testWidgets('the engine renders the prompt and a drawing surface', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -136,9 +161,22 @@ void main() {
     // Mandatory in every pack per the data contract.
     expect(find.text('أعد التعليمة'), findsOneWidget);
     expect(find.text('من جديد'), findsOneWidget);
+
+    final motorToggle = find.byKey(const Key('simplified_motor_button'));
+    final renderObject = tester.element(motorToggle).findRenderObject();
+    expect(renderObject, isA<RenderBox>());
+    final motorSize = (renderObject! as RenderBox).size;
+    expect(motorSize.width, greaterThanOrEqualTo(64));
+    expect(motorSize.height, greaterThanOrEqualTo(64));
+
+    await tester.tap(find.text('أعد التعليمة'));
+    await tester.pump();
+    expect(harness.audio.played, contains(VoiceKeys.instructionRepeat));
   });
 
-  testWidgets('tracing the shape completes the level and reports one attempt', (tester) async {
+  testWidgets('tracing the shape completes the level and reports one attempt', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -150,8 +188,11 @@ void main() {
     final canvas = tester.getRect(canvasFinder);
     await traceCircle(tester, canvas);
 
-    expect(harness.controller.traceSession!.levelComplete, isTrue,
-        reason: 'a full trace of the authored ring must complete the stroke');
+    expect(
+      harness.controller.traceSession!.levelComplete,
+      isTrue,
+      reason: 'a full trace of the authored ring must complete the stroke',
+    );
 
     // The measured stage is over, so exactly one attempt is reported. Colouring
     // that follows cannot change it.
@@ -171,7 +212,9 @@ void main() {
     expect(json.toString(), isNot(contains('0.85')));
   });
 
-  testWidgets('completing the trace opens the colouring stage with a palette', (tester) async {
+  testWidgets('completing the trace opens the colouring stage with a palette', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -212,7 +255,9 @@ void main() {
     expect(harness.controller.phase, LevelPhase.finished);
   });
 
-  testWidgets('the simplified motor toggle is reachable and announces itself', (tester) async {
+  testWidgets('the simplified motor toggle is reachable and announces itself', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -230,7 +275,9 @@ void main() {
     expect(harness.controller.traceSession!.activeTolerance.toleranceDp, 44);
   });
 
-  testWidgets('touch-only content is refused on television with a true reason', (tester) async {
+  testWidgets('touch-only content is refused on television with a true reason', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -244,7 +291,9 @@ void main() {
     expect(canvasFinder, findsNothing);
   });
 
-  testWidgets('an unknown engine shows an update prompt, not a crash', (tester) async {
+  testWidgets('an unknown engine shows an update prompt, not a crash', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -255,10 +304,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('هذه اللعبة تحتاج تحديث التطبيق'), findsOneWidget);
+    expect(find.byType(GameStatePanel), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the registry exposes every implemented engine and nothing else', (tester) async {
+  testWidgets('the registry exposes every implemented engine and nothing else', (
+    tester,
+  ) async {
     final registry = buildDefaultRegistry();
     // All twelve canonical engines now have a real pack-driven implementation.
     for (final id in [

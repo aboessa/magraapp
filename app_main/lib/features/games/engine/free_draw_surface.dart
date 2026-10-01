@@ -28,9 +28,11 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_colors.dart';
 import '../data/creation_document.dart';
 import '../presentation/widgets/drawing_asset.dart';
 import 'coloring_regions.dart' show parseHex;
+import 'game_art.dart';
 import 'game_pack.dart';
 import 'game_services.dart';
 import 'game_session_controller.dart';
@@ -70,6 +72,50 @@ const List<double> kBrushSizes = [3, 6, 10, 16, 26, 42];
 const int kMaxStrokes = 120;
 const int kMaxUndone = 80;
 
+/// Child-facing palette label. The authored hex remains drawing data only.
+String arabicPaletteColorLabel(String hex, int index) {
+  final normalized = hex.trim().toUpperCase();
+  const names = <String, String>{
+    '#000000': 'أسود',
+    '#FFFFFF': 'أبيض',
+    '#1A1A2E': 'كحلي داكن',
+    '#FF3B30': 'أحمر',
+    '#FF6B35': 'برتقالي محمر',
+    '#FF9F1C': 'برتقالي',
+    '#FFD34D': 'ذهبي',
+    '#FFCC02': 'أصفر',
+    '#FFE066': 'أصفر فاتح',
+    '#22C55E': 'أخضر',
+    '#00C950': 'أخضر زاهٍ',
+    '#00D6F5': 'سماوي',
+    '#0EA5E9': 'أزرق سماوي',
+    '#2580FF': 'أزرق',
+    '#3B82F6': 'أزرق فاتح',
+    '#6366F1': 'نيلي',
+    '#9D68FF': 'بنفسجي فاتح',
+    '#6A3DF2': 'بنفسجي',
+    '#A855F7': 'أرجواني',
+    '#EC4899': 'وردي',
+    '#FF6FAE': 'وردي فاتح',
+    '#F43F5E': 'وردي محمر',
+    '#EF4444': 'أحمر فاتح',
+    '#8B4513': 'بني داكن',
+    '#795548': 'بني',
+    '#A0826D': 'بني فاتح',
+    '#6B7280': 'رمادي',
+    '#9CA3AF': 'رمادي فاتح',
+  };
+  final known = names[normalized];
+  if (known != null) return known;
+  const western = '0123456789';
+  const arabic = '٠١٢٣٤٥٦٧٨٩';
+  final ordinal = '${index + 1}'.split('').map((digit) {
+    final digitIndex = western.indexOf(digit);
+    return digitIndex < 0 ? digit : arabic[digitIndex];
+  }).join();
+  return 'اللون $ordinal';
+}
+
 /// Controller that lets outer pages clear/undo/redo the free-draw canvas
 /// without needing a GlobalKey. GameSessionController remains the source of
 /// truth for document save; this only manipulates the stroke layer.
@@ -80,7 +126,12 @@ class FreeDrawController {
   VoidCallback? _clearDirectFn;
   VoidCallback? _undoFn;
   VoidCallback? _redoFn;
-  void _attach({VoidCallback? clear, VoidCallback? clearDirect, VoidCallback? undo, VoidCallback? redo}) {
+  void _attach({
+    VoidCallback? clear,
+    VoidCallback? clearDirect,
+    VoidCallback? undo,
+    VoidCallback? redo,
+  }) {
     _clearFn = clear;
     _clearDirectFn = clearDirect;
     _undoFn = undo;
@@ -150,7 +201,7 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
   double _width = kBrushSizes[1];
   bool _erasing = false;
   DrawBrush _brush = DrawBrush.pencil;
-  double _opacity = 1;
+  final double _opacity = 1;
   final TransformationController _viewTransform = TransformationController();
   bool _panMode = false;
   int? _activePointer;
@@ -440,7 +491,10 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
             child: Semantics(
               liveRegion: true,
               child: Text(
-                level.prompt!,
+                safeChildFacingLabel(
+                  authoredText: level.prompt,
+                  arabicFallback: 'ابدأ الرسم واتبع التعليمة.',
+                ),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
@@ -456,228 +510,219 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
             ),
           ),
         Expanded(
-          child: Center(
-            child: AspectRatio(
-              aspectRatio:
-                  widget.canvasAspectRatio ??
-                  ((doc?.canvasWidth ?? 1) / (doc?.canvasHeight ?? 1)),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final size = widget.canvasSizeOverride ?? constraints.biggest;
-                  if (_canvasSize != size) {
-                    _canvasSize = size;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      widget.onCanvasSizeChanged?.call(size);
-                    });
-                  }
-                  if (_restorePending != null) _applyPendingRestore(size);
-                  final bgAsset = level.backgroundAsset ?? doc?.backgroundAsset;
-                  final tplAsset =
-                      level.coloring?.templateAsset ?? doc?.templateAsset;
-                  return InteractiveViewer(
-                    transformationController: _viewTransform,
-                    panEnabled: _panMode,
-                    scaleEnabled: _panMode,
-                    minScale: 1,
-                    maxScale: 4,
-                    boundaryMargin: const EdgeInsets.all(160),
-                    child: RepaintBoundary(
-                      key: widget.canvasRepaintBoundaryKey,
-                      child: Container(
-                        width: size.width,
-                        height: size.height,
-                        decoration: BoxDecoration(
-                          color: background,
-                          border: Border.all(
-                            color: const Color(0x1A000000),
-                            width: 1.2,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            if (bgAsset != null)
-                              _AssetBackground(asset: bgAsset, size: size),
-                            if (tplAsset != null)
-                              _AssetTemplate(asset: tplAsset, size: size),
-                            MouseRegion(
-                              cursor: _panMode
-                                  ? SystemMouseCursors.grab
-                                  : SystemMouseCursors.precise,
-                              onExit: (_) {
-                                final pointer = _activePointer;
-                                if (pointer != null) _end(pointer);
-                              },
-                              child: Listener(
-                                key: const Key('free_draw_canvas'),
-                                behavior: HitTestBehavior.opaque,
-                                onPointerDown: (e) {
-                                  if (_panMode) return;
-                                  _begin(
-                                    e.pointer,
-                                    _clampPoint(e.localPosition),
-                                  );
-                                },
-                                onPointerMove: (e) {
-                                  if (_panMode) return;
-                                  _extend(
-                                    e.pointer,
-                                    _clampPoint(e.localPosition),
-                                  );
-                                },
-                                onPointerUp: (e) => _end(e.pointer),
-                                onPointerCancel: (e) => _end(e.pointer),
-                                child: Semantics(
-                                  label: 'مساحة الرسم',
-                                  child: CustomPaint(
-                                    size: size,
-                                    painter: _FreeDrawPainter(
-                                      // Each delegate owns an immutable frame.
-                                      strokes: List<FreeStroke>.unmodifiable(
-                                        _strokes,
-                                      ),
-                                      current: List<Offset>.unmodifiable(
-                                        _current,
-                                      ),
-                                      currentColor: _color,
-                                      currentWidth: _width,
-                                      currentIsEraser: _erasing,
-                                      currentBrush: _brush,
-                                      currentOpacity: _opacity,
-                                      background: background,
-                                      reduceMotion: _reduceMotion,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+            child:
+                (widget.canvasAspectRatio != null ||
+                    (doc != null &&
+                        (doc.canvasWidth) > 0 &&
+                        (doc.canvasHeight) > 0))
+                ? Center(
+                    child: AspectRatio(
+                      aspectRatio:
+                          widget.canvasAspectRatio ??
+                          ((doc?.canvasWidth ?? 1) / (doc?.canvasHeight ?? 1)),
+                      child: _buildCanvasArea(
+                        background: background,
+                        level: level,
+                        doc: doc,
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
+                  )
+                : _buildCanvasArea(
+                    background: background,
+                    level: level,
+                    doc: doc,
+                  ),
           ),
         ),
-        _buildBrushToolbar(context, target),
-        _buildPalette(context, target),
-        _buildTools(context, target),
+        _buildModernToolbars(context, target),
       ],
     );
   }
 
-  Widget _buildBrushToolbar(BuildContext context, double target) {
-    const labels = <DrawBrush, (String, IconData)>{
-      DrawBrush.pencil: ('قلم', Icons.edit_outlined),
-      DrawBrush.marker: ('ماركر', Icons.border_color_outlined),
-      DrawBrush.crayon: ('شمع', Icons.brush_outlined),
-      DrawBrush.paintBrush: ('فرشاة', Icons.format_paint_outlined),
-    };
-    return _StudioToolbar(
-      child: Column(
-        children: [
-          SizedBox(
-            height: target,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              children: [
-                for (final entry in labels.entries)
-                  _StudioToolButton(
-                    icon: entry.value.$2,
-                    label: entry.value.$1,
-                    selected: !_panMode && !_erasing && _brush == entry.key,
-                    onPressed: () => setState(() {
-                      _brush = entry.key;
-                      _erasing = false;
-                      _panMode = false;
-                    }),
-                  ),
-                _StudioToolButton(
-                  icon: Icons.pan_tool_alt_outlined,
-                  label: 'تحريك',
-                  selected: _panMode,
-                  onPressed: () => setState(() {
-                    _panMode = !_panMode;
-                    _activePointer = null;
-                    _current = [];
-                  }),
+  Widget _buildCanvasArea({
+    required Color background,
+    required dynamic level,
+    required CreationDocument? doc,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = widget.canvasSizeOverride ?? constraints.biggest;
+        if (_canvasSize != size) {
+          _canvasSize = size;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            widget.onCanvasSizeChanged?.call(size);
+          });
+        }
+        if (_restorePending != null) _applyPendingRestore(size);
+        final String? bgAsset =
+            (level.backgroundAsset as String?) ?? doc?.backgroundAsset;
+        final String? tplAsset =
+            (level.coloring?.templateAsset as String?) ?? doc?.templateAsset;
+        return InteractiveViewer(
+          transformationController: _viewTransform,
+          panEnabled: _panMode,
+          scaleEnabled: _panMode,
+          minScale: 1,
+          maxScale: 4,
+          boundaryMargin: const EdgeInsets.all(160),
+          child: RepaintBoundary(
+            key: widget.canvasRepaintBoundaryKey,
+            child: Container(
+              width: size.width,
+              height: size.height,
+              decoration: BoxDecoration(
+                color: background,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  width: 1.5,
                 ),
-                if (_panMode)
-                  _StudioToolButton(
-                    icon: Icons.center_focus_strong,
-                    label: 'توسيط',
-                    onPressed: () => _viewTransform.value = Matrix4.identity(),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.shadow.withValues(alpha: 0.35),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
                   ),
-              ],
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (bgAsset != null)
+                    _AssetBackground(asset: bgAsset, size: size),
+                  if (tplAsset != null)
+                    _AssetTemplate(asset: tplAsset, size: size),
+                  MouseRegion(
+                    cursor: _panMode
+                        ? SystemMouseCursors.grab
+                        : SystemMouseCursors.precise,
+                    onExit: (_) {
+                      final pointer = _activePointer;
+                      if (pointer != null) _end(pointer);
+                    },
+                    child: Listener(
+                      key: const Key('free_draw_canvas'),
+                      behavior: HitTestBehavior.opaque,
+                      onPointerDown: (e) {
+                        if (_panMode) return;
+                        _begin(e.pointer, _clampPoint(e.localPosition));
+                      },
+                      onPointerMove: (e) {
+                        if (_panMode) return;
+                        _extend(e.pointer, _clampPoint(e.localPosition));
+                      },
+                      onPointerUp: (e) => _end(e.pointer),
+                      onPointerCancel: (e) => _end(e.pointer),
+                      child: Semantics(
+                        label: 'مساحة الرسم',
+                        child: CustomPaint(
+                          size: size,
+                          painter: _FreeDrawPainter(
+                            strokes: List<FreeStroke>.unmodifiable(_strokes),
+                            current: List<Offset>.unmodifiable(_current),
+                            currentColor: _color,
+                            currentWidth: _width,
+                            currentIsEraser: _erasing,
+                            currentBrush: _brush,
+                            currentOpacity: _opacity,
+                            background: background,
+                            reduceMotion: _reduceMotion,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(12, 2, 12, 6),
-            child: Row(
-              children: [
-                const Icon(Icons.opacity_rounded, size: 17, color: Color(0xFFBFC8FF)),
-                const SizedBox(width: 6),
-                Text('شفافية ${(_opacity * 100).round()}٪', style: const TextStyle(color: Color(0xFFBFC8FF), fontSize: 11, fontWeight: FontWeight.w700)),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 3,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-                      activeTrackColor: const Color(0xFF00D6F5),
-                      inactiveTrackColor: Colors.white24,
-                      thumbColor: const Color(0xFF00D6F5),
-                    ),
-                    child: Slider(
-                      value: _opacity,
-                      min: 0.2,
-                      max: 1,
-                      divisions: 8,
-                      onChanged: _erasing ? null : (value) => setState(() => _opacity = value),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        );
+      },
+    );
+  }
+
+  Widget _buildModernToolbars(BuildContext context, double target) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.indigoSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+        border: Border(
+          top: BorderSide(color: scheme.outlineVariant, width: 1.2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: 0.45),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           ),
         ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 6),
+            _buildColorAndSizeBar(context, target),
+            Container(
+              height: 1,
+              color: scheme.outlineVariant,
+              margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            ),
+            _buildToolsAndActionsBar(context, target),
+            const SizedBox(height: 6),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildPalette(BuildContext context, double target) {
-    // ألوان أكثر + أحجام فرش أكثر — صفّين منفصلين أوضح للطفل
-    return _StudioToolbar(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildColorAndSizeBar(BuildContext context, double target) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: target,
+      child: Row(
         children: [
-          // صف الألوان — 28 لون سكرول أفقي
-          SizedBox(
-            height: target + 14,
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < kBrushSizes.length && i < 5; i++) ...[
+                  _buildSizeDot(kBrushSizes[i], i, target),
+                  if (i < 4) const SizedBox(width: 5),
+                ],
+              ],
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 24,
+            color: scheme.outlineVariant,
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+          ),
+          Expanded(
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              separatorBuilder: (_, __) => const SizedBox(width: 6),
+              padding: const EdgeInsetsDirectional.only(end: 12),
+              physics: const BouncingScrollPhysics(),
+              separatorBuilder: (_, __) => const SizedBox(width: 7),
               itemCount: _palette.length,
               itemBuilder: (context, i) {
                 final hex = _palette[i];
-                final isSelected = !_erasing && _color.toARGB32() == _parseHex(hex).toARGB32();
+                final isSelected =
+                    !_erasing && _color.toARGB32() == _parseHex(hex).toARGB32();
                 final isWhite = hex.toUpperCase() == '#FFFFFF';
                 return Semantics(
                   button: true,
                   selected: isSelected,
-                  label: 'اختيار اللون $hex',
+                  label: 'اختيار ${arabicPaletteColorLabel(hex, i)}',
                   child: InkResponse(
                     onTap: () => setState(() {
                       _color = _parseHex(hex);
@@ -685,81 +730,44 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
                     }),
                     containedInkWell: true,
                     customBorder: const CircleBorder(),
-                    radius: target / 2,
-                    child: Container(
-                      width: target,
-                      height: target,
-                      decoration: BoxDecoration(
-                        color: _parseHex(hex),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected ? const Color(0xFFFFD34D) : (isWhite ? Colors.black26 : Colors.white24),
-                          width: isSelected ? 3 : (isWhite ? 1.5 : 1),
-                        ),
-                        boxShadow: isSelected
-                            ? [BoxShadow(color: const Color(0xFFFFD34D).withValues(alpha: 0.4), blurRadius: 6, spreadRadius: 1)]
-                            : null,
-                      ),
-                      child: isSelected
-                          ? const Icon(Icons.check_rounded, size: 16, color: Color(0xFF11183D))
-                          : null,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Container(height: 1, color: Colors.white10, margin: const EdgeInsets.symmetric(horizontal: 12)),
-          // صف أحجام الفرش — 6 أحجام من رفيع جداً لسميك
-          SizedBox(
-            height: target + 14,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemCount: kBrushSizes.length,
-              itemBuilder: (context, i) {
-                final size = kBrushSizes[i];
-                final selected = _width == size;
-                // خريطة بصرية: 3→6px, 42→26px لتظل داخل الدائرة
-                final dot = (4 + (size / 42) * 20).clamp(4.0, 26.0);
-                final label = switch (i) {
-                  0 => 'رفيع جداً',
-                  1 => 'رفيع',
-                  2 => 'متوسط',
-                  3 => 'عريض',
-                  4 => 'سميك',
-                  5 => 'سميك جداً',
-                  _ => 'حجم ${size.round()}',
-                };
-                return Semantics(
-                  button: true,
-                  selected: selected,
-                  label: label,
-                  child: InkResponse(
-                    onTap: () => setState(() => _width = size),
-                    containedInkWell: true,
-                    customBorder: const CircleBorder(),
-                    radius: target / 2,
-                    child: Container(
-                      width: target,
-                      height: target,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: selected ? const Color(0xFFFFD34D) : Colors.white.withValues(alpha: 0.08),
-                        border: Border.all(
-                          color: selected ? const Color(0xFFFFD34D) : Colors.white24,
-                          width: selected ? 3 : 1,
-                        ),
-                      ),
+                    child: SizedBox.square(
+                      dimension: target,
                       child: Center(
                         child: Container(
-                          width: dot,
-                          height: dot,
+                          width: 32,
+                          height: 32,
                           decoration: BoxDecoration(
-                            color: selected ? const Color(0xFF11183D) : Colors.white,
+                            color: _parseHex(hex),
                             shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.starGold
+                                  : (isWhite
+                                        ? scheme.outline
+                                        : scheme.onSurface.withValues(
+                                            alpha: 0.25,
+                                          )),
+                              width: isSelected ? 2.8 : 1,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.starGold.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    ),
+                                  ]
+                                : null,
                           ),
+                          child: isSelected
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  size: 16,
+                                  color: AppColors.midnight,
+                                )
+                              : null,
                         ),
                       ),
                     ),
@@ -773,67 +781,169 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
     );
   }
 
-  Widget _buildTools(BuildContext context, double target) {
-    return _StudioToolbar(
-      bottomMargin: 12,
-      child: SizedBox(
-        height: target + 12,
-        child: Row(
-          children: [
-            const SizedBox(width: 8),
-          Semantics(
-            selected: _erasing,
-            child: _StudioToolButton(
-              key: const Key('free_eraser'),
-              onPressed: () => setState(() => _erasing = !_erasing),
-              icon: _erasing ? Icons.brush_rounded : Icons.cleaning_services_outlined,
-              label: _erasing ? 'ارسم' : 'ممحاة',
-              selected: _erasing,
-            ),
-          ),
-          _StudioToolButton(
-            key: const Key('free_undo'),
-            onPressed: _strokes.isEmpty ? null : _undo,
-            icon: Icons.undo_rounded,
-            label: 'رجوع',
-          ),
-          _StudioToolButton(
-            key: const Key('free_redo'),
-            onPressed: _undone.isEmpty ? null : _redo,
-            icon: Icons.redo_rounded,
-            label: 'إعادة',
-          ),
-          _StudioToolButton(
-            key: const Key('free_clear'),
-            onPressed: _strokes.isEmpty && _current.isEmpty ? null : _clear,
-            icon: Icons.refresh_rounded,
-            label: 'من جديد',
-          ),
-          _StudioToolButton(
-            onPressed: widget.controller.repeatInstruction,
-            icon: Icons.volume_up_outlined,
-            label: 'تعليمات',
-          ),
-          const Spacer(),
-          Semantics(
-            button: true,
-            label: 'تم',
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: FilledButton.icon(
-                key: const Key('free_done'),
-                onPressed: widget.controller.markDone,
-                icon: const Icon(Icons.check_rounded, size: 18),
-                label: const Text('تم'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF6A3DF2),
-                  foregroundColor: Colors.white,
-                  minimumSize: Size(76, target),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  Widget _buildSizeDot(double size, int index, double target) {
+    final selected = _width == size;
+    final dotSize = switch (index) {
+      0 => 5.0,
+      1 => 8.0,
+      2 => 12.0,
+      3 => 16.0,
+      _ => 20.0,
+    };
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'سُمك القلم ${index + 1}',
+      child: InkWell(
+        onTap: () => setState(() => _width = size),
+        borderRadius: BorderRadius.circular(target / 2),
+        child: SizedBox.square(
+          dimension: target,
+          child: Center(
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected
+                    ? AppColors.starGold
+                    : Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.08),
+                border: Border.all(
+                  color: selected
+                      ? AppColors.starGold
+                      : Theme.of(context).colorScheme.outlineVariant,
+                  width: selected ? 2 : 1,
+                ),
+              ),
+              child: Center(
+                child: Container(
+                  width: dotSize,
+                  height: dotSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected ? AppColors.midnight : AppColors.starlight,
+                  ),
                 ),
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToolsAndActionsBar(BuildContext context, double target) {
+    const labels = <DrawBrush, (String, IconData)>{
+      DrawBrush.pencil: ('قلم', Icons.edit_outlined),
+      DrawBrush.marker: ('ماركر', Icons.border_color_outlined),
+      DrawBrush.paintBrush: ('فرشاة', Icons.format_paint_outlined),
+      DrawBrush.crayon: ('شمع', Icons.brush_outlined),
+    };
+
+    return SizedBox(
+      height: target + 8,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final entry in labels.entries)
+              _StudioToolButton(
+                minSize: target,
+                icon: entry.value.$2,
+                label: entry.value.$1,
+                selected: !_panMode && !_erasing && _brush == entry.key,
+                onPressed: () => setState(() {
+                  _brush = entry.key;
+                  _erasing = false;
+                  _panMode = false;
+                }),
+              ),
+            Semantics(
+              selected: _erasing,
+              child: _StudioToolButton(
+                key: const Key('free_eraser'),
+                minSize: target,
+                onPressed: () => setState(() => _erasing = !_erasing),
+                icon: _erasing
+                    ? Icons.brush_rounded
+                    : Icons.cleaning_services_outlined,
+                label: _erasing ? 'ارسم' : 'ممحاة',
+                selected: _erasing,
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 24,
+              color: Theme.of(context).colorScheme.outlineVariant,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+            ),
+            _StudioToolButton(
+              key: const Key('free_undo'),
+              minSize: target,
+              onPressed: _strokes.isEmpty ? null : _undo,
+              icon: Icons.undo_rounded,
+              label: 'رجوع',
+            ),
+            _StudioToolButton(
+              key: const Key('free_redo'),
+              minSize: target,
+              onPressed: _undone.isEmpty ? null : _redo,
+              icon: Icons.redo_rounded,
+              label: 'إعادة',
+            ),
+            _StudioToolButton(
+              key: const Key('free_clear'),
+              minSize: target,
+              onPressed: _strokes.isEmpty && _current.isEmpty ? null : _clear,
+              icon: Icons.refresh_rounded,
+              label: 'من جديد',
+            ),
+            _StudioToolButton(
+              minSize: target,
+              icon: Icons.pan_tool_alt_outlined,
+              label: 'تحريك',
+              selected: _panMode,
+              onPressed: () => setState(() {
+                _panMode = !_panMode;
+                _activePointer = null;
+                _current = [];
+              }),
+            ),
+            if (widget.controller.pack.levels.firstOrNull?.prompt != null)
+              _StudioToolButton(
+                minSize: target,
+                onPressed: widget.controller.repeatInstruction,
+                icon: Icons.volume_up_outlined,
+                label: 'تعليمات',
+              ),
+            const SizedBox(width: 8),
+            Semantics(
+              button: true,
+              label: 'تم',
+              child: FilledButton.icon(
+                key: const Key('free_done'),
+                onPressed: widget.controller.markDone,
+                icon: const Icon(Icons.check_rounded, size: 16),
+                label: const Text(
+                  'تم',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.cosmicPurple,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  minimumSize: Size(68, target),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -841,25 +951,12 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
   }
 }
 
-class _StudioToolbar extends StatelessWidget {
-  const _StudioToolbar({required this.child, this.bottomMargin = 4});
-
-  final Widget child;
-  final double bottomMargin;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    margin: EdgeInsetsDirectional.only(bottom: bottomMargin),
-    color: const Color(0xFF11183D),
-    child: child,
-  );
-}
-
 class _StudioToolButton extends StatelessWidget {
   const _StudioToolButton({
     required this.icon,
     required this.label,
     required this.onPressed,
+    this.minSize = 48,
     this.selected = false,
     super.key,
   });
@@ -867,16 +964,18 @@ class _StudioToolButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;
+  final double minSize;
   final bool selected;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final enabled = onPressed != null;
     final foreground = !enabled
-        ? Colors.white24
+        ? scheme.onSurface.withValues(alpha: 0.38)
         : selected
-            ? const Color(0xFF0C1030)
-            : const Color(0xFFDCE2FF);
+        ? AppColors.midnight
+        : AppColors.starlight;
     return Semantics(
       button: true,
       label: label,
@@ -884,13 +983,16 @@ class _StudioToolButton extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
         child: Material(
-          color: selected ? const Color(0xFFFFD34D) : Colors.transparent,
+          color: selected ? AppColors.starGold : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             onTap: onPressed,
             borderRadius: BorderRadius.circular(12),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              constraints: BoxConstraints(
+                minWidth: minSize,
+                minHeight: minSize,
+              ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 7),
                 child: Column(
@@ -898,7 +1000,15 @@ class _StudioToolButton extends StatelessWidget {
                   children: [
                     Icon(icon, size: 20, color: foreground),
                     const SizedBox(height: 1),
-                    Text(label, style: TextStyle(color: foreground, fontSize: 9, fontWeight: FontWeight.w800), overflow: TextOverflow.ellipsis),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: foreground,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),

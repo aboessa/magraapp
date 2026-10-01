@@ -6,7 +6,6 @@
 /// invented local board that could hide a publication or entitlement problem.
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,6 +14,7 @@ import '../../../../core/env/app_environment.dart';
 import '../../../child/application/child_provider.dart';
 import '../../application/creation_cloud_service.dart';
 import '../../application/game_providers.dart';
+import '../../engine/game_board_kit.dart';
 import '../../engine/game_pack.dart';
 import '../../engine/game_session_controller.dart';
 import '../../engine/media_audio_player.dart';
@@ -38,7 +38,6 @@ class GameRoute extends ConsumerWidget {
 
     if (childId == null || childId.isEmpty) {
       return const _GameMessage(
-        icon: Icons.face_outlined,
         title: 'اختر طفلًا أولًا',
         body: 'الألعاب تُفتح لطفل واحد، حتى يُحفظ تقدّمه في المكان الصحيح.',
       );
@@ -48,19 +47,21 @@ class GameRoute extends ConsumerWidget {
     final resolved = ref.watch(gamePackProvider(request));
 
     return resolved.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const GameStateScaffold(
+        panel: GameStatePanel(
+          kind: GameStateKind.loading,
+          title: 'نجهّز اللعبة',
+          message: 'لحظات وتبدأ المغامرة.',
+        ),
+      ),
       error: (error, _) {
         final malformed = error is GamePackParseException;
         return _GameMessage(
-          icon: malformed
-              ? Icons.extension_off_outlined
-              : Icons.cloud_off_outlined,
+          kind: GameStateKind.error,
           title: 'لم نتمكّن من فتح هذه اللعبة',
           body: malformed
               ? 'بيانات اللعبة غير مكتملة الآن. جرّب لعبة أخرى أو أعد المحاولة.'
               : 'تحقق من الاتصال ثم أعد المحاولة.',
-          detail: kDebugMode ? '$error' : null,
           actionLabel: 'إعادة المحاولة',
           onAction: () => ref.invalidate(gamePackProvider(request)),
         );
@@ -100,18 +101,19 @@ class _GameHost extends ConsumerStatefulWidget {
 
 class _GameHostState extends ConsumerState<_GameHost> {
   late final GameSessionController _controller;
+  CapTokenGameAudioService? _ownedAudioService;
 
   @override
   void initState() {
     super.initState();
     final tokens = widget.game.assetTokens;
     final audioService = tokens.isNotEmpty
-        ? CapTokenGameAudioService(
+        ? (_ownedAudioService = CapTokenGameAudioService(
             player: JustAudioAdapter(),
             assetTokens: tokens,
             urlBuilder: (assetId, token) =>
                 '${AppConfig.baseUrl}/api/v1/media/assets/${Uri.encodeComponent(assetId)}?token=${Uri.encodeComponent(token)}',
-          )
+          ))
         : ref.read(gameAudioServiceProvider);
 
     _controller = GameSessionController(
@@ -129,7 +131,10 @@ class _GameHostState extends ConsumerState<_GameHost> {
 
   @override
   void dispose() {
+    // The controller queues stop first; disposal is then queued by the owned
+    // adapter, so a preload/play operation cannot race either lifecycle action.
     _controller.dispose();
+    _ownedAudioService?.dispose();
     super.dispose();
   }
 
@@ -151,66 +156,28 @@ class _GameHostState extends ConsumerState<_GameHost> {
 /// A calm, honest dead end with an optional recovery action.
 class _GameMessage extends StatelessWidget {
   const _GameMessage({
-    required this.icon,
     required this.title,
     required this.body,
-    this.detail,
+    this.kind = GameStateKind.unavailable,
     this.actionLabel,
     this.onAction,
   });
 
-  final IconData icon;
+  final GameStateKind kind;
   final String title;
   final String body;
-  final String? detail;
   final String? actionLabel;
   final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 440),
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 64),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  body,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                if (detail != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    detail!,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                if (onAction != null && actionLabel != null) ...[
-                  const SizedBox(height: 20),
-                  FilledButton.icon(
-                    onPressed: onAction,
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: Text(actionLabel!),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
+    return GameStateScaffold(
+      panel: GameStatePanel(
+        kind: kind,
+        title: title,
+        message: body,
+        actionLabel: actionLabel,
+        onAction: onAction,
       ),
     );
   }

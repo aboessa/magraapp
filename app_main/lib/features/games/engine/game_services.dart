@@ -16,10 +16,34 @@ import 'trace_geometry.dart';
 /// Age tracks, which set the tone of feedback.
 enum AgeTrack { preschool, kids, junior }
 
-AgeTrack ageTrackForRange(int ageMin, int ageMax) {
-  if (ageMax <= 5) return AgeTrack.preschool;
-  if (ageMax <= 8) return AgeTrack.kids;
-  return AgeTrack.junior;
+/// Resolves an authored age range without guessing across experience tracks.
+///
+/// Both bounds must be whole numbers in the supported 3–12 range and must land
+/// in the same track. Missing, malformed, reversed and cross-track ranges use
+/// the neutral [AgeTrack.kids] treatment; a child's age, viewport and input
+/// capability are deliberately not part of this decision.
+AgeTrack ageTrackForRange(Object? ageMin, Object? ageMax) {
+  if (ageMin is! num || ageMax is! num) return AgeTrack.kids;
+  if (!ageMin.isFinite || !ageMax.isFinite) return AgeTrack.kids;
+  if (ageMin != ageMin.roundToDouble() || ageMax != ageMax.roundToDouble()) {
+    return AgeTrack.kids;
+  }
+
+  final minimum = ageMin.toInt();
+  final maximum = ageMax.toInt();
+  if (minimum < 3 || maximum > 12 || minimum > maximum) {
+    return AgeTrack.kids;
+  }
+
+  AgeTrack trackFor(int age) {
+    if (age <= 5) return AgeTrack.preschool;
+    if (age <= 8) return AgeTrack.kids;
+    return AgeTrack.junior;
+  }
+
+  final minimumTrack = trackFor(minimum);
+  final maximumTrack = trackFor(maximum);
+  return minimumTrack == maximumTrack ? minimumTrack : AgeTrack.kids;
 }
 
 /// What the child is told, and when.
@@ -129,11 +153,16 @@ class FeedbackService {
   /// The voice key for an event, or null when nothing should be said.
   String? voiceKeyFor(FeedbackEvent event) {
     switch (event) {
-      case FeedbackEvent.strokeComplete: return VoiceKeys.strokeComplete;
-      case FeedbackEvent.levelComplete: return VoiceKeys.levelComplete;
-      case FeedbackEvent.gameComplete: return VoiceKeys.gameComplete;
-      case FeedbackEvent.guidance: return VoiceKeys.hint;
-      case FeedbackEvent.coloringIntro: return VoiceKeys.coloringIntro;
+      case FeedbackEvent.strokeComplete:
+        return VoiceKeys.strokeComplete;
+      case FeedbackEvent.levelComplete:
+        return VoiceKeys.levelComplete;
+      case FeedbackEvent.gameComplete:
+        return VoiceKeys.gameComplete;
+      case FeedbackEvent.guidance:
+        return VoiceKeys.hint;
+      case FeedbackEvent.coloringIntro:
+        return VoiceKeys.coloringIntro;
     }
   }
 }
@@ -149,9 +178,12 @@ class HelpLadder {
   factory HelpLadder.fromJson(Map<String, dynamic>? json) {
     final data = json ?? const <String, dynamic>{};
     return HelpLadder(
-      hintAfterStalls: (data['hint_after_failed_attempts'] as num?)?.toInt() ?? 2,
-      simplifyAfterStalls: (data['simplify_after_failed_attempts'] as num?)?.toInt() ?? 3,
-      solutionAfterStalls: (data['solution_after_failed_attempts'] as num?)?.toInt() ?? 4,
+      hintAfterStalls:
+          (data['hint_after_failed_attempts'] as num?)?.toInt() ?? 2,
+      simplifyAfterStalls:
+          (data['simplify_after_failed_attempts'] as num?)?.toInt() ?? 3,
+      solutionAfterStalls:
+          (data['solution_after_failed_attempts'] as num?)?.toInt() ?? 4,
     );
   }
 
@@ -205,22 +237,22 @@ class GameAttempt {
   final List<Map<String, Object?>> answers;
 
   Map<String, Object?> toJson() => {
-        'child_id': childId,
-        'content_type': 'game',
-        'content_id': gameId,
-        'game_id': gameId,
-        if (episodeId != null) 'episode_id': episodeId,
-        if (objectiveId != null) 'objective_id': objectiveId,
-        'event_id': eventId,
-        'position_ms': 0,
-        'duration_ms': 0,
-        'completed': completed,
-        'score': score,
-        'max_score': maxScore,
-        'answers': answers,
-        'time_spent': timeSpentSeconds,
-        'help_used': helpUsed,
-      };
+    'child_id': childId,
+    'content_type': 'game',
+    'content_id': gameId,
+    'game_id': gameId,
+    if (episodeId != null) 'episode_id': episodeId,
+    if (objectiveId != null) 'objective_id': objectiveId,
+    'event_id': eventId,
+    'position_ms': 0,
+    'duration_ms': 0,
+    'completed': completed,
+    'score': score,
+    'max_score': maxScore,
+    'answers': answers,
+    'time_spent': timeSpentSeconds,
+    'help_used': helpUsed,
+  };
 }
 
 /// Sends attempts. An interface so the engine can be tested without a network.

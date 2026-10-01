@@ -13,62 +13,37 @@ class PlayCatalog {
   final bool usesBundled;
 }
 
-/// يوحّد مصادر الألعاب بقاعدة واحدة: **الخادم هو المصدر، والمبندل بديلٌ مُعلَن**.
+/// حالة طلب قائمة الألعاب الخاصة بالطفل.
+enum PlayServerState { loading, completed, error }
+
+/// يختار مصدر ألعاب واحدًا: الخادم، ثم الكاتالوج البعيد، ثم بديل الانقطاع.
 ///
-/// ## ما كان في `play_page.dart`
-///
-/// كانت الصفحة تدمج ثلاثة مصادر **بلا شرط**: ألعاب الخادم، ثم
-/// `LocalCatalog.experiences` مباشرةً، ثم `catalog.experiences` — ثم إن خلا الكل
-/// أضافت **ثلاث ألعاب مكتوبة في الكود** كـ«بديل مطلق». وتعليقها يقول عن المبندل
-/// «always exists» كأن ذلك ميزة.
-///
-/// وأثره أن الطفل يرى ألعابًا من الحزمة **حتى والشبكة سليمة تمامًا**. وردّ الخادم
-/// `fetchGames(childId:)` هو ما يطبّق حالة النشر والمسار العمري والاستحقاق؛
-/// و`ExperienceItem` المبندل لا يحمل حالةً ولا عمرًا، فلا شيء منها يُطبَّق عليه.
-/// أي أن **سياسة النشر تُتجاوز في كل جولة**، لا في الانقطاع وحده — وهو ما وصفه
-/// `APP-103` بأنه يحدث «في وضع الانقطاع».
-///
-/// ## القاعدة هنا
-///
-/// المبندل يُستخدم **فقط** إذا لم يُنتج الخادم ولا الكاتالوج شيئًا **و**كان
-/// الكاتالوج نفسه على المسار المبندل (أي أن الشبكة فشلت فعلًا). فالمبندل بديلُ
-/// انقطاعٍ لا إضافةً دائمة. ولا ألعاب مكتوبة في الكود بحال: «بديل مطلق» يعني
-/// محتوًى لا يعرفه الخادم ولا يستطيع أحد سحبه.
+/// كل رد مكتمل من الخادم حاكم، حتى القائمة الفارغة، لأنه يطبّق حالة النشر
+/// والمسار العمري والاستحقاق. لا تظهر المصادر البديلة أثناء التحميل، ولا تُستخدم
+/// بعد اكتمال الطلب. والكاتالوج المبندل لا يُستخدم إلا عند انقطاع معلن.
 PlayCatalog resolvePlayableGames({
+  required PlayServerState serverState,
   required List<ExperienceItem> server,
   required List<ExperienceItem> catalog,
   required List<ExperienceItem> bundled,
   required bool catalogIsBundled,
+  required bool allowBundledFallback,
 }) {
-  final seen = <String>{};
-  final games = <ExperienceItem>[];
-
-  void addAll(Iterable<ExperienceItem> items) {
-    for (final item in items) {
-      // المعرّفات تُقارَن بعد تطبيع سابقة `game-`: الخادم والحزمة كتباها بصيغتين.
-      final id = item.id;
-      final prefixed = id.startsWith('game-') ? id : 'game-$id';
-      final bare = id.startsWith('game-') ? id.substring(5) : id;
-      if (seen.contains(id) || seen.contains(prefixed) || seen.contains(bare)) {
-        continue;
-      }
-      seen
-        ..add(id)
-        ..add(prefixed)
-        ..add(bare);
-      games.add(item);
-    }
+  if (serverState == PlayServerState.completed) {
+    return PlayCatalog(games: List.unmodifiable(server), usesBundled: false);
   }
 
-  addAll(server);
-  addAll(catalog);
-
-  // الشرطان معًا: لا شيء حيّ، **و**الكاتالوج يعلن أنه مبندل. فردٌّ فارغ صحيح من
-  // الخادم (الطفل التجريبي يُعيد `[]` بقصد) لا يُعتبر انقطاعًا فتُحشَر له الحزمة.
-  if (games.isEmpty && catalogIsBundled) {
-    addAll(bundled);
-    return PlayCatalog(games: List.unmodifiable(games), usesBundled: games.isNotEmpty);
+  if (serverState == PlayServerState.loading) {
+    return const PlayCatalog(games: <ExperienceItem>[], usesBundled: false);
   }
 
-  return PlayCatalog(games: List.unmodifiable(games), usesBundled: false);
+  if (!catalogIsBundled && catalog.isNotEmpty) {
+    return PlayCatalog(games: List.unmodifiable(catalog), usesBundled: false);
+  }
+
+  if (allowBundledFallback && bundled.isNotEmpty) {
+    return PlayCatalog(games: List.unmodifiable(bundled), usesBundled: true);
+  }
+
+  return const PlayCatalog(games: <ExperienceItem>[], usesBundled: false);
 }

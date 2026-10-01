@@ -19,16 +19,19 @@ library;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:majarra/features/games/engine/block_code_engine.dart';
 import 'package:majarra/features/games/engine/game_board_kit.dart';
 import 'package:majarra/features/games/engine/game_pack.dart';
 import 'package:majarra/features/games/engine/game_services.dart';
 import 'package:majarra/features/games/engine/game_session_controller.dart';
+import 'package:majarra/features/games/engine/rhythm_tap_engine.dart';
 import 'package:majarra/features/games/engine/sim_lab_engine.dart';
 import 'package:majarra/features/games/engine/timeline_map_engine.dart';
 import 'package:majarra/features/games/engine/wave_two_engines.dart';
 import 'package:majarra/features/games/presentation/pages/game_screen.dart';
+import 'package:majarra/features/games/presentation/widgets/drawing_asset.dart';
 
 /// A minimal pack wrapper around one authored level.
 Map<String, dynamic> packWith(
@@ -43,7 +46,7 @@ Map<String, dynamic> packWith(
     'supports_dpad': supportsDpad,
     'progression': {'levels_to_finish': 1, 'advance_on': 'level_complete'},
     'accessibility': {
-      'min_touch_target_dp': 56,
+      'min_touch_target_dp': 64,
       'sequential_tap_alternative': true,
       'reduced_motion_supported': true,
       'simplified_motor': {'tolerance_dp': 40, 'coverage_required': 0.6},
@@ -53,19 +56,28 @@ Map<String, dynamic> packWith(
   };
 }
 
-({GameSessionController controller, RecordingAttemptReporter reporter, SilentGameAudioService audio})
-    session(Map<String, dynamic> packJson) {
+({
+  GameSessionController controller,
+  RecordingAttemptReporter reporter,
+  SilentGameAudioService audio,
+})
+session(
+  Map<String, dynamic> packJson, {
+  String gameId = 'game-test',
+  GameAccessibilitySettings settings = const GameAccessibilitySettings(),
+}) {
   final reporter = RecordingAttemptReporter();
   final audio = SilentGameAudioService();
   var counter = 0;
   final controller = GameSessionController(
     pack: GamePack.fromJson(packJson),
-    gameId: 'game-test',
+    gameId: gameId,
     childId: 'child-test',
     ageTrack: AgeTrack.kids,
     audio: audio,
     reporter: reporter,
     eventIdFactory: () => 'event-${counter++}',
+    settings: settings,
   );
   return (controller: controller, reporter: reporter, audio: audio);
 }
@@ -74,13 +86,48 @@ Future<void> pumpEngine(
   WidgetTester tester,
   Widget Function(BuildContext) build,
 ) async {
-  await tester.pumpWidget(MaterialApp(
-    home: Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(body: Builder(builder: build)),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(body: Builder(builder: build)),
+      ),
     ),
-  ));
+  );
   await tester.pump();
+}
+
+bool primaryFocusIsWithin(Finder finder) {
+  final focusContext = FocusManager.instance.primaryFocus?.context;
+  if (focusContext is! Element) return false;
+
+  final targets = finder.evaluate().toSet();
+  if (targets.contains(focusContext)) return true;
+
+  var found = false;
+  focusContext.visitAncestorElements((ancestor) {
+    found = targets.contains(ancestor);
+    return !found;
+  });
+  if (found) return true;
+
+  for (final target in targets) {
+    target.visitAncestorElements((ancestor) {
+      found = ancestor == focusContext;
+      return !found;
+    });
+    if (found) return true;
+  }
+  return false;
+}
+
+Future<void> tabTo(WidgetTester tester, Finder finder) async {
+  for (var index = 0; index < 30; index++) {
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    if (primaryFocusIsWithin(finder)) return;
+  }
+  fail('Could not focus ${finder.description} with Tab.');
 }
 
 void main() {
@@ -100,7 +147,10 @@ void main() {
           .map((f) => f.uri.pathSegments.last)
           .where((name) => name.endsWith('.md'))
           // `05-count-quantity.md` -> `count_quantity`
-          .map((name) => name.replaceFirst(RegExp(r'^\d+-'), '').replaceAll('.md', ''))
+          .map(
+            (name) =>
+                name.replaceFirst(RegExp(r'^\d+-'), '').replaceAll('.md', ''),
+          )
           .map((name) => name.replaceAll('-', '_'))
           .toSet();
 
@@ -108,54 +158,132 @@ void main() {
       expect(registered, equals(documented));
     });
 
-    test('every registered engine declares D-pad support explicitly', () {
-      final registry = buildDefaultRegistry();
-      // trace_color is the only engine that needs a pointer.
-      expect(registry.playableOnTelevision('trace_color', packSupportsDpad: true), isFalse);
-      for (final id in registry.engineIds.where((id) => id != 'trace_color')) {
+    testWidgets(
+      'every registered engine declares D-pad support and rhythm stays accessible',
+      (tester) async {
+        final registry = buildDefaultRegistry();
+        // trace_color is the only engine that needs a pointer.
         expect(
-          registry.playableOnTelevision(id, packSupportsDpad: true),
-          isTrue,
-          reason: '$id declares supports_dpad in its contract',
+          registry.playableOnTelevision('trace_color', packSupportsDpad: true),
+          isFalse,
         );
-      }
-    });
+        for (final id in registry.engineIds.where(
+          (id) => id != 'trace_color',
+        )) {
+          expect(
+            registry.playableOnTelevision(id, packSupportsDpad: true),
+            isTrue,
+            reason: '$id declares supports_dpad in its contract',
+          );
+        }
+
+        final s = session(
+          packWith('rhythm_tap', {
+            'level': 1,
+            'track': 'asset-existing-track',
+            'track_duration_ms': 5000,
+            'lanes': 2,
+            'hit_window_ms': 450,
+            'accuracy_to_pass': 0.5,
+            'notes': [
+              {'time_ms': 1000, 'lane': 0},
+              {'time_ms': 2000, 'lane': 1},
+            ],
+            'visual_pulse': true,
+            'never_fail': true,
+          }),
+          gameId: 'game-wave2-rhythm',
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(2),
+                disableAnimations: true,
+              ),
+              child: child!,
+            ),
+            home: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(
+                body: Builder(
+                  builder: (context) =>
+                      const RhythmTapEngine().build(context, s.controller),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final stageImages = tester
+            .widgetList<Image>(find.byType(Image))
+            .map((image) => image.image)
+            .whereType<AssetImage>()
+            .map((image) => image.assetName);
+        expect(
+          stageImages,
+          contains(endsWith('wave2-rhythm/stage-background.webp')),
+        );
+        expect(find.byKey(const Key('rhythm_stage_art')), findsOneWidget);
+        expect(
+          Directionality.of(
+            tester.element(find.byKey(const ValueKey('rhythm_lane_0'))),
+          ),
+          TextDirection.ltr,
+        );
+        expect(
+          tester
+              .widget<AnimatedContainer>(
+                find.byKey(const ValueKey('rhythm_lane_glow_0')),
+              )
+              .duration,
+          Duration.zero,
+        );
+        final lane = find.byKey(const ValueKey('rhythm_lane_0'));
+        await tabTo(tester, lane);
+        expect(primaryFocusIsWithin(lane), isTrue);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 
   // ---------------------------------------------------------- count_quantity
 
   group('count_quantity', () {
     Map<String, dynamic> level({String mode = 'count_and_pick'}) => {
-          'level': 1,
-          'mode': mode,
-          'scoring': 'discrete',
-          'range': [1, 5],
-          'numeral_system': 'arabic_indic',
-          'count_aloud_on_error': true,
-          'allow_recount_button': true,
+      'level': 1,
+      'mode': mode,
+      'scoring': 'discrete',
+      'range': [1, 5],
+      'numeral_system': 'arabic_indic',
+      'count_aloud_on_error': true,
+      'allow_recount_button': true,
+      'items': [
+        {
+          'id': 'q1',
           'items': [
-            {
-              'id': 'q1',
-              'items': [
-                {'image': 'asset-star', 'count': 3}
-              ],
-              'question_key': 'count.how_many',
-              'options': [2, 3, 4],
-              'answer': 3,
-            },
-            {
-              'id': 'q2',
-              'items': [
-                {'image': 'asset-star', 'count': 5}
-              ],
-              'question_key': 'count.how_many',
-              'options': [4, 5, 6],
-              'answer': 5,
-            },
+            {'image': 'asset-star', 'count': 3},
           ],
-        };
+          'question_key': 'count.how_many',
+          'options': [2, 3, 4],
+          'answer': 3,
+        },
+        {
+          'id': 'q2',
+          'items': [
+            {'image': 'asset-star', 'count': 5},
+          ],
+          'question_key': 'count.how_many',
+          'options': [4, 5, 6],
+          'answer': 5,
+        },
+      ],
+    };
 
-    testWidgets('all items right on the first try scores full marks', (tester) async {
+    testWidgets('all items right on the first try scores full marks', (
+      tester,
+    ) async {
       final s = session(packWith('count_quantity', level()));
       await pumpEngine(
         tester,
@@ -176,15 +304,20 @@ void main() {
       expect(s.reporter.attempts.single.helpUsed, isFalse);
     });
 
-    testWidgets('a wrong answer counts aloud instead of rejecting', (tester) async {
+    testWidgets('a wrong answer counts aloud instead of rejecting', (
+      tester,
+    ) async {
       final s = session(packWith('count_quantity', level()));
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => const CountQuantityEngine().build(context, s.controller),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  const CountQuantityEngine().build(context, s.controller),
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.byKey(const ValueKey('count_option_2')));
@@ -199,17 +332,61 @@ void main() {
       expect(find.byKey(const ValueKey('count_option_3')), findsOneWidget);
     });
 
-    testWidgets('the recount button is present before any mistake', (tester) async {
-      final s = session(packWith('count_quantity', level()));
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => const CountQuantityEngine().build(context, s.controller),
+    testWidgets('the recount button is present before any mistake', (
+      tester,
+    ) async {
+      final s = session(packWith('count_quantity', level(mode: 'drag_amount')));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  const CountQuantityEngine().build(context, s.controller),
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump();
       expect(find.byKey(const Key('count_recount_button')), findsOneWidget);
+
+      final source = find.byKey(const ValueKey('drag_source_0'));
+      final sourceSemantics = tester.widget<Semantics>(
+        find.ancestor(of: source, matching: find.byType(Semantics)).first,
+      );
+      expect(sourceSemantics.properties.button, isTrue);
+      expect(sourceSemantics.properties.label, 'نجمة رقم ١');
+      await tabTo(tester, source);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+
+      final boxSemantics = tester.widget<Semantics>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.label == 'عدد العناصر في الصندوق',
+        ),
+      );
+      expect(boxSemantics.properties.liveRegion, isTrue);
+      expect(boxSemantics.properties.value, '١');
+      final recountSize = tester.getSize(
+        find.byKey(const Key('count_recount_button')),
+      );
+      expect(recountSize.width, greaterThanOrEqualTo(64));
+      expect(recountSize.height, greaterThanOrEqualTo(64));
+
+      final empty = session(
+        packWith('count_quantity', {'level': 1, 'items': const []}),
+      );
+      await pumpEngine(
+        tester,
+        (context) =>
+            const CountQuantityEngine().build(context, empty.controller),
+      );
+      expect(find.byType(GameStatePanel), findsOneWidget);
+      expect(
+        find.text('لا توجد عناصر للعد هنا. جرّب مستوى آخر.'),
+        findsOneWidget,
+      );
     });
 
     test('numeral formatting is display only', () {
@@ -226,39 +403,49 @@ void main() {
 
   group('logic_pattern', () {
     Map<String, dynamic> matrixLevel() => {
-          'level': 4,
-          'mode': 'matrix_3x3',
-          'scoring': 'discrete',
-          'grid': [
-            ['asset-a1', 'asset-a2', 'asset-a3'],
-            ['asset-b1', 'asset-b2', 'asset-b3'],
-            ['asset-c1', 'asset-c2', null],
-          ],
-          'options': ['asset-c3', 'asset-x1', 'asset-x2', 'asset-x3', 'asset-x4'],
-          'answer': 'asset-c3',
-          'rule_key': 'rule.rotate_and_shift',
-          'changing_dimensions': ['rotation', 'color'],
-          'require_explanation': true,
-          'explain_options': ['rule.rotate_and_shift', 'rule.mirror_only', 'rule.color_only'],
-          'explain_answer': 'rule.rotate_and_shift',
-        };
+      'level': 4,
+      'mode': 'matrix_3x3',
+      'scoring': 'discrete',
+      'grid': [
+        ['asset-a1', 'asset-a2', 'asset-a3'],
+        ['asset-b1', 'asset-b2', 'asset-b3'],
+        ['asset-c1', 'asset-c2', null],
+      ],
+      'options': ['asset-c3', 'asset-x1', 'asset-x2', 'asset-x3', 'asset-x4'],
+      'answer': 'asset-c3',
+      'rule_key': 'rule.rotate_and_shift',
+      'changing_dimensions': ['rotation', 'color'],
+      'require_explanation': true,
+      'explain_options': [
+        'rule.rotate_and_shift',
+        'rule.mirror_only',
+        'rule.color_only',
+      ],
+      'explain_answer': 'rule.rotate_and_shift',
+    };
 
-    testWidgets('a correct answer without the explanation cannot reach mastery',
-        (tester) async {
+    testWidgets('a correct answer without the explanation cannot reach mastery', (
+      tester,
+    ) async {
       final s = session(packWith('logic_pattern', matrixLevel()));
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => const LogicPatternEngine().build(context, s.controller),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  const LogicPatternEngine().build(context, s.controller),
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.byKey(const ValueKey('logic_option_asset-c3')));
       await tester.pumpAndSettle();
       // Wrong rule chosen.
-      await tester.tap(find.byKey(const ValueKey('logic_explain_rule.mirror_only')));
+      await tester.tap(
+        find.byKey(const ValueKey('logic_explain_rule.mirror_only')),
+      );
       await tester.pumpAndSettle();
 
       final attempt = s.reporter.attempts.single;
@@ -269,35 +456,46 @@ void main() {
       expect(attempt.score / attempt.maxScore, lessThan(0.8));
     });
 
-    testWidgets('answer and explanation together score both marks', (tester) async {
+    testWidgets('answer and explanation together score both marks', (
+      tester,
+    ) async {
       final s = session(packWith('logic_pattern', matrixLevel()));
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => const LogicPatternEngine().build(context, s.controller),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  const LogicPatternEngine().build(context, s.controller),
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump();
       await tester.tap(find.byKey(const ValueKey('logic_option_asset-c3')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('logic_explain_rule.rotate_and_shift')));
+      await tester.tap(
+        find.byKey(const ValueKey('logic_explain_rule.rotate_and_shift')),
+      );
       await tester.pumpAndSettle();
 
       expect(s.reporter.attempts.single.score, 2);
       expect(s.reporter.attempts.single.maxScore, 2);
     });
 
-    testWidgets('hints point at the rule, and the answer is never eliminated',
-        (tester) async {
+    testWidgets('hints point at the rule, and the answer is never eliminated', (
+      tester,
+    ) async {
       final s = session(packWith('logic_pattern', matrixLevel()));
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => const LogicPatternEngine().build(context, s.controller),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  const LogicPatternEngine().build(context, s.controller),
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump();
 
       for (var i = 0; i < 3; i++) {
@@ -306,18 +504,24 @@ void main() {
       }
       // The rule is what gets explained, and the correct option is still offered.
       expect(s.audio.played, contains('vo.hint_2'));
-      expect(find.byKey(const ValueKey('logic_option_asset-c3')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('logic_option_asset-c3')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('every cell carries a text alternative', (tester) async {
       final s = session(packWith('logic_pattern', matrixLevel()));
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => const LogicPatternEngine().build(context, s.controller),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  const LogicPatternEngine().build(context, s.controller),
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump();
 
       // Asserted on the declared label rather than the merged semantics tree: the
@@ -325,12 +529,13 @@ void main() {
       // stable thing to match on, while the declaration is exactly the contract
       // item ("وصف بديل لكل خلية").
       Finder labelled(String label) => find.byWidgetPredicate(
-            (widget) => widget is Semantics && widget.properties.label == label,
-          );
+        (widget) => widget is Semantics && widget.properties.label == label,
+      );
 
-      // Colour is never the only channel: a glyph and a label accompany each cell.
-      expect(labelled('asset-a1'), findsOneWidget);
-      expect(labelled('asset-c2'), findsOneWidget);
+      // Colour is never the only channel: a stable glyph and a child-safe
+      // ordinal label accompany each unresolved cell; raw asset ids stay hidden.
+      expect(labelled('الشكل ١'), findsOneWidget);
+      expect(labelled('الشكل ٨'), findsOneWidget);
       expect(labelled('الخلية الناقصة'), findsOneWidget);
     });
   });
@@ -339,25 +544,35 @@ void main() {
 
   group('word_build', () {
     Map<String, dynamic> arabicLevel() => {
-          'level': 3,
-          'mode': 'letter',
-          'scoring': 'discrete',
-          'language': 'ar',
-          'word': 'قمر',
-          'word_audio': 'asset-vo-word-qamar',
-          'word_image': 'asset-moon',
-          'writing_direction': 'rtl',
-          'slots': 3,
-          'letters': [
-            {'char': 'ق', 'form': 'initial', 'position': 1, 'audio': 'asset-vo-qaf'},
-            {'char': 'م', 'form': 'medial', 'position': 2, 'audio': 'asset-vo-meem'},
-            {'char': 'ر', 'form': 'final', 'position': 3, 'audio': 'asset-vo-ra'},
-          ],
-          'distractors': [
-            {'char': 'ن', 'form': 'isolated', 'audio': 'asset-vo-noon'},
-          ],
-          'show_word_text_button': true,
-        };
+      'level': 3,
+      'mode': 'letter',
+      'scoring': 'discrete',
+      'language': 'ar',
+      'word': 'قمر',
+      'word_audio': 'asset-vo-word-qamar',
+      'word_image': 'asset-moon',
+      'writing_direction': 'rtl',
+      'slots': 3,
+      'letters': [
+        {
+          'char': 'ق',
+          'form': 'initial',
+          'position': 1,
+          'audio': 'asset-vo-qaf',
+        },
+        {
+          'char': 'م',
+          'form': 'medial',
+          'position': 2,
+          'audio': 'asset-vo-meem',
+        },
+        {'char': 'ر', 'form': 'final', 'position': 3, 'audio': 'asset-vo-ra'},
+      ],
+      'distractors': [
+        {'char': 'ن', 'form': 'isolated', 'audio': 'asset-vo-noon'},
+      ],
+      'show_word_text_button': true,
+    };
 
     test('a letter renders in its in-word form, not isolated', () {
       // Ignoring `form` would teach the wrong shape, which the contract calls out.
@@ -370,13 +585,16 @@ void main() {
 
     testWidgets('the written-word button is always available', (tester) async {
       final s = session(packWith('word_build', arabicLevel()));
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => const WordBuildEngine().build(context, s.controller),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  const WordBuildEngine().build(context, s.controller),
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump();
 
       // Mandatory: it is what makes the game playable without hearing.
@@ -387,42 +605,54 @@ void main() {
       expect(find.byKey(const Key('word_text_reveal')), findsOneWidget);
     });
 
-    testWidgets('tapping a letter then a slot places it, and the word completes',
-        (tester) async {
+    testWidgets(
+      'tapping a letter then a slot places it, and the word completes',
+      (tester) async {
+        final s = session(packWith('word_build', arabicLevel()));
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) =>
+                    const WordBuildEngine().build(context, s.controller),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        for (final entry in [('ق', 1, 0), ('م', 2, 1), ('ر', 3, 2)]) {
+          await tester.tap(
+            find.byKey(ValueKey('word_tile_${entry.$1}_${entry.$2}')),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(ValueKey('word_slot_${entry.$3}')));
+          await tester.pumpAndSettle();
+        }
+
+        final attempt = s.reporter.attempts.single;
+        expect(attempt.score, 1);
+        expect(attempt.maxScore, 1);
+        // The word itself is never in the payload.
+        expect(attempt.answers.single.containsKey('word'), isFalse);
+        expect(attempt.answers.single['word_length'], 3);
+      },
+    );
+
+    testWidgets('a wrong letter bounces back without punishment', (
+      tester,
+    ) async {
       final s = session(packWith('word_build', arabicLevel()));
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => const WordBuildEngine().build(context, s.controller),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  const WordBuildEngine().build(context, s.controller),
+            ),
           ),
         ),
-      ));
-      await tester.pump();
-
-      for (final entry in [('ق', 1, 0), ('م', 2, 1), ('ر', 3, 2)]) {
-        await tester.tap(find.byKey(ValueKey('word_tile_${entry.$1}_${entry.$2}')));
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(ValueKey('word_slot_${entry.$3}')));
-        await tester.pumpAndSettle();
-      }
-
-      final attempt = s.reporter.attempts.single;
-      expect(attempt.score, 1);
-      expect(attempt.maxScore, 1);
-      // The word itself is never in the payload.
-      expect(attempt.answers.single.containsKey('word'), isFalse);
-      expect(attempt.answers.single['word_length'], 3);
-    });
-
-    testWidgets('a wrong letter bounces back without punishment', (tester) async {
-      final s = session(packWith('word_build', arabicLevel()));
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => const WordBuildEngine().build(context, s.controller),
-          ),
-        ),
-      ));
+      );
       await tester.pump();
 
       // The distractor cannot occupy a slot, and the tile returns to the tray.
@@ -440,29 +670,31 @@ void main() {
 
   group('block_code interpreter', () {
     BlockGrid grid() => BlockGrid.fromJson(const {
-          'w': 4,
-          'h': 4,
-          'walls': [
-            [2, 0]
-          ],
-          'start': [0, 0],
-          'facing': 'east',
-          'goal': [3, 0],
-          'collectibles': [
-            [1, 0]
-          ],
-        });
+      'w': 4,
+      'h': 4,
+      'walls': [
+        [2, 0],
+      ],
+      'start': [0, 0],
+      'facing': 'east',
+      'goal': [3, 0],
+      'collectibles': [
+        [1, 0],
+      ],
+    });
 
     test('move advances one cell in the facing direction', () {
-      final trace = BlockInterpreter(grid: grid())
-          .run(BlockProgram.fromTokens(['move']));
+      final trace = BlockInterpreter(
+        grid: grid(),
+      ).run(BlockProgram.fromTokens(['move']));
       expect(trace.last.x, 1);
       expect(trace.last.y, 0);
     });
 
     test('a wall stops Robo and marks the causing block', () {
-      final trace = BlockInterpreter(grid: grid())
-          .run(BlockProgram.fromTokens(['move', 'move']));
+      final trace = BlockInterpreter(
+        grid: grid(),
+      ).run(BlockProgram.fromTokens(['move', 'move']));
       expect(trace.last.collided, isTrue);
       // Stopped before the wall at x=2, on the second block.
       expect(trace.last.x, 1);
@@ -477,8 +709,9 @@ void main() {
         'facing': 'east',
         'goal': [3, 0],
       });
-      final trace = BlockInterpreter(grid: open)
-          .run(BlockProgram.fromTokens(['repeat:3', 'move']));
+      final trace = BlockInterpreter(
+        grid: open,
+      ).run(BlockProgram.fromTokens(['repeat:3', 'move']));
       expect(trace.last.x, 3);
     });
 
@@ -488,14 +721,15 @@ void main() {
         'w': 4,
         'h': 2,
         'walls': [
-          [1, 0]
+          [1, 0],
         ],
         'start': [0, 0],
         'facing': 'east',
         'goal': [0, 1],
       });
-      final trace =
-          BlockInterpreter(grid: g).run(BlockProgram.fromTokens(['if_path', 'move', 'turn_right']));
+      final trace = BlockInterpreter(
+        grid: g,
+      ).run(BlockProgram.fromTokens(['if_path', 'move', 'turn_right']));
       expect(trace.last.collided, isFalse);
       expect(trace.last.x, 0);
       expect(trace.last.facing, Facing.south);
@@ -517,7 +751,7 @@ void main() {
         'facing': 'east',
         'goal': [3, 0],
         'collectibles': [
-          [1, 0]
+          [1, 0],
         ],
       });
       final open = BlockInterpreter(grid: g);
@@ -526,7 +760,8 @@ void main() {
       expect(open.reachedGoal(skipped.last), isFalse);
 
       final complete = open.run(
-          BlockProgram.fromTokens(['move', 'collect', 'move', 'move']));
+        BlockProgram.fromTokens(['move', 'collect', 'move', 'move']),
+      );
       expect(open.reachedGoal(complete.last), isTrue);
     });
 
@@ -535,7 +770,7 @@ void main() {
         'w': 3,
         'h': 2,
         'walls': [
-          [2, 0]
+          [2, 0],
         ],
         'start': [0, 0],
         'facing': 'east',
@@ -556,16 +791,165 @@ void main() {
         'facing': 'east',
         'goal': [2, 0],
       });
-      final trace = BlockInterpreter(grid: g).run(BlockProgram(
-        main: const [ProgramBlock(BlockKind.function)],
-        function: const [ProgramBlock(BlockKind.move), ProgramBlock(BlockKind.move)],
-      ));
+      final trace = BlockInterpreter(grid: g).run(
+        BlockProgram(
+          main: const [ProgramBlock(BlockKind.function)],
+          function: const [
+            ProgramBlock(BlockKind.move),
+            ProgramBlock(BlockKind.move),
+          ],
+        ),
+      );
       expect(trace.last.x, 2);
     });
 
     test('block count treats repeat as one block', () {
       final program = BlockProgram.fromTokens(['repeat:5', 'move']);
       expect(program.blockCount, 2);
+    });
+
+    testWidgets(
+      'block maze pilot keeps LTR geometry and accessible art at 2x',
+      (tester) async {
+        tester.view.physicalSize = const Size(1000, 1600);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final s = session(
+          packWith('block_code', {
+            'level': 1,
+            'prompt': 'أوصل روبو إلى الهدف',
+            'grid': {
+              'w': 4,
+              'h': 4,
+              'walls': [
+                [1, 1],
+              ],
+              'start': [0, 0],
+              'facing': 'east',
+              'goal': [3, 3],
+              'collectibles': [
+                [2, 2],
+              ],
+            },
+            'allowed_blocks': ['move', 'turn_left', 'turn_right', 'collect'],
+            'block_limit': 8,
+            'optimal_blocks': 6,
+            'step_delay_ms': 500,
+            'reference_solution': ['move'],
+          }),
+          gameId: 'game-block-maze-3',
+          settings: const GameAccessibilitySettings(reduceMotion: true),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(2),
+                disableAnimations: true,
+              ),
+              child: child!,
+            ),
+            home: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(
+                body: Builder(
+                  builder: (context) =>
+                      const BlockCodeEngine().build(context, s.controller),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.byType(DrawingAsset), findsNWidgets(3));
+        Finder semanticsLabel(String label) => find.byWidgetPredicate(
+          (widget) => widget is Semantics && widget.properties.label == label,
+        );
+        expect(semanticsLabel('روبو'), findsOneWidget);
+        expect(semanticsLabel('عائق'), findsOneWidget);
+        expect(semanticsLabel('الهدف'), findsOneWidget);
+        expect(
+          tester.getTopLeft(find.byKey(const ValueKey('block_cell_0_0'))).dx,
+          lessThan(
+            tester.getTopLeft(find.byKey(const ValueKey('block_cell_1_0'))).dx,
+          ),
+        );
+        expect(
+          Directionality.of(
+            tester.element(find.byKey(const ValueKey('block_cell_0_0'))),
+          ),
+          TextDirection.ltr,
+        );
+        final move = find.byKey(const ValueKey('block_palette_move'));
+        final turnLeft = find.byKey(const ValueKey('block_palette_turn_left'));
+        await tabTo(tester, move);
+        expect(primaryFocusIsWithin(move), isTrue);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pump();
+        expect(find.byKey(const ValueKey('block_placed_0')), findsOneWidget);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+        await tester.pump();
+        expect(primaryFocusIsWithin(turnLeft), isTrue);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pump();
+        expect(find.byKey(const ValueKey('block_placed_1')), findsOneWidget);
+        expect(find.text('الأوامر: 2 من 8'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('Robo collision has semantic and non-colour visual signals', (
+      tester,
+    ) async {
+      final s = session(
+        packWith('block_code', {
+          'level': 1,
+          'prompt': 'جرّب تحريك روبو',
+          'grid': {
+            'w': 3,
+            'h': 2,
+            'walls': [
+              [1, 0],
+            ],
+            'start': [0, 0],
+            'facing': 'east',
+            'goal': [2, 1],
+            'collectibles': const <List<int>>[],
+          },
+          'allowed_blocks': ['move'],
+          'block_limit': 2,
+          'optimal_blocks': 1,
+          'step_delay_ms': 500,
+          'reference_solution': const <String>[],
+        }),
+        gameId: 'game-block-maze-3',
+        settings: const GameAccessibilitySettings(reduceMotion: true),
+      );
+      await pumpEngine(
+        tester,
+        (context) => const BlockCodeEngine().build(context, s.controller),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('block_palette_move')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('block_run_button')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.label == 'روبو توقف أمام عائق',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('block_collision_indicator')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
     });
   });
 
@@ -575,9 +959,21 @@ void main() {
     final pendulum = SimModel(
       variables: [
         const SimVariable(
-            id: 'length_cm', labelKey: 'var.length', min: 20, max: 100, step: 20, unitKey: 'unit.cm'),
+          id: 'length_cm',
+          labelKey: 'var.length',
+          min: 20,
+          max: 100,
+          step: 20,
+          unitKey: 'unit.cm',
+        ),
         const SimVariable(
-            id: 'mass_g', labelKey: 'var.mass', min: 10, max: 50, step: 10, unitKey: 'unit.gram'),
+          id: 'mass_g',
+          labelKey: 'var.mass',
+          min: 10,
+          max: 50,
+          step: 10,
+          unitKey: 'unit.gram',
+        ),
       ],
       relationships: const {'length_cm': 'positive', 'mass_g': 'none'},
     );
@@ -601,18 +997,32 @@ void main() {
       final model = SimModel(
         variables: [
           const SimVariable(
-              id: 'light_h', labelKey: 'var.light', min: 0, max: 12, step: 1, unitKey: 'unit.hour'),
+            id: 'light_h',
+            labelKey: 'var.light',
+            min: 0,
+            max: 12,
+            step: 1,
+            unitKey: 'unit.hour',
+          ),
         ],
         relationships: const {'light_h': 'saturating'},
       );
       final low = model.measure({'light_h': 0});
       final mid = model.measure({'light_h': 4});
       final high = model.measure({'light_h': 12});
-      expect(mid - low, greaterThan(high - mid),
-          reason: 'growth must slow, which is what saturating means');
+      expect(
+        mid - low,
+        greaterThan(high - mid),
+        reason: 'growth must slow, which is what saturating means',
+      );
     });
 
-    testWidgets('a wrong prediction is recorded and never deducted', (tester) async {
+    testWidgets('a wrong prediction is recorded and never deducted', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1000, 2000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       final level = {
         'level': 4,
         'mode': 'shape',
@@ -625,10 +1035,14 @@ void main() {
             'min': 20,
             'max': 100,
             'step': 20,
-            'unit_key': 'unit.cm'
+            'unit_key': 'unit.cm',
           },
         ],
-        'measured': {'id': 'period_s', 'label_key': 'var.period', 'unit_key': 'unit.second'},
+        'measured': {
+          'id': 'period_s',
+          'label_key': 'var.period',
+          'unit_key': 'unit.second',
+        },
         'hypothesis_options': ['hyp.longer_slower', 'hyp.no_effect'],
         'expected_relationships': {'length_cm': 'positive'},
         'explanation_options': ['exp.length_only', 'exp.mass_only'],
@@ -638,25 +1052,73 @@ void main() {
         'supervision_level': 'none',
         'safety_note_key': null,
       };
-      final s = session(packWith('sim_lab', level));
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => const SimLabEngine().build(context, s.controller),
+      final s = session(
+        packWith('sim_lab', level),
+        gameId: 'game-wave1-sim-lab',
+        settings: const GameAccessibilitySettings(reduceMotion: true),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(2),
+              disableAnimations: true,
+            ),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  const SimLabEngine().build(context, s.controller),
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump();
 
+      expect(find.text('التوقع ١'), findsOneWidget);
+      expect(find.text('التوقع ٢'), findsOneWidget);
+      expect(find.textContaining('hyp.'), findsNothing);
+
       // The wrong hypothesis.
-      await tester.tap(find.byKey(const ValueKey('sim_hypothesis_hyp.no_effect')));
+      await tester.tap(
+        find.byKey(const ValueKey('sim_hypothesis_hyp.no_effect')),
+      );
       await tester.pumpAndSettle();
+
+      final labImages = tester
+          .widgetList<Image>(find.byType(Image))
+          .map((image) => image.image)
+          .whereType<AssetImage>()
+          .map((image) => image.assetName);
+      expect(
+        labImages,
+        contains(endsWith('wave1-sim-lab/lab-background.webp')),
+      );
+      expect(labImages, contains(endsWith('wave1-sim-lab/heat-apparatus.png')));
+      expect(find.byKey(const Key('sim_result_painter')), findsOneWidget);
+      expect(find.textContaining('var.'), findsNothing);
+      expect(find.textContaining('unit.'), findsNothing);
+      expect(find.textContaining('hyp.'), findsNothing);
+      for (final key in [
+        const Key('sim_record_trial'),
+        const Key('sim_go_explain'),
+        const ValueKey('sim_minus_length_cm'),
+        const ValueKey('sim_plus_length_cm'),
+      ]) {
+        final size = tester.getSize(find.byKey(key));
+        expect(size.width, greaterThanOrEqualTo(64));
+        expect(size.height, greaterThanOrEqualTo(64));
+      }
 
       // Cannot explain before the minimum number of trials.
       await tester.tap(find.byKey(const Key('sim_go_explain')));
       await tester.pumpAndSettle();
       expect(s.audio.played, contains('vo.need_more_trials'));
-      expect(find.byKey(const ValueKey('sim_explanation_exp.length_only')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('sim_explanation_exp.length_only')),
+        findsNothing,
+      );
 
       await tester.tap(find.byKey(const Key('sim_record_trial')));
       await tester.pumpAndSettle();
@@ -667,7 +1129,12 @@ void main() {
       await tester.tap(find.byKey(const Key('sim_go_explain')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('sim_explanation_exp.length_only')));
+      expect(find.text('التفسير ١'), findsOneWidget);
+      expect(find.text('التفسير ٢'), findsOneWidget);
+      expect(find.textContaining('exp.'), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey('sim_explanation_exp.length_only')),
+      );
       await tester.pumpAndSettle();
 
       final attempt = s.reporter.attempts.single;
@@ -690,9 +1157,12 @@ void main() {
       expect(x2, lessThan(x1));
     });
 
-    test('an unknown region falls back to the world rather than mis-plotting', () {
-      expect(MapBounds.forRegion('atlantis').maxLon, MapBounds.world.maxLon);
-    });
+    test(
+      'an unknown region falls back to the world rather than mis-plotting',
+      () {
+        expect(MapBounds.forRegion('atlantis').maxLon, MapBounds.world.maxLon);
+      },
+    );
 
     test('projection and unprojection round-trip', () {
       final bounds = MapBounds.forRegion('middle_east_north_africa');
@@ -721,6 +1191,226 @@ void main() {
       expect(centuryDescription(1), 'القرن الأول الميلادي');
       expect(centuryDescription(100), 'القرن الأول الميلادي');
       expect(centuryDescription(101), 'القرن الثاني الميلادي');
+    });
+
+    testWidgets(
+      'Egypt pilot shows event scene and an unmirrored real map at 2x',
+      (tester) async {
+        tester.view.physicalSize = const Size(1000, 1500);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final s = session(
+          packWith('timeline_map', {
+            'level': 1,
+            'mode': 'map',
+            'prompt': 'ضع الحدث على الخريطة',
+            'map': {
+              'region': 'middle_east_north_africa',
+              'projection': 'equirectangular',
+              'mirror_in_rtl': false,
+            },
+            'events': [
+              {
+                'id': 'pyramids',
+                'label_key': 'timeline.event.pyramids',
+                'image': 'timeline.event.pyramids',
+                'lat': 29.9792,
+                'lon': 31.1342,
+                'tolerance_km': 200,
+              },
+            ],
+          }),
+          gameId: 'game-timeline-egypt-3',
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(2),
+                disableAnimations: true,
+              ),
+              child: child!,
+            ),
+            home: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(
+                body: Builder(
+                  builder: (context) =>
+                      const TimelineMapEngine().build(context, s.controller),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final assetNames = tester
+            .widgetList<Image>(find.byType(Image))
+            .map((image) => image.image)
+            .whereType<AssetImage>()
+            .map((image) => image.assetName);
+        expect(
+          assetNames,
+          contains(endsWith('wave2-timeline/event-pyramids.webp')),
+        );
+        expect(
+          assetNames,
+          contains(
+            endsWith('wave3-timeline-detail/map-timeline-background.webp'),
+          ),
+        );
+        expect(
+          Directionality.of(
+            tester.element(find.byKey(const Key('timeline_map_surface'))),
+          ),
+          TextDirection.ltr,
+        );
+        expect(
+          Directionality.of(
+            tester.element(find.byKey(const Key('timeline_event_art'))),
+          ),
+          TextDirection.ltr,
+          reason: 'event artwork must never mirror in RTL',
+        );
+        expect(find.byTooltip('حرّك غربًا'), findsOneWidget);
+        expect(find.byTooltip('حرّك شرقًا'), findsOneWidget);
+        expect(find.text('بناء الأهرام'), findsOneWidget);
+        for (final action in [
+          find.byTooltip('اسمع الاسم'),
+          find.byKey(const Key('timeline_map_west')),
+          find.byKey(const Key('timeline_map_north')),
+          find.byKey(const Key('timeline_map_south')),
+          find.byKey(const Key('timeline_map_east')),
+          find.byKey(const Key('timeline_submit_place')),
+        ]) {
+          final size = tester.getSize(action);
+          expect(size.width, greaterThanOrEqualTo(64));
+          expect(size.height, greaterThanOrEqualTo(64));
+        }
+
+        final west = find.byKey(const Key('timeline_map_west'));
+        final north = find.byKey(const Key('timeline_map_north'));
+        final description = find.byKey(const Key('timeline_map_description'));
+        final before = tester.widget<Text>(description).data;
+        await tabTo(tester, west);
+        expect(primaryFocusIsWithin(west), isTrue);
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+        await tester.pump();
+        expect(primaryFocusIsWithin(north), isTrue);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pump();
+        expect(tester.widget<Text>(description).data, isNot(before));
+
+        await tester.tap(find.byKey(const Key('timeline_submit_place')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('timeline_retry_feedback')),
+          findsOneWidget,
+        );
+        expect(
+          find.text('حرّك العلامة شرقًا ثم جرّب مرة أخرى'),
+          findsOneWidget,
+        );
+        expect(find.byIcon(Icons.east_rounded), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('unknown event key uses a neutral child-facing label', (
+      tester,
+    ) async {
+      const rawKey = 'timeline.event.internal_missing_scene';
+      final s = session(
+        packWith('timeline_map', {
+          'level': 1,
+          'mode': 'timeline',
+          'timeline': {'from': 600, 'to': 1000},
+          'events': [
+            {
+              'id': 'unknown-event',
+              'label_key': rawKey,
+              'image': 'asset-missing-event-scene',
+              'year': 800,
+            },
+          ],
+        }),
+        gameId: 'game-timeline-egypt-3',
+      );
+      await pumpEngine(
+        tester,
+        (context) => const TimelineMapEngine().build(context, s.controller),
+      );
+
+      expect(find.text('حدث تاريخي'), findsOneWidget);
+      expect(find.textContaining(rawKey), findsNothing);
+      expect(find.textContaining('timeline.event.'), findsNothing);
+      expect(find.bySemanticsLabel('الحدث: حدث تاريخي'), findsOneWidget);
+
+      final empty = session(
+        packWith('timeline_map', {'level': 1, 'events': const []}),
+      );
+      await pumpEngine(
+        tester,
+        (context) => const TimelineMapEngine().build(context, empty.controller),
+      );
+      expect(find.byType(GameStatePanel), findsOneWidget);
+      expect(
+        find.text('لا توجد أحداث للعب هنا. جرّب مستوى آخر.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the authored timeline follows Arabic reading direction', (
+      tester,
+    ) async {
+      final s = session(
+        packWith('timeline_map', {
+          'level': 1,
+          'mode': 'timeline',
+          'timeline': {'from': 600, 'to': 1000},
+          'events': [
+            {
+              'id': 'library',
+              'label_key': 'timeline.event.library_alex',
+              'image': 'timeline.event.library_alex',
+              'year': 800,
+              'tolerance_years': 20,
+            },
+          ],
+        }),
+        gameId: 'game-wave2-timeline',
+      );
+      await pumpEngine(
+        tester,
+        (context) => const TimelineMapEngine().build(context, s.controller),
+      );
+
+      expect(
+        Directionality.of(
+          tester.element(find.byKey(const Key('timeline_year_slider'))),
+        ),
+        TextDirection.rtl,
+      );
+      final timelineImages = tester
+          .widgetList<Image>(find.byType(Image))
+          .map((image) => image.image)
+          .whereType<AssetImage>()
+          .map((image) => image.assetName);
+      expect(
+        timelineImages,
+        contains(endsWith('wave2-timeline/timeline-background.webp')),
+      );
+      expect(find.byKey(const Key('timeline_background_art')), findsOneWidget);
+      for (final key in [
+        const Key('timeline_year_minus'),
+        const Key('timeline_year_plus'),
+        const Key('timeline_submit_year'),
+      ]) {
+        final size = tester.getSize(find.byKey(key));
+        expect(size.width, greaterThanOrEqualTo(64));
+        expect(size.height, greaterThanOrEqualTo(64));
+      }
+      expect(tester.takeException(), isNull);
     });
   });
 }

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 768" role="img" aria-label="سمكة مرجانية ودودة">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#FF7C64"/><stop offset="1" stop-color="#D9443F"/></linearGradient>
+    <linearGradient id="belly" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFE8C7"/><stop offset="1" stop-color="#F5C48F"/></linearGradient>
+  </defs>
+  <g stroke="#172F4F" stroke-width="22" stroke-linejoin="round" stroke-linecap="round">
+    <path fill="#F15D4C" d="M574 331 700 221v322L574 436Z"/>
+    <path fill="url(#body)" d="M104 384c0-174 125-269 287-269 145 0 264 103 264 269S536 653 391 653C229 653 104 558 104 384Z"/>
+    <path fill="#ED5C4B" d="M304 142 384 49l62 111Z"/>
+    <path fill="#ED5C4B" d="M173 327 68 260l44 129Z"/>
+    <path fill="#ED5C4B" d="M173 441 68 508l44-129Z"/>
+    <path fill="url(#belly)" d="M217 470c46 110 117 151 185 151s135-43 180-151c-105 40-258 40-365 0Z"/>
+    <path fill="#F16B50" d="M459 244q49 19 77 59m-97-89q64 13 103 46"/>
+  </g>
+  <g fill="#FFF" stroke="#172F4F" stroke-width="15"><circle cx="292" cy="340" r="47"/><circle cx="464" cy="340" r="47"/></g>
+  <g fill="#5E3B2B"><circle cx="292" cy="343" r="25"/><circle cx="464" cy="343" r="25"/></g>
+  <circle cx="282" cy="332" r="9" fill="#FFF"/><circle cx="454" cy="332" r="9" fill="#FFF"/>
+  <path d="M343 425q48 43 96 0" fill="none" stroke="#172F4F" stroke-width="16" stroke-linecap="round"/>
+  <path d="M621 385h41" stroke="#F7CE58" stroke-width="18" stroke-linecap="round"/>
+</svg>

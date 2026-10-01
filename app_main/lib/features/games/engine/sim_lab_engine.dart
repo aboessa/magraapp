@@ -28,10 +28,18 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'game_art.dart';
 import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
 import 'game_session_controller.dart';
+
+String _simLabel(String technicalId, String fallback) {
+  return safeChildFacingLabel(
+    technicalId: technicalId,
+    arabicFallback: fallback,
+  );
+}
 
 /// A variable the child can move.
 class SimVariable {
@@ -45,13 +53,13 @@ class SimVariable {
   });
 
   factory SimVariable.fromJson(Map<String, dynamic> json) => SimVariable(
-        id: str(json, 'id'),
-        labelKey: str(json, 'label_key'),
-        min: doubleOr(json, 'min', 0),
-        max: doubleOr(json, 'max', 1),
-        step: doubleOr(json, 'step', 1),
-        unitKey: str(json, 'unit_key'),
-      );
+    id: str(json, 'id'),
+    labelKey: str(json, 'label_key'),
+    min: doubleOr(json, 'min', 0),
+    max: doubleOr(json, 'max', 1),
+    step: doubleOr(json, 'step', 1),
+    unitKey: str(json, 'unit_key'),
+  );
 
   final String id;
   final String labelKey;
@@ -179,14 +187,20 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
     if (raw is! Map) return const {};
     return {
       for (final entry in raw.entries)
-        entry.key.toString(): entry.value is String ? entry.value as String : 'none',
+        entry.key.toString(): entry.value is String
+            ? entry.value as String
+            : 'none',
     };
   }
 
   List<String> get _hypothesisOptions =>
-      (_level['hypothesis_options'] as List<dynamic>? ?? const []).whereType<String>().toList();
+      (_level['hypothesis_options'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList();
   List<String> get _explanationOptions =>
-      (_level['explanation_options'] as List<dynamic>? ?? const []).whereType<String>().toList();
+      (_level['explanation_options'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList();
   String get _explanationAnswer => str(_level, 'explanation_answer');
   int get _minTrials => intOr(_level, 'min_trials_before_explain', 2);
   String get _supervision => str(_level, 'supervision_level');
@@ -195,7 +209,31 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
     return value is String && value.isNotEmpty ? value : null;
   }
 
-  SimModel get _model => SimModel(variables: _variables, relationships: _relationships);
+  String? get _apparatusAssetId => switch (widget.controller.gameId) {
+    'game-wave1-sim-lab' => 'asset-heat-apparatus',
+    'game-wave3-sim-saturating' => 'asset-beaker-water',
+    _ => null,
+  };
+
+  bool get _hasReviewedLabArt => _apparatusAssetId != null;
+
+  String _variableLabel(SimVariable variable) {
+    final index = _variables.indexWhere((entry) => entry.id == variable.id);
+    return _simLabel(
+      variable.labelKey,
+      'المتغيّر ${formatNumeral(index < 0 ? 1 : index + 1, 'arabic_indic')}',
+    );
+  }
+
+  String _unitLabel(String unitKey) => _simLabel(unitKey, 'وحدة');
+
+  String get _measuredLabel =>
+      _simLabel(str(_measured, 'label_key'), 'النتيجة');
+
+  String get _measuredUnit => _simLabel(str(_measured, 'unit_key'), 'درجة');
+
+  SimModel get _model =>
+      SimModel(variables: _variables, relationships: _relationships);
 
   bool get _canExplain => _trials.length >= _minTrials;
 
@@ -211,7 +249,11 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
 
   Future<void> _runTrial() async {
     final measured = _model.measure(_settings);
-    setState(() => _trials.add(SimTrial(settings: Map.of(_settings), measured: measured)));
+    setState(
+      () => _trials.add(
+        SimTrial(settings: Map.of(_settings), measured: measured),
+      ),
+    );
     await widget.controller.speakVoiceKey('vo.trial_recorded');
   }
 
@@ -294,7 +336,14 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
                 children: [
                   const Icon(Icons.shield_outlined),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(_safetyNoteKey!)),
+                  Expanded(
+                    child: Text(
+                      _simLabel(
+                        _safetyNoteKey!,
+                        'اتبع تعليمات السلامة مع شخص بالغ.',
+                      ),
+                    ),
+                  ),
                 ],
               ),
             )
@@ -347,15 +396,18 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
       children: [
         Text('ما توقعك؟', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 12),
-        for (final option in _hypothesisOptions)
+        for (var index = 0; index < _hypothesisOptions.length; index++)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: ChoiceTile(
-              key: ValueKey('sim_hypothesis_$option'),
-              label: option,
-              selected: _prediction == option,
+              key: ValueKey('sim_hypothesis_${_hypothesisOptions[index]}'),
+              label: _simLabel(
+                _hypothesisOptions[index],
+                'التوقع ${formatNumeral(index + 1, 'arabic_indic')}',
+              ),
+              selected: _prediction == _hypothesisOptions[index],
               touchTarget: target,
-              onPressed: () => _predict(option),
+              onPressed: () => _predict(_hypothesisOptions[index]),
             ),
           ),
       ],
@@ -366,6 +418,10 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_hasReviewedLabArt) ...[
+          _labVisualization(),
+          const SizedBox(height: 12),
+        ],
         for (final variable in _variables) _variableControl(variable, target),
         const SizedBox(height: 12),
         Container(
@@ -377,9 +433,9 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
           child: Semantics(
             liveRegion: true,
             child: Text(
-              '${str(_measured, 'label_key')}: '
+              '$_measuredLabel: '
               '${_model.measure(_settings).toStringAsFixed(1)} '
-              '${str(_measured, 'unit_key')}',
+              '$_measuredUnit',
               key: const Key('sim_measured_value'),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium,
@@ -388,6 +444,7 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
         ),
         const SizedBox(height: 12),
         FilledButton.icon(
+          style: gameActionStyle(target),
           key: const Key('sim_record_trial'),
           onPressed: _runTrial,
           icon: const Icon(Icons.science_outlined),
@@ -397,13 +454,61 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
         _resultsTable(),
         const SizedBox(height: 12),
         OutlinedButton(
+          style: gameActionStyle(target),
           key: const Key('sim_go_explain'),
           onPressed: _goToExplain,
-          child: Text(_canExplain
-              ? 'انتقل إلى التفسير'
-              : 'جرّب ${_minTrials - _trials.length} مرة أخرى'),
+          child: Text(
+            _canExplain
+                ? 'انتقل إلى التفسير'
+                : 'جرّب ${_minTrials - _trials.length} مرة أخرى',
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _labVisualization() {
+    final measured = _model.measure(_settings);
+    final normalized = ((measured - 1) / 9).clamp(0.0, 1.0);
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: 'تمثيل بصري للنتيجة الحالية',
+      value: '$_measuredLabel ${measured.toStringAsFixed(1)} $_measuredUnit',
+      child: SizedBox(
+        key: const Key('sim_lab_visualization'),
+        height: 190,
+        child: GameDecorativeSurface(
+          role: GameArtRole.lab,
+          gameId: widget.controller.gameId,
+          scrimOpacity: 0.28,
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: DecorativeGameArt(
+                  key: const Key('sim_apparatus_art'),
+                  role: GameArtRole.apparatus,
+                  assetId: _apparatusAssetId,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              ExcludeSemantics(
+                child: CustomPaint(
+                  key: const Key('sim_result_painter'),
+                  painter: _SimResultPainter(
+                    value: normalized,
+                    foreground: scheme.primary,
+                    background: scheme.surface.withValues(alpha: 0.72),
+                    outline: scheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -422,12 +527,16 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${variable.labelKey}  ${value.toStringAsFixed(0)} ${variable.unitKey}'),
+          Text(
+            '${_variableLabel(variable)}  ${value.toStringAsFixed(0)} '
+            '${_unitLabel(variable.unitKey)}',
+          ),
           Row(
             children: [
               // The +/- buttons are the mandatory slider alternative, and are
               // present regardless of whether the slider is usable.
               IconButton(
+                style: gameActionStyle(target),
                 key: ValueKey('sim_minus_${variable.id}'),
                 onPressed: () => nudge(-variable.step),
                 icon: const Icon(Icons.remove_circle_outline),
@@ -441,12 +550,16 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
                   max: variable.max,
                   divisions: variable.step <= 0
                       ? null
-                      : ((variable.max - variable.min) / variable.step).round().clamp(1, 100),
+                      : ((variable.max - variable.min) / variable.step)
+                            .round()
+                            .clamp(1, 100),
                   label: value.toStringAsFixed(0),
-                  onChanged: (next) => setState(() => _settings[variable.id] = next),
+                  onChanged: (next) =>
+                      setState(() => _settings[variable.id] = next),
                 ),
               ),
               IconButton(
+                style: gameActionStyle(target),
                 key: ValueKey('sim_plus_${variable.id}'),
                 onPressed: () => nudge(variable.step),
                 icon: const Icon(Icons.add_circle_outline),
@@ -479,35 +592,48 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
           width: _tableHighlighted ? 3 : 1,
         ),
       ),
-      child: Table(
-        defaultColumnWidth: const IntrinsicColumnWidth(),
-        children: [
-          TableRow(children: [
-            for (final variable in _variables)
-              Padding(
-                padding: const EdgeInsets.all(4),
-                child: Text(variable.labelKey,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(4),
-              child: Text(str(_measured, 'label_key'),
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ]),
-          for (final trial in _trials)
-            TableRow(children: [
-              for (final variable in _variables)
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Table(
+          defaultColumnWidth: const IntrinsicColumnWidth(),
+          children: [
+            TableRow(
+              children: [
+                for (final variable in _variables)
+                  Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Text(
+                      _variableLabel(variable),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(4),
-                  child: Text((trial.settings[variable.id] ?? 0).toStringAsFixed(0)),
+                  child: Text(
+                    _measuredLabel,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
-              Padding(
-                padding: const EdgeInsets.all(4),
-                child: Text(trial.measured.toStringAsFixed(1)),
+              ],
+            ),
+            for (final trial in _trials)
+              TableRow(
+                children: [
+                  for (final variable in _variables)
+                    Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Text(
+                        (trial.settings[variable.id] ?? 0).toStringAsFixed(0),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Text(trial.measured.toStringAsFixed(1)),
+                  ),
+                ],
               ),
-            ]),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -519,16 +645,19 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
         const SizedBox(height: 16),
         Text('فسّر ما حدث', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 12),
-        for (final option in _explanationOptions)
+        for (var index = 0; index < _explanationOptions.length; index++)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: ChoiceTile(
-              key: ValueKey('sim_explanation_$option'),
-              label: option,
+              key: ValueKey('sim_explanation_${_explanationOptions[index]}'),
+              label: _simLabel(
+                _explanationOptions[index],
+                'التفسير ${formatNumeral(index + 1, 'arabic_indic')}',
+              ),
               selected: false,
-              eliminated: _eliminated.contains(option),
+              eliminated: _eliminated.contains(_explanationOptions[index]),
               touchTarget: target,
-              onPressed: () => _explain(option),
+              onPressed: () => _explain(_explanationOptions[index]),
             ),
           ),
       ],
@@ -551,4 +680,63 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
       ),
     );
   }
+}
+
+/// Static result gauge derived only from [SimModel.measure].
+class _SimResultPainter extends CustomPainter {
+  const _SimResultPainter({
+    required this.value,
+    required this.foreground,
+    required this.background,
+    required this.outline,
+  });
+
+  final double value;
+  final Color foreground;
+  final Color background;
+  final Color outline;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final gauge = RRect.fromRectAndRadius(
+      Rect.fromLTWH(size.width - 34, 18, 16, size.height - 36),
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(gauge, Paint()..color = background);
+
+    final fillHeight = gauge.height * value;
+    final fill = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        gauge.left,
+        gauge.bottom - fillHeight,
+        gauge.width,
+        fillHeight,
+      ),
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(fill, Paint()..color = foreground);
+    canvas.drawRRect(
+      gauge,
+      Paint()
+        ..color = outline
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+
+    final markerY = gauge.bottom - gauge.height * value;
+    canvas.drawLine(
+      Offset(gauge.left - 6, markerY),
+      Offset(gauge.right + 6, markerY),
+      Paint()
+        ..color = outline
+        ..strokeWidth = 3,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SimResultPainter oldDelegate) =>
+      oldDelegate.value != value ||
+      oldDelegate.foreground != foreground ||
+      oldDelegate.background != background ||
+      oldDelegate.outline != outline;
 }

@@ -259,42 +259,6 @@ abstract final class LocalCatalog {
   ];
 
   static const experiences = <ExperienceItem>[
-    // Legacy core
-    ExperienceItem(
-      id: 'letter-tracing',
-      title: 'ارسم الحرف',
-      subtitle: 'حروف • 3–6 سنوات',
-      imageAsset: 'assets/images/games/game-letter-tracing-cover.webp',
-      planetId: 'abjad',
-    ),
-    ExperienceItem(
-      id: 'number-maze',
-      title: 'متاهة الأرقام',
-      subtitle: 'منطق • 6–9 سنوات',
-      imageAsset: 'assets/images/games/game-number-maze-cover.webp',
-      planetId: 'arqam',
-    ),
-    ExperienceItem(
-      id: 'animal-memory',
-      title: 'ذاكرة الحيوانات',
-      subtitle: 'ذاكرة • 4–8 سنوات',
-      imageAsset: 'assets/images/games/game-animal-memory-cover.webp',
-      planetId: 'qisas',
-    ),
-    ExperienceItem(
-      id: 'shape-matching',
-      title: 'طابق الأشكال',
-      subtitle: 'أشكال • 3–6 سنوات',
-      imageAsset: 'assets/images/games/game-shape-matching-cover.webp',
-      planetId: 'arqam',
-    ),
-    ExperienceItem(
-      id: 'butterfly-sequence',
-      title: 'ترتيب الفراشة',
-      subtitle: 'تسلسل • 5–8 سنوات',
-      imageAsset: 'assets/images/games/game-butterfly-sequence-cover.webp',
-      planetId: 'oloom',
-    ),
     // Wave 1-3 existing (18) — mapped to server ids
     // Wave1 — each unique CDN cover via PlayVeo (no local duplicates)
     ExperienceItem(

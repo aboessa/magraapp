@@ -28,8 +28,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../data/drawing_asset_map.dart';
 import '../presentation/widgets/drawing_asset.dart';
+import 'game_art.dart';
 import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
@@ -69,17 +69,45 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
   final Set<int> _matched = {};
   final List<int> _revealed = [];
   bool _locked = false;
+  bool _retrying = false;
   int _misses = 0;
   Timer? _flipBack;
+  late int _activeLevelIndex;
+  int _levelGeneration = 0;
 
   @override
   void initState() {
     super.initState();
+    _activeLevelIndex = widget.controller.levelIndex;
     _build();
   }
 
   @override
+  void didUpdateWidget(covariant _MemoryFlipBoard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final nextLevelIndex = widget.controller.levelIndex;
+    if (nextLevelIndex != _activeLevelIndex) {
+      _resetForLevel(nextLevelIndex);
+    }
+  }
+
+  void _resetForLevel(int levelIndex) {
+    _levelGeneration++;
+    _activeLevelIndex = levelIndex;
+    _flipBack?.cancel();
+    _flipBack = null;
+    _locked = false;
+    _build();
+  }
+
+  bool _isCurrentLevel(int generation) =>
+      mounted &&
+      generation == _levelGeneration &&
+      _activeLevelIndex == widget.controller.levelIndex;
+
+  @override
   void dispose() {
+    _levelGeneration++;
     _flipBack?.cancel();
     super.dispose();
   }
@@ -109,16 +137,26 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
       tiles.add(_MemoryTile(pairIndex: index, assetId: str(pair, 'a')));
       tiles.add(_MemoryTile(pairIndex: index, assetId: str(pair, 'b')));
     }
-    _deck = seededShuffle(tiles, widget.controller.gameId.hashCode + widget.controller.levelIndex);
+    _deck = seededShuffle(
+      tiles,
+      widget.controller.gameId.hashCode + widget.controller.levelIndex,
+    );
     _matched.clear();
     _revealed.clear();
+    _locked = false;
+    _retrying = false;
     _misses = 0;
   }
 
   Future<void> _tap(int index) async {
-    if (_locked || _matched.contains(index) || _revealed.contains(index)) return;
+    if (_locked || _matched.contains(index) || _revealed.contains(index)) {
+      return;
+    }
 
-    setState(() => _revealed.add(index));
+    setState(() {
+      _retrying = false;
+      _revealed.add(index);
+    });
     if (_revealed.length < 2) return;
 
     final first = _revealed[0];
@@ -128,7 +166,10 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
         _matched.addAll([first, second]);
         _revealed.clear();
       });
-      widget.controller.feedback.emit(FeedbackEvent.strokeComplete, track: widget.controller.ageTrack);
+      widget.controller.feedback.emit(
+        FeedbackEvent.strokeComplete,
+        track: widget.controller.ageTrack,
+      );
       if (_matched.length == _deck.length) await _finish();
       return;
     }
@@ -136,26 +177,35 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
     // Hold both visible so the child can memorise them, then turn them back.
     // Not a failure: entertainment-first, and the contract gives it no score.
     _misses++;
-    setState(() => _locked = true);
+    setState(() {
+      _locked = true;
+      _retrying = true;
+    });
     _flipBack?.cancel();
+    final generation = _levelGeneration;
     _flipBack = Timer(Duration(milliseconds: _flipBackDelayMs), () {
-      if (!mounted) return;
+      if (!_isCurrentLevel(generation)) return;
       setState(() {
         _revealed.clear();
         _locked = false;
+        _retrying = false;
       });
     });
   }
 
   Future<void> _finish() async {
+    final generation = _levelGeneration;
     // `memory_flip` is entertainment-first: the mastery document lists it as
     // writing attempts but no mastery, so it reports 0 of 0 — it happened, and it
     // is not a mark.
     await widget.controller.reportEngineAttempt(
       score: 0,
       maxScore: 0,
-      answers: [{'pairs': _deck.length ~/ 2, 'misses': _misses}],
+      answers: [
+        {'pairs': _deck.length ~/ 2, 'misses': _misses},
+      ],
     );
+    if (!_isCurrentLevel(generation)) return;
     await widget.controller.finishLevelFromEngine();
   }
 
@@ -167,7 +217,14 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
       return BoardScaffold(
         controller: widget.controller,
         prompt: widget.controller.prompt,
-        child: const Center(child: Text('لا توجد بنود في هذا المستوى')),
+        child: const Center(
+          child: GameStatePanel(
+            kind: GameStateKind.empty,
+            title: 'هذا المستوى فارغ الآن',
+            message: 'اختر لعبة أخرى وسنجهّز هذا المستوى قريبًا.',
+            compact: true,
+          ),
+        ),
       );
     }
     return BoardScaffold(
@@ -181,32 +238,100 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
         ),
         itemCount: _deck.length,
         itemBuilder: (context, index) {
-          final isUp = _matched.contains(index) || _revealed.contains(index);
+          final isMatched = _matched.contains(index);
+          final isUp = isMatched || _revealed.contains(index);
+          final isRetry = _retrying && _revealed.contains(index);
+          final scheme = Theme.of(context).colorScheme;
+          final cardBack = gameRoleArtPath(
+            role: GameArtRole.cardBack,
+            gameId: widget.controller.gameId,
+          );
+          final cardIdentity = safeChildFacingLabel(
+            artId: _deck[index].assetId,
+            arabicFallback:
+                'الزوج رقم ${formatNumeral(_deck[index].pairIndex + 1, 'arabic_indic')}',
+          );
+          final stateLabel = isMatched
+              ? 'بطاقة متطابقة: $cardIdentity'
+              : isRetry
+              ? 'بطاقة مكشوفة: $cardIdentity، جرّب بطاقة أخرى'
+              : isUp
+              ? 'بطاقة مكشوفة: $cardIdentity'
+              : 'بطاقة مقلوبة';
           return Semantics(
             button: true,
-            label: isUp ? 'بطاقة مكشوفة' : 'بطاقة مقلوبة',
+            excludeSemantics: true,
+            selected: isUp,
+            label: stateLabel,
+            value: isRetry ? 'حاول مرة أخرى' : null,
             child: InkWell(
               // Position-stable key: the tile stays addressable as it flips, which
               // a reveal-state finder cannot do.
               key: ValueKey('memory_tile_$index'),
               onTap: () => _tap(index),
               child: Container(
-                constraints: BoxConstraints(minWidth: target, minHeight: target),
+                constraints: BoxConstraints(
+                  minWidth: target,
+                  minHeight: target,
+                ),
                 decoration: BoxDecoration(
-                  color: _matched.contains(index)
-                      ? Theme.of(context).colorScheme.primaryContainer
+                  color: isMatched
+                      ? scheme.primaryContainer
                       : isUp
-                          ? Theme.of(context).colorScheme.surfaceContainerHighest
-                          : Theme.of(context).colorScheme.primary,
+                      ? scheme.surfaceContainerHighest
+                      : scheme.primary,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isMatched || isRetry
+                        ? scheme.primary
+                        : isUp
+                        ? scheme.secondary
+                        : scheme.outlineVariant,
+                    width: isMatched || isUp ? 3 : 1,
+                  ),
                 ),
                 alignment: Alignment.center,
-                child: isUp
-                    ? Padding(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (isUp)
+                      Padding(
                         padding: const EdgeInsets.all(8),
                         child: _CardFace(assetId: _deck[index].assetId),
                       )
-                    : const Icon(Icons.question_mark, size: 28),
+                    else if (cardBack != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: DecorativeGameArt(
+                          role: GameArtRole.cardBack,
+                          gameId: widget.controller.gameId,
+                        ),
+                      )
+                    else
+                      const Center(child: Icon(Icons.question_mark, size: 28)),
+                    if (isMatched || isUp)
+                      PositionedDirectional(
+                        top: 4,
+                        end: 4,
+                        child: Icon(
+                          isMatched
+                              ? Icons.check_circle
+                              : isRetry
+                              ? Icons.refresh_rounded
+                              : Icons.visibility_outlined,
+                          key: ValueKey(
+                            isMatched
+                                ? 'memory_matched_$index'
+                                : isRetry
+                                ? 'memory_retry_$index'
+                                : 'memory_revealed_$index',
+                          ),
+                          size: 22,
+                          color: scheme.primary,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           );
@@ -241,22 +366,37 @@ class _CardFace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (drawingAssetPath(assetId) == null) {
-      // المعرّف بلا فنّ: يبقى النصّ لأنه يُميّز البطاقات فيبقى اللعب ممكنًا.
-      return Text(
-        assetId,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.labelSmall,
+    final path = gameArtPath(assetId);
+    if (path == null) {
+      final name = arabicNameFor(assetId);
+      // المعرّف بلا فنّ أو ترجمة يبقى قابلًا للتمييز بعلامة هندسية ثابتة لا
+      // تعتمد على اللون، من دون كشف مفتاح الحزمة التقني للطفل.
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(nonColourGlyph(_fallbackCardIndex(assetId)), size: 34),
+          const SizedBox(height: 6),
+          Text(
+            name ?? 'بطاقة مصوّرة',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ],
       );
     }
     return DrawingAsset(
-      assetIdOrPath: assetId,
+      // الصورة الملوّنة أولًا (`game_art.dart`)، لا رسم التلوين الأبيض والأسود.
+      assetIdOrPath: path,
       fit: BoxFit.contain,
-      // التسمية تُترك للأب: `Semantics` أعلاه يُعلن «بطاقة مكشوفة/مقلوبة»،
-      // وإعلان اسم الأصل هنا يُفشي الجواب لقارئ الشاشة.
+      // التسمية الدلالية الآمنة يعلنها الأب بعد الكشف؛ يظل وجه الصورة نفسه
+      // مستبعدًا من الدمج حتى لا يكرر قارئ الشاشة الاسم.
       fallbackIsShrink: true,
     );
   }
+}
+
+int _fallbackCardIndex(String assetId) {
+  return assetId.codeUnits.fold<int>(0, (sum, code) => sum + code);
 }
 
 // --------------------------------------------------------------- match_pairs
@@ -293,6 +433,7 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
   /// Items placed correctly on the first try, which is what `score` counts.
   final Set<String> _firstTry = {};
   final Set<String> _retried = {};
+  String? _retryMessage;
 
   Map<String, dynamic> get _level => widget.controller.rawLevel;
   List<Map<String, dynamic>> get _targets => mapList(_level['targets']);
@@ -304,7 +445,10 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
   List<Map<String, dynamic>> get _tray {
     final all = [..._items, ..._distractors];
     if (_level['shuffle'] == false) return all;
-    return seededShuffle(all, widget.controller.gameId.hashCode + widget.controller.levelIndex);
+    return seededShuffle(
+      all,
+      widget.controller.gameId.hashCode + widget.controller.levelIndex,
+    );
   }
 
   Future<void> _placeOn(String targetId) async {
@@ -323,6 +467,7 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
       setState(() {
         _retried.add(itemId);
         _selectedItem = null;
+        _retryMessage = 'ليست هنا. جرّب هدفًا آخر.';
       });
       return;
     }
@@ -331,8 +476,12 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
       _placed[itemId] = targetId;
       if (!_retried.contains(itemId)) _firstTry.add(itemId);
       _selectedItem = null;
+      _retryMessage = null;
     });
-    widget.controller.feedback.emit(FeedbackEvent.strokeComplete, track: widget.controller.ageTrack);
+    widget.controller.feedback.emit(
+      FeedbackEvent.strokeComplete,
+      track: widget.controller.ageTrack,
+    );
 
     if (_placed.length == _items.length) await _finish();
   }
@@ -341,14 +490,16 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
     await widget.controller.reportEngineAttempt(
       score: _firstTry.length,
       maxScore: _items.length,
-      answers: _items.map((item) {
-        final id = str(item, 'id');
-        return <String, Object?>{
-          'item': id,
-          'correct': _placed.containsKey(id),
-          'attempts': _retried.contains(id) ? 2 : 1,
-        };
-      }).toList(growable: false),
+      answers: _items
+          .map((item) {
+            final id = str(item, 'id');
+            return <String, Object?>{
+              'item': id,
+              'correct': _placed.containsKey(id),
+              'attempts': _retried.contains(id) ? 2 : 1,
+            };
+          })
+          .toList(growable: false),
       helpUsed: _retried.isNotEmpty,
     );
     await widget.controller.finishLevelFromEngine();
@@ -357,6 +508,19 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
   @override
   Widget build(BuildContext context) {
     final target = effectiveTouchTarget(widget.controller.pack.accessibility);
+    if (_targets.isEmpty || _items.isEmpty) {
+      return BoardScaffold(
+        controller: widget.controller,
+        prompt: widget.controller.prompt,
+        child: const Center(
+          child: GameStatePanel(
+            kind: GameStateKind.empty,
+            title: 'هذا المستوى فارغ الآن',
+            message: 'لا توجد عناصر للمطابقة هنا. جرّب مستوى آخر.',
+          ),
+        ),
+      );
+    }
     return BoardScaffold(
       controller: widget.controller,
       prompt: widget.controller.prompt,
@@ -368,12 +532,15 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
                 for (final entry in _targets)
                   Expanded(
                     child: _DropTarget(
-                      label: str(entry, 'id'),
+                      id: str(entry, 'id'),
+                      artId: str(entry, 'image'),
+                      label: arabicNameFor(str(entry, 'label_key')),
                       minSize: target,
                       accepting: _selectedItem != null,
+                      completed: _placed.values.contains(str(entry, 'id')),
                       placed: _placed.entries
                           .where((placed) => placed.value == str(entry, 'id'))
-                          .map((placed) => placed.key)
+                          .map((placed) => _imageOf(placed.key))
                           .toList(growable: false),
                       onTap: () => _placeOn(str(entry, 'id')),
                     ),
@@ -381,24 +548,64 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
               ],
             ),
           ),
+          if (_retryMessage != null) ...[
+            const SizedBox(height: 10),
+            Semantics(
+              liveRegion: true,
+              label: _retryMessage,
+              child: Container(
+                key: const Key('match_retry_feedback'),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.refresh_rounded),
+                    const SizedBox(width: 8),
+                    Flexible(child: Text(_retryMessage!)),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
+            alignment: WrapAlignment.center,
             children: [
               for (final item in _tray)
                 if (!_placed.containsKey(str(item, 'id')))
                   _TrayChip(
                     id: str(item, 'id'),
+                    artId: str(item, 'image'),
+                    label: arabicNameFor(str(item, 'label_key')),
                     minSize: target,
                     selected: _selectedItem == str(item, 'id'),
-                    onTap: () => setState(() => _selectedItem = str(item, 'id')),
+                    retried: _retried.contains(str(item, 'id')),
+                    reduceMotion: widget.controller.settings.reduceMotion,
+                    onTap: () =>
+                        setState(() => _selectedItem = str(item, 'id')),
                   ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  String? _imageOf(String itemId) {
+    for (final item in [..._items, ..._distractors]) {
+      if (str(item, 'id') == itemId) return str(item, 'image');
+    }
+    return null;
   }
 }
 
@@ -456,7 +663,10 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
       if (!_retried.contains(itemId)) _firstTry.add(itemId);
       _selected = null;
     });
-    widget.controller.feedback.emit(FeedbackEvent.strokeComplete, track: widget.controller.ageTrack);
+    widget.controller.feedback.emit(
+      FeedbackEvent.strokeComplete,
+      track: widget.controller.ageTrack,
+    );
     if (_sorted.length == _items.length) await _finish();
   }
 
@@ -464,14 +674,16 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
     await widget.controller.reportEngineAttempt(
       score: _firstTry.length,
       maxScore: _items.length,
-      answers: _items.map((item) {
-        final id = str(item, 'id');
-        return <String, Object?>{
-          'item': id,
-          'correct': _sorted.containsKey(id),
-          'attempts': _retried.contains(id) ? 2 : 1,
-        };
-      }).toList(growable: false),
+      answers: _items
+          .map((item) {
+            final id = str(item, 'id');
+            return <String, Object?>{
+              'item': id,
+              'correct': _sorted.containsKey(id),
+              'attempts': _retried.contains(id) ? 2 : 1,
+            };
+          })
+          .toList(growable: false),
       helpUsed: _retried.isNotEmpty,
     );
     await widget.controller.finishLevelFromEngine();
@@ -480,6 +692,19 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
   @override
   Widget build(BuildContext context) {
     final target = effectiveTouchTarget(widget.controller.pack.accessibility);
+    if (_bins.isEmpty || _items.isEmpty) {
+      return BoardScaffold(
+        controller: widget.controller,
+        prompt: widget.controller.prompt,
+        child: const Center(
+          child: GameStatePanel(
+            kind: GameStateKind.empty,
+            title: 'هذا المستوى فارغ الآن',
+            message: 'لا توجد عناصر للفرز هنا. جرّب مستوى آخر.',
+          ),
+        ),
+      );
+    }
     return BoardScaffold(
       controller: widget.controller,
       prompt: widget.controller.prompt,
@@ -488,20 +713,24 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
           Expanded(
             child: Row(
               children: [
-                for (final bin in _bins)
+                for (var index = 0; index < _bins.length; index++)
                   Expanded(
                     child: _DropTarget(
                       // A bin is distinguished by image, text and audio, never by
                       // colour alone — the contract is explicit, because colour
                       // alone excludes colour-blind children.
-                      label: str(bin, 'id'),
+                      id: str(_bins[index], 'id'),
+                      artId: _binArt(_bins[index]),
+                      label: _binLabel(_bins[index], index),
                       minSize: target,
                       accepting: _selected != null,
                       placed: _sorted.entries
-                          .where((entry) => entry.value == str(bin, 'id'))
-                          .map((entry) => entry.key)
+                          .where(
+                            (entry) => entry.value == str(_bins[index], 'id'),
+                          )
+                          .map((entry) => _imageOf(entry.key))
                           .toList(growable: false),
-                      onTap: () => _drop(str(bin, 'id')),
+                      onTap: () => _drop(str(_bins[index], 'id')),
                     ),
                   ),
               ],
@@ -511,20 +740,60 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
+            alignment: WrapAlignment.center,
             children: [
-              for (final item in _items)
-                if (!_sorted.containsKey(str(item, 'id')))
+              for (var index = 0; index < _items.length; index++)
+                if (!_sorted.containsKey(str(_items[index], 'id')))
                   _TrayChip(
-                    id: str(item, 'id'),
+                    id: str(_items[index], 'id'),
+                    artId: str(_items[index], 'image'),
+                    label: _itemLabel(_items[index], index),
                     minSize: target,
-                    selected: _selected == str(item, 'id'),
-                    onTap: () => setState(() => _selected = str(item, 'id')),
+                    selected: _selected == str(_items[index], 'id'),
+                    reduceMotion: widget.controller.settings.reduceMotion,
+                    onTap: () =>
+                        setState(() => _selected = str(_items[index], 'id')),
                   ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  String _binLabel(Map<String, dynamic> bin, int index) {
+    return safeChildFacingLabel(
+      technicalId: str(bin, 'label_key'),
+      artId: _binArt(bin),
+      arabicFallback: 'السلة ${formatNumeral(index + 1, 'arabic_indic')}',
+    );
+  }
+
+  String _itemLabel(Map<String, dynamic> item, int index) {
+    return safeChildFacingLabel(
+      technicalId: str(item, 'label_key'),
+      artId: str(item, 'image'),
+      arabicFallback: 'القطعة ${formatNumeral(index + 1, 'arabic_indic')}',
+    );
+  }
+
+  /// A produced basket for the bin's category when one exists (`bin.red` →
+  /// `asset-bin-red`), else the pack's own emblem image.
+  String? _binArt(Map<String, dynamic> bin) {
+    final key = str(bin, 'label_key');
+    if (key.startsWith('bin.')) {
+      final basket = 'asset-bin-${key.substring(4)}';
+      if (gameArtPath(basket) != null) return basket;
+    }
+    final image = str(bin, 'image');
+    return image.isEmpty ? null : image;
+  }
+
+  String? _imageOf(String itemId) {
+    for (final item in _items) {
+      if (str(item, 'id') == itemId) return str(item, 'image');
+    }
+    return null;
   }
 }
 
@@ -556,6 +825,24 @@ class _SequenceOrderBoard extends StatefulWidget {
 class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
   /// Panel ids in the order the child has placed them.
   final List<String> _order = [];
+  final Map<String, FocusNode> _panelFocusNodes = {};
+
+  @override
+  void initState() {
+    super.initState();
+    for (final panel in _panels) {
+      final id = str(panel, 'id');
+      if (id.isNotEmpty) _panelFocusNodes[id] = FocusNode();
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final node in _panelFocusNodes.values) {
+      node.dispose();
+    }
+    super.dispose();
+  }
 
   Map<String, dynamic> get _level => widget.controller.rawLevel;
   List<Map<String, dynamic>> get _panels => mapList(_level['panels']);
@@ -566,7 +853,11 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
     final raw = _level['accepted_orders'];
     if (raw is! List) return const [];
     return raw
-        .map((entry) => entry is List ? entry.whereType<String>().toList(growable: false) : null)
+        .map(
+          (entry) => entry is List
+              ? entry.whereType<String>().toList(growable: false)
+              : null,
+        )
         .whereType<List<String>>()
         .toList(growable: false);
   }
@@ -581,7 +872,24 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
   Future<void> _place(String panelId) async {
     if (_order.contains(panelId)) return;
     setState(() => _order.add(panelId));
-    widget.controller.feedback.emit(FeedbackEvent.strokeComplete, track: widget.controller.ageTrack);
+
+    // Inserting remains a single tap/activate action. Because that action removes
+    // its focused tray card, move focus deterministically to the next unplaced
+    // card after layout instead of letting primary focus fall out of the board.
+    final nextPanelId = _panels
+        .map((panel) => str(panel, 'id'))
+        .where((id) => !_order.contains(id))
+        .firstOrNull;
+    if (nextPanelId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _panelFocusNodes[nextPanelId]?.requestFocus();
+      });
+    }
+
+    widget.controller.feedback.emit(
+      FeedbackEvent.strokeComplete,
+      track: widget.controller.ageTrack,
+    );
     if (_order.length == _panels.length) await _finish();
   }
 
@@ -590,9 +898,14 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
     setState(_order.removeLast);
   }
 
-  bool get _isCorrect => _accepted.any((accepted) =>
-      accepted.length == _order.length &&
-      List.generate(_order.length, (i) => accepted[i] == _order[i]).every((match) => match));
+  bool get _isCorrect => _accepted.any(
+    (accepted) =>
+        accepted.length == _order.length &&
+        List.generate(
+          _order.length,
+          (i) => accepted[i] == _order[i],
+        ).every((match) => match),
+  );
 
   Future<void> _finish() async {
     // The mastery document scores this engine 1 for a correct order, out of 1 —
@@ -601,7 +914,11 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
       score: _isCorrect ? 1 : 0,
       maxScore: 1,
       answers: [
-        {'ordered': _order.length, 'panels': _panels.length, 'correct': _isCorrect},
+        {
+          'ordered': _order.length,
+          'panels': _panels.length,
+          'correct': _isCorrect,
+        },
       ],
     );
     await widget.controller.finishLevelFromEngine();
@@ -610,24 +927,45 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
   @override
   Widget build(BuildContext context) {
     final target = effectiveTouchTarget(widget.controller.pack.accessibility);
-    final strip = [
-      for (var slot = 0; slot < _panels.length; slot++)
-        Expanded(
-          child: Container(
-            margin: const EdgeInsets.all(4),
-            constraints: BoxConstraints(minHeight: target),
-            decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).colorScheme.outline),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              slot < _order.length ? _order[slot] : '${slot + 1}',
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
+
+    Map<String, dynamic>? panelOf(String panelId) {
+      for (final panel in _panels) {
+        if (str(panel, 'id') == panelId) return panel;
+      }
+      return null;
+    }
+
+    String panelCaption(Map<String, dynamic> panel, int index) {
+      return safeChildFacingLabel(
+        authoredText: str(panel, 'caption'),
+        technicalId: str(panel, 'caption_key'),
+        arabicFallback: 'الخطوة ${formatNumeral(index + 1, 'arabic_indic')}',
+      );
+    }
+
+    String panelCaptionForId(String panelId) {
+      final panels = _panels;
+      for (var index = 0; index < panels.length; index++) {
+        if (str(panels[index], 'id') == panelId) {
+          return panelCaption(panels[index], index);
+        }
+      }
+      return 'خطوة مصوّرة';
+    }
+
+    if (_panels.isEmpty || _accepted.isEmpty) {
+      return BoardScaffold(
+        controller: widget.controller,
+        prompt: widget.controller.prompt,
+        child: const Center(
+          child: GameStatePanel(
+            kind: GameStateKind.empty,
+            title: 'هذا المستوى فارغ الآن',
+            message: 'لا توجد خطوات للترتيب هنا. جرّب مستوى آخر.',
           ),
         ),
-    ];
+      );
+    }
 
     return BoardScaffold(
       controller: widget.controller,
@@ -635,33 +973,130 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
       footer: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: OutlinedButton.icon(
+          key: const Key('sequence_undo_button'),
+          style: gameActionStyle(target),
           onPressed: _undo,
           icon: const Icon(Icons.undo),
           label: const Text('رجوع'),
         ),
       ),
-      child: Column(
-        children: [
-          Row(children: _isRtl ? strip.reversed.toList(growable: false) : strip),
-          const SizedBox(height: 16),
-          Expanded(
-            child: Wrap(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // The child list stays in logical order. The surrounding Arabic Row
+            // places slot zero on the right; reversing it here would mirror the
+            // reading order a second time.
+            Row(
+              textDirection: _isRtl ? TextDirection.rtl : TextDirection.ltr,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var slot = 0; slot < _panels.length; slot++)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: _SequencePanelFrame(
+                        key: ValueKey('sequence_slot_$slot'),
+                        panel: slot < _order.length
+                            ? panelOf(_order[slot])
+                            : null,
+                        caption: slot < _order.length
+                            ? panelCaptionForId(_order[slot])
+                            : 'الخطوة ${formatNumeral(slot + 1, 'arabic_indic')}',
+                        minHeight: target,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              textDirection: _isRtl ? TextDirection.rtl : TextDirection.ltr,
               spacing: 8,
               runSpacing: 8,
+              alignment: WrapAlignment.center,
               children: [
-                for (final panel in _panels)
-                  if (!_order.contains(str(panel, 'id')))
-                    _TrayChip(
-                      id: str(panel, 'id'),
-                      minSize: target,
-                      selected: false,
-                      onTap: () => _place(str(panel, 'id')),
+                for (var index = 0; index < _panels.length; index++)
+                  if (!_order.contains(str(_panels[index], 'id')))
+                    SizedBox(
+                      width: (target + 32) * 4 / 3,
+                      child: Semantics(
+                        button: true,
+                        label: panelCaption(_panels[index], index),
+                        child: InkWell(
+                          key: ValueKey('tray_${str(_panels[index], 'id')}'),
+                          focusNode:
+                              _panelFocusNodes[str(_panels[index], 'id')],
+                          onTap: () => _place(str(_panels[index], 'id')),
+                          borderRadius: BorderRadius.circular(12),
+                          child: _SequencePanelFrame(
+                            panel: _panels[index],
+                            caption: panelCaption(_panels[index], index),
+                            minHeight: target,
+                          ),
+                        ),
+                      ),
                     ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+}
+
+/// A responsive 4:3 story panel. Art is always rendered under LTR directionality
+/// so Arabic reading order can move the cards without ever mirroring an image.
+class _SequencePanelFrame extends StatelessWidget {
+  const _SequencePanelFrame({
+    required this.panel,
+    required this.caption,
+    required this.minHeight,
+    super.key,
+  });
+
+  final Map<String, dynamic>? panel;
+  final String caption;
+  final double minHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final artId = panel == null ? null : str(panel!, 'image');
+    final path = gameArtPath(artId);
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AspectRatio(
+          aspectRatio: 4 / 3,
+          child: Container(
+            constraints: BoxConstraints(minHeight: minHeight),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerLow,
+              border: Border.all(color: scheme.outlineVariant, width: 1.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: path == null
+                ? Center(
+                    child: Icon(
+                      Icons.photo_size_select_actual_outlined,
+                      color: scheme.outline,
+                    ),
+                  )
+                : Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: GameArt(assetId: artId),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          caption,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+      ],
     );
   }
 }
@@ -670,35 +1105,61 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
 
 class _DropTarget extends StatelessWidget {
   const _DropTarget({
-    required this.label,
+    required this.id,
     required this.minSize,
     required this.accepting,
     required this.placed,
     required this.onTap,
+    this.completed = false,
+    this.artId,
+    this.label,
   });
 
-  final String label;
+  /// Stable id, used for the key only — never shown to the child.
+  final String id;
+  final String? artId;
+
+  /// Arabic caption under the picture (bins need it: colour alone excludes
+  /// colour-blind children).
+  final String? label;
   final double minSize;
   final bool accepting;
-  final List<String> placed;
+
+  /// A correct placement is announced and shown without relying on colour.
+  final bool completed;
+
+  /// Art ids of the pieces already placed here.
+  final List<String?> placed;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final caption = safeChildFacingLabel(
+      authoredText: label,
+      artId: artId,
+      arabicFallback: 'مكان الصورة',
+    );
+    final scheme = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
-      label: label,
+      label: caption,
+      value: completed ? 'تم وضع الصورة الصحيحة' : null,
       child: InkWell(
+        key: ValueKey('drop_target_$id'),
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           margin: const EdgeInsets.all(6),
           constraints: BoxConstraints(minWidth: minSize, minHeight: minSize),
           decoration: BoxDecoration(
+            color: scheme.surfaceContainerLow,
             border: Border.all(
-              color: accepting
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline,
-              width: accepting ? 3 : 1,
+              color: completed
+                  ? scheme.tertiary
+                  : accepting
+                  ? scheme.primary
+                  : scheme.outlineVariant,
+              width: completed || accepting ? 3 : 1.5,
             ),
             borderRadius: BorderRadius.circular(16),
           ),
@@ -706,16 +1167,36 @@ class _DropTarget extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(label, style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 6),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 4,
-                children: [
-                  for (final id in placed)
-                    Chip(label: Text(id, style: Theme.of(context).textTheme.labelSmall)),
-                ],
+              if (completed)
+                ExcludeSemantics(
+                  child: Icon(
+                    Icons.check_circle_outline_rounded,
+                    key: ValueKey('drop_target_completed_$id'),
+                    color: scheme.tertiary,
+                  ),
+                ),
+              Expanded(
+                child: GameArt(assetId: artId, label: label),
               ),
+              if (gameArtPath(artId) != null) ...[
+                const SizedBox(height: 4),
+                Text(caption, style: Theme.of(context).textTheme.labelLarge),
+              ],
+              if (placed.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [
+                    for (final art in placed)
+                      SizedBox.square(
+                        dimension: 36,
+                        child: GameArt(assetId: art),
+                      ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -729,38 +1210,88 @@ class _TrayChip extends StatelessWidget {
     required this.id,
     required this.minSize,
     required this.selected,
+    required this.reduceMotion,
     required this.onTap,
+    this.retried = false,
+    this.artId,
+    this.label,
   });
 
+  /// Stable id, used for the key only — never shown to the child.
   final String id;
+  final String? artId;
+  final String? label;
   final double minSize;
   final bool selected;
+  final bool retried;
+  final bool reduceMotion;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final side = minSize + 24;
+    final effectiveReduceMotion =
+        reduceMotion || MediaQuery.maybeDisableAnimationsOf(context) == true;
+    final scheme = Theme.of(context).colorScheme;
+    final caption = safeChildFacingLabel(
+      authoredText: label,
+      artId: artId,
+      arabicFallback: 'قطعة مصوّرة',
+    );
     return Semantics(
       button: true,
       selected: selected,
+      label: caption,
+      value: retried ? 'أعد المحاولة' : null,
       child: InkWell(
+        key: ValueKey('tray_$id'),
         onTap: onTap,
-        child: Container(
-          constraints: BoxConstraints(minWidth: minSize, minHeight: minSize),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: effectiveReduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 150),
+          width: side,
+          height: side,
+          padding: const EdgeInsets.all(6),
+          transform: selected && !effectiveReduceMotion
+              ? Matrix4.diagonal3Values(1.08, 1.08, 1)
+              : null,
+          transformAlignment: Alignment.center,
           decoration: BoxDecoration(
             color: selected
-                ? Theme.of(context).colorScheme.primaryContainer
-                : Theme.of(context).colorScheme.surfaceContainerHighest,
+                ? scheme.primaryContainer
+                : scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: selected
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.transparent,
-              width: 2,
+              color: selected || retried
+                  ? scheme.primary
+                  : scheme.outlineVariant,
+              width: selected || retried ? 3 : 1,
             ),
           ),
           alignment: Alignment.center,
-          child: Text(id, style: Theme.of(context).textTheme.labelMedium),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Center(
+                child: GameArt(assetId: artId, label: label),
+              ),
+              if (selected || retried)
+                PositionedDirectional(
+                  top: 0,
+                  end: 0,
+                  child: Icon(
+                    selected ? Icons.touch_app_outlined : Icons.refresh_rounded,
+                    key: ValueKey(
+                      selected ? 'tray_selected_$id' : 'tray_retry_$id',
+                    ),
+                    size: 20,
+                    color: scheme.primary,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

@@ -24,6 +24,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'game_art.dart';
 import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
@@ -40,10 +41,28 @@ int hijriYearForGregorian(int gregorianYear) {
 }
 
 const _arabicOrdinals = [
-  '', 'الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع',
-  'الثامن', 'التاسع', 'العاشر', 'الحادي عشر', 'الثاني عشر', 'الثالث عشر',
-  'الرابع عشر', 'الخامس عشر', 'السادس عشر', 'السابع عشر', 'الثامن عشر',
-  'التاسع عشر', 'العشرون', 'الحادي والعشرون',
+  '',
+  'الأول',
+  'الثاني',
+  'الثالث',
+  'الرابع',
+  'الخامس',
+  'السادس',
+  'السابع',
+  'الثامن',
+  'التاسع',
+  'العاشر',
+  'الحادي عشر',
+  'الثاني عشر',
+  'الثالث عشر',
+  'الرابع عشر',
+  'الخامس عشر',
+  'السادس عشر',
+  'السابع عشر',
+  'الثامن عشر',
+  'التاسع عشر',
+  'العشرون',
+  'الحادي والعشرون',
 ];
 
 /// A spoken-language description of a year, e.g. «القرن الثامن الميلادي».
@@ -53,7 +72,9 @@ const _arabicOrdinals = [
 String centuryDescription(int year) {
   if (year <= 0) return 'قبل الميلاد';
   final century = ((year - 1) ~/ 100) + 1;
-  final ordinal = century < _arabicOrdinals.length ? _arabicOrdinals[century] : '$century';
+  final ordinal = century < _arabicOrdinals.length
+      ? _arabicOrdinals[century]
+      : '$century';
   return 'القرن $ordinal الميلادي';
 }
 
@@ -76,11 +97,20 @@ class MapBounds {
   final double minLon;
   final double maxLon;
 
-  static const world = MapBounds(minLat: -60, maxLat: 80, minLon: -180, maxLon: 180);
+  static const world = MapBounds(
+    minLat: -60,
+    maxLat: 80,
+    minLon: -180,
+    maxLon: 180,
+  );
 
   static const _known = <String, MapBounds>{
-    'middle_east_north_africa':
-        MapBounds(minLat: 10, maxLat: 42, minLon: -18, maxLon: 63),
+    'middle_east_north_africa': MapBounds(
+      minLat: 10,
+      maxLat: 42,
+      minLon: -18,
+      maxLon: 63,
+    ),
     'arab_world': MapBounds(minLat: 10, maxLat: 40, minLon: -18, maxLon: 60),
     'world': world,
   };
@@ -108,9 +138,12 @@ double distanceKm(double lat1, double lon1, double lat2, double lon2) {
   double toRad(double d) => d * math.pi / 180;
   final dLat = toRad(lat2 - lat1);
   final dLon = toRad(lon2 - lon1);
-  final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-      math.cos(toRad(lat1)) * math.cos(toRad(lat2)) *
-          math.sin(dLon / 2) * math.sin(dLon / 2);
+  final a =
+      math.sin(dLat / 2) * math.sin(dLat / 2) +
+      math.cos(toRad(lat1)) *
+          math.cos(toRad(lat2)) *
+          math.sin(dLon / 2) *
+          math.sin(dLon / 2);
   return 2 * earthRadiusKm * math.atan2(math.sqrt(a), math.sqrt(1 - a));
 }
 
@@ -119,6 +152,7 @@ class TimelineEvent {
     required this.id,
     required this.labelKey,
     required this.image,
+    this.label = '',
     this.year,
     this.toleranceYears,
     this.lat,
@@ -128,22 +162,27 @@ class TimelineEvent {
   });
 
   factory TimelineEvent.fromJson(Map<String, dynamic> json) => TimelineEvent(
-        id: str(json, 'id'),
-        labelKey: str(json, 'label_key'),
-        image: str(json, 'image'),
-        year: json['year'] is num ? (json['year'] as num).toInt() : null,
-        toleranceYears: json['tolerance_years'] is num
-            ? (json['tolerance_years'] as num).toInt()
-            : null,
-        lat: json['lat'] is num ? (json['lat'] as num).toDouble() : null,
-        lon: json['lon'] is num ? (json['lon'] as num).toDouble() : null,
-        toleranceKm:
-            json['tolerance_km'] is num ? (json['tolerance_km'] as num).toInt() : null,
-        explainKey: json['explain_key'] is String ? json['explain_key'] as String : null,
-      );
+    id: str(json, 'id'),
+    labelKey: str(json, 'label_key'),
+    label: str(json, 'label'),
+    image: str(json, 'image'),
+    year: json['year'] is num ? (json['year'] as num).toInt() : null,
+    toleranceYears: json['tolerance_years'] is num
+        ? (json['tolerance_years'] as num).toInt()
+        : null,
+    lat: json['lat'] is num ? (json['lat'] as num).toDouble() : null,
+    lon: json['lon'] is num ? (json['lon'] as num).toDouble() : null,
+    toleranceKm: json['tolerance_km'] is num
+        ? (json['tolerance_km'] as num).toInt()
+        : null,
+    explainKey: json['explain_key'] is String
+        ? json['explain_key'] as String
+        : null,
+  );
 
   final String id;
   final String labelKey;
+  final String label;
   final String image;
   final int? year;
   final int? toleranceYears;
@@ -183,6 +222,8 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
   int _correctFirstTry = 0;
   bool _anyHelpUsed = false;
   bool _showAnchor = false;
+  String? _retryMessage;
+  IconData? _retryIcon;
 
   /// The child's current guess for the active event.
   int? _guessYear;
@@ -226,6 +267,15 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
 
   bool get _needsYear => _mode == 'timeline' || _mode == 'both';
   bool get _needsPlace => _mode == 'map' || _mode == 'both';
+
+  String _eventLabel(TimelineEvent event) {
+    return safeChildFacingLabel(
+      authoredText: event.label,
+      technicalId: event.labelKey,
+      artId: event.image,
+      arabicFallback: 'حدث تاريخي',
+    );
+  }
 
   /// The year label, converted for display only.
   ///
@@ -278,8 +328,10 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
 
   Future<void> _accept() async {
     if (_wrongAttempts == 0) _correctFirstTry++;
-    widget.controller.feedback
-        .emit(FeedbackEvent.strokeComplete, track: widget.controller.ageTrack);
+    widget.controller.feedback.emit(
+      FeedbackEvent.strokeComplete,
+      track: widget.controller.ageTrack,
+    );
     final event = _event;
     if (event?.explainKey != null) {
       await widget.controller.speakVoiceKey(event!.explainKey!);
@@ -293,12 +345,31 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
     _wrongAttempts++;
     _anyHelpUsed = true;
     final event = _event;
+    setState(() {
+      if (olderThanGuess != null) {
+        _retryMessage = olderThanGuess
+            ? 'اتجه إلى زمن أقدم ثم جرّب مرة أخرى'
+            : 'اتجه إلى زمن أحدث ثم جرّب مرة أخرى';
+        _retryIcon = olderThanGuess
+            ? Icons.history_rounded
+            : Icons.update_rounded;
+      } else if (eastOfGuess != null) {
+        _retryMessage = eastOfGuess
+            ? 'حرّك العلامة شرقًا ثم جرّب مرة أخرى'
+            : 'حرّك العلامة غربًا ثم جرّب مرة أخرى';
+        _retryIcon = eastOfGuess ? Icons.east_rounded : Icons.west_rounded;
+      } else {
+        _retryMessage = 'عدّل الموضع ثم جرّب مرة أخرى';
+        _retryIcon = Icons.refresh_rounded;
+      }
+    });
 
     switch (_wrongAttempts) {
       case 1:
         if (olderThanGuess != null) {
-          await widget.controller
-              .speakVoiceKey(olderThanGuess ? 'vo.hint_older' : 'vo.hint_newer');
+          await widget.controller.speakVoiceKey(
+            olderThanGuess ? 'vo.hint_older' : 'vo.hint_newer',
+          );
         } else if (eastOfGuess != null) {
           await widget.controller.speakVoiceKey('vo.hint_direction');
         }
@@ -347,6 +418,8 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
       _narrowFrom = null;
       _narrowTo = null;
       _showAnchor = false;
+      _retryMessage = null;
+      _retryIcon = null;
     });
   }
 
@@ -369,11 +442,18 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
   @override
   Widget build(BuildContext context) {
     final event = _event;
+    final target = effectiveTouchTarget(widget.controller.pack.accessibility);
     if (event == null) {
       return BoardScaffold(
         controller: widget.controller,
         prompt: widget.controller.prompt,
-        child: const Center(child: Text('لا أحداث في هذا المستوى')),
+        child: const Center(
+          child: GameStatePanel(
+            kind: GameStateKind.empty,
+            title: 'هذا المستوى فارغ الآن',
+            message: 'لا توجد أحداث للعب هنا. جرّب مستوى آخر.',
+          ),
+        ),
       );
     }
 
@@ -389,17 +469,62 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    const Icon(Icons.event_outlined),
-                    const SizedBox(width: 8),
+                    Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: SizedBox.square(
+                        dimension: 72,
+                        child:
+                            gameRoleArtPath(
+                                  role: GameArtRole.event,
+                                  gameId: widget.controller.gameId,
+                                  assetId: event.image,
+                                ) !=
+                                null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: DecorativeGameArt(
+                                  key: const Key('timeline_event_art'),
+                                  role: GameArtRole.event,
+                                  gameId: widget.controller.gameId,
+                                  assetId: event.image,
+                                ),
+                              )
+                            : gameRoleArtPath(
+                                    role: GameArtRole.event,
+                                    gameId: widget.controller.gameId,
+                                    assetId: event.labelKey,
+                                  ) !=
+                                  null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: DecorativeGameArt(
+                                  key: const Key('timeline_event_art'),
+                                  role: GameArtRole.event,
+                                  gameId: widget.controller.gameId,
+                                  assetId: event.labelKey,
+                                ),
+                              )
+                            : gameArtPath(event.image) != null
+                            ? GameArt(
+                                key: const Key('timeline_event_art'),
+                                assetId: event.image,
+                              )
+                            : const Icon(Icons.event_outlined, size: 40),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        event.labelKey,
+                        _eventLabel(event),
                         key: const Key('timeline_event_label'),
+                        semanticsLabel: 'الحدث: ${_eventLabel(event)}',
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                     ),
                     IconButton(
-                      onPressed: () => widget.controller.speakVoiceKey(event.labelKey),
+                      style: gameActionStyle(target),
+                      onPressed: () =>
+                          widget.controller.speakVoiceKey(event.labelKey),
                       icon: const Icon(Icons.volume_up_outlined),
                       tooltip: 'اسمع الاسم',
                     ),
@@ -410,6 +535,33 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
             const SizedBox(height: 12),
             if (_needsYear && !showMap) _buildTimeline(event),
             if (showMap) _buildMap(event),
+            if (_retryMessage != null) ...[
+              const SizedBox(height: 10),
+              Semantics(
+                liveRegion: true,
+                label: _retryMessage,
+                child: Container(
+                  key: const Key('timeline_retry_feedback'),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(_retryIcon ?? Icons.refresh_rounded),
+                      const SizedBox(width: 8),
+                      Flexible(child: Text(_retryMessage!)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -417,86 +569,128 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
   }
 
   Widget _buildTimeline(TimelineEvent event) {
+    final target = effectiveTouchTarget(widget.controller.pack.accessibility);
     final anchors = mapList(_timeline['anchors']);
+    final anchor = anchors.isEmpty ? null : anchors.first;
+    final anchorText = anchor == null
+        ? null
+        : 'مرجع: ${safeChildFacingLabel(technicalId: str(anchor, 'label_key'), arabicFallback: 'مرجع زمني')} (${_yearLabel(intOr(anchor, 'year', 0))})';
     final guess = _guessYear ?? ((_from + _to) ~/ 2);
     final span = (_to - _from).abs();
 
-    return Column(
-      children: [
-        // The timeline *is* mirrored in RTL: it reads like a line.
-        Directionality(
-          textDirection: Directionality.of(context),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(_yearLabel(_from)),
-                  Text(_yearLabel(_to)),
-                ],
-              ),
-              Slider(
-                key: const Key('timeline_year_slider'),
-                // Guard: when from==to, divisions must be null (continuous) to avoid RangeError max 0 in js_primitives
-                value: guess.toDouble().clamp(
-                    _from.toDouble(), _to == _from ? _from.toDouble() + 1 : _to.toDouble()),
-                min: _from.toDouble(),
-                max: _from == _to ? _from.toDouble() + 1 : _to.toDouble(),
-                divisions: span <= 1 ? null : span.clamp(1, 2000),
-                label: _yearLabel(guess),
-                onChanged: (value) => setState(() => _guessYear = value.round()),
-              ),
-            ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: DecorativeGameArt(
+              key: const Key('timeline_background_art'),
+              role: GameArtRole.timeline,
+              gameId: widget.controller.gameId,
+            ),
           ),
-        ),
-        Semantics(
-          liveRegion: true,
-          child: Text(
-            // The text description of the position, which the contract requires.
-            '${_yearLabel(guess)} — ${centuryDescription(guess)}',
-            key: const Key('timeline_position_description'),
+          Positioned.fill(
+            child: ColoredBox(
+              color: Theme.of(
+                context,
+              ).colorScheme.surface.withValues(alpha: 0.82),
+            ),
           ),
-        ),
-        if (_showAnchor && anchors.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              key: const Key('timeline_anchor'),
-              'مرجع: ${str(anchors.first, 'label_key')} '
-              '(${_yearLabel(intOr(anchors.first, 'year', 0))})',
-              style: Theme.of(context).textTheme.labelMedium,
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                // The timeline *is* mirrored in RTL: it reads like a line.
+                Directionality(
+                  textDirection: Directionality.of(context),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(_yearLabel(_from)),
+                          Text(_yearLabel(_to)),
+                        ],
+                      ),
+                      Slider(
+                        key: const Key('timeline_year_slider'),
+                        // Guard: when from==to, divisions must be null (continuous) to avoid RangeError max 0 in js_primitives
+                        value: guess.toDouble().clamp(
+                          _from.toDouble(),
+                          _to == _from ? _from.toDouble() + 1 : _to.toDouble(),
+                        ),
+                        min: _from.toDouble(),
+                        max: _from == _to
+                            ? _from.toDouble() + 1
+                            : _to.toDouble(),
+                        divisions: span <= 1 ? null : span.clamp(1, 2000),
+                        label: _yearLabel(guess),
+                        onChanged: (value) =>
+                            setState(() => _guessYear = value.round()),
+                      ),
+                    ],
+                  ),
+                ),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    // The text description of the position, which the contract requires.
+                    '${_yearLabel(guess)} — ${centuryDescription(guess)}',
+                    key: const Key('timeline_position_description'),
+                  ),
+                ),
+                if (_showAnchor && anchorText != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      anchorText,
+                      key: const Key('timeline_anchor'),
+                      semanticsLabel: anchorText,
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                // Fine adjustment, the mandatory drag alternative.
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      style: gameActionStyle(target),
+                      key: const Key('timeline_year_minus'),
+                      onPressed: () => setState(
+                        () => _guessYear = (guess - 1).clamp(_from, _to),
+                      ),
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
+                    IconButton(
+                      style: gameActionStyle(target),
+                      key: const Key('timeline_year_plus'),
+                      onPressed: () => setState(
+                        () => _guessYear = (guess + 1).clamp(_from, _to),
+                      ),
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ],
+                ),
+                FilledButton(
+                  style: gameActionStyle(target),
+                  key: const Key('timeline_submit_year'),
+                  onPressed: () {
+                    _guessYear ??= guess;
+                    _submitYear();
+                  },
+                  child: const Text('ضع الحدث في زمنه'),
+                ),
+              ],
             ),
           ),
-        const SizedBox(height: 8),
-        // Fine adjustment, the mandatory drag alternative.
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              key: const Key('timeline_year_minus'),
-              onPressed: () => setState(() => _guessYear = (guess - 1).clamp(_from, _to)),
-              icon: const Icon(Icons.remove_circle_outline),
-            ),
-            IconButton(
-              key: const Key('timeline_year_plus'),
-              onPressed: () => setState(() => _guessYear = (guess + 1).clamp(_from, _to)),
-              icon: const Icon(Icons.add_circle_outline),
-            ),
-          ],
-        ),
-        FilledButton(
-          key: const Key('timeline_submit_year'),
-          onPressed: () {
-            _guessYear ??= guess;
-            _submitYear();
-          },
-          child: const Text('ضع الحدث في زمنه'),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildMap(TimelineEvent event) {
+    final target = effectiveTouchTarget(widget.controller.pack.accessibility);
     final lat = _guessLat ?? (_bounds.minLat + _bounds.maxLat) / 2;
     final lon = _guessLon ?? (_bounds.minLon + _bounds.maxLon) / 2;
     final (fx, fy) = _bounds.project(lat, lon);
@@ -515,31 +709,36 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
                 key: const Key('timeline_map_surface'),
                 onTapDown: (details) {
                   final local = details.localPosition;
-                  final (nlat, nlon) =
-                      _bounds.unproject(local.dx / width, local.dy / height);
+                  final (nlat, nlon) = _bounds.unproject(
+                    local.dx / width,
+                    local.dy / height,
+                  );
                   setState(() {
                     _guessLat = nlat;
                     _guessLon = nlon;
                   });
                 },
-                child: Container(
+                child: SizedBox(
                   width: width,
                   height: height,
-                  decoration: BoxDecoration(
-                    // A politically neutral base: no borders are drawn at all,
-                    // which is the strongest form of the contract's requirement
-                    // until reviewed base artwork ships.
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: GameDecorativeSurface(
+                    role: GameArtRole.map,
+                    gameId: widget.controller.gameId,
+                    scrimOpacity: 0.24,
                     borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: fx * width - 12,
-                        top: fy * height - 12,
-                        child: const Icon(Icons.place, size: 24),
-                      ),
-                    ],
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: fx * width - 12,
+                          top: fy * height - 12,
+                          child: Icon(
+                            Icons.place,
+                            size: 24,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -557,28 +756,37 @@ class _TimelineMapSurfaceState extends State<_TimelineMapSurface> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
+              style: gameActionStyle(target),
               key: const Key('timeline_map_west'),
               onPressed: () => setState(() => _guessLon = lon - 1),
               icon: const Icon(Icons.chevron_left),
+              tooltip: 'حرّك غربًا',
             ),
             IconButton(
+              style: gameActionStyle(target),
               key: const Key('timeline_map_north'),
               onPressed: () => setState(() => _guessLat = lat + 1),
               icon: const Icon(Icons.expand_less),
+              tooltip: 'حرّك شمالًا',
             ),
             IconButton(
+              style: gameActionStyle(target),
               key: const Key('timeline_map_south'),
               onPressed: () => setState(() => _guessLat = lat - 1),
               icon: const Icon(Icons.expand_more),
+              tooltip: 'حرّك جنوبًا',
             ),
             IconButton(
+              style: gameActionStyle(target),
               key: const Key('timeline_map_east'),
               onPressed: () => setState(() => _guessLon = lon + 1),
               icon: const Icon(Icons.chevron_right),
+              tooltip: 'حرّك شرقًا',
             ),
           ],
         ),
         FilledButton(
+          style: gameActionStyle(target),
           key: const Key('timeline_submit_place'),
           onPressed: () {
             _guessLat ??= lat;

@@ -32,6 +32,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import 'game_art.dart';
 import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
@@ -106,13 +107,16 @@ class _RhythmTapSurfaceState extends State<_RhythmTapSurface>
   @override
   void initState() {
     super.initState();
-    _notes = mapList(widget.controller.rawLevel['notes'])
-        .map((json) => _RhythmNote(
-              timeMs: intOr(json, 'time_ms', 0),
-              lane: intOr(json, 'lane', 0),
-            ))
-        .toList()
-      ..sort((a, b) => a.timeMs.compareTo(b.timeMs));
+    _notes =
+        mapList(widget.controller.rawLevel['notes'])
+            .map(
+              (json) => _RhythmNote(
+                timeMs: intOr(json, 'time_ms', 0),
+                lane: intOr(json, 'lane', 0),
+              ),
+            )
+            .toList()
+          ..sort((a, b) => a.timeMs.compareTo(b.timeMs));
     _ticker = createTicker(_onTick);
   }
 
@@ -143,7 +147,9 @@ class _RhythmTapSurfaceState extends State<_RhythmTapSurface>
     final authored = intOr(_level, 'hit_window_ms', 400);
     final widened = (authored * _windowScale).round();
     if (widget.controller.settings.simplifiedMotor) {
-      return widened < _simplifiedMotorWindowMs ? _simplifiedMotorWindowMs : widened;
+      return widened < _simplifiedMotorWindowMs
+          ? _simplifiedMotorWindowMs
+          : widened;
     }
     return widened;
   }
@@ -239,7 +245,9 @@ class _RhythmTapSurfaceState extends State<_RhythmTapSurface>
           'notes_hit': _hits,
           'window_widened': _windowScale != 1,
           'lanes_collapsed': _collapsedToOneLane,
-          'passed': _notes.isEmpty ? true : _hits / _notes.length >= _accuracyToPass,
+          'passed': _notes.isEmpty
+              ? true
+              : _hits / _notes.length >= _accuracyToPass,
         },
       ],
     );
@@ -271,64 +279,77 @@ class _RhythmTapSurfaceState extends State<_RhythmTapSurface>
               ),
             )
           : _running
-              ? null
-              : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: FilledButton.icon(
-                    key: const Key('rhythm_start_button'),
-                    onPressed: _start,
-                    icon: const Icon(Icons.play_arrow_outlined),
-                    label: const Text('ابدأ الأنشودة'),
-                    style: ButtonStyle(
-                      minimumSize: WidgetStatePropertyAll(Size(laneTarget, laneTarget)),
-                    ),
+          ? null
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: FilledButton.icon(
+                key: const Key('rhythm_start_button'),
+                onPressed: _start,
+                icon: const Icon(Icons.play_arrow_outlined),
+                label: const Text('ابدأ الأنشودة'),
+                style: ButtonStyle(
+                  minimumSize: WidgetStatePropertyAll(
+                    Size(laneTarget, laneTarget),
                   ),
                 ),
-      // Never wrapped in a Directionality override: the lane order is game
-      // geometry and the contract forbids mirroring it in RTL.
-      child: Directionality(
-        textDirection: TextDirection.ltr,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final laneWidth = constraints.maxWidth / _lanes;
-            final hitLineY = constraints.maxHeight - laneTarget - 8;
-            return Stack(
-              children: [
-                // Hit line.
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: hitLineY,
-                  child: Container(
-                    height: 3,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+              ),
+            ),
+      child: widget.controller.gameId == 'game-wave2-rhythm'
+          ? GameDecorativeSurface(
+              key: const Key('rhythm_stage_art'),
+              role: GameArtRole.stage,
+              gameId: 'game-wave2-rhythm',
+              scrimOpacity: 0.46,
+              child: _buildLaneSurface(laneTarget),
+            )
+          : _buildLaneSurface(laneTarget),
+    );
+  }
+
+  /// Lane geometry is physical screen space, so it remains LTR in Arabic.
+  Widget _buildLaneSurface(double laneTarget) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final laneWidth = constraints.maxWidth / _lanes;
+          final hitLineY = constraints.maxHeight - laneTarget - 8;
+          return Stack(
+            children: [
+              // Hit line.
+              Positioned(
+                left: 0,
+                right: 0,
+                top: hitLineY,
+                child: Container(
+                  height: 3,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-                // Falling notes.
-                for (final note in _notes)
-                  if (!note.judged || note.hit)
-                    ..._buildNote(note, laneWidth, hitLineY),
-                // Lane buttons.
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Row(
-                    children: [
-                      for (var lane = 0; lane < _lanes; lane++)
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: _laneButton(lane, laneTarget),
-                          ),
+              ),
+              // Falling notes.
+              for (final note in _notes)
+                if (!note.judged || note.hit)
+                  ..._buildNote(note, laneWidth, hitLineY),
+              // Lane buttons.
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Row(
+                  children: [
+                    for (var lane = 0; lane < _lanes; lane++)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: _laneButton(lane, laneTarget),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -374,9 +395,13 @@ class _RhythmTapSurfaceState extends State<_RhythmTapSurface>
     // A soft fade, not a flash. 300ms per pulse is ~3.3 pulses per second at the
     // absolute maximum note density, and the opacity never reaches full black or
     // white, so this stays under the 3Hz flashing limit the contract sets.
-    final glowing = glowStart != null &&
+    final reduceMotion =
+        widget.controller.settings.reduceMotion ||
+        MediaQuery.maybeDisableAnimationsOf(context) == true;
+    final glowing =
+        glowStart != null &&
         (_elapsed - glowStart).inMilliseconds < 300 &&
-        !widget.controller.settings.reduceMotion;
+        !reduceMotion;
 
     return Semantics(
       button: true,
@@ -385,7 +410,10 @@ class _RhythmTapSurfaceState extends State<_RhythmTapSurface>
         key: ValueKey('rhythm_lane_$lane'),
         onTap: () => _tapLane(lane),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
+          key: ValueKey('rhythm_lane_glow_$lane'),
+          duration: reduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 120),
           height: target,
           decoration: BoxDecoration(
             color: glowing
@@ -398,10 +426,10 @@ class _RhythmTapSurfaceState extends State<_RhythmTapSurface>
             ),
           ),
           alignment: Alignment.center,
-          child: Icon(
-            Icons.touch_app_outlined,
-            size: 28,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          padding: const EdgeInsets.all(6),
+          // Alternating drums so two lanes differ by picture, not colour alone.
+          child: GameArt(
+            assetId: lane.isEven ? 'asset-drum-teal' : 'asset-drum-coral',
           ),
         ),
       ),

@@ -5,15 +5,16 @@
 /// belongs to the selected engine.
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 
 import '../../data/creation_document.dart';
 import '../../data/local_creation_store.dart';
 import '../../engine/block_code_engine.dart';
+import '../../engine/game_board_kit.dart';
 import '../../engine/game_engine_registry.dart';
 import '../../engine/game_pack.dart';
+import '../../engine/game_services.dart';
 import '../../engine/game_session_controller.dart';
 import '../../engine/rhythm_tap_engine.dart';
 import '../../engine/sim_lab_engine.dart';
@@ -79,6 +80,7 @@ class _GameScreenState extends State<GameScreen> {
   final GlobalKey _captureKey = GlobalKey();
 
   String? _saveMessage;
+  bool _saveSucceeded = false;
   bool _saving = false;
 
   @override
@@ -111,22 +113,30 @@ class _GameScreenState extends State<GameScreen> {
     );
 
     if (!availability.isAvailable) {
-      return _UnavailableView(
-        reason: availability.reason!,
-        detail: kDebugMode ? availability.detail : null,
-      );
+      return _unavailableState(availability.reason!);
     }
 
     final engine = widget.registry.resolve(widget.pack.engineId)!;
 
+    final visualSpec = GameBoardVisualSpec.forAgeTrack(
+      widget.controller.ageTrack,
+    );
+    final touchTarget = effectiveTouchTarget(
+      widget.controller.pack.accessibility,
+    );
+    final actionStyle = gameActionStyle(touchTarget);
     return Scaffold(
+      backgroundColor: visualSpec.backgroundColor,
       appBar: AppBar(
+        toolbarHeight: touchTarget,
         title: Text(
           'المستوى ${widget.controller.levelIndex + 1} من '
           '${widget.controller.levelCount}',
         ),
         actions: [
           IconButton(
+            key: const Key('simplified_motor_button'),
+            style: actionStyle,
             icon: Icon(
               widget.controller.settings.simplifiedMotor
                   ? Icons.accessibility_new
@@ -137,35 +147,93 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          if (widget.controller.settings.simplifiedMotor)
-            Container(
-              width: double.infinity,
-              color: Theme.of(context).colorScheme.secondaryContainer,
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              child: Text(
-                'الوضع الحركي المبسّط مفعّل: الطريق أوسع.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            if (widget.controller.settings.simplifiedMotor)
+              Semantics(
+                liveRegion: true,
+                child: Container(
+                  width: double.infinity,
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 16,
+                  ),
+                  child: Text(
+                    'الوضع الحركي المبسّط مفعّل: الطريق أوسع.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ),
+            Expanded(
+              child: RepaintBoundary(
+                key: _captureKey,
+                child: engine.build(context, widget.controller),
               ),
             ),
-          Expanded(
-            child: RepaintBoundary(
-              key: _captureKey,
-              child: engine.build(context, widget.controller),
-            ),
-          ),
-          if (_saveMessage != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                _saveMessage!,
-                style: Theme.of(context).textTheme.bodySmall,
+            if (widget.controller.phase == LevelPhase.finished)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: GameStatePanel(
+                  kind: widget.controller.gameComplete
+                      ? GameStateKind.gameComplete
+                      : GameStateKind.levelComplete,
+                  title: widget.controller.gameComplete
+                      ? 'أكملت اللعبة'
+                      : 'أكملت المستوى',
+                  message: widget.controller.gameComplete
+                      ? 'أنهيت كل المستويات. عمل رائع!'
+                      : 'المستوى التالي جاهز عندما تريد.',
+                  compact: true,
+                ),
               ),
-            ),
-          _buildFooter(context),
-        ],
+            if (_saveMessage != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: GameStatePanel(
+                  kind: _saveSucceeded
+                      ? GameStateKind.correct
+                      : GameStateKind.retry,
+                  title: _saveSucceeded ? 'تم الحفظ' : 'تعذّر الحفظ',
+                  message: _saveMessage!,
+                  compact: true,
+                ),
+              ),
+            _buildFooter(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _unavailableState(GameUnavailableReason reason) {
+    final (title, message) = switch (reason) {
+      GameUnavailableReason.requiresTouch => (
+        'هذه اللعبة تحتاج شاشة لمس',
+        'التتبّع والتلوين يحتاجان إصبعًا أو قلمًا. جرّبها على الجوال أو اللوح.',
+      ),
+      GameUnavailableReason.unsupportedEngine ||
+      GameUnavailableReason.unsupportedEngineVersion => (
+        'هذه اللعبة تحتاج تحديث التطبيق',
+        'أضفنا نوعًا أو نسخة أحدث من الألعاب. حدّث التطبيق لتلعبها.',
+      ),
+      GameUnavailableReason.unsupportedPackVersion => (
+        'هذه اللعبة تحتاج تحديث التطبيق',
+        'نسخة بيانات اللعبة أحدث من نسخة التطبيق.',
+      ),
+      GameUnavailableReason.malformedPack => (
+        'لم نتمكّن من فتح هذه اللعبة',
+        'سنصلحها قريبًا. جرّب لعبة أخرى.',
+      ),
+    };
+    return GameStateScaffold(
+      panel: GameStatePanel(
+        kind: GameStateKind.unavailable,
+        title: title,
+        message: message,
       ),
     );
   }
@@ -179,6 +247,9 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildFooter(BuildContext context) {
     final controller = widget.controller;
+    final actionStyle = gameActionStyle(
+      effectiveTouchTarget(controller.pack.accessibility),
+    );
     final showSave =
         widget.creationStore != null &&
         (controller.level.mode.isCreation ||
@@ -192,18 +263,21 @@ class _GameScreenState extends State<GameScreen> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 12,
+        runSpacing: 8,
         children: [
           if (showSave)
             OutlinedButton.icon(
+              style: actionStyle,
               onPressed: _saving ? null : _saveDrawing,
               icon: const Icon(Icons.save_alt),
               label: const Text('احفظ رسمتي'),
             ),
-          if (showSave && showNext) const SizedBox(width: 12),
           if (showNext)
             FilledButton.icon(
+              style: actionStyle,
               onPressed: () {
                 setState(() => _saveMessage = null);
                 controller.nextLevel();
@@ -274,83 +348,14 @@ class _GameScreenState extends State<GameScreen> {
     if (!mounted) return;
     setState(() {
       _saving = false;
-      _saveMessage = result.isSuccess
-          ? 'حُفظت رسمتك على هذا الجهاز.'
-          : 'لم نتمكّن من حفظ الرسمة. '
-                '(${result.detail ?? result.outcome.name})';
+      _saveSucceeded = result.isSuccess;
+      _saveMessage = switch (result.outcome) {
+        CreationSaveOutcome.saved => 'حُفظت رسمتك على هذا الجهاز.',
+        CreationSaveOutcome.tooLarge =>
+          'الرسمة كبيرة للحفظ الآن. جرّب مساحة رسم أصغر ثم أعد المحاولة.',
+        CreationSaveOutcome.renderFailed =>
+          'لم نتمكّن من حفظ الرسمة الآن. أعد المحاولة بعد قليل.',
+      };
     });
-  }
-}
-
-class _UnavailableView extends StatelessWidget {
-  const _UnavailableView({required this.reason, this.detail});
-
-  final GameUnavailableReason reason;
-  final String? detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final (title, body, icon) = switch (reason) {
-      GameUnavailableReason.requiresTouch => (
-        'هذه اللعبة تحتاج شاشة لمس',
-        'التتبّع والتلوين يحتاجان إصبعًا أو قلمًا. '
-            'جرّبها على الجوال أو اللوح.',
-        Icons.touch_app_outlined,
-      ),
-      GameUnavailableReason.unsupportedEngine ||
-      GameUnavailableReason.unsupportedEngineVersion => (
-        'هذه اللعبة تحتاج تحديث التطبيق',
-        'أضفنا نوعًا أو نسخة أحدث من الألعاب. حدّث التطبيق لتلعبها.',
-        Icons.system_update_outlined,
-      ),
-      GameUnavailableReason.unsupportedPackVersion => (
-        'هذه اللعبة تحتاج تحديث التطبيق',
-        'نسخة بيانات اللعبة أحدث من نسخة التطبيق.',
-        Icons.system_update_outlined,
-      ),
-      GameUnavailableReason.malformedPack => (
-        'لم نتمكّن من فتح هذه اللعبة',
-        'سنصلحها قريبًا. جرّب لعبة أخرى.',
-        Icons.extension_off_outlined,
-      ),
-    };
-
-    return Scaffold(
-      appBar: AppBar(),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 440),
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 64),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  body,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                if (detail != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    detail!,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

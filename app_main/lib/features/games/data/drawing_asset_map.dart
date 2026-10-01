@@ -171,6 +171,32 @@ const kDrawingAssetMap = <String, String>{
   // prompts
   'asset-prompt-cover': 'assets/images/drawing/covers/cover-prompt.svg',
   'asset-free-cover': 'assets/images/drawing/covers/cover-free.svg',
+  // Wave 4 — approved production cards for «طابق الطبيعة».
+  // These transparent PNGs are also shared by Wave 4 packs that use the same
+  // canonical ids, so they must resolve locally rather than fall back to raw text.
+  'asset-wave4-apple': 'assets/images/games/wave4/match-nature-3/apple.png',
+  'asset-wave4-bird': 'assets/images/games/wave4/match-nature-3/bird.png',
+  'asset-wave4-cat': 'assets/images/games/wave4/match-nature-3/cat.png',
+  'asset-wave4-dog': 'assets/images/games/wave4/match-nature-3/dog.svg',
+  'asset-wave4-fish-red':
+      'assets/images/games/wave4/match-nature-3/fish-red.svg',
+  'asset-wave4-tree': 'assets/images/games/wave4/match-nature-3/tree.png',
+  'asset-wave4-flower': 'assets/images/games/wave4/match-nature-3/flower.png',
+  'asset-wave4-house': 'assets/images/games/wave4/match-nature-3/house.png',
+  'asset-wave4-sun': 'assets/images/games/wave4/match-nature-3/sun.png',
+  'asset-wave4-car': 'assets/images/games/wave4/match-nature-3/car.png',
+  'asset-wave4-ball': 'assets/images/games/wave4/match-nature-3/ball.png',
+  'asset-wave4-boat-old':
+      'assets/images/games/wave4/match-nature-3/boat-old.png',
+  'asset-wave4-library': 'assets/images/games/wave4/match-nature-3/library.png',
+  'asset-wave4-moon-star':
+      'assets/images/games/wave4/match-nature-3/moon-star.png',
+  'asset-wave4-pyramid': 'assets/images/games/wave4/match-nature-3/pyramid.png',
+  'asset-wave4-robot-goal':
+      'assets/images/games/wave4/match-nature-3/robot-goal.png',
+  'asset-wave4-rocket': 'assets/images/games/wave4/match-nature-3/rocket.png',
+  'asset-wave4-salt-beaker':
+      'assets/images/games/wave4/match-nature-3/salt-beaker.png',
 };
 
 String? drawingAssetPath(String assetId) => kDrawingAssetMap[assetId];

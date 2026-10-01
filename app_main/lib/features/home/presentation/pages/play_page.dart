@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/env/app_environment.dart';
 import '../../../../core/layout/app_layout.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../application/home_providers.dart';
@@ -20,8 +21,11 @@ class PlayPage extends ConsumerWidget {
     final catalogAsync = ref.watch(homeCatalogProvider);
     final gamesAsync = ref.watch(gameCatalogProvider);
     return catalogAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, s) => Scaffold(body: Center(child: Text('تعذّر التحميل: $e'))),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, s) => const Scaffold(
+        body: Center(child: Text('مفيش اتصال بالإنترنت. جرّب تاني بعد شوية.')),
+      ),
       data: (catalog) {
         final padding = context.horizontalPagePadding;
         // `APP-103`: الخادم هو المصدر، والحزمة بديلُ انقطاعٍ **مُعلَن**.
@@ -31,13 +35,25 @@ class PlayPage extends ConsumerWidget {
         // سليمة تمامًا — وردّ `fetchGames(childId:)` هو ما يطبّق حالة النشر
         // والمسار العمري والاستحقاق، والعنصر المبندل لا يحمل حالةً ولا عمرًا.
         //
-        // ‏`gamesAsync.hasError` يُقرأ صريحًا: المزوّد يرفع فشله الآن، وقراءة
-        // `valueOrNull` وحدها كانت ستُحوّل الخطأ إلى «لا ألعاب» في صمت.
+        // حالة الطلب جزء من قرار المصدر: AsyncData([]) ردّ حاكم، بينما الخطأ
+        // وحده يسمح بمسار الانقطاع، والتحميل لا يعرض كتالوجًا أقدم مؤقتًا.
+        final serverState = gamesAsync.hasValue
+            ? PlayServerState.completed
+            : gamesAsync.hasError
+            ? PlayServerState.error
+            : PlayServerState.loading;
         final resolved = resolvePlayableGames(
+          serverState: serverState,
           server: gamesAsync.valueOrNull ?? const <ExperienceItem>[],
           catalog: catalog.experiences,
-          bundled: LocalCatalog.experiences,
-          catalogIsBundled: catalog.usesBundledCatalog || gamesAsync.hasError,
+          // `APP-202`: لا ألعاب محزومة في الإنتاج؛ فشل الخادم يُعرض كانقطاع.
+          bundled: AppConfig.isProduction
+              ? const <ExperienceItem>[]
+              : LocalCatalog.experiences,
+          catalogIsBundled: catalog.usesBundledCatalog,
+          allowBundledFallback:
+              catalog.usesBundledCatalog ||
+              serverState == PlayServerState.error,
         );
         final games = resolved.games;
 
@@ -58,37 +74,71 @@ class PlayPage extends ConsumerWidget {
           byEngine.putIfAbsent(engine, () => []).add(g);
         }
 
+        if (serverState == PlayServerState.loading) {
+          return Scaffold(
+            backgroundColor: AppColors.deepSpace,
+            appBar: AppBar(
+              title: const Text('العب'),
+              backgroundColor: AppColors.deepSpace,
+              foregroundColor: Colors.white,
+            ),
+            body: const CinematicBackground(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+
         if (games.isEmpty) {
           return Scaffold(
             backgroundColor: AppColors.deepSpace,
             appBar: AppBar(
-                title: const Text('العب'),
-                backgroundColor: AppColors.deepSpace,
-                foregroundColor: Colors.white),
+              title: const Text('العب'),
+              backgroundColor: AppColors.deepSpace,
+              foregroundColor: Colors.white,
+            ),
             body: CinematicBackground(
-              child: CustomScrollView(slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(padding),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 60),
-                        const Icon(Icons.extension_off_rounded,
-                            color: Colors.white38, size: 64),
-                        const SizedBox(height: 16),
-                        const Text('لا توجد ألعاب متاحة حالياً',
-                            style: TextStyle(color: Colors.white70, fontSize: 16)),
-                        const SizedBox(height: 24),
-                        FilledButton.icon(
-                          onPressed: () => context.push('/studio'),
-                          icon: const Icon(Icons.brush_rounded),
-                          label: const Text('استوديو الإبداع'),
-                        ),
-                      ],
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(padding),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 60),
+                          const Icon(
+                            Icons.extension_off_rounded,
+                            color: Colors.white38,
+                            size: 64,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'لا توجد ألعاب مناسبة لك الآن. جرّب التحديث بعد قليل.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          OutlinedButton.icon(
+                            key: const Key('play_empty_retry'),
+                            onPressed: () =>
+                                ref.invalidate(gameCatalogProvider),
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('تحديث الألعاب'),
+                          ),
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                            onPressed: () => context.push('/studio'),
+                            icon: const Icon(Icons.brush_rounded),
+                            label: const Text('استوديو الإبداع'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ]),
+                ],
+              ),
             ),
           );
         }
@@ -96,96 +146,101 @@ class PlayPage extends ConsumerWidget {
         return Scaffold(
           backgroundColor: AppColors.deepSpace,
           appBar: AppBar(
-              title: Text('العب • ${games.length} لعبة',
-                  style: const TextStyle(color: Colors.white)),
-              backgroundColor: AppColors.deepSpace,
-              foregroundColor: Colors.white),
+            title: Text(
+              'العب • ${games.length} لعبة',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: AppColors.deepSpace,
+            foregroundColor: Colors.white,
+          ),
           body: CinematicBackground(
-            child: CustomScrollView(slivers: [
-              // `APP-103`: استخدام الحزمة المبندلة **يُقال**، كما تقوله الرئيسية.
-              // هذه الشاشة كانت تعرضها بلا أي إشارة، فيقرأها الطفل ووليّ أمره
-              // كأنها ما نشره الخادم.
-              if (resolved.usesBundled)
+            child: CustomScrollView(
+              slivers: [
+                // `APP-103`: استخدام الحزمة المبندلة **يُقال**، كما تقوله الرئيسية.
+                // هذه الشاشة كانت تعرضها بلا أي إشارة، فيقرأها الطفل ووليّ أمره
+                // كأنها ما نشره الخادم.
+                if (resolved.usesBundled)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(padding, 14, padding, 0),
+                      child: _OfflineLibraryNotice(
+                        onRefresh: () {
+                          ref.invalidate(gameCatalogProvider);
+                          ref.invalidate(homeCatalogProvider);
+                        },
+                      ),
+                    ),
+                  ),
+                // Featured
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(padding, 14, padding, 0),
-                    child: _OfflineLibraryNotice(
-                      onRefresh: () {
-                        ref.invalidate(gameCatalogProvider);
-                        ref.invalidate(homeCatalogProvider);
-                      },
-                    ),
-                  ),
-                ),
-              // Featured
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 22),
-                  child: ContentRail<ExperienceItem>(
-                    title: 'ألعاب مميزة • ${games.length}',
-                    items: games.take(8).toList(),
-                    height: 266,
-                    horizontalPadding: padding,
-                    itemBuilder: (c, item, i) => ExperienceCard(
-                      item: item,
-                      isTelevision: false,
-                      onPressed: () => context.push('/game/${item.serverGameId}'),
-                    ),
-                  ),
-                ),
-              ),
-              // By engine (so 12 engines all discoverable)
-              for (final entry in byEngine.entries)
-                if (entry.value.length >= 2)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 22),
-                      child: ContentRail<ExperienceItem>(
-                        title: _engineLabel(entry.key),
-                        subtitle: '${entry.value.length} ألعاب',
-                        items: entry.value,
-                        height: 266,
-                        horizontalPadding: padding,
-                        itemBuilder: (c, item, i) => ExperienceCard(
-                          item: item,
-                          isTelevision: false,
-                          onPressed: () => context.push('/game/${item.serverGameId}'),
-                        ),
+                    padding: const EdgeInsets.only(top: 22),
+                    child: ContentRail<ExperienceItem>(
+                      title: 'ألعاب مميزة • ${games.length}',
+                      items: games.take(8).toList(),
+                      height: 266,
+                      horizontalPadding: padding,
+                      itemBuilder: (c, item, i) => ExperienceCard(
+                        item: item,
+                        isTelevision: false,
+                        onPressed: () => context.push('/game/${item.id}'),
                       ),
                     ),
                   ),
-              // By planet (legacy)
-              for (final planet in catalog.planets)
-                if ((byPlanet[planet.id]?.isNotEmpty ?? false))
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 22),
-                      child: ContentRail<ExperienceItem>(
-                        title: planet.name,
-                        subtitle: planet.description,
-                        items: byPlanet[planet.id]!,
-                        height: 266,
-                        horizontalPadding: padding,
-                        itemBuilder: (c, item, i) => ExperienceCard(
-                          item: item,
-                          isTelevision: false,
-                          onPressed: () => context.push('/game/${item.serverGameId}'),
+                ),
+                // By engine (so 12 engines all discoverable)
+                for (final entry in byEngine.entries)
+                  if (entry.value.length >= 2)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 22),
+                        child: ContentRail<ExperienceItem>(
+                          title: _engineLabel(entry.key),
+                          subtitle: '${entry.value.length} ألعاب',
+                          items: entry.value,
+                          height: 266,
+                          horizontalPadding: padding,
+                          itemBuilder: (c, item, i) => ExperienceCard(
+                            item: item,
+                            isTelevision: false,
+                            onPressed: () => context.push('/game/${item.id}'),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(padding),
-                  child: FilledButton.icon(
-                    onPressed: () => context.push('/studio'),
-                    icon: const Icon(Icons.brush_rounded),
-                    label: const Text('استوديو الإبداع'),
+                // By planet (legacy)
+                for (final planet in catalog.planets)
+                  if ((byPlanet[planet.id]?.isNotEmpty ?? false))
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 22),
+                        child: ContentRail<ExperienceItem>(
+                          title: planet.name,
+                          subtitle: planet.description,
+                          items: byPlanet[planet.id]!,
+                          height: 266,
+                          horizontalPadding: padding,
+                          itemBuilder: (c, item, i) => ExperienceCard(
+                            item: item,
+                            isTelevision: false,
+                            onPressed: () => context.push('/game/${item.id}'),
+                          ),
+                        ),
+                      ),
+                    ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(padding),
+                    child: FilledButton.icon(
+                      onPressed: () => context.push('/studio'),
+                      icon: const Icon(Icons.brush_rounded),
+                      label: const Text('استوديو الإبداع'),
+                    ),
                   ),
                 ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 80)),
-            ]),
+                const SliverToBoxAdapter(child: SizedBox(height: 80)),
+              ],
+            ),
           ),
         );
       },
@@ -200,12 +255,27 @@ String _engineFromId(String id) {
   if (id.contains('sequence')) return 'sequence_order';
   if (id.contains('count')) return 'count_quantity';
   if (id.contains('logic')) return 'logic_pattern';
-  if (id.contains('word') || id.contains('letter') || id.contains('tracing-word')) return 'word_build';
+  if (id.contains('word') ||
+      id.contains('letter') ||
+      id.contains('tracing-word')) {
+    return 'word_build';
+  }
   if (id.contains('rhythm')) return 'rhythm_tap';
   if (id.contains('block') || id.contains('maze')) return 'block_code';
-  if (id.contains('sim') || id.contains('plant') || id.contains('lab')) return 'sim_lab';
-  if (id.contains('timeline') || id.contains('egypt') || id.contains('civilization')) return 'timeline_map';
-  if (id.contains('shape') || id.contains('number') || id.contains('letter') || id.contains('trace')) return 'trace_color';
+  if (id.contains('sim') || id.contains('plant') || id.contains('lab')) {
+    return 'sim_lab';
+  }
+  if (id.contains('timeline') ||
+      id.contains('egypt') ||
+      id.contains('civilization')) {
+    return 'timeline_map';
+  }
+  if (id.contains('shape') ||
+      id.contains('number') ||
+      id.contains('letter') ||
+      id.contains('trace')) {
+    return 'trace_color';
+  }
   return 'other';
 }
 
@@ -226,14 +296,6 @@ String _engineLabel(String engineId) {
     'other': 'ألعاب أخرى',
   };
   return labels[engineId] ?? engineId;
-}
-
-extension _ServerId on ExperienceItem {
-  String get serverGameId {
-    // local catalog uses 'letter-tracing' but server uses 'game-letter-tracing'
-    if (id.startsWith('game-')) return id;
-    return 'game-$id';
-  }
 }
 
 /// إشعار «هذه المكتبة المحلية لا المنشورة» على شاشة «العب» (`APP-103`).

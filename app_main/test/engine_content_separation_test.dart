@@ -81,6 +81,11 @@ const _allowedConstantLists = <String, String>{
   'free_draw_surface.dart:_fallbackPalette':
       'default brush colours; any level palette wins',
 
+  // Spoken Arabic names for palette values. The hex stays drawing data while
+  // assistive technology receives a stable child-facing colour name.
+  'free_draw_surface.dart:names':
+      'accessibility labels for brush colours, never level content',
+
   // Names for the four brush tools defined by DrawBrush. Packs provide drawing
   // prompts and assets, but do not define or rename the editor's tool vocabulary.
   'free_draw_surface.dart:labels':
@@ -165,6 +170,16 @@ const _allowedConstantLists = <String, String>{
       'TEMPORARY: five bundled asset ids used when the remote asset map is unavailable; tracked with APP-103',
   'drawing_asset_map.dart:kDrawingAssetMap':
       'maps stable drawing reference ids to bundled files; no game logic',
+  // Colored game-art paths for ids the packs already reference. Like
+  // kDrawingAssetMap it only resolves an id to a bundled file: the pack still
+  // decides which id appears, where and why.
+  'game_art.dart:kGameArtMap':
+      'maps pack asset ids to bundled colored art files; no game logic',
+  // Arabic names for bundled art ids, used as the caption / screen-reader name of
+  // a picture and as the fallback when its art is not produced yet, so the child
+  // never sees a raw `asset-...` id. A pack cannot add a picture through it.
+  'game_art.dart:_arabicNames':
+      'accessible names of bundled art ids, not authored level content',
   // Studio V2 presentation scaffolding — excluded from the game engine contract
   // because it styles local creation flows and does not feed any engine.
   'coloring_board_v2.dart:kBoardPaletteV2':
@@ -548,7 +563,7 @@ void main() {
       expect(find.byIcon(Icons.question_mark), findsNWidgets(8));
     });
 
-    testWidgets('a revealed tile shows the pack\'s asset id', (tester) async {
+    testWidgets('a revealed tile hides its raw asset id', (tester) async {
       final harness = _Harness(
         _packOf(
           engineId: 'memory_flip',
@@ -562,10 +577,10 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('memory_tile_0')));
       await tester.pump();
 
-      // One of the two faces of the single authored pair. Nothing else could
-      // produce this string, so the face cannot be coming from the app.
-      final shown = find.textContaining('asset-only-in-this-test');
-      expect(shown, findsOneWidget);
+      // Unknown art remains distinguishable without exposing a technical pack id
+      // as child-facing content.
+      expect(find.textContaining('asset-only-in-this-test'), findsNothing);
+      expect(find.text('بطاقة مصوّرة'), findsOneWidget);
     });
 
     testWidgets('an empty content list produces an empty board', (
@@ -635,14 +650,16 @@ void main() {
       Map<String, dynamic>? engine,
       Map<String, dynamic>? gaps,
       Object? title,
+      Object? ageMin = 3,
+      Object? ageMax = 5,
     }) => {
       'success': true,
       'data': {
         'id': 'game-1',
         if (engineId != null) 'engine_id': engineId,
         if (title != null) 'title': title,
-        'age_min': 3,
-        'age_max': 5,
+        if (ageMin != null) 'age_min': ageMin,
+        if (ageMax != null) 'age_max': ageMax,
         'engine_version': 1,
         'episode_id': 'ep-1',
         'objective': {'id': 'objective-1', 'code': 'OBJ'},
@@ -728,13 +745,33 @@ void main() {
       );
     });
 
-    test('the age track follows the pack\'s authored range', () {
+    test('the age track follows only a valid authored range', () {
       // Taken from the game, not the child: a pack authored for 3–5 should sound
       // like a preschool pack even when an older sibling opens it.
       expect(
         resolvedGameFromEnvelope('fallback', envelope()).ageTrack,
         AgeTrack.preschool,
       );
+      expect(
+        resolvedGameFromEnvelope(
+          'fallback',
+          envelope(ageMin: 9, ageMax: 12),
+        ).ageTrack,
+        AgeTrack.junior,
+      );
+
+      // Missing, invalid and cross-track metadata stays neutral rather than being
+      // guessed from one bound.
+      for (final invalid in [
+        envelope(ageMin: null),
+        envelope(ageMin: 8, ageMax: 6),
+        envelope(ageMin: 5, ageMax: 6),
+      ]) {
+        expect(
+          resolvedGameFromEnvelope('fallback', invalid).ageTrack,
+          AgeTrack.kids,
+        );
+      }
     });
   });
 }

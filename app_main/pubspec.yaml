@@ -87,6 +87,31 @@ flutter:
     - assets/images/series/banners/
     - assets/images/planets/
     - assets/images/games/
+    # Existing reviewed role art used by pack-driven game surfaces. Keep these
+    # explicit: Flutter directory entries are not recursive, and source trees
+    # must never be bundled.
+    - assets/images/games/wave/wave1-memory-animals/board-background.webp
+    - assets/images/games/wave/wave1-memory-animals/card-back.webp
+    - assets/images/games/wave/wave1-picture-match/board-background.webp
+    - assets/images/games/wave/wave2-memory-2/board-background.webp
+    - assets/images/games/wave/wave2-memory-2/card-back.webp
+    - assets/images/games/wave/wave2-match-2/board-background.webp
+    - assets/images/games/wave/wave2-rhythm/stage-background.webp
+    - assets/images/games/wave/wave1-sim-lab/lab-background.webp
+    - assets/images/games/wave/wave1-sim-lab/heat-apparatus.png
+    - assets/images/games/wave/wave3-sim-saturating/lab-background.webp
+    - assets/images/games/wave/wave3-sim-saturating/beaker-water.png
+    - assets/images/games/wave/wave2-timeline/timeline-background.webp
+    - assets/images/games/wave/wave2-timeline/event-pyramids.webp
+    - assets/images/games/wave/wave2-timeline/event-library.webp
+    - assets/images/games/wave/wave3-timeline-detail/map-timeline-background.webp
+    # Wave4 uses a nested game folder; declare it explicitly so Flutter bundles
+    # the reviewed production cards rather than finding them only on disk.
+    - assets/images/games/wave4/match-nature-3/
+    # Lightweight 512px WebP derivatives of the reviewed Wave 1–3 game art,
+    # resolved by `engine/game_art.dart` (the full PNG sources stay out of the
+    # bundle).
+    - assets/images/games/art/
     - assets/images/episodes/
     - assets/images/explore/
     - assets/images/seasonal/

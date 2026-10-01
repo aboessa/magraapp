@@ -37,8 +37,16 @@ void main() {
         }
       }
 
-      expect(missing, isEmpty, reason: 'Missing drawing assets:\n${missing.join('\n')}');
-      expect(unsupported, isEmpty, reason: 'Unsupported extensions:\n${unsupported.join('\n')}');
+      expect(
+        missing,
+        isEmpty,
+        reason: 'Missing drawing assets:\n${missing.join('\n')}',
+      );
+      expect(
+        unsupported,
+        isEmpty,
+        reason: 'Unsupported extensions:\n${unsupported.join('\n')}',
+      );
       expect(duplicateIds, isEmpty, reason: 'Duplicate ids: $duplicateIds');
     });
 
@@ -50,8 +58,38 @@ void main() {
       // Duplicate paths are allowed only if intentional (same SVG reused).
       // We just ensure no path is empty and no id maps to empty.
       for (final e in kDrawingAssetMap.entries) {
-        expect(e.value.trim().isNotEmpty, isTrue, reason: 'Empty path for ${e.key}');
-        expect(e.value.startsWith('assets/'), isTrue, reason: '${e.key} must be assets/ path: ${e.value}');
+        expect(
+          e.value.trim().isNotEmpty,
+          isTrue,
+          reason: 'Empty path for ${e.key}',
+        );
+        expect(
+          e.value.startsWith('assets/'),
+          isTrue,
+          reason: '${e.key} must be assets/ path: ${e.value}',
+        );
+      }
+    });
+
+    test('all match-nature-3 asset ids resolve to production art', () {
+      const matchNatureAssetIds = [
+        'asset-wave4-apple',
+        'asset-wave4-bird',
+        'asset-wave4-cat',
+        'asset-wave4-dog',
+        'asset-wave4-fish-red',
+        'asset-wave4-tree',
+        'asset-wave4-flower',
+        'asset-wave4-house',
+        'asset-wave4-sun',
+        'asset-wave4-car',
+      ];
+      for (final assetId in matchNatureAssetIds) {
+        expect(
+          kDrawingAssetMap[assetId],
+          isNotNull,
+          reason: '$assetId must not fall back to raw text in طابق الطبيعة',
+        );
       }
     });
 
@@ -64,32 +102,54 @@ void main() {
       final coversDir = Directory('assets/images/drawing/covers');
 
       if (coloringDir.existsSync()) {
-        final count = coloringDir.listSync().where((e) => e.path.endsWith('.svg')).length;
+        final count = coloringDir
+            .listSync()
+            .where((e) => e.path.endsWith('.svg'))
+            .length;
         expect(count, greaterThanOrEqualTo(30), reason: 'coloring SVGs');
       }
       if (templatesDir.existsSync()) {
-        final count = templatesDir.listSync().where((e) => e.path.endsWith('.svg')).length;
+        final count = templatesDir
+            .listSync()
+            .where((e) => e.path.endsWith('.svg'))
+            .length;
         expect(count, greaterThanOrEqualTo(30));
       }
       if (coversDir.existsSync()) {
-        final count = coversDir.listSync().where((e) => e.path.endsWith('.svg')).length;
+        final count = coversDir
+            .listSync()
+            .where((e) => e.path.endsWith('.svg'))
+            .length;
         expect(count, greaterThanOrEqualTo(10));
       }
     });
 
     test('pubspec bundles drawing subdirectories', () {
       final pubspec = File('pubspec.yaml').readAsStringSync();
-      expect(pubspec.contains('assets/images/drawing/coloring/'), isTrue,
-          reason: 'pubspec must bundle coloring/');
-      expect(pubspec.contains('assets/images/drawing/templates/'), isTrue,
-          reason: 'pubspec must bundle templates/');
-      expect(pubspec.contains('assets/images/drawing/covers/'), isTrue,
-          reason: 'pubspec must bundle covers/');
+      expect(
+        pubspec.contains('assets/images/drawing/coloring/'),
+        isTrue,
+        reason: 'pubspec must bundle coloring/',
+      );
+      expect(
+        pubspec.contains('assets/images/drawing/templates/'),
+        isTrue,
+        reason: 'pubspec must bundle templates/',
+      );
+      expect(
+        pubspec.contains('assets/images/drawing/covers/'),
+        isTrue,
+        reason: 'pubspec must bundle covers/',
+      );
     });
 
     test('flutter_svg is a direct dependency', () {
       final pubspec = File('pubspec.yaml').readAsStringSync();
-      expect(pubspec.contains('flutter_svg'), isTrue, reason: 'flutter_svg must be direct dep');
+      expect(
+        pubspec.contains('flutter_svg'),
+        isTrue,
+        reason: 'flutter_svg must be direct dep',
+      );
       final lock = File('pubspec.lock').readAsStringSync();
       expect(lock.contains('flutter_svg'), isTrue);
     });
