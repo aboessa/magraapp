@@ -56,6 +56,162 @@ Map<String, dynamic> packWith(
   };
 }
 
+Map<String, dynamic> juniorBlockProgressionPack({required bool advanced}) => {
+  'pack_version': 1,
+  'engine_id': 'block_code',
+  'pack_id': advanced
+      ? 'wave3-block-advanced-p2a-test'
+      : 'wave1-block-code-p2a-test',
+  'supports_dpad': true,
+  'progression': {'levels_to_finish': 3, 'advance_on': 'level_complete'},
+  'accessibility': {
+    'min_touch_target_dp': 64,
+    'sequential_tap_alternative': true,
+    'reduced_motion_supported': true,
+  },
+  'voice_manifest': const <String, String>{},
+  'levels': advanced
+      ? [
+          {
+            'level': 1,
+            'grid': {
+              'w': 5,
+              'h': 5,
+              'walls': const <List<int>>[],
+              'start': [0, 0],
+              'facing': 'east',
+              'goal': [4, 2],
+              'collectibles': const <List<int>>[],
+            },
+            'allowed_blocks': ['move', 'turn_right', 'repeat'],
+            'block_limit': 10,
+            'optimal_blocks': 6,
+            'step_delay_ms': 500,
+            'reference_solution': [
+              'repeat:4',
+              'move',
+              'turn_right',
+              'repeat:2',
+              'move',
+            ],
+          },
+          {
+            'level': 2,
+            'grid': {
+              'w': 5,
+              'h': 5,
+              'walls': const <List<int>>[],
+              'start': [0, 0],
+              'facing': 'east',
+              'goal': [4, 2],
+              'collectibles': [
+                [4, 0],
+              ],
+            },
+            'allowed_blocks': ['move', 'turn_right', 'repeat', 'collect'],
+            'block_limit': 10,
+            'optimal_blocks': 7,
+            'step_delay_ms': 500,
+            'reference_solution': [
+              'repeat:4',
+              'move',
+              'collect',
+              'turn_right',
+              'repeat:2',
+              'move',
+            ],
+          },
+          {
+            'level': 3,
+            'grid': {
+              'w': 3,
+              'h': 3,
+              'walls': [
+                [1, 0],
+              ],
+              'start': [0, 0],
+              'facing': 'east',
+              'goal': [0, 1],
+              'collectibles': const <List<int>>[],
+            },
+            'allowed_blocks': ['move', 'turn_right', 'if_path'],
+            'block_limit': 6,
+            'optimal_blocks': 4,
+            'step_delay_ms': 500,
+            'reference_solution': ['if_path', 'move', 'turn_right', 'move'],
+          },
+        ]
+      : [
+          {
+            'level': 1,
+            'grid': {
+              'w': 4,
+              'h': 4,
+              'walls': const <List<int>>[],
+              'start': [0, 0],
+              'facing': 'east',
+              'goal': [3, 0],
+              'collectibles': const <List<int>>[],
+            },
+            'allowed_blocks': ['move'],
+            'block_limit': 6,
+            'optimal_blocks': 3,
+            'step_delay_ms': 500,
+            'reference_solution': ['move', 'move', 'move'],
+          },
+          {
+            'level': 2,
+            'grid': {
+              'w': 4,
+              'h': 4,
+              'walls': const <List<int>>[],
+              'start': [0, 0],
+              'facing': 'east',
+              'goal': [3, 2],
+              'collectibles': const <List<int>>[],
+            },
+            'allowed_blocks': ['move', 'turn_right'],
+            'block_limit': 8,
+            'optimal_blocks': 6,
+            'step_delay_ms': 500,
+            'reference_solution': [
+              'move',
+              'move',
+              'move',
+              'turn_right',
+              'move',
+              'move',
+            ],
+          },
+          {
+            'level': 3,
+            'grid': {
+              'w': 5,
+              'h': 5,
+              'walls': [
+                [2, 0],
+              ],
+              'start': [0, 0],
+              'facing': 'east',
+              'goal': [4, 2],
+              'collectibles': const <List<int>>[],
+            },
+            'allowed_blocks': ['move', 'turn_left', 'turn_right', 'repeat'],
+            'block_limit': 10,
+            'optimal_blocks': 6,
+            'step_delay_ms': 500,
+            'reference_solution': [
+              'turn_right',
+              'repeat:2',
+              'move',
+              'turn_left',
+              'repeat:4',
+              'move',
+            ],
+          },
+        ],
+};
+
 ({
   GameSessionController controller,
   RecordingAttemptReporter reporter,
@@ -1089,6 +1245,237 @@ void main() {
     test('block count treats repeat as one block', () {
       final program = BlockProgram.fromTokens(['repeat:5', 'move']);
       expect(program.blockCount, 2);
+    });
+
+    test(
+      'P2-A junior packs advance 1→2→3 and every reference solves',
+      () async {
+        for (final advanced in [false, true]) {
+          final packJson = juniorBlockProgressionPack(advanced: advanced);
+          final pack = GamePack.fromJson(packJson);
+          final s = session(
+            packJson,
+            gameId: advanced
+                ? 'game-wave3-block-advanced'
+                : 'game-wave1-block-code',
+          );
+
+          expect(pack.progression.levelsToFinish, 3);
+          expect(pack.rawLevels.map((level) => level['level']), [1, 2, 3]);
+          expect(pack.supportsDpad, isTrue);
+          expect(pack.accessibility.sequentialTapAlternative, isTrue);
+          expect(pack.accessibility.reducedMotionSupported, isTrue);
+
+          for (final level in pack.rawLevels) {
+            final grid = BlockGrid.fromJson(
+              Map<String, dynamic>.from(level['grid'] as Map),
+            );
+            final tokens = (level['reference_solution'] as List).cast<String>();
+            final program = BlockProgram.fromTokens(tokens);
+            final allowed = (level['allowed_blocks'] as List).cast<String>();
+            expect(
+              program.blockCount,
+              lessThanOrEqualTo((level['block_limit'] as num).toInt()),
+            );
+            expect(
+              tokens.map((token) => token.split(':').first),
+              everyElement(isIn(allowed)),
+            );
+
+            final interpreter = BlockInterpreter(grid: grid);
+            final trace = interpreter.run(program);
+            expect(
+              interpreter.reachedGoal(trace.last),
+              isTrue,
+              reason: '${pack.packId} level ${level['level']}',
+            );
+            expect(trace.last.collided, isFalse);
+            expect(trace.last.collected, hasLength(grid.collectibles.length));
+          }
+
+          expect(s.controller.levelCount, 3);
+          expect(s.controller.levelIndex, 0);
+          await s.controller.finishLevelFromEngine();
+          expect(s.controller.gameComplete, isFalse);
+          s.controller.nextLevel();
+          expect(s.controller.levelIndex, 1);
+          await s.controller.finishLevelFromEngine();
+          expect(s.controller.gameComplete, isFalse);
+          s.controller.nextLevel();
+          expect(s.controller.levelIndex, 2);
+          await s.controller.finishLevelFromEngine();
+          expect(s.controller.gameComplete, isTrue);
+        }
+      },
+    );
+
+    testWidgets(
+      'repeat count authors ×4 optimally with RTL, 2x text, and D-pad',
+      (tester) async {
+        tester.view.physicalSize = const Size(1400, 2200);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final packJson = juniorBlockProgressionPack(advanced: true);
+        final s = session(
+          packJson,
+          gameId: 'game-wave3-block-advanced',
+          settings: const GameAccessibilitySettings(reduceMotion: true),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(2),
+                disableAnimations: true,
+              ),
+              child: child!,
+            ),
+            home: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(
+                body: AnimatedBuilder(
+                  animation: s.controller,
+                  builder: (context, _) =>
+                      const BlockCodeEngine().build(context, s.controller),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final selector = find.byKey(const Key('block_repeat_count_selector'));
+        final decrease = find.byKey(const Key('block_repeat_count_decrease'));
+        final increase = find.byKey(const Key('block_repeat_count_increase'));
+        expect(find.text('عدد التكرار: ×٢'), findsOneWidget);
+        var semantics = tester.widget<Semantics>(selector).properties;
+        expect(semantics.label, 'عدد التكرار');
+        expect(semantics.value, '×٢');
+        expect(semantics.onIncrease, isNotNull);
+        expect(semantics.onDecrease, isNull);
+        expect(tester.getSize(decrease).shortestSide, greaterThanOrEqualTo(64));
+        expect(tester.getSize(increase).shortestSide, greaterThanOrEqualTo(64));
+
+        await tabTo(tester, increase);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pump();
+        expect(find.text('عدد التكرار: ×٣'), findsOneWidget);
+        semantics = tester.widget<Semantics>(selector).properties;
+        expect(semantics.onIncrease, isNotNull);
+        expect(semantics.onDecrease, isNotNull);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+        await tester.pump();
+        expect(primaryFocusIsWithin(decrease), isTrue);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pump();
+        expect(find.text('عدد التكرار: ×٢'), findsOneWidget);
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+        await tester.pump();
+        expect(primaryFocusIsWithin(increase), isTrue);
+        for (var count = 0; count < 2; count++) {
+          await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+          await tester.pump();
+        }
+        expect(find.text('عدد التكرار: ×٤'), findsOneWidget);
+
+        Future<void> add(String token) async {
+          await tester.tap(find.byKey(ValueKey('block_palette_$token')));
+          await tester.pump();
+        }
+
+        await add('repeat');
+        await add('move');
+        await add('turn_right');
+        await tester.tap(decrease);
+        await tester.pump();
+        await tester.tap(decrease);
+        await tester.pump();
+        expect(find.text('عدد التكرار: ×٢'), findsOneWidget);
+        await add('repeat');
+        await add('move');
+
+        expect(find.text(' ×٤'), findsOneWidget);
+        expect(find.text(' ×٢'), findsOneWidget);
+        await tester.tap(find.byKey(const Key('block_run_button')));
+        await tester.pumpAndSettle();
+
+        final attempt = s.reporter.attempts.single;
+        expect(attempt.completed, isTrue);
+        expect(attempt.score, 2);
+        expect(attempt.maxScore, 2);
+        expect(attempt.answers.single['blocks_used'], 5);
+        expect(attempt.answers.single['optimal'], isTrue);
+        expect(s.audio.played, contains('vo.star_optimal'));
+
+        s.controller.nextLevel();
+        await tester.pump();
+        expect(s.controller.levelIndex, 1);
+        expect(find.byKey(const ValueKey('block_placed_0')), findsNothing);
+        expect(find.byKey(const Key('block_result')), findsNothing);
+        expect(find.text('الأوامر: 0 من 10'), findsOneWidget);
+        expect(find.text('عدد التكرار: ×٢'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('a longer valid tapped solution completes without penalty', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1000, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final s = session(
+        packWith('block_code', {
+          'level': 1,
+          'grid': {
+            'w': 3,
+            'h': 3,
+            'walls': const <List<int>>[],
+            'start': [0, 0],
+            'facing': 'east',
+            'goal': [2, 0],
+            'collectibles': const <List<int>>[],
+          },
+          'allowed_blocks': ['move', 'turn_right'],
+          'block_limit': 8,
+          'optimal_blocks': 2,
+          'step_delay_ms': 500,
+          'reference_solution': ['move', 'move'],
+        }),
+        gameId: 'game-wave1-block-code',
+        settings: const GameAccessibilitySettings(reduceMotion: true),
+      );
+      await pumpEngine(
+        tester,
+        (context) => const BlockCodeEngine().build(context, s.controller),
+      );
+
+      final turn = find.byKey(const ValueKey('block_palette_turn_right'));
+      final move = find.byKey(const ValueKey('block_palette_move'));
+      for (var index = 0; index < 4; index++) {
+        await tester.tap(turn);
+        await tester.pump();
+      }
+      for (var index = 0; index < 2; index++) {
+        await tester.tap(move);
+        await tester.pump();
+      }
+      await tester.tap(find.byKey(const Key('block_run_button')));
+      await tester.pumpAndSettle();
+
+      final attempt = s.reporter.attempts.single;
+      expect(attempt.completed, isTrue);
+      expect(
+        attempt.score,
+        1,
+        reason: 'reaching the goal always earns the base star',
+      );
+      expect(attempt.maxScore, 2);
+      expect(attempt.answers.single['blocks_used'], 6);
+      expect(attempt.answers.single['optimal'], isFalse);
+      expect(s.controller.gameComplete, isTrue);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets(

@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Add schema-valid three-level progression for the two verified junior block-code packs, using current grid-object compatibility and proven reference solutions without creating Robo visuals.",
+  "status": "completed",
+  "steps": [
+    "Read context.json, FEAT-002.json, inventory.md and the exact junior progression tables in plan.md first; do not re-decide the content architecture.",
+    "Extend the P2-A assertions in dashboard/api/test/enginePacks.test.mjs for both block games and execute every reference_solution with runBlockProgram, checking goals, collectibles, block limits and allowed blocks.",
+    "Create dashboard/api/migrations/0107_games_p2a_junior_progression.sql with idempotent guarded content_pack-only updates, current block_code v1 grid objects and r2_key-resolved ready voice IDs; do not apply it.",
+    "Update dashboard/api/migrations/LEDGER.md surgically for 0107 and preserve FEAT-001/user edits.",
+    "Extend existing Flutter block/game tests to prove 1-to-3 progression, non-mirrored RTL geometry, D-pad/tap behavior, reduced motion and unchanged scoring semantics; use only the existing robot/goal/obstacle chrome."
+  ],
+  "acceptance_criteria": [
+    "Both named block games contain exactly three contiguous, distinct levels teaching sequence/turn/repeat and repeat/collect/if_path respectively.",
+    "Every reference solution reaches the goal and collects every collectible under the shared interpreter; longer valid solutions are not punished.",
+    "No new character pose or image is added; any future Robo visual remains blocked on an approved Character Sheet.",
+    "Migration 0107 changes only content_pack/updated_at for its two IDs and is never applied by this workflow."
+  ],
+  "verification": [
+    "cd dashboard/api; node --experimental-strip-types --test test/enginePacks.test.mjs test/migrations.test.mjs",
+    "cd app_main; flutter test test/game_screen_test.dart test/engine_content_separation_test.dart test/wave_two_engines_test.dart test/shared_fixtures_test.dart"
+  ],
+  "blocked_reason": null,
+  "findings": "Implemented guarded migration 0107 for exactly game-wave1-block-code and game-wave3-block-advanced. Each pack has the exact three contiguous progression levels from plan.md, uses the current block_code v1 grid object, resolves all ready voice references by stable r2_key, updates content_pack only, and carries no Robo/character image. Every reference_solution passed ENGINE_SCHEMAS/validateGamePack and runBlockProgram, reached its goal, collected every collectible, stayed within block_limit, and used only allowed blocks. Flutter coverage proves both packs advance 1→2→3, the existing board remains LTR inside RTL at 2x text, D-pad and tap input work, reduced motion is honored, and a longer valid solution retains the base completion score. Verification passed: node --experimental-strip-types --test test/enginePacks.test.mjs test/migrations.test.mjs (51/51, including shared server simulator fixture); exact FEAT Flutter suite (82/82); npm test (1598/1598); expanded focused Flutter suite (118/118); flutter analyze lib/features/games (no issues). npm run typecheck:types remains blocked by the same 50 pre-existing errors in unrelated untracked adminAiStoryStudio, adminCoupons, adminLiveEvents, adminNotifications, and adminScreentime routes; no FEAT-002 file appears in those errors. No D1 migration was applied, no production/status/media/character action occurred, and no APK was built or uploaded. Live backend token/R2/audio playback, hardware D-pad, device safe areas/contrast, and TalkBack/VoiceOver remain unverified release gates."
+}

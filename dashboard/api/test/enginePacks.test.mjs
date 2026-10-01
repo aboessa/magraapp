@@ -31,6 +31,10 @@ const P2A_PRESCHOOL_KIDS = path.resolve(
   import.meta.dirname,
   '../migrations/0106_games_p2a_preschool_kids_progression.sql',
 );
+const P2A_JUNIOR = path.resolve(
+  import.meta.dirname,
+  '../migrations/0107_games_p2a_junior_progression.sql',
+);
 
 function extractP2APacks(sql) {
   const packs = new Map();
@@ -167,6 +171,109 @@ test('0106 authors only the five verified preschool/kids three-level packs', () 
   assert.deepEqual(logic.levels.map((level) => level.mode), ['linear', 'linear_alt', 'matrix_2x2']);
   assert.ok(logic.levels.every((level) => level.changing_dimensions.includes('shape')));
   assert.ok(logic.levels.every((level) => level.options.length === 3));
+});
+
+test('0107 authors only the two verified junior block-code three-level packs', () => {
+  const sql = readFileSync(P2A_JUNIOR, 'utf8');
+  const executable = sql.replace(/^\s*--.*$/gm, '');
+  const packs = extractP2APacks(sql);
+  const expectedIds = [
+    'game-wave1-block-code',
+    'game-wave3-block-advanced',
+  ];
+
+  assert.deepEqual([...packs.keys()].sort(), expectedIds);
+  assert.match(executable, /UPDATE games\s+SET content_pack = resolved\.content_pack\s+FROM resolved/i);
+  assert.doesNotMatch(executable, /\bSET\s+(?:status|age_min|age_max|learning_objective_id)\s*=/i);
+  assert.doesNotMatch(executable, /\b(?:INSERT|DELETE)\b/i);
+  assert.match(executable, /ca\.r2_key = v\.value[\s\S]*ca\.status = 'ready'/i);
+  assert.match(executable, /resolved_voice_count = resolved\.required_voice_count/i);
+  assert.doesNotMatch(sql, /asset-(?:games|vo)-[a-z0-9-]+/i,
+    'voice ids are environment-specific; the migration must carry only stable r2_key values');
+  assert.doesNotMatch(sql, /asset-complete-robot|robot.*\.(?:png|webp|svg)/i,
+    'the existing Robo chrome is reused; no character asset belongs in these packs');
+
+  const voiceSeed = readFileSync(path.resolve(import.meta.dirname, '../migrations/0088_games_voice_assets.sql'), 'utf8');
+  const voiceIds = new Map();
+  let voiceIndex = 0;
+
+  for (const [gameId, pack] of packs) {
+    assert.equal(pack.engine_id, 'block_code', gameId);
+    assert.equal(pack.pack_version, 1, gameId);
+    assert.equal(pack.levels.length, 3, gameId);
+    assert.deepEqual(pack.levels.map((level) => level.level), [1, 2, 3], gameId);
+    assert.equal(new Set(pack.levels.map((level) => JSON.stringify(level))).size, 3, gameId);
+    assert.equal(pack.progression.levels_to_finish, 3, gameId);
+    assert.equal(pack.progression.advance_on, 'level_complete', gameId);
+    assert.equal(pack.supports_dpad, true, gameId);
+    assert.equal(pack.accessibility.sequential_tap_alternative, true, gameId);
+    assert.equal(pack.accessibility.reduced_motion_supported, true, gameId);
+    assert.deepEqual(pack.assets.images, [], gameId);
+
+    for (const [voiceKey, r2Key] of Object.entries(pack.voice_manifest)) {
+      assert.match(r2Key, /^private\/audio\/games\/block-code\/.+\.wav$/, `${gameId}: ${voiceKey}`);
+      assert.ok(voiceSeed.includes(`'${r2Key}'`), `${gameId}: ${voiceKey} must use an existing voice file`);
+      if (!voiceIds.has(r2Key)) voiceIds.set(r2Key, `ready-voice-${++voiceIndex}`);
+      pack.voice_manifest[voiceKey] = voiceIds.get(r2Key);
+    }
+
+    const ready = new Set(Object.values(pack.voice_manifest));
+    const result = validateGamePack(ENGINE_SCHEMAS.block_code, pack, baseContext('block_code', {
+      ageMin: 9,
+      ageMax: 12,
+      hasLearningObjective: true,
+      knownAssetIds: ready,
+      readyAssetIds: ready,
+      forPublish: true,
+    }));
+    assert.deepEqual(result.errors, [], `${gameId}: ${result.errors.join('; ')}`);
+
+    for (const level of pack.levels) {
+      assert.equal(typeof level.grid, 'object', `${gameId} level ${level.level}: current grid object`);
+      assert.ok(!Array.isArray(level.grid), `${gameId} level ${level.level}: legacy grid is forbidden`);
+      assert.ok(level.reference_solution.length <= level.block_limit, `${gameId} level ${level.level}: block limit`);
+      for (const token of level.reference_solution) {
+        assert.ok(level.allowed_blocks.includes(token.split(':')[0]),
+          `${gameId} level ${level.level}: ${token} must be allowed`);
+      }
+      const outcome = runBlockProgram({
+        width: level.grid.w,
+        height: level.grid.h,
+        start: level.grid.start,
+        goal: level.grid.goal,
+        facing: level.grid.facing,
+        walls: level.grid.walls ?? [],
+        collectibles: level.grid.collectibles ?? [],
+      }, level.reference_solution);
+      assert.equal(outcome.reachedGoal, true, `${gameId} level ${level.level}: reference reaches goal`);
+      assert.equal(outcome.collided, false, `${gameId} level ${level.level}: reference does not collide`);
+      assert.equal(outcome.collected, (level.grid.collectibles ?? []).length,
+        `${gameId} level ${level.level}: reference collects every collectible`);
+    }
+  }
+
+  const first = packs.get('game-wave1-block-code');
+  assert.deepEqual(first.levels.map((level) => level.allowed_blocks), [
+    ['move'],
+    ['move', 'turn_right'],
+    ['move', 'turn_left', 'turn_right', 'repeat'],
+  ]);
+  assert.deepEqual(first.levels.map((level) => [level.block_limit, level.optimal_blocks]), [
+    [6, 3], [8, 6], [10, 6],
+  ]);
+  assert.deepEqual(first.levels[2].grid.walls, [[2, 0]]);
+
+  const advanced = packs.get('game-wave3-block-advanced');
+  assert.deepEqual(advanced.levels.map((level) => level.allowed_blocks), [
+    ['move', 'turn_right', 'repeat'],
+    ['move', 'turn_right', 'repeat', 'collect'],
+    ['move', 'turn_right', 'if_path'],
+  ]);
+  assert.deepEqual(advanced.levels.map((level) => [level.block_limit, level.optimal_blocks]), [
+    [10, 6], [10, 7], [6, 4],
+  ]);
+  assert.deepEqual(advanced.levels[1].grid.collectibles, [[4, 0]]);
+  assert.deepEqual(advanced.levels[2].grid.walls, [[1, 0]]);
 });
 
 // ------------------------------------------------------------- schema integrity
