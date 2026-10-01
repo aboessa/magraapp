@@ -6,6 +6,7 @@ import adminRoute from './routes/admin.ts';
 import accountRoute from './routes/account.ts';
 import authRoute from './routes/auth.ts';
 import billingRoute from './routes/billing.ts';
+import manualPaymentsRoute from './routes/manualPayments.ts';
 import booksRoute from './routes/books.ts';
 import episodesRoute from './routes/episodes.ts';
 import storiesRoute from './routes/stories.ts';
@@ -26,6 +27,8 @@ import adminPartnershipsRoute from './routes/adminPartnerships.ts';
 import partnershipsRoute from './routes/partnerships.ts';
 import adminSiteModeRoute from './routes/adminSiteMode.ts';
 import siteModeRoute from './routes/siteMode.ts';
+import legalRoute from './routes/legal.ts';
+import adminLegalRoute from './routes/adminLegal.ts';
 import publicSiteRoute, { siteFiles } from './routes/publicSite.ts';
 import publicRenderRoute, { rootNegotiation } from './routes/publicRender.ts';
 import adminAuthRoute from './routes/adminAuth.ts';
@@ -39,9 +42,27 @@ import recommendationsRoute from './routes/recommendations.ts';
 import childSettingsRoute from './routes/childSettings.ts';
 import adminSchoolsRoute from './routes/adminSchools.ts';
 import analyticsIngestRoute from './routes/analyticsIngest.ts';
+import crashIngestRoute from './routes/crashIngest.ts';
+import pushRoute from './routes/push.ts';
+import { NOTIFY_CRON, runFamilyNotifications } from './scheduled/notifications.ts';
 import notificationsRoute from './routes/notifications.ts';
+import adminNotificationsRoute from './routes/adminNotifications.ts';
+import adminCouponsRoute from './routes/adminCoupons.ts';
+import { adminGamificationRoute } from './routes/adminGamification.ts';
+import { adminComplianceRoute } from './routes/adminCompliance.ts';
+import { adminMediaIngestRoute } from './routes/adminMediaIngest.ts';
+import { adminStreamHealthRoute } from './routes/adminStreamHealth.ts';
+import { adminParentDigestsRoute } from './routes/adminParentDigests.ts';
+import { adminTicketsRoute } from './routes/adminTickets.ts';
+import { adminCopilotRoute } from './routes/adminCopilot.ts';
+import { adminAiStoryStudioRoute } from './routes/adminAiStoryStudio.ts';
+import { adminLiveEventsRoute } from './routes/adminLiveEvents.ts';
+import { adminScreentimeRoute } from './routes/adminScreentime.ts';
 import homeResolvedRoute from './routes/homeResolved.ts';
 import creativeRoute from './routes/creative.ts';
+import tvPairingRoute from './routes/tvPairing.ts';
+import tvLinkRoute from './routes/tvLink.ts';
+import adminAppHealthRoute from './routes/adminAppHealth.ts';
 import publicCreativeStudioRoute from './routes/publicCreativeStudio.ts';
 import adminCreativeStudioRoute from './routes/adminCreativeStudio.ts';
 import { handleFamilyEvents } from './queue/familyEvents.ts';
@@ -62,6 +83,9 @@ import {
   mediaSessionLimit,
   parentWriteLimit,
   strictAuthLimit,
+  tvPairPollLimit,
+  tvPairStartLimit,
+  tvRemoteLimit,
 } from './lib/rateLimit.ts';
 import { baseSecurityHeaders } from './lib/securityHeaders.ts';
 
@@ -148,6 +172,21 @@ app.use('/api/v1/child-settings/*', parentWriteLimit);
 app.use('/api/v1/notifications/*', parentWriteLimit);
 app.use('/api/v1/family/*', parentWriteLimit);
 
+// TV-001: television pairing. Exact paths, one limiter each, so no request is
+// counted twice. Outside `/auth/*` because a TV polls twelve times a minute and
+// the five-a-minute login limit would refuse it. The two phone-side paths are
+// parent writes and count per parent.
+app.use('/api/v1/tv/pair/start', tvPairStartLimit);
+app.use('/api/v1/tv/pair/poll', tvPairPollLimit);
+app.use('/api/v1/tv/pair/lookup', parentWriteLimit);
+app.use('/api/v1/tv/pair/approve', parentWriteLimit);
+// TV-002: remote control. Opening a socket is per address (a reconnect loop on a
+// flaky TV); tickets, the device list and commands are per parent.
+app.use('/api/v1/tv/link/connect', tvPairPollLimit);
+app.use('/api/v1/tv/link/ticket', tvRemoteLimit);
+app.use('/api/v1/tv/link/devices', tvRemoteLimit);
+app.use('/api/v1/tv/link/command', tvRemoteLimit);
+
 // The one child-path endpoint that writes an R2 object, so an unconstrained loop
 // costs storage rather than only CPU.
 app.use('/api/v1/creations', creationWriteLimit);
@@ -196,6 +235,18 @@ app.route('/api/v1/admin/auth', adminAuthRoute);
 app.route('/api/v1/admin', adminSearchRoute);
 app.route('/api/v1/admin', adminCalendarRoute);
 app.route('/api/v1/admin', adminCampaignsRoute);
+app.route('/api/v1/admin', adminNotificationsRoute);
+app.route('/api/v1/admin', adminCouponsRoute);
+app.route('/api/v1/admin', adminGamificationRoute);
+app.route('/api/v1/admin', adminComplianceRoute);
+app.route('/api/v1/admin', adminMediaIngestRoute);
+app.route('/api/v1/admin', adminStreamHealthRoute);
+app.route('/api/v1/admin', adminParentDigestsRoute);
+app.route('/api/v1/admin', adminTicketsRoute);
+app.route('/api/v1/admin', adminCopilotRoute);
+app.route('/api/v1/admin', adminAiStoryStudioRoute);
+app.route('/api/v1/admin', adminLiveEventsRoute);
+app.route('/api/v1/admin', adminScreentimeRoute);
 // Drawing-game readiness, ops and production queues. **Before** adminRoute, not after.
 //
 // Mounted after it, `GET /admin/games/ops` and `GET /admin/games/analytics` were both
@@ -227,9 +278,14 @@ app.route('/api/v1/admin', adminAiProvidersRoute);
 // استوديو المبدعين admin — قبل adminRoute نفس علة billing/ops: لو بعده، /games/:id يبتلعها
 // كان في السطر الأخير وفشل لوحة الإدارة بالوصول لها. R2-first كامل.
 app.route('/api/v1/admin', adminCreativeStudioRoute);
+// ADM-304: real version and error data for the releases/diagnostics pages.
+// Before adminRoute, which guards itself but whose generic routes could bind
+// `app-health` as an id.
+app.route('/api/v1/admin', adminAppHealthRoute);
 app.route('/api/v1/admin', adminRoute);
 app.route('/api/v1/auth', authRoute);
 app.route('/api/v1/account', accountRoute);
+app.route('/api/v1/billing/manual', manualPaymentsRoute);
 app.route('/api/v1/billing', billingRoute);
 app.route('/api/v1/media', mediaRoute);
 app.route('/api/v1/planets', planetsRoute);
@@ -240,17 +296,27 @@ app.route('/api/v1/creations', creationsRoute);
 app.route('/api/v1/books', booksRoute);
 app.route('/api/v1/stories', storiesRoute);
 app.route('/api/v1/family', familyRoute);
+app.route('/api/v1/tv/pair', tvPairingRoute);
+app.route('/api/v1/tv/link', tvLinkRoute);
 // ENC-001: جلسة التنزيل تُصدر قدرات وسائط وترخيصًا موقَّعًا، فحصّتها حصّة مسار
 // الوسائط لا حصّة الكتابة الأبوية: كل جلسة تُصدر توكنات، وهي أغلى ما يُمنَح.
 app.route('/api/v1/downloads', downloadsRoute);
 app.route('/api/v1/partnerships', partnershipsRoute);
 // حالة الموقع عامة بلا مصادقة: صفحة الهبوط تستعلم عنها قبل أن تعرض أي شيء
 app.route('/api/v1/site-mode', siteModeRoute);
+// الصفحات القانونية المنشورة فقط، بلا مصادقة: الموقع والتطبيق يقرآنها
+app.route('/api/v1/legal', legalRoute);
 app.route('/api/v1/admin', adminEpisodeStreamingRoute);
+app.route('/api/v1/admin', adminNotificationsRoute);
+app.route('/api/v1/admin', adminCouponsRoute);
 app.route('/api/v1/app-config', appConfigRoute);
 app.route('/api/v1/recommendations', recommendationsRoute);
 app.route('/api/v1/child-settings', childSettingsRoute);
 app.route('/api/v1/analytics', analyticsIngestRoute);
+// OPS-202: crash reports, under /analytics so `analyticsLimit` covers them.
+app.route('/api/v1/analytics', crashIngestRoute);
+// APP-203: push notification tokens and preferences.
+app.route('/api/v1/push', pushRoute);
 app.route('/api/v1/notifications', notificationsRoute);
 app.route('/api/v1/home', homeResolvedRoute);
 app.route('/api/v1', creativeRoute);
@@ -270,6 +336,7 @@ app.route('/api/v1/admin', adminBillingRoute);
 app.route('/api/v1/admin', adminAnalyticsRoute);
 app.route('/api/v1/admin/partnerships', adminPartnershipsRoute);
 app.route('/api/v1/admin/site-mode', adminSiteModeRoute);
+app.route('/api/v1/admin/legal', adminLegalRoute);
 // إدارة المستخدمين تُركَّب على نفس البادئة قبل adminRoute، فمساراتها /users
 // تُطابق أولًا. مركّبة صراحةً لا داخل adminRoute حتى لا تعتمد على ترتيب
 // التركيب هناك.
@@ -296,6 +363,8 @@ export { FamilyState } from './do/FamilyState.ts';
 export { IdentityState } from './do/IdentityState.ts';
 export { StoryCollab } from './do/StoryCollab.ts';
 export { RateLimiter } from './do/RateLimiter.ts';
+export { TvPairing } from './do/TvPairing.ts';
+export { FamilyLink } from './do/FamilyLink.ts';
 
 const worker: ExportedHandler<Env, unknown> = {
   fetch: app.fetch,
@@ -326,6 +395,13 @@ const worker: ExportedHandler<Env, unknown> = {
       ctx.waitUntil(runHealthChecks(env).then(
         (result) => console.log('health_checks', result.written, 'raised', result.raised),
         (error) => console.error('health_checks_failed', error),
+      ))
+      return
+    }
+    if (cron === NOTIFY_CRON) {
+      ctx.waitUntil(runFamilyNotifications(env).then(
+        (result) => console.log('family_notifications', result.families, 'sent', result.sent),
+        (error) => console.error('family_notifications_failed', error),
       ))
       return
     }

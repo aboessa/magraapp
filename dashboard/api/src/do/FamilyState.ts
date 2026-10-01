@@ -9,7 +9,10 @@ import {
 // الذي يطالب بالامتداد في الاستيراد النسبي ولا يستنتجه كما يفعل مُجمِّع wrangler.
 // بلا الامتداد لا يمكن استيراد هذا الكائن في اختبار إطلاقًا — وهو أكبر ملف منطق
 // في المشروع وكان بلا أي تغطية.
-import { boundedInteger, deriveAgeTrack, isPlan, normalizeTracks, PLAN_LIMITS, PLAN_POLICY_VERSION, planAllows, type AgeTrack, type Plan } from '../lib/familyPolicy.ts';
+import { boundedInteger, deriveAgeTrack, isPlan, isTvPlatform, normalizeTracks, planAllows, type AgeTrack, type Plan } from '../lib/familyPolicy.ts';
+// ADMIN-POLICY: limits come from the dashboard policy, with the code defaults
+// (`PLAN_LIMITS`) as the fallback when nothing is stored or D1 is unreachable.
+import { loadPlanLimits } from '../lib/platformPolicy.ts';
 import { hashPassword, verifyPassword } from '../lib/security.ts';
 import { loadScreenTimePolicy } from '../lib/parentalControls.ts';
 import { addColumn, applySchemaSteps, readSchemaState, type SchemaState } from '../lib/doSchema.ts';
@@ -67,6 +70,9 @@ const LEASE_TTL_MS = 15 * 60 * 1000;
  */
 const MAX_HEARTBEAT_CREDIT_SECONDS = 5 * 60;
 
+/// ADM-309: credit for the gap between the last heartbeat and `/playback/end`.
+const END_TAIL_CREDIT_SECONDS = 60;
+
 type ScreenTimeGate = {
   dailyLimitSeconds: number | null;
   sessionLimitSeconds: number | null;
@@ -99,6 +105,9 @@ function limitRefusal(error: string, limitName: string, context: {
   plan: Plan;
   limit: number;
   current: number;
+  /// ADMIN-POLICY: the version the decision was made under, from the dashboard
+  /// policy (or the code default, `PLAN_POLICY_VERSION`, when none is stored).
+  policyVersion: number;
 }) {
   return {
     success: false as const,
@@ -108,7 +117,7 @@ function limitRefusal(error: string, limitName: string, context: {
       plan: context.plan,
       value: context.limit,
       current: context.current,
-      policy_version: PLAN_POLICY_VERSION,
+      policy_version: context.policyVersion,
     },
   };
 }
@@ -626,6 +635,9 @@ export class FamilyState {
       'PATCH /children': (r) => this.updateChild(r),
       'POST /children/track-transition': (r) => this.trackTransition(r),
       'POST /progress': (r) => this.updateProgress(r),
+      'POST /progress/list': (r) => this.listProgress(r),
+      // APP-207: the parent's weekly report, from this object's own tables.
+      'POST /reports/weekly': (r) => this.weeklyReport(r),
       'POST /favorites': (r) => this.updateFavorite(r),
       'GET /devices': () => this.getDevices(),
       'POST /devices/revoke': (r) => this.revokeDevice(r),
@@ -665,8 +677,10 @@ export class FamilyState {
       // everything here carries an operator id and a reason instead. Reached only from
       // `routes/adminDevices.ts`, which enforces the permission and audits first.
       'POST /admin/devices/revoke': (r) => this.adminRevokeDevice(r),
+      'POST /admin/devices/revoke-all': (r) => this.adminRevokeAllDevices(r),
       'POST /admin/downloads/revoke': (r) => this.adminRevokeDownloads(r),
       'POST /admin/resync': (r) => this.adminResync(r),
+      'POST /admin/pin/reset': (r) => this.adminResetPin(r),
       'GET /admin/inspect': () => this.adminInspect(),
     };
 
@@ -1350,8 +1364,11 @@ export class FamilyState {
     const children = this.sql.exec<{ id: string; nickname: string; age_track: string; status: string }>(
       'SELECT id, nickname, age_track, status FROM children ORDER BY created_at',
     ).toArray();
-    const devices = this.sql.exec<{ id: string; platform: string; status: string; last_seen_at: number }>(
-      'SELECT id, platform, status, last_seen_at FROM devices ORDER BY last_seen_at DESC',
+    const devices = this.sql.exec<{
+      id: string; platform: string; status: string; last_seen_at: number;
+      display_name: string | null; registered_at: number; revoked_at: number | null;
+    }>(
+      'SELECT id, platform, status, last_seen_at, display_name, registered_at, revoked_at FROM devices ORDER BY last_seen_at DESC LIMIT 100',
     ).toArray();
 
     this.state.storage.transactionSync(() => {
@@ -1361,6 +1378,13 @@ export class FamilyState {
         children: children.map((child) => ({ id: child.id, age_track: child.age_track, status: child.status })),
         device_count: devices.length,
         active_device_count: devices.filter((device) => device.status === 'active').length,
+        // ADM-307: the full device list, so a resync backfills `device_projection`
+        // for families whose devices signed in before it existed.
+        devices: devices.map((device) => ({
+          id: device.id, platform: device.platform, status: device.status,
+          display_name: device.display_name, registered_at: device.registered_at,
+          last_seen_at: device.last_seen_at, revoked_at: device.revoked_at,
+        })),
         by: 'operator',
         operator_id: operator.actorId,
         reason: operator.reason,
@@ -1441,6 +1465,65 @@ export class FamilyState {
     });
   }
 
+  /// `POST /admin/pin/reset` — operator PIN reset.
+  private async adminResetPin(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const operator = this.operatorFrom(body);
+    if (!operator) return json({ success: false, error: 'actor_id and reason are required' }, 400);
+
+    const family = this.family();
+    if (!family) return json({ success: false, error: 'Family not found' }, 404);
+
+    const now = Date.now();
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(
+        `UPDATE family SET parent_pin_hash = NULL, parent_pin_failed_count = 0, parent_pin_locked_until = NULL, parent_pin_version = parent_pin_version + 1, updated_at = ? WHERE singleton = 1`,
+        now,
+      );
+      this.addOutbox('parent_pin.changed', {
+        reset: true,
+        actorId: operator.actorId,
+        reason: operator.reason,
+        occurredAtMs: now,
+      });
+    });
+
+    return json({ success: true, data: { reset: true, timestamp: now } });
+  }
+
+  /// `POST /admin/devices/revoke-all` — operator revokes all devices and sessions for a family.
+  private async adminRevokeAllDevices(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const operator = this.operatorFrom(body);
+    if (!operator) return json({ success: false, error: 'actor_id and reason are required' }, 400);
+
+    const family = this.family();
+    if (!family) return json({ success: false, error: 'Family not found' }, 404);
+
+    const now = Date.now();
+    this.state.storage.transactionSync(() => {
+      const revoked = this.sql.exec<{ id: string }>(
+        `UPDATE devices SET status = 'revoked', revoked_at = ? WHERE status = 'active' RETURNING id`, now,
+      ).toArray();
+      this.sql.exec(`UPDATE auth_sessions SET status = 'revoked', revoked_at = ? WHERE status = 'active'`, now);
+      this.sql.exec(`UPDATE family SET auth_epoch = auth_epoch + 1, updated_at = ? WHERE singleton = 1`, now);
+      this.sql.exec(`UPDATE playback_leases SET status = 'revoked', ended_at = ? WHERE status = 'active'`, now);
+      this.sql.exec(`UPDATE offline_licenses SET status = 'revoked', revoked_at = ? WHERE status IN ('pending', 'active')`, now);
+      this.addOutbox('session.revoked', {
+        scope: 'all',
+        actorId: operator.actorId,
+        reason: operator.reason,
+        occurredAtMs: now,
+        // ADM-307: unlike a password reset, this also revokes the devices.
+        deviceIds: revoked.map((row) => row.id),
+      });
+    });
+    // The event used to wait for an unrelated alarm before reaching D1.
+    await this.scheduleOutbox();
+
+    return json({ success: true, data: { revoked_all: true, timestamp: now } });
+  }
+
   private async initialize(request: Request) {
     const body = await request.json() as Record<string, unknown>;
     const parentId = typeof body.parent_id === 'string' ? body.parent_id : '';
@@ -1487,17 +1570,29 @@ export class FamilyState {
       SELECT id, status FROM devices WHERE installation_id_hash = ?
     `, installationHash).toArray()[0];
     if (existingDevice?.status === 'revoked') return json({ success: false, error: 'Device is revoked' }, 403);
-    const activeDevices = this.sql.exec<{ count: number }>(`SELECT COUNT(*) AS count FROM devices WHERE status = 'active'`).toArray()[0]?.count ?? 0;
-    if (!existingDevice && activeDevices >= PLAN_LIMITS[plan].devices) {
-      return json(limitRefusal('This account has reached its device limit', 'devices', {
-        plan, limit: PLAN_LIMITS[plan].devices, current: activeDevices,
-      }), 403);
+    // TV-004: a device takes a slot only while it is signed in, and televisions
+    // have their own allowance. A device already holding a live session is
+    // re-authenticating, not adding a screen, so it is never refused.
+    const tv = isTvPlatform(platform);
+    const signedIn = this.signedInDeviceIds(now, tv ? 'tv' : 'screen');
+    const limitName = tv ? 'tvDevices' : 'devices';
+    const policy = await loadPlanLimits(this.env);
+    const limit = policy.limits[plan][limitName];
+    const alreadyCounted = existingDevice ? signedIn.has(existingDevice.id) : false;
+    if (!alreadyCounted && signedIn.size >= limit) {
+      return json(limitRefusal(
+        tv ? 'This account has reached its TV limit' : 'This account has reached its device limit',
+        tv ? 'tv_devices' : 'devices',
+        { plan, limit, current: signedIn.size, policyVersion: policy.version },
+      ), 403);
     }
 
     const deviceId = existingDevice?.id ?? crypto.randomUUID();
     this.state.storage.transactionSync(() => {
       if (existingDevice) {
-        this.sql.exec(`UPDATE devices SET display_name = COALESCE(?, display_name), last_seen_at = ? WHERE id = ?`, displayName, now, deviceId);
+        // The platform follows the latest sign-in, so a TV that once signed in
+        // as "android" is counted as a TV from now on.
+        this.sql.exec(`UPDATE devices SET display_name = COALESCE(?, display_name), platform = ?, last_seen_at = ? WHERE id = ?`, displayName, platform, now, deviceId);
       } else {
         this.sql.exec(`
           INSERT INTO devices (id, installation_id_hash, display_name, platform, registered_at, last_seen_at)
@@ -1509,10 +1604,33 @@ export class FamilyState {
           id, device_id, refresh_token_hash, auth_epoch, expires_at, created_at, last_seen_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `, sessionId, deviceId, refreshHash, family.auth_epoch, expiresAt, now, now);
-      this.addOutbox('session.created', { sessionId, deviceId, platform });
+      // ADM-307: enough for the D1 device projection (`device_projection`, 0102).
+      // The installation hash stays here: an operator never needs a fingerprint.
+      this.addOutbox('session.created', {
+        sessionId, deviceId, platform,
+        displayName: displayName ?? null,
+        registeredAt: existingDevice ? null : now,
+      });
     });
     await this.scheduleOutbox();
     return json({ success: true, data: { session_id: sessionId, device_id: deviceId, plan, auth_epoch: family.auth_epoch, expires_at: expiresAt } }, 201);
+  }
+
+  /// Devices that currently hold a live, unexpired session (`TV-004`).
+  ///
+  /// A signed-out or long-idle device used to keep its slot until a parent
+  /// removed it by hand, so a family that logged out of an old phone (or
+  /// reinstalled the TV app) found itself "at the limit" with nothing running.
+  /// Only a device someone can actually use right now takes a slot.
+  private signedInDeviceIds(now: number, kind: 'tv' | 'screen') {
+    const rows = this.sql.exec<{ id: string; platform: string }>(`
+      SELECT d.id, d.platform FROM devices d
+      WHERE d.status = 'active' AND EXISTS (
+        SELECT 1 FROM auth_sessions s
+        WHERE s.device_id = d.id AND s.status = 'active' AND s.expires_at > ?
+      )
+    `, now).toArray();
+    return new Set(rows.filter((row) => isTvPlatform(row.platform) === (kind === 'tv')).map((row) => row.id));
   }
 
   private async resolveSession(request: Request) {
@@ -1553,17 +1671,28 @@ export class FamilyState {
       return json({ success: false, error: 'Refresh token is invalid or expired' }, 401);
     }
 
+    // Sliding expiry (`AUTH-SLIDE`): a refresh moves the session's end to the
+    // window the Worker asks for, so a device that is used at least once per
+    // window stays signed in indefinitely instead of being logged out on a fixed
+    // date. The window is bounded as on create, and never shortened: a refresh
+    // cannot be used to cut a session's remaining life. An idle device still
+    // expires, and revocation, reuse detection and the auth epoch are untouched.
+    const requestedExpiry = body.expires_at === undefined
+      ? null
+      : boundedInteger(body.expires_at, now + 60_000, now + 90 * 24 * 60 * 60 * 1000);
+    const nextExpiry = requestedExpiry === null ? session.expires_at : Math.max(session.expires_at, requestedExpiry);
+
     this.state.storage.transactionSync(() => {
       this.sql.exec(`
         INSERT INTO used_refresh_tokens (token_hash, session_id, expires_at, used_at)
         VALUES (?, ?, ?, ?)
-      `, currentHash, sessionId, session.expires_at, now);
+      `, currentHash, sessionId, nextExpiry, now);
       this.sql.exec(`
-        UPDATE auth_sessions SET refresh_token_hash = ?, last_seen_at = ?
+        UPDATE auth_sessions SET refresh_token_hash = ?, last_seen_at = ?, expires_at = ?
         WHERE id = ? AND status = 'active'
-      `, nextHash, now, sessionId);
+      `, nextHash, now, nextExpiry, sessionId);
     });
-    return json({ success: true, data: { session_id: sessionId, device_id: session.device_id, plan: this.currentPlan(), auth_epoch: family.auth_epoch, expires_at: session.expires_at } });
+    return json({ success: true, data: { session_id: sessionId, device_id: session.device_id, plan: this.currentPlan(), auth_epoch: family.auth_epoch, expires_at: nextExpiry } });
   }
 
   private revokeSession(sessionId: string, now = Date.now()) {
@@ -2092,10 +2221,11 @@ export class FamilyState {
     const track = deriveAgeTrack(birthMonth, birthYear);
     if (!track) return json({ success: false, error: 'Child must be between 3 and 12 years old' }, 400);
     const plan = this.currentPlan();
+    const policy = await loadPlanLimits(this.env);
     const count = this.sql.exec<{ count: number }>(`SELECT COUNT(*) AS count FROM children WHERE status = 'active'`).toArray()[0]?.count ?? 0;
-    if (count >= PLAN_LIMITS[plan].children) {
+    if (count >= policy.limits[plan].children) {
       return json(limitRefusal('Child profile limit reached', 'children', {
-        plan, limit: PLAN_LIMITS[plan].children, current: count,
+        plan, limit: policy.limits[plan].children, current: count, policyVersion: policy.version,
       }), 403);
     }
 
@@ -2121,7 +2251,7 @@ export class FamilyState {
         language,
         // API-102: إنشاء الطفل قرار حدٍّ (`children`)، فالسياسة التي أجازته تُسجَّل
         // معه. سجلٌّ يقول «أُنشئ» بلا سياسته لا يُفسِّر لماذا رُفض التالي.
-        policyVersion: PLAN_POLICY_VERSION,
+        policyVersion: policy.version,
       });
     });
     await this.scheduleOutbox();
@@ -2857,17 +2987,39 @@ export class FamilyState {
    * وليس أن الطفل شاهد. احتساب الفارق كما هو كان سيحرق حدّ اليوم كله بنبضة واحدة
    * متأخرة، وهو خطأ في غير مصلحة الطفل.
    */
-  private creditWatchTime(childId: string, activityDate: string, elapsedMs: number, now: number): void {
-    if (!childId || !activityDate || elapsedMs <= 0) return;
-    const seconds = Math.min(Math.floor(elapsedMs / 1000), MAX_HEARTBEAT_CREDIT_SECONDS);
-    if (seconds <= 0) return;
-    this.sql.exec(`
-      INSERT INTO screen_time_daily (child_id, activity_date, watched_seconds, updated_at)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(child_id, activity_date) DO UPDATE SET
-        watched_seconds = watched_seconds + excluded.watched_seconds,
-        updated_at = excluded.updated_at
-    `, childId, activityDate, seconds, now);
+  private creditWatchTime(
+    lease: { id: string; child_id: string; entity_type: string; entity_id: string },
+    activityDate: string,
+    elapsedMs: number,
+    now: number,
+    capSeconds = MAX_HEARTBEAT_CREDIT_SECONDS,
+  ): number {
+    if (!lease.child_id || !activityDate || elapsedMs <= 0) return 0;
+    const seconds = Math.min(Math.floor(elapsedMs / 1000), capSeconds);
+    if (seconds <= 0) return 0;
+    // ADM-309: the same credit, emitted as an event in the same transaction, so
+    // the admin projection (`child_watch_time_daily`) is exactly the screen-time
+    // counter and can never drift from it. The child's track is snapshotted so
+    // a later track transition does not rewrite history.
+    this.state.storage.transactionSync(() => {
+      this.sql.exec(`
+        INSERT INTO screen_time_daily (child_id, activity_date, watched_seconds, updated_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(child_id, activity_date) DO UPDATE SET
+          watched_seconds = watched_seconds + excluded.watched_seconds,
+          updated_at = excluded.updated_at
+      `, lease.child_id, activityDate, seconds, now);
+      this.addOutbox('watch_time.credited', {
+        leaseId: lease.id,
+        childId: lease.child_id,
+        ageTrack: this.child(lease.child_id)?.age_track ?? null,
+        entityType: lease.entity_type,
+        entityId: lease.entity_id,
+        activityDate,
+        seconds,
+      });
+    });
+    return seconds;
   }
 
   // --- ENC-001: تراخيص الاستخدام دون إنترنت --------------------------------
@@ -2950,12 +3102,14 @@ export class FamilyState {
     if (!planAllows(plan, requiredPlan)) {
       return json({ success: false, error: 'An active subscription for this content tier is required' }, 402);
     }
-    const limits = PLAN_LIMITS[plan];
+    const policy = await loadPlanLimits(this.env);
+    const limits = policy.limits[plan];
+    const policyVersion = policy.version;
     // الباقة المجانية بلا تنزيل: الحدّ صفر، والرفض صريح بدل إخفاء زرّ في العميل.
     if (limits.downloadDevices === 0) {
       return json({
         ...limitRefusal('Offline downloads are not part of this plan', 'download_devices', {
-          plan, limit: 0, current: 0,
+          plan, limit: 0, current: 0, policyVersion,
         }),
         code: 'offline_not_in_plan',
       }, 402);
@@ -2986,7 +3140,7 @@ export class FamilyState {
     if (!deviceRows.includes(session.device_id) && deviceRows.length >= limits.downloadDevices) {
       return json({
         ...limitRefusal('This plan has reached its download device limit', 'download_devices', {
-          plan, limit: limits.downloadDevices, current: deviceRows.length,
+          plan, limit: limits.downloadDevices, current: deviceRows.length, policyVersion,
         }),
         code: 'download_device_limit',
         data: { limit: limits.downloadDevices, devices: deviceRows.length },
@@ -2999,7 +3153,7 @@ export class FamilyState {
     if (items >= limits.offlineItems) {
       return json({
         ...limitRefusal('This plan has reached its offline item limit', 'offline_items', {
-          plan, limit: limits.offlineItems, current: items,
+          plan, limit: limits.offlineItems, current: items, policyVersion,
         }),
         code: 'offline_item_limit',
         data: { limit: limits.offlineItems, items },
@@ -3036,7 +3190,7 @@ export class FamilyState {
         // لتُرصد — السطر يبقى نظيفًا للحالة الطبيعية.
         integrity,
         // API-102: حدّا `download_devices` و`offline_items` مرّا قبل هذا السطر.
-        policyVersion: PLAN_POLICY_VERSION,
+        policyVersion,
       });
     });
     await this.scheduleOutbox();
@@ -3203,6 +3357,7 @@ export class FamilyState {
     const now = Date.now();
     this.sweepOfflineLicenses(now);
     const plan = this.currentPlan(now);
+    const listLimits = (await loadPlanLimits(this.env)).limits[plan];
     const rows = this.sql.exec(`
       SELECT id, child_id, device_id, entity_type, entity_id, content_version,
              required_plan, status, issued_at, expires_at, completed_at
@@ -3215,8 +3370,8 @@ export class FamilyState {
       data: {
         licences: rows,
         limits: {
-          download_devices: PLAN_LIMITS[plan].downloadDevices,
-          offline_items: PLAN_LIMITS[plan].offlineItems,
+          download_devices: listLimits.downloadDevices,
+          offline_items: listLimits.offlineItems,
         },
         plan,
       },
@@ -3317,9 +3472,10 @@ export class FamilyState {
     const active = this.sql.exec<{ count: number }>(`
       SELECT COUNT(*) AS count FROM playback_leases WHERE status = 'active' AND expires_at > ?
     `, now).toArray()[0]?.count ?? 0;
-    if (active >= PLAN_LIMITS[plan].concurrentStreams) {
+    const policy = await loadPlanLimits(this.env);
+    if (active >= policy.limits[plan].concurrentStreams) {
       return json(limitRefusal('Concurrent stream limit reached', 'concurrent_streams', {
-        plan, limit: PLAN_LIMITS[plan].concurrentStreams, current: active,
+        plan, limit: policy.limits[plan].concurrentStreams, current: active, policyVersion: policy.version,
       }), 429);
     }
 
@@ -3344,11 +3500,14 @@ export class FamilyState {
       this.addOutbox('playback.started', {
         leaseId, childId, assetId, entityType, entityId, deviceId: session.device_id,
         // قرار حدّ (`concurrent_streams`) مثل سابقه.
-        policyVersion: PLAN_POLICY_VERSION,
+        policyVersion: policy.version,
       });
     });
     await this.scheduleOutbox();
-    return json({ success: true, data: { lease_id: leaseId, expires_at: expiresAt, plan } }, 201);
+    return json({
+      success: true,
+      data: { lease_id: leaseId, expires_at: expiresAt, plan, ...this.remainingAllowance(childId, now, screenTime, now) },
+    }, 201);
   }
 
   private async heartbeatPlayback(request: Request) {
@@ -3362,10 +3521,10 @@ export class FamilyState {
 
     const now = Date.now();
     const lease = this.sql.exec<{
-      child_id: string; asset_id: string; entity_id: string;
+      id: string; child_id: string; asset_id: string; entity_type: string; entity_id: string;
       created_at: number; last_heartbeat_at: number;
     }>(`
-      SELECT child_id, asset_id, entity_id, created_at, last_heartbeat_at FROM playback_leases
+      SELECT id, child_id, asset_id, entity_type, entity_id, created_at, last_heartbeat_at FROM playback_leases
       WHERE id = ? AND session_id = ? AND status = 'active' AND expires_at > ?
     `, leaseId, sessionId, now).toArray()[0];
     if (!lease) return json({ success: false, error: 'Playback lease is unavailable' }, 404);
@@ -3373,7 +3532,17 @@ export class FamilyState {
     // احتساب ما مضى قبل أي قرار: الوقت الذي شُوهد فعلًا يُسجَّل حتى لو انتهى هذا
     // النداء بسحب العقد، وإلّا صارت آخر فترة مشاهدة قبل كل رفض مجانية.
     const screenTime = await this.screenTimeGate(lease.child_id);
-    this.creditWatchTime(lease.child_id, screenTime.localDate, now - lease.last_heartbeat_at, now);
+    // APP-206: a paused player kept heartbeating, so pauses counted as watching.
+    // The app now reports how long the video actually played since the last
+    // heartbeat; the credit is the smaller of that and the wall-clock gap, so a
+    // client can only ever report less than elapsed time, never more. An older
+    // client that sends nothing is credited the wall-clock gap, as before.
+    const playedMs = boundedInteger(body.played_ms, 0, 24 * 60 * 60 * 1000);
+    const wallMs = now - lease.last_heartbeat_at;
+    const creditMs = playedMs === null ? wallMs : Math.min(playedMs, wallMs);
+    if (this.creditWatchTime(lease, screenTime.localDate, creditMs, now) > 0) {
+      await this.scheduleOutbox();
+    }
 
     const revoke = (reason: string, code: string, message: string, extra: Record<string, unknown> = {}) => {
       this.state.storage.transactionSync(() => {
@@ -3451,8 +3620,38 @@ export class FamilyState {
     if (!updated.length) return json({ success: false, error: 'Playback lease is unavailable' }, 404);
     return json({
       success: true,
-      data: { lease_id: leaseId, expires_at: expiresAt, asset_id: lease.asset_id, entity_id: lease.entity_id },
+      data: {
+        lease_id: leaseId, expires_at: expiresAt, asset_id: lease.asset_id, entity_id: lease.entity_id,
+        // APP-203: which child, so the Worker can name them in a parent alert.
+        child_id: lease.child_id,
+        child_nickname: this.sql.exec<{ nickname: string | null }>(
+          'SELECT nickname FROM children WHERE id = ?', lease.child_id,
+        ).toArray()[0]?.nickname ?? null,
+        ...this.remainingAllowance(lease.child_id, lease.created_at, screenTime, now),
+      },
     });
+  }
+
+  /// APP-206: how long the child may keep watching, so the player can warn
+  /// before stopping. The nearer of the daily and session limits; null when the
+  /// parent set neither (`DECIDE-108`: no limit unless the parent enabled one).
+  private remainingAllowance(childId: string, leaseCreatedAt: number, screenTime: ScreenTimeGate, now: number) {
+    const candidates: Array<{ kind: 'daily' | 'session'; seconds: number }> = [];
+    if (screenTime.dailyLimitSeconds !== null) {
+      candidates.push({
+        kind: 'daily',
+        seconds: screenTime.dailyLimitSeconds - this.watchedSecondsOn(childId, screenTime.localDate),
+      });
+    }
+    if (screenTime.sessionLimitSeconds !== null) {
+      candidates.push({
+        kind: 'session',
+        seconds: screenTime.sessionLimitSeconds - Math.floor((now - leaseCreatedAt) / 1000),
+      });
+    }
+    if (candidates.length === 0) return { remaining_seconds: null, limit_kind: null };
+    const nearest = candidates.reduce((a, b) => (b.seconds < a.seconds ? b : a));
+    return { remaining_seconds: Math.max(0, nearest.seconds), limit_kind: nearest.kind };
   }
 
   private async endPlayback(request: Request) {
@@ -3460,17 +3659,36 @@ export class FamilyState {
     const sessionId = typeof body.session_id === 'string' ? body.session_id : '';
     const leaseId = typeof body.lease_id === 'string' ? body.lease_id : '';
     if (!this.activeSession(sessionId)) return json({ success: false, error: 'Unauthorized' }, 401);
+    // ADM-309: the interval since the last heartbeat was never credited, so a
+    // 40-second episode with a 30-second heartbeat lost a quarter of its time.
+    // The local date is resolved first (it awaits D1); the lease is then ended
+    // and credited synchronously, so no concurrent heartbeat can credit it twice.
+    const owner = this.sql.exec<{ child_id: string }>(
+      `SELECT child_id FROM playback_leases WHERE id = ? AND session_id = ? AND status = 'active'`,
+      leaseId, sessionId,
+    ).toArray()[0];
+    const localDate = owner ? (await this.screenTimeGate(owner.child_id)).localDate : '';
     const now = Date.now();
     let ended = false;
+    let tail: { id: string; child_id: string; entity_type: string; entity_id: string; last_heartbeat_at: number } | undefined;
     this.state.storage.transactionSync(() => {
-      const updated = this.sql.exec(`
+      tail = this.sql.exec<{ id: string; child_id: string; entity_type: string; entity_id: string; last_heartbeat_at: number }>(`
         UPDATE playback_leases SET status = 'ended', ended_at = ?
-        WHERE id = ? AND session_id = ? AND status = 'active' RETURNING id
-      `, now, leaseId, sessionId).toArray();
-      ended = updated.length > 0;
+        WHERE id = ? AND session_id = ? AND status = 'active'
+        RETURNING id, child_id, entity_type, entity_id, last_heartbeat_at
+      `, now, leaseId, sessionId).toArray()[0];
+      ended = tail !== undefined;
       if (ended) this.addOutbox('playback.ended', { leaseId });
     });
     if (!ended) return json({ success: false, error: 'Playback lease is unavailable' }, 404);
+    if (tail && localDate) {
+      // Capped at one minute: the tail is at most one heartbeat interval (30 s)
+      // of real watching; anything longer is a paused player left open.
+      // APP-206: bounded by the played time the app reports, like a heartbeat.
+      const tailPlayed = boundedInteger(body.played_ms, 0, 24 * 60 * 60 * 1000);
+      const tailWall = now - tail.last_heartbeat_at;
+      this.creditWatchTime(tail, localDate, tailPlayed === null ? tailWall : Math.min(tailPlayed, tailWall), now, END_TAIL_CREDIT_SECONDS);
+    }
     await this.scheduleOutbox();
     return json({ success: true, data: { ended: true } });
   }
@@ -3533,6 +3751,12 @@ export class FamilyState {
       this.sql.exec(`UPDATE auth_sessions SET status = 'revoked', revoked_at = ? WHERE device_id = ? AND status = 'active'`, now, deviceId);
       this.sql.exec(`UPDATE family SET auth_epoch = auth_epoch + 1, updated_at = ? WHERE singleton = 1`, now);
       this.sql.exec(`UPDATE playback_leases SET status = 'revoked', ended_at = ? WHERE device_id = ? AND status = 'active'`, now, deviceId);
+      // A parent removing a lost phone must also end its downloads, exactly as the
+      // operator path does (`adminRevokeDevice`); they stayed licensed for days.
+      this.sql.exec(
+        `UPDATE offline_licenses SET status = 'revoked', revoked_at = ? WHERE device_id = ? AND status IN ('pending', 'active')`,
+        now, deviceId,
+      );
       this.addOutbox('device.revoked', { deviceId });
     });
     await this.scheduleOutbox();
@@ -3561,13 +3785,14 @@ export class FamilyState {
     `, now).toArray()[0] ?? null;
 
     const plan = this.currentPlan(now);
-    const limits = PLAN_LIMITS[plan];
+    const limits = (await loadPlanLimits(this.env)).limits[plan];
     const activeChildren = this.sql.exec<{ count: number }>(
       `SELECT COUNT(*) AS count FROM children WHERE status = 'active'`,
     ).toArray()[0]?.count ?? 0;
-    const activeDevices = this.sql.exec<{ count: number }>(
-      `SELECT COUNT(*) AS count FROM devices WHERE status = 'active'`,
-    ).toArray()[0]?.count ?? 0;
+    // The same definition the limit is enforced with, so the screen cannot
+    // disagree with what the app allows.
+    const activeDevices = this.signedInDeviceIds(now, 'screen').size;
+    const activeTvs = this.signedInDeviceIds(now, 'tv').size;
 
     return json({
       success: true,
@@ -3593,10 +3818,114 @@ export class FamilyState {
         limits: {
           children: limits.children,
           devices: limits.devices,
+          tv_devices: limits.tvDevices,
           concurrent_streams: limits.concurrentStreams,
           download_devices: limits.downloadDevices,
         },
-        usage: { children: activeChildren, devices: activeDevices },
+        usage: { children: activeChildren, devices: activeDevices, tv_devices: activeTvs },
+      },
+    });
+  }
+
+  /// APP-201: one child's progress. `/state` returns the newest 50 rows across
+  /// every child and content type, and the route filtered by child afterwards,
+  /// so a busy family's rows crowded one child's episodes out of "كمّل المشاهدة".
+  private async listProgress(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const childId = typeof body.child_id === 'string' ? body.child_id : '';
+    if (!this.child(childId)) return json({ success: false, error: 'Active child profile not found' }, 404);
+    const rows = this.sql.exec(`
+      SELECT child_id, content_type, content_id, position_ms, duration_ms, completed, updated_at
+      FROM content_progress WHERE child_id = ? ORDER BY updated_at DESC LIMIT 200
+    `, childId).toArray();
+    return json({ success: true, data: rows });
+  }
+
+  /// `POST /reports/weekly` — `APP-207`.
+  ///
+  /// Everything here is the authority, not a projection: the minutes are the
+  /// same `screen_time_daily` seconds the limits enforce, keyed by the family's
+  /// local date (`local_date` is resolved by the Worker from the family
+  /// timezone). The two weeks are the 7 local days ending today and the 7 before.
+  /// Completions, attempts and mastery use a rolling 7×24h window in ms, since
+  /// their timestamps are instants, not local dates.
+  private async weeklyReport(request: Request) {
+    const body = await request.json() as Record<string, unknown>;
+    const childId = typeof body.child_id === 'string' ? body.child_id : '';
+    const localDate = typeof body.local_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.local_date)
+      ? body.local_date : '';
+    if (!this.child(childId)) return json({ success: false, error: 'Active child profile not found' }, 404);
+    if (!localDate) return json({ success: false, error: 'local_date is required' }, 400);
+
+    const shift = (date: string, days: number) => {
+      const [y, m, d] = date.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, d) + days * 86_400_000).toISOString().slice(0, 10);
+    };
+    const thisWeek = Array.from({ length: 7 }, (_, i) => shift(localDate, i - 6));
+    const lastWeekStart = shift(localDate, -13);
+
+    const seconds = new Map(this.sql.exec<{ activity_date: string; watched_seconds: number }>(`
+      SELECT activity_date, watched_seconds FROM screen_time_daily
+       WHERE child_id = ? AND activity_date >= ? AND activity_date <= ?
+    `, childId, lastWeekStart, localDate).toArray().map((row) => [row.activity_date, Number(row.watched_seconds)]));
+
+    const daily = thisWeek.map((date) => ({ date, minutes: Math.round((seconds.get(date) ?? 0) / 60) }));
+    let thisWeekSeconds = 0;
+    let lastWeekSeconds = 0;
+    for (const [date, value] of seconds) {
+      if (date >= thisWeek[0]) thisWeekSeconds += value;
+      else lastWeekSeconds += value;
+    }
+
+    const now = Date.now();
+    const since = now - 7 * 86_400_000;
+    const completed = this.sql.exec<{ content_type: string; content_id: string; updated_at: number }>(`
+      SELECT content_type, content_id, updated_at FROM content_progress
+       WHERE child_id = ? AND completed = 1 AND updated_at >= ?
+       ORDER BY updated_at DESC LIMIT 20
+    `, childId, since).toArray();
+
+    const attempts = this.sql.exec<{ count: number; scored: number; score: number | null; max_score: number | null }>(`
+      SELECT COUNT(*) AS count,
+             SUM(CASE WHEN max_score > 0 THEN 1 ELSE 0 END) AS scored,
+             SUM(CASE WHEN max_score > 0 THEN score ELSE 0 END) AS score,
+             SUM(CASE WHEN max_score > 0 THEN max_score ELSE 0 END) AS max_score
+        FROM attempts WHERE child_id = ? AND created_at >= ?
+    `, childId, since).toArray()[0];
+    const games = this.sql.exec<{ count: number }>(`
+      SELECT COUNT(DISTINCT game_id) AS count FROM attempts
+       WHERE child_id = ? AND created_at >= ? AND game_id IS NOT NULL
+    `, childId, since).toArray()[0];
+
+    const mastered = this.sql.exec<{ objective_id: string }>(`
+      SELECT objective_id FROM mastery
+       WHERE child_id = ? AND level = 'independent' AND last_attempt_at >= ?
+       ORDER BY last_attempt_at DESC LIMIT 10
+    `, childId, since).toArray();
+    const practicing = this.sql.exec<{ objective_id: string }>(`
+      SELECT objective_id FROM mastery
+       WHERE child_id = ? AND level = 'needs_review' AND last_attempt_at >= ?
+       ORDER BY last_attempt_at DESC LIMIT 10
+    `, childId, since).toArray();
+
+    const maxScore = Number(attempts?.max_score ?? 0);
+    return json({
+      success: true,
+      data: {
+        local_date: localDate,
+        week_start: thisWeek[0],
+        daily,
+        minutes_this_week: Math.round(thisWeekSeconds / 60),
+        minutes_last_week: Math.round(lastWeekSeconds / 60),
+        active_days: daily.filter((day) => day.minutes > 0).length,
+        completed: completed.map((row) => ({ content_type: row.content_type, content_id: row.content_id, completed_at: row.updated_at })),
+        attempts: Number(attempts?.count ?? 0),
+        games_played: Number(games?.count ?? 0),
+        // Only scored attempts: an unscored drawing is not a failed answer.
+        accuracy: maxScore > 0 ? Math.round((Number(attempts?.score ?? 0) / maxScore) * 100) : null,
+        // `independent` is the top level in `lib/mastery.ts` (there is no "mastered").
+        mastered: mastered.map((row) => row.objective_id),
+        needs_review: practicing.map((row) => row.objective_id),
       },
     });
   }

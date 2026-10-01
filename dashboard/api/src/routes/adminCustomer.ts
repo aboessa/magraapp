@@ -30,7 +30,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../lib/db.ts';
 import { queryAll, queryFirst } from '../lib/db.ts';
-import { requireAdmin } from '../lib/adminAuth.ts';
+import { requireAdmin, requirePermission } from '../lib/adminAuth.ts';
 import { actorId, auditStatement } from '../lib/auditLog.ts';
 import { callDurable, familyStub } from '../lib/doClient.ts';
 import { parsePagination } from '../lib/catalogueValidation.ts';
@@ -258,6 +258,61 @@ route.get('/customers/:id', requireAdmin, async (c) => {
       },
     },
   });
+});
+
+/// `POST /families/:id/devices/revoke-all` — operator revokes all devices for the family.
+route.post('/families/:id/devices/revoke-all', requirePermission('manage_permissions'), async (c) => {
+  const parentId = c.req.param('id') ?? '';
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null;
+  const reason = typeof body?.reason === 'string' && body.reason.trim() ? body.reason.trim() : null;
+  if (!reason) return c.json({ success: false, error: 'reason is required' }, 400);
+  const exists = await queryFirst(c.env.DB, 'SELECT parent_id FROM family_projection WHERE parent_id = ?', [parentId]);
+  if (!exists) return c.json({ success: false, error: 'Family not found' }, 404);
+
+  await auditStatement(c.env.DB, actorId(c), 'devices_revoke_all_requested', 'family', parentId, {
+    reason,
+  }).run();
+
+  const result = await callDurable<{ success: boolean; data?: Record<string, unknown>; error?: string }>(
+    familyStub(c.env, parentId), '/admin/devices/revoke-all',
+    { body: { actor_id: actorId(c), reason } },
+  );
+  if (!result.ok || !result.data?.success) {
+    return c.json({ success: false, error: result.data?.error ?? 'Family state rejected the request' }, 502);
+  }
+
+  await auditStatement(c.env.DB, actorId(c), 'devices_revoke_all', 'family', parentId, {
+    reason, result: result.data.data ?? {},
+  }).run();
+
+  return c.json({ success: true, data: { ...result.data.data, source: 'family_state' } });
+});
+
+/// `POST /families/:id/pin/reset` — operator resets parent PIN.
+route.post('/families/:id/pin/reset', requirePermission('manage_permissions'), async (c) => {
+  const parentId = c.req.param('id') ?? '';
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null;
+  const reason = (typeof body?.reason === 'string' && body.reason.trim() ? body.reason.trim() : null) ?? 'Operator PIN reset request';
+  const exists = await queryFirst(c.env.DB, 'SELECT parent_id FROM family_projection WHERE parent_id = ?', [parentId]);
+  if (!exists) return c.json({ success: false, error: 'Family not found' }, 404);
+
+  await auditStatement(c.env.DB, actorId(c), 'parent_pin_reset_requested', 'family', parentId, {
+    reason,
+  }).run();
+
+  const result = await callDurable<{ success: boolean; data?: Record<string, unknown>; error?: string }>(
+    familyStub(c.env, parentId), '/admin/pin/reset',
+    { body: { actor_id: actorId(c), reason } },
+  );
+  if (!result.ok || !result.data?.success) {
+    return c.json({ success: false, error: result.data?.error ?? 'Family state rejected the PIN reset' }, 502);
+  }
+
+  await auditStatement(c.env.DB, actorId(c), 'parent_pin_reset', 'family', parentId, {
+    reason, result: result.data.data ?? {},
+  }).run();
+
+  return c.json({ success: true, data: { ...result.data.data, source: 'family_state' } });
 });
 
 export default route;

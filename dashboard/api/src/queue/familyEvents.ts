@@ -24,6 +24,49 @@ function parentUpsert(env: Env, event: FamilyEvent) {
   `).bind(event.parentId, event.occurredAt, event.parentId);
 }
 
+/// ADM-307: one device row. A sign-in never un-revokes a device (FamilyState
+/// refuses a revoked device's sign-in), so only an authoritative snapshot
+/// (`family.resynced`) may set the status; ordinary events keep a revoke.
+function deviceUpsert(env: Env, event: FamilyEvent, device: {
+  deviceId: string; platform: string; displayName: string | null; status: 'active' | 'revoked';
+  registeredAt: number | null; lastSeenAt: number | null; revokedAt: number | null; authoritative?: boolean;
+}) {
+  return env.DB.prepare(`
+    INSERT INTO device_projection (
+      device_id, parent_id, display_name, platform, status,
+      registered_at_ms, last_seen_at_ms, revoked_at_ms, last_event_at_ms
+    )
+    SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+    WHERE NOT EXISTS (SELECT 1 FROM family_deletion_watermarks WHERE parent_id = ?)
+    ON CONFLICT(device_id) DO UPDATE SET
+      display_name = COALESCE(excluded.display_name, device_projection.display_name),
+      platform = excluded.platform,
+      -- A snapshot may set the status only when it is newer than what is stored.
+      status = CASE WHEN ? = 1 AND excluded.last_event_at_ms >= device_projection.last_event_at_ms
+                    THEN excluded.status ELSE device_projection.status END,
+      registered_at_ms = COALESCE(device_projection.registered_at_ms, excluded.registered_at_ms),
+      last_seen_at_ms = MAX(COALESCE(device_projection.last_seen_at_ms, 0), COALESCE(excluded.last_seen_at_ms, 0)),
+      revoked_at_ms = CASE WHEN ? = 1 AND excluded.last_event_at_ms >= device_projection.last_event_at_ms
+                           THEN excluded.revoked_at_ms ELSE device_projection.revoked_at_ms END,
+      last_event_at_ms = MAX(device_projection.last_event_at_ms, excluded.last_event_at_ms),
+      updated_at = datetime('now')
+    WHERE device_projection.parent_id = excluded.parent_id
+  `).bind(
+    device.deviceId, event.parentId, device.displayName, device.platform, device.status,
+    device.registeredAt ?? device.lastSeenAt, device.lastSeenAt, device.revokedAt, event.occurredAt,
+    event.parentId,
+    device.authoritative ? 1 : 0, device.authoritative ? 1 : 0,
+  );
+}
+
+function deviceRevoke(env: Env, event: FamilyEvent, deviceIds: string[]) {
+  return env.DB.prepare(`
+    UPDATE device_projection
+       SET status = 'revoked', revoked_at_ms = ?, last_event_at_ms = MAX(last_event_at_ms, ?), updated_at = datetime('now')
+     WHERE parent_id = ? AND device_id IN (${deviceIds.map(() => '?').join(',')})
+  `).bind(event.occurredAt, event.occurredAt, event.parentId, ...deviceIds);
+}
+
 function eventStatements(env: Env, event: FamilyEvent): D1PreparedStatement[] {
   const statements: D1PreparedStatement[] = [parentUpsert(env, event)];
 
@@ -99,6 +142,16 @@ function eventStatements(env: Env, event: FamilyEvent): D1PreparedStatement[] {
   if (event.type === 'family.deleted') {
     const requestId = text(event.payload.requestId);
     if (!requestId) throw new Error('invalid_family_deleted_event');
+    // ADM-309: a deleted family's watch history goes with it.
+    statements.push(env.DB.prepare(
+      'DELETE FROM child_watch_time_daily WHERE parent_id = ?',
+    ).bind(event.parentId));
+    statements.push(env.DB.prepare(
+      'DELETE FROM child_series_signals WHERE parent_id = ?',
+    ).bind(event.parentId));
+    statements.push(env.DB.prepare(
+      'DELETE FROM device_projection WHERE parent_id = ?',
+    ).bind(event.parentId));
     statements.push(env.DB.prepare(`
       INSERT INTO family_deletion_watermarks (parent_id, deleted_at_ms)
       VALUES (?, ?)
@@ -280,10 +333,118 @@ function eventStatements(env: Env, event: FamilyEvent): D1PreparedStatement[] {
     ));
   }
 
+  // ADM-309: watch time. The seconds are additive, so the pre-check in
+  // `processFamilyEvent` is not enough on its own: two concurrent deliveries can
+  // both pass it. The `NOT EXISTS processed_family_events` guard is evaluated in
+  // the same batch as the processed-row insert, so the second one adds nothing.
+  if (event.type === 'watch_time.credited') {
+    const childId = text(event.payload.childId);
+    const contentType = text(event.payload.entityType, 32);
+    const contentId = text(event.payload.entityId);
+    const activityDate = typeof event.payload.activityDate === 'string'
+      && /^\d{4}-\d{2}-\d{2}$/.test(event.payload.activityDate) ? event.payload.activityDate : null;
+    const seconds = Number(event.payload.seconds);
+    const ageTrack = ['preschool', 'kids', 'junior'].includes(String(event.payload.ageTrack))
+      ? String(event.payload.ageTrack) : null;
+    if (!childId || !contentType || !contentId || !activityDate
+      || !Number.isInteger(seconds) || seconds <= 0 || seconds > 3600) {
+      throw new Error('invalid_watch_time_event');
+    }
+    statements.push(env.DB.prepare(`
+      INSERT INTO child_watch_time_daily (
+        activity_date, child_id, content_type, content_id, parent_id, age_track,
+        watched_seconds, last_event_at_ms
+      )
+      SELECT ?, ?, ?, ?, ?, ?, ?, ?
+      WHERE NOT EXISTS (SELECT 1 FROM processed_family_events WHERE event_id = ?)
+        AND NOT EXISTS (SELECT 1 FROM child_deletion_watermarks WHERE child_id = ?)
+        AND NOT EXISTS (SELECT 1 FROM family_deletion_watermarks WHERE parent_id = ?)
+      ON CONFLICT(activity_date, child_id, content_type, content_id) DO UPDATE SET
+        watched_seconds = child_watch_time_daily.watched_seconds + excluded.watched_seconds,
+        age_track = COALESCE(excluded.age_track, child_watch_time_daily.age_track),
+        last_event_at_ms = MAX(child_watch_time_daily.last_event_at_ms, excluded.last_event_at_ms),
+        updated_at = datetime('now')
+    `).bind(
+      activityDate, childId, contentType, contentId, event.parentId, ageTrack,
+      seconds, event.occurredAt,
+      event.eventId, childId, event.parentId,
+    ));
+  }
+
+  // ADM-307: devices, projected from the authority's events.
+  if (event.type === 'session.created') {
+    const deviceId = text(event.payload.deviceId);
+    const platform = text(event.payload.platform, 32);
+    if (deviceId && platform) {
+      statements.push(deviceUpsert(env, event, {
+        deviceId, platform, displayName: text(event.payload.displayName, 80), status: 'active',
+        registeredAt: typeof event.payload.registeredAt === 'number' ? event.payload.registeredAt : null,
+        lastSeenAt: event.occurredAt, revokedAt: null,
+      }));
+    }
+  }
+  if (event.type === 'device.revoked') {
+    const deviceId = text(event.payload.deviceId);
+    if (deviceId) statements.push(deviceRevoke(env, event, [deviceId]));
+  }
+  if (event.type === 'session.revoked' && Array.isArray(event.payload.deviceIds)) {
+    const ids = event.payload.deviceIds.map((id) => text(id)).filter((id): id is string => !!id).slice(0, 100);
+    if (ids.length) statements.push(deviceRevoke(env, event, ids));
+  }
+  if (event.type === 'family.resynced' && Array.isArray(event.payload.devices)) {
+    for (const raw of event.payload.devices.slice(0, 100)) {
+      const device = raw as Record<string, unknown>;
+      const deviceId = text(device.id);
+      const platform = text(device.platform, 32);
+      if (!deviceId || !platform) continue;
+      statements.push(deviceUpsert(env, event, {
+        deviceId, platform, displayName: text(device.display_name, 80),
+        status: device.status === 'revoked' ? 'revoked' : 'active',
+        registeredAt: typeof device.registered_at === 'number' ? device.registered_at : null,
+        lastSeenAt: typeof device.last_seen_at === 'number' ? device.last_seen_at : null,
+        revokedAt: typeof device.revoked_at === 'number' ? device.revoked_at : null,
+        // A snapshot states the truth as of now, including a revoke.
+        authoritative: true,
+      }));
+    }
+  }
+
+  // APP-209: series the child liked («عجبني») or saved («احفظ»), for
+  // recommendations. Other favourite types are not projected.
+  if (event.type === 'favorite.updated') {
+    const entityType = text(event.payload.entityType, 32);
+    const kind = entityType === 'series_like' ? 'like' : entityType === 'series' ? 'save' : null;
+    if (kind) {
+      const childId = text(event.payload.childId);
+      const seriesId = text(event.payload.entityId);
+      if (!childId || !seriesId) throw new Error('invalid_favorite_event');
+      const active = event.payload.action === 'remove' ? 0 : 1;
+      statements.push(env.DB.prepare(`
+        INSERT INTO child_series_signals (child_id, series_id, kind, parent_id, active, last_event_at_ms)
+        SELECT ?, ?, ?, ?, ?, ?
+        WHERE NOT EXISTS (SELECT 1 FROM child_deletion_watermarks WHERE child_id = ?)
+          AND NOT EXISTS (SELECT 1 FROM family_deletion_watermarks WHERE parent_id = ?)
+        ON CONFLICT(child_id, series_id, kind) DO UPDATE SET
+          active = excluded.active,
+          last_event_at_ms = excluded.last_event_at_ms,
+          updated_at = datetime('now')
+        -- The queue does not guarantee order: an older add must not undo a newer remove.
+        WHERE excluded.last_event_at_ms >= child_series_signals.last_event_at_ms
+      `).bind(childId, seriesId, kind, event.parentId, active, event.occurredAt, childId, event.parentId));
+    }
+  }
+
   if (event.type === 'child.deleted') {
     const childId = text(event.payload.childId);
     const requestId = text(event.payload.requestId);
     if (!childId || !requestId) throw new Error('invalid_child_deleted_event');
+    statements.push(env.DB.prepare(
+      'DELETE FROM child_series_signals WHERE child_id = ?',
+    ).bind(childId));
+    // ADM-309: a deleted child's watch history goes with them.
+    statements.push(env.DB.prepare(
+      'DELETE FROM child_watch_time_daily WHERE child_id = ?',
+    ).bind(childId));
     statements.push(env.DB.prepare(`
       INSERT INTO child_deletion_watermarks (child_id, parent_id, deleted_at_ms)
       VALUES (?, ?, ?)

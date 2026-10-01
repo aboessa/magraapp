@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import type { Env } from '../lib/db.ts';
+import { queryAll } from '../lib/db.ts';
 import { callDurable, familyStub } from '../lib/doClient.ts';
+import { loadScreenTimePolicy } from '../lib/parentalControls.ts';
 import {
   authenticateParent,
   createParentProof,
@@ -322,15 +324,93 @@ familyRoute.get('/progress', async (c) => {
   const childId = c.req.query('childId') ?? c.req.query('child_id');
   if (!childId) return c.json({ success: false, error: 'childId is required' }, 400);
 
-  const result = await state(c.env, auth.principal);
-  if (!result.ok || !result.data?.success || !result.data.data) return forward(result);
-  const ownsChild = result.data.data.children.some((child) => child.id === childId);
-  if (!ownsChild) return c.json({ success: false, error: 'Active child profile not found' }, 404);
+  // APP-201: a child-scoped read; ownership is checked inside the object.
+  return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/progress/list', {
+    body: { child_id: childId },
+  }));
+});
+
+/// `GET /family/reports/weekly?child_id=` — `APP-207`.
+///
+/// The authority (minutes, completions, attempts, mastery) comes from the
+/// family's Durable Object; ownership is checked there. The Worker adds what
+/// only D1 knows: the family's local date (timezone), which series the minutes
+/// went to (`child_watch_time_daily`, scoped to this parent), and titles.
+/// No comparison with other children and no raw timeline: totals a parent can
+/// act on, the same privacy line as the existing activity summary.
+familyRoute.get('/reports/weekly', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const childId = c.req.query('child_id') ?? c.req.query('childId');
+  if (!childId) return c.json({ success: false, error: 'child_id is required' }, 400);
+
+  const policy = await loadScreenTimePolicy(c.env, auth.principal.parentId, childId);
+  const report = await callDurable<Envelope<WeeklyCore>>(
+    familyStub(c.env, auth.principal.parentId), '/reports/weekly',
+    { body: { child_id: childId, local_date: policy.localDate } },
+  );
+  if (report.status !== 200 || !report.data?.success || !report.data.data) return forward(report);
+  const core = report.data.data;
+
+  const episodeIds = core.completed.filter((row) => row.content_type === 'episode').map((row) => row.content_id);
+  const objectiveIds = [...core.mastered, ...core.needs_review];
+  const [topSeries, episodeTitles, objectiveTitles] = await Promise.all([
+    queryAll<{ series_id: string; title: string | null; seconds: number }>(c.env.DB, `
+      SELECT e.series_id, s.title_ar AS title, SUM(w.watched_seconds) AS seconds
+        FROM child_watch_time_daily w
+        JOIN episodes e ON e.id = w.content_id AND w.content_type = 'episode'
+        LEFT JOIN series s ON s.id = e.series_id
+       WHERE w.parent_id = ? AND w.child_id = ? AND w.activity_date >= ? AND w.activity_date <= ?
+       GROUP BY e.series_id ORDER BY seconds DESC LIMIT 5
+    `, [auth.principal.parentId, childId, core.week_start, core.local_date]).catch(() => []),
+    titlesFor(c.env, 'SELECT id, title_ar AS title FROM episodes WHERE id IN', episodeIds),
+    titlesFor(c.env, 'SELECT id, title_ar AS title FROM learning_objectives WHERE id IN', objectiveIds),
+  ]);
+
+  const change = core.minutes_last_week > 0
+    ? Math.round(((core.minutes_this_week - core.minutes_last_week) / core.minutes_last_week) * 100)
+    : null;
   return c.json({
     success: true,
-    data: result.data.data.progress.filter((item) => item.child_id === childId),
+    data: {
+      ...core,
+      timezone: policy.timezone,
+      change_percent: change,
+      daily_limit_minutes: policy.dailyMinutes,
+      top_series: topSeries.map((row) => ({
+        series_id: row.series_id, title: row.title, minutes: Math.round(Number(row.seconds) / 60),
+      })),
+      completed: core.completed.map((row) => ({ ...row, title: episodeTitles.get(row.content_id) ?? null })),
+      mastered: core.mastered.map((id) => ({ objective_id: id, title: objectiveTitles.get(id) ?? null })),
+      needs_review: core.needs_review.map((id) => ({ objective_id: id, title: objectiveTitles.get(id) ?? null })),
+    },
   });
 });
+
+type WeeklyCore = {
+  local_date: string;
+  week_start: string;
+  daily: Array<{ date: string; minutes: number }>;
+  minutes_this_week: number;
+  minutes_last_week: number;
+  active_days: number;
+  completed: Array<{ content_type: string; content_id: string; completed_at: number }>;
+  attempts: number;
+  games_played: number;
+  accuracy: number | null;
+  mastered: string[];
+  needs_review: string[];
+};
+
+/// Titles for up to 20 ids; a failed read yields ids without titles, not a 500.
+async function titlesFor(env: Env, select: string, ids: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(ids)].slice(0, 20);
+  if (unique.length === 0) return new Map();
+  const rows = await queryAll<{ id: string; title: string | null }>(
+    env.DB, `${select} (${unique.map(() => '?').join(',')})`, unique,
+  ).catch(() => []);
+  return new Map(rows.filter((row) => row.title).map((row) => [row.id, row.title as string]));
+}
 
 familyRoute.get('/mastery', async (c) => {
   const auth = await principal(c);
@@ -573,6 +653,22 @@ familyRoute.post('/parent-pin', async (c) => {
       expires_at: new Date(issued.expiresAt).toISOString(),
     },
   });
+});
+
+/// Whether this family has a parent PIN. The app used a per-device mirror to
+/// guess, so a new device (a TV, a reinstalled phone) offered "create a PIN"
+/// although one existed, and the parent read it as "my PIN was not saved".
+/// Reveals only a boolean about the caller's own family.
+familyRoute.get('/parent-pin/status', async (c) => {
+  const auth = await principal(c);
+  if (!auth.ok) return unauthorized(auth.reason);
+  const status = await callDurable<Envelope<{ enrolled: boolean }>>(
+    familyStub(c.env, auth.principal.parentId), '/parent-pin/status', {},
+  );
+  if (!status.ok || !status.data?.success) {
+    return c.json({ success: false, error: 'Family service unavailable' }, 503);
+  }
+  return c.json({ success: true, data: { enrolled: status.data.data?.enrolled === true } });
 });
 
 familyRoute.post('/parent-pin/verify', async (c) => {

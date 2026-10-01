@@ -195,10 +195,23 @@ route.post('/events', async (c) => {
     }
   }
 
+  // ADM-304: the app sends its real version on every request (`X-App-Version`).
+  // Recorded with the event so the dashboard can show which versions are in use,
+  // which is what deciding a forced-update minimum needs. Bounded and shaped.
+  let paramsJson = params.json;
+  const headerVersion = c.req.header('X-App-Version')?.trim();
+  if (headerVersion && /^\d{1,4}(\.\d{1,4}){0,3}([+-][\w.]{1,20})?$/.test(headerVersion)) {
+    const stored = JSON.parse(paramsJson) as Record<string, unknown>;
+    if (stored.app_version === undefined) {
+      stored.app_version = headerVersion;
+      paramsJson = JSON.stringify(stored);
+    }
+  }
+
   const id = crypto.randomUUID();
   await c.env.DB.prepare(
     `INSERT INTO analytics_events (id, parent_id, child_id, event_name, params_json) VALUES (?,?,?,?,?)`,
-  ).bind(id, parentId, childId, name, params.json).run();
+  ).bind(id, parentId, childId, name, paramsJson).run();
   return c.json({ success: true, data: { id } }, 201);
 });
 

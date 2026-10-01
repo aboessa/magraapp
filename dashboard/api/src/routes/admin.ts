@@ -1,4 +1,4 @@
-﻿import { Hono } from 'hono'
+import { Hono } from 'hono'
 import type { Context } from 'hono'
 import type { Env } from '../lib/db.ts'
 import { pathParam } from '../lib/routeParams.ts'
@@ -264,9 +264,41 @@ function serializeSeries(row: DbRow) {
   }
 }
 
+const EPISODE_VIDEO_ASSET_SELECT = `
+  COALESCE(
+    (SELECT al.asset_id
+       FROM asset_links al
+       JOIN content_assets ca ON ca.id = al.asset_id
+      WHERE al.entity_type = 'episode'
+        AND al.entity_id = e.id
+        AND al.role IN ('stream', 'video')
+        AND ca.status = 'ready'
+      ORDER BY CASE al.role WHEN 'stream' THEN 0 ELSE 1 END, al.sort_order ASC
+      LIMIT 1),
+    (SELECT ca.id
+       FROM content_assets ca
+      WHERE ca.kind = 'video'
+        AND ca.status = 'ready'
+        AND (ca.r2_key = REPLACE(e.video_master_url, 'r2://majarra-media/', '')
+             OR e.video_master_url LIKE '%' || ca.r2_key)
+      LIMIT 1)
+  ) AS video_asset_id
+`
+
 function serializeEpisode(row: DbRow) {
+  const videoMasterUrl = typeof row.video_master_url === 'string' ? row.video_master_url.trim() : null
+  const videoAssetId = (row.video_asset_id as string | null) || null
+  let videoUrl: string | null = null
+  if (videoMasterUrl && (videoMasterUrl.startsWith('http://') || videoMasterUrl.startsWith('https://'))) {
+    videoUrl = videoMasterUrl
+  } else if (videoAssetId) {
+    videoUrl = `/admin/assets/${videoAssetId}/content`
+  }
+
   return {
     ...row,
+    video_asset_id: videoAssetId,
+    video_url: videoUrl,
     track_ids: parseTrackIds(row.track_ids),
     is_free: Boolean(row.is_free),
     is_published: Boolean(row.is_published),
@@ -439,7 +471,7 @@ adminRoute.get('/series/:id', async (c) => {
     queryAll<DbRow>(db, 'SELECT * FROM characters WHERE series_id = ? ORDER BY created_at', [id]),
   ])
   const episodeIds = await queryAll<DbRow>(db, `
-    SELECT e.*, ${artworkSelect('thumb_asset', 'episode', 'e.id', EPISODE_THUMBNAIL_ROLES)}
+    SELECT e.*, ${EPISODE_VIDEO_ASSET_SELECT}, ${artworkSelect('thumb_asset', 'episode', 'e.id', EPISODE_THUMBNAIL_ROLES)}
     FROM episodes e WHERE e.series_id = ? AND e.status <> 'archived'
     ORDER BY e.season_id, e.episode_number
   `, [id])
@@ -792,6 +824,7 @@ adminRoute.get('/episodes', async (c) => {
     SELECT e.*, s.title_ar AS series_title,
       (SELECT GROUP_CONCAT(track_id) FROM episode_tracks WHERE episode_id = e.id) AS track_ids,
       lo.title_ar AS objective_title,
+      ${EPISODE_VIDEO_ASSET_SELECT},
       ${artworkSelect('thumb_asset', 'episode', 'e.id', EPISODE_THUMBNAIL_ROLES)}
     FROM episodes e
     JOIN series s ON s.id = e.series_id
@@ -815,6 +848,7 @@ adminRoute.get('/episodes/:id', async (c) => {
     SELECT e.*, s.title_ar AS series_title,
       (SELECT GROUP_CONCAT(track_id) FROM episode_tracks WHERE episode_id = e.id) AS track_ids,
       lo.title_ar AS objective_title,
+      ${EPISODE_VIDEO_ASSET_SELECT},
       ${artworkSelect('thumb_asset', 'episode', 'e.id', EPISODE_THUMBNAIL_ROLES)}
     FROM episodes e
     JOIN series s ON s.id = e.series_id

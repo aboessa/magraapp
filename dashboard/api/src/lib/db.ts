@@ -31,6 +31,8 @@ export interface Env {
   ADMIN_API_KEY?: string;
   AUTH_TOKEN_SECRET?: string;
   MEDIA_TOKEN_SECRET?: string;
+  /// APP-203: Firebase service-account JSON (`majarra-fcm-sender`, messaging only).
+  FCM_SERVICE_ACCOUNT_JSON?: string;
 
   /// OPS-106: بريد يستقبل تنبيهات العمليات.
   ///
@@ -123,6 +125,17 @@ export interface Env {
   /// غيابها يعني **180 يومًا** — وهو ما ينفّذه النظام اليوم، لا رقمًا جديدًا.
   /// وقيمةٌ مشوّهة تُسجَّل وتُستبدل بالافتراض ولا تُعطّل الحذف.
   ANALYTICS_RETENTION_DAYS?: string;
+
+  /// `TV-001`: one Durable Object per television pairing code. Optional so a run
+  /// without the binding answers 503 on the pairing paths instead of crashing;
+  /// `wrangler.jsonc` declares it for both environments.
+  TV_PAIRING?: DurableObjectNamespace;
+  /// `TV-002`: one object per family holding the TV and remote WebSockets.
+  FAMILY_LINK?: DurableObjectNamespace;
+  /// Where the QR code on the television points, e.g. https://majarra.app/link-tv.
+  /// The code is appended as `?code=`. Unset means the QR carries the app's own
+  /// `majarra://app/link-tv` link, which opens the app directly when installed.
+  TV_PAIRING_URL?: string;
 }
 
 export async function queryAll<T>(db: D1Database, sql: string, params: unknown[] = []): Promise<T[]> {

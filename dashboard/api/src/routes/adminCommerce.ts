@@ -234,8 +234,9 @@ route.get('/commerce/reconciliation', async (c) => {
 // ---- Plans & Pricing ----
 route.get('/plans/:id', async (c) => {
   const id = pathParam(c, 'id')
-  const { PLAN_LIMITS } = await import('../lib/familyPolicy.ts')
-  const limits = (PLAN_LIMITS as any)[id]
+  // ADMIN-POLICY: the limits actually enforced, not the code defaults.
+  const { loadPlanLimits } = await import('../lib/platformPolicy.ts')
+  const limits = ((await loadPlanLimits(c.env)).limits as any)[id]
   if (!limits) return c.json({ success: false, error: 'Plan not found' }, 404)
   // Count subscribers
   const subs = await queryFirst<{ cnt: number }>(c.env.DB, `SELECT COUNT(*) as cnt FROM family_projection WHERE plan=? AND status='active'`, [id])
@@ -243,7 +244,7 @@ route.get('/plans/:id', async (c) => {
   const pricing = await queryAll(c.env.DB, `SELECT pp.*, sp.store_product_id, sp.provider, sp.billing_period FROM plan_pricing pp JOIN store_products sp ON sp.id=pp.store_product_id WHERE pp.plan=? ORDER BY pp.country, pp.effective_from DESC`, [id])
   const products = await queryAll(c.env.DB, `SELECT * FROM store_products WHERE plan=? ORDER BY provider, billing_period`, [id])
   const promos = await queryAll(c.env.DB, `SELECT * FROM promotions WHERE plan=? OR plan IS NULL ORDER BY created_at DESC LIMIT 10`, [id])
-  return c.json({ success: true, data: { id, limits: { children: limits.children, devices: limits.devices, concurrent_streams: limits.concurrentStreams, download_devices: limits.downloadDevices }, subscribers: Number(subs?.cnt ?? 0), pricing, products, promotions: promos } })
+  return c.json({ success: true, data: { id, limits: { children: limits.children, devices: limits.devices, tv_devices: limits.tvDevices, concurrent_streams: limits.concurrentStreams, download_devices: limits.downloadDevices, offline_items: limits.offlineItems }, subscribers: Number(subs?.cnt ?? 0), pricing, products, promotions: promos } })
 })
 
 route.get('/pricing/matrix', async (c) => {
@@ -859,6 +860,68 @@ route.post('/content-costs', requirePermission('edit_metadata'), async (c) => {
   await c.env.DB.batch([
     c.env.DB.prepare(`INSERT INTO content_costs (id, entity_type, entity_id, category, amount_minor, currency, vendor, incurred_at, allocation_basis, notes, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id, entityType, entityId, category, amount, currency, (body.vendor as string) || null, (body.incurred_at as string) || new Date().toISOString(), (body.allocation_basis as string) || null, (body.notes as string) || null, actorId(c)),
     auditStatement(c.env.DB, actorId(c), 'create', 'content_cost', id, body)
+  ])
+  return c.json({ success: true, data: { id } }, 201)
+})
+
+// ---- Content budgets (ADM-302) ----
+//
+// `api.contentBudgets` called this path and nothing answered it, so the
+// "budget vs actual" tab could never show a number. Budgets are compared with
+// recorded costs in the same currency only: summing across currencies would
+// be a made-up figure.
+const BUDGET_SCOPES = ['planet', 'series', 'global'] as const
+const BUDGET_STATUSES = ['draft', 'committed', 'actual', 'forecast'] as const
+
+route.get('/content-budgets', async (c) => {
+  const budgets = await queryAll<{ scope_type: string; scope_id: string | null; currency: string; period: string } & Record<string, unknown>>(c.env.DB, `
+    SELECT * FROM content_budgets ORDER BY period DESC, scope_type, created_at DESC LIMIT 200
+  `)
+  // Costs per entity, currency and month; small enough to fold in memory.
+  const costs = await queryAll<{ entity_id: string; currency: string; month: string; total: number }>(c.env.DB, `
+    SELECT entity_id, currency, substr(incurred_at, 1, 7) AS month, SUM(amount_minor) AS total
+    FROM content_costs GROUP BY entity_id, currency, month
+  `)
+  const inPeriod = (month: string, period: string) => {
+    const quarter = period.match(/^(\d{4})-Q([1-4])$/)
+    if (quarter) {
+      const m = Number(month.slice(5, 7))
+      return month.startsWith(quarter[1]) && Math.ceil(m / 3) === Number(quarter[2])
+    }
+    return month.startsWith(period)
+  }
+  const data = budgets.map((b) => ({
+    ...b,
+    actual_minor: costs
+      .filter((row) => row.currency === b.currency
+        && (b.scope_type === 'global' || row.entity_id === b.scope_id)
+        && inPeriod(row.month ?? '', b.period))
+      .reduce((sum, row) => sum + Number(row.total ?? 0), 0),
+  }))
+  return c.json({ success: true, data })
+})
+
+route.post('/content-budgets', requirePermission('edit_metadata'), async (c) => {
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
+  if (!body) return c.json({ success: false, error: 'A JSON object is required' }, 400)
+  const scopeType = typeof body.scope_type === 'string' ? body.scope_type : ''
+  const scopeId = typeof body.scope_id === 'string' && body.scope_id.trim() ? body.scope_id.trim() : null
+  const amount = Number(body.amount_minor)
+  const currency = typeof body.currency === 'string' && /^[A-Z]{3}$/.test(body.currency.toUpperCase()) ? body.currency.toUpperCase() : ''
+  const period = typeof body.period === 'string' ? body.period.trim() : ''
+  const status = typeof body.status === 'string' ? body.status : 'draft'
+  const notes = typeof body.notes === 'string' ? body.notes.slice(0, 1000) : null
+  if (!(BUDGET_SCOPES as readonly string[]).includes(scopeType)) return c.json({ success: false, error: 'scope_type must be planet, series or global' }, 400)
+  if (scopeType !== 'global' && !scopeId) return c.json({ success: false, error: 'scope_id is required for planet and series budgets' }, 400)
+  if (!Number.isInteger(amount) || amount < 0) return c.json({ success: false, error: 'amount_minor must be a whole non-negative number' }, 400)
+  if (!currency) return c.json({ success: false, error: 'currency must be a 3-letter code' }, 400)
+  if (!/^\d{4}(-(Q[1-4]|\d{2}))?$/.test(period)) return c.json({ success: false, error: 'period must look like 2026, 2026-Q1 or 2026-03' }, 400)
+  if (!(BUDGET_STATUSES as readonly string[]).includes(status)) return c.json({ success: false, error: 'invalid status' }, 400)
+  const id = crypto.randomUUID()
+  await c.env.DB.batch([
+    c.env.DB.prepare(`INSERT INTO content_budgets (id, scope_type, scope_id, amount_minor, currency, period, status, notes) VALUES (?,?,?,?,?,?,?,?)`)
+      .bind(id, scopeType, scopeType === 'global' ? null : scopeId, amount, currency, period, status, notes),
+    auditStatement(c.env.DB, actorId(c), 'create', 'content_budget', id, { scope_type: scopeType, scope_id: scopeId, amount_minor: amount, currency, period, status }),
   ])
   return c.json({ success: true, data: { id } }, 201)
 })

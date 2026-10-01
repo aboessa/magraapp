@@ -23,6 +23,83 @@ route.get('/analytics/overview', async (c) => {
 })
 
 /**
+ * `GET /analytics/watch-time?days=7|30|90` — `ADM-309`.
+ *
+ * From `child_watch_time_daily`, the projection of the same seconds the
+ * screen-time limits count (`watch_time.credited`). Days are the families'
+ * local dates. Aggregates only: no child names, no per-family rows.
+ */
+route.get('/analytics/watch-time', async (c) => {
+  const requested = Number(c.req.query('days') ?? 7)
+  const days = [7, 30, 90].includes(requested) ? requested : 7
+  const since = new Date(Date.now() - (days - 1) * 86_400_000).toISOString().slice(0, 10)
+  const db = c.env.DB
+
+  const [totals, daily, byTrack, topContent, topSeries] = await Promise.all([
+    queryFirst<{ seconds: number | null; children: number; families: number; child_days: number }>(db, `
+      SELECT SUM(watched_seconds) AS seconds,
+             COUNT(DISTINCT child_id) AS children,
+             COUNT(DISTINCT parent_id) AS families,
+             COUNT(DISTINCT activity_date || '|' || child_id) AS child_days
+        FROM child_watch_time_daily WHERE activity_date >= ?
+    `, [since]),
+    queryAll<{ day: string; seconds: number; children: number }>(db, `
+      SELECT activity_date AS day, SUM(watched_seconds) AS seconds, COUNT(DISTINCT child_id) AS children
+        FROM child_watch_time_daily WHERE activity_date >= ?
+       GROUP BY activity_date ORDER BY activity_date
+    `, [since]),
+    queryAll<{ age_track: string | null; seconds: number; children: number }>(db, `
+      SELECT age_track, SUM(watched_seconds) AS seconds, COUNT(DISTINCT child_id) AS children
+        FROM child_watch_time_daily WHERE activity_date >= ?
+       GROUP BY age_track ORDER BY seconds DESC
+    `, [since]),
+    queryAll<{ content_type: string; content_id: string; title: string | null; series_title: string | null; seconds: number; children: number }>(db, `
+      SELECT w.content_type, w.content_id,
+             e.title_ar AS title, s.title_ar AS series_title,
+             SUM(w.watched_seconds) AS seconds, COUNT(DISTINCT w.child_id) AS children
+        FROM child_watch_time_daily w
+        LEFT JOIN episodes e ON e.id = w.content_id AND w.content_type = 'episode'
+        LEFT JOIN series s ON s.id = e.series_id
+       WHERE w.activity_date >= ?
+       GROUP BY w.content_type, w.content_id
+       ORDER BY seconds DESC LIMIT 20
+    `, [since]),
+    queryAll<{ series_id: string; title: string | null; seconds: number; children: number }>(db, `
+      SELECT e.series_id, s.title_ar AS title,
+             SUM(w.watched_seconds) AS seconds, COUNT(DISTINCT w.child_id) AS children
+        FROM child_watch_time_daily w
+        JOIN episodes e ON e.id = w.content_id AND w.content_type = 'episode'
+        LEFT JOIN series s ON s.id = e.series_id
+       WHERE w.activity_date >= ?
+       GROUP BY e.series_id
+       ORDER BY seconds DESC LIMIT 10
+    `, [since]),
+  ])
+
+  const seconds = Number(totals?.seconds ?? 0)
+  const childDays = Number(totals?.child_days ?? 0)
+  return c.json({
+    success: true,
+    data: {
+      days,
+      since,
+      totals: {
+        watched_minutes: Math.round(seconds / 60),
+        active_children: Number(totals?.children ?? 0),
+        active_families: Number(totals?.families ?? 0),
+        // Per child on the days they watched: a child who watched once is not
+        // averaged down by the days they did not open the app.
+        avg_minutes_per_child_day: childDays > 0 ? Math.round((seconds / 60 / childDays) * 10) / 10 : 0,
+      },
+      daily: daily.map((row) => ({ day: row.day, minutes: Math.round(Number(row.seconds) / 60), children: Number(row.children) })),
+      by_track: byTrack.map((row) => ({ age_track: row.age_track, minutes: Math.round(Number(row.seconds) / 60), children: Number(row.children) })),
+      top_content: topContent.map((row) => ({ ...row, minutes: Math.round(Number(row.seconds) / 60), seconds: Number(row.seconds), children: Number(row.children) })),
+      top_series: topSeries.map((row) => ({ ...row, minutes: Math.round(Number(row.seconds) / 60), seconds: Number(row.seconds), children: Number(row.children) })),
+    },
+  })
+})
+
+/**
  * تقدّم طفل واحد.
  *
  * ## العلّة التي كانت هنا

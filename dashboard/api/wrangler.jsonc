@@ -85,6 +85,18 @@
 			{
 				"name": "RATE_LIMITER",
 				"class_name": "RateLimiter"
+			},
+			// TV-001: one object per television pairing code. Short-lived: each
+			// record is deleted by its own alarm within minutes.
+			{
+				"name": "TV_PAIRING",
+				"class_name": "TvPairing"
+			},
+			// TV-002: one object per family holding TV/remote WebSockets. Uses the
+			// Hibernation API so an idle connected TV costs nothing.
+			{
+				"name": "FAMILY_LINK",
+				"class_name": "FamilyLink"
 			}
 		]
 	},
@@ -115,6 +127,18 @@
 			"new_sqlite_classes": [
 				"RateLimiter"
 			]
+		},
+		{
+			"tag": "v5",
+			"new_sqlite_classes": [
+				"TvPairing"
+			]
+		},
+		{
+			"tag": "v6",
+			"new_sqlite_classes": [
+				"FamilyLink"
+			]
 		}
 	],
 	// OPS-106: تعبيران. التنظيف يوميّ، وفحص الصحة كل خمس دقائق.
@@ -122,6 +146,7 @@
 	"triggers": {
 		"crons": [
 			"0 3 * * *",
+			"0 16 * * *",
 			"*/5 * * * *"
 		]
 	},
@@ -235,6 +260,14 @@
 					{
 						"name": "RATE_LIMITER",
 						"class_name": "RateLimiter"
+					},
+					{
+						"name": "TV_PAIRING",
+						"class_name": "TvPairing"
+					},
+					{
+						"name": "FAMILY_LINK",
+						"class_name": "FamilyLink"
 					}
 				]
 			},
@@ -262,11 +295,24 @@
 					"new_sqlite_classes": [
 						"RateLimiter"
 					]
+				},
+				{
+					"tag": "v5",
+					"new_sqlite_classes": [
+						"TvPairing"
+					]
+				},
+				{
+					"tag": "v6",
+					"new_sqlite_classes": [
+						"FamilyLink"
+					]
 				}
 			],
 			"triggers": {
 				"crons": [
 					"0 3 * * *",
+					"0 16 * * *",
 					"*/5 * * * *"
 				]
 			},

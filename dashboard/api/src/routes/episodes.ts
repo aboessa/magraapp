@@ -10,7 +10,10 @@ import {
   EPISODE_THUMBNAIL_ROLES,
   publicAssetBaseUrl,
 } from '../lib/assetUrls.ts';
-import { authenticateParent, createMediaToken, mediaIsConfigured, type ParentPrincipal } from '../lib/parentAuth.ts';
+import {
+  authenticateParent, createHlsToken, createMediaToken, HLS_PREFIX_PATTERN, hlsTokenTtlSeconds,
+  mediaIsConfigured, type ParentPrincipal,
+} from '../lib/parentAuth.ts';
 import {
   availabilityContext,
   availabilityFor,
@@ -19,6 +22,7 @@ import {
 } from '../lib/requestGeo.ts';
 import type { AgeTrack, Plan } from '../lib/familyPolicy.ts';
 import { bodyOr400, boolean, integer, list, opaque, text, type BodySchema } from '../lib/requestSchema.ts';
+import { notifyParent } from '../lib/push.ts';
 
 
 type AppEnv = { Bindings: Env };
@@ -43,6 +47,8 @@ type PlaybackLease = {
   lease_id: string;
   expires_at: number;
   plan: Plan;
+  remaining_seconds?: number | null;
+  limit_kind?: string | null;
 };
 
 const episodesRoute = new Hono<AppEnv>();
@@ -53,6 +59,10 @@ const episodesRoute = new Hono<AppEnv>();
 /// يأتي من المسار ومن الجلسة المُصادَقة، وقبوله من الجسم كان سيجعل العميل يقرّر
 /// نيابةً عن الخادم.
 const PLAYBACK_SESSION: BodySchema = { child_id: text({ max: 128 }) };
+
+/// APP-206: heartbeat and end. `played_ms` is bounded by the server against the
+/// wall-clock gap, so its only effect can be to credit less than elapsed time.
+const PLAYBACK_TICK: BodySchema = { played_ms: integer({ min: 0, max: 24 * 60 * 60 * 1000, optional: true }) };
 
 /// تقدّم مشاهدة، أو محاولة تفاعلية داخل حلقة.
 ///
@@ -112,6 +122,23 @@ async function catalogMedia(env: Env, episodeId: string) {
     SELECT track_id FROM episode_tracks WHERE episode_id = ? ORDER BY track_id
   `, [episodeId]);
   return { media, tracks: tracks.map((row) => row.track_id) };
+}
+
+/// CONTENT-001: the episode's HLS master, if one is registered (role `hls`,
+/// kind `manifest`). Kept off the `stream`/`video` roles on purpose, so offline
+/// downloads (`downloads.ts:assetsFor`) keep licensing the MP4 only.
+async function catalogHls(env: Env, episodeId: string) {
+  const row = await queryFirst<{ asset_id: string; r2_key: string }>(env.DB, `
+    SELECT ca.id AS asset_id, ca.r2_key
+      FROM asset_links al JOIN content_assets ca ON ca.id = al.asset_id
+     WHERE al.entity_type = 'episode' AND al.entity_id = ? AND al.role = 'hls'
+       AND ca.kind = 'manifest' AND ca.status = 'ready' AND ca.visibility = 'private'
+       AND ca.bucket = 'media' AND ca.r2_key LIKE '%/hls/master.m3u8'
+     LIMIT 1
+  `, [episodeId]).catch(() => null);
+  if (!row) return null;
+  const prefix = row.r2_key.slice(0, -'master.m3u8'.length);
+  return HLS_PREFIX_PATTERN.test(prefix) ? { asset_id: row.asset_id, prefix } : null;
 }
 
 async function issueMediaToken(env: Env, principal: ParentPrincipal, leaseId: string, media: CatalogMedia) {
@@ -342,16 +369,34 @@ episodesRoute.post('/:id/playback-sessions', async (c) => {
   // capability endpoint below. It supports byte ranges and accepts the short-lived
   // capability in `?token=`, which is required by the HTML video element.
   const streamUrl = `/api/v1/media/assets/${catalog.media.asset_id}`;
+
+  // CONTENT-001: adaptive HLS where it exists. `stream_url` stays the MP4, which
+  // web (Chrome's <video> has no HLS) and older app versions keep using.
+  const hls = await catalogHls(c.env, catalog.media.id);
+  const hlsUrl = hls
+    ? `/api/v1/media/hls/${await createHlsToken(c.env, {
+      sub: auth.principal.parentId,
+      sid: auth.principal.sessionId,
+      lid: lease.lease_id,
+      aid: hls.asset_id,
+      prefix: hls.prefix,
+      bucket: 'media',
+    }, hlsTokenTtlSeconds(catalog.media.duration_seconds))}/master.m3u8`
+    : null;
   return c.json({
     success: true,
     data: {
       lease_id: lease.lease_id,
       stream_url: streamUrl,
+      hls_url: hlsUrl,
       authorization: `Bearer ${token}`,
       expires_at: new Date(lease.expires_at).toISOString(),
       capability_expires_in: 180,
       content_type: catalog.media.mime_type,
       protection: 'access_controlled_no_drm',
+      // APP-206: lets the player warn before a limit stops it.
+      remaining_seconds: lease.remaining_seconds ?? null,
+      limit_kind: lease.limit_kind ?? null,
     },
   }, 201);
 });
@@ -363,15 +408,23 @@ episodesRoute.post('/:id/playback-sessions/:leaseId/heartbeat', async (c) => {
   const catalog = await catalogMedia(c.env, c.req.param('id'));
   if (!catalog) return c.json({ success: false, error: 'Protected episode media is unavailable' }, 404);
 
+  // APP-206: optional `played_ms` (how long the video actually played since the
+  // last heartbeat). An empty or absent body stays valid for older clients.
+  const parsedBeat = await bodyOr400<{ played_ms?: number }>(c, PLAYBACK_TICK);
+  if (!parsedBeat.ok) return parsedBeat.response;
+
   const requiredPlan: Plan = catalog.media.is_free ? 'free' : catalog.media.price_tier;
   const heartbeat = await callDurable<Envelope<{
     lease_id: string; expires_at: number; asset_id: string; entity_id: string;
+    remaining_seconds?: number | null; limit_kind?: string | null;
+    child_id?: string; child_nickname?: string | null;
   }>>(familyStub(c.env, auth.principal.parentId), '/playback/heartbeat', {
     body: {
       session_id: auth.principal.sessionId,
       lease_id: c.req.param('leaseId'),
       required_plan: requiredPlan,
       allowed_tracks: catalog.tracks,
+      ...(parsedBeat.value.played_ms === undefined ? {} : { played_ms: parsedBeat.value.played_ms }),
     },
   });
   const lease = heartbeat.data?.success ? heartbeat.data.data : null;
@@ -380,12 +433,33 @@ episodesRoute.post('/:id/playback-sessions/:leaseId/heartbeat', async (c) => {
     return c.json({ success: false, error: 'Playback lease is unavailable' }, 404);
   }
   const token = await issueMediaToken(c.env, auth.principal, lease.lease_id, catalog.media);
+
+  // APP-203: tell the parent's phone once, when a child's day is 5 minutes
+  // from its limit. Deduplicated per child per day in `push_log`, so a
+  // heartbeat every 30 s sends it once. Never delays or fails the heartbeat.
+  const remaining = lease.remaining_seconds;
+  if (lease.limit_kind === 'daily' && typeof remaining === 'number' && remaining > 0 && remaining <= 300) {
+    const task = (async () => {
+      const name = lease.child_nickname?.trim() || 'طفلك';
+      await notifyParent(c.env, auth.principal.parentId, 'screen_time',
+        `screen_time:${lease.child_id ?? lease.lease_id}:${new Date().toISOString().slice(0, 10)}`, {
+          title: 'وقت الشاشة قرب يخلص',
+          body: `فاضل ${Math.max(1, Math.ceil(remaining / 60))} دقايق على وقت مشاهدة ${name} النهارده.`,
+          route: '/parent',
+        });
+    })();
+    try { c.executionCtx.waitUntil(task); } catch { /* outside a Worker (tests) */ }
+  }
+
   return c.json({
     success: true,
     data: {
       authorization: `Bearer ${token}`,
       expires_at: new Date(lease.expires_at).toISOString(),
       capability_expires_in: 180,
+      // APP-206: lets the player warn before a limit stops it.
+      remaining_seconds: lease.remaining_seconds ?? null,
+      limit_kind: lease.limit_kind ?? null,
     },
   });
 });
@@ -393,8 +467,14 @@ episodesRoute.post('/:id/playback-sessions/:leaseId/heartbeat', async (c) => {
 episodesRoute.post('/:id/playback-sessions/:leaseId/end', async (c) => {
   const auth = await authenticateParent(c.env, c.req.header('Authorization'));
   if (!auth.ok) return unauthorized(auth.reason);
+  const parsedEnd = await bodyOr400<{ played_ms?: number }>(c, PLAYBACK_TICK);
+  if (!parsedEnd.ok) return parsedEnd.response;
   return forward(await callDurable(familyStub(c.env, auth.principal.parentId), '/playback/end', {
-    body: { session_id: auth.principal.sessionId, lease_id: c.req.param('leaseId') },
+    body: {
+      session_id: auth.principal.sessionId,
+      lease_id: c.req.param('leaseId'),
+      ...(parsedEnd.value.played_ms === undefined ? {} : { played_ms: parsedEnd.value.played_ms }),
+    },
   }));
 });
 

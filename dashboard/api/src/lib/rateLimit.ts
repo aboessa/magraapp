@@ -221,3 +221,35 @@ export const parentWriteLimit = rateLimit({
 export const creationWriteLimit = rateLimit({
   windowMs: 60_000, max: 30, keyPrefix: 'creation-write', perPrincipal: true,
 })
+
+/**
+ * Television pairing: issuing a code (`TV-001`).
+ *
+ * Unauthenticated, so keyed per address. A television asks for a code when the
+ * pairing screen opens and again when one expires (every ten minutes), so ten a
+ * minute leaves room for several TVs behind one home router while still bounding
+ * a loop that tries to exhaust the code space.
+ */
+export const tvPairStartLimit = rateLimit({ windowMs: 60_000, max: 10, keyPrefix: 'tv-pair-start' })
+
+/**
+ * Television pairing: polling for approval.
+ *
+ * Kept off `/auth/*` on purpose: a TV polls every five seconds (12/minute), and
+ * `strictAuthLimit` would refuse it after the fifth. Forty covers three TVs
+ * pairing at once behind one address. The poll needs a 256-bit secret, so this
+ * limit is about load, not guessing.
+ */
+export const tvPairPollLimit = rateLimit({ windowMs: 60_000, max: 40, keyPrefix: 'tv-pair-poll' })
+
+/**
+ * TV remote commands (`TV-002`), per parent.
+ *
+ * A parent scrubbing through a cartoon taps "+10s" several times a second, so
+ * this is more generous than the parent-write limit. Each command wakes one
+ * Durable Object and sends one small message; 120 a minute is far above real use
+ * and still bounds a loop.
+ */
+export const tvRemoteLimit = rateLimit({
+  windowMs: 60_000, max: 120, keyPrefix: 'tv-remote', perPrincipal: true,
+})

@@ -124,6 +124,21 @@ route.get('/questions', async (c)=>{
   return c.json({ success:true, data: rows.map((r:any)=>({ ...r, correct_answer: JSON.parse(r.correct_answer||'{}'), distractors: JSON.parse(r.distractors||'[]'), media_asset_ids: JSON.parse(r.media_asset_ids||'[]') })), meta:{ total: Number(totalRow?.total??0), limit, offset, summary }})
 })
 
+/// ADM-301: registered **before** `/questions/:id`. Declared after it, Hono bound
+/// the literal `export` as a question id and the export always answered
+/// "Question not found".
+route.get('/questions/export', async (c)=>{
+  const db=c.env.DB
+  const q=c.req.query('q')?.trim()
+  const status=c.req.query('status')
+  const clauses:string[]=[]; const params:unknown[]=[]
+  if(q){ clauses.push('(code LIKE ? OR prompt_ar LIKE ?)'); params.push(`%${q}%`,`%${q}%`) }
+  if(status){ clauses.push('status = ?'); params.push(status) }
+  const where=clauses.length? `WHERE ${clauses.join(' AND ')}`:''
+  const rows=await queryAll<any>(db, `SELECT * FROM questions ${where} ORDER BY code LIMIT 500`, params)
+  return c.json({ success:true, data: rows.map((r:any)=>({ ...r, correct_answer: JSON.parse(r.correct_answer||'{}'), distractors: JSON.parse(r.distractors||'[]') })) })
+})
+
 route.get('/questions/:id', async (c)=>{
   const db=c.env.DB
   const id=pathParam(c,'id')
@@ -262,18 +277,6 @@ route.post('/questions/import', requirePermission('create'), async (c)=>{
   batches.push(auditStatement(c.env.DB, actorId(c), 'import','question','batch',{ count: ids.length }))
   await c.env.DB.batch(batches)
   return c.json({ success:true, data:{ imported: ids.length, ids } })
-})
-
-route.get('/questions/export', async (c)=>{
-  const db=c.env.DB
-  const q=c.req.query('q')?.trim()
-  const status=c.req.query('status')
-  const clauses:string[]=[]; const params:unknown[]=[]
-  if(q){ clauses.push('(code LIKE ? OR prompt_ar LIKE ?)'); params.push(`%${q}%`,`%${q}%`) }
-  if(status){ clauses.push('status = ?'); params.push(status) }
-  const where=clauses.length? `WHERE ${clauses.join(' AND ')}`:''
-  const rows=await queryAll<any>(db, `SELECT * FROM questions ${where} ORDER BY code LIMIT 500`, params)
-  return c.json({ success:true, data: rows.map((r:any)=>({ ...r, correct_answer: JSON.parse(r.correct_answer||'{}'), distractors: JSON.parse(r.distractors||'[]') })) })
 })
 
 export default route

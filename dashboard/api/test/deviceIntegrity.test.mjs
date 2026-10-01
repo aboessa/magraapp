@@ -139,7 +139,7 @@ const doSource = readFileSync(
 );
 
 test('السياسة تُطبَّق على مدّة الترخيص في مسار الجلسة', () => {
-  assert.match(routeSource, /ttl_ms: licenceTtlFor\(risk, LICENSE_TTL_MS\)/);
+  assert.match(routeSource, /ttl_ms: licenceTtlFor\(risk, await licenseTtlMs\(c\.env\)\)/);
   assert.match(routeSource, /integrity: integrityAuditDetails\(integritySignals, risk\)/);
 });
 

@@ -3,7 +3,7 @@ import type { Env } from '../lib/db.ts';
 import { queryAll, queryFirst } from '../lib/db.ts';
 import { callDurable, familyStub } from '../lib/doClient.ts';
 import { bodyOr400, text } from '../lib/requestSchema.ts';
-import { PLAN_LIMITS } from '../lib/familyPolicy.ts';
+import { loadPlanLimits } from '../lib/platformPolicy.ts';
 import { authenticateParent } from '../lib/parentAuth.ts';
 import { sha256Base64Url } from '../lib/security.ts';
 import { verifyAuditAndApplyGooglePlay } from '../services/billing.ts';
@@ -159,6 +159,9 @@ billingRoute.get('/catalog', async (c) => {
       sp.provider
   `, [country, ...providers, country]);
 
+  // ADMIN-POLICY: the catalogue shows the limits actually enforced.
+  const planLimits = (await loadPlanLimits(c.env)).limits;
+
   // Exact-country rows win over GLOBAL without allowing multiple active price
   // revisions for the same provider product to leak into the client.
   const seenOffers = new Set<string>();
@@ -207,10 +210,11 @@ billingRoute.get('/catalog', async (c) => {
       plans: (['family', 'family_plus'] as const).map((id) => ({
         id,
         limits: {
-          children: PLAN_LIMITS[id].children,
-          devices: PLAN_LIMITS[id].devices,
-          concurrent_streams: PLAN_LIMITS[id].concurrentStreams,
-          download_devices: PLAN_LIMITS[id].downloadDevices,
+          children: planLimits[id].children,
+          devices: planLimits[id].devices,
+          tv_devices: planLimits[id].tvDevices,
+          concurrent_streams: planLimits[id].concurrentStreams,
+          download_devices: planLimits[id].downloadDevices,
         },
       })),
       offers,

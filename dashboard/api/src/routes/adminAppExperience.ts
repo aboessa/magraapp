@@ -587,27 +587,105 @@ route.get('/home-experience/preview', async (c) => {
 // نموًّا في المنصّة.
 route.get('/devices', async (c) => {
   const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'), UNBOUNDED_LIST_PAGINATION)
-  // `DB-102`: القائمة **غير متوفّرة**، لا فارغة.
-  //
-  // كان هنا `COUNT(*)` وقائمةٌ من `account_devices`. والمقيس: الجدول بلا كاتب
-  // واحد في المستودع (صفر `INSERT`/`UPDATE`)، فالردّ كان دائمًا `data: []` و
-  // `total: 0` — أي أن المشغّل يقرأ «صفر أجهزة على المنصّة» بينما الأجهزة تعمل
-  // وسلطتها في `FamilyState`. وشقيقُ هذا المسار (`/devices/:id/revoke`) يرفض
-  // بصراحةٍ لهذا السبب نفسه منذ قبل هذه الدفعة؛ فالقائمة كانت تُخالفه بصمتها.
-  //
-  // و`total: null` لا صفر: الصفر ادّعاءُ قياسٍ لم يحدث.
+  // ADM-307: from `device_projection` (0102), the queue-fed projection of
+  // `FamilyState.devices`. `DB-102` answered "unavailable" here because
+  // `account_devices` never had a writer; this table does. It lags the
+  // authority by seconds, and a family's live list and every revoke still go
+  // through FamilyState (`/admin/families/:id/...`).
+  const clauses: string[] = []
+  const params: unknown[] = []
+  const status = c.req.query('status')
+  if (status === 'active' || status === 'revoked') { clauses.push('d.status = ?'); params.push(status) }
+  const platform = c.req.query('platform')?.trim()
+  if (platform && /^[a-z_]{1,32}$/.test(platform)) { clauses.push('d.platform = ?'); params.push(platform) }
+  const parentId = c.req.query('parent_id')?.trim()
+  if (parentId) { clauses.push('d.parent_id = ?'); params.push(parentId) }
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+
+  const [total, rows] = await Promise.all([
+    queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM device_projection d ${where}`, params),
+    queryAll<Record<string, unknown>>(c.env.DB, `
+      SELECT d.device_id AS id, d.parent_id, f.display_name AS parent_name, d.display_name,
+             d.platform, d.status, d.registered_at_ms, d.last_seen_at_ms, d.revoked_at_ms
+        FROM device_projection d
+        LEFT JOIN family_projection f ON f.parent_id = d.parent_id
+        ${where}
+       ORDER BY d.last_seen_at_ms DESC
+       LIMIT ? OFFSET ?
+    `, [...params, limit, offset]),
+  ])
+  const iso = (ms: unknown) => (typeof ms === 'number' && ms > 0 ? new Date(ms).toISOString() : null)
   return c.json({
     success: true,
-    data: [],
+    data: rows.map(({ registered_at_ms, last_seen_at_ms, revoked_at_ms, ...row }) => ({
+      ...row,
+      registered_at: iso(registered_at_ms),
+      last_seen_at: iso(last_seen_at_ms),
+      revoked_at: iso(revoked_at_ms),
+    })),
     meta: {
-      total: null,
+      total: Number(total?.total ?? 0),
       limit,
       offset,
-      unavailable: {
-        source: 'account_devices (جدول D1 بلا كاتب)',
-        reason:
-          'ملكية الأجهزة انتقلت إلى FamilyState (`0010_cleanup_dead_d1_tables.sql`)، ولا إسقاط أجهزة يُغذّى من أحداثه. قائمةُ أسرةٍ واحدة متاحة في مساحة العميل عبر قراءة السلطة.',
-      },
+      source: 'device_projection',
+      // Stated so the screen does not present a projection as the live state.
+      note: 'last_seen is the last sign-in; the live list per family is under the family file.',
+    },
+  })
+})
+
+/// `GET /admin/downloads` — offline licences across families (ADM-307 follow-up).
+///
+/// `media_licenses`/`child_downloads` are written by the queue (0083) and had no
+/// reader. This lists licences newest first, with the device and family names
+/// from their projections and the bytes actually downloaded. Read-only: revoking
+/// stays on the family's authority (`POST /admin/families/:id/downloads/revoke`).
+route.get('/downloads', async (c) => {
+  const { limit, offset } = parsePagination(c.req.query('limit'), c.req.query('offset'), UNBOUNDED_LIST_PAGINATION)
+  const clauses: string[] = []
+  const params: unknown[] = []
+  const status = c.req.query('status')
+  if (status && ['pending', 'active', 'expired', 'revoked', 'superseded'].includes(status)) { clauses.push('l.status = ?'); params.push(status) }
+  const parentId = c.req.query('parent_id')?.trim()
+  if (parentId) { clauses.push('l.parent_id = ?'); params.push(parentId) }
+  const deviceId = c.req.query('device_id')?.trim()
+  if (deviceId) { clauses.push('l.device_id = ?'); params.push(deviceId) }
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+
+  const [total, summary, rows] = await Promise.all([
+    queryFirst<{ total: number }>(c.env.DB, `SELECT COUNT(*) AS total FROM media_licenses l ${where}`, params),
+    queryAll<{ status: string; licences: number }>(c.env.DB,
+      `SELECT status, COUNT(*) AS licences FROM media_licenses GROUP BY status`),
+    queryAll<Record<string, unknown>>(c.env.DB, `
+      SELECT l.id, l.parent_id, f.display_name AS parent_name, l.device_id, d.display_name AS device_name,
+             d.platform, l.entity_type, l.content_id, e.title_ar AS content_title, l.status,
+             l.issued_at_ms, l.expires_at_ms, l.completed_at_ms, l.revoked_at_ms,
+             (SELECT COALESCE(SUM(byte_size), 0) FROM child_downloads cd WHERE cd.license_id = l.id) AS bytes
+        FROM media_licenses l
+        LEFT JOIN family_projection f ON f.parent_id = l.parent_id
+        LEFT JOIN device_projection d ON d.device_id = l.device_id
+        LEFT JOIN episodes e ON e.id = l.content_id AND l.entity_type = 'episode'
+        ${where}
+       ORDER BY l.issued_at_ms DESC
+       LIMIT ? OFFSET ?
+    `, [...params, limit, offset]),
+  ])
+  const iso = (ms: unknown) => (typeof ms === 'number' && ms > 0 ? new Date(ms).toISOString() : null)
+  return c.json({
+    success: true,
+    data: rows.map(({ issued_at_ms, expires_at_ms, completed_at_ms, revoked_at_ms, bytes, ...row }) => ({
+      ...row,
+      bytes: Number(bytes ?? 0),
+      issued_at: iso(issued_at_ms),
+      expires_at: iso(expires_at_ms),
+      completed_at: iso(completed_at_ms),
+      revoked_at: iso(revoked_at_ms),
+    })),
+    meta: {
+      total: Number(total?.total ?? 0),
+      limit,
+      offset,
+      by_status: Object.fromEntries(summary.map((row) => [row.status, Number(row.licences)])),
     },
   })
 })
@@ -660,7 +738,7 @@ route.get('/remote-config', async (c) => {
 /// فورًا بلا مراجعة ولا جدولة، فهي نشرٌ فعليّ لتغيير سلوك المنتج. ربطها
 /// بصلاحية تعديل الميتاداتا كان يمنح كل محرّر محتوى مفتاح المنصّة.
 route.put('/remote-config/:key', requirePermission('publish'), async (c) => {
-  const key = c.req.param('key')
+  const key = c.req.param('key') ?? ''
   const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
   if (!body) return c.json({ success: false, error: 'صيغة الطلب غير صالحة' }, 400)
 
@@ -671,8 +749,39 @@ route.put('/remote-config/:key', requirePermission('publish'), async (c) => {
   if (body.value === undefined) return c.json({ success: false, error: 'value مطلوب' }, 400)
 
   const targeting = body.targeting && typeof body.targeting === 'object' ? body.targeting : {}
+  const reason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 500) : ''
 
-  await c.env.DB.prepare(`
+  // ADM-308: the previous value is recorded with the change, in the same batch,
+  // so it can be restored. The audit used to hold only the new value and was
+  // written outside the batch, so "rollback" had nothing reliable to go back to.
+  const before = await remoteConfigSnapshot(c.env, key)
+  const after: RemoteConfigSnapshot = { value: body.value, rollout_percent: rollout, targeting: targeting as Record<string, unknown> }
+  await c.env.DB.batch([
+    remoteConfigWrite(c.env, key, after),
+    auditStatement(c.env.DB, actorId(c), 'update', 'remote_config', key, {
+      format: 'remote_config_v2', reason: reason || null, before, after,
+    }),
+  ])
+
+  return c.json({ success: true, data: { key, rollout_percent: rollout } })
+})
+
+type RemoteConfigSnapshot = { value: unknown; rollout_percent: number; targeting: Record<string, unknown> }
+
+async function remoteConfigSnapshot(env: Env, key: string): Promise<RemoteConfigSnapshot | null> {
+  const row = await queryFirst<{ value_json: string; rollout_percent: number; targeting_json: string }>(
+    env.DB, 'SELECT value_json, rollout_percent, targeting_json FROM remote_config WHERE key = ?', [key],
+  )
+  if (!row) return null
+  return {
+    value: parseJson(row.value_json, null),
+    rollout_percent: Number(row.rollout_percent ?? 100),
+    targeting: parseJson(row.targeting_json, {}) as Record<string, unknown>,
+  }
+}
+
+function remoteConfigWrite(env: Env, key: string, snapshot: RemoteConfigSnapshot) {
+  return env.DB.prepare(`
     INSERT INTO remote_config (key, value_json, rollout_percent, targeting_json, updated_at)
     VALUES (?, ?, ?, ?, datetime('now'))
     ON CONFLICT(key) DO UPDATE SET
@@ -680,21 +789,71 @@ route.put('/remote-config/:key', requirePermission('publish'), async (c) => {
       rollout_percent = excluded.rollout_percent,
       targeting_json = excluded.targeting_json,
       updated_at = datetime('now')
-  `).bind(key, JSON.stringify(body.value), rollout, JSON.stringify(targeting)).run()
+  `).bind(key, JSON.stringify(snapshot.value), snapshot.rollout_percent, JSON.stringify(snapshot.targeting))
+}
 
-  try {
-    await c.env.DB.prepare(`
-      INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, details)
-      VALUES (?, ?, 'update', 'remote_config', ?, ?)
-    `).bind(
-      crypto.randomUUID(), auditActor(c), key,
-      JSON.stringify({ value: body.value, rollout_percent: rollout }),
-    ).run()
-  } catch (error) {
-    console.error('remote_config_audit_failed', error instanceof Error ? error.message : String(error))
+/// A change is restorable when it recorded the value it replaced. Changes made
+/// before ADM-308 recorded only the new value and are shown, not offered.
+function parseRemoteConfigAudit(details: string) {
+  const parsed = parseJson(details, null) as Record<string, unknown> | null
+  if (!parsed || parsed.format !== 'remote_config_v2') {
+    return { restorable: false as const, before: null, after: parsed, reason: null }
+  }
+  const before = parsed.before as RemoteConfigSnapshot | null
+  return {
+    restorable: before !== null && typeof before === 'object' && 'value' in before,
+    before,
+    after: parsed.after as RemoteConfigSnapshot | null,
+    reason: typeof parsed.reason === 'string' ? parsed.reason : null,
+  }
+}
+
+/// `GET /admin/remote-config/history?key=` — ADM-308.
+route.get('/remote-config/history', async (c) => {
+  const key = c.req.query('key')?.trim()
+  const rows = await queryAll<{ id: string; actor_id: string; action: string; entity_id: string; details: string; created_at: string }>(
+    c.env.DB, `
+      SELECT id, actor_id, action, entity_id, details, created_at FROM audit_logs
+       WHERE entity_type = 'remote_config' ${key ? 'AND entity_id = ?' : ''}
+       ORDER BY created_at DESC, id DESC LIMIT 50
+    `, key ? [key] : [],
+  )
+  return c.json({
+    success: true,
+    data: rows.map((row) => ({
+      id: row.id, key: row.entity_id, actor_id: row.actor_id, action: row.action,
+      created_at: row.created_at, ...parseRemoteConfigAudit(row.details),
+    })),
+  })
+})
+
+/// `POST /admin/remote-config/:key/rollback` — ADM-308: restores the value a
+/// recorded change replaced. Takes the change's id (never "the last one"), needs
+/// a reason, and is itself recorded, so a rollback can be rolled back.
+route.post('/remote-config/:key/rollback', requirePermission('publish'), async (c) => {
+  const key = c.req.param('key') ?? ''
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
+  const changeId = typeof body?.change_id === 'string' ? body.change_id : ''
+  const reason = typeof body?.reason === 'string' ? body.reason.trim() : ''
+  if (!changeId) return c.json({ success: false, error: 'change_id مطلوب' }, 400)
+  if (reason.length < 3 || reason.length > 500) return c.json({ success: false, error: 'اكتب سبب الاسترجاع (3 أحرف على الأقل)' }, 400)
+
+  const change = await queryFirst<{ details: string }>(c.env.DB,
+    `SELECT details FROM audit_logs WHERE id = ? AND entity_type = 'remote_config' AND entity_id = ?`, [changeId, key])
+  if (!change) return c.json({ success: false, error: 'التغيير ده مش موجود للمفتاح ده' }, 404)
+  const parsed = parseRemoteConfigAudit(change.details)
+  if (!parsed.restorable || !parsed.before) {
+    return c.json({ success: false, error: 'التغيير ده ما سجّلش القيمة القديمة، فمينفعش يترجع' }, 400)
   }
 
-  return c.json({ success: true, data: { key, rollout_percent: rollout } })
+  const current = await remoteConfigSnapshot(c.env, key)
+  await c.env.DB.batch([
+    remoteConfigWrite(c.env, key, parsed.before),
+    auditStatement(c.env.DB, actorId(c), 'rollback', 'remote_config', key, {
+      format: 'remote_config_v2', reason, rolled_back: changeId, before: current, after: parsed.before,
+    }),
+  ])
+  return c.json({ success: true, data: { key, restored_from: changeId, value: parsed.before.value } })
 })
 
 /// أعلام الميزات، جدول منفصل عن remote_config في المهاجرة 0015
@@ -712,6 +871,43 @@ route.get('/feature-flags', async (c) => {
       created_at: row.created_at,
     })),
   })
+})
+
+/// ADM-305: flags were read-only, so the dashboard item opened the remote-config
+/// page and nothing could turn a flag on. Keys are lower_snake_case so the app
+/// can reference them as constants; every change carries a reason and is
+/// audited. The app reads them from the public `/app-config` (cached 120 s).
+const FLAG_KEY = /^[a-z][a-z0-9_]{1,63}$/
+
+route.put('/feature-flags/:key', requirePermission('publish'), async (c) => {
+  const key = c.req.param('key') ?? ''
+  if (!FLAG_KEY.test(key)) return c.json({ success: false, error: 'المفتاح لازم يكون حروف إنجليزية صغيرة وأرقام و _ (مثال: tv_trailers)' }, 400)
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
+  if (!body || typeof body.enabled !== 'boolean') return c.json({ success: false, error: 'enabled (true/false) مطلوب' }, 400)
+  const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
+  if (reason.length < 3 || reason.length > 500) return c.json({ success: false, error: 'اكتب سبب التغيير (3 أحرف على الأقل)' }, 400)
+  const before = await queryFirst<{ enabled: number }>(c.env.DB, `SELECT enabled FROM feature_flags WHERE key = ?`, [key])
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      INSERT INTO feature_flags (key, enabled) VALUES (?, ?)
+      ON CONFLICT(key) DO UPDATE SET enabled = excluded.enabled
+    `).bind(key, body.enabled ? 1 : 0),
+    auditStatement(c.env.DB, actorId(c), before ? 'update' : 'create', 'feature_flag', key, {
+      reason, before: before ? Number(before.enabled) === 1 : null, after: body.enabled,
+    }),
+  ])
+  return c.json({ success: true, data: { key, enabled: body.enabled } })
+})
+
+route.delete('/feature-flags/:key', requirePermission('publish'), async (c) => {
+  const key = c.req.param('key') ?? ''
+  const existing = await queryFirst(c.env.DB, `SELECT key FROM feature_flags WHERE key = ?`, [key])
+  if (!existing) return c.json({ success: false, error: 'Flag not found' }, 404)
+  await c.env.DB.batch([
+    c.env.DB.prepare(`DELETE FROM feature_flags WHERE key = ?`).bind(key),
+    auditStatement(c.env.DB, actorId(c), 'delete', 'feature_flag', key, {}),
+  ])
+  return c.json({ success: true, data: { key, deleted: true } })
 })
 
 // Support Center - Family lookup

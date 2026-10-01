@@ -41,6 +41,7 @@ import { queryFirst } from '../lib/db.ts';
 import { requireAdmin, requirePermission } from '../lib/adminAuth.ts';
 import { actorId, auditStatement } from '../lib/auditLog.ts';
 import { callDurable, familyStub } from '../lib/doClient.ts';
+import { isTvPlatform } from '../lib/familyPolicy.ts';
 
 type AppEnv = { Bindings: Env };
 
@@ -86,6 +87,37 @@ route.get('/families/:id/device-state', requireAdmin, async (c) => {
   }).run();
 
   return c.json({ success: true, data: { ...result.data.data, source: 'family_state' } });
+});
+
+/// `GET /admin/families/:id/tvs` — ADM-306: a family's televisions.
+///
+/// Registered TVs come from FamilyState (the authority); which of them have the
+/// app open right now, and what they are playing, from the family's FamilyLink.
+/// Either source can be unreachable on its own, and says so rather than showing
+/// "no TVs". Revoking uses the existing device revoke above.
+route.get('/families/:id/tvs', requireAdmin, async (c) => {
+  const parentId = c.req.param('id') ?? '';
+  if (!await familyExists(c.env, parentId)) return c.json({ success: false, error: 'Family not found' }, 404);
+
+  const devices = await callDurable<{ success: boolean; data?: Array<Record<string, unknown>> }>(
+    familyStub(c.env, parentId), '/devices', { method: 'GET' },
+  ).catch(() => null);
+  const link = c.env.FAMILY_LINK
+    ? await callDurable<{ success: boolean; data?: Array<Record<string, unknown>> }>(
+      c.env.FAMILY_LINK.get(c.env.FAMILY_LINK.idFromName(parentId)), '/devices', { body: {} },
+    ).catch(() => null)
+    : null;
+
+  const registered = devices?.ok && devices.data?.success
+    ? (devices.data.data ?? [])
+      .filter((d) => isTvPlatform(String(d.platform ?? '')))
+      // A device fingerprint an operator never needs.
+      .map(({ installation_id_hash: _hash, ...rest }) => rest)
+    : null;
+  const connected = link?.ok && link.data?.success ? (link.data.data ?? []) : null;
+
+  await auditStatement(c.env.DB, actorId(c), 'view', 'family_tvs', parentId, {}).run();
+  return c.json({ success: true, data: { registered, connected } });
 });
 
 /// `POST /admin/families/:id/devices/:deviceId/revoke`

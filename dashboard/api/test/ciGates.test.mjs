@@ -146,7 +146,7 @@ test('critical advisories fail the dependency job while lesser ones only report'
   assert.match(job, /npm audit --omit=dev \|\| true/);
 });
 
-test('the deploy gate cannot run on a red pipeline or off master', () => {
+test('the deploy gate requires a green pipeline and an explicit manual approval', () => {
   const job = workflow.slice(workflow.indexOf('\n  deploy:'));
   const needs = job.match(/needs: \[([^\]]+)\]/);
   assert.ok(needs, 'the deploy gate must declare its dependencies');
@@ -158,21 +158,8 @@ test('the deploy gate cannot run on a red pipeline or off master', () => {
     'secrets', 'dependencies']) {
     assert.ok(declared.includes(name), `deploy does not wait for ${name}`);
   }
-  /* Both branch names, and that is a fix for a measured defect (2026-09-23).
-
-     This pinned `refs/heads/master` alone. Measured on the remote: the only remote
-     branch is `main` (`origin/HEAD -> origin/main`); `master` is local-only and
-     points at the same commit. So the deploy job was conditioned on a ref that does
-     not exist on the server — a deploy that could never fire, under seven green
-     jobs that read as "shipped".
-
-     It is `OPS-001` inverted. That fix added `master` to the triggers because the
-     workflow listed only `main`; the truth is that `main` is the one that exists.
-     The remedy that does not recur is accepting both names in both places. */
-  assert.match(
-    job,
-    /if: \(github\.ref == 'refs\/heads\/master' \|\| github\.ref == 'refs\/heads\/main'\) && github\.event_name == 'push'/,
-  );
+  assert.match(job, /if: github\.event_name == 'workflow_dispatch' && inputs\.deploy_production == true/);
+  assert.match(job, /environment: production/);
   assert.match(job, /--env production/);
   // `OPS-105`: it deploys for real when the credentials exist, and dry-runs when they
   // do not. Both paths must be present — a job that only ever dry-runs passes

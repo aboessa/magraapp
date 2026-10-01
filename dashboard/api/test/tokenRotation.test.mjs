@@ -108,7 +108,8 @@ test('كل مسار تحقّق يستخدم الحلقة لا السرّ الو�
   // انزلاق واحد يعيد العطل: مسار يتحقّق بالسرّ الحالي وحده يُخرج مستخدميه عند
   // الدوران، والعطل يظهر مرّة كل تدوير — أي حين لا أحد ينظر.
   const calls = authSource.match(/verifySignedToken<[^>]+>\(\s*\n?\s*token,\s*([^)]+)\)/g) ?? [];
-  assert.equal(calls.length, 5, 'عدد مسارات التحقّق تغيّر');
+  // CONTENT-001: + verifyHlsToken.
+  assert.equal(calls.length, 6, 'عدد مسارات التحقّق تغيّر');
   for (const call of calls) {
     assert.match(call, /secretRing\(env, '(AUTH|MEDIA)_TOKEN_SECRET'\)/, call);
   }

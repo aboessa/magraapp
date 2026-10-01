@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../lib/db.ts';
-import { mediaIsConfigured, verifyMediaToken } from '../lib/parentAuth.ts';
+import { mediaIsConfigured, verifyHlsToken, verifyMediaToken } from '../lib/parentAuth.ts';
 
 type AppEnv = { Bindings: Env };
 
@@ -74,6 +74,47 @@ mediaRoute.get('/assets/:assetId', async (c) => {
     return new Response(object.body, { status: 206, headers });
   }
 
+  headers.set('Content-Length', String(object.size));
+  return new Response(object.body, { headers });
+});
+
+/// `GET /api/v1/media/hls/:token/<file>` — CONTENT-001.
+///
+/// Serves one episode's HLS folder under an `hls_lease` capability
+/// (`lib/parentAuth.ts`). The token is a path segment so the playlists'
+/// relative URIs (`720p/index.m3u8`, `media.mp4`) resolve under it without the
+/// Worker rewriting them. `<file>` is a closed shape — a playlist or a
+/// rendition's media file, one folder deep — so the capability cannot reach
+/// anything outside its prefix.
+const HLS_FILE = /^(master\.m3u8|[0-9]{3,4}p\/(index\.m3u8|media\.mp4))$/;
+
+mediaRoute.get('/hls/:token/*', async (c) => {
+  if (!mediaIsConfigured(c.env)) return c.text('', 503);
+  const claims = await verifyHlsToken(c.env, c.req.param('token'));
+  if (!claims) return c.text('', 401);
+
+  const marker = `/hls/${c.req.param('token')}/`;
+  const path = new URL(c.req.url).pathname;
+  const file = decodeURIComponent(path.slice(path.indexOf(marker) + marker.length));
+  if (!HLS_FILE.test(file)) return c.text('', 404);
+
+  const range = c.req.header('Range');
+  const object = await c.env.MEDIA_BUCKET.get(claims.prefix + file, range ? { range: c.req.raw.headers } : undefined);
+  if (!object) return c.text('', 404);
+
+  const headers = new Headers();
+  headers.set('Content-Type', file.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : 'video/mp4');
+  headers.set('ETag', object.httpEtag);
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Cache-Control', 'private, no-store');
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('Referrer-Policy', 'no-referrer');
+  if (range && 'range' in object && object.range) {
+    const objectRange = object.range as { offset: number; length: number };
+    headers.set('Content-Range', `bytes ${objectRange.offset}-${objectRange.offset + objectRange.length - 1}/${object.size}`);
+    headers.set('Content-Length', String(objectRange.length));
+    return new Response(object.body, { status: 206, headers });
+  }
   headers.set('Content-Length', String(object.size));
   return new Response(object.body, { headers });
 });

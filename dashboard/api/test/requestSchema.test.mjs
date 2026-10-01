@@ -168,7 +168,7 @@ const COVERED = [
   'auth.ts', 'account.ts', 'family.ts', 'childSettings.ts',
   'episodes.ts', 'books.ts', 'stories.ts', 'downloads.ts',
   'notifications.ts', 'billing.ts', 'partnerships.ts', 'analyticsIngest.ts',
-  'creations.ts',
+  'creations.ts', 'tvPairing.ts', 'tvLink.ts', 'crashIngest.ts', 'push.ts', 'manualPayments.ts',
 ];
 
 /// ما لم يُحوَّل بعد، بسببه المكتوب. القائمة **تنقص ولا تنمو**.

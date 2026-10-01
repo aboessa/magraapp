@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Env } from '../lib/db.ts';
 import { queryAll, queryFirst } from '../lib/db.ts';
 import { authenticateParent } from '../lib/parentAuth.ts';
+import { rankSeries, type SeriesSignal } from '../lib/recommendSeries.ts';
 
 type AppEnv = { Bindings: Env };
 const route = new Hono<AppEnv>();
@@ -34,6 +35,24 @@ route.get('/', async (c) => {
     }
 
     let recs: { series_id: string; reason: string }[] = [...editorial];
+
+    // APP-209: personal picks from what this child liked, saved and watched.
+    // After the editorial pins (an editor's decision wins), before the age fill.
+    if (recs.length < 12) {
+      try {
+        const personal = await personalPicks(c.env.DB, childId, (child as { age_track?: string }).age_track ?? null);
+        const seen = new Set(recs.map((r) => r.series_id));
+        for (const pick of personal) {
+          if (seen.has(pick.series_id)) continue;
+          recs.push({ series_id: pick.series_id, reason: pick.reason });
+          seen.add(pick.series_id);
+          if (recs.length >= 12) break;
+        }
+      } catch (error) {
+        // Personalisation is an improvement, never a reason for an empty rail.
+        console.warn('recommendations_personal_failed', error instanceof Error ? error.message : String(error));
+      }
+    }
 
     // If editorial empty or few, supplement by age track
     if (recs.length < 12) {
@@ -71,6 +90,51 @@ route.get('/', async (c) => {
     return c.json({ success: true, data: [] });
   }
 });
+
+function ageRange(track: string | null): [number, number] | null {
+  if (track === 'preschool') return [3, 5];
+  if (track === 'kids') return [6, 8];
+  if (track === 'junior') return [9, 12];
+  return null;
+}
+
+/// APP-209: signals from D1 projections (`child_series_signals`, 0101, and
+/// `child_watch_time_daily`, 0100), scored by `lib/recommendSeries.ts`.
+async function personalPicks(db: D1Database, childId: string, track: string | null) {
+  const since = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const [liked, watched, series, categories] = await Promise.all([
+    queryAll<{ series_id: string; kind: 'like' | 'save' }>(db,
+      `SELECT series_id, kind FROM child_series_signals WHERE child_id = ? AND active = 1`, [childId]),
+    queryAll<{ series_id: string; seconds: number }>(db, `
+      SELECT e.series_id, SUM(w.watched_seconds) AS seconds
+        FROM child_watch_time_daily w
+        JOIN episodes e ON e.id = w.content_id AND w.content_type = 'episode'
+       WHERE w.child_id = ? AND w.activity_date >= ?
+       GROUP BY e.series_id`, [childId, since]),
+    queryAll<{ id: string; planet_id: string | null; age_min: number | null; age_max: number | null }>(db,
+      `SELECT id, planet_id, age_min, age_max FROM series WHERE status = 'published' ORDER BY sort_order`),
+    queryAll<{ series_id: string; category_id: string }>(db, `SELECT series_id, category_id FROM series_categories`),
+  ]);
+  const signals: SeriesSignal[] = [
+    ...liked,
+    ...watched.map((w) => ({ series_id: w.series_id, kind: 'watch' as const, minutes: Number(w.seconds) / 60 })),
+  ];
+  if (signals.length === 0) return [];
+
+  const byId = new Map<string, string[]>();
+  for (const row of categories) byId.set(row.series_id, [...(byId.get(row.series_id) ?? []), row.category_id]);
+  const facts = series.map((s) => ({ id: s.id, planet_id: s.planet_id, categories: byId.get(s.id) ?? [] }));
+
+  // A liked or saved series may be outside the child's age range now (a saved
+  // show from last year); it still says something. Candidates must fit.
+  const range = ageRange(track);
+  const candidates = facts.filter((_, i) => {
+    if (!range) return true;
+    const s = series[i];
+    return (s.age_min ?? 0) <= range[1] && (s.age_max ?? 99) >= range[0];
+  });
+  return rankSeries(candidates, signals, facts);
+}
 
 // Editorial pinning moved to `routes/adminRecommendations.ts`
 // (`POST /api/v1/admin/recommendations`).

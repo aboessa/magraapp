@@ -27,7 +27,7 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf
 /// The source of every route file, concatenated, for "is this purpose used
 /// anywhere" questions.
 const routeSources = [
-  'account', 'family', 'creations', 'childSettings', 'billing',
+  'account', 'family', 'creations', 'childSettings', 'billing', 'tvPairing',
 ].map((name) => ({ name, source: read(`src/routes/${name}.ts`) }));
 
 /* --------------------------------------------- every purpose must be enforced */
@@ -57,8 +57,9 @@ test('the two purposes with no endpoint were removed, not left issuable', () => 
   // `manage_billing` could only gate Google Play endpoints that have no client
   // caller and belong to a decision-blocked task; putting a PIN in front of
   // purchase verification would risk stranding a charged purchase.
-  // `approve_tv` had no endpoint anywhere.
-  for (const removed of ['manage_billing', 'support_ticket', 'approve_tv']) {
+  // `approve_tv` was removed on the same grounds and returned with
+  // `POST /tv/pair/approve` (TV-001); its enforcement is pinned below.
+  for (const removed of ['manage_billing', 'support_ticket']) {
     assert.equal(
       PARENT_PROOF_PURPOSES.includes(removed), false,
       `${removed} must not be issuable`,
@@ -153,6 +154,25 @@ test('deleting one creation requires the same consumed proof as purging many', (
     single.indexOf("'delete_creation'") < single.indexOf('/creations/delete'),
     'the proof must be verified before the deletion is dispatched',
   );
+});
+
+test('approving a television requires a consumed approve_tv proof before the body is read', () => {
+  const body = handler(
+    read('src/routes/tvPairing.ts'),
+    "tvPairingRoute.post('/approve'",
+    'export default tvPairingRoute',
+  );
+  assert.match(body, /purpose: 'approve_tv'/);
+  assert.match(body, /consume: true/);
+  assert.ok(
+    body.indexOf("'approve_tv'") < body.indexOf('await bodyOr400'),
+    'the gate must precede the handler work',
+  );
+  assert.ok(
+    body.indexOf("'approve_tv'") < body.indexOf('createParentSession('),
+    'no session may be minted before the proof is verified',
+  );
+  assert.ok(SINGLE_USE_PURPOSES.includes('approve_tv'));
 });
 
 test('destructive purposes are single-use and browsing purposes are not', () => {

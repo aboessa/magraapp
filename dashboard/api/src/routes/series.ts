@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import type { Env } from '../lib/db.ts';
 import { queryAll, queryFirst } from '../lib/db.ts';
 import { cachedPublicJson } from '../lib/publicCache.ts';
+import { authenticateParent, createMediaToken, mediaIsConfigured } from '../lib/parentAuth.ts';
+import { loadScreenTimePolicy } from '../lib/parentalControls.ts';
 import { contentClassPredicate, shouldServeTestFixtures } from '../lib/contentClass.ts';
 import { seasonEpisodeCountSelect } from '../lib/episodeCounts.ts';
 import {
@@ -200,6 +202,59 @@ seriesRoute.get('/:id', async (c) => {
       note: 'Each series has its own identity, characters, visual bible, and goals - not platform mascots',
     };
   });
+});
+
+/// `GET /api/v1/series/:id/trailer?child_id=` — APP-204.
+///
+/// A 12-second muted preview for the TV home hero. The file is private like
+/// every video (`artworkSelect` never serves video publicly), so this hands out
+/// a short media capability to a signed-in family — no playback lease: a muted
+/// preview is not a watch, is not counted as screen time, and does not take a
+/// concurrent-stream slot. It is withheld during bedtime, when an autoplaying
+/// picture on the TV is exactly what the parent asked to stop.
+seriesRoute.get('/:id/trailer', async (c) => {
+  if (!mediaIsConfigured(c.env)) return c.body(null, 204);
+  const auth = await authenticateParent(c.env, c.req.header('Authorization'));
+  if (!auth.ok) return c.json({ success: false, error: 'Unauthorized' }, 401);
+  const childId = c.req.query('child_id') ?? '';
+  const owned = childId
+    ? await queryFirst(c.env.DB, `SELECT 1 AS ok FROM child_projection WHERE child_id = ? AND parent_id = ? AND status = 'active'`, [childId, auth.principal.parentId])
+    : null;
+  if (!owned) return c.json({ success: false, error: 'Child not found' }, 404);
+
+  const policy = await loadScreenTimePolicy(c.env, auth.principal.parentId, childId);
+  if (policy.bedtimeActive) return c.body(null, 204);
+
+  const trailer = await queryFirst<{
+    asset_id: string; r2_key: string; mime_type: string | null; original_filename: string | null; version: number; etag: string | null;
+  }>(c.env.DB, `
+    SELECT ca.id AS asset_id, ca.r2_key, ca.mime_type, ca.original_filename, ca.version, ca.etag
+      FROM series s
+      JOIN asset_links al ON al.entity_type = 'series' AND al.entity_id = s.id AND al.role = 'trailer'
+      JOIN content_assets ca ON ca.id = al.asset_id
+     WHERE s.id = ? AND s.status = 'published'
+       AND ca.kind = 'video' AND ca.status = 'ready' AND ca.visibility = 'private'
+       AND ca.bucket = 'media' AND ca.r2_key IS NOT NULL
+     LIMIT 1
+  `, [c.req.param('id')]);
+  if (!trailer) return c.body(null, 204);
+
+  const token = await createMediaToken(c.env, {
+    sub: auth.principal.parentId,
+    sid: auth.principal.sessionId,
+    lid: `trailer:${c.req.param('id')}`,
+    aid: trailer.asset_id,
+    r2_key: trailer.r2_key,
+    bucket: 'media',
+    mime_type: trailer.mime_type,
+    filename: trailer.original_filename,
+    asset_version: trailer.version,
+    etag: trailer.etag,
+  });
+  return c.json({
+    success: true,
+    data: { url: `/api/v1/media/assets/${trailer.asset_id}?token=${encodeURIComponent(token)}`, muted: true, seconds: 12 },
+  }, 200, { 'Cache-Control': 'private, no-store' });
 });
 
 export default seriesRoute;

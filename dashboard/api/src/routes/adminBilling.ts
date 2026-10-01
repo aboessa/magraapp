@@ -6,6 +6,8 @@ import { actorId, auditStatement, claimedActor } from '../lib/auditLog.ts'
 import { parsePagination } from '../lib/catalogueValidation.ts'
 import { callDurable, familyStub } from '../lib/doClient.ts'
 import { isPlan } from '../lib/familyPolicy.ts'
+import { loadManualSettings, manualExpiry, MANUAL_METHOD_CODES, METHOD_LABELS, validateManualSettings } from '../lib/manualPayments.ts'
+import { notifyParent } from '../lib/push.ts'
 
 type AppEnv = { Bindings: Env; Variables: AdminVariables }
 const route = new Hono<AppEnv>()
@@ -135,9 +137,10 @@ route.post('/billing/grant', requirePermission('manage_billing'), async (c) => {
   if (!parentId || !isPlan(plan)) {
     return c.json({ success: false, error: 'parent_id and valid plan (family, family_plus) required' }, 400)
   }
+  const days = typeof body?.days === 'number' && Number.isFinite(body.days) && body.days > 0 ? Math.min(body.days, 3650) : 365
   const now = Date.now()
   const entitlementId = `admin-grant:${parentId}:${plan}:${now}`
-  const expiresAt = now + 365*24*60*60*1000
+  const expiresAt = now + days * 24 * 60 * 60 * 1000
 
   // Apply to FamilyState DO (authoritative)
   const applied = await callDurable<{ success: boolean; data?: { plan: string } }>(familyStub(c.env, parentId), '/entitlements/apply', {
@@ -194,6 +197,151 @@ route.post('/billing/grant', requirePermission('manage_billing'), async (c) => {
   }
 
   return c.json({ success: true, data: { parent_id: parentId, plan: applied.data.data?.plan ?? plan, entitlement_id: entitlementId, expires_at: new Date(expiresAt).toISOString() } })
+})
+
+// ── Manual payments (wallets / InstaPay), migration 0104 ──
+//
+// The operator checks the transfer in the wallet or bank app, then approves.
+// Approval grants a `manual` entitlement in FamilyState (the authority) for the
+// days copied into the request at submission; the parent never sets the amount.
+
+route.get('/billing/manual/settings', async (c) => {
+  return c.json({ success: true, data: { ...await loadManualSettings(c.env), method_codes: MANUAL_METHOD_CODES, method_labels: METHOD_LABELS } })
+})
+
+route.put('/billing/manual/settings', requirePermission('manage_billing'), async (c) => {
+  const body = await c.req.json().catch(() => null)
+  const checked = validateManualSettings(body)
+  if (!checked.ok) return c.json({ success: false, error: checked.error }, 400)
+  const before = await loadManualSettings(c.env)
+  const next = checked.value
+  const actor = actorId(c)
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      INSERT INTO manual_payment_settings (id, enabled, methods_json, prices_json, instructions, receipt_required, version, updated_by, updated_at)
+      VALUES (1, ?, ?, ?, ?, ?, 1, ?, datetime('now'))
+      ON CONFLICT(id) DO UPDATE SET enabled = excluded.enabled, methods_json = excluded.methods_json,
+        prices_json = excluded.prices_json, instructions = excluded.instructions,
+        receipt_required = excluded.receipt_required, version = manual_payment_settings.version + 1,
+        updated_by = excluded.updated_by, updated_at = excluded.updated_at
+    `).bind(next.enabled ? 1 : 0, JSON.stringify(next.methods), JSON.stringify(next.prices), next.instructions, next.receipt_required ? 1 : 0, actor),
+    auditStatement(c.env.DB, actor, 'update', 'manual_payment_settings', '1', {
+      before: { enabled: before.enabled, methods: before.methods, prices: before.prices, receipt_required: before.receipt_required },
+      after: next,
+      claimed_actor: claimedActor(c),
+    }),
+  ])
+  return c.json({ success: true, data: await loadManualSettings(c.env) })
+})
+
+route.get('/billing/manual/requests', async (c) => {
+  const status = c.req.query('status')?.trim()
+  const { limit } = parsePagination(c.req.query('limit'), undefined, { defaultLimit: 50, maxLimit: 200 })
+  const valid = ['pending', 'approved', 'rejected', 'cancelled']
+  const where = status && valid.includes(status) ? 'WHERE status = ?' : ''
+  const rows = await queryAll(c.env.DB, `
+    SELECT id, parent_id, plan, period, days, amount_egp, method_code, sender, reference,
+           receipt_key IS NOT NULL AS has_receipt, status, reject_reason, entitlement_id,
+           starts_at_ms, expires_at_ms, reviewed_by, reviewed_at, created_at
+      FROM manual_payment_requests ${where}
+     ORDER BY CASE status WHEN 'pending' THEN 0 ELSE 1 END, created_at DESC LIMIT ?
+  `, where ? [status, limit] : [limit])
+  const pending = await queryFirst<{ n: number }>(c.env.DB, `SELECT COUNT(*) AS n FROM manual_payment_requests WHERE status = 'pending'`)
+  return c.json({ success: true, data: rows, meta: { pending: Number(pending?.n ?? 0) } })
+})
+
+route.get('/billing/manual/requests/:id/receipt', requirePermission('manage_billing'), async (c) => {
+  const row = await queryFirst<{ receipt_key: string | null }>(c.env.DB, 'SELECT receipt_key FROM manual_payment_requests WHERE id = ?', [c.req.param('id')])
+  const bucket = (c.env as unknown as { CREATIONS_BUCKET?: R2Bucket }).CREATIONS_BUCKET
+  if (!row?.receipt_key || !bucket || !row.receipt_key.startsWith('billing/receipts/')) return c.json({ success: false, error: 'No receipt' }, 404)
+  const object = await bucket.get(row.receipt_key)
+  if (!object) return c.json({ success: false, error: 'No receipt' }, 404)
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': object.httpMetadata?.contentType ?? 'application/octet-stream',
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'",
+    },
+  })
+})
+
+/// Hono's `executionCtx` getter throws outside a Worker (tests); then just await.
+async function later(c: { executionCtx: { waitUntil(task: Promise<unknown>): void } }, task: Promise<unknown>) {
+  try { c.executionCtx.waitUntil(task) } catch { await task }
+}
+
+type ManualRow = { id: string; parent_id: string; plan: 'family' | 'family_plus'; period: string; days: number; amount_egp: number; status: string }
+
+route.post('/billing/manual/requests/:id/approve', requirePermission('manage_billing'), async (c) => {
+  const id = c.req.param('id') ?? ''
+  const request = await queryFirst<ManualRow>(c.env.DB, 'SELECT id, parent_id, plan, period, days, amount_egp, status FROM manual_payment_requests WHERE id = ?', [id])
+  if (!request) return c.json({ success: false, error: 'Payment request not found' }, 404)
+  if (request.status !== 'pending') return c.json({ success: false, error: `Payment request is already ${request.status}` }, 409)
+
+  const actor = actorId(c)
+  const now = Date.now()
+  const expiresAt = await manualExpiry(c.env, request.parent_id, request.plan, request.days, now)
+  // Claim first so two operators cannot both grant the same transfer.
+  const claim = await c.env.DB.prepare(`
+    UPDATE manual_payment_requests SET status = 'approved', reviewed_by = ?, reviewed_at = datetime('now')
+     WHERE id = ? AND status = 'pending'
+  `).bind(actor, id).run()
+  if (!claim.meta?.changes) return c.json({ success: false, error: 'Payment request was reviewed by someone else' }, 409)
+
+  const entitlementId = `manual:${id}`
+  const applied = await callDurable<{ success: boolean; data?: { plan: string } }>(familyStub(c.env, request.parent_id), '/entitlements/apply', {
+    body: {
+      id: entitlementId, source: 'manual', provider_purchase_id: id, plan: request.plan, status: 'active',
+      starts_at: now - 1000, expires_at: expiresAt, observed_at: now,
+    },
+  })
+  if (!applied.ok || !applied.data?.success) {
+    await c.env.DB.prepare(`UPDATE manual_payment_requests SET status = 'pending', reviewed_by = NULL, reviewed_at = NULL WHERE id = ?`).bind(id).run()
+    return c.json({ success: false, error: 'Failed to apply entitlement to FamilyState', details: applied.data }, 502)
+  }
+  await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE manual_payment_requests SET entitlement_id = ?, starts_at_ms = ?, expires_at_ms = ? WHERE id = ?')
+      .bind(entitlementId, now, expiresAt, id),
+    auditStatement(c.env.DB, actor, 'billing_manual_approved', 'manual_payment_request', id, {
+      parent_id: request.parent_id, plan: request.plan, period: request.period, days: request.days,
+      amount_egp: request.amount_egp, expires_at_ms: expiresAt, claimed_actor: claimedActor(c),
+    }),
+  ])
+  const until = new Date(expiresAt).toLocaleDateString('ar-EG', { timeZone: 'Africa/Cairo', day: 'numeric', month: 'long', year: 'numeric' })
+  await later(c, notifyParent(c.env, request.parent_id, 'billing', `manual_approved:${id}`, {
+    title: 'اشتراكك اتفعّل',
+    body: `${request.plan === 'family_plus' ? 'باقة العائلة بلس' : 'باقة العائلة'} شغّالة لحد ${until}. شكرًا ليك.`,
+    route: '/membership',
+  }))
+  return c.json({ success: true, data: { id, status: 'approved', plan: applied.data.data?.plan ?? request.plan, entitlement_id: entitlementId, expires_at: new Date(expiresAt).toISOString() } })
+})
+
+route.post('/billing/manual/requests/:id/reject', requirePermission('manage_billing'), async (c) => {
+  const id = c.req.param('id') ?? ''
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null
+  const reason = typeof body?.reason === 'string' ? body.reason.trim() : ''
+  if (reason.length < 3 || reason.length > 300) return c.json({ success: false, error: 'reason (3-300 chars) required' }, 400)
+  const request = await queryFirst<ManualRow>(c.env.DB, 'SELECT id, parent_id, plan, period, days, amount_egp, status FROM manual_payment_requests WHERE id = ?', [id])
+  if (!request) return c.json({ success: false, error: 'Payment request not found' }, 404)
+  if (request.status !== 'pending') return c.json({ success: false, error: `Payment request is already ${request.status}` }, 409)
+  const actor = actorId(c)
+  const [result] = await c.env.DB.batch([
+    c.env.DB.prepare(`
+      UPDATE manual_payment_requests SET status = 'rejected', reject_reason = ?, reviewed_by = ?, reviewed_at = datetime('now')
+       WHERE id = ? AND status = 'pending'
+    `).bind(reason, actor, id),
+    auditStatement(c.env.DB, actor, 'billing_manual_rejected', 'manual_payment_request', id, {
+      parent_id: request.parent_id, plan: request.plan, amount_egp: request.amount_egp, reason, claimed_actor: claimedActor(c),
+    }),
+  ])
+  if (!result.meta?.changes) return c.json({ success: false, error: `Payment request is already ${request.status}` }, 409)
+  await later(c, notifyParent(c.env, request.parent_id, 'billing', `manual_rejected:${id}`, {
+    title: 'مقدرناش نأكد التحويل',
+    body: `السبب: ${reason}. تقدر تبعت الطلب تاني من صفحة العضوية.`,
+    route: '/membership',
+  }))
+  return c.json({ success: true, data: { id, status: 'rejected' } })
 })
 
 export default route

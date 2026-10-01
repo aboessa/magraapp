@@ -37,6 +37,8 @@ export const FAMILY_EVENT_TYPES = [
   'playback.started',
   'playback.revoked',
   'playback.ended',
+  // ADM-309 — ثواني المشاهدة المُحتسَبة، نفس رصيد وقت الشاشة. غير مُدقَّق (حجم وخصوصية).
+  'watch_time.credited',
   'entitlement.updated',
   'data.exported',
 

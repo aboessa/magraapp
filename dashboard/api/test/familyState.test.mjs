@@ -257,6 +257,97 @@ test('the free plan allows exactly one device', async () => {
   assert.match(second.body.error, /device limit/i);
 });
 
+const newSession = (id, install, platform) => post('/sessions/create', {
+  session_id: id,
+  refresh_token_hash: `hash-${id}`,
+  installation_id_hash: install,
+  platform,
+  expires_at: Date.now() + 60_000 * 10,
+});
+
+test('TV-004: a free family can add a TV next to its phone, but only one', async () => {
+  // The TV is approved from the phone, so a shared count of one made a TV
+  // impossible on the free plan. Streams, not screens, limit simultaneous use.
+  const { object } = await seeded();
+  const tv = await call(object, newSession('tv-1', 'install-tv-1', 'android_tv'));
+  assert.equal(tv.status, 201);
+
+  const secondTv = await call(object, newSession('tv-2', 'install-tv-2', 'android_tv'));
+  assert.equal(secondTv.status, 403);
+  assert.match(secondTv.body.error, /TV limit/);
+  assert.equal(secondTv.body.limit.name, 'tv_devices');
+  assert.equal(secondTv.body.limit.policy_version, 3);
+
+  // A TV does not free a phone slot either: the phone allowance is unchanged.
+  const phone = await call(object, newSession('phone-2', 'install-2', 'ios'));
+  assert.equal(phone.status, 403);
+  assert.match(phone.body.error, /device limit/);
+});
+
+test('TV-004: a signed-out device stops taking a slot', async () => {
+  // Logging out of an old phone used to leave its slot taken until a parent
+  // removed it by hand.
+  const { object, session } = await seeded();
+  await call(object, post('/sessions/logout', { session_id: session.session_id }));
+  const replacement = await call(object, newSession('phone-2', 'install-2', 'ios'));
+  assert.equal(replacement.status, 201);
+});
+
+test('TV-004: an expired session stops taking a slot too', async () => {
+  const { object, db, session } = await seeded();
+  db.prepare(`UPDATE auth_sessions SET expires_at = ? WHERE id = ?`).run(Date.now() - 1000, session.session_id);
+  assert.equal((await call(object, newSession('phone-2', 'install-2', 'ios'))).status, 201);
+});
+
+test('TV-004: a device that is already signed in is never refused on re-login', async () => {
+  const { object } = await seeded();
+  const again = await call(object, newSession('phone-again', 'install-1', 'android'));
+  assert.equal(again.status, 201);
+});
+
+test('TV-004: a device keeps the platform of its latest sign-in', async () => {
+  // A TV that once signed in by email as "android" is counted as a TV afterwards.
+  const { object, db } = await seeded();
+  await call(object, newSession('same', 'install-1', 'android_tv'));
+  assert.equal(rows(db, `SELECT platform FROM devices WHERE installation_id_hash = 'install-1'`)[0].platform, 'android_tv');
+});
+
+test('TV-004: the billing screen counts devices the way the limit does', async () => {
+  const { object, session } = await seeded();
+  await call(object, newSession('tv-1', 'install-tv-1', 'android_tv'));
+  let status = await call(object, get('/billing/status'));
+  assert.deepEqual(status.body.data.usage, { children: 0, devices: 1, tv_devices: 1 });
+  assert.equal(status.body.data.limits.tv_devices, 1);
+  await call(object, post('/sessions/logout', { session_id: session.session_id }));
+  status = await call(object, get('/billing/status'));
+  assert.equal(status.body.data.usage.devices, 0);
+});
+
+test('APP-201: progress is read per child and a rewatch reopens a finished episode', async () => {
+  const { object, session } = await seeded();
+  // Plan limit on free is one child; the test only needs one.
+  const child = await call(object, post('/children', {
+    session_id: session.session_id, nickname: 'ليلى', birth_month: 1, birth_year: new Date().getUTCFullYear() - 7, avatar_id: 'a1',
+  }));
+  const childId = child.body.data.id;
+  const report = (seq, pos, dur, id) => call(object, post('/progress', {
+    session_id: session.session_id, child_id: childId, content_id: 'ep-1', content_type: 'episode',
+    event_id: id, position_ms: pos, duration_ms: dur, sequence: seq,
+  }));
+  assert.equal((await report(1, 95_000, 100_000, 'e1')).body.data.completed, true);
+  // Watching again from the start, reported later: the new position is kept
+  // (the app shows it as "continue"), and the episode stays counted as watched.
+  const again = await report(2, 20_000, 100_000, 'e2');
+  assert.equal(again.body.data.accepted, true, 'a rewind in a newer viewing is accepted');
+  assert.equal(again.body.data.completed, true);
+
+  const listed = await call(object, post('/progress/list', { child_id: childId }));
+  assert.equal(listed.status, 200);
+  assert.equal(listed.body.data.length, 1);
+  assert.equal(listed.body.data[0].position_ms, 20_000);
+  assert.equal((await call(object, post('/progress/list', { child_id: 'someone-else' }))).status, 404);
+});
+
 test('the same installation reuses its device row rather than adding one', async () => {
   // Re-authenticating on the same phone must not consume another device slot.
   const { object, db } = await seeded();
@@ -778,6 +869,32 @@ test('a refresh rotates the token hash', async () => {
   assert.equal(stored.refresh_token_hash, 'hash-2');
   // The consumed hash is retained so a replay can be detected.
   assert.equal(rows(db, `SELECT token_hash FROM used_refresh_tokens`)[0].token_hash, 'hash-1');
+});
+
+test('a refresh slides the session expiry forward, and never shortens it', async () => {
+  // AUTH-SLIDE: a device used within the window must not be logged out on a
+  // fixed date thirty days after it first signed in.
+  const { object, db, session } = await seeded();
+  const DAY = 24 * 60 * 60 * 1000;
+  db.prepare(`UPDATE auth_sessions SET expires_at = ? WHERE id = ?`).run(Date.now() + 2 * DAY, session.session_id);
+
+  const extended = Date.now() + 30 * DAY;
+  const slid = await call(object, post('/sessions/refresh', {
+    session_id: session.session_id, current_hash: 'hash-1', next_hash: 'hash-2', expires_at: extended,
+  }));
+  assert.equal(slid.status, 200);
+  assert.equal(slid.body.data.expires_at, extended);
+  assert.equal(rows(db, `SELECT expires_at FROM auth_sessions WHERE id = 'session-1'`)[0].expires_at, extended);
+
+  const shorter = await call(object, post('/sessions/refresh', {
+    session_id: session.session_id, current_hash: 'hash-2', next_hash: 'hash-3', expires_at: Date.now() + DAY,
+  }));
+  assert.equal(shorter.body.data.expires_at, extended, 'a refresh cannot cut the remaining life');
+
+  const unbounded = await call(object, post('/sessions/refresh', {
+    session_id: session.session_id, current_hash: 'hash-3', next_hash: 'hash-4', expires_at: Date.now() + 400 * DAY,
+  }));
+  assert.equal(unbounded.body.data.expires_at, extended, 'an out-of-bounds window is ignored');
 });
 
 test('replaying a consumed refresh token revokes the session', async () => {

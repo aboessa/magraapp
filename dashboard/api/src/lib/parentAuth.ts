@@ -13,7 +13,11 @@ import {
 
 export const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const MEDIA_TOKEN_TTL_SECONDS = 3 * 60;
-const PARENT_PROOF_TTL_SECONDS = 5 * 60;
+/// 15 minutes, matching the app's own cap on a parent-area grant. At 5 the
+/// parent was asked for the PIN again mid-task. Destructive purposes are still
+/// single-use (`SINGLE_USE_PURPOSES`), so a longer window does not make one
+/// proof replayable.
+const PARENT_PROOF_TTL_SECONDS = 15 * 60;
 const PASSWORD_RESET_TOKEN_TTL_SECONDS = 30 * 60;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -43,6 +47,13 @@ const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
  * | `delete_child` | `DELETE /account/children/:childId` |
  * | `delete_account` | `DELETE /account/delete` |
  * | `export_data` | `GET /account/export` |
+ * | `approve_tv` | `POST /tv/pair/approve` |
+ *
+ * ## `approve_tv` returned with its endpoint (`TV-001`)
+ *
+ * It was removed below because nothing verified it. Television pairing now
+ * exists (`routes/tvPairing.ts`), and approving a code creates a full family
+ * session on another device, so it is gated and single-use like `revoke_device`.
  *
  * ## Two purposes were removed rather than wired
  *
@@ -53,8 +64,9 @@ const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
  *   stranding a purchase Google Play has already charged for. It returns when
  *   billing is implemented, and it belongs on the parent-initiated *start* of a
  *   plan change — never on the provider-completed verification.
- * - **`approve_tv`** — no TV approval or device-pairing endpoint exists anywhere
- *   in the API, and no client requests it. It was aspirational.
+ * - **`approve_tv`** — at the time no TV approval or device-pairing endpoint
+ *   existed and no client requested it. It has since returned with its endpoint;
+ *   see the section above.
  */
 export const PARENT_PROOF_PURPOSES = [
   'parent_area',
@@ -68,6 +80,7 @@ export const PARENT_PROOF_PURPOSES = [
   'delete_child',
   'delete_account',
   'export_data',
+  'approve_tv',
 ] as const;
 
 /**
@@ -87,6 +100,9 @@ export const SINGLE_USE_PURPOSES: readonly ParentProofPurpose[] = [
   'export_data',
   'change_password',
   'change_parent_pin',
+  // Approving a television mints a 30-day session for it. A replayed proof would
+  // let one PIN entry pair any number of devices.
+  'approve_tv',
 ];
 
 export type ParentProofPurpose = typeof PARENT_PROOF_PURPOSES[number];
@@ -391,11 +407,18 @@ export async function verifyParentProof(env: Env, values: {
 
 export async function createParentSession(env: Env, values: {
   parentId: string;
-  installationId: string;
   platform: string;
   deviceName: string | null;
-}) {
+} & (
+  | { installationId: string; installationIdHash?: never }
+  /// TV pairing hashes the television's installation id when the code is issued
+  /// and never holds the raw value afterwards; the hash is what FamilyState keys
+  /// devices by in either case.
+  | { installationIdHash: string; installationId?: never }
+)) {
   if (!authIsConfigured(env)) throw new Error('Authentication is not configured');
+  const installationIdHash = values.installationIdHash
+    ?? await sha256Base64Url(values.installationId!);
   const sessionId = crypto.randomUUID();
   const refreshToken = await signedRefreshToken(env, {
     parentId: values.parentId,
@@ -407,7 +430,7 @@ export async function createParentSession(env: Env, values: {
     body: {
       session_id: sessionId,
       refresh_token_hash: await sha256Base64Url(refreshToken),
-      installation_id_hash: await sha256Base64Url(values.installationId),
+      installation_id_hash: installationIdHash,
       platform: values.platform,
       device_name: values.deviceName,
       expires_at: expiresAt,
@@ -450,6 +473,9 @@ export async function rotateParentSession(env: Env, refreshToken: string) {
       session_id: parts.sessionId,
       current_hash: await sha256Base64Url(refreshToken),
       next_hash: await sha256Base64Url(nextRefreshToken),
+      // Sliding window: every refresh extends the session by the full TTL, so an
+      // active device (a TV used weekly, say) never has to sign in again.
+      expires_at: Date.now() + REFRESH_TOKEN_TTL_MS,
     },
   });
   const data = rotated.data?.success ? rotated.data.data : null;
@@ -544,6 +570,59 @@ export async function createMediaToken(env: Env, values: Omit<MediaClaims, 'typ'
   const signingSecret = secret(env, 'MEDIA_TOKEN_SECRET');
   if (!signingSecret) throw new Error('Media protection is not configured');
   return createSignedToken({ typ: 'media_lease', ...values, exp: expiration(MEDIA_TOKEN_TTL_SECONDS) } satisfies MediaClaims, signingSecret);
+}
+
+/// CONTENT-001: a capability for one episode's HLS folder.
+///
+/// ## Why a separate token
+///
+/// `media_lease` is bound to one object and lives 180 s. An HLS player fetches
+/// many objects (master, variant playlists, byte ranges of each rendition) on
+/// its own, for the whole episode, and a VOD player never refetches the
+/// playlists, so a 180 s token embedded in them would fail mid-episode. This
+/// token is bound to one R2 *prefix* (`private/episodes/<id>/hls/`) and to the
+/// playback lease, and lives for the episode's length with margin (bounded,
+/// see `hlsTokenTtlSeconds`). It travels in the URL path, so the playlists'
+/// relative URIs inherit it without rewriting.
+///
+/// The trade-off, stated: a revoked lease stops the app (heartbeat) at once,
+/// but a copied URL keeps working for that one episode until `exp`. The same
+/// holds for the MP4 capability's 180 s; here the window is longer and bounded.
+type HlsClaims = {
+  typ: 'hls_lease';
+  sub: string;
+  sid: string;
+  lid: string;
+  aid: string;
+  prefix: string;
+  bucket: 'media';
+  exp: number;
+};
+
+export const HLS_PREFIX_PATTERN = /^private\/episodes\/[a-z0-9][a-z0-9-]{0,120}\/hls\/$/;
+
+/// 30 min minimum (pauses, slow networks), 4 h maximum, else 4× the duration.
+export function hlsTokenTtlSeconds(durationSeconds: number | null | undefined) {
+  const duration = typeof durationSeconds === 'number' && durationSeconds > 0 ? durationSeconds : 0;
+  return Math.min(4 * 60 * 60, Math.max(30 * 60, Math.ceil(duration * 4)));
+}
+
+export async function createHlsToken(env: Env, values: Omit<HlsClaims, 'typ' | 'exp'>, ttlSeconds: number) {
+  const signingSecret = secret(env, 'MEDIA_TOKEN_SECRET');
+  if (!signingSecret) throw new Error('Media protection is not configured');
+  if (!HLS_PREFIX_PATTERN.test(values.prefix)) throw new Error('Invalid HLS prefix');
+  return createSignedToken({ typ: 'hls_lease', ...values, exp: expiration(ttlSeconds) } satisfies HlsClaims, signingSecret);
+}
+
+export async function verifyHlsToken(env: Env, token: string | undefined) {
+  if (!token || token.length > 4096) return null;
+  const claims = await verifySignedToken<HlsClaims>(token, secretRing(env, 'MEDIA_TOKEN_SECRET'));
+  if (!claims || claims.typ !== 'hls_lease' || !isValidExpiry(claims.exp)
+    || typeof claims.sub !== 'string' || typeof claims.sid !== 'string'
+    || typeof claims.lid !== 'string' || typeof claims.aid !== 'string'
+    || claims.bucket !== 'media'
+    || typeof claims.prefix !== 'string' || !HLS_PREFIX_PATTERN.test(claims.prefix)) return null;
+  return claims;
 }
 
 export async function verifyMediaToken(env: Env, authorization: string | undefined) {

@@ -47,6 +47,7 @@ import {
   parseIntegritySignals,
 } from '../lib/deviceIntegrity.ts';
 import { bodyOr400, boolean, nested, text } from '../lib/requestSchema.ts';
+import { loadPolicy } from '../lib/platformPolicy.ts';
 
 type AppEnv = { Bindings: Env };
 type Envelope<T> = { success: boolean; data?: T; error?: string; code?: string };
@@ -55,7 +56,13 @@ type Envelope<T> = { success: boolean; data?: T; error?: string; code?: string }
 ///
 /// ثلاثون يومًا كما كان العميل يمنح نفسه، لكن القرار صار هنا: تغييره لباقة أو
 /// لنوع محتوى لا يحتاج تحديث تطبيق.
-const LICENSE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+///
+/// ADMIN-POLICY: the number of days is set from the dashboard (`offline_license`,
+/// 1-30, default 30). `licenceTtlFor` still shortens it on risky devices.
+async function licenseTtlMs(env: Env) {
+  const policy = await loadPolicy(env, 'offline_license');
+  return policy.value.ttl_days * 24 * 60 * 60 * 1000;
+}
 
 /// الأدوار التي تُعدّ أصلًا قابلًا للتنزيل لكل نوع كيان.
 ///
@@ -321,7 +328,7 @@ route.post('/sessions', async (c) => {
       signature_key_id: OFFLINE_LICENSE_KEY_ID,
       required_plan: content.requiredPlan,
       allowed_tracks: content.tracks,
-      ttl_ms: licenceTtlFor(risk, LICENSE_TTL_MS),
+      ttl_ms: licenceTtlFor(risk, await licenseTtlMs(c.env)),
       integrity: integrityAuditDetails(integritySignals, risk),
       assets: content.assets.map((asset) => ({
         asset_id: asset.asset_id,
@@ -453,7 +460,7 @@ route.post('/licences/:licenceId/renew', async (c) => {
     body: {
       session_id: auth.principal.sessionId,
       licence_id: c.req.param('licenceId'),
-      ttl_ms: LICENSE_TTL_MS,
+      ttl_ms: await licenseTtlMs(c.env),
       signature_key_id: OFFLINE_LICENSE_KEY_ID,
     },
   });

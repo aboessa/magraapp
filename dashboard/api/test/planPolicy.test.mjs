@@ -20,16 +20,17 @@ const read = (relative) => readFileSync(root + relative, 'utf8');
 ///
 /// **حين تتغيّر أرقام `PLAN_LIMITS`:** ارفع `PLAN_POLICY_VERSION`، ثم حدّث هذا
 /// النصّ من مخرَج `planLimitsFingerprint()`. الخطوتان معًا أو لا شيء.
+/// v3 (`TV-004`): televisions got their own allowance, `tvDevices`.
 const FINGERPRINT_V2 = [
-  'family:children=4,concurrentStreams=2,devices=4,downloadDevices=2,offlineItems=4',
-  'family_plus:children=4,concurrentStreams=4,devices=8,downloadDevices=4,offlineItems=4',
-  'free:children=1,concurrentStreams=1,devices=1,downloadDevices=0,offlineItems=1',
+  'family:children=4,concurrentStreams=2,devices=4,downloadDevices=2,offlineItems=4,tvDevices=2',
+  'family_plus:children=4,concurrentStreams=4,devices=8,downloadDevices=4,offlineItems=4,tvDevices=4',
+  'free:children=1,concurrentStreams=1,devices=1,downloadDevices=0,offlineItems=1,tvDevices=1',
 ].join('|');
 
 test('تغيير الأرقام بلا رفع الإصدار يُفشل الجولة', () => {
   // هذا هو الحرس على المعيار الثالث. رقم إصدار لا يتغيّر مع ما يوصفه أسوأ من
   // غيابه: يجعل سجلًّا قديمًا يبدو مُفسَّرًا وهو ليس كذلك.
-  assert.equal(PLAN_POLICY_VERSION, 2, 'ارفع الإصدار مع كل تغيير في الأرقام');
+  assert.equal(PLAN_POLICY_VERSION, 3, 'ارفع الإصدار مع كل تغيير في الأرقام');
   assert.equal(
     planLimitsFingerprint(),
     FINGERPRINT_V2,
@@ -74,9 +75,14 @@ test('لا سطر في المصدر يقرأ الجدول المُسقَط', () 
 test('الأرقام مُعلَنة في ملف واحد', () => {
   // مصدران للأرقام هو أصل البند. والمستهلكون يقرأون من `familyPolicy` ولا
   // يكتبون أرقامًا لأنفسهم.
+  // ADMIN-POLICY: consumers read through `platformPolicy`, whose only fallback is
+  // `PLAN_LIMITS` — so there is still one place for defaults and one for edits.
   for (const consumer of ['src/routes/billing.ts', 'src/routes/adminPlans.ts', 'src/do/FamilyState.ts']) {
-    assert.match(read(consumer), /PLAN_LIMITS/, `${consumer} يجب أن يقرأ السياسة`);
+    const source = read(consumer);
+    assert.match(source, /loadPlanLimits|loadPolicy/, `${consumer} يجب أن يقرأ السياسة`);
+    assert.doesNotMatch(source, /PLAN_LIMITS\[/, `${consumer} لا يقرأ الافتراضي مباشرة`);
   }
+  assert.match(read('src/lib/platformPolicy.ts'), /structuredClone\(PLAN_LIMITS\)/);
   const policy = read('src/lib/familyPolicy.ts');
   assert.match(policy, /free: \{ children: 1/, 'الأرقام هنا');
 });
@@ -88,7 +94,7 @@ test('كل رفض حدٍّ يذكر الحدّ وقيمته وإصداره', () 
   // من يقرأ سجلًّا بعد شهر يعرف على أي سياسة رُفض — والأرقام تتغيّر مع الباقات.
   const source = read('src/do/FamilyState.ts');
   assert.match(source, /function limitRefusal\(/);
-  assert.match(source, /policy_version: PLAN_POLICY_VERSION/);
+  assert.match(source, /policy_version: context\.policyVersion/);
 
   for (const limit of ['children', 'devices', 'concurrent_streams', 'download_devices', 'offline_items']) {
     assert.match(
@@ -105,13 +111,16 @@ test('قرارات الحدّ الناجحة تحمل الإصدار إلى سج
   const source = read('src/do/FamilyState.ts');
   const events = source.match(/addOutbox\('(child\.created|playback\.started|offline_license\.issued)'[\s\S]{0,700}?\}\)/g) ?? [];
   assert.equal(events.length, 3, 'أحداث قرارات الحدّ الثلاثة');
+  // ADMIN-POLICY: the version of the policy the limit was checked against (the
+  // dashboard one, or the code default), never a constant.
   for (const event of events) {
-    assert.match(event, /policyVersion: PLAN_POLICY_VERSION/, event.slice(0, 60));
+    assert.match(event, /policyVersion(: policy\.version)?,?/, event.slice(0, 60));
+    assert.doesNotMatch(event, /policyVersion: PLAN_POLICY_VERSION/, event.slice(0, 60));
   }
 });
 
 test('الإصدار يُعلَن في كاتالوج الباقات', () => {
   const source = read('src/routes/adminPlans.ts');
-  assert.match(source, /source: 'family_policy'/);
-  assert.match(source, /policy_version: PLAN_POLICY_VERSION/);
+  assert.match(source, /'family_policy' : 'platform_policy'/);
+  assert.match(source, /policy_version: policy\.version/);
 });

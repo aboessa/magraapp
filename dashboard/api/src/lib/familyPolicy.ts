@@ -29,11 +29,28 @@ export type AgeTrack = 'preschool' | 'kids' | 'junior';
 /// **يُرفَع مع كل تغيير في `PLAN_LIMITS`.** واختبار في `architecture.test.mjs`
 /// يثبّت بصمة الأرقام، فتغييرها بلا رفع الإصدار يُفشل الجولة — لأن رقمًا لا
 /// يتغيّر مع ما يوصفه أسوأ من غيابه.
-export const PLAN_POLICY_VERSION = 2;
+export const PLAN_POLICY_VERSION = 3;
+
+/// Television platforms. They have their own allowance (`tvDevices`) and do not
+/// use a `devices` slot (`TV-004`).
+export const TV_PLATFORMS = ['android_tv', 'tvos'] as const;
+
+export function isTvPlatform(platform: string) {
+  return (TV_PLATFORMS as readonly string[]).includes(platform);
+}
 
 export const PLAN_LIMITS: Record<Plan, {
   children: number;
+  /// Phones, tablets and browsers signed in at once.
   devices: number;
+  /// Televisions signed in at once, counted apart from `devices` (`TV-004`).
+  ///
+  /// A TV is approved *from* a phone, so under one shared count the free plan
+  /// (one device) could never have a TV at all: the phone doing the approving
+  /// already holds the only slot. What limits simultaneous watching is
+  /// `concurrentStreams`, which covers TVs and phones together, so a separate TV
+  /// allowance lets a free family watch on the TV *or* the phone, never both.
+  tvDevices: number;
   concurrentStreams: number;
   downloadDevices: number;
   /// أقصى عدد عناصر محفوظة للاستخدام دون إنترنت في وقت واحد.
@@ -45,9 +62,9 @@ export const PLAN_LIMITS: Record<Plan, {
   /// أسرة.
   offlineItems: number;
 }> = {
-  free: { children: 1, devices: 1, concurrentStreams: 1, downloadDevices: 0, offlineItems: 1 },
-  family: { children: 4, devices: 4, concurrentStreams: 2, downloadDevices: 2, offlineItems: 4 },
-  family_plus: { children: 4, devices: 8, concurrentStreams: 4, downloadDevices: 4, offlineItems: 4 },
+  free: { children: 1, devices: 1, tvDevices: 1, concurrentStreams: 1, downloadDevices: 0, offlineItems: 1 },
+  family: { children: 4, devices: 4, tvDevices: 2, concurrentStreams: 2, downloadDevices: 2, offlineItems: 4 },
+  family_plus: { children: 4, devices: 8, tvDevices: 4, concurrentStreams: 4, downloadDevices: 4, offlineItems: 4 },
 };
 
 /// بصمة الأرقام المُعلَنة.

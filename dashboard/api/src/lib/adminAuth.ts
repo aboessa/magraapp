@@ -45,7 +45,11 @@ export type AdminVariables = {
 type AdminContext = Context<{ Bindings: Env; Variables: AdminVariables }>
 
 function bearer(c: AdminContext) {
-  return c.req.header('Authorization')?.replace(/^Bearer\s+/i, '')?.trim() ?? ''
+  return (
+    c.req.header('Authorization')?.replace(/^Bearer\s+/i, '')?.trim() ||
+    c.req.query('token')?.trim() ||
+    ''
+  )
 }
 
 export async function requireAdmin(c: AdminContext, next: Next) {

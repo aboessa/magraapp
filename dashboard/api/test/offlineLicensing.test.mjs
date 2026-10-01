@@ -561,8 +561,9 @@ test('المسار لا يفرض حدًّا بنفسه', () => {
 
 test('مدة الترخيص من الخادم لا من العميل', () => {
   // كانت `offlineLicenseDuration` ثابتًا في `download_manager.dart`.
-  assert.match(routeSource, /LICENSE_TTL_MS = 30 \* 24 \* 60 \* 60 \* 1000/);
-  assert.match(routeSource, /ttl_ms: LICENSE_TTL_MS/);
+  // ADMIN-POLICY: the days come from the dashboard (default 30), still server-side.
+  assert.match(routeSource, /loadPolicy\(env, 'offline_license'\)/);
+  assert.match(routeSource, /ttl_ms: await licenseTtlMs\(c\.env\)/);
 });
 
 test('الأدوار القابلة للتنزيل قائمة مغلقة', () => {

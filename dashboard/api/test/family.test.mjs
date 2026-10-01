@@ -40,6 +40,14 @@ function env({ children = [{ id: CHILD_ID }], progress = [] } = {}) {
               },
             });
           }
+          // APP-201: the child-scoped read the route now uses.
+          if (pathname === '/progress/list') {
+            const { child_id: childId } = await request.json();
+            if (!children.some((child) => child.id === childId)) {
+              return Response.json({ success: false, error: 'Active child profile not found' }, { status: 404 });
+            }
+            return Response.json({ success: true, data: progress.filter((row) => row.child_id === childId) });
+          }
           if (pathname === '/state') {
             return Response.json({
               success: true,

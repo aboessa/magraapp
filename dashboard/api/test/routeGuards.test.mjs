@@ -253,6 +253,12 @@ const ANONYMOUS_BY_DESIGN = new Map([
   // Public enquiry form on the marketing site. It writes a partnership request
   // for staff review and reads nothing.
   ['partnerships.ts POST /', 'public partnership enquiry form'],
+
+  // TV-001: a television with no session asks for a pairing code, then polls
+  // with the 256-bit poll secret it alone received. The code grants nothing by
+  // itself; approval (`/approve`) needs a parent session and a PIN proof.
+  ['tvPairing.ts POST /start', 'a signed-out television asks for a pairing code'],
+  ['tvPairing.ts POST /poll', 'authorised by the poll secret issued with the code'],
 ]);
 
 test('every mutating public handler authenticates or is a recorded exception', () => {
@@ -437,6 +443,8 @@ const CRITICAL_GUARDS = [
   // A remote-config value reaches every live app immediately, with no review
   // and no schedule. That is a publish, not a metadata edit.
   ['adminAppExperience.ts', 'PUT', '/remote-config/:key', 'publish'],
+  // ADM-308: restoring a value is the same publish.
+  ['adminAppExperience.ts', 'POST', '/remote-config/:key/rollback', 'publish'],
   ['adminAppExperience.ts', 'POST', '/devices/:id/revoke', 'archive'],
   // Toggling site mode hides the platform from every visitor.
   ['adminSiteMode.ts', 'PUT', '/', 'publish'],
@@ -534,6 +542,7 @@ const INDEPENDENTLY_MOUNTED = [
   'adminAnalytics.ts',
   'adminPartnerships.ts',
   'adminSiteMode.ts',
+  'adminLegal.ts',
   'adminUsers.ts',
   'adminAiProviders.ts',
 ];
@@ -684,15 +693,18 @@ test('device revoke refuses a stale D1-only operation', () => {
 });
 
 
-test('plans catalogue is authenticated, policy-derived, and read-only', () => {
+test('plans catalogue is authenticated, policy-derived, and writes only platform policy under publish', () => {
   const source = stripComments(read('adminPlans.ts'));
 
   assert.match(source, /\.use\(\s*'\*'\s*,\s*requireAdmin\s*\)/);
-  assert.match(source, /import\s+\{\s*PLAN_LIMITS/);
+  assert.match(source, /loadPolicy\(c\.env, 'plan_limits'\)/);
   assert.match(source, /route\.get\('\/plans'/);
-  assert.match(source, /source:\s*'family_policy'/);
+  assert.match(source, /'family_policy'/);
   assert.match(source, /pricing_available:\s*false/);
-  assert.doesNotMatch(source, /\.post\(|\.put\(|\.patch\(|\.delete\(/);
+  // ADMIN-POLICY: the only writes are the policy sections, each behind `publish`.
+  const writes = [...source.matchAll(/route\.(post|put|patch|delete)\('([^']+)'([^\n]*)/g)];
+  assert.deepEqual(writes.map((w) => w[2]), ['/platform-policy/:section', '/platform-policy/:section/reset']);
+  for (const write of writes) assert.match(write[3], /requirePermission\('publish'\)/);
 });
 
 test('Google Play regional pricing keeps live prices provider-owned and publishes only with authority', () => {
