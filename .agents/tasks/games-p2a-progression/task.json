@@ -1,0 +1,7 @@
+{
+  "task_id": "task-games-p2a-progression",
+  "task_description": "Expand only the seven verified Wave1–3 single-level games to three meaningful levels using existing assets and voice files, while documenting blockers for the other eleven games.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}
