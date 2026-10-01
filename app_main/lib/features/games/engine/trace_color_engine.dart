@@ -15,6 +15,7 @@ import 'game_services.dart';
 import 'game_session_controller.dart';
 import 'trace_geometry.dart';
 import 'trace_session.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 class TraceColorEngine extends GameEngine {
   const TraceColorEngine();
@@ -100,7 +101,7 @@ class _TraceColorSurfaceState extends State<TraceColorSurface> {
     }
     // legacy strings -> ids with no geometry
     return c.regions
-        .map((id) => ColorRegion(id: id, polygon: const []))
+        .map((id) => ColorRegion(id: id, polygon: []))
         .toList(growable: false);
   }
 
@@ -118,7 +119,8 @@ class _TraceColorSurfaceState extends State<TraceColorSurface> {
               child: Text(
                 safeChildFacingLabel(
                   authoredText: level.prompt,
-                  arabicFallback: 'ابدأ الرسم واتبع التعليمة.',
+                  arabicFallback: AppLocalizationsAr()
+                      .gamestracecolorengineArabicFallback01,
                 ),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium,

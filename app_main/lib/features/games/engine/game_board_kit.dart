@@ -13,6 +13,7 @@ import '../../../app/theme/app_colors.dart';
 import 'game_art.dart';
 import 'game_services.dart';
 import 'game_session_controller.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 /// Reads a list of objects out of authored level JSON.
 List<Map<String, dynamic>> mapList(Object? value) {
@@ -43,7 +44,7 @@ double doubleOr(Map<String, dynamic> map, String key, double fallback) {
 
 /// A list of strings, preserving nulls as null so a "missing slot" survives.
 List<String?> nullableStrings(Object? value) {
-  if (value is! List) return const [];
+  if (value is! List) return [];
   return value
       .map((entry) => entry is String ? entry : null)
       .toList(growable: false);
@@ -51,7 +52,7 @@ List<String?> nullableStrings(Object? value) {
 
 /// A list of integers, preserving nulls.
 List<int?> nullableInts(Object? value) {
-  if (value is! List) return const [];
+  if (value is! List) return [];
   return value
       .map((entry) => entry is num ? entry.toInt() : null)
       .toList(growable: false);
@@ -60,14 +61,25 @@ List<int?> nullableInts(Object? value) {
 /// A deterministic shuffle seeded from the level, so a rebuild does not reshuffle
 /// the board under a child's finger.
 List<T> seededShuffle<T>(List<T> items, int seed) {
-  if (items.isEmpty) return const [];
+  if (items.isEmpty) return [];
   if (items.length == 1) return List<T>.of(items);
   final copy = List<T>.of(items);
   copy.shuffle(math.Random(seed));
   return copy;
 }
 
-const _arabicIndicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+final _arabicIndicDigits = [
+  AppLocalizationsAr().gamesgameboardkitSeed01,
+  AppLocalizationsAr().gamesgameboardkitSeed02,
+  AppLocalizationsAr().gamesgameboardkitSeed03,
+  AppLocalizationsAr().gamesgameboardkitSeed04,
+  '٤',
+  '٥',
+  '٦',
+  '٧',
+  '٨',
+  '٩',
+];
 
 /// Renders [value] in the numeral system the pack asks for.
 String formatNumeral(int value, String system, {String languageCode = 'ar'}) {
@@ -654,7 +666,7 @@ class ChoiceTile extends StatelessWidget {
 
 /// A shape mark that distinguishes an item without relying on colour.
 IconData nonColourGlyph(int index) {
-  const glyphs = [
+  final glyphs = [
     Icons.circle_outlined,
     Icons.square_outlined,
     Icons.change_history_outlined,

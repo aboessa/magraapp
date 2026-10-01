@@ -29,6 +29,7 @@ import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
 import 'game_session_controller.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 /// Approximate Hijri year for a Gregorian one.
 ///
@@ -40,21 +41,21 @@ int hijriYearForGregorian(int gregorianYear) {
   return ((gregorianYear - 622) / 0.970229).round() + 1;
 }
 
-const _arabicOrdinals = [
+final _arabicOrdinals = [
   '',
-  'الأول',
-  'الثاني',
-  'الثالث',
-  'الرابع',
-  'الخامس',
-  'السادس',
-  'السابع',
-  'الثامن',
-  'التاسع',
-  'العاشر',
-  'الحادي عشر',
-  'الثاني عشر',
-  'الثالث عشر',
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian01,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian02,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian03,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian04,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian05,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian06,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian07,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian08,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian09,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian10,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian11,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian12,
+  AppLocalizationsAr().gamestimelinemapengineHijriYearForGregorian13,
   'الرابع عشر',
   'الخامس عشر',
   'السادس عشر',
@@ -97,14 +98,14 @@ class MapBounds {
   final double minLon;
   final double maxLon;
 
-  static const world = MapBounds(
+  static final world = MapBounds(
     minLat: -60,
     maxLat: 80,
     minLon: -180,
     maxLon: 180,
   );
 
-  static const _known = <String, MapBounds>{
+  static final _known = <String, MapBounds>{
     'middle_east_north_africa': MapBounds(
       minLat: 10,
       maxLat: 42,
@@ -134,7 +135,7 @@ class MapBounds {
 
 /// Great-circle distance in kilometres.
 double distanceKm(double lat1, double lon1, double lat2, double lon2) {
-  const earthRadiusKm = 6371.0;
+  final earthRadiusKm = 6371.0;
   double toRad(double d) => d * math.pi / 180;
   final dLat = toRad(lat2 - lat1);
   final dLon = toRad(lon2 - lon1);

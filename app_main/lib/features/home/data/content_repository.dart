@@ -1,18 +1,39 @@
 import '../../../core/cache/catalog_cache.dart';
 import '../../../core/diagnostics/ignored_errors.dart';
+import '../../../core/env/app_environment.dart';
 import '../domain/content_models.dart';
 import 'content_dtos.dart';
 import 'local_catalog.dart';
 import 'majarra_api_client.dart';
 
+/// لا شيء حيّ ولا كاش: الخادم لم يُجب ولم يُحفظ من قبل أي كتالوج (`APP-202`).
+class CatalogUnavailableException implements Exception {
+  const CatalogUnavailableException();
+
+  @override
+  String toString() =>
+      'CatalogUnavailableException: no live or cached catalogue';
+}
+
 class ContentRepository {
-  const ContentRepository(
+  ContentRepository(
     this._api, {
     CatalogCache cache = const CatalogCache(),
-  }) : _cache = cache;
+    bool? allowBundledFallback,
+  }) : _cache = cache,
+       _allowBundled = allowBundledFallback ?? !AppConfig.isProduction;
 
   final MajarraApiClient _api;
   final CatalogCache _cache;
+
+  /// `APP-202`: الكتالوج المحزوم بديلُ انقطاعٍ **في التطوير وحده**.
+  ///
+  /// في الإنتاج كان فشل الشبكة بلا كاش يعرض `LocalCatalog` كأنه محتوى المنصة:
+  /// عناوين لم تُنشر أو سُحبت، بلا حالة نشر ولا مسار عمري ولا استحقاق، فتُتجاوز
+  /// كل قرارات الأدمن. الآن: المجموعة الفاشلة بلا كاش تصير رفًّا فارغًا، وإن لم
+  /// يأتِ شيء إطلاقًا (لا حيّ ولا كاش) تُرمى [CatalogUnavailableException] فتعرض
+  /// الشاشة «تعذّر الاتصال» مع إعادة المحاولة.
+  final bool _allowBundled;
 
   Future<HomeCatalog> loadHome() async {
     final fetched = await Future.wait<_EndpointRows>([
@@ -132,6 +153,19 @@ class ContentRepository {
           availableCollections: available,
         ),
       );
+    }
+
+    if (!_allowBundled && liveCollections == 0 && !usedCache) {
+      throw const CatalogUnavailableException();
+    }
+    if (!_allowBundled && usedBundled) {
+      // المجموعات الفاشلة بلا كاش تصير فارغة بدل المحزوم.
+      planetRows ??= const [];
+      seriesRows ??= const [];
+      episodeRows ??= const [];
+      bookRows ??= const [];
+      storyRows ??= const [];
+      usedBundled = false;
     }
 
     final planets = planetRows == null

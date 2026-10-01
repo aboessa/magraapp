@@ -7,8 +7,15 @@ import javax.imageio.ImageIO
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    id("com.google.gms.google-services") apply false
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Local and pull-request builds do not carry production Firebase configuration.
+// CI materializes this ignored file only for an explicitly configured release.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 val majarraLogoSource = file("../../assets/brand/majarra-logo.png")

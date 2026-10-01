@@ -65,10 +65,14 @@ class ContentProgress {
   ///
   /// Excludes finished items and the first few seconds, so a title the user
   /// merely opened does not clutter the rail.
+  ///
+  /// APP-201: a finished episode being watched again (position back under 90%)
+  /// is resumable too. The server keeps it counted as watched, which reports
+  /// and rewards rely on, and records the new position.
   bool get isResumable {
-    if (completed) return false;
     if (positionMs < 15_000) return false;
     final value = fraction;
+    if (completed && (value == null || value >= 0.9)) return false;
     // Past ~95% is effectively finished even if the completion flag never
     // arrived, for example when the app was killed on the closing credits.
     return value == null || value < 0.95;
@@ -89,9 +93,9 @@ final progressProvider = FutureProvider<Map<String, ContentProgress>>((
   final api = ref.watch(majarraApiClientProvider);
   try {
     final rows = await api.fetchProgress(childId: childId);
-    final entries = rows.map(ContentProgress.fromJson).where(
-      (item) => item.contentId.isNotEmpty,
-    );
+    final entries = rows
+        .map(ContentProgress.fromJson)
+        .where((item) => item.contentId.isNotEmpty);
     return {for (final item in entries) item.contentId: item};
   } catch (_) {
     return const {};

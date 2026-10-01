@@ -23,21 +23,25 @@ void main() {
   final appSource = File('lib/app/majarra_app.dart').readAsStringSync();
 
   group('التوثيق يطابق القيمة', () {
-    test('لا مدّة بالدقائق في تعليق دورة الحياة تخالف `parentAccessDuration`', () {
-      final minutes = AuthGuard.parentAccessDuration.inMinutes;
-      // كل رقمٍ يليه «دقيقة/دقائق» أو `minute` في هذا الملف يجب أن يكون هو نفسه.
-      final mentions = RegExp(r'(\d+)\s*(?:دقيقة|دقائق|minutes?|-minute)')
-          .allMatches(appSource)
-          .map((match) => match.group(1))
-          .toSet();
-      for (final mention in mentions) {
-        expect(
-          mention, '$minutes',
-          reason: 'التعليق يذكر $mention دقيقة والثابت $minutes — '
-              'هذا هو الخطأ نفسه الذي رصده `APP-107`',
-        );
-      }
-    });
+    test(
+      'لا مدّة بالدقائق في تعليق دورة الحياة تخالف `parentAccessDuration`',
+      () {
+        final minutes = AuthGuard.parentAccessDuration.inMinutes;
+        // كل رقمٍ يليه «دقيقة/دقائق» أو `minute` في هذا الملف يجب أن يكون هو نفسه.
+        final mentions = RegExp(
+          r'(\d+)\s*(?:دقيقة|دقائق|minutes?|-minute)',
+        ).allMatches(appSource).map((match) => match.group(1)).toSet();
+        for (final mention in mentions) {
+          expect(
+            mention,
+            '$minutes',
+            reason:
+                'التعليق يذكر $mention دقيقة والثابت $minutes — '
+                'هذا هو الخطأ نفسه الذي رصده `APP-107`',
+          );
+        }
+      },
+    );
 
     test('المدّة مُعلَنة بالكلمات أيضًا كي لا يُقرأ الرقم وحده', () {
       // «خمس عشرة» مكتوبة نصًّا: الأرقام تُعدَّل بحثًا واستبدالًا، والكلمات تُقرأ.
@@ -51,7 +55,15 @@ void main() {
       // من كود يمكن نداؤه هنا بلا `pumpWidget` لتطبيق كامل بمخزنٍ آمن حقيقي.
       // والخاصيّة المُثبَّتة هي الشرط نفسه، لا شكل الاستدعاء.
       expect(appSource, contains('AppLifecycleState.detached'));
-      expect(appSource, contains('!kIsWeb && state == AppLifecycleState.paused'));
+      // TV-005: `paused` starts a two-minute grace on non-web; the grant is
+      // revoked on return only if the app was away longer than that.
+      expect(appSource, contains('if (kIsWeb) return;'));
+      expect(appSource, contains('state == AppLifecycleState.paused'));
+      expect(appSource, contains('_backgroundGrace = Duration(minutes: 2)'));
+      expect(
+        appSource,
+        contains('DateTime.now().difference(leftAt) > _backgroundGrace'),
+      );
     });
 
     test('`inactive` لا تُبطل', () {

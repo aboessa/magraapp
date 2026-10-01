@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +26,11 @@ import '../../profile/data/billing_status.dart';
 import '../../profile/data/progress_store.dart';
 import '../application/playback_providers.dart';
 import '../../profile/data/settings_store.dart';
+import '../../../core/config/feature_flags.dart';
+import '../../../core/device/device_profile.dart';
+import '../../tv/application/tv_playback_bridge.dart';
+import '../../tv/presentation/tv_cast_sheet.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 // =============================================================================
 // Majarra PlaybackPage — production-grade immersive video player
@@ -133,8 +139,8 @@ class SubtitleTrack {
 extension EpisodeItemPlaybackX on EpisodeItem {
   List<String> get audioTrackCodes {
     if (audioTracks.isEmpty) {
-      if (captionsUrl != null && captionsUrl!.isNotEmpty) return const ['ar'];
-      return const [];
+      if (captionsUrl != null && captionsUrl!.isNotEmpty) return ['ar'];
+      return [];
     }
     return audioTracks.map((e) => e.language).toList();
   }
@@ -148,17 +154,25 @@ extension EpisodeItemPlaybackX on EpisodeItem {
           .toList();
     }
     if (captionsUrl != null && captionsUrl!.isNotEmpty) {
-      return [SubtitleTrack(code: 'ar', label: 'العربية', url: captionsUrl)];
+      return [
+        SubtitleTrack(
+          code: 'ar',
+          label: AppLocalizationsAr().playbackplaybackpageLabel01,
+          url: captionsUrl,
+        ),
+      ];
     }
-    return const [];
+    return [];
   }
 
   List<PlaybackRendition> get uiQualityRenditions {
-    if (qualityRenditions.isEmpty) return const [];
+    if (qualityRenditions.isEmpty) return [];
     return qualityRenditions
         .map(
           (m) => PlaybackRendition(
-            label: (m['label'] as String?) ?? 'تلقائي',
+            label:
+                (m['label'] as String?) ??
+                AppLocalizationsAr().playbackplaybackpageText01,
             url: m['url'] as String?,
           ),
         )
@@ -178,6 +192,7 @@ enum PlaybackErrorKind {
   concurrentLimit,
   territory,
   offlineUnavailable,
+
   /// حدود ولي الأمر: وقت النوم، أو الحدّ اليومي، أو حدّ الجلسة.
   ///
   /// منفصلة عن [forbidden] عن قصد: «هذا المحتوى يتطلب اشتراكًا» يدفع ولي الأمر
@@ -199,51 +214,51 @@ class _PlaybackError {
   const _PlaybackError(this.kind, this.message);
   final PlaybackErrorKind kind;
   final String message;
-  static const network = _PlaybackError(
+  static final network = _PlaybackError(
     PlaybackErrorKind.network,
-    'انقطع الاتصال. تحقّق من الإنترنت وحاول مرة أخرى.',
+    AppLocalizationsAr().playbackplaybackpageMessage01,
   );
-  static const media = _PlaybackError(
+  static final media = _PlaybackError(
     PlaybackErrorKind.mediaUnavailable,
-    'الفيديو غير متاح حاليًا. حاول لاحقًا.',
+    AppLocalizationsAr().playbackplaybackpageMessage02,
   );
-  static const auth = _PlaybackError(
+  static final auth = _PlaybackError(
     PlaybackErrorKind.authExpired,
-    'انتهت الجلسة. سجّل الدخول مجددًا.',
+    AppLocalizationsAr().playbackplaybackpageMessage03,
   );
-  static const forbidden = _PlaybackError(
+  static final forbidden = _PlaybackError(
     PlaybackErrorKind.forbidden,
-    'هذا المحتوى يتطلب اشتراكًا.',
+    AppLocalizationsAr().playbackplaybackpageMessage04,
   );
-  static const concurrent = _PlaybackError(
+  static final concurrent = _PlaybackError(
     PlaybackErrorKind.concurrentLimit,
     'يتم التشغيل على عدد كبير من الأجهزة. أوقف تشغيلًا آخر أو اطلب من ولي الأمر إدارة الأجهزة.',
   );
-  static const territory = _PlaybackError(
+  static final territory = _PlaybackError(
     PlaybackErrorKind.territory,
     'هذا المحتوى غير متاح في منطقتك.',
   );
-  static const bedtime = _PlaybackError(
+  static final bedtime = _PlaybackError(
     PlaybackErrorKind.screenTime,
     'وقت النوم الآن. نكمل المشاهدة غدًا.',
   );
-  static const dailyLimit = _PlaybackError(
+  static final dailyLimit = _PlaybackError(
     PlaybackErrorKind.screenTime,
     'انتهى وقت المشاهدة لهذا اليوم.',
   );
-  static const sessionLimit = _PlaybackError(
+  static final sessionLimit = _PlaybackError(
     PlaybackErrorKind.screenTime,
     'انتهت مدة هذه الجلسة. خُذ راحة قصيرة ثم ابدأ من جديد.',
   );
-  static const offline = _PlaybackError(
+  static final offline = _PlaybackError(
     PlaybackErrorKind.offlineUnavailable,
     'هذا المحتوى غير متوفر دون اتصال.',
   );
-  static const screenCapture = _PlaybackError(
+  static final screenCapture = _PlaybackError(
     PlaybackErrorKind.screenCapture,
     'تم إيقاف التشغيل لأن الشاشة تُسجَّل أو تُعرض على شاشة أخرى. أوقف التسجيل ثم أكمل.',
   );
-  static const unknown = _PlaybackError(
+  static final unknown = _PlaybackError(
     PlaybackErrorKind.unknown,
     'تعذّر تشغيل الحلقة. حاول مرة أخرى.',
   );
@@ -254,16 +269,35 @@ class _PlaybackError {
 // ---------------------------------------------------------------------------
 
 class PlaybackPage extends ConsumerStatefulWidget {
-  const PlaybackPage({required this.episodeId, super.key});
+  const PlaybackPage({required this.episodeId, this.startAtMs, super.key});
   final String episodeId;
+
+  /// TV-002: where to start, when the phone handed playback over mid-episode.
+  /// Takes precedence over the saved resume point.
+  final int? startAtMs;
 
   @override
   ConsumerState<PlaybackPage> createState() => _PlaybackPageState();
 }
 
 class _PlaybackPageState extends ConsumerState<PlaybackPage>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver
+    implements TvPlaybackTarget {
   VideoPlayerController? _controller;
+
+  // TV-002: the remote-control bridge. Captured so `dispose` needs no `ref`.
+  TvPlaybackBridge? _bridge;
+  DateTime _lastStateReport = DateTime.fromMillisecondsSinceEpoch(0);
+  String? _lastReportedStatus;
+  bool _errorReported = false;
+  String? _castBanner;
+  // APP-206: time actually played (paused and buffering excluded), and the
+  // warning shown before a screen-time limit stops playback.
+  final Stopwatch _playedClock = Stopwatch();
+  int _unsentPlayedMs = 0;
+  String? _limitWarning;
+  Timer? _limitWarningTimer;
+  final Set<int> _limitWarnedThresholds = <int>{};
   Timer? _hideTimer;
   Timer? _heartbeatTimer;
   Timer? _progressTimer;
@@ -323,10 +357,10 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
   int _lastReportedMs = -1;
   DateTime _lastSeekAt = DateTime.fromMillisecondsSinceEpoch(0);
 
-  static const _hideDuration = Duration(seconds: 3);
-  static const _heartbeatInterval = Duration(seconds: 30);
-  static const _progressInterval = Duration(seconds: 15);
-  static const _seekDebounce = Duration(milliseconds: 300);
+  static final _hideDuration = Duration(seconds: 3);
+  static final _heartbeatInterval = Duration(seconds: 30);
+  static final _progressInterval = Duration(seconds: 15);
+  static final _seekDebounce = Duration(milliseconds: 300);
 
   /// Verifies that the protected endpoint is returning media rather than an
   /// API error body. Chrome reports both cases as a vague demux failure, so the
@@ -337,9 +371,7 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
   /// لا `http.Client()` عاريًا هنا — وهو ما كان يكسر
   /// `presentation_network_layering_test.dart`.
   Future<void> _probeNetworkVideo(Uri uri) async {
-    final rejection = await ref
-        .read(mediaProbeRepositoryProvider)
-        .probe(uri);
+    final rejection = await ref.read(mediaProbeRepositoryProvider).probe(uri);
     if (rejection != null) {
       debugPrint('[playback] media_probe rejected: $rejection');
       throw StateError('Invalid media response: $rejection');
@@ -350,10 +382,15 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
   // Lifecycle
   // -------------------------------------------------------------------------
 
+  /// APP-201: outlives this page, so the final progress write can refresh the
+  /// home rail after `dispose`.
+  ProviderContainer? _container;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _container = ProviderScope.containerOf(context, listen: false);
     _enterImmersive();
   }
 
@@ -421,8 +458,10 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _bridge?.detach(this);
     _captureSubscription?.cancel();
     _hideTimer?.cancel();
+    _limitWarningTimer?.cancel();
     _heartbeatTimer?.cancel();
     _progressTimer?.cancel();
     _nextEpisodeCountdown?.cancel();
@@ -490,9 +529,12 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
   // Capability session [AC23]
   // -------------------------------------------------------------------------
 
-  Future<({String url, String authorization, String leaseId})?> _createSession(
-    EpisodeItem episode,
-  ) async {
+  /// CONTENT-001: adaptive HLS is used on Android, iOS and TV. Web keeps the
+  /// MP4: `video_player_web` is a plain `<video>`, and Chrome has no native HLS.
+  static bool get _hlsSupported => !kIsWeb;
+
+  Future<({String url, String authorization, String leaseId, bool hls})?>
+  _createSession(EpisodeItem episode) async {
     final api = ref.read(majarraApiClientProvider);
     final childId = ref.read(childProvider).activeChildId;
     _api = api;
@@ -521,7 +563,28 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
       final resolvedUrl = Uri.parse(
         ApiEnvironment.baseUrl,
       ).resolve(streamUrl).toString();
-      return (url: resolvedUrl, authorization: authorization, leaseId: leaseId);
+      _limitWarnedThresholds.clear();
+      _applyAllowance(map);
+      // The HLS URL carries its own lease-bound capability in the path, so it
+      // needs no `?token=`; the MP4 URL stays the fallback.
+      final hlsUrl = map['hls_url'];
+      if (_hlsSupported && hlsUrl is String && hlsUrl.isNotEmpty) {
+        final resolvedHls = Uri.parse(
+          ApiEnvironment.baseUrl,
+        ).resolve(hlsUrl).toString();
+        return (
+          url: resolvedHls,
+          authorization: authorization,
+          leaseId: leaseId,
+          hls: true,
+        );
+      }
+      return (
+        url: resolvedUrl,
+        authorization: authorization,
+        leaseId: leaseId,
+        hls: false,
+      );
     } on MajarraApiException catch (e) {
       // رمز الخطأ يُقرأ قبل رمز الحالة: ثلاث حالات مختلفة تشترك في 403 (اشتراك
       // ناقص، وقت نوم، انتهاء وقت اليوم)، وعرض «يتطلب اشتراكًا» لطفل انتهى وقته
@@ -556,14 +619,51 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     }
   }
 
+  /// APP-206: playing time not yet reported, including a failed heartbeat's.
+  int _takePlayedMs() {
+    _unsentPlayedMs += _playedClock.elapsedMilliseconds;
+    _playedClock.reset(); // keeps running if the video is playing
+    return _unsentPlayedMs;
+  }
+
+  /// APP-206: warns at 5 minutes and at 1 minute before a limit stops playback,
+  /// instead of the video stopping without notice.
+  void _applyAllowance(Map<String, Object?> data) {
+    final remaining = data['remaining_seconds'];
+    if (remaining is! num || remaining <= 0) return;
+    final seconds = remaining.toInt();
+    final threshold = seconds <= 60 ? 60 : (seconds <= 300 ? 300 : null);
+    if (threshold == null || _limitWarnedThresholds.contains(threshold)) return;
+    _limitWarnedThresholds
+      ..add(threshold)
+      ..add(300); // reaching the 1-minute mark also covers the 5-minute one
+    final minutes = (seconds / 60).ceil();
+    final amount = minutes <= 1
+        ? 'دقيقة واحدة'
+        : (minutes == 2 ? 'دقيقتين' : '$minutes دقايق');
+    final message = data['limit_kind'] == 'session'
+        ? 'فاضل $amount وتخلص الجلسة. خد راحة بعدها'
+        : 'فاضل $amount على وقت المشاهدة النهارده';
+    if (!mounted) return;
+    setState(() => _limitWarning = message);
+    _limitWarningTimer?.cancel();
+    _limitWarningTimer = Timer(const Duration(seconds: 8), () {
+      if (mounted) setState(() => _limitWarning = null);
+    });
+  }
+
   void _startHeartbeat(String episodeId, String sessionId) {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) async {
       try {
-        await _api?.playbackHeartbeat(
+        final envelope = await _api?.playbackHeartbeat(
           episodeId: episodeId,
           sessionId: sessionId,
+          playedMs: _takePlayedMs(),
         );
+        _unsentPlayedMs = 0;
+        final data = envelope?['data'];
+        if (data is Map) _applyAllowance(data.cast<String, Object?>());
         // `APP-105`: كان الردّ يُخزَّن في `_capabilityToken` «لنقلٍ مُقطَّع مستقبلي».
         // لا قارئ له، فالمحفوظ **قدرةُ وصول إلى وسائط** تبقى في الذاكرة بلا
         // غرض — كلفةٌ أمنية صغيرة مقابل صفر قيمة. والنبضة تُجدّد العقد على
@@ -593,7 +693,13 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     final sess = _sessionId;
     if (api == null || ep == null || sess == null) return;
     try {
-      await api.endPlaybackSession(episodeId: ep, sessionId: sess);
+      _playedClock.stop();
+      await api.endPlaybackSession(
+        episodeId: ep,
+        sessionId: sess,
+        playedMs: _takePlayedMs(),
+      );
+      _unsentPlayedMs = 0;
     } catch (_) {}
   }
 
@@ -635,8 +741,14 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     String? playbackUrl;
     String? token;
     String? sessionId;
+    var isHls = false;
     _offlinePath = null;
     _sessionId = null;
+    // APP-206: a new lease starts counting from zero.
+    _playedClock
+      ..stop()
+      ..reset();
+    _unsentPlayedMs = 0;
 
     if (offline != null) {
       playbackUrl = offline;
@@ -649,7 +761,9 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
         final session = await _createSession(episode);
         if (session != null) {
           playbackUrl = session.url;
-          token = session.authorization;
+          isHls = session.hls;
+          // HLS carries its capability in the path; no query token.
+          token = session.hls ? null : session.authorization;
           sessionId = session.leaseId;
           _sessionId = sessionId;
         } else {
@@ -728,17 +842,21 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     // تستخدمه الألعاب في `game_route.dart`)، والتوكن قصير العمر ومربوط بأصل
     // واحد، والاستجابة `no-store` فلا يتسرّب عبر `Referer`.
     final playbackUri = offline == null && token != null && token.isNotEmpty
-        ? Uri.parse(playbackUrl).replace(queryParameters: {
-            ...Uri.parse(playbackUrl).queryParameters,
-            'token': token.replaceFirst(RegExp(r'^Bearer\s+'), ''),
-          })
+        ? Uri.parse(playbackUrl).replace(
+            queryParameters: {
+              ...Uri.parse(playbackUrl).queryParameters,
+              'token': token.replaceFirst(RegExp(r'^Bearer\s+'), ''),
+            },
+          )
         : Uri.parse(playbackUrl);
     VideoPlayerController? controller;
 
     try {
-      if (offline == null) await _probeNetworkVideo(playbackUri);
+      // The probe checks for an MP4 `ftyp`; a playlist is text, so HLS skips it.
+      if (offline == null && !isHls) await _probeNetworkVideo(playbackUri);
       controller = VideoPlayerController.networkUrl(
         playbackUri,
+        formatHint: isHls ? VideoFormat.hls : null,
         httpHeaders: const {},
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
         closedCaptionFile: _captionsLoader(episode),
@@ -752,18 +870,38 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
       await controller.setVolume(1);
       await controller.setPlaybackSpeed(_playbackSpeed);
 
-      // Resume logic [AC17-18]
-      final resumeAt = _resumePosition(episode.id, controller.value.duration);
-      if (resumeAt != null) {
-        await controller.seekTo(resumeAt);
-        _resumeFrom = resumeAt;
+      // TV-002: a hand-over from the phone starts where the phone stopped.
+      final handedOver = widget.startAtMs;
+      if (handedOver != null && handedOver > 0) {
+        final target = Duration(milliseconds: handedOver);
+        final duration = controller.value.duration;
+        await controller.seekTo(
+          duration > Duration.zero && target > duration ? duration : target,
+        );
+      } else {
+        // Resume logic [AC17-18]
+        final resumeAt = _resumePosition(episode.id, controller.value.duration);
+        if (resumeAt != null) {
+          await controller.seekTo(resumeAt);
+          _resumeFrom = resumeAt;
+        }
       }
 
       await controller.play();
+      final bridge = ref.read(tvPlaybackBridgeProvider);
+      _bridge = bridge;
       setState(() {
         _controller = controller;
         _initialising = false;
+        _castBanner = bridge.takeBanner();
       });
+      bridge.attach(this);
+      _reportCastState(force: true);
+      if (_castBanner != null) {
+        Timer(const Duration(seconds: 5), () {
+          if (mounted) setState(() => _castBanner = null);
+        });
+      }
       _scheduleHide();
       _announceResume();
       await const ScreenCaptureGuard().enable();
@@ -879,7 +1017,7 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
         durMs > 0 && (posMs / durMs >= 0.90 || posMs >= durMs - 5000);
     final eventId = '$ep-$childId-${DateTime.now().microsecondsSinceEpoch}';
     // Fire-and-forget, swallow failure — must never interrupt playback
-    api
+    final write = api
         .updateProgress(
           childId: childId,
           contentId: ep,
@@ -888,6 +1026,14 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
           eventId: eventId,
         )
         .catchError((Object _) => <String, dynamic>{});
+    // APP-201: the progress list was fetched once per child and never again, so
+    // "كمّل المشاهدة" never showed what was just watched. Refetch after the last
+    // write of this viewing lands (the page may already be gone, hence the
+    // container captured in initState).
+    if (isFinal) {
+      final container = _container;
+      unawaited(write.then((_) => container?.invalidate(progressProvider)));
+    }
     if (completed) {
       MajarraAnalytics.log(
         'content_completed',
@@ -951,12 +1097,161 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     } else if (_showSkipIntro) {
       setState(() => _showSkipIntro = false);
     }
+    // APP-206: only real playing counts toward the child's screen time.
+    final playingNow = v.isPlaying && !v.isBuffering;
+    if (playingNow && !_playedClock.isRunning) {
+      _playedClock.start();
+    } else if (!playingNow && _playedClock.isRunning) {
+      _playedClock.stop();
+    }
     if (_wasPlaying != v.isPlaying || _isBuffering != v.isBuffering) {
       setState(() {
         _wasPlaying = v.isPlaying;
         _isBuffering = v.isBuffering;
       });
     }
+    _reportCastState();
+  }
+
+  // -------------------------------------------------------------------------
+  // TV-002: remote control. Only reaches a phone when this device is a TV with
+  // the link open; otherwise `onState` is null and reports cost nothing.
+  // -------------------------------------------------------------------------
+
+  /// Reports on every status change, and every 10 s while playing so the
+  /// phone's progress bar can correct its own interpolation. Not per frame:
+  /// each report is one WebSocket message.
+  void _reportCastState({bool force = false}) {
+    final bridge = _bridge;
+    final c = _controller;
+    if (bridge == null || c == null || !c.value.isInitialized) return;
+    final v = c.value;
+    final ended = v.duration > Duration.zero && v.position >= v.duration;
+    final status = ended
+        ? 'ended'
+        : v.isBuffering
+        ? 'loading'
+        : v.isPlaying
+        ? 'playing'
+        : 'paused';
+    final now = DateTime.now();
+    final changed = status != _lastReportedStatus;
+    if (!force &&
+        !changed &&
+        now.difference(_lastStateReport) < const Duration(seconds: 10)) {
+      return;
+    }
+    _lastReportedStatus = status;
+    _lastStateReport = now;
+    final title = ref
+        .read(homeCatalogProvider)
+        .valueOrNull
+        ?.episodes
+        .where((e) => e.id == _boundEpisodeId)
+        .firstOrNull
+        ?.title;
+    bridge.report(
+      TvPlaybackSnapshot(
+        status: status,
+        episodeId: _boundEpisodeId ?? widget.episodeId,
+        title: title,
+        childId: _reportingChildId,
+        positionMs: v.position.inMilliseconds,
+        durationMs: v.duration.inMilliseconds,
+      ),
+    );
+  }
+
+  /// A player that could not start tells the phone why, once.
+  void _reportCastError(String reason) {
+    if (_errorReported) return;
+    _errorReported = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref
+          .read(tvPlaybackBridgeProvider)
+          .report(
+            TvPlaybackSnapshot(
+              status: 'error',
+              episodeId: widget.episodeId,
+              reason: reason,
+            ),
+          );
+    });
+  }
+
+  @override
+  Future<void> pause() async {
+    await _controller?.pause();
+    if (mounted) setState(() => _showControls = true);
+    _reportCastState(force: true);
+  }
+
+  @override
+  Future<void> resume() async {
+    await _controller?.play();
+    _scheduleHide();
+    _reportCastState(force: true);
+  }
+
+  @override
+  Future<void> stop() async {
+    await _controller?.pause();
+    if (!mounted) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
+  }
+
+  @override
+  Future<void> seekTo(Duration position) async {
+    final c = _controller;
+    if (c == null) return;
+    final duration = c.value.duration;
+    final target = position < Duration.zero
+        ? Duration.zero
+        : (duration > Duration.zero && position > duration
+              ? duration
+              : position);
+    await c.seekTo(target);
+    _reportCastState(force: true);
+  }
+
+  @override
+  Future<void> seekBy(Duration delta) async {
+    final c = _controller;
+    if (c == null) return;
+    await seekTo(c.value.position + delta);
+  }
+
+  /// Phone side: hand this episode to a TV and turn this screen into a remote.
+  Future<void> _castToTv(EpisodeItem episode) async {
+    final c = _controller;
+    await c?.pause();
+    if (!mounted) return;
+    final chosen = await showTvCastSheet(
+      context,
+      episodeId: episode.id,
+      positionMs: c?.value.position.inMilliseconds ?? 0,
+    );
+    if (!mounted) return;
+    if (chosen == null) {
+      await c?.play();
+      return;
+    }
+    // Leaving the player ends this device's playback session, so the family's
+    // stream count reflects the TV only.
+    context.pushReplacement(
+      Uri(
+        path: '/tv-remote',
+        queryParameters: {
+          'device': chosen.deviceId,
+          if (chosen.name != null) 'name': chosen.name,
+        },
+      ).toString(),
+    );
   }
 
   DurationRange? _currentEpisodeIntro() {
@@ -1422,6 +1717,7 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
           ),
         );
       }
+      _reportCastError('episode_not_found');
       return _MissingEpisode(onBack: () => context.pop());
     }
 
@@ -1438,6 +1734,8 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
 
     // Error state with retry [AC22]
     if (_error != null && controller == null && !_initialising) {
+      // TV-002: e.g. `playback_dailyLimit`, so the phone can say why.
+      _reportCastError('playback_${_error!.kind.name}');
       return Scaffold(
         backgroundColor: Colors.black,
         body: _ErrorView(
@@ -1456,6 +1754,14 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
     }
 
     final isTablet = MediaQuery.sizeOf(context).width >= 700;
+    // TV-002: a phone or tablet with a real session can hand playback to a TV.
+    final isTelevision =
+        ref.watch(deviceProfileProvider).valueOrNull?.isTelevision ?? false;
+    final canCast =
+        !isTelevision &&
+        !ref.read(authGuardProvider).isDemo &&
+        controller != null &&
+        featureOn(ref, FeatureFlag.tvCast);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -1621,6 +1927,92 @@ class _PlaybackPageState extends ConsumerState<PlaybackPage>
                 },
                 onLock: _toggleLock,
                 onMore: _showSettingsSheet,
+                onCast: canCast ? () => _castToTv(episode) : null,
+              ),
+
+            // TV-002: who this TV is playing for, after a hand-over.
+            if (_castBanner != null)
+              Positioned(
+                top: 24,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  child: Center(
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 22,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.72),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: AppColors.starGold.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        child: Text(
+                          _castBanner!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // APP-206: screen time is about to end.
+            if (_limitWarning != null)
+              Positioned(
+                top: _castBanner != null ? 84 : 24,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  child: Center(
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 22,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.78),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: AppColors.electricCyan.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.hourglass_bottom_rounded,
+                              color: AppColors.electricCyan,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              _limitWarning!,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
 
             // CENTER [AC29] — -10, PlayPause 76dp, +10
@@ -1918,6 +2310,7 @@ class _TopBar extends StatelessWidget {
     required this.onBack,
     required this.onLock,
     required this.onMore,
+    this.onCast,
   });
   final String title;
   final String subtitle;
@@ -1925,6 +2318,9 @@ class _TopBar extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onLock;
   final VoidCallback onMore;
+
+  /// TV-002: null hides the button (on a TV, in demo, before playback starts).
+  final VoidCallback? onCast;
   @override
   Widget build(BuildContext context) => SafeArea(
     child: Padding(
@@ -1966,6 +2362,15 @@ class _TopBar extends StatelessWidget {
               ],
             ),
           ),
+          if (onCast != null) ...[
+            const SizedBox(width: 8),
+            _RoundAction(
+              icon: Icons.cast_rounded,
+              label: 'شغّل على التلفزيون',
+              onTap: isLocked ? null : onCast,
+              dark: true,
+            ),
+          ],
           const SizedBox(width: 8),
           _RoundAction(
             icon: isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,

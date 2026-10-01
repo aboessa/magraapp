@@ -88,7 +88,8 @@ class StudioCategory {
 const List<StudioCategory> kStudioCategories = <StudioCategory>[
   StudioCategory(
     id: StudioCategoryId.coloring,
-    artAsset: 'assets/images/studio/card-coloring.webp', // 16:9 full-bleed, no safe area crop - must be cover center
+    artAsset:
+        'assets/images/studio/card-coloring.webp', // 16:9 full-bleed, no safe area crop - must be cover center
     title: 'لوّن',
     subtitle: 'اختر صورة ولوّنها بالفرشاة أو الدلو',
     icon: Icons.palette_rounded,
@@ -121,15 +122,6 @@ const List<StudioCategory> kStudioCategories = <StudioCategory>[
     subtitle: 'أكمل الجزء الناقص من الرسمة',
     icon: Icons.extension_rounded,
     gradient: StudioGradients.complete,
-    isPrimary: true,
-  ),
-  StudioCategory(
-    id: StudioCategoryId.copyPattern,
-    artAsset: 'assets/images/studio/card-copy-pattern.webp',
-    title: 'انسخ النمط',
-    subtitle: 'انسخ التسلسل كما تراه',
-    icon: Icons.grid_view_rounded,
-    gradient: StudioGradients.copyPattern,
     isPrimary: true,
   ),
   StudioCategory(

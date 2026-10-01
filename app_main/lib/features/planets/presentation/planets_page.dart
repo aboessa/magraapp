@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,7 @@ import '../../../core/widgets/cinematic_image.dart';
 import '../../home/domain/content_models.dart';
 import '../../home/presentation/widgets/content_cards.dart';
 import '../../home/presentation/widgets/content_rail.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 class PlanetsPage extends StatefulWidget {
   const PlanetsPage({
@@ -57,11 +60,16 @@ class _PlanetsPageState extends State<PlanetsPage> {
 
   void _selectPlanet(int index) {
     if (index < 0 || index >= widget.catalog.planets.length) return;
-    if (index != _selectedIndex) setState(() => _selectedIndex = index);
-    final planetId = widget.catalog.planets[index].id;
-    context.go(
-      Uri(path: '/planets', queryParameters: {'planetId': planetId}).toString(),
-    );
+    if (index != _selectedIndex) {
+      setState(() => _selectedIndex = index);
+      final planetId = widget.catalog.planets[index].id;
+      context.replace(
+        Uri(
+          path: '/planets',
+          queryParameters: {'planetId': planetId},
+        ).toString(),
+      );
+    }
   }
 
   @override
@@ -85,16 +93,167 @@ class _PlanetsPageState extends State<PlanetsPage> {
 
     return CinematicBackground(
       child: CustomScrollView(
-        key: const PageStorageKey('planets-page'),
+        key: PageStorageKey('planets-page'),
         slivers: [
           SliverAppBar(
             pinned: true,
+            floating: false,
             toolbarHeight: widget.isTelevision ? 86 : 72,
-            backgroundColor: const Color(0xFF0B1026).withValues(alpha: 0.88),
-            titleSpacing: padding,
-            title: Text(
-              'كواكب مجرة',
-              style: Theme.of(context).textTheme.headlineMedium,
+            backgroundColor: Color(0xFF080C22).withValues(alpha: 0.82),
+            elevation: 0,
+            leadingWidth: 64,
+            leading: Padding(
+              padding: const EdgeInsetsDirectional.only(start: 14),
+              child: Center(
+                child: Tooltip(
+                  message: AppLocalizationsAr().planetsplanetspageMessage01,
+                  child: Material(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/');
+                        }
+                      },
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            width: 1,
+                          ),
+                        ),
+                        child: const BackButtonIcon(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            titleSpacing: 8,
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF2580FF), Color(0xFF8B5CF6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFF2580FF).withValues(alpha: 0.4),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.public_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        AppLocalizationsAr().planetsplanetspageText01,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            (widget.isTelevision
+                                    ? Theme.of(context).textTheme.headlineMedium
+                                    : Theme.of(context).textTheme.titleLarge)
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: -0.3,
+                                ),
+                      ),
+                      Text(
+                        AppLocalizationsAr().planetsplanetspageText02,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.mutedText.withValues(alpha: 0.8),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 14),
+                child: Center(
+                  child: Tooltip(
+                    message: 'بحث في المحتوى',
+                    child: Material(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => context.push('/search'),
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.16),
+                              width: 1,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.search_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            flexibleSpace: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        const Color(0xFF060919).withValues(alpha: 0.92),
+                        const Color(0xFF0B1026).withValues(alpha: 0.78),
+                      ],
+                    ),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -372,9 +531,9 @@ class _PlanetChooser extends StatelessWidget {
     final scaler = MediaQuery.textScalerOf(context);
     final labelGrowth =
         ((scaler.scale(_choiceLabelFontSize) - _choiceLabelFontSize) +
-                (scaler.scale(_choiceComingSoonFontSize) -
-                    _choiceComingSoonFontSize)) *
-            _choiceLineFactor;
+            (scaler.scale(_choiceComingSoonFontSize) -
+                _choiceComingSoonFontSize)) *
+        _choiceLineFactor;
     final height = (isTelevision ? 152.0 : 128.0) + labelGrowth;
 
     return SizedBox(

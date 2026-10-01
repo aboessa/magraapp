@@ -2,8 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/router/auth_guard.dart';
+import '../../../core/device/device_profile.dart';
+import '../../tv/data/tv_session_origin.dart';
 import '../../../core/cache/catalog_cache.dart';
 import '../../../core/cache/reader_page_cache.dart';
+import '../../../core/push/push_service.dart';
 import '../../child/application/child_provider.dart';
 import '../../downloads/application/download_providers.dart';
 import '../../games/application/creation_cloud_service.dart';
@@ -35,6 +38,22 @@ class AuthController {
         _bootstrapTeardownPending = true;
       }
     }
+    // TV-005: a television keeps only sessions it made by pairing (or by the
+    // email fallback). An older session is ended so the TV shows its code.
+    if (!_bootstrapTeardownPending &&
+        _ref.read(currentDeviceProfileProvider).isTelevision &&
+        _ref.read(authGuardProvider).isAuthenticated) {
+      var known = true;
+      try {
+        known = await TvSessionOrigin.isKnown();
+      } catch (_) {
+        known = true; // Storage trouble must not sign a TV out.
+      }
+      if (!known) {
+        await logout();
+        return;
+      }
+    }
     if (!_bootstrapTeardownPending) return;
 
     // Keep this flag set if teardown fails. Invalidating authBootstrapProvider
@@ -51,6 +70,9 @@ class AuthController {
   /// credentials and account-scoped data so offline logout remains possible.
   Future<void> logout() async {
     final childIds = await _captureChildIds(includeServer: true);
+    // APP-203: this phone stops receiving the family's notifications. Before
+    // the server logout, while the session can still authorise the call.
+    await PushService.instance.disable(_ref.read(majarraApiClientProvider));
     try {
       await _ref.read(majarraApiClientProvider).logout();
     } catch (_) {

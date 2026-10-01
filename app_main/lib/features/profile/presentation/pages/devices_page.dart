@@ -10,6 +10,7 @@ import '../../../home/application/home_providers.dart';
 import '../../../profile/data/billing_status.dart';
 import '../../application/account_providers.dart';
 import '../widgets/profile_page_content.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 /// A device session on the family account.
 class FamilyDevice {
@@ -47,7 +48,8 @@ class FamilyDevice {
   final bool isActive;
   final String? lastSeen;
 
-  String get displayName => name.isEmpty ? 'جهاز غير مسمّى' : name;
+  String get displayName =>
+      name.isEmpty ? AppLocalizationsAr().profiledevicespageGet01 : name;
 
   String get subtitle {
     final parts = <String>[
@@ -103,6 +105,25 @@ class DevicesPage extends ConsumerWidget {
                   onPressed: () => ref.invalidate(familyDevicesProvider),
                 ),
               ],
+            ),
+            // TV-001: approve a television showing a pairing code.
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: SizedBox(
+                  height: 52,
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      await context.push('/link-tv');
+                      if (context.mounted) {
+                        ref.invalidate(familyDevicesProvider);
+                      }
+                    },
+                    icon: const Icon(Icons.tv_rounded),
+                    label: const Text('ربط تلفزيون بكود'),
+                  ),
+                ),
+              ),
             ),
             ...devices.when(
               loading: () => [

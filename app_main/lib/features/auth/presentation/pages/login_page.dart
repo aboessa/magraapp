@@ -16,6 +16,7 @@ import '../../../../l10n/app_localizations_ar.dart';
 import '../../../home/application/home_providers.dart';
 import '../../../home/data/majarra_api_client.dart';
 import '../../data/installation_identity.dart';
+import '../../../tv/data/tv_session_origin.dart';
 
 enum _LoginErrorKind {
   none,
@@ -36,8 +37,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _pass = TextEditingController();
+  final _emailFocus = FocusNode(debugLabel: 'login_email');
+  final _passFocus = FocusNode(debugLabel: 'login_password');
+  final _submitFocus = FocusNode(debugLabel: 'login_submit');
+  final _forgotFocus = FocusNode(debugLabel: 'login_forgot');
+  final _demoFocus = FocusNode(debugLabel: 'login_demo');
+  final _registerFocus = FocusNode(debugLabel: 'login_register');
   bool _obscure = true;
   bool _loading = false;
+  bool _sentToPairing = false;
 
   _LoginErrorKind _errorKind = _LoginErrorKind.none;
   String? _errorMessage;
@@ -52,6 +60,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   void dispose() {
     _email.dispose();
     _pass.dispose();
+    _emailFocus.dispose();
+    _passFocus.dispose();
+    _submitFocus.dispose();
+    _forgotFocus.dispose();
+    _demoFocus.dispose();
+    _registerFocus.dispose();
     _countdownTimer?.cancel();
     super.dispose();
   }
@@ -146,14 +160,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       // family plan limit (4). Using a constant ID makes all demo logins reuse
       // the same device record.
       const demoInstallationId = 'demo-family-web-fixed-12345678';
+      // TV-005: on a television the demo family is a real TV sign-in with this
+      // TV's own identity, so it lands in the TV allowance, not as "web".
+      final isTv = ref.read(currentDeviceProfileProvider).isTelevision;
+      final installationId = isTv
+          ? await ref.read(installationIdentityProvider).getOrCreate()
+          : demoInstallationId;
       for (final email in _demoFamilyEmails) {
         try {
           final res = await api.login(
             email: email,
             password: _demoFamilyPassword,
-            installationId: demoInstallationId,
-            platform: 'web',
-            deviceName: 'متصفح تجريبي',
+            installationId: installationId,
+            platform: isTv ? 'android_tv' : 'web',
+            deviceName: isTv ? await televisionLabel() : 'متصفح تجريبي',
           );
           final data = res['data'] as Map<String, dynamic>?;
           if (data != null && data['access_token'] != null) {
@@ -171,15 +191,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         }
       }
 
-      if (loginData == null) throw Exception('تعذّر تسجيل دخول الأسرة التجريبية');
+      if (loginData == null) {
+        throw Exception('تعذّر تسجيل دخول الأسرة التجريبية');
+      }
 
       final access = loginData['access_token'] as String?;
       final refresh = loginData['refresh_token'] as String?;
       final parent = loginData['parent'] as Map<String, dynamic>?;
       final parentId = parent?['id']?.toString();
-      if (access == null || refresh == null || parentId == null) throw Exception('استجابة دخول غير متوقعة');
+      if (access == null || refresh == null || parentId == null) {
+        throw Exception('استجابة دخول غير متوقعة');
+      }
 
-      await storage.save(accessToken: access, refreshToken: refresh, parentId: parentId);
+      await storage.save(
+        accessToken: access,
+        refreshToken: refresh,
+        parentId: parentId,
+      );
+      if (isTv) await TvSessionOrigin.record(TvSessionOrigin.email);
       guard.setAuthenticated(true, parentId: parentId);
 
       if (!mounted) return;
@@ -228,8 +257,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           email: _email.text.trim(),
           password: _pass.text,
           installationId: installationId,
-          platform: currentAuthPlatform,
-          deviceName: currentDeviceLabel,
+          // TV-001: a television using the email fallback is still a TV in
+          // the family's device list, not "جهاز Android".
+          platform: ref.read(currentDeviceProfileProvider).isTelevision
+              ? 'android_tv'
+              : currentAuthPlatform,
+          deviceName: ref.read(currentDeviceProfileProvider).isTelevision
+              ? await televisionLabel()
+              : currentDeviceLabel,
         );
         final data = res['data'] as Map<String, dynamic>?;
         final access = data?['access_token'] as String?;
@@ -244,6 +279,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           refreshToken: refresh,
           parentId: parentId,
         );
+        if (ref.read(currentDeviceProfileProvider).isTelevision) {
+          await TvSessionOrigin.record(TvSessionOrigin.email);
+        }
         guard.setAuthenticated(true, parentId: parentId);
       });
       if (!mounted) return;
@@ -309,6 +347,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final isTelevision = device?.isTelevision ?? false;
     final isTablet = width >= 600 && width < 1024 && !isTelevision;
     final isDesktopTv = width >= 1024 || isTelevision;
+
+    // TV-001: typing credentials with a remote is the slowest way in, so a
+    // television opens on the pairing code instead. `?method=email` is how the
+    // pairing screen offers this form as the fallback.
+    if (isTelevision && !_sentToPairing) {
+      String? method;
+      try {
+        method = GoRouterState.of(context).uri.queryParameters['method'];
+      } catch (_) {
+        method = 'email'; // Not under a router (e.g. a widget test): stay here.
+      }
+      if (method != 'email') {
+        _sentToPairing = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) context.go('/tv-pairing');
+        });
+      }
+    }
 
     // Responsive background mapping (R2-first, bundled webp instant):
     // Mobile portrait (<600): login-bg-mobile — CDN WebP, bundled 44KB webp
@@ -440,6 +496,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           const SizedBox(height: 28),
                           TextFormField(
                             controller: _email,
+                            focusNode: _emailFocus,
+                            autofocus: isTelevision,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             autofillHints: const [
@@ -448,6 +506,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             ],
                             autocorrect: false,
                             validator: _validateEmail,
+                            onFieldSubmitted: (_) => _passFocus.requestFocus(),
                             style: const TextStyle(color: Colors.white),
                             decoration: _fieldDecoration(
                               label: l10n.emailLabel,
@@ -457,6 +516,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: _pass,
+                            focusNode: _passFocus,
                             obscureText: _obscure,
                             textInputAction: TextInputAction.done,
                             autofillHints: const [AutofillHints.password],
@@ -471,6 +531,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   icon: Icons.lock_outline_rounded,
                                 ).copyWith(
                                   suffixIcon: IconButton(
+                                    focusNode: FocusNode(
+                                      skipTraversal: true,
+                                      canRequestFocus: false,
+                                    ),
                                     tooltip: _obscure
                                         ? 'إظهار كلمة المرور'
                                         : 'إخفاء كلمة المرور',
@@ -489,6 +553,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           Align(
                             alignment: AlignmentDirectional.centerEnd,
                             child: TextButton(
+                              focusNode: _forgotFocus,
                               onPressed: () => context.push(
                                 Uri(
                                   path: '/forgot-password',
@@ -510,17 +575,50 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                           const SizedBox(height: 14),
                           FilledButton(
+                            focusNode: _submitFocus,
                             onPressed: _loading ? null : _login,
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(50),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 18,
-                                vertical: 14,
+                            style: ButtonStyle(
+                              minimumSize: WidgetStateProperty.all(
+                                const Size.fromHeight(50),
                               ),
-                              backgroundColor: AppColors.starGold,
-                              foregroundColor: AppColors.deepSpace,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+                              padding: WidgetStateProperty.all(
+                                const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 14,
+                                ),
+                              ),
+                              backgroundColor: WidgetStateProperty.resolveWith((
+                                states,
+                              ) {
+                                if (states.contains(WidgetState.focused)) {
+                                  return const Color(0xFFFFE580);
+                                }
+                                return AppColors.starGold;
+                              }),
+                              foregroundColor: WidgetStateProperty.all(
+                                AppColors.deepSpace,
+                              ),
+                              side: WidgetStateProperty.resolveWith((states) {
+                                if (states.contains(WidgetState.focused)) {
+                                  return const BorderSide(
+                                    color: Colors.white,
+                                    width: 2.8,
+                                  );
+                                }
+                                return BorderSide.none;
+                              }),
+                              elevation: WidgetStateProperty.resolveWith((
+                                states,
+                              ) {
+                                if (states.contains(WidgetState.focused)) {
+                                  return 8;
+                                }
+                                return 0;
+                              }),
+                              shape: WidgetStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
                               ),
                             ),
                             child: _loading
@@ -553,15 +651,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                 ),
-                                child: Text(
-                                  'أو',
-                                  style: TextStyle(
-                                    color: AppColors.mutedText.withValues(
-                                      alpha: 0.6,
-                                    ),
-                                    fontSize: 12,
-                                  ),
-                                ),
                               ),
                               Expanded(
                                 child: Divider(
@@ -585,6 +674,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ),
                               ),
                               TextButton(
+                                focusNode: _registerFocus,
                                 onPressed: () => context.push('/register'),
                                 child: const Text(
                                   'إنشاء حساب',
@@ -597,6 +687,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           // Demo Family Account – single family button, children chosen inside on /children page
                           const SizedBox(height: 14),
                           _DemoFamilyCard(
+                            focusNode: _demoFocus,
                             loading: _loading,
                             onUseFamily: _useDemoFamily,
                           ),
@@ -740,40 +831,85 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }) {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
     );
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(color: AppColors.mutedText.withValues(alpha: 0.7)),
+      floatingLabelStyle: const TextStyle(
+        color: AppColors.starGold,
+        fontWeight: FontWeight.w700,
+      ),
       prefixIcon: Icon(icon, color: AppColors.mutedText),
       filled: true,
       fillColor: const Color(0xFF111A3A).withValues(alpha: 0.72),
       border: border,
       enabledBorder: border,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.starGold, width: 2.8),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.danger, width: 2.8),
+      ),
     );
   }
 }
 
 /// Demo family account – single button as requested: one family account, children inside
 class _DemoFamilyCard extends StatelessWidget {
-  const _DemoFamilyCard({required this.loading, required this.onUseFamily});
+  const _DemoFamilyCard({
+    required this.loading,
+    required this.onUseFamily,
+    this.focusNode,
+  });
 
   final bool loading;
   final VoidCallback onUseFamily;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
     return FilledButton.icon(
+      focusNode: focusNode,
       onPressed: loading ? null : onUseFamily,
       icon: loading
-          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1A1A2E)))
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFF1A1A2E),
+              ),
+            )
           : const Icon(Icons.login_rounded, size: 18),
-      label: const Text('دخول بحساب الأسرة التجريبي', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-      style: FilledButton.styleFrom(
-        backgroundColor: AppColors.starGold,
-        foregroundColor: const Color(0xFF1A1A2E),
-        minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      label: const Text(
+        'دخول بحساب الأسرة التجريبي',
+        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+      ),
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.focused)) {
+            return const Color(0xFFFFE580);
+          }
+          return AppColors.starGold;
+        }),
+        foregroundColor: WidgetStateProperty.all(const Color(0xFF1A1A2E)),
+        side: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.focused)) {
+            return const BorderSide(color: Colors.white, width: 2.8);
+          }
+          return BorderSide.none;
+        }),
+        elevation: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.focused)) return 8;
+          return 0;
+        }),
+        minimumSize: WidgetStateProperty.all(const Size.fromHeight(52)),
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
       ),
     );
   }

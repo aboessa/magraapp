@@ -1,28 +1,31 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/layout/app_layout.dart';
-import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../core/widgets/focusable_scale.dart';
 import '../../../../app/router/auth_guard.dart';
 import '../../../child/application/child_provider.dart';
+import '../../../child/application/family_children_provider.dart';
+import '../../../child/domain/child_profile.dart';
+import '../../../child/presentation/widgets/child_avatars.dart';
+import '../../application/home_providers.dart';
 import '../../domain/content_models.dart';
 import '../pages/explore_page.dart';
 import '../pages/library_page.dart';
 import 'home_feed.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 /// Index of each destination in the shared navigation list. Shared by every
 /// shell (phone, tablet, television) so a destination's position is
 /// unambiguous everywhere it is referenced.
 abstract final class HomeDestinationIndex {
-  static const home = 0;
-  static const explore = 1;
-  static const library = 2;
-  static const profile = 3;
+  static final home = 0;
+  static final explore = 1;
+  static final library = 2;
+  static final profile = 3;
 }
 
 /// A single source of truth for one navigation destination: its label, its
@@ -85,25 +88,25 @@ List<HomeDestinationSpec> buildHomeDestinationSpecs({
 
   return [
     HomeDestinationSpec(
-      label: 'الرئيسية',
+      label: AppLocalizationsAr().homehomedestinationspecLabel01,
       icon: Icons.home_outlined,
       selectedIcon: Icons.home_rounded,
       build: () => homeSurface,
     ),
     HomeDestinationSpec(
-      label: 'استكشف',
+      label: AppLocalizationsAr().homehomedestinationspecLabel02,
       icon: Icons.explore_outlined,
       selectedIcon: Icons.explore_rounded,
-      build: () => const ExplorePage(),
+      build: () => ExplorePage(),
     ),
     HomeDestinationSpec(
-      label: 'مكتبتي',
+      label: AppLocalizationsAr().homehomedestinationspecLabel03,
       icon: Icons.bookmark_outline_rounded,
       selectedIcon: Icons.bookmarks_rounded,
-      build: () => const LibraryPage(),
+      build: () => LibraryPage(),
     ),
     HomeDestinationSpec(
-      label: 'ملفي',
+      label: AppLocalizationsAr().homehomedestinationspecLabel04,
       icon: Icons.person_outline_rounded,
       selectedIcon: Icons.person_rounded,
       build: () =>
@@ -121,356 +124,115 @@ class _ProfileDestination extends ConsumerWidget {
   final bool isTelevision;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activeChild = ref.watch(childProvider);
     // The guest session carries no credentials, so account management cannot
     // work for it. Those actions now state that plainly instead of relying on a
     // router redirect that looked like an unresponsive button.
     final isGuest = ref.watch(authGuardProvider).isDemo;
     final padding = context.horizontalPagePadding;
-    // Cinematic backdrop: colourful banner + planet as decoration
-    final bannerAsset =
-        'assets/images/series/banners/hekaya-wa-hikma-banner.webp';
-    return CinematicBackground(
-      child: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Stack(
-              children: [
-                SizedBox(
-                  height: isTelevision ? 390 : 340,
-                  width: double.infinity,
-                  child: Stack(
-                    fit: StackFit.expand,
+    return ColoredBox(
+      color: AppColors.deepSpace,
+      child: RefreshIndicator(
+        color: AppColors.starGold,
+        backgroundColor: const Color(0xFF101735),
+        onRefresh: () async {
+          ref.invalidate(familyChildrenProvider);
+          ref.invalidate(homeCatalogProvider);
+          await Future.delayed(const Duration(milliseconds: 350));
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(
+                    padding,
+                    18,
+                    padding,
+                    18,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // لون أساسي غامق
-                      Container(color: const Color(0xFF050817)),
-                      // صورة كبيرة واضحة - هيكايا (ألوان غنية)
-                      Opacity(
-                        opacity: 0.72,
-                        child: Image.asset(
-                          bannerAsset,
-                          fit: BoxFit.cover,
-                          alignment: const Alignment(0, -0.2),
-                          errorBuilder: (_, __, ___) => Image.asset(
-                            'assets/images/planets/planet-science.webp',
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                const SizedBox.shrink(),
-                          ),
-                        ),
-                      ),
-                      // Blur خفيف يحافظ على التفاصيل
-                      ClipRect(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                          child: Container(
-                            color: const Color(
-                              0xFF06091A,
-                            ).withValues(alpha: 0.32),
-                          ),
-                        ),
-                      ),
-                      // Scrim يحمي النص
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Color(0xFF06091A).withValues(alpha: 0.18),
-                              Color(0xFF06091A).withValues(alpha: 0.58),
-                              Color(0xFF06091A),
-                            ],
-                            stops: [0, 0.45, 1],
-                          ),
-                        ),
-                      ),
-                      // توهج كوني
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: Alignment(0.8, -0.2),
-                            radius: 1.1,
-                            colors: [
-                              Color(0xFF6A3DF2).withValues(alpha: 0.22),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
+                      _WelcomeMembershipHeader(isTelevision: isTelevision),
+                      SizedBox(height: 20),
+                      _FamilyChildrenRoster(
+                        isTelevision: isTelevision,
+                        isGuest: isGuest,
                       ),
                     ],
                   ),
                 ),
-                SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(
-                      padding,
-                      18,
-                      padding,
-                      18,
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF101735,
-                            ).withValues(alpha: 0.88),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  const Text(
-                                    '👋',
-                                    style: TextStyle(fontSize: 18),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'أهلاً بك في مجرة',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: isTelevision ? 20 : 17,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'كواكب تعليمية، حكايات، وأنشطة لكل عمر من 3 إلى 12 سنة',
-                                style: TextStyle(
-                                  color: AppColors.mutedText.withValues(
-                                    alpha: 0.82,
-                                  ),
-                                  fontSize: 11,
-                                  height: 1.5,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              FocusableScale(
-                                onPressed: () => context.push('/membership'),
-                                semanticLabel: 'عرض حالة العضوية',
-                                borderRadius: BorderRadius.circular(99),
-                                focusScale: 1.02,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 22,
-                                    vertical: 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(99),
-                                    border: Border.all(
-                                      color: AppColors.starGold.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                    ),
-                                    color: AppColors.starGold.withValues(
-                                      alpha: 0.12,
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'عرض حالة العضوية',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.starGold,
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'اعرض الباقة الحالية وحدودها',
-                                style: TextStyle(
-                                  color: AppColors.mutedText.withValues(
-                                    alpha: 0.62,
-                                  ),
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  // Placeholder avatar: no child profile is
-                                  // loaded from the API yet, so a series poster
-                                  // must not stand in for a real child.
-                                  Container(
-                                    width: 72,
-                                    height: 72,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppColors.indigoSurface,
-                                      border: Border.all(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.18,
-                                        ),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.person_rounded,
-                                      color: Colors.white,
-                                      size: 30,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    activeChild.displayName
-                                                ?.trim()
-                                                .isNotEmpty ==
-                                            true
-                                        ? activeChild.displayName!.trim()
-                                        : 'ملف الطفل',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.92,
-                                      ),
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    activeChild.trackLabel,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.mutedText.withValues(
-                                        alpha: 0.68,
-                                      ),
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: InkWell(
-                                onTap: () => isGuest
-                                    ? _promptSignIn(context, 'إضافة ملف طفل')
-                                    : context.push('/children'),
-                                borderRadius: BorderRadius.circular(16),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      width: 72,
-                                      height: 72,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: const Color(
-                                          0xFF1B2550,
-                                        ).withValues(alpha: 0.72),
-                                        border: Border.all(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.10,
-                                          ),
-                                        ),
-                                      ),
-                                      child: const Icon(
-                                        Icons.person_add_alt_1_rounded,
-                                        color: Colors.white,
-                                        size: 28,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      isGuest ? 'إضافة (حساب)' : 'إضافة',
-                                      style: TextStyle(
-                                        color: AppColors.mutedText.withValues(
-                                          alpha: 0.72,
-                                        ),
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: _ProfileContent(
-              padding: EdgeInsetsDirectional.fromSTEB(padding, 14, padding, 0),
-              child: OutlinedButton.icon(
-                onPressed: () => isGuest
-                    ? _promptSignIn(context, 'منطقة ولي الأمر')
-                    : context.push('/parent-pin'),
-                icon: const Icon(
-                  Icons.lock_outline_rounded,
-                  size: 16,
-                  color: Colors.white,
+            SliverToBoxAdapter(
+              child: _ProfileContent(
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  padding,
+                  14,
+                  padding,
+                  0,
                 ),
-                label: Text(
-                  isGuest
-                      ? 'منطقة ولي الأمر - تتطلب حسابًا'
-                      : 'منطقة ولي الأمر - PIN / بصمة',
-                  style: const TextStyle(
+                child: OutlinedButton.icon(
+                  onPressed: () => isGuest
+                      ? _promptSignIn(
+                          context,
+                          AppLocalizationsAr().homehomedestinationspecText01,
+                        )
+                      : context.push('/parent-pin'),
+                  icon: Icon(
+                    Icons.lock_outline_rounded,
+                    size: 16,
                     color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
                   ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: const Color(
-                    0xFF111A3A,
-                  ).withValues(alpha: 0.72),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  label: Text(
+                    isGuest
+                        ? AppLocalizationsAr().homehomedestinationspecText02
+                        : AppLocalizationsAr().homehomedestinationspecText03,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(
+                      0xFF111A3A,
+                    ).withValues(alpha: 0.72),
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: _ProfileContent(
-              padding: EdgeInsetsDirectional.fromSTEB(padding, 28, padding, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'ملفي الشخصي',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: const Alignment(0, 0),
-                        radius: 1.1,
-                        colors: [
-                          const Color(0xFF1B2550).withValues(alpha: 0.22),
-                          Colors.transparent,
-                        ],
+            SliverToBoxAdapter(
+              child: _ProfileContent(
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  padding,
+                  28,
+                  padding,
+                  0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'ملفي الشخصي',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    child: Column(
+                    const SizedBox(height: 14),
+                    Column(
                       children: [
                         Row(
                           children: [
@@ -485,7 +247,7 @@ class _ProfileDestination extends ConsumerWidget {
                             Expanded(
                               child: _ProfileQuickCard(
                                 icon: Icons.bookmarks_rounded,
-                                label: 'المسلسلات المحفوظة',
+                                label: 'قائمتي',
                                 onTap: () => context.push('/watchlist'),
                               ),
                             ),
@@ -523,92 +285,528 @@ class _ProfileDestination extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _ProfileContent(
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  padding,
+                  28,
+                  padding,
+                  0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'إعدادات الحساب',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    if (isGuest) const _GuestAccountNotice(),
+                    if (isGuest) const SizedBox(height: 12),
+                    _ProfileSettingTile(
+                      icon: Icons.person_outline_rounded,
+                      label: 'بيانات الحساب',
+                      trailingNote: isGuest ? 'يتطلب حسابًا' : null,
+                      onTap: () => isGuest
+                          ? _promptSignIn(context, 'بيانات الحساب')
+                          : context.push('/account'),
+                    ),
+                    const SizedBox(height: 10),
+                    _ProfileSettingTile(
+                      icon: Icons.devices_other_rounded,
+                      label: 'إدارة الاجهزة',
+                      trailingNote: isGuest ? 'يتطلب حسابًا' : null,
+                      onTap: () => isGuest
+                          ? _promptSignIn(context, 'إدارة الأجهزة')
+                          : context.push('/devices'),
+                    ),
+                    const SizedBox(height: 10),
+                    _ProfileSettingTile(
+                      icon: Icons.settings_outlined,
+                      label: 'الإعدادات',
+                      trailingNote: isGuest ? 'يتطلب حسابًا' : null,
+                      onTap: () => isGuest
+                          ? _promptSignIn(context, 'الإعدادات')
+                          : context.push('/settings'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _ProfileContent(
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  padding,
+                  28,
+                  padding,
+                  18,
+                ),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    _FooterLink(
+                      label: 'الدعم الفني',
+                      onTap: () => context.push('/support'),
+                    ),
+                    _FooterLink(
+                      label: 'الخصوصية والبيانات',
+                      onTap: () => context.push('/privacy'),
+                    ),
+                    _FooterLink(
+                      label: 'شروط الاستخدام',
+                      onTap: () => context.push('/legal/terms'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: isTelevision ? 32 : 98)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WelcomeMembershipHeader extends ConsumerWidget {
+  const _WelcomeMembershipHeader({required this.isTelevision});
+
+  final bool isTelevision;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeChild = ref.watch(childProvider);
+    final isGuest = ref.watch(authGuardProvider).isDemo;
+    final name = activeChild.displayName?.trim().isNotEmpty == true
+        ? activeChild.displayName!.trim()
+        : null;
+
+    final greeting = name != null
+        ? 'مرحبًا $name!'
+        : (isGuest ? 'مرحبًا بك في مجرة!' : 'مرحبًا بك يا بطل!');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            greeting,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: isTelevision ? 26 : 22,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'انطلق في مغامرة مع أقوى وأحدث كواكب ومسلسلات مجرة، بدبلجة عربية أصيلة!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.82),
+                fontSize: 12.5,
+                height: 1.45,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          FocusableScale(
+            onPressed: () => context.push('/membership'),
+            semanticLabel: 'عرض حالة العضوية',
+            borderRadius: BorderRadius.circular(99),
+            focusScale: 1.02,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(99),
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.starGold.withValues(alpha: 0.28),
+                    AppColors.starGold.withValues(alpha: 0.12),
+                  ],
+                ),
+                border: Border.all(color: AppColors.starGold, width: 1.4),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.starGold.withValues(alpha: 0.22),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.workspace_premium_rounded,
+                    color: AppColors.starGold,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'ابدأ تجربتك المجانية!',
+                    style: TextStyle(
+                      color: AppColors.starGold,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.2,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: _ProfileContent(
-              padding: EdgeInsetsDirectional.fromSTEB(padding, 28, padding, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+          const SizedBox(height: 6),
+          Text(
+            'اعرض الباقة الحالية وحدودها',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.mutedText.withValues(alpha: 0.75),
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FamilyChildrenRoster extends ConsumerWidget {
+  const _FamilyChildrenRoster({
+    required this.isTelevision,
+    required this.isGuest,
+  });
+
+  final bool isTelevision;
+  final bool isGuest;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeChild = ref.watch(childProvider);
+    final childrenAsync = ref.watch(familyChildrenProvider);
+
+    final childrenList = childrenAsync.valueOrNull ?? const <ChildProfile>[];
+    final List<ChildProfile> displayChildren;
+    if (childrenList.isNotEmpty) {
+      displayChildren = childrenList;
+    } else {
+      displayChildren = [
+        ChildProfile(
+          id: activeChild.activeChildId ?? 'default-child',
+          nickname: activeChild.displayName?.trim().isNotEmpty == true
+              ? activeChild.displayName!.trim()
+              : (isGuest ? 'الضيف' : 'ملف الطفل'),
+          ageTrack: activeChild.ageTrack ?? 'kids',
+          birthMonth: 1,
+          birthYear: 2018,
+          avatarId: isGuest ? 'luna' : 'zaina',
+        ),
+      ];
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
                 children: [
-                  const Text(
-                    'إعدادات الحساب',
+                  Icon(
+                    Icons.family_restroom_rounded,
+                    color: AppColors.starGold,
+                    size: 18,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'أطفال الأسرة',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 17,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  if (isGuest) const _GuestAccountNotice(),
-                  if (isGuest) const SizedBox(height: 12),
-                  _ProfileSettingTile(
-                    icon: Icons.person_outline_rounded,
-                    label: 'بيانات الحساب',
-                    trailingNote: isGuest ? 'يتطلب حسابًا' : null,
-                    onTap: () => isGuest
-                        ? _promptSignIn(context, 'بيانات الحساب')
-                        : context.push('/account'),
-                  ),
-                  const SizedBox(height: 10),
-                  _ProfileSettingTile(
-                    icon: Icons.devices_other_rounded,
-                    label: 'إدارة الاجهزة',
-                    trailingNote: isGuest ? 'يتطلب حسابًا' : null,
-                    onTap: () => isGuest
-                        ? _promptSignIn(context, 'إدارة الأجهزة')
-                        : context.push('/devices'),
-                  ),
-                  const SizedBox(height: 10),
-                  _ProfileSettingTile(
-                    icon: Icons.settings_outlined,
-                    label: 'الإعدادات',
-                    trailingNote: isGuest ? 'يتطلب حسابًا' : null,
-                    onTap: () => isGuest
-                        ? _promptSignIn(context, 'الإعدادات')
-                        : context.push('/settings'),
-                  ),
                 ],
               ),
-            ),
+              InkWell(
+                onTap: () => isGuest
+                    ? _promptSignIn(context, 'إدارة الملفات')
+                    : context.push('/children'),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.edit_outlined,
+                        color: AppColors.starGold,
+                        size: 15,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'تعديل',
+                        style: TextStyle(
+                          color: AppColors.starGold.withValues(alpha: 0.95),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-          SliverToBoxAdapter(
-            child: _ProfileContent(
-              padding: EdgeInsetsDirectional.fromSTEB(padding, 28, padding, 18),
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  _FooterLink(
-                    label: 'الدعم الفني',
-                    onTap: () => context.push('/support'),
+        ),
+        const SizedBox(height: 14),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final child in displayChildren) ...[
+                _ChildProfileItem(
+                  child: child,
+                  isActive:
+                      child.id == activeChild.activeChildId ||
+                      (activeChild.activeChildId == null &&
+                          child == displayChildren.first),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    if (child.id != activeChild.activeChildId) {
+                      ref
+                          .read(childProvider.notifier)
+                          .selectChild(
+                            childId: child.id,
+                            ageTrack: child.ageTrack,
+                            displayName: child.displayName,
+                            interests: child.interests,
+                            language: child.language,
+                          );
+                    } else {
+                      context.push('/children');
+                    }
+                  },
+                ),
+                const SizedBox(width: 16),
+              ],
+              _AddChildButton(
+                isGuest: isGuest,
+                onTap: () => isGuest
+                    ? _promptSignIn(context, 'إضافة ملف طفل')
+                    : context.push('/children'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChildProfileItem extends StatelessWidget {
+  const _ChildProfileItem({
+    required this.child,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final ChildProfile child;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarId = child.avatarId.trim().isNotEmpty ? child.avatarId : 'luna';
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 82,
+                  height: 82,
+                  padding: const EdgeInsets.all(3.5),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isActive
+                          ? AppColors.starGold
+                          : Colors.white.withValues(alpha: 0.18),
+                      width: isActive ? 2.6 : 1.2,
+                    ),
                   ),
-                  _FooterLink(
-                    label: 'الخصوصية والبيانات',
-                    onTap: () => context.push('/privacy'),
+                  child: ClipOval(
+                    child: ChildAvatarView(
+                      avatarId: avatarId,
+                      size: 75,
+                      selected: false,
+                      showBorder: false,
+                      showShadow: false,
+                    ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Text(
-                      'الشروط والأحكام غير منشورة',
-                      style: TextStyle(
-                        color: AppColors.mutedText,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                ),
+                if (isActive)
+                  PositionedDirectional(
+                    bottom: 0,
+                    end: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(3.5),
+                      decoration: BoxDecoration(
+                        color: AppColors.starGold,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.deepSpace,
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        size: 13,
+                        color: Color(0xFF080C22),
                       ),
                     ),
                   ),
-                ],
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              child.displayName,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isActive
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.82),
+                fontSize: 12.5,
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
-          ),
-          SliverToBoxAdapter(child: SizedBox(height: isTelevision ? 32 : 98)),
-        ],
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: isActive
+                    ? const Color(0xFFFFD34D).withValues(alpha: 0.15)
+                    : Colors.white.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isActive
+                      ? const Color(0xFFFFD34D).withValues(alpha: 0.4)
+                      : Colors.white.withValues(alpha: 0.10),
+                  width: 0.8,
+                ),
+              ),
+              child: Text(
+                child.trackLabel,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isActive
+                      ? const Color(0xFFFFD34D)
+                      : AppColors.mutedText.withValues(alpha: 0.75),
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddChildButton extends StatelessWidget {
+  const _AddChildButton({required this.isGuest, required this.onTap});
+
+  final bool isGuest;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 82,
+              height: 82,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+                border: Border.all(
+                  color: AppColors.starGold.withValues(alpha: 0.45),
+                  width: 1.5,
+                ),
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                color: AppColors.starGold,
+                size: 34,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              isGuest ? 'إضافة (حساب)' : 'إضافة طفل',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.82),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'ملف جديد',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.mutedText.withValues(alpha: 0.55),
+                  fontSize: 9.5,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -729,26 +927,33 @@ class _ProfileQuickCard extends StatelessWidget {
   Widget build(BuildContext context) => FocusableScale(
     onPressed: onTap,
     semanticLabel: label,
-    borderRadius: BorderRadius.circular(14),
+    borderRadius: BorderRadius.circular(16),
     child: Container(
-      constraints: const BoxConstraints(minHeight: 92),
+      constraints: const BoxConstraints(minHeight: 86),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF111A3A).withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        color: const Color(0xFF101735),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.white, size: 26),
+          Icon(icon, color: Colors.white, size: 28),
           const SizedBox(height: 8),
           Text(
             label,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),

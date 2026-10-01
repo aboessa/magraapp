@@ -48,6 +48,8 @@ const Map<String, RouteAccess> _prefixAccess = {
   '/reader': RouteAccess.childSession,
   '/game': RouteAccess.childSession,
   '/series': RouteAccess.childSession,
+  // Legal pages are public: they are read before an account exists.
+  '/legal/': RouteAccess.public,
 };
 
 /// Every route defined in `_routes` (`app_router.dart`), mapped to the
@@ -69,7 +71,11 @@ const Map<String, RouteAccess> routeAccessTable = {
   '/help-signin': RouteAccess.public,
   '/terms': RouteAccess.public,
   '/privacy': RouteAccess.public,
+  '/legal/:slug': RouteAccess.public,
   '/support': RouteAccess.public,
+  // TV-001: a signed-out television shows its pairing code here. It must be
+  // public: the whole point is that the TV has no session yet.
+  '/tv-pairing': RouteAccess.public,
 
   // --- parentVerified: former `parentProtected` set ---
   '/parent': RouteAccess.parentVerified,
@@ -112,7 +118,12 @@ const Map<String, RouteAccess> routeAccessTable = {
   '/children': RouteAccess.authenticatedFamily,
   '/onboarding': RouteAccess.authenticatedFamily,
   '/parent-pin': RouteAccess.authenticatedFamily,
-  '/tv-pairing': RouteAccess.authenticatedFamily,
+  // TV-001: approving a TV from the phone. Needs a session; the approval itself
+  // asks for the parent PIN, so the page can keep the code across that step.
+  '/link-tv': RouteAccess.authenticatedFamily,
+  // TV-002: the remote for a TV this phone cast to. Opened from a child's
+  // player, so it needs a session but no PIN, like the player itself.
+  '/tv-remote': RouteAccess.authenticatedFamily,
   // These three deep links start with `/studio`, which is NOT one of the
   // four prefixes `_guardRedirect` special-cases (`/playback`, `/reader`,
   // `/game`, `/series`). Today they therefore fall through to the same

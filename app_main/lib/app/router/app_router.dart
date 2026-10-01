@@ -34,6 +34,7 @@ import '../../features/profile/presentation/pages/account_data_page.dart';
 import '../../features/profile/presentation/pages/devices_page.dart';
 import '../../features/profile/presentation/pages/settings_page.dart';
 import '../../features/profile/presentation/pages/support_page.dart';
+import '../../features/profile/presentation/pages/legal_document_page.dart';
 import '../../features/profile/presentation/pages/privacy_page.dart';
 import '../../features/auth/application/reset_token_vault.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -52,6 +53,8 @@ import '../../features/onboarding/presentation/pages/onboarding_flow_page.dart';
 import '../../features/parent/presentation/pages/parent_dashboard_page.dart';
 import '../../features/reader/presentation/pages/story_reader_page.dart';
 import '../../features/audio/presentation/pages/audio_player_page.dart';
+import '../../features/tv/presentation/pages/link_tv_page.dart';
+import '../../features/tv/presentation/pages/tv_remote_page.dart';
 import '../../features/tv/presentation/pages/tv_pairing_page.dart';
 import '../../features/home/domain/content_models.dart';
 import '../../features/child/application/child_provider.dart';
@@ -85,14 +88,18 @@ final routerProvider = Provider<GoRouter>((ref) {
     required FamilyOnboardingStatus status,
     required bool anyChildStamped,
   }) {
-    final hasPersistedStep = ref.read(onboardingControllerProvider).hasPersistedStep;
+    final hasPersistedStep = ref
+        .read(onboardingControllerProvider)
+        .hasPersistedStep;
 
     guard.setFamilyOnboardingStatus(status);
-    guard.setOnboardingJourneyInProgress(onboardingJourneyIsActive(
-      status: status,
-      hasPersistedStep: hasPersistedStep,
-      anyChildStamped: anyChildStamped,
-    ));
+    guard.setOnboardingJourneyInProgress(
+      onboardingJourneyIsActive(
+        status: status,
+        hasPersistedStep: hasPersistedStep,
+        anyChildStamped: anyChildStamped,
+      ),
+    );
 
     // خطوةٌ خلّفها حسابٌ قديم: تُمسح هنا لأن `OnboardingFlowPage` لا يُبنى في
     // هذه الحالة أصلًا (التوجيه يذهب إلى `/children`)، فلا موضع آخر يراها.
@@ -116,15 +123,26 @@ final routerProvider = Provider<GoRouter>((ref) {
   // الأخير غير متزامن، و`ref.listen` عليه يُصعِّد الفشل خطأً غير مُعالَج بدل أن
   // يُسلّمه حالةً (موصَّف في `onboarding_journey.dart`). والمشتقّان
   // `Provider` عاديّان لا يرميان أبدًا.
-  ref.listen(familyOnboardingStatusProvider, (prev, next) => syncOnboardingJourney(),
-      fireImmediately: true);
+  ref.listen(
+    familyOnboardingStatusProvider,
+    (prev, next) => syncOnboardingJourney(),
+    fireImmediately: true,
+  );
   ref.listen(anyChildStampedProvider, (prev, next) => syncOnboardingJourney());
-  ref.listen(onboardingControllerProvider, (prev, next) => syncOnboardingJourney(),
-      fireImmediately: true);
+  ref.listen(
+    onboardingControllerProvider,
+    (prev, next) => syncOnboardingJourney(),
+    fireImmediately: true,
+  );
   return GoRouter(
     initialLocation: '/',
     refreshListenable: guard,
-    redirect: (context, state) => _guardRedirect(state, guard, resetTokenVault),
+    redirect: (context, state) => _guardRedirect(
+      state,
+      guard,
+      resetTokenVault,
+      isTelevision: ref.read(currentDeviceProfileProvider).isTelevision,
+    ),
     routes: _routes,
     errorBuilder: _errorBuilder,
   );
@@ -133,8 +151,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 String? _guardRedirect(
   GoRouterState state,
   AuthGuard guard,
-  ResetTokenVault resetTokenVault,
-) {
+  ResetTokenVault resetTokenVault, {
+  bool isTelevision = false,
+}) {
   final loc = state.matchedLocation;
 
   // Capture reset credentials before any authenticated-entry redirect. Both
@@ -170,6 +189,8 @@ String? _guardRedirect(
   // local constant rather than living in `route_access.dart`.
   const authEntry = {
     '/login',
+    // TV-001: a television that is already signed in has nothing to pair.
+    '/tv-pairing',
     '/register',
     '/verify-email',
     '/forgot-password',
@@ -177,6 +198,14 @@ String? _guardRedirect(
   };
 
   final access = accessFor(loc);
+
+  final redirect = signedOutTvRedirect(
+    location: loc,
+    isAuthenticated: guard.isAuthenticated,
+    isTelevision: isTelevision,
+    loginMethod: state.uri.queryParameters['method'],
+  );
+  if (redirect != null) return redirect;
 
   if (!guard.isAuthenticated && access != RouteAccess.public) return '/login';
   if (guard.isAuthenticated &&
@@ -235,6 +264,28 @@ String? _guardRedirect(
     return Uri(path: '/parent-pin', queryParameters: {'from': loc}).toString();
   }
   return null;
+}
+
+/// TV-001: a television with no session opens on the pairing code.
+///
+/// The first screen a freshly installed TV shows is the code and QR, not an
+/// email form: typing credentials with a remote is what pairing exists to
+/// avoid. Every protected route and `/login` lead there. The email form stays
+/// reachable as an explicit fallback (`/login?method=email`), and other public
+/// pages (privacy, support) are left alone.
+String? signedOutTvRedirect({
+  required String location,
+  required bool isAuthenticated,
+  required bool isTelevision,
+  String? loginMethod,
+}) {
+  if (!isTelevision || isAuthenticated) return null;
+  if (location == '/tv-pairing') return null;
+  if (location == '/login') {
+    return loginMethod == 'email' ? null : '/tv-pairing';
+  }
+  if (accessFor(location) == RouteAccess.public) return null;
+  return '/tv-pairing';
 }
 
 /* ------------------------------------------- الاتجاه بحسب المسار (`APP-108`) */
@@ -529,8 +580,19 @@ final List<RouteBase> _routes = <RouteBase>[
   GoRoute(path: '/privacy', builder: (context, state) => const PrivacyPage()),
   GoRoute(
     path: '/playback/:episodeId',
-    builder: (context, state) =>
-        PlaybackPage(episodeId: state.pathParameters['episodeId'] ?? ''),
+    builder: (context, state) => PlaybackPage(
+      episodeId: state.pathParameters['episodeId'] ?? '',
+      // TV-002: `?t=` carries the position a phone handed over.
+      startAtMs: int.tryParse(state.uri.queryParameters['t'] ?? ''),
+    ),
+  ),
+  // TV-002: the phone's remote for a TV it cast to.
+  GoRoute(
+    path: '/tv-remote',
+    builder: (context, state) => TvRemotePage(
+      deviceId: state.uri.queryParameters['device'] ?? '',
+      initialName: state.uri.queryParameters['name'],
+    ),
   ),
   GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
   GoRoute(path: '/register', builder: (context, state) => const RegisterPage()),
@@ -552,7 +614,15 @@ final List<RouteBase> _routes = <RouteBase>[
     path: '/help-signin',
     builder: (context, state) => const HelpSignInPage(),
   ),
-  GoRoute(path: '/terms', builder: (context, state) => const PrivacyPage()),
+  GoRoute(
+    path: '/terms',
+    builder: (context, state) => const LegalDocumentPage(slug: 'terms'),
+  ),
+  GoRoute(
+    path: '/legal/:slug',
+    builder: (context, state) =>
+        LegalDocumentPage(slug: state.pathParameters['slug'] ?? ''),
+  ),
   GoRoute(
     path: '/verify-email',
     builder: (context, state) {
@@ -763,6 +833,13 @@ final List<RouteBase> _routes = <RouteBase>[
     path: '/tv-pairing',
     builder: (context, state) => const TvPairingPage(),
   ),
+  // TV-001: the phone side. Also the target of the QR on the television,
+  // `majarra://app/link-tv?code=ABCD-EF23`.
+  GoRoute(
+    path: '/link-tv',
+    builder: (context, state) =>
+        LinkTvPage(initialCode: state.uri.queryParameters['code']),
+  ),
   GoRoute(
     path: '/series/:seriesId',
     name: 'series-details',
@@ -867,9 +944,22 @@ class _PinGatePageState extends ConsumerState<_PinGatePage> {
     final guard = ref.read(authGuardProvider);
     bool hasPin;
     try {
-      hasPin = await ref.read(parentPinStoreProvider).hasPin(ownerId: guard.parentId);
+      // The server knows whether the family has a PIN; this device may not (a
+      // TV, a reinstall, another phone), and guessing "no" showed a "create
+      // PIN" screen that parents read as "my PIN was not saved".
+      hasPin = guard.isRealAuthenticated
+          ? await ref.read(majarraApiClientProvider).parentPinEnrolled()
+          : await ref
+                .read(parentPinStoreProvider)
+                .hasPin(ownerId: guard.parentId);
     } catch (_) {
-      hasPin = false;
+      try {
+        hasPin = await ref
+            .read(parentPinStoreProvider)
+            .hasPin(ownerId: guard.parentId);
+      } catch (_) {
+        hasPin = false;
+      }
     }
     if (!mounted) return;
     setState(() {
@@ -883,7 +973,9 @@ class _PinGatePageState extends ConsumerState<_PinGatePage> {
     if (_loading) {
       return const Scaffold(
         backgroundColor: AppColors.deepSpace,
-        body: Center(child: CircularProgressIndicator(color: AppColors.starGold)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.starGold),
+        ),
       );
     }
     return _hasPin

@@ -49,11 +49,10 @@ enum FamilyOnboardingStatus {
 /// backgrounding.
 class AuthGuard extends ChangeNotifier {
   AuthGuard({FlutterSecureStorage? storage})
-    : _storage = storage ??
+    : _storage =
+          storage ??
           const FlutterSecureStorage(
-            aOptions: AndroidOptions(
-              encryptedSharedPreferences: true,
-            ),
+            aOptions: AndroidOptions(encryptedSharedPreferences: true),
             iOptions: IOSOptions(
               accessibility: KeychainAccessibility.first_unlock,
             ),
@@ -97,7 +96,8 @@ class AuthGuard extends ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isDemo = false;
   bool _hasChild = false;
-  FamilyOnboardingStatus _familyOnboardingStatus = FamilyOnboardingStatus.loading;
+  FamilyOnboardingStatus _familyOnboardingStatus =
+      FamilyOnboardingStatus.loading;
   bool _onboardingJourneyInProgress = false;
   bool _isLoading = true;
   String? _parentId;
@@ -304,7 +304,9 @@ class AuthGuard extends ChangeNotifier {
   /// هذه الدالّة يؤكّد أنه **يعرف** أن الأسرة بلا أطفال، لا أنه لم يعرف بعد.
   void setHasCompletedOnboarding(bool value) {
     setFamilyOnboardingStatus(
-      value ? FamilyOnboardingStatus.complete : FamilyOnboardingStatus.incomplete,
+      value
+          ? FamilyOnboardingStatus.complete
+          : FamilyOnboardingStatus.incomplete,
     );
   }
 
@@ -318,7 +320,20 @@ class AuthGuard extends ChangeNotifier {
   ///
   /// The server expiry is authoritative and is capped to the local safety window
   /// so a malformed response can never create a longer-lived UI grant.
-  bool grantParentAccess({required String proof, required DateTime expiresAt}) {
+  ///
+  /// When [issuedAt] is given, only the *duration* the server granted is used,
+  /// counted from this device's clock. TV boxes often run minutes off, and
+  /// comparing the server's absolute expiry with a fast clock made every grant
+  /// fail or last seconds, so the PIN was asked again and again.
+  bool grantParentAccess({
+    required String proof,
+    required DateTime expiresAt,
+    DateTime? issuedAt,
+  }) {
+    if (issuedAt != null) {
+      final granted = expiresAt.difference(issuedAt);
+      if (granted > Duration.zero) expiresAt = DateTime.now().add(granted);
+    }
     if (!isRealAuthenticated ||
         _parentId == null ||
         proof.isEmpty ||
@@ -402,8 +417,9 @@ final authGuardProvider = Provider<AuthGuard>((ref) {
 /// والمفتاح نصّ لا عدّاد: `StateNotifier` لا يُخطر إلا إذا اختلفت القيمة،
 /// فإخطارات الحرّاس الأخرى (منح إثبات والد، تبدّل الطفل النشط) لا تُسبّب
 /// إعادة جلبٍ لا داعي لها — لأنها لا تُغيّر هذا النصّ.
-final authSessionKeyProvider =
-    StateNotifierProvider<AuthSessionKey, String>((ref) {
+final authSessionKeyProvider = StateNotifierProvider<AuthSessionKey, String>((
+  ref,
+) {
   return AuthSessionKey(ref.watch(authGuardProvider));
 });
 

@@ -36,6 +36,7 @@ import 'game_art.dart';
 import 'game_pack.dart';
 import 'game_services.dart';
 import 'game_session_controller.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 enum DrawBrush { pencil, marker, crayon, paintBrush }
 
@@ -75,30 +76,47 @@ const int kMaxUndone = 80;
 /// Child-facing palette label. The authored hex remains drawing data only.
 String arabicPaletteColorLabel(String hex, int index) {
   final normalized = hex.trim().toUpperCase();
-  const names = <String, String>{
-    '#000000': 'أسود',
-    '#FFFFFF': 'أبيض',
-    '#1A1A2E': 'كحلي داكن',
-    '#FF3B30': 'أحمر',
-    '#FF6B35': 'برتقالي محمر',
-    '#FF9F1C': 'برتقالي',
-    '#FFD34D': 'ذهبي',
-    '#FFCC02': 'أصفر',
-    '#FFE066': 'أصفر فاتح',
-    '#22C55E': 'أخضر',
-    '#00C950': 'أخضر زاهٍ',
-    '#00D6F5': 'سماوي',
-    '#0EA5E9': 'أزرق سماوي',
-    '#2580FF': 'أزرق',
-    '#3B82F6': 'أزرق فاتح',
-    '#6366F1': 'نيلي',
-    '#9D68FF': 'بنفسجي فاتح',
-    '#6A3DF2': 'بنفسجي',
-    '#A855F7': 'أرجواني',
-    '#EC4899': 'وردي',
-    '#FF6FAE': 'وردي فاتح',
-    '#F43F5E': 'وردي محمر',
-    '#EF4444': 'أحمر فاتح',
+  final names = <String, String>{
+    '#000000':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel01,
+    '#FFFFFF':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel02,
+    '#1A1A2E':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel03,
+    '#FF3B30':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel04,
+    '#FF6B35':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel05,
+    '#FF9F1C':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel06,
+    '#FFD34D':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel07,
+    '#FFCC02':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel08,
+    '#FFE066':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel09,
+    '#22C55E':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel10,
+    '#00C950':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel11,
+    '#00D6F5':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel12,
+    '#0EA5E9':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel13,
+    '#2580FF':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel14,
+    '#3B82F6':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel15,
+    '#6366F1':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel16,
+    '#9D68FF':
+        AppLocalizationsAr().gamesfreedrawsurfaceArabicPaletteColorLabel17,
+    '#6A3DF2': AppLocalizationsAr().gamesfreedrawsurfaceText01,
+    '#A855F7': AppLocalizationsAr().gamesfreedrawsurfaceText02,
+    '#EC4899': AppLocalizationsAr().gamesfreedrawsurfaceText03,
+    '#FF6FAE': AppLocalizationsAr().gamesfreedrawsurfaceText04,
+    '#F43F5E': AppLocalizationsAr().gamesfreedrawsurfaceText05,
+    '#EF4444': AppLocalizationsAr().gamesfreedrawsurfaceText06,
     '#8B4513': 'بني داكن',
     '#795548': 'بني',
     '#A0826D': 'بني فاتح',
@@ -107,8 +125,8 @@ String arabicPaletteColorLabel(String hex, int index) {
   };
   final known = names[normalized];
   if (known != null) return known;
-  const western = '0123456789';
-  const arabic = '٠١٢٣٤٥٦٧٨٩';
+  final western = '0123456789';
+  final arabic = '٠١٢٣٤٥٦٧٨٩';
   final ordinal = '${index + 1}'.split('').map((digit) {
     final digitIndex = western.indexOf(digit);
     return digitIndex < 0 ? digit : arabic[digitIndex];
@@ -207,7 +225,7 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
   int? _activePointer;
   Size _canvasSize = const Size.square(320);
 
-  static const _fallbackPalette = <String>[
+  static final _fallbackPalette = <String>[
     '#000000',
     '#FFFFFF',
     '#1A1A2E',
@@ -480,7 +498,7 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
     final level = widget.controller.level;
     final target = effectiveTouchTarget(widget.controller.pack.accessibility);
     // لوحة بيضا صافية كما طلب — أبيض نقي مهما كان الثيم غامق
-    const background = Colors.white;
+    final background = Colors.white;
     final doc = widget.initialDocument;
 
     return Column(
@@ -835,7 +853,7 @@ class _FreeDrawSurfaceState extends State<FreeDrawSurface> {
   }
 
   Widget _buildToolsAndActionsBar(BuildContext context, double target) {
-    const labels = <DrawBrush, (String, IconData)>{
+    final labels = <DrawBrush, (String, IconData)>{
       DrawBrush.pencil: ('قلم', Icons.edit_outlined),
       DrawBrush.marker: ('ماركر', Icons.border_color_outlined),
       DrawBrush.paintBrush: ('فرشاة', Icons.format_paint_outlined),

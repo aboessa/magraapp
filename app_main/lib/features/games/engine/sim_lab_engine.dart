@@ -33,6 +33,7 @@ import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
 import 'game_session_controller.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 String _simLabel(String technicalId, String fallback) {
   return safeChildFacingLabel(
@@ -198,7 +199,7 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
           .whereType<String>()
           .toList();
   List<String> get _explanationOptions =>
-      (_level['explanation_options'] as List<dynamic>? ?? const [])
+      (_level['explanation_options'] as List<dynamic>? ?? [])
           .whereType<String>()
           .toList();
   String get _explanationAnswer => str(_level, 'explanation_answer');
@@ -221,16 +222,24 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
     final index = _variables.indexWhere((entry) => entry.id == variable.id);
     return _simLabel(
       variable.labelKey,
-      'المتغيّر ${formatNumeral(index < 0 ? 1 : index + 1, 'arabic_indic')}',
+      AppLocalizationsAr().gamessimlabengineGet01(
+        formatNumeral(index < 0 ? 1 : index + 1, 'arabic_indic'),
+      ),
     );
   }
 
-  String _unitLabel(String unitKey) => _simLabel(unitKey, 'وحدة');
+  String _unitLabel(String unitKey) =>
+      _simLabel(unitKey, AppLocalizationsAr().gamessimlabengineUnitKey01);
 
-  String get _measuredLabel =>
-      _simLabel(str(_measured, 'label_key'), 'النتيجة');
+  String get _measuredLabel => _simLabel(
+    str(_measured, 'label_key'),
+    AppLocalizationsAr().gamessimlabengineGet02,
+  );
 
-  String get _measuredUnit => _simLabel(str(_measured, 'unit_key'), 'درجة');
+  String get _measuredUnit => _simLabel(
+    str(_measured, 'unit_key'),
+    AppLocalizationsAr().gamessimlabengineGet03,
+  );
 
   SimModel get _model =>
       SimModel(variables: _variables, relationships: _relationships);
@@ -325,7 +334,7 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
       prompt: widget.controller.prompt,
       header: _supervision == 'required' && _safetyNoteKey != null
           ? Container(
-              key: const Key('sim_safety_banner'),
+              key: Key('sim_safety_banner'),
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -334,13 +343,13 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.shield_outlined),
-                  const SizedBox(width: 8),
+                  Icon(Icons.shield_outlined),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _simLabel(
                         _safetyNoteKey!,
-                        'اتبع تعليمات السلامة مع شخص بالغ.',
+                        AppLocalizationsAr().gamessimlabengineText01,
                       ),
                     ),
                   ),
@@ -353,7 +362,7 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _stageIndicator(),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             switch (_stage) {
               _SimStage.predict => _buildPredict(target),
               _SimStage.experiment => _buildExperiment(target),
@@ -367,7 +376,11 @@ class _SimLabSurfaceState extends State<_SimLabSurface> {
   }
 
   Widget _stageIndicator() {
-    const labels = ['توقّع', 'جرّب', 'فسّر'];
+    final labels = [
+      AppLocalizationsAr().gamessimlabengineText02,
+      AppLocalizationsAr().gamessimlabengineText03,
+      AppLocalizationsAr().gamessimlabengineText04,
+    ];
     final active = switch (_stage) {
       _SimStage.predict => 0,
       _SimStage.experiment => 1,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/auth_guard.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/device/device_profile.dart';
 import '../../../../core/security/biometric_auth.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -61,6 +62,8 @@ class PinUnlockPage extends ConsumerStatefulWidget {
 
 class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
   final _pin = TextEditingController();
+  final _pinFocus = FocusNode(debugLabel: 'unlock_pin');
+  final _submitFocus = FocusNode(debugLabel: 'unlock_submit');
   ParentPinStore get _store => ref.read(parentPinStoreProvider);
 
   bool _obscure = true;
@@ -81,6 +84,8 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
   @override
   void dispose() {
     _pin.dispose();
+    _pinFocus.dispose();
+    _submitFocus.dispose();
     super.dispose();
   }
 
@@ -91,7 +96,12 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
     '/membership',
     '/settings',
     '/my-collection',
+    '/link-tv',
   };
+
+  /// Callers that pushed the PIN screen and await `true`, so their own state
+  /// (a drawing, a TV pairing code) survives the detour.
+  static const _popBackTargets = {'/my-collection', '/link-tv'};
 
   String get _returnTarget => _allowedReturnTargets.contains(widget.returnTo)
       ? widget.returnTo!
@@ -99,7 +109,7 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
 
   void _navigateToReturnTarget() {
     if (!mounted) return;
-    if (widget.returnTo == '/my-collection' && context.canPop()) {
+    if (_popBackTargets.contains(widget.returnTo) && context.canPop()) {
       context.pop(true);
     } else {
       context.go(_returnTarget);
@@ -118,7 +128,9 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
     BiometricAvailability availability;
     try {
       enabled = await _store.isBiometricEnabled();
-      availability = await ref.read(biometricAuthenticatorProvider).availability();
+      availability = await ref
+          .read(biometricAuthenticatorProvider)
+          .availability();
     } catch (_) {
       return;
     }
@@ -150,11 +162,15 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
     final expiresAtValue = data['expires_at'] as String?;
     final issuedAtValue = data['issued_at'] as String?;
 
-    DateTime? expiresAt = expiresAtValue != null ? DateTime.tryParse(expiresAtValue) : null;
+    DateTime? expiresAt = expiresAtValue != null
+        ? DateTime.tryParse(expiresAtValue)
+        : null;
     // Fallback: if server clock is far ahead (e.g. DO fake time 2026) or parse fails,
     // use issued_at + 15m or now + 15m so grant never fails due to clock skew.
     if (expiresAt == null) {
-      final issued = issuedAtValue != null ? DateTime.tryParse(issuedAtValue) : null;
+      final issued = issuedAtValue != null
+          ? DateTime.tryParse(issuedAtValue)
+          : null;
       if (issued != null) {
         expiresAt = issued.add(const Duration(minutes: 15));
       } else {
@@ -165,7 +181,11 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
     if (proof == null || proof.isEmpty) return false;
 
     final guard = ref.read(authGuardProvider);
-    final granted = guard.grantParentAccess(proof: proof, expiresAt: expiresAt);
+    final granted = guard.grantParentAccess(
+      proof: proof,
+      expiresAt: expiresAt,
+      issuedAt: issuedAtValue != null ? DateTime.tryParse(issuedAtValue) : null,
+    );
 
     // Even if grant says false due to transient auth state, still navigate –
     // the router will re-check hasParentAccess and show PIN again if truly invalid.
@@ -221,7 +241,9 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
 
     setState(() => _busy = true);
     try {
-      final response = await ref.read(majarraApiClientProvider).verifyParentPin(pin: pin);
+      final response = await ref
+          .read(majarraApiClientProvider)
+          .verifyParentPin(pin: pin);
       if (!mounted) return;
 
       // نوقف المؤشّر وننتقل قبل الكتابة المحلية، لا لأنها ثقيلة — صارت تجري
@@ -240,7 +262,9 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
     } on MajarraApiException catch (e) {
       if (!mounted) return;
       final msg = e.message;
-      if (msg.contains('423') || msg.contains('Too many attempts') || msg.contains('locked_until')) {
+      if (msg.contains('423') ||
+          msg.contains('Too many attempts') ||
+          msg.contains('locked_until')) {
         _pin.clear();
         setState(() {
           _busy = false;
@@ -266,10 +290,15 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
         // — وهو من قال «يوجد رمز» فأوصلَنا إلى هنا — فيُعيد بناء هذه الصفحة
         // نفسها ويُعاد 404: حلقة لا تطبيبٌ ذاتي. و`stage=setup` يكسرها.
         setState(() => _busy = false);
-        context.go(Uri(path: '/parent-pin', queryParameters: {
-          if (widget.returnTo != null) 'from': widget.returnTo,
-          'stage': 'setup',
-        }).toString());
+        context.go(
+          Uri(
+            path: '/parent-pin',
+            queryParameters: {
+              if (widget.returnTo != null) 'from': widget.returnTo,
+              'stage': 'setup',
+            },
+          ).toString(),
+        );
         return;
       }
       if (msg.contains('401') || msg.contains('Unauthorized')) {
@@ -322,6 +351,8 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
+    final isTelevision =
+        ref.watch(deviceProfileProvider).valueOrNull?.isTelevision ?? false;
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
       body: CinematicBackground(
@@ -333,7 +364,9 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const CircularProgressIndicator(color: AppColors.starGold),
+                        const CircularProgressIndicator(
+                          color: AppColors.starGold,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           l10n.pinUnlockingWithBiometric,
@@ -345,122 +378,175 @@ class _PinUnlockPageState extends ConsumerState<PinUnlockPage> {
                       ],
                     ),
                   )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_forward_rounded,
-                            color: Colors.white,
-                          ),
-                          onPressed: () => context.pop(),
-                        ),
-                      ),
-                      const Spacer(),
-                      const Icon(
-                        Icons.lock_rounded,
-                        color: AppColors.starGold,
-                        size: 48,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        l10n.parentArea,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.enterParentPin,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.mutedText.withValues(alpha: 0.72),
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _PinField(
-                        controller: _pin,
-                        obscure: _obscure,
-                        enabled: !_isLockedOut && !_busy,
-                        hintText: '••••',
-                        onToggleObscure: () =>
-                            setState(() => _obscure = !_obscure),
-                        onSubmitted: (_) => _submit(),
-                      ),
-                      if (_error != null) ...[
-                        const SizedBox(height: 12),
-                        Semantics(
-                          liveRegion: true,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline_rounded,
-                                color: AppColors.danger,
-                                size: 16,
+                : Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 440),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.arrow_forward_rounded,
+                                color: Colors.white,
                               ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  _error!,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: AppColors.danger,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 50,
-                        child: FilledButton(
-                          onPressed: (_isLockedOut || _busy) ? null : _submit,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.starGold,
-                            foregroundColor: AppColors.deepSpace,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              onPressed: () => context.pop(),
                             ),
                           ),
-                          child: _busy
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.deepSpace,
+                          const Spacer(),
+                          const Icon(
+                            Icons.lock_rounded,
+                            color: AppColors.starGold,
+                            size: 48,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            l10n.parentArea,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.enterParentPin,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.mutedText.withValues(
+                                alpha: 0.72,
+                              ),
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          _PinField(
+                            controller: _pin,
+                            focusNode: _pinFocus,
+                            autofocus: isTelevision,
+                            obscure: _obscure,
+                            enabled: !_isLockedOut && !_busy,
+                            hintText: '••••',
+                            onToggleObscure: () =>
+                                setState(() => _obscure = !_obscure),
+                            onSubmitted: (_) => _submit(),
+                          ),
+                          if (_error != null) ...[
+                            const SizedBox(height: 12),
+                            Semantics(
+                              liveRegion: true,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline_rounded,
+                                    color: AppColors.danger,
+                                    size: 16,
                                   ),
-                                )
-                              : Text(
-                                  l10n.enter,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      _error!,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: AppColors.danger,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          if (isTelevision) ...[
+                            const SizedBox(height: 12),
+                            Center(
+                              child: _TvPinKeypad(
+                                controller: _pin,
+                                onSubmitted: _submit,
+                                enabled: !_isLockedOut && !_busy,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 50,
+                            child: FilledButton(
+                              focusNode: _submitFocus,
+                              onPressed: (_isLockedOut || _busy)
+                                  ? null
+                                  : _submit,
+                              style: ButtonStyle(
+                                backgroundColor:
+                                    WidgetStateProperty.resolveWith((states) {
+                                      if (states.contains(
+                                        WidgetState.focused,
+                                      )) {
+                                        return const Color(0xFFFFE580);
+                                      }
+                                      return AppColors.starGold;
+                                    }),
+                                foregroundColor: WidgetStateProperty.all(
+                                  AppColors.deepSpace,
+                                ),
+                                side: WidgetStateProperty.resolveWith((states) {
+                                  if (states.contains(WidgetState.focused)) {
+                                    return const BorderSide(
+                                      color: Colors.white,
+                                      width: 2.8,
+                                    );
+                                  }
+                                  return BorderSide.none;
+                                }),
+                                elevation: WidgetStateProperty.resolveWith((
+                                  states,
+                                ) {
+                                  if (states.contains(WidgetState.focused)) {
+                                    return 8;
+                                  }
+                                  return 0;
+                                }),
+                                shape: WidgetStateProperty.all(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
                                 ),
-                        ),
+                              ),
+                              child: _busy
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.deepSpace,
+                                      ),
+                                    )
+                                  : Text(
+                                      l10n.enter,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            l10n.pinServerVerificationFooter,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.mutedText.withValues(
+                                alpha: 0.42,
+                              ),
+                              fontSize: 10,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      Text(
-                        l10n.pinServerVerificationFooter,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.mutedText.withValues(alpha: 0.42),
-                          fontSize: 10,
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
           ),
         ),
@@ -477,6 +563,8 @@ class _PinField extends StatelessWidget {
     required this.hintText,
     required this.onToggleObscure,
     required this.onSubmitted,
+    this.focusNode,
+    this.autofocus = false,
   });
 
   final TextEditingController controller;
@@ -485,12 +573,16 @@ class _PinField extends StatelessWidget {
   final String hintText;
   final VoidCallback onToggleObscure;
   final ValueChanged<String> onSubmitted;
+  final FocusNode? focusNode;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
     return TextField(
       controller: controller,
+      focusNode: focusNode,
+      autofocus: autofocus,
       obscureText: obscure,
       enabled: enabled,
       keyboardType: TextInputType.number,
@@ -516,9 +608,18 @@ class _PinField extends StatelessWidget {
         fillColor: const Color(0xFF111A3A).withValues(alpha: 0.72),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.starGold, width: 2.8),
         ),
         suffixIcon: IconButton(
+          focusNode: FocusNode(skipTraversal: true, canRequestFocus: false),
           icon: Icon(
             obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
             color: AppColors.mutedText,
@@ -526,6 +627,154 @@ class _PinField extends StatelessWidget {
           tooltip: obscure ? l10n.pinToggleShow : l10n.pinToggleHide,
           onPressed: onToggleObscure,
         ),
+      ),
+    );
+  }
+}
+
+class _TvPinKeypad extends StatelessWidget {
+  const _TvPinKeypad({
+    required this.controller,
+    required this.onSubmitted,
+    this.enabled = true,
+  });
+
+  final TextEditingController controller;
+  final VoidCallback onSubmitted;
+  final bool enabled;
+
+  void _onDigit(String d) {
+    if (!enabled) return;
+    if (controller.text.length < ParentPinStore.maxPinLength) {
+      controller.text += d;
+      if (controller.text.length == 4) {
+        onSubmitted();
+      }
+    }
+  }
+
+  void _onBackspace() {
+    if (!enabled) return;
+    if (controller.text.isNotEmpty) {
+      controller.text = controller.text.substring(
+        0,
+        controller.text.length - 1,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 320),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildRow(['1', '2', '3']),
+          const SizedBox(height: 8),
+          _buildRow(['4', '5', '6']),
+          const SizedBox(height: 8),
+          _buildRow(['7', '8', '9']),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildKey(icon: Icons.backspace_outlined, onTap: _onBackspace),
+              const SizedBox(width: 8),
+              _buildKey(digit: '0'),
+              const SizedBox(width: 8),
+              _buildKey(
+                icon: Icons.check_circle_outline_rounded,
+                onTap: onSubmitted,
+                isAction: true,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRow(List<String> digits) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < digits.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          _buildKey(digit: digits[i]),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildKey({
+    String? digit,
+    IconData? icon,
+    VoidCallback? onTap,
+    bool isAction = false,
+  }) {
+    return FocusableActionDetector(
+      child: Builder(
+        builder: (context) {
+          final isFocused = Focus.of(context).hasFocus;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            width: 76,
+            height: 44,
+            decoration: BoxDecoration(
+              color: isFocused
+                  ? (isAction
+                        ? AppColors.starGold
+                        : AppColors.royalBlue.withValues(alpha: 0.6))
+                  : const Color(0xFF111A3A).withValues(alpha: 0.85),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isFocused
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.12),
+                width: isFocused ? 2.5 : 1,
+              ),
+              boxShadow: isFocused
+                  ? [
+                      BoxShadow(
+                        color:
+                            (isAction
+                                    ? AppColors.starGold
+                                    : AppColors.electricCyan)
+                                .withValues(alpha: 0.45),
+                        blurRadius: 14,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : const [],
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: enabled ? (onTap ?? () => _onDigit(digit!)) : null,
+              child: Center(
+                child: icon != null
+                    ? Icon(
+                        icon,
+                        color: isFocused && isAction
+                            ? AppColors.deepSpace
+                            : Colors.white,
+                        size: 20,
+                      )
+                    : Text(
+                        digit!,
+                        style: TextStyle(
+                          color: isFocused && isAction
+                              ? AppColors.deepSpace
+                              : Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

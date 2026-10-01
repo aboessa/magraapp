@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/auth_guard.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/device/device_profile.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../application/child_provider.dart';
 import '../../application/family_children_provider.dart';
@@ -25,7 +26,9 @@ class ChildSwitcherPage extends ConsumerWidget {
       body: CinematicBackground(
         child: SafeArea(
           child: children.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.starGold)),
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.starGold),
+            ),
             error: (_, __) => _RosterLoadError(
               onRetry: () => ref.invalidate(familyChildrenProvider),
             ),
@@ -33,7 +36,8 @@ class ChildSwitcherPage extends ConsumerWidget {
               items: items,
               isDemo: auth.isDemo,
               onCreate: () => _openForm(context, ref),
-              onEdit: (profile) => _openForm(context, ref, existingProfile: profile),
+              onEdit: (profile) =>
+                  _openForm(context, ref, existingProfile: profile),
             ),
           ),
         ),
@@ -158,7 +162,9 @@ class _ProfileGrid extends ConsumerWidget {
                 // edit at all, so its card omits the affordance entirely.
                 onEdit: isDemo ? null : () => onEdit(items[i]),
                 onTap: () {
-                  ref.read(childProvider.notifier).selectChild(
+                  ref
+                      .read(childProvider.notifier)
+                      .selectChild(
                         childId: items[i].id,
                         ageTrack: items[i].ageTrack,
                         displayName: items[i].displayName,
@@ -243,21 +249,30 @@ class _ProfileCardState extends State<_ProfileCard> {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: _hover ? Colors.white : Colors.white.withValues(alpha: 0.86),
+                    color: _hover
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.86),
                     fontSize: 13.5,
                     fontWeight: _hover ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: _hover ? 0.10 : 0.06),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     widget.profile.trackLabel,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.58), fontSize: 9, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.58),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -294,7 +309,11 @@ class _EditBadge extends StatelessWidget {
             border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
             boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)],
           ),
-          child: const Icon(Icons.edit_rounded, size: 13, color: AppColors.starGold),
+          child: const Icon(
+            Icons.edit_rounded,
+            size: 13,
+            color: AppColors.starGold,
+          ),
         ),
       ),
     );
@@ -330,12 +349,27 @@ class _AddProfileCardState extends State<_AddProfileCard> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withValues(alpha: _hover ? 0.10 : 0.04),
-                  border: Border.all(color: Colors.white.withValues(alpha: _hover ? 0.24 : 0.10), width: 1.2, strokeAlign: BorderSide.strokeAlignCenter),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: _hover ? 0.24 : 0.10),
+                    width: 1.2,
+                    strokeAlign: BorderSide.strokeAlignCenter,
+                  ),
                 ),
-                child: Icon(Icons.add_rounded, color: Colors.white.withValues(alpha: _hover ? 0.9 : 0.42), size: 34),
+                child: Icon(
+                  Icons.add_rounded,
+                  color: Colors.white.withValues(alpha: _hover ? 0.9 : 0.42),
+                  size: 34,
+                ),
               ),
               const SizedBox(height: 12),
-              Text('إضافة طفل', style: TextStyle(color: Colors.white.withValues(alpha: _hover ? 0.9 : 0.56), fontSize: 12.5, fontWeight: FontWeight.w600)),
+              Text(
+                'إضافة طفل',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: _hover ? 0.9 : 0.56),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
         ),
@@ -346,11 +380,17 @@ class _AddProfileCardState extends State<_AddProfileCard> {
 
 /// Minimal family actions – replaces the big "مدير الأسرة" card.
 /// Just 3 tiny ghost buttons in a row, not a huge card with PIN.
-class _MinimalFamilyActions extends StatelessWidget {
+class _MinimalFamilyActions extends ConsumerWidget {
   const _MinimalFamilyActions();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // TV-005: family management happens on the parent's phone. On a TV these
+    // buttons sat one D-pad press below the profiles and led straight to the
+    // parent PIN screen.
+    if (ref.watch(currentDeviceProfileProvider).isTelevision) {
+      return const SizedBox.shrink();
+    }
     return Column(
       children: [
         const SizedBox(height: 8),
@@ -361,9 +401,21 @@ class _MinimalFamilyActions extends StatelessWidget {
           spacing: 12,
           runSpacing: 8,
           children: [
-            _GhostAction(icon: Icons.admin_panel_settings_outlined, label: 'إدارة الأسرة', onTap: () => context.push('/parent')),
-            _GhostAction(icon: Icons.workspace_premium_outlined, label: 'العضوية', onTap: () => context.push('/membership')),
-            _GhostAction(icon: Icons.lock_outline_rounded, label: 'منطقة ولي الأمر', onTap: () => context.push('/parent-pin')),
+            _GhostAction(
+              icon: Icons.admin_panel_settings_outlined,
+              label: 'إدارة الأسرة',
+              onTap: () => context.push('/parent'),
+            ),
+            _GhostAction(
+              icon: Icons.workspace_premium_outlined,
+              label: 'العضوية',
+              onTap: () => context.push('/membership'),
+            ),
+            _GhostAction(
+              icon: Icons.lock_outline_rounded,
+              label: 'منطقة ولي الأمر',
+              onTap: () => context.push('/parent-pin'),
+            ),
           ],
         ),
       ],
@@ -372,7 +424,11 @@ class _MinimalFamilyActions extends StatelessWidget {
 }
 
 class _GhostAction extends StatelessWidget {
-  const _GhostAction({required this.icon, required this.label, required this.onTap});
+  const _GhostAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -384,12 +440,26 @@ class _GhostAction extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white.withValues(alpha: 0.10)), color: Colors.white.withValues(alpha: 0.03)),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 14, color: AppColors.mutedText),
-          const SizedBox(width: 6),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
-        ]),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          color: Colors.white.withValues(alpha: 0.03),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: AppColors.mutedText),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -404,22 +474,55 @@ class _RosterLoadError extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 64, height: 64,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.06), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
-            child: const Icon(Icons.cloud_off_rounded, color: AppColors.mutedText, size: 28),
-          ),
-          const SizedBox(height: 18),
-          const Text('تعذّر تحميل ملفات الأطفال', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
-          const Text('تحقق من الاتصال ثم حاول مرة أخرى', style: TextStyle(color: AppColors.mutedText, fontSize: 12)),
-          const SizedBox(height: 20),
-          FilledButton(onPressed: onRetry, style: FilledButton.styleFrom(backgroundColor: AppColors.starGold, foregroundColor: AppColors.deepSpace, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('إعادة المحاولة', style: TextStyle(fontWeight: FontWeight.w800))),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              child: const Icon(
+                Icons.cloud_off_rounded,
+                color: AppColors.mutedText,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'تعذّر تحميل ملفات الأطفال',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'تحقق من الاتصال ثم حاول مرة أخرى',
+              style: TextStyle(color: AppColors.mutedText, fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: onRetry,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.starGold,
+                foregroundColor: AppColors.deepSpace,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'إعادة المحاولة',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
-

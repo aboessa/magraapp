@@ -84,23 +84,9 @@ class _TvHomeShellState extends State<TvHomeShell> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           MajarraPortalButton(size: 62, onPressed: _showPortal),
-                          const SizedBox(height: 14),
-                          IconButton(
-                            tooltip: 'اقتران التلفزيون',
-                            onPressed: () => context.push('/tv-pairing'),
-                            icon: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.qr_code_2_rounded,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ),
-                          ),
+                          // TV-001: pairing happens before sign-in now
+                          // (`/tv-pairing` is the signed-out entry), so a
+                          // signed-in shell has no pairing button.
                           const SizedBox(height: 14),
                           const _TvProfileBadge(),
                         ],

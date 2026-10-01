@@ -265,5 +265,1596 @@
   "googlePlayUnavailableOnDevice": "Google Play n'est pas disponible sur cet appareil.",
   "parentDailyLimitTitle": "Limite quotidienne de temps d'écran",
   "parentDailyLimitOff": "Désactivée — aucune limite de temps d'écran",
-  "parentDailyLimitOn": "Activée : {minutes} minutes par jour"
+  "parentDailyLimitOn": "Activée : {minutes} minutes par jour",
+  "authinstallationidentityGet01": "متصفح ويب",
+  "@authinstallationidentityGet01": {
+    "description": "get copy for app_main/lib/features/auth/data/installation_identity.dart; Arabic fallback preserves the current UI."
+  },
+  "authinstallationidentityGet02": "جهاز Android",
+  "@authinstallationidentityGet02": {
+    "description": "get copy for app_main/lib/features/auth/data/installation_identity.dart; Arabic fallback preserves the current UI."
+  },
+  "authinstallationidentityGet03": "جهاز Apple محمول",
+  "@authinstallationidentityGet03": {
+    "description": "get copy for app_main/lib/features/auth/data/installation_identity.dart; Arabic fallback preserves the current UI."
+  },
+  "authinstallationidentityGet04": "جهاز Windows",
+  "@authinstallationidentityGet04": {
+    "description": "get copy for app_main/lib/features/auth/data/installation_identity.dart; Arabic fallback preserves the current UI."
+  },
+  "authinstallationidentityGet05": "جهاز macOS",
+  "@authinstallationidentityGet05": {
+    "description": "get copy for app_main/lib/features/auth/data/installation_identity.dart; Arabic fallback preserves the current UI."
+  },
+  "authregisterpageDispose01": "أدخل اسم عرض للأسرة",
+  "@authregisterpageDispose01": {
+    "description": "dispose copy for app_main/lib/features/auth/presentation/pages/register_page.dart; Arabic fallback preserves the current UI."
+  },
+  "authregisterpageDispose02": "أدخل البريد الإلكتروني",
+  "@authregisterpageDispose02": {
+    "description": "dispose copy for app_main/lib/features/auth/presentation/pages/register_page.dart; Arabic fallback preserves the current UI."
+  },
+  "authregisterpageDispose03": "أدخل بريدًا إلكترونيًا صالحًا",
+  "@authregisterpageDispose03": {
+    "description": "dispose copy for app_main/lib/features/auth/presentation/pages/register_page.dart; Arabic fallback preserves the current UI."
+  },
+  "authregisterpageText01": "استخدم {value1} حرفًا على الأقل",
+  "@authregisterpageText01": {
+    "description": "text copy for app_main/lib/features/auth/presentation/pages/register_page.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "authregisterpageText02": "كلمتا المرور غير متطابقتين",
+  "@authregisterpageText02": {
+    "description": "text copy for app_main/lib/features/auth/presentation/pages/register_page.dart; Arabic fallback preserves the current UI."
+  },
+  "detailsseriesdetailspageLoaded01": "حلقة واحدة",
+  "@detailsseriesdetailspageLoaded01": {
+    "description": "loaded copy for app_main/lib/features/details/presentation/series_details_page.dart; Arabic fallback preserves the current UI."
+  },
+  "detailsseriesdetailspageLoaded02": "{value1} حلقة",
+  "@detailsseriesdetailspageLoaded02": {
+    "description": "loaded copy for app_main/lib/features/details/presentation/series_details_page.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "detailsseriesdetailspageLoaded03": "تم حفظ المسلسل",
+  "@detailsseriesdetailspageLoaded03": {
+    "description": "loaded copy for app_main/lib/features/details/presentation/series_details_page.dart; Arabic fallback preserves the current UI."
+  },
+  "detailsseriesdetailspageLoaded04": "تمت إزالة المسلسل من المحفوظات",
+  "@detailsseriesdetailspageLoaded04": {
+    "description": "loaded copy for app_main/lib/features/details/presentation/series_details_page.dart; Arabic fallback preserves the current UI."
+  },
+  "detailsseriesdetailspageGet01": "مش قادرين نحفظ ده دلوقتي. جرّب تاني",
+  "@detailsseriesdetailspageGet01": {
+    "description": "get copy for app_main/lib/features/details/presentation/series_details_page.dart; Arabic fallback preserves the current UI."
+  },
+  "detailsseriesdetailspageText01": "حلو! هنقترح عليك حاجات شبهه",
+  "@detailsseriesdetailspageText01": {
+    "description": "text copy for app_main/lib/features/details/presentation/series_details_page.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesblockcodeengineGet01": "تقدّم",
+  "@gamesblockcodeengineGet01": {
+    "description": "get copy for app_main/lib/features/games/engine/block_code_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesblockcodeengineGet02": "انعطف يسارًا",
+  "@gamesblockcodeengineGet02": {
+    "description": "get copy for app_main/lib/features/games/engine/block_code_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesblockcodeengineGet03": "انعطف يمينًا",
+  "@gamesblockcodeengineGet03": {
+    "description": "get copy for app_main/lib/features/games/engine/block_code_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesblockcodeengineGet04": "كرّر",
+  "@gamesblockcodeengineGet04": {
+    "description": "get copy for app_main/lib/features/games/engine/block_code_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesblockcodeengineGet05": "إذا كان الطريق مفتوحًا",
+  "@gamesblockcodeengineGet05": {
+    "description": "get copy for app_main/lib/features/games/engine/block_code_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel01": "أسود",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel01": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel02": "أبيض",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel02": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel03": "كحلي داكن",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel03": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel04": "أحمر",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel04": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel05": "برتقالي محمر",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel05": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel06": "برتقالي",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel06": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel07": "ذهبي",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel07": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel08": "أصفر",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel08": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel09": "أصفر فاتح",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel09": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel10": "أخضر",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel10": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel11": "أخضر زاهٍ",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel11": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel12": "سماوي",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel12": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel13": "أزرق سماوي",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel13": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel14": "أزرق",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel14": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel15": "أزرق فاتح",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel15": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel16": "نيلي",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel16": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceArabicPaletteColorLabel17": "بنفسجي فاتح",
+  "@gamesfreedrawsurfaceArabicPaletteColorLabel17": {
+    "description": "arabicPaletteColorLabel copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceText01": "بنفسجي",
+  "@gamesfreedrawsurfaceText01": {
+    "description": "text copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceText02": "أرجواني",
+  "@gamesfreedrawsurfaceText02": {
+    "description": "text copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceText03": "وردي",
+  "@gamesfreedrawsurfaceText03": {
+    "description": "text copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceText04": "وردي فاتح",
+  "@gamesfreedrawsurfaceText04": {
+    "description": "text copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceText05": "وردي محمر",
+  "@gamesfreedrawsurfaceText05": {
+    "description": "text copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesfreedrawsurfaceText06": "أحمر فاتح",
+  "@gamesfreedrawsurfaceText06": {
+    "description": "text copy for app_main/lib/features/games/engine/free_draw_surface.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText01": "قطة",
+  "@gamesgameartText01": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText02": "عصفور",
+  "@gamesgameartText02": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText03": "سمكة",
+  "@gamesgameartText03": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText04": "سمكة حمراء",
+  "@gamesgameartText04": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText05": "سمكة زرقاء",
+  "@gamesgameartText05": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText06": "أرنب",
+  "@gamesgameartText06": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText07": "أسد",
+  "@gamesgameartText07": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText08": "بومة",
+  "@gamesgameartText08": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText09": "سلحفاة",
+  "@gamesgameartText09": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText10": "كلب",
+  "@gamesgameartText10": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText11": "حصان",
+  "@gamesgameartText11": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText12": "فيل",
+  "@gamesgameartText12": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText13": "حوت",
+  "@gamesgameartText13": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText14": "دجاجة",
+  "@gamesgameartText14": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText15": "فراشة",
+  "@gamesgameartText15": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText16": "تفاحة",
+  "@gamesgameartText16": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText17": "صاروخ",
+  "@gamesgameartText17": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText18": "شجرة",
+  "@gamesgameartText18": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText19": "وردة",
+  "@gamesgameartText19": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText20": "شمس",
+  "@gamesgameartText20": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText21": "قمر",
+  "@gamesgameartText21": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText22": "هلال ونجمة",
+  "@gamesgameartText22": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText23": "نجمة",
+  "@gamesgameartText23": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText24": "نجوم",
+  "@gamesgameartText24": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText25": "بيت",
+  "@gamesgameartText25": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText26": "سيارة",
+  "@gamesgameartText26": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText27": "كرة",
+  "@gamesgameartText27": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText28": "مركب",
+  "@gamesgameartText28": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText29": "مركب قديم",
+  "@gamesgameartText29": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText30": "هرم",
+  "@gamesgameartText30": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText31": "مكتبة",
+  "@gamesgameartText31": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText32": "كتاب",
+  "@gamesgameartText32": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText33": "جبل",
+  "@gamesgameartText33": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText34": "بحر",
+  "@gamesgameartText34": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText35": "قوس قزح",
+  "@gamesgameartText35": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText36": "قطار",
+  "@gamesgameartText36": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText37": "طائرة",
+  "@gamesgameartText37": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText38": "دراجة",
+  "@gamesgameartText38": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText39": "حقيبة",
+  "@gamesgameartText39": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText40": "مصباح",
+  "@gamesgameartText40": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText41": "مسجد",
+  "@gamesgameartText41": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText42": "فانوس",
+  "@gamesgameartText42": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText43": "هلال",
+  "@gamesgameartText43": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText44": "الهدف",
+  "@gamesgameartText44": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText45": "كوب ملح",
+  "@gamesgameartText45": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText46": "كوكب",
+  "@gamesgameartText46": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText47": "أحمر",
+  "@gamesgameartText47": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText48": "أزرق",
+  "@gamesgameartText48": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText49": "أخضر",
+  "@gamesgameartText49": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText50": "أصفر",
+  "@gamesgameartText50": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText51": "دائرة",
+  "@gamesgameartText51": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText52": "مربع",
+  "@gamesgameartText52": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText53": "مثلث",
+  "@gamesgameartText53": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText54": "بناء الأهرام",
+  "@gamesgameartText54": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText55": "مكتبة الإسكندرية",
+  "@gamesgameartText55": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText56": "تأسيس القاهرة",
+  "@gamesgameartText56": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText57": "حفر قناة السويس",
+  "@gamesgameartText57": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartText58": "بناء السد العالي",
+  "@gamesgameartText58": {
+    "description": "text copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameartFallback01": "عنصر مصوّر",
+  "@gamesgameartFallback01": {
+    "description": "fallback copy for app_main/lib/features/games/engine/game_art.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameboardkitSeed01": "٠",
+  "@gamesgameboardkitSeed01": {
+    "description": "seed copy for app_main/lib/features/games/engine/game_board_kit.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameboardkitSeed02": "١",
+  "@gamesgameboardkitSeed02": {
+    "description": "seed copy for app_main/lib/features/games/engine/game_board_kit.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameboardkitSeed03": "٢",
+  "@gamesgameboardkitSeed03": {
+    "description": "seed copy for app_main/lib/features/games/engine/game_board_kit.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgameboardkitSeed04": "٣",
+  "@gamesgameboardkitSeed04": {
+    "description": "seed copy for app_main/lib/features/games/engine/game_board_kit.dart; Arabic fallback preserves the current UI."
+  },
+  "gamessimlabengineGet01": "المتغيّر {value1}",
+  "@gamessimlabengineGet01": {
+    "description": "get copy for app_main/lib/features/games/engine/sim_lab_engine.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gamessimlabengineUnitKey01": "وحدة",
+  "@gamessimlabengineUnitKey01": {
+    "description": "unitKey copy for app_main/lib/features/games/engine/sim_lab_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamessimlabengineGet02": "النتيجة",
+  "@gamessimlabengineGet02": {
+    "description": "get copy for app_main/lib/features/games/engine/sim_lab_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamessimlabengineGet03": "درجة",
+  "@gamessimlabengineGet03": {
+    "description": "get copy for app_main/lib/features/games/engine/sim_lab_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamessimlabengineText01": "اتبع تعليمات السلامة مع شخص بالغ.",
+  "@gamessimlabengineText01": {
+    "description": "text copy for app_main/lib/features/games/engine/sim_lab_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamessimlabengineText02": "توقّع",
+  "@gamessimlabengineText02": {
+    "description": "text copy for app_main/lib/features/games/engine/sim_lab_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamessimlabengineText03": "جرّب",
+  "@gamessimlabengineText03": {
+    "description": "text copy for app_main/lib/features/games/engine/sim_lab_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamessimlabengineText04": "فسّر",
+  "@gamessimlabengineText04": {
+    "description": "text copy for app_main/lib/features/games/engine/sim_lab_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian01": "الأول",
+  "@gamestimelinemapengineHijriYearForGregorian01": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian02": "الثاني",
+  "@gamestimelinemapengineHijriYearForGregorian02": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian03": "الثالث",
+  "@gamestimelinemapengineHijriYearForGregorian03": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian04": "الرابع",
+  "@gamestimelinemapengineHijriYearForGregorian04": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian05": "الخامس",
+  "@gamestimelinemapengineHijriYearForGregorian05": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian06": "السادس",
+  "@gamestimelinemapengineHijriYearForGregorian06": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian07": "السابع",
+  "@gamestimelinemapengineHijriYearForGregorian07": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian08": "الثامن",
+  "@gamestimelinemapengineHijriYearForGregorian08": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian09": "التاسع",
+  "@gamestimelinemapengineHijriYearForGregorian09": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian10": "العاشر",
+  "@gamestimelinemapengineHijriYearForGregorian10": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian11": "الحادي عشر",
+  "@gamestimelinemapengineHijriYearForGregorian11": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian12": "الثاني عشر",
+  "@gamestimelinemapengineHijriYearForGregorian12": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestimelinemapengineHijriYearForGregorian13": "الثالث عشر",
+  "@gamestimelinemapengineHijriYearForGregorian13": {
+    "description": "hijriYearForGregorian copy for app_main/lib/features/games/engine/timeline_map_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gamestracecolorengineArabicFallback01": "ابدأ الرسم واتبع التعليمة.",
+  "@gamestracecolorengineArabicFallback01": {
+    "description": "arabicFallback copy for app_main/lib/features/games/engine/trace_color_engine.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesTitle01": "هذا المستوى فارغ الآن",
+  "@gameswaveoneenginesTitle01": {
+    "description": "title copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesMessage01": "اختر لعبة أخرى وسنجهّز هذا المستوى قريبًا.",
+  "@gameswaveoneenginesMessage01": {
+    "description": "message copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesText01": "الزوج رقم {value1}",
+  "@gameswaveoneenginesText01": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gameswaveoneenginesText02": "بطاقة متطابقة: {value1}",
+  "@gameswaveoneenginesText02": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gameswaveoneenginesText03": "بطاقة مكشوفة: {value1}، جرّب بطاقة أخرى",
+  "@gameswaveoneenginesText03": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gameswaveoneenginesText04": "بطاقة مكشوفة: {value1}",
+  "@gameswaveoneenginesText04": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gameswaveoneenginesText05": "بطاقة مقلوبة",
+  "@gameswaveoneenginesText05": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesText06": "حاول مرة أخرى",
+  "@gameswaveoneenginesText06": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesBuild01": "بطاقة مصوّرة",
+  "@gameswaveoneenginesBuild01": {
+    "description": "build copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesRetryMessage01": "ليست هنا. جرّب هدفًا آخر.",
+  "@gameswaveoneenginesRetryMessage01": {
+    "description": "retryMessage copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesTitle02": "هذا المستوى فارغ الآن",
+  "@gameswaveoneenginesTitle02": {
+    "description": "title copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesMessage02": "لا توجد عناصر للمطابقة هنا. جرّب مستوى آخر.",
+  "@gameswaveoneenginesMessage02": {
+    "description": "message copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesTitle03": "هذا المستوى فارغ الآن",
+  "@gameswaveoneenginesTitle03": {
+    "description": "title copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesMessage03": "لا توجد عناصر للفرز هنا. جرّب مستوى آخر.",
+  "@gameswaveoneenginesMessage03": {
+    "description": "message copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesArabicFallback01": "السلة {value1}",
+  "@gameswaveoneenginesArabicFallback01": {
+    "description": "arabicFallback copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gameswaveoneenginesArabicFallback02": "القطعة {value1}",
+  "@gameswaveoneenginesArabicFallback02": {
+    "description": "arabicFallback copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gameswaveoneenginesArabicFallback03": "الخطوة {value1}",
+  "@gameswaveoneenginesArabicFallback03": {
+    "description": "arabicFallback copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gameswaveoneenginesPanelCaptionForId01": "خطوة مصوّرة",
+  "@gameswaveoneenginesPanelCaptionForId01": {
+    "description": "panelCaptionForId copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesTitle04": "هذا المستوى فارغ الآن",
+  "@gameswaveoneenginesTitle04": {
+    "description": "title copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesMessage04": "لا توجد خطوات للترتيب هنا. جرّب مستوى آخر.",
+  "@gameswaveoneenginesMessage04": {
+    "description": "message copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesText07": "رجوع",
+  "@gameswaveoneenginesText07": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswaveoneenginesText08": "الخطوة {value1}",
+  "@gameswaveoneenginesText08": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_one_engines.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gameswavetwoenginesTitle01": "هذا المستوى فارغ الآن",
+  "@gameswavetwoenginesTitle01": {
+    "description": "title copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswavetwoenginesMessage01": "لا توجد عناصر للعد هنا. جرّب مستوى آخر.",
+  "@gameswavetwoenginesMessage01": {
+    "description": "message copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswavetwoenginesText01": "أعد العدّ",
+  "@gameswavetwoenginesText01": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswavetwoenginesArabicFallback01": "عنصر العدّ",
+  "@gameswavetwoenginesArabicFallback01": {
+    "description": "arabicFallback copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswavetwoenginesArabicFallback02": "الخيار {value1}",
+  "@gameswavetwoenginesArabicFallback02": {
+    "description": "arabicFallback copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gameswavetwoenginesArabicFallback03": "عنصر العدّ",
+  "@gameswavetwoenginesArabicFallback03": {
+    "description": "arabicFallback copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswavetwoenginesText02": "{value1} رقم {value2}",
+  "@gameswavetwoenginesText02": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {},
+      "value2": {}
+    }
+  },
+  "gameswavetwoenginesLabel01": "عدد العناصر في الصندوق",
+  "@gameswavetwoenginesLabel01": {
+    "description": "label copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswavetwoenginesText03": "أرجع واحدًا",
+  "@gameswavetwoenginesText03": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswavetwoenginesText04": "انتهيت",
+  "@gameswavetwoenginesText04": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswavetwoenginesText05": "المجموعة الأولى",
+  "@gameswavetwoenginesText05": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gameswavetwoenginesText06": "المجموعة الثانية",
+  "@gameswavetwoenginesText06": {
+    "description": "text copy for app_main/lib/features/games/engine/wave_two_engines.dart; Arabic fallback preserves the current UI."
+  },
+  "gamescoloringhomev2Label01": "طيور",
+  "@gamescoloringhomev2Label01": {
+    "description": "label copy for app_main/lib/features/games/presentation/pages/coloring/coloring_home_v2.dart; Arabic fallback preserves the current UI."
+  },
+  "gamescoloringhomev2Label02": "حيوانات",
+  "@gamescoloringhomev2Label02": {
+    "description": "label copy for app_main/lib/features/games/presentation/pages/coloring/coloring_home_v2.dart; Arabic fallback preserves the current UI."
+  },
+  "gamescoloringhomev2Label03": "مركبات",
+  "@gamescoloringhomev2Label03": {
+    "description": "label copy for app_main/lib/features/games/presentation/pages/coloring/coloring_home_v2.dart; Arabic fallback preserves the current UI."
+  },
+  "gamescoloringhomev2Label04": "الفضاء",
+  "@gamescoloringhomev2Label04": {
+    "description": "label copy for app_main/lib/features/games/presentation/pages/coloring/coloring_home_v2.dart; Arabic fallback preserves the current UI."
+  },
+  "gamescoloringhomev2liveSub01": "طيور",
+  "@gamescoloringhomev2liveSub01": {
+    "description": "sub copy for app_main/lib/features/games/presentation/pages/coloring/coloring_home_v2_live.dart; Arabic fallback preserves the current UI."
+  },
+  "gamescoloringhomev2liveSub02": "حيوانات",
+  "@gamescoloringhomev2liveSub02": {
+    "description": "sub copy for app_main/lib/features/games/presentation/pages/coloring/coloring_home_v2_live.dart; Arabic fallback preserves the current UI."
+  },
+  "gamescoloringhomev2liveSub03": "مركبات",
+  "@gamescoloringhomev2liveSub03": {
+    "description": "sub copy for app_main/lib/features/games/presentation/pages/coloring/coloring_home_v2_live.dart; Arabic fallback preserves the current UI."
+  },
+  "gamescoloringhomev2liveSub04": "الفضاء",
+  "@gamescoloringhomev2liveSub04": {
+    "description": "sub copy for app_main/lib/features/games/presentation/pages/coloring/coloring_home_v2_live.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgamerouteTitle01": "اختر طفلًا أولًا",
+  "@gamesgamerouteTitle01": {
+    "description": "title copy for app_main/lib/features/games/presentation/pages/game_route.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgamerouteBody01": "الألعاب تُفتح لطفل واحد، حتى يُحفظ تقدّمه في المكان الصحيح.",
+  "@gamesgamerouteBody01": {
+    "description": "body copy for app_main/lib/features/games/presentation/pages/game_route.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgamescreenText01": "المستوى {value1} من ",
+  "@gamesgamescreenText01": {
+    "description": "text copy for app_main/lib/features/games/presentation/pages/game_screen.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "gamesgamescreenTooltip01": "وضع حركي مبسّط",
+  "@gamesgamescreenTooltip01": {
+    "description": "tooltip copy for app_main/lib/features/games/presentation/pages/game_screen.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgamescreenText02": "الوضع الحركي المبسّط مفعّل: الطريق أوسع.",
+  "@gamesgamescreenText02": {
+    "description": "text copy for app_main/lib/features/games/presentation/pages/game_screen.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgamescreenText03": "أكملت اللعبة",
+  "@gamesgamescreenText03": {
+    "description": "text copy for app_main/lib/features/games/presentation/pages/game_screen.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgamescreenText04": "أكملت المستوى",
+  "@gamesgamescreenText04": {
+    "description": "text copy for app_main/lib/features/games/presentation/pages/game_screen.dart; Arabic fallback preserves the current UI."
+  },
+  "gamesgamescreenText05": "أنهيت كل المستويات. عمل رائع!",
+  "@gamesgamescreenText05": {
+    "description": "text copy for app_main/lib/features/games/presentation/pages/game_screen.dart; Arabic fallback preserves the current UI."
+  },
+  "homehomepageBuild01": "مفيش اتصال بالإنترنت",
+  "@homehomepageBuild01": {
+    "description": "build copy for app_main/lib/features/home/presentation/home_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homehomepageBuild02": "تعذّر تجهيز الرحلة",
+  "@homehomepageBuild02": {
+    "description": "build copy for app_main/lib/features/home/presentation/home_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homelibrarypageText01": "مكتبتي",
+  "@homelibrarypageText01": {
+    "description": "text copy for app_main/lib/features/home/presentation/pages/library_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homelibrarypageTooltip01": "بحث",
+  "@homelibrarypageTooltip01": {
+    "description": "tooltip copy for app_main/lib/features/home/presentation/pages/library_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homelibrarypageLabel01": "أكمل المشاهدة",
+  "@homelibrarypageLabel01": {
+    "description": "label copy for app_main/lib/features/home/presentation/pages/library_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homelibrarypageLabel02": "المحفوظات",
+  "@homelibrarypageLabel02": {
+    "description": "label copy for app_main/lib/features/home/presentation/pages/library_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homelibrarypageLabel03": "التحميلات",
+  "@homelibrarypageLabel03": {
+    "description": "label copy for app_main/lib/features/home/presentation/pages/library_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homelibrarypageLabel04": "رسوماتي",
+  "@homelibrarypageLabel04": {
+    "description": "label copy for app_main/lib/features/home/presentation/pages/library_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homelibrarypageText02": "تعذّر تحميل المكتبة",
+  "@homelibrarypageText02": {
+    "description": "text copy for app_main/lib/features/home/presentation/pages/library_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homelibrarypageText03": "إعادة المحاولة",
+  "@homelibrarypageText03": {
+    "description": "text copy for app_main/lib/features/home/presentation/pages/library_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homelibrarypageText04": "لا توجد حلقات قيد المتابعة",
+  "@homelibrarypageText04": {
+    "description": "text copy for app_main/lib/features/home/presentation/pages/library_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homeplaypageBuild01": "مفيش اتصال بالإنترنت. جرّب تاني بعد شوية.",
+  "@homeplaypageBuild01": {
+    "description": "build copy for app_main/lib/features/home/presentation/pages/play_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homeplaypageText01": "العب",
+  "@homeplaypageText01": {
+    "description": "text copy for app_main/lib/features/home/presentation/pages/play_page.dart; Arabic fallback preserves the current UI."
+  },
+  "homecinematicheroLabel01": "قصص مجرة المختارة",
+  "@homecinematicheroLabel01": {
+    "description": "label copy for app_main/lib/features/home/presentation/widgets/cinematic_hero.dart; Arabic fallback preserves the current UI."
+  },
+  "homehomedestinationspecLabel01": "الرئيسية",
+  "@homehomedestinationspecLabel01": {
+    "description": "label copy for app_main/lib/features/home/presentation/widgets/home_destination_spec.dart; Arabic fallback preserves the current UI."
+  },
+  "homehomedestinationspecLabel02": "استكشف",
+  "@homehomedestinationspecLabel02": {
+    "description": "label copy for app_main/lib/features/home/presentation/widgets/home_destination_spec.dart; Arabic fallback preserves the current UI."
+  },
+  "homehomedestinationspecLabel03": "مكتبتي",
+  "@homehomedestinationspecLabel03": {
+    "description": "label copy for app_main/lib/features/home/presentation/widgets/home_destination_spec.dart; Arabic fallback preserves the current UI."
+  },
+  "homehomedestinationspecLabel04": "ملفي",
+  "@homehomedestinationspecLabel04": {
+    "description": "label copy for app_main/lib/features/home/presentation/widgets/home_destination_spec.dart; Arabic fallback preserves the current UI."
+  },
+  "homehomedestinationspecText01": "منطقة ولي الأمر",
+  "@homehomedestinationspecText01": {
+    "description": "text copy for app_main/lib/features/home/presentation/widgets/home_destination_spec.dart; Arabic fallback preserves the current UI."
+  },
+  "homehomedestinationspecText02": "منطقة ولي الأمر - تتطلب حسابًا",
+  "@homehomedestinationspecText02": {
+    "description": "text copy for app_main/lib/features/home/presentation/widgets/home_destination_spec.dart; Arabic fallback preserves the current UI."
+  },
+  "homehomedestinationspecText03": "منطقة ولي الأمر - PIN / بصمة",
+  "@homehomedestinationspecText03": {
+    "description": "text copy for app_main/lib/features/home/presentation/widgets/home_destination_spec.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsGet01": "إثنين",
+  "@parentparentreportsGet01": {
+    "description": "get copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsGet02": "ثلاثاء",
+  "@parentparentreportsGet02": {
+    "description": "get copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsGet03": "أربعاء",
+  "@parentparentreportsGet03": {
+    "description": "get copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsGet04": "خميس",
+  "@parentparentreportsGet04": {
+    "description": "get copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsGet05": "جمعة",
+  "@parentparentreportsGet05": {
+    "description": "get copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsGet06": "سبت",
+  "@parentparentreportsGet06": {
+    "description": "get copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsGet07": "أحد",
+  "@parentparentreportsGet07": {
+    "description": "get copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsMasteryLevelLabel01": "متقَن",
+  "@parentparentreportsMasteryLevelLabel01": {
+    "description": "masteryLevelLabel copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsMasteryLevelLabel02": "بمساعدة",
+  "@parentparentreportsMasteryLevelLabel02": {
+    "description": "masteryLevelLabel copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsMasteryLevelLabel03": "قيد التمرّن",
+  "@parentparentreportsMasteryLevelLabel03": {
+    "description": "masteryLevelLabel copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsMasteryLevelLabel04": "مُقدَّم",
+  "@parentparentreportsMasteryLevelLabel04": {
+    "description": "masteryLevelLabel copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsMasteryLevelLabel05": "محتاج مراجعة",
+  "@parentparentreportsMasteryLevelLabel05": {
+    "description": "masteryLevelLabel copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsMasteryLevelLabel06": "لم يبدأ",
+  "@parentparentreportsMasteryLevelLabel06": {
+    "description": "masteryLevelLabel copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentreportsMasteryLevelLabel07": "قيد التمرّن",
+  "@parentparentreportsMasteryLevelLabel07": {
+    "description": "masteryLevelLabel copy for app_main/lib/features/parent/application/parent_reports.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageTooltip01": "رجوع",
+  "@parentparentdashboardpageTooltip01": {
+    "description": "tooltip copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageText01": "منطقة ولي الأمر",
+  "@parentparentdashboardpageText01": {
+    "description": "text copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageTooltip02": "الإعدادات",
+  "@parentparentdashboardpageTooltip02": {
+    "description": "tooltip copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageTitle01": "تعذّر تحميل ملفات الأطفال",
+  "@parentparentdashboardpageTitle01": {
+    "description": "title copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageBody01": "تحقق من الاتصال ثم حاول مرة أخرى.",
+  "@parentparentdashboardpageBody01": {
+    "description": "body copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageText02": "الملف النشط",
+  "@parentparentdashboardpageText02": {
+    "description": "text copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageText03": "تبديل",
+  "@parentparentdashboardpageText03": {
+    "description": "text copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageText04": "لم يُختر ملف طفل بعد.",
+  "@parentparentdashboardpageText04": {
+    "description": "text copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageText05": "ملف طفل",
+  "@parentparentdashboardpageText05": {
+    "description": "text copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageText06": "نطاق المكتبة لهذا الملف",
+  "@parentparentdashboardpageText06": {
+    "description": "text copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageText07": "تعذّر تحميل المكتبة.",
+  "@parentparentdashboardpageText07": {
+    "description": "text copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageLabel01": "سلاسل متاحة",
+  "@parentparentdashboardpageLabel01": {
+    "description": "label copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageLabel02": "حلقات",
+  "@parentparentdashboardpageLabel02": {
+    "description": "label copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageLabel03": "أنشطة",
+  "@parentparentdashboardpageLabel03": {
+    "description": "label copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageText08": "تعذّر تحميل تقرير الأسبوع.",
+  "@parentparentdashboardpageText08": {
+    "description": "text copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageText09": "إعادة",
+  "@parentparentdashboardpageText09": {
+    "description": "text copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageTitle02": "تقرير الأسبوع",
+  "@parentparentdashboardpageTitle02": {
+    "description": "title copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentparentdashboardpageBody02": "مفيش نشاط في آخر 7 أيام.",
+  "@parentparentdashboardpageBody02": {
+    "description": "body copy for app_main/lib/features/parent/presentation/pages/parent_dashboard_page.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardNotificationsCard01": "حلقات جديدة",
+  "@parentnotificationscardNotificationsCard01": {
+    "description": "NotificationsCard copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardNotificationsCard02": "لما تنزل حلقة جديدة على مجرة",
+  "@parentnotificationscardNotificationsCard02": {
+    "description": "NotificationsCard copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardNotificationsCard03": "وقت الشاشة",
+  "@parentnotificationscardNotificationsCard03": {
+    "description": "NotificationsCard copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardNotificationsCard04": "لما يفضل 5 دقايق على وقت الطفل اليومي",
+  "@parentnotificationscardNotificationsCard04": {
+    "description": "NotificationsCard copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardNotificationsCard05": "تقرير الأسبوع",
+  "@parentnotificationscardNotificationsCard05": {
+    "description": "NotificationsCard copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardNotificationsCard06": "كل جمعة: اتفرجوا قد إيه واتعلموا إيه",
+  "@parentnotificationscardNotificationsCard06": {
+    "description": "NotificationsCard copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardText01": "الإشعارات اتفعّلت على الموبايل ده",
+  "@parentnotificationscardText01": {
+    "description": "text copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardText02": "الإشعارات مقفولة. فعّلها من إعدادات الموبايل لتطبيق مجرة",
+  "@parentnotificationscardText02": {
+    "description": "text copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardKind01": "مش قادرين نحفظ الإعداد دلوقتي. جرّب تاني",
+  "@parentnotificationscardKind01": {
+    "description": "kind copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardText03": "الإشعارات",
+  "@parentnotificationscardText03": {
+    "description": "text copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "parentnotificationscardText04": "فعّل الإشعارات على الموبايل ده",
+  "@parentnotificationscardText04": {
+    "description": "text copy for app_main/lib/features/parent/presentation/widgets/notifications_card.dart; Arabic fallback preserves the current UI."
+  },
+  "planetsplanetspageMessage01": "رجوع",
+  "@planetsplanetspageMessage01": {
+    "description": "message copy for app_main/lib/features/planets/presentation/planets_page.dart; Arabic fallback preserves the current UI."
+  },
+  "planetsplanetspageText01": "كواكب مجرة",
+  "@planetsplanetspageText01": {
+    "description": "text copy for app_main/lib/features/planets/presentation/planets_page.dart; Arabic fallback preserves the current UI."
+  },
+  "planetsplanetspageText02": "رحلة عبر عوالم المعرفة والترفيه",
+  "@planetsplanetspageText02": {
+    "description": "text copy for app_main/lib/features/planets/presentation/planets_page.dart; Arabic fallback preserves the current UI."
+  },
+  "playbackplaybackpageLabel01": "العربية",
+  "@playbackplaybackpageLabel01": {
+    "description": "label copy for app_main/lib/features/playback/presentation/playback_page.dart; Arabic fallback preserves the current UI."
+  },
+  "playbackplaybackpageText01": "تلقائي",
+  "@playbackplaybackpageText01": {
+    "description": "text copy for app_main/lib/features/playback/presentation/playback_page.dart; Arabic fallback preserves the current UI."
+  },
+  "playbackplaybackpageMessage01": "انقطع الاتصال. تحقّق من الإنترنت وحاول مرة أخرى.",
+  "@playbackplaybackpageMessage01": {
+    "description": "message copy for app_main/lib/features/playback/presentation/playback_page.dart; Arabic fallback preserves the current UI."
+  },
+  "playbackplaybackpageMessage02": "الفيديو غير متاح حاليًا. حاول لاحقًا.",
+  "@playbackplaybackpageMessage02": {
+    "description": "message copy for app_main/lib/features/playback/presentation/playback_page.dart; Arabic fallback preserves the current UI."
+  },
+  "playbackplaybackpageMessage03": "انتهت الجلسة. سجّل الدخول مجددًا.",
+  "@playbackplaybackpageMessage03": {
+    "description": "message copy for app_main/lib/features/playback/presentation/playback_page.dart; Arabic fallback preserves the current UI."
+  },
+  "playbackplaybackpageMessage04": "هذا المحتوى يتطلب اشتراكًا.",
+  "@playbackplaybackpageMessage04": {
+    "description": "message copy for app_main/lib/features/playback/presentation/playback_page.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentsText01": "سياسة الخصوصية",
+  "@profilelegaldocumentsText01": {
+    "description": "text copy for app_main/lib/features/profile/data/legal_documents.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentsText02": "خصوصية الأطفال",
+  "@profilelegaldocumentsText02": {
+    "description": "text copy for app_main/lib/features/profile/data/legal_documents.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentsText03": "شروط الاستخدام",
+  "@profilelegaldocumentsText03": {
+    "description": "text copy for app_main/lib/features/profile/data/legal_documents.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentsText04": "حذف الحساب والبيانات",
+  "@profilelegaldocumentsText04": {
+    "description": "text copy for app_main/lib/features/profile/data/legal_documents.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentGet01": "سنة",
+  "@profilemanualpaymentGet01": {
+    "description": "get copy for app_main/lib/features/profile/data/manual_payment.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentGet02": "شهر",
+  "@profilemanualpaymentGet02": {
+    "description": "get copy for app_main/lib/features/profile/data/manual_payment.dart; Arabic fallback preserves the current UI."
+  },
+  "profiledevicespageGet01": "جهاز غير مسمّى",
+  "@profiledevicespageGet01": {
+    "description": "get copy for app_main/lib/features/profile/presentation/pages/devices_page.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentpageBuild01": "الصفحات القانونية",
+  "@profilelegaldocumentpageBuild01": {
+    "description": "build copy for app_main/lib/features/profile/presentation/pages/legal_document_page.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentpageTooltip01": "رجوع",
+  "@profilelegaldocumentpageTooltip01": {
+    "description": "tooltip copy for app_main/lib/features/profile/presentation/pages/legal_document_page.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentpageText01": "تعذّر تحميل الصفحة. تأكد من الاتصال وحاول تاني.",
+  "@profilelegaldocumentpageText01": {
+    "description": "text copy for app_main/lib/features/profile/presentation/pages/legal_document_page.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentpageAction01": "إعادة المحاولة",
+  "@profilelegaldocumentpageAction01": {
+    "description": "action copy for app_main/lib/features/profile/presentation/pages/legal_document_page.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentpageText02": "الصفحة دي لسه ماتنشرتش. تقدر تشوف ملخص البيانات ",
+  "@profilelegaldocumentpageText02": {
+    "description": "text copy for app_main/lib/features/profile/presentation/pages/legal_document_page.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentpageText03": "اللي التطبيق بيخزّنها وأدوات التحكم فيها.",
+  "@profilelegaldocumentpageText03": {
+    "description": "text copy for app_main/lib/features/profile/presentation/pages/legal_document_page.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentpageAction02": "ملخص الخصوصية والبيانات",
+  "@profilelegaldocumentpageAction02": {
+    "description": "action copy for app_main/lib/features/profile/presentation/pages/legal_document_page.dart; Arabic fallback preserves the current UI."
+  },
+  "profilelegaldocumentpageBuild02": "الإصدار {value1} · آخر تحديث {value2}",
+  "@profilelegaldocumentpageBuild02": {
+    "description": "build copy for app_main/lib/features/profile/presentation/pages/legal_document_page.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {},
+      "value2": {}
+    }
+  },
+  "profilemembershippageInitState01": "تعذر إتمام عملية الشراء. أعد المحاولة.",
+  "@profilemembershippageInitState01": {
+    "description": "initState copy for app_main/lib/features/profile/presentation/pages/membership_page.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText01": "وصلنا طلبك. هنراجع التحويل ونبعتلك إشعار أول ما الاشتراك يتفعّل.",
+  "@profilemanualpaymentsectionText01": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText02": "الإيصال اترفع.",
+  "@profilemanualpaymentsectionText02": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText03": "إلغاء الطلب؟",
+  "@profilemanualpaymentsectionText03": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText04": "لو كنت حوّلت الفلوس فعلًا، سيب الطلب زي ما هو لحد ما نراجعه.",
+  "@profilemanualpaymentsectionText04": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText05": "رجوع",
+  "@profilemanualpaymentsectionText05": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText06": "إلغاء الطلب",
+  "@profilemanualpaymentsectionText06": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText07": "جدّد اشتراكك بالمحفظة أو إنستاباي",
+  "@profilemanualpaymentsectionText07": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText08": "ادفع بالمحفظة أو إنستاباي",
+  "@profilemanualpaymentsectionText08": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText09": "آخر طلب اترفض",
+  "@profilemanualpaymentsectionText09": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText10": "تقدر تبعت طلب جديد.",
+  "@profilemanualpaymentsectionText10": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText11": "لو جدّدت قبل ما الاشتراك يخلص، المدة الجديدة بتتضاف بعد الحالية.",
+  "@profilemanualpaymentsectionText11": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText12": "جدّد الاشتراك",
+  "@profilemanualpaymentsectionText12": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText13": "اشترك دلوقتي",
+  "@profilemanualpaymentsectionText13": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionBuild01": "طلبك بـ {value1} جنيه ({value2}) ",
+  "@profilemanualpaymentsectionBuild01": {
+    "description": "build copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {},
+      "value2": {}
+    }
+  },
+  "profilemanualpaymentsectionBuild02": "تحت المراجعة. هنبعتلك إشعار أول ما يتفعّل.",
+  "@profilemanualpaymentsectionBuild02": {
+    "description": "build copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionBuild03": "إرفاق صورة الإيصال",
+  "@profilemanualpaymentsectionBuild03": {
+    "description": "build copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText14": "إلغاء الطلب",
+  "@profilemanualpaymentsectionText14": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText15": "1. اختار الباقة",
+  "@profilemanualpaymentsectionText15": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText16": "{value1} · {value2} ج.م / {value3}",
+  "@profilemanualpaymentsectionText16": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {},
+      "value2": {},
+      "value3": {}
+    }
+  },
+  "profilemanualpaymentsectionText17": "2. اختار وسيلة التحويل",
+  "@profilemanualpaymentsectionText17": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText18": "حوّل {value1} جنيه على {value2}:",
+  "@profilemanualpaymentsectionText18": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {},
+      "value2": {}
+    }
+  },
+  "profilemanualpaymentsectionTooltip01": "نسخ الرقم",
+  "@profilemanualpaymentsectionTooltip01": {
+    "description": "tooltip copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText19": "الرقم اتنسخ",
+  "@profilemanualpaymentsectionText19": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText20": "باسم: {value1}",
+  "@profilemanualpaymentsectionText20": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "profilemanualpaymentsectionText21": "3. بعد ما تحوّل، اكتب بيانات التحويل",
+  "@profilemanualpaymentsectionText21": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText22": "رقمك أو عنوان إنستاباي اللي حوّلت منه",
+  "@profilemanualpaymentsectionText22": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText23": "رقم المحفظة اللي حوّلت منها",
+  "@profilemanualpaymentsectionText23": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionLabelText01": "رقم العملية (اختياري)",
+  "@profilemanualpaymentsectionLabelText01": {
+    "description": "labelText copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText24": "صورة الإيصال (مطلوبة)",
+  "@profilemanualpaymentsectionText24": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText25": "صورة الإيصال (اختياري)",
+  "@profilemanualpaymentsectionText25": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText26": "اتختارت صورة الإيصال",
+  "@profilemanualpaymentsectionText26": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText27": "ابعت للمراجعة",
+  "@profilemanualpaymentsectionText27": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText28": "الاشتراك بيتفعّل {value1} يوم بعد ما نتأكد من التحويل، وبيوصلك إشعار. ",
+  "@profilemanualpaymentsectionText28": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "profilemanualpaymentsectionText29": "مفيش تجديد تلقائي.",
+  "@profilemanualpaymentsectionText29": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText30": "عندك طلب تحت المراجعة بالفعل.",
+  "@profilemanualpaymentsectionText30": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText31": "بعت طلبات كتير النهارده. جرّب بكرة أو كلّمنا.",
+  "@profilemanualpaymentsectionText31": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText32": "افتح منطقة الأهل بالرقم السري الأول.",
+  "@profilemanualpaymentsectionText32": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText33": "الصورة كبيرة أو نوعها مش مدعوم.",
+  "@profilemanualpaymentsectionText33": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "profilemanualpaymentsectionText34": "الدفع بالمحفظة مش متاح دلوقتي.",
+  "@profilemanualpaymentsectionText34": {
+    "description": "text copy for app_main/lib/features/profile/presentation/widgets/manual_payment_section.dart; Arabic fallback preserves the current UI."
+  },
+  "searchsearchpageTooltip01": "رجوع",
+  "@searchsearchpageTooltip01": {
+    "description": "tooltip copy for app_main/lib/features/search/presentation/search_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcommandhandlerText01": "بيتفرج دلوقتي: {value1} · من {value2}",
+  "@tvtvcommandhandlerText01": {
+    "description": "text copy for app_main/lib/features/tv/application/tv_command_handler.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {},
+      "value2": {}
+    }
+  },
+  "tvtvcommandhandlerText02": "بيتفرج دلوقتي: {value1}",
+  "@tvtvcommandhandlerText02": {
+    "description": "text copy for app_main/lib/features/tv/application/tv_command_handler.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "tvlinktvpageError01": "الكود ٨ حروف وأرقام، زي ABCD-EF23.",
+  "@tvlinktvpageError01": {
+    "description": "error copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText01": "الكود غير صحيح أو انتهت صلاحيته. اطلب كودًا جديدًا من التلفزيون.",
+  "@tvlinktvpageText01": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText02": "تعذّر التحقق من الكود. حاول مرة أخرى.",
+  "@tvlinktvpageText02": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageError02": "تعذّر الاتصال. تحقّق من الإنترنت.",
+  "@tvlinktvpageError02": {
+    "description": "error copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText03": "انتهت صلاحية الكود. اطلب كودًا جديدًا من التلفزيون.",
+  "@tvlinktvpageText03": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText04": "تمت الموافقة على هذا الكود بالفعل.",
+  "@tvlinktvpageText04": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText05": "وصلت لحدّ التلفزيونات في باقتك. احذف تلفزيون قديم أو اخرج منه، وبعدين وافق تاني. الكود لسه شغّال.",
+  "@tvlinktvpageText05": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText06": "انتهت صلاحية تأكيد ولي الأمر. أدخل PIN مرة أخرى.",
+  "@tvlinktvpageText06": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText07": "تعذّرت الموافقة. حاول مرة أخرى.",
+  "@tvlinktvpageText07": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageError03": "تعذّر الاتصال. تحقّق من الإنترنت.",
+  "@tvlinktvpageError03": {
+    "description": "error copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageBuild01": "ربط تلفزيون",
+  "@tvlinktvpageBuild01": {
+    "description": "build copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText08": "إدارة الأجهزة",
+  "@tvlinktvpageText08": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText09": "افتح مجرّة على التلفزيون، واكتب الكود اللي ظاهر على الشاشة.",
+  "@tvlinktvpageText09": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageLabelText01": "كود التلفزيون",
+  "@tvlinktvpageLabelText01": {
+    "description": "labelText copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText10": "متابعة",
+  "@tvlinktvpageText10": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText11": "تلفزيون",
+  "@tvlinktvpageText11": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText12": "{value1} · الكود {value2}",
+  "@tvlinktvpageText12": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {},
+      "value2": {}
+    }
+  },
+  "tvlinktvpageText13": "الجهاز ده عايز يدخل على حساب عيلتك. وافق بس لو التلفزيون قدامك دلوقتي وإنت اللي طلبت الكود.",
+  "@tvlinktvpageText13": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText14": "موافقة بـ PIN ولي الأمر",
+  "@tvlinktvpageText14": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText15": "ده مش جهازي",
+  "@tvlinktvpageText15": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText16": "تم ربط التلفزيون. هيفتح لوحده خلال ثواني على شاشة اختيار الطفل.",
+  "@tvlinktvpageText16": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText17": "تقدر تشيله في أي وقت من شاشة الأجهزة.",
+  "@tvlinktvpageText17": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvlinktvpageText18": "تمام",
+  "@tvlinktvpageText18": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/link_tv_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvpairingpageText01": "محاولات كثيرة. انتظر دقيقة ثم اطلب كودًا جديدًا.",
+  "@tvtvpairingpageText01": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_pairing_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvpairingpageText02": "تعذّر الحصول على كود. تحقّق من اتصال التلفزيون بالإنترنت.",
+  "@tvtvpairingpageText02": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_pairing_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvpairingpageText03": "ادخل من موبايلك",
+  "@tvtvpairingpageText03": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_pairing_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvpairingpageText04": "افتح تطبيق مجرّة على موبايل ولي الأمر.",
+  "@tvtvpairingpageText04": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_pairing_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvpairingpageText05": "صوّر الكود بكاميرا الموبايل، أو ادخل: الأجهزة ← ربط تلفزيون.",
+  "@tvtvpairingpageText05": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_pairing_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvpairingpageText06": "اكتب الكود الظاهر هنا، وأكّد برقم PIN ولي الأمر.",
+  "@tvtvpairingpageText06": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_pairing_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvpairingpageText07": "الدخول بالبريد وكلمة المرور",
+  "@tvtvpairingpageText07": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_pairing_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvpairingpageText08": "تمت الموافقة، جارٍ الدخول…",
+  "@tvtvpairingpageText08": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_pairing_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageError01": "تعذّر الاتصال. حاول مرة أخرى.",
+  "@tvtvremotepageError01": {
+    "description": "error copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageBuild01": "التلفزيون",
+  "@tvtvremotepageBuild01": {
+    "description": "build copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageText01": "التلفزيون مش متصل",
+  "@tvtvremotepageText01": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageText02": "جارٍ التشغيل…",
+  "@tvtvremotepageText02": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageText03": "مستني",
+  "@tvtvremotepageText03": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageText04": "شغّال على التلفزيون",
+  "@tvtvremotepageText04": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageText05": "متوقف مؤقتًا",
+  "@tvtvremotepageText05": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageText06": "الحلقة خلصت",
+  "@tvtvremotepageText06": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageText07": "ما اشتغلتش",
+  "@tvtvremotepageText07": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageTooltip01": "رجوع ١٠ ثواني",
+  "@tvtvremotepageTooltip01": {
+    "description": "tooltip copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageText08": "إيقاف مؤقت",
+  "@tvtvremotepageText08": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageText09": "تشغيل",
+  "@tvtvremotepageText09": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageTooltip02": "قدّام ١٠ ثواني",
+  "@tvtvremotepageTooltip02": {
+    "description": "tooltip copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvremotepageText10": "إيقاف التشغيل على التلفزيون",
+  "@tvtvremotepageText10": {
+    "description": "text copy for app_main/lib/features/tv/presentation/pages/tv_remote_page.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetError01": "تعذّر الوصول للتلفزيونات. تحقّق من الإنترنت.",
+  "@tvtvcastsheetError01": {
+    "description": "error copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetError02": "اختار ملف الطفل الأول.",
+  "@tvtvcastsheetError02": {
+    "description": "error copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetError03": "تعذّر الاتصال. حاول مرة أخرى.",
+  "@tvtvcastsheetError03": {
+    "description": "error copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetBuild01": "شغّل على التلفزيون",
+  "@tvtvcastsheetBuild01": {
+    "description": "build copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetText01": "مفيش تلفزيون متصل دلوقتي. افتح مجرّة على التلفزيون وتأكد إنه داخل على نفس الحساب.",
+  "@tvtvcastsheetText01": {
+    "description": "text copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetText02": "تحديث",
+  "@tvtvcastsheetText02": {
+    "description": "text copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetText03": "تلفزيون",
+  "@tvtvcastsheetText03": {
+    "description": "text copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetText04": "شغّال: {value1}",
+  "@tvtvcastsheetText04": {
+    "description": "text copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  },
+  "tvtvcastsheetText05": "شغّال دلوقتي",
+  "@tvtvcastsheetText05": {
+    "description": "text copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetText06": "متصل",
+  "@tvtvcastsheetText06": {
+    "description": "text copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetCastErrorMessage01": "التلفزيون مش متصل دلوقتي. افتح مجرّة عليه وحاول تاني.",
+  "@tvtvcastsheetCastErrorMessage01": {
+    "description": "castErrorMessage copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetCastErrorMessage02": "التلفزيون ما ردّش. تأكد إنه شغّال ومتصل بالإنترنت.",
+  "@tvtvcastsheetCastErrorMessage02": {
+    "description": "castErrorMessage copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetCastErrorMessage03": "ملف الطفل ده مش موجود على الحساب.",
+  "@tvtvcastsheetCastErrorMessage03": {
+    "description": "castErrorMessage copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetCastErrorMessage04": "وقت الشاشة لليوم خلص للطفل ده.",
+  "@tvtvcastsheetCastErrorMessage04": {
+    "description": "castErrorMessage copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetCastErrorMessage05": "دلوقتي وقت النوم حسب إعدادات ولي الأمر.",
+  "@tvtvcastsheetCastErrorMessage05": {
+    "description": "castErrorMessage copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetCastErrorMessage06": "الطفل وصل لحد المشاهدة المتواصلة. استراحة شوية.",
+  "@tvtvcastsheetCastErrorMessage06": {
+    "description": "castErrorMessage copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetText07": "وصلت لعدد الشاشات المسموح بيه في باقتك.",
+  "@tvtvcastsheetText07": {
+    "description": "text copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetText08": "الحلقة دي محتاجة اشتراك.",
+  "@tvtvcastsheetText08": {
+    "description": "text copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetText09": "مفيش حاجة شغالة على التلفزيون.",
+  "@tvtvcastsheetText09": {
+    "description": "text copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvcastsheetText10": "التلفزيون ما قدرش يشغّل الحلقة.",
+  "@tvtvcastsheetText10": {
+    "description": "text copy for app_main/lib/features/tv/presentation/tv_cast_sheet.dart; Arabic fallback preserves the current UI."
+  },
+  "tvtvreceiverhostLabel01": "تلفزيون",
+  "@tvtvreceiverhostLabel01": {
+    "description": "label copy for app_main/lib/features/tv/presentation/tv_receiver_host.dart; Arabic fallback preserves the current UI."
+  },
+  "mainText01": "حدث خطأ: {value1}",
+  "@mainText01": {
+    "description": "text copy for app_main/lib/main.dart; Arabic fallback preserves the current UI.",
+    "placeholders": {
+      "value1": {}
+    }
+  }
 }

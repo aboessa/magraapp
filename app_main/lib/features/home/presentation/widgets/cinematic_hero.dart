@@ -10,6 +10,8 @@ import '../../../../core/layout/app_layout.dart';
 import '../../../../core/widgets/cinematic_image.dart';
 import '../../../profile/data/watchlist_store.dart';
 import '../../domain/content_models.dart';
+import 'tv_hero_trailer.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 /// A curated home hero. Randomness is limited to the enabled editorial
 /// spotlight list; it never chooses blindly from the full content catalog.
@@ -32,7 +34,9 @@ class CinematicHeroSlider extends StatefulWidget {
 }
 
 class _CinematicHeroSliderState extends State<CinematicHeroSlider> {
-  static const _autoAdvanceDelay = Duration(seconds: 8);
+  // APP-204: on TV a slide stays long enough for its 12 s preview to play.
+  Duration get _autoAdvanceDelay =>
+      Duration(seconds: widget.isTelevision ? 14 : 8);
 
   late final PageController _pageController;
   late List<_ResolvedSpotlight> _items;
@@ -52,7 +56,9 @@ class _CinematicHeroSliderState extends State<CinematicHeroSlider> {
     } else {
       _activeIndex = 0; // exactly 1 item — no randomization needed
     }
-    _pageController = PageController(initialPage: _activeIndex.clamp(0, (_items.length - 1).clamp(0, 999)));
+    _pageController = PageController(
+      initialPage: _activeIndex.clamp(0, (_items.length - 1).clamp(0, 999)),
+    );
   }
 
   @override
@@ -130,18 +136,27 @@ class _CinematicHeroSliderState extends State<CinematicHeroSlider> {
     if (_items.isEmpty) return const SizedBox.shrink();
 
     final compact = context.layoutClass == AppLayoutClass.compact;
+    // أيّ ماستر يُرسَم — طوليّ 3:4 أم عريض 16:9 — يقرّره [_useBannerMaster]،
+    // ويطابقه هنا: صندوقٌ بنسبة الفنّ نفسها، فلا شريطٌ أسود ولا قصّ. القياس
+    // على الإنتاج: البوستر 1200×1600 (0.75) والبانر 1920×1080 (1.778) لكل
+    // السلاسل المنشورة الخمس عشرة — لا تخمينًا.
+    final useBanner = _useBannerMaster(
+      isTelevision: widget.isTelevision,
+      compact: compact,
+    );
     final viewportHeight = MediaQuery.sizeOf(context).height;
-    final height = widget.isTelevision
-        ? (viewportHeight - 130).clamp(420.0, 570.0)
-        : (compact ? viewportHeight * 0.68 : viewportHeight * 0.58).clamp(
-            408.0,
-            compact ? 560.0 : 600.0,
-          );
-    final horizontalPadding = context.horizontalPagePadding;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final height = useBanner
+        ? (widget.isTelevision ? (viewportHeight - 130) : viewportHeight * 0.58)
+              .clamp(300.0, widget.isTelevision ? 570.0 : 460.0)
+        // البوستر: العرض يحكم لا الارتفاع، فالصندوق يتّبع 3:4 تمامًا مهما
+        // اختلف طول الشاشة. الحدّان الأعلى والأدنى يمنعان صندوقًا هائلًا على
+        // جهازٍ لوحيّ ضيق طويل أو ضئيلًا على هاتفٍ قصير.
+        : (viewportWidth * (4 / 3)).clamp(440.0, 620.0);
 
     return Semantics(
       container: true,
-      label: 'قصص مجرة المختارة',
+      label: AppLocalizationsAr().homecinematicheroLabel01,
       child: SizedBox(
         height: height,
         child: Stack(
@@ -156,23 +171,21 @@ class _CinematicHeroSliderState extends State<CinematicHeroSlider> {
                 item: _items[index],
                 compact: compact,
                 isTelevision: widget.isTelevision,
+                useBannerMaster: useBanner,
+                isActive: index == _activeIndex,
                 onOpenSeries: () => widget.onOpenSeries(_items[index].series),
               ),
             ),
             if (_items.length > 1)
               Align(
-                alignment: AlignmentDirectional.bottomEnd,
+                alignment: Alignment.bottomCenter,
                 child: Padding(
-                  padding: EdgeInsetsDirectional.only(
-                    end: horizontalPadding,
-                    bottom: widget.isTelevision ? 28 : 20,
+                  padding: EdgeInsets.only(
+                    bottom: widget.isTelevision ? 18 : 12,
                   ),
                   child: _SliderProgress(
                     count: _items.length,
                     activeIndex: _activeIndex,
-                    // مدّة التقدّم التلقائي، أو `null` حين لا تقدّم — فالشريط
-                    // يمتلئ فعلًا بقدر ما بقي، ولا يكذب امتلاءً حين يكون
-                    // الدوّار متوقّفًا (حركة مُقلَّلة، أو شريحة واحدة).
                     autoAdvance: _autoAdvanceTimer != null
                         ? _autoAdvanceDelay
                         : null,
@@ -193,17 +206,33 @@ class _CinematicHeroSliderState extends State<CinematicHeroSlider> {
   }
 }
 
+/// أيّ ماستر فنّي يناسب هذا التخطيط، بلا قصّ ولا فراغ.
+///
+/// القاعدة: صندوقٌ ضيّق (هاتف) يأخذ البوستر الطوليّ 3:4 لأن نسبته قريبة من
+/// نسبة الصندوق، وصندوقٌ عريض (جهاز لوحيّ أو تلفاز) يأخذ البانر 16:9 للسبب
+/// نفسه بالضبط. القرار من فئة التخطيط لا من حجم الشاشة الخام، لأنها ما
+/// يستعمله باقي التطبيق لتمييز الهاتف عن الجهاز اللوحي (‏`app_layout.dart`).
+bool _useBannerMaster({required bool isTelevision, required bool compact}) {
+  if (isTelevision) return true;
+  return !compact;
+}
+
 class _CinematicSlide extends StatelessWidget {
   const _CinematicSlide({
     required this.item,
     required this.compact,
     required this.isTelevision,
+    required this.useBannerMaster,
     required this.onOpenSeries,
+    this.isActive = false,
   });
 
+  /// Only the slide on screen may start a preview.
+  final bool isActive;
   final _ResolvedSpotlight item;
   final bool compact;
   final bool isTelevision;
+  final bool useBannerMaster;
   final VoidCallback onOpenSeries;
 
   @override
@@ -217,7 +246,7 @@ class _CinematicSlide extends StatelessWidget {
           padding,
           24,
           padding,
-          isTelevision ? 54 : 44,
+          isTelevision ? 54 : 34,
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: isTelevision ? 700 : 570),
@@ -226,7 +255,7 @@ class _CinematicSlide extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _Eyebrow(label: item.spotlight.eyebrow),
-              const SizedBox(height: 13),
+              const SizedBox(height: 10),
               Text(
                 series.title,
                 maxLines: 2,
@@ -235,53 +264,70 @@ class _CinematicSlide extends StatelessWidget {
                     (isTelevision
                             ? Theme.of(context).textTheme.displayLarge
                             : compact
-                            ? Theme.of(context).textTheme.displayMedium
-                            : Theme.of(context).textTheme.displayLarge)
+                            ? const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                height: 1.15,
+                              )
+                            : Theme.of(context).textTheme.displayMedium)
                         ?.copyWith(
                           shadows: const [
-                            Shadow(color: Colors.black87, blurRadius: 18),
+                            Shadow(
+                              color: Colors.black,
+                              blurRadius: 24,
+                              offset: Offset(0, 3),
+                            ),
+                            Shadow(color: Colors.black87, blurRadius: 10),
                           ],
                         ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
-                runSpacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  _MetaChip(label: series.ageLabel),
-                  _MetaChip(
-                    label: series.episodesCount > 0
-                        ? '${series.episodesCount} حلقات'
-                        : 'سلسلة جديدة',
-                  ),
-                  if (series.isFree) const _MetaChip(label: 'مجاني'),
+                  _MetaBadge(label: series.ageLabel),
+                  if (series.episodesCount > 0)
+                    _MetaBadge(label: '${series.episodesCount} حلقات'),
+                  if (series.isFree)
+                    const _MetaBadge(label: 'مجاني', isHighlight: true),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Text(
                 series.description,
                 maxLines: compact ? 2 : 3,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.starlight.withValues(alpha: 0.9),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.88),
+                  fontSize: compact ? 12.5 : 14,
+                  height: 1.45,
                   shadows: const [
                     Shadow(color: Colors.black87, blurRadius: 12),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
+                    flex: 3,
                     child: Container(
                       height: 46,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFDF7D), Color(0xFFFFB52E)],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                        borderRadius: BorderRadius.circular(23),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.18),
-                            blurRadius: 12,
+                            color: AppColors.starGold.withValues(alpha: 0.35),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -289,22 +335,22 @@ class _CinematicSlide extends StatelessWidget {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: onOpenSeries,
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(23),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Icon(
                                 Icons.play_arrow_rounded,
                                 color: Color(0xFF0B1026),
-                                size: 22,
+                                size: 24,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 6),
                               Text(
                                 item.spotlight.primaryActionLabel,
                                 style: const TextStyle(
                                   color: Color(0xFF0B1026),
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ],
@@ -314,7 +360,13 @@ class _CinematicSlide extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  _WatchlistButton(seriesId: series.id, title: series.title),
+                  Expanded(
+                    flex: 2,
+                    child: _WatchlistButton(
+                      seriesId: series.id,
+                      title: series.title,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -323,7 +375,6 @@ class _CinematicSlide extends StatelessWidget {
       ),
     );
 
-    // Bloom مستخرج من لون الكوكب 8-18% - MAJARRA_CINEMATIC_STREAMING_UX_PLAN.md:108
     final bloomColor = _accentForPlanet(series.planetId ?? 'abjad');
     return Semantics(
       label: '${series.title}، ${item.spotlight.eyebrow}',
@@ -333,88 +384,77 @@ class _CinematicSlide extends StatelessWidget {
           vertical: isTelevision ? 0 : 8,
         ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(isTelevision ? 24 : 20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-          boxShadow: AppColors.heroShadow,
+          borderRadius: BorderRadius.circular(isTelevision ? 24 : 22),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.55),
+              blurRadius: 28,
+              offset: const Offset(0, 12),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Bloom خلف الصورة
+            // خلفية توهج خفيفة من الكوكب
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     center: const Alignment(0.15, -0.15),
-                    radius: 1.1,
-                    colors: [bloomColor.withValues(alpha: 0.22), bloomColor.withValues(alpha: 0.06), Colors.transparent],
-                    stops: const [0, 0.35, 1],
+                    radius: 1.2,
+                    colors: [
+                      bloomColor.withValues(alpha: 0.15),
+                      Colors.transparent,
+                    ],
+                    stops: const [0, 1],
                   ),
                 ),
               ),
             ),
-            // `bannerUrl` لا `coverUrl`.
-            //
-            // البانر عريض 16:9 والبوستر طوليّ. وكان هذا السطر يقرأ البوستر
-            // فيُمَدّ في صندوقٍ عريض — وهو سبب أن الهيرو لا يبدو كتطبيق بثّ:
-            // وجهٌ مقطوع، وتكوينٌ مُزاح، وتفاصيل مفقودة خارج الإطار.
-            //
-            // و`SeriesItem.bannerUrl` يسقط إلى `coverUrl` عند غياب البانر
-            // (`content_dtos.dart:203`)، فالحالة الأسوأ هي ما كان يحدث دائمًا،
-            // والأفضل صار هو المعتاد: الخمس عشرة سلسلة المنشورة كلّها لها بانر
-            // في `asset_links`.
             ExcludeSemantics(
               child: CinematicImage(
-                networkUrl: series.bannerUrl ?? series.coverUrl,
-                assetPath: series.bannerAsset,
+                networkUrl: useBannerMaster
+                    ? (series.bannerUrl ?? series.coverUrl)
+                    : (series.coverUrl ?? series.bannerUrl),
+                assetPath: useBannerMaster
+                    ? series.bannerAsset
+                    : series.posterAsset,
                 semanticLabel: 'مشهد من ${series.title}',
-                // البانر مُؤلَّف ليُقرأ كاملًا، فلا إزاحة: التوسيط يحفظ التكوين
-                // الذي رسمه الفنّان. الإزاحة `0.15` كانت تعويضًا عن قصّ البوستر.
                 alignment: Alignment.center,
               ),
             ),
-            // Premium cinematic scrim - like Haikyu banner
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x0A06091A),
-                    Color(0x1A06091A),
-                    Color(0x8006091A),
-                    Color(0xF506091A),
-                  ],
-                  stops: [0, 0.35, 0.62, 1],
+            // APP-204: muted preview over the banner, on TV, active slide only.
+            if (isTelevision && isActive)
+              Positioned.fill(
+                child: TvHeroTrailer(
+                  key: ValueKey('trailer-${series.id}'),
+                  seriesId: series.id,
                 ),
               ),
-            ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: AlignmentDirectional.centerStart,
-                  end: AlignmentDirectional.centerEnd,
-                  colors: [
-                    Color(0xF506091A),
-                    Color(0x8A06091A),
-                    Color(0x1406091A),
-                  ],
-                  stops: const [0, 0.52, 1],
-                ),
-              ),
-            ),
-            // Subtle top highlight
-            Positioned.fill(
+            // حاجب سينمائي نقي:
+            // النصف العلوي (40%) شفاف بالكامل لضمان أقصى نقاء وتشبع للصورة دون أي ضبابية أو تبييض.
+            // والتدرج السفلي فقط ينساب بسلاسة إلى خلفية التطبيق لضمان قراءة النص والأزرار.
+            const Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
-                    end: Alignment.center,
+                    end: Alignment.bottomCenter,
                     colors: [
-                      Colors.white.withValues(alpha: 0.04),
                       Colors.transparent,
+                      Colors.transparent,
+                      Color(0x2E06091A),
+                      Color(0x8C06091A),
+                      Color(0xED06091A),
+                      Color(0xFF06091A),
                     ],
+                    stops: [0.0, 0.40, 0.62, 0.80, 0.94, 1.0],
                   ),
                 ),
               ),
@@ -427,19 +467,7 @@ class _CinematicSlide extends StatelessWidget {
   }
 }
 
-/// زرّ «في قائمتي» في الهيرو.
-///
-/// ## ما كان
-///
-/// دائرةٌ بعلامة `+` مُسنَدة إلى `onOpenSeries` — أي **نفس فعل زرّ التشغيل**
-/// بجوارها. علامةُ زائد تعني «أضِف»، وكانت تنقل إلى صفحة السلسلة: زرٌّ يقول غير
-/// ما يفعل. وهو نفس العطل الذي رُصد في «أكمل الرسمة» (زرّان بنصَّين مختلفَين
-/// وفعلٍ واحد)، فلا يصحّ إصلاحه هناك وتركه في أبرز موضعٍ في التطبيق.
-///
-/// ## وما صار
-///
-/// `WatchlistNotifier.toggle` الحقيقي، والأيقونة تتبع الحالة — فالزرّ يفعل ما
-/// تقوله صورته، ويُخبر بالنتيجة.
+/// زرّ «في قائمتي» في الهيرو بنمط تطبيقات البث الاحترافية.
 class _WatchlistButton extends ConsumerWidget {
   const _WatchlistButton({required this.seriesId, required this.title});
 
@@ -450,38 +478,64 @@ class _WatchlistButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final saved = ref.watch(watchlistProvider).contains(seriesId);
     return Container(
-      width: 46,
       height: 46,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: saved ? 0.24 : 0.14),
-        shape: BoxShape.circle,
+        color: saved
+            ? AppColors.starGold.withValues(alpha: 0.2)
+            : Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(23),
         border: Border.all(
-          color: Colors.white.withValues(alpha: saved ? 0.42 : 0.22),
+          color: saved
+              ? AppColors.starGold.withValues(alpha: 0.6)
+              : Colors.white.withValues(alpha: 0.2),
+          width: 1.2,
         ),
+        boxShadow: [
+          if (saved)
+            BoxShadow(
+              color: AppColors.starGold.withValues(alpha: 0.25),
+              blurRadius: 12,
+            ),
+        ],
       ),
-      child: IconButton(
-        // النصّ يذكر العمل والحالة، فقارئ الشاشة لا يحتاج أن يرى الأيقونة.
-        tooltip: saved ? 'إزالة من قائمتي' : 'إضافة إلى قائمتي',
-        onPressed: () => ref.read(watchlistProvider.notifier).toggle(seriesId),
-        icon: Icon(
-          saved ? Icons.check_rounded : Icons.add_rounded,
-          color: Colors.white,
-          size: 22,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(23),
+          onTap: () => ref.read(watchlistProvider.notifier).toggle(seriesId),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  saved ? Icons.check_rounded : Icons.add_rounded,
+                  color: saved ? AppColors.starGold : Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    saved ? 'في قائمتي' : 'قائمتي',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: saved ? AppColors.starGold : Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        padding: EdgeInsets.zero,
       ),
     );
   }
 }
 
-/// مؤشّر الشرائح.
-///
-/// الشريحة النشطة شريطٌ يمتلئ بمقدار ما بقي من التقدّم التلقائي، وبقيتها نقاط.
-/// وهذا هو النمط الذي تستعمله تطبيقات البثّ لأنه يجيب سؤالًا يسأله المشاهد
-/// فعلًا: «هل سينتقل عنّي الآن؟». والنقاط الساكنة كانت تقول العدد والموضع فقط.
-///
-/// و[autoAdvance] يساوي `null` حين لا تقدّم — حركةٌ مُقلَّلة أو شريحة واحدة —
-/// فيبقى الشريط ممتلئًا بلا حركة بدل أن يوهم بعدٍّ تنازليّ لا يحدث.
+/// مؤشّر الشرائح بتصميم كبسولة زجاجية عائمة.
 class _SliderProgress extends StatelessWidget {
   const _SliderProgress({
     required this.count,
@@ -495,56 +549,60 @@ class _SliderProgress extends StatelessWidget {
   final Duration? autoAdvance;
   final ValueChanged<int> onSelected;
 
-  static const double _activeWidth = 30;
-  static const double _dotWidth = 7;
-  static const double _trackHeight = 5;
+  static const double _activeWidth = 24;
+  static const double _dotWidth = 6;
+  static const double _trackHeight = 4;
 
   @override
   Widget build(BuildContext context) {
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       label: 'اختيار القصة المعروضة',
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(count, (index) {
-          final selected = index == activeIndex;
-          return Semantics(
-            button: true,
-            selected: selected,
-            label: 'القصة ${index + 1} من $count',
-            child: GestureDetector(
-              onTap: () => onSelected(index),
-              child: AnimatedContainer(
-                duration: reducedMotion
-                    ? Duration.zero
-                    : const Duration(milliseconds: 260),
-                curve: Curves.easeOutCubic,
-                width: selected ? _activeWidth : _dotWidth,
-                height: _trackHeight,
-                margin: const EdgeInsetsDirectional.only(start: 5),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(99),
-                  color: AppColors.starlight.withValues(
-                    alpha: selected ? 0.3 : 0.45,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.38),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(count, (index) {
+            final selected = index == activeIndex;
+            return Semantics(
+              button: true,
+              selected: selected,
+              label: 'القصة ${index + 1} من $count',
+              child: GestureDetector(
+                onTap: () => onSelected(index),
+                child: AnimatedContainer(
+                  duration: reducedMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  width: selected ? _activeWidth : _dotWidth,
+                  height: _trackHeight,
+                  margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(99),
+                    color: selected
+                        ? AppColors.starGold
+                        : Colors.white.withValues(alpha: 0.35),
                   ),
+                  child: selected
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(99),
+                          child: _AutoAdvanceFill(
+                            key: ValueKey(activeIndex),
+                            duration: reducedMotion ? null : autoAdvance,
+                          ),
+                        )
+                      : null,
                 ),
-                // المِلء داخل المسار: `Align` بـ`widthFactor` يتجنّب حساب عرضٍ
-                // بالبكسل، فيبقى صحيحًا مع أي قيمة لـ`_activeWidth`.
-                child: selected
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(99),
-                        child: _AutoAdvanceFill(
-                          // المفتاح يُعيد تشغيل المِلء من الصفر عند كل شريحة،
-                          // وإلّا لاستمرّ من موضع الشريحة السابقة.
-                          key: ValueKey(activeIndex),
-                          duration: reducedMotion ? null : autoAdvance,
-                        ),
-                      )
-                    : null,
               ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -553,7 +611,6 @@ class _SliderProgress extends StatelessWidget {
 class _AutoAdvanceFill extends StatelessWidget {
   const _AutoAdvanceFill({required this.duration, super.key});
 
-  /// `null` تعني «لا تقدّم»: يُرسَم ممتلئًا بلا حركة.
   final Duration? duration;
 
   @override
@@ -588,46 +645,76 @@ class _Eyebrow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(
-          Icons.auto_awesome_rounded,
-          color: AppColors.starGold,
-          size: 19,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.starGold.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.starGold.withValues(alpha: 0.38),
+          width: 1,
         ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: AppColors.starGold,
-              letterSpacing: 0.15,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.auto_awesome_rounded,
+            color: AppColors.starGold,
+            size: 14,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.starGold,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.15,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({required this.label});
+class _MetaBadge extends StatelessWidget {
+  const _MetaBadge({required this.label, this.isHighlight = false});
 
   final String label;
+  final bool isHighlight;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.deepSpace.withValues(alpha: 0.74),
-        borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: AppColors.starlight.withValues(alpha: 0.2)),
+        color: isHighlight
+            ? AppColors.electricCyan.withValues(alpha: 0.15)
+            : const Color(0xFF06091A).withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isHighlight
+              ? AppColors.electricCyan.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.18),
+          width: 1,
+        ),
       ),
-      child: Text(label, style: Theme.of(context).textTheme.labelMedium),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isHighlight
+              ? AppColors.electricCyan
+              : Colors.white.withValues(alpha: 0.9),
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }

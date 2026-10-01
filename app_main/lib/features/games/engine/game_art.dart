@@ -15,10 +15,11 @@ import 'package:flutter/material.dart';
 
 import '../data/drawing_asset_map.dart';
 import '../presentation/widgets/drawing_asset.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 /// مشتقّات WebP بعرض 512 من الفنّ المراجَع في `games/wave/*` و`wave4/`.
-const _a = 'assets/images/games/art';
-const _wave = 'assets/images/games/wave';
+final _a = 'assets/images/games/art';
+final _wave = 'assets/images/games/wave';
 
 /// الأدوار البصرية التي لا يحملها عقد pack v1 كحقول مستقلة.
 ///
@@ -180,7 +181,7 @@ class GameDecorativeSurface extends StatelessWidget {
 }
 
 /// معرّف الحزمة ← صورة ملوّنة شفافة مُنتَجة ومراجَعة.
-const kGameArtMap = <String, String>{
+final kGameArtMap = <String, String>{
   // حيوانات
   'asset-color-cat': '$_a/animal-cat.webp',
   'asset-color-bird': '$_a/animal-bird.webp',
@@ -219,25 +220,66 @@ String? gameArtPath(String? assetId) {
   return kGameArtMap[assetId] ?? drawingAssetPath(assetId);
 }
 
-const _arabicNames = <String, String>{
-  'cat': 'قطة', 'bird': 'عصفور', 'fish': 'سمكة', 'fish-red': 'سمكة حمراء',
-  'fish-blue': 'سمكة زرقاء', 'rabbit': 'أرنب', 'lion': 'أسد', 'owl': 'بومة',
-  'turtle': 'سلحفاة', 'dog': 'كلب', 'horse': 'حصان', 'elephant': 'فيل',
-  'whale': 'حوت', 'chicken': 'دجاجة', 'butterfly': 'فراشة', 'apple': 'تفاحة',
-  'rocket': 'صاروخ', 'tree': 'شجرة', 'flower': 'وردة', 'sun': 'شمس',
-  'moon': 'قمر', 'moon-star': 'هلال ونجمة', 'star': 'نجمة', 'stars': 'نجوم',
-  'house': 'بيت', 'car': 'سيارة', 'ball': 'كرة', 'boat': 'مركب',
-  'boat-old': 'مركب قديم', 'pyramid': 'هرم', 'library': 'مكتبة',
-  'book': 'كتاب', 'mountain': 'جبل', 'sea': 'بحر', 'rainbow': 'قوس قزح',
-  'train': 'قطار', 'airplane': 'طائرة', 'bicycle': 'دراجة', 'bag': 'حقيبة',
-  'lamp': 'مصباح', 'mosque': 'مسجد', 'lantern': 'فانوس', 'crescent': 'هلال',
-  'robot-goal': 'الهدف', 'salt-beaker': 'كوب ملح', 'planet': 'كوكب',
-  'red': 'أحمر', 'blue': 'أزرق', 'green': 'أخضر', 'yellow': 'أصفر',
-  'circle': 'دائرة', 'square': 'مربع', 'triangle': 'مثلث',
+final _arabicNames = <String, String>{
+  'cat': AppLocalizationsAr().gamesgameartText01,
+  'bird': AppLocalizationsAr().gamesgameartText02,
+  'fish': AppLocalizationsAr().gamesgameartText03,
+  'fish-red': AppLocalizationsAr().gamesgameartText04,
+  'fish-blue': AppLocalizationsAr().gamesgameartText05,
+  'rabbit': AppLocalizationsAr().gamesgameartText06,
+  'lion': AppLocalizationsAr().gamesgameartText07,
+  'owl': AppLocalizationsAr().gamesgameartText08,
+  'turtle': AppLocalizationsAr().gamesgameartText09,
+  'dog': AppLocalizationsAr().gamesgameartText10,
+  'horse': AppLocalizationsAr().gamesgameartText11,
+  'elephant': AppLocalizationsAr().gamesgameartText12,
+  'whale': AppLocalizationsAr().gamesgameartText13,
+  'chicken': AppLocalizationsAr().gamesgameartText14,
+  'butterfly': AppLocalizationsAr().gamesgameartText15,
+  'apple': AppLocalizationsAr().gamesgameartText16,
+  'rocket': AppLocalizationsAr().gamesgameartText17,
+  'tree': AppLocalizationsAr().gamesgameartText18,
+  'flower': AppLocalizationsAr().gamesgameartText19,
+  'sun': AppLocalizationsAr().gamesgameartText20,
+  'moon': AppLocalizationsAr().gamesgameartText21,
+  'moon-star': AppLocalizationsAr().gamesgameartText22,
+  'star': AppLocalizationsAr().gamesgameartText23,
+  'stars': AppLocalizationsAr().gamesgameartText24,
+  'house': AppLocalizationsAr().gamesgameartText25,
+  'car': AppLocalizationsAr().gamesgameartText26,
+  'ball': AppLocalizationsAr().gamesgameartText27,
+  'boat': AppLocalizationsAr().gamesgameartText28,
+  'boat-old': AppLocalizationsAr().gamesgameartText29,
+  'pyramid': AppLocalizationsAr().gamesgameartText30,
+  'library': AppLocalizationsAr().gamesgameartText31,
+  'book': AppLocalizationsAr().gamesgameartText32,
+  'mountain': AppLocalizationsAr().gamesgameartText33,
+  'sea': AppLocalizationsAr().gamesgameartText34,
+  'rainbow': AppLocalizationsAr().gamesgameartText35,
+  'train': AppLocalizationsAr().gamesgameartText36,
+  'airplane': AppLocalizationsAr().gamesgameartText37,
+  'bicycle': AppLocalizationsAr().gamesgameartText38,
+  'bag': AppLocalizationsAr().gamesgameartText39,
+  'lamp': AppLocalizationsAr().gamesgameartText40,
+  'mosque': AppLocalizationsAr().gamesgameartText41,
+  'lantern': AppLocalizationsAr().gamesgameartText42,
+  'crescent': AppLocalizationsAr().gamesgameartText43,
+  'robot-goal': AppLocalizationsAr().gamesgameartText44,
+  'salt-beaker': AppLocalizationsAr().gamesgameartText45,
+  'planet': AppLocalizationsAr().gamesgameartText46,
+  'red': AppLocalizationsAr().gamesgameartText47,
+  'blue': AppLocalizationsAr().gamesgameartText48,
+  'green': AppLocalizationsAr().gamesgameartText49,
+  'yellow': AppLocalizationsAr().gamesgameartText50,
+  'circle': AppLocalizationsAr().gamesgameartText51,
+  'square': AppLocalizationsAr().gamesgameartText52,
+  'triangle': AppLocalizationsAr().gamesgameartText53,
   // أحداث الخط الزمني (`timeline.event.*`)
-  'pyramids': 'بناء الأهرام', 'library_alex': 'مكتبة الإسكندرية',
-  'cairo_found': 'تأسيس القاهرة', 'suez_canal': 'حفر قناة السويس',
-  'aswan_dam': 'بناء السد العالي',
+  'pyramids': AppLocalizationsAr().gamesgameartText54,
+  'library_alex': AppLocalizationsAr().gamesgameartText55,
+  'cairo_found': AppLocalizationsAr().gamesgameartText56,
+  'suez_canal': AppLocalizationsAr().gamesgameartText57,
+  'aswan_dam': AppLocalizationsAr().gamesgameartText58,
 };
 
 /// اسم عربي مفهوم للطفل من معرّف أصل أو مفتاح تسمية (`label.cat`, `bin.red`).
@@ -309,7 +351,9 @@ String safeChildFacingLabel({
   if (knownArtName != null) return knownArtName;
 
   final fallback = arabicFallback.trim();
-  return _isChildFacingText(fallback) ? fallback : 'عنصر مصوّر';
+  return _isChildFacingText(fallback)
+      ? fallback
+      : AppLocalizationsAr().gamesgameartFallback01;
 }
 
 /// صورة عنصر لعبة، بحجمٍ يحدّده الأب.

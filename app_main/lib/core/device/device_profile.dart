@@ -37,3 +37,11 @@ class DeviceProfileService {
 final deviceProfileProvider = FutureProvider<DeviceProfile>((ref) {
   return DeviceProfileService().load();
 });
+
+/// The profile as a plain value, for code that cannot wait (the router's
+/// redirect). `main.dart` loads the profile before `runApp` and overrides this
+/// with it, so the very first redirect already knows it is on a television.
+final currentDeviceProfileProvider = Provider<DeviceProfile>((ref) {
+  return ref.watch(deviceProfileProvider).valueOrNull ??
+      const DeviceProfile(isTelevision: false);
+});

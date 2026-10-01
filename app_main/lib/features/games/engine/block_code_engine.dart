@@ -39,6 +39,7 @@ import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
 import 'game_session_controller.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 /// The blocks the contract defines. Nothing else is executable.
 enum BlockKind {
@@ -117,15 +118,15 @@ enum BlockKind {
   String get label {
     switch (this) {
       case BlockKind.move:
-        return 'تقدّم';
+        return AppLocalizationsAr().gamesblockcodeengineGet01;
       case BlockKind.turnLeft:
-        return 'انعطف يسارًا';
+        return AppLocalizationsAr().gamesblockcodeengineGet02;
       case BlockKind.turnRight:
-        return 'انعطف يمينًا';
+        return AppLocalizationsAr().gamesblockcodeengineGet03;
       case BlockKind.repeat:
-        return 'كرّر';
+        return AppLocalizationsAr().gamesblockcodeengineGet04;
       case BlockKind.ifPath:
-        return 'إذا كان الطريق مفتوحًا';
+        return AppLocalizationsAr().gamesblockcodeengineGet05;
       case BlockKind.collect:
         return 'اجمع';
       case BlockKind.function:

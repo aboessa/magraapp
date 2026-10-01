@@ -11,7 +11,12 @@ import '../../../core/failures/app_failure.dart';
 import 'content_dtos.dart';
 
 class MajarraApiException implements Exception {
-  const MajarraApiException(this.message, {this.statusCode, this.code, this.data});
+  const MajarraApiException(
+    this.message, {
+    this.statusCode,
+    this.code,
+    this.data,
+  });
 
   final String message;
   final int? statusCode;
@@ -303,6 +308,124 @@ class MajarraApiClient {
     );
   }
 
+  /// TV-001: a signed-out television asks for a pairing code to display.
+  Future<Map<String, dynamic>> startTvPairing({
+    required String installationId,
+    required String platform,
+    String? deviceName,
+  }) async {
+    return _postJson(
+      '/api/v1/tv/pair/start',
+      body: {
+        'installation_id': installationId,
+        'platform': platform,
+        if (deviceName != null) 'device_name': deviceName,
+      },
+    );
+  }
+
+  /// TV-001: the television asks whether its code has been approved. The
+  /// response carries the session tokens exactly once, on approval.
+  Future<Map<String, dynamic>> pollTvPairing({
+    required String code,
+    required String pollSecret,
+  }) async {
+    return _postJson(
+      '/api/v1/tv/pair/poll',
+      body: {'code': code, 'poll_secret': pollSecret},
+    );
+  }
+
+  /// TV-001: the phone shows which device a code belongs to before approving.
+  Future<Map<String, dynamic>> lookupTvPairing({required String code}) async {
+    return _postJson(
+      '/api/v1/tv/pair/lookup',
+      auth: true,
+      body: {'code': code},
+    );
+  }
+
+  /// TV-001: approves a television with a single-use `approve_tv` proof.
+  Future<Map<String, dynamic>> approveTvPairing({required String code}) async {
+    final proof = await authorizeParentAction('approve_tv');
+    return _postJson(
+      '/api/v1/tv/pair/approve',
+      auth: true,
+      parentProofToken: proof,
+      body: {'code': code},
+    );
+  }
+
+  /// TV-002: a 60-second ticket to open the TV/remote link socket.
+  Future<String> tvLinkTicket({
+    required String role,
+    String? deviceName,
+  }) async {
+    final envelope = await _postJson(
+      '/api/v1/tv/link/ticket',
+      auth: true,
+      body: {'role': role, if (deviceName != null) 'device_name': deviceName},
+    );
+    final data = envelope['data'];
+    final ticket = data is Map ? data['ticket'] : null;
+    if (ticket is! String || ticket.isEmpty) {
+      throw const MajarraApiException(
+        'Link ticket response is missing its ticket',
+      );
+    }
+    return ticket;
+  }
+
+  /// TV-002: the socket URL for a ticket. `https` becomes `wss`.
+  Uri tvLinkSocketUri(String ticket) {
+    final base = _baseUri;
+    return base.replace(
+      scheme: base.scheme == 'http' ? 'ws' : 'wss',
+      path: '/api/v1/tv/link/connect',
+      queryParameters: {'ticket': ticket},
+    );
+  }
+
+  /// TV-002: televisions of this family that have the app open right now.
+  Future<List<Map<String, Object?>>> tvLinkDevices() async {
+    final envelope = await _postJson(
+      '/api/v1/tv/link/devices',
+      auth: true,
+      body: const {},
+    );
+    final data = envelope['data'];
+    if (data is! List) return const [];
+    return data
+        .whereType<Map<dynamic, dynamic>>()
+        .map((item) => item.cast<String, Object?>())
+        .toList(growable: false);
+  }
+
+  /// TV-002: play / pause / resume / stop / seek on a connected TV.
+  Future<Map<String, dynamic>> tvLinkCommand({
+    required String deviceId,
+    required String command,
+    String? episodeId,
+    String? childId,
+    int? positionMs,
+    int? deltaMs,
+    String? from,
+  }) async {
+    return _postJson(
+      '/api/v1/tv/link/command',
+      auth: true,
+      body: {
+        'device_id': deviceId,
+        'command': command,
+        if (episodeId != null) 'episode_id': episodeId,
+        if (childId != null) 'child_id': childId,
+        if (positionMs != null) 'position_ms': positionMs,
+        if (deltaMs != null) 'delta_ms': deltaMs,
+        if (from != null) 'from': from,
+      },
+    );
+  }
+
   Future<Map<String, dynamic>> refresh({required String refreshToken}) async {
     return _postJson(
       '/api/v1/auth/refresh',
@@ -586,6 +709,9 @@ class MajarraApiClient {
         'positionMs': positionMs,
         'durationMs': durationMs,
         'eventId': eventId,
+        // APP-201: increasing, so rewinding and rewatching are accepted rather
+        // than refused as "older than what the server has".
+        'sequence': DateTime.now().millisecondsSinceEpoch,
         if (deviceId != null) 'deviceId': deviceId,
       },
     );
@@ -607,25 +733,111 @@ class MajarraApiClient {
     );
   }
 
+  /// `APP-204`: a short muted preview for the TV hero, or null (none, bedtime,
+  /// or any failure — a missing trailer is never an error on the home screen).
+  Future<String?> fetchSeriesTrailerUrl({
+    required String seriesId,
+    required String childId,
+  }) async {
+    if (childId == 'demo-child') return null;
+    try {
+      final envelope = await _getJson(
+        '/api/v1/series/${Uri.encodeComponent(seriesId)}/trailer',
+        auth: true,
+        query: {'child_id': childId},
+      );
+      final data = envelope['data'];
+      final url = data is Map ? data['url'] : null;
+      return url is String && url.isNotEmpty
+          ? _baseUri.resolve(url).toString()
+          : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // --- APP-203: push notifications ---
+
+  Future<void> registerPushToken(
+    String token, {
+    required String platform,
+  }) async {
+    await _postJson(
+      '/api/v1/push/tokens',
+      auth: true,
+      body: {'token': token, 'platform': platform},
+    );
+  }
+
+  Future<void> unregisterPushToken(String token) async {
+    await _withAuthRetry(
+      auth: true,
+      doRequest: (headers) => _client
+          .delete(
+            _baseUri.replace(path: '/api/v1/push/tokens'),
+            headers: headers,
+            body: jsonEncode({'token': token}),
+          )
+          .timeout(_timeout),
+    );
+  }
+
+  Future<Map<String, bool>> pushPreferences() async {
+    final envelope = await _getJson('/api/v1/push/preferences', auth: true);
+    final data = envelope['data'];
+    return {
+      for (final key in const ['new_episodes', 'screen_time', 'weekly_report'])
+        key: !(data is Map && data[key] == false),
+    };
+  }
+
+  /// Needs the parent-area proof: a child cannot silence screen-time alerts.
+  Future<void> savePushPreference(String kind, bool enabled) async {
+    await _postJson(
+      '/api/v1/push/preferences',
+      auth: true,
+      parentProof: true,
+      body: {kind: enabled},
+    );
+  }
+
+  /// `APP-207`: the parent's weekly report for one child.
+  Future<Map<String, dynamic>?> fetchWeeklyReport({
+    required String childId,
+  }) async {
+    if (childId == 'demo-child') return null;
+    final envelope = await _getJson(
+      '/api/v1/family/reports/weekly',
+      auth: true,
+      query: {'child_id': childId},
+    );
+    final data = envelope['data'];
+    return data is Map<String, dynamic> ? data : null;
+  }
+
+  /// [playedMs] (`APP-206`) is how long the video actually played since the last
+  /// heartbeat, so a paused player does not spend the child's screen time.
   Future<Map<String, dynamic>> playbackHeartbeat({
     required String episodeId,
     required String sessionId,
+    int? playedMs,
   }) async {
     return _postJson(
       '/api/v1/episodes/$episodeId/playback-sessions/$sessionId/heartbeat',
       auth: true,
-      body: {},
+      body: {if (playedMs != null) 'played_ms': playedMs},
     );
   }
 
   Future<Map<String, dynamic>> endPlaybackSession({
     required String episodeId,
     required String sessionId,
+    int? playedMs,
   }) async {
     return _postJson(
       '/api/v1/episodes/$episodeId/playback-sessions/$sessionId/end',
       auth: true,
-      body: {},
+      body: {if (playedMs != null) 'played_ms': playedMs},
     );
   }
 
@@ -799,11 +1011,7 @@ class MajarraApiClient {
               '/api/v1/family/children/${Uri.encodeComponent(childId)}/track-transition',
         );
         return _client
-            .post(
-              uri,
-              headers: headers,
-              body: jsonEncode({'action': action}),
-            )
+            .post(uri, headers: headers, body: jsonEncode({'action': action}))
             .timeout(_timeout);
       },
     );
@@ -1188,6 +1396,75 @@ class MajarraApiClient {
     );
   }
 
+  /// A published legal document (privacy, children-privacy, terms,
+  /// delete-account). Public: read before an account exists. A 404 means the
+  /// owner has not published it yet.
+  Future<Map<String, dynamic>> getLegalDocument(String slug) {
+    return _getJson('/api/v1/legal/${Uri.encodeComponent(slug)}', attempts: 2);
+  }
+
+  // --- Manual payments (wallets / InstaPay) ---
+
+  /// The receiving numbers, prices and this family's latest reports. Empty
+  /// (`enabled: false`) until an operator switches it on.
+  Future<Map<String, dynamic>> getManualPaymentOptions() {
+    return _getJson('/api/v1/billing/manual/options', auth: true, attempts: 2);
+  }
+
+  /// Reports a transfer. The server decides the amount and the days from the
+  /// plan and period; the app never sends a price. Needs the parent-area proof.
+  Future<Map<String, dynamic>> submitManualPayment({
+    required String plan,
+    required String period,
+    required String method,
+    required String sender,
+    String? reference,
+  }) {
+    return _postJson(
+      '/api/v1/billing/manual/requests',
+      auth: true,
+      parentProof: true,
+      body: {
+        'plan': plan,
+        'period': period,
+        'method': method,
+        'sender': sender,
+        if (reference != null && reference.isNotEmpty) 'reference': reference,
+      },
+    );
+  }
+
+  /// Attaches a receipt image (JPEG/PNG/WebP, ≤ 3 MiB) to a pending report.
+  Future<Map<String, dynamic>> uploadManualPaymentReceipt({
+    required String requestId,
+    required Uint8List bytes,
+    required String mimeType,
+  }) {
+    return _withAuthRetry(
+      auth: true,
+      parentProof: true,
+      doRequest: (headers) => _client
+          .post(
+            _baseUri.replace(
+              path:
+                  '/api/v1/billing/manual/requests/${Uri.encodeComponent(requestId)}/receipt',
+            ),
+            headers: {...headers, 'Content-Type': mimeType},
+            body: bytes,
+          )
+          .timeout(_extendedTimeout),
+    );
+  }
+
+  Future<Map<String, dynamic>> cancelManualPayment(String requestId) {
+    return _postJson(
+      '/api/v1/billing/manual/requests/${Uri.encodeComponent(requestId)}/cancel',
+      auth: true,
+      parentProof: true,
+      body: const {},
+    );
+  }
+
   /// Gets the Google Play product mapping and the account identifier that must
   /// be attached to a purchase before it can be verified by the server.
   Future<Map<String, dynamic>> getGooglePlayBillingContext() async {
@@ -1338,6 +1615,16 @@ class MajarraApiClient {
       parentProof: true,
       body: {'pin': pin},
     );
+  }
+
+  /// Whether the family has a parent PIN, from the server (not this device).
+  Future<bool> parentPinEnrolled() async {
+    final envelope = await _getJson(
+      '/api/v1/family/parent-pin/status',
+      auth: true,
+    );
+    final data = envelope['data'];
+    return data is Map && data['enrolled'] == true;
   }
 
   Future<Map<String, dynamic>> verifyParentPin({

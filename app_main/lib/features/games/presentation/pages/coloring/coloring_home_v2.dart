@@ -46,7 +46,9 @@ class ColoringCategorySpec {
   final String? remoteThumbUrl;
 
   String? get bestDisplayUrl {
-    if (remoteThumbUrl != null && remoteThumbUrl!.trim().isNotEmpty) return remoteThumbUrl;
+    if (remoteThumbUrl != null && remoteThumbUrl!.trim().isNotEmpty) {
+      return remoteThumbUrl;
+    }
     if (remoteUrl != null && remoteUrl!.trim().isNotEmpty) return remoteUrl;
     if (assetPath != null && assetPath!.trim().isNotEmpty) return assetPath;
     return null;
@@ -95,7 +97,7 @@ class FeaturedColoringSpec {
 /// `DrawingAsset` يمرّر فرع الشبكة عبر `RemoteImageCache`: بعد أوّل تحميل تُقرأ
 /// من القرص دون شبكة. والمسار المبندل القديم يُستعمَل فقط حين لا توأم (لا يحدث
 /// للخمسة — كلّها على R2 — لكنّ السقوط الآمن يبقى بدل صورة مكسورة).
-const _kLocalFallback5 = [
+final _kLocalFallback5 = [
   'assets/images/coloring/v2/bird.png',
   'assets/images/coloring/v2/cat.png',
   'assets/images/coloring/v2/fish.png',
@@ -111,9 +113,15 @@ String _fallbackUrlOrAsset(String bundledPath) =>
 String _pngFallbackForId(String id) {
   final lower = id.toLowerCase();
   // محاولة مطابقة مباشرة أولاً
-  if (lower.contains('bird')) return _fallbackUrlOrAsset('assets/images/coloring/v2/bird.png');
-  if (lower.contains('cat')) return _fallbackUrlOrAsset('assets/images/coloring/v2/cat.png');
-  if (lower.contains('fish')) return _fallbackUrlOrAsset('assets/images/coloring/v2/fish.png');
+  if (lower.contains('bird')) {
+    return _fallbackUrlOrAsset('assets/images/coloring/v2/bird.png');
+  }
+  if (lower.contains('cat')) {
+    return _fallbackUrlOrAsset('assets/images/coloring/v2/cat.png');
+  }
+  if (lower.contains('fish')) {
+    return _fallbackUrlOrAsset('assets/images/coloring/v2/fish.png');
+  }
   if (lower.contains('vehicle') || lower.contains('car')) {
     return _fallbackUrlOrAsset('assets/images/coloring/v2/vehicles.png');
   }
@@ -135,7 +143,7 @@ String _cdnOrBundled(String bundledPath) =>
 final kColoringCategoriesV2 = <ColoringCategorySpec>[
   ColoringCategorySpec(
     id: 'birds',
-    label: 'طيور',
+    label: AppLocalizationsAr().gamescoloringhomev2Label01,
     icon: Icons.flutter_dash_rounded,
     gradientStart: Color(0xFFFFD34D),
     gradientEnd: Color(0xFFFF8A2A),
@@ -144,7 +152,7 @@ final kColoringCategoriesV2 = <ColoringCategorySpec>[
   ),
   ColoringCategorySpec(
     id: 'animals',
-    label: 'حيوانات',
+    label: AppLocalizationsAr().gamescoloringhomev2Label02,
     icon: Icons.pets_rounded,
     gradientStart: Color(0xFF9EE86F),
     gradientEnd: Color(0xFF2ECC71),
@@ -153,7 +161,7 @@ final kColoringCategoriesV2 = <ColoringCategorySpec>[
   ),
   ColoringCategorySpec(
     id: 'vehicles',
-    label: 'مركبات',
+    label: AppLocalizationsAr().gamescoloringhomev2Label03,
     icon: Icons.directions_car_rounded,
     gradientStart: Color(0xFF6EE7FF),
     gradientEnd: Color(0xFF2856D8),
@@ -162,7 +170,7 @@ final kColoringCategoriesV2 = <ColoringCategorySpec>[
   ),
   ColoringCategorySpec(
     id: 'space',
-    label: 'الفضاء',
+    label: AppLocalizationsAr().gamescoloringhomev2Label04,
     icon: Icons.rocket_launch_rounded,
     gradientStart: Color(0xFF8B6CFF),
     gradientEnd: Color(0xFF3A1E7A),
@@ -212,15 +220,55 @@ final kColoringCategoriesV2 = <ColoringCategorySpec>[
 /// بعد توليد PlayVeo الناجح: الملفات ستصبح
 /// assets/images/coloring/v2/{bird,cat,dino,fish,...}.png  (شفافة)
 /// التوثيق: POST /v1/images/remove-background { url: JPEG } → {status:completed, url:transparent PNG}
-const kFeaturedColoringV2 = <FeaturedColoringSpec>[
-  FeaturedColoringSpec(id: 'bird-001', label: 'عصفور صغير', isNew: true, assetPath: 'assets/images/coloring/v2/bird.png'),
-  FeaturedColoringSpec(id: 'cat-001', label: 'قطة لطيفة', isNew: true, assetPath: 'assets/images/coloring/v2/cat.png'),
-  FeaturedColoringSpec(id: 'dino-001', label: 'ديناصور', isNew: true, assetPath: 'assets/images/coloring/v2/dino.png'),
-  FeaturedColoringSpec(id: 'fish-001', label: 'سمكة', isNew: true, assetPath: 'assets/images/coloring/v2/fish.png'),
-  FeaturedColoringSpec(id: 'vehicles-001', label: 'سيارة', isNew: true, assetPath: 'assets/images/coloring/v2/vehicles.png'),
-  FeaturedColoringSpec(id: 'space-001', label: 'صاروخ', isNew: true, assetPath: 'assets/images/coloring/v2/space.png'),
-  FeaturedColoringSpec(id: 'flowers-001', label: 'زهور', isNew: true, assetPath: 'assets/images/coloring/v2/flowers.png'),
-  FeaturedColoringSpec(id: 'animals-001', label: 'حيوانات', isNew: false, assetPath: 'assets/images/coloring/v2/animals.png'),
+final kFeaturedColoringV2 = <FeaturedColoringSpec>[
+  FeaturedColoringSpec(
+    id: 'bird-001',
+    label: 'عصفور صغير',
+    isNew: true,
+    assetPath: 'assets/images/coloring/v2/bird.png',
+  ),
+  FeaturedColoringSpec(
+    id: 'cat-001',
+    label: 'قطة لطيفة',
+    isNew: true,
+    assetPath: 'assets/images/coloring/v2/cat.png',
+  ),
+  FeaturedColoringSpec(
+    id: 'dino-001',
+    label: 'ديناصور',
+    isNew: true,
+    assetPath: 'assets/images/coloring/v2/dino.png',
+  ),
+  FeaturedColoringSpec(
+    id: 'fish-001',
+    label: 'سمكة',
+    isNew: true,
+    assetPath: 'assets/images/coloring/v2/fish.png',
+  ),
+  FeaturedColoringSpec(
+    id: 'vehicles-001',
+    label: 'سيارة',
+    isNew: true,
+    assetPath: 'assets/images/coloring/v2/vehicles.png',
+  ),
+  FeaturedColoringSpec(
+    id: 'space-001',
+    label: 'صاروخ',
+    isNew: true,
+    assetPath: 'assets/images/coloring/v2/space.png',
+  ),
+  FeaturedColoringSpec(
+    id: 'flowers-001',
+    label: 'زهور',
+    isNew: true,
+    assetPath: 'assets/images/coloring/v2/flowers.png',
+  ),
+  FeaturedColoringSpec(
+    id: 'animals-001',
+    label: 'حيوانات',
+    isNew: false,
+    assetPath: 'assets/images/coloring/v2/animals.png',
+  ),
 ];
 
 class ColoringHomeV2Page extends StatelessWidget {
@@ -245,8 +293,8 @@ class ColoringHomeV2Page extends StatelessWidget {
   final String? displayName;
   final List<StudioHeroResume> resumable;
 
-  static const _heroAsset = 'assets/images/studio/hero-start-drawing.webp';
-  static const _heroFallback = 'assets/images/studio/hero-start-drawing.webp';
+  static final _heroAsset = 'assets/images/studio/hero-start-drawing.webp';
+  static final _heroFallback = 'assets/images/studio/hero-start-drawing.webp';
 
   @override
   Widget build(BuildContext context) {
@@ -268,47 +316,30 @@ class ColoringHomeV2Page extends StatelessWidget {
               },
             ),
             const SizedBox(height: 22),
-            _SectionTitleV2(title: 'رسومات مميزة', action: null),
-            const SizedBox(height: 10),
-            LayoutBuilder(builder: (context, constraints) {
-              final cols = constraints.maxWidth < 360 ? 1 : 2;
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: cols,
-                  childAspectRatio: cols == 1 ? 1.6 : 1.25,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemCount: kFeaturedColoringV2.length,
-                itemBuilder: (c, i) => _FeaturedTileV2(
-                  spec: kFeaturedColoringV2[i],
-                  onTap: () => onOpenFeatured?.call(kFeaturedColoringV2[i]),
-                ),
-              );
-            }),
+            _FeaturedSectionV2(onOpenFeatured: onOpenFeatured),
             const SizedBox(height: 22),
             _SectionTitleV2(title: 'اختر رسمة لتلوينها', action: null),
             const SizedBox(height: 10),
-            LayoutBuilder(builder: (context, constraints) {
-              final cols = constraints.maxWidth < 360 ? 1 : 2;
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: cols,
-                  childAspectRatio: 2.2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemCount: kColoringCategoriesV2.length,
-                itemBuilder: (c, i) => _CategoryTileV2(
-                  spec: kColoringCategoriesV2[i],
-                  onTap: () => onOpenCategory?.call(kColoringCategoriesV2[i]),
-                ),
-              );
-            }),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cols = constraints.maxWidth < 360 ? 1 : 2;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: cols,
+                    childAspectRatio: 2.2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: kColoringCategoriesV2.length,
+                  itemBuilder: (c, i) => _CategoryTileV2(
+                    spec: kColoringCategoriesV2[i],
+                    onTap: () => onOpenCategory?.call(kColoringCategoriesV2[i]),
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 22),
             _AchievementV2(count: myDrawingsCount),
           ],
@@ -371,22 +402,177 @@ class _HeroColoringV2 extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _SectionTitleV2 extends StatelessWidget {
-  const _SectionTitleV2({required this.title, this.action});
+  const _SectionTitleV2({required this.title, this.action, this.actionWidget});
   final String title;
   final String? action;
+  final Widget? actionWidget;
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(width: 4, height: 18, decoration: BoxDecoration(color: AppColors.starGold, borderRadius: BorderRadius.circular(999))),
+        Container(
+          width: 4,
+          height: 18,
+          decoration: BoxDecoration(
+            color: AppColors.starGold,
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
         const SizedBox(width: 8),
-        Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const Spacer(),
-        if (action != null) Text(action!, style: const TextStyle(color: AppColors.electricCyan, fontSize: 12, fontWeight: FontWeight.w700)),
+        if (actionWidget != null)
+          actionWidget!
+        else if (action != null)
+          Text(
+            action!,
+            style: const TextStyle(
+              color: AppColors.electricCyan,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _FeaturedSectionV2 extends StatefulWidget {
+  const _FeaturedSectionV2({required this.onOpenFeatured});
+  final void Function(FeaturedColoringSpec featured)? onOpenFeatured;
+
+  @override
+  State<_FeaturedSectionV2> createState() => _FeaturedSectionV2State();
+}
+
+class _FeaturedSectionV2State extends State<_FeaturedSectionV2> {
+  bool _showAll = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final initialCount = 4;
+    final total = kFeaturedColoringV2.length;
+    final hasMore = total > initialCount;
+    final displayed = _showAll || !hasMore
+        ? kFeaturedColoringV2
+        : kFeaturedColoringV2.take(initialCount).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitleV2(
+          title: 'رسومات مميزة',
+          actionWidget: hasMore
+              ? InkWell(
+                  onTap: () => setState(() => _showAll = !_showAll),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _showAll ? 'عرض أقل' : 'عرض الكل ($total)',
+                          style: const TextStyle(
+                            color: Color(0xFFFFD34D),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          _showAll
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.keyboard_arrow_down_rounded,
+                          color: const Color(0xFFFFD34D),
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : null,
+        ),
+        const SizedBox(height: 10),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cols = constraints.maxWidth < 360 ? 1 : 2;
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cols,
+                childAspectRatio: cols == 1 ? 1.6 : 1.25,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: displayed.length,
+              itemBuilder: (c, i) => _FeaturedTileV2(
+                spec: displayed[i],
+                onTap: () => widget.onOpenFeatured?.call(displayed[i]),
+              ),
+            );
+          },
+        ),
+        if (hasMore) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: InkWell(
+              onTap: () => setState(() => _showAll = !_showAll),
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF161F4E),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFFFFD34D).withValues(alpha: 0.35),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _showAll
+                          ? 'عرض رسومات أقل'
+                          : 'عرض المزيد من الرسومات (${total - initialCount}+)',
+                      style: const TextStyle(
+                        color: Color(0xFFFFD34D),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      _showAll
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: const Color(0xFFFFD34D),
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -396,6 +582,14 @@ class _FeaturedTileV2 extends StatelessWidget {
   const _FeaturedTileV2({required this.spec, required this.onTap});
   final FeaturedColoringSpec spec;
   final VoidCallback onTap;
+
+  String _resolveAsset() {
+    final p = spec.assetPath;
+    if (p != null && p.trim().isNotEmpty && p.startsWith('assets/')) {
+      return p;
+    }
+    return spec.bestDisplayUrl ?? spec.fallbackAsset;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -407,7 +601,13 @@ class _FeaturedTileV2 extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: Colors.white.withValues(alpha: 0.9)),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 12, offset: const Offset(0, 6))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
@@ -415,12 +615,8 @@ class _FeaturedTileV2 extends StatelessWidget {
             Positioned.fill(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 36),
-                // `DrawingAsset` يمرّر فرع الشبكة عبر `RemoteImageCache` (قرص
-                // بعد أوّل تحميل) وفرع الأصل المبندل مباشرة. `Image.network`
-                // العاري هنا كان يعيد التنزيل في كلّ جلسة ويتجاوز التثبيت.
                 child: DrawingAsset(
-                  assetIdOrPath:
-                      spec.bestDisplayUrl ?? spec.assetPath ?? spec.fallbackAsset,
+                  assetIdOrPath: _resolveAsset(),
                   fit: BoxFit.contain,
                 ),
               ),
@@ -430,12 +626,22 @@ class _FeaturedTileV2 extends StatelessWidget {
                 top: 8,
                 right: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF6A3DF2),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: const Text('جديد', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                  child: const Text(
+                    'جديد',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
               ),
             Positioned(
@@ -444,8 +650,19 @@ class _FeaturedTileV2 extends StatelessWidget {
               child: Container(
                 width: 22,
                 height: 22,
-                decoration: BoxDecoration(color: const Color(0xFFFFF3C2), shape: BoxShape.circle, border: Border.all(color: const Color(0xFFFFD34D), width: 1.2)),
-                child: const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFF9F1C)),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3C2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFFFFD34D),
+                    width: 1.2,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.star_rounded,
+                  size: 14,
+                  color: Color(0xFFFF9F1C),
+                ),
               ),
             ),
             Positioned(
@@ -457,7 +674,19 @@ class _FeaturedTileV2 extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
                 color: const Color(0xFF0C1030),
                 alignment: Alignment.center,
-                child: Text(spec.label, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, softWrap: true, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700, height: 1.3)),
+                child: Text(
+                  spec.label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  softWrap: true,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                  ),
+                ),
               ),
             ),
           ],
@@ -481,39 +710,70 @@ class _CategoryTileV2 extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.14), blurRadius: 10, offset: const Offset(0, 5))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.14),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Row(
           children: [
             // لو فيه remote thumb نعرضه على خلفية gradient
-            Stack(children: [
-              Container(
-                width: 56,
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [spec.gradientStart, spec.gradientEnd]),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: DrawingAsset(
-                    assetIdOrPath:
-                        spec.bestDisplayUrl ?? spec.assetPath ?? spec.fallbackAsset,
-                    fit: BoxFit.contain,
+            Stack(
+              children: [
+                Container(
+                  width: 56,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [spec.gradientStart, spec.gradientEnd],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: DrawingAsset(
+                      assetIdOrPath:
+                          spec.bestDisplayUrl ??
+                          spec.assetPath ??
+                          spec.fallbackAsset,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
-              ),
-            ]),
+              ],
+            ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(spec.label, style: const TextStyle(color: Color(0xFF0C1030), fontSize: 13, fontWeight: FontWeight.w800)),
+                    Text(
+                      spec.label,
+                      style: const TextStyle(
+                        color: Color(0xFF0C1030),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text('${spec.count} رسمة', style: TextStyle(color: const Color(0xFF0C1030).withValues(alpha: 0.55), fontSize: 10, fontWeight: FontWeight.w600)),
+                    Text(
+                      '${spec.count} رسمة',
+                      style: TextStyle(
+                        color: const Color(0xFF0C1030).withValues(alpha: 0.55),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -535,17 +795,28 @@ class _AchievementV2 extends StatelessWidget {
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF221A4A), Color(0xFF141032)]),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF221A4A), Color(0xFF141032)],
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFD34D).withValues(alpha: 0.18)),
+        border: Border.all(
+          color: const Color(0xFFFFD34D).withValues(alpha: 0.18),
+        ),
       ),
       child: Row(
         children: [
           Container(
             width: 34,
             height: 34,
-            decoration: BoxDecoration(color: const Color(0xFFFFD34D).withValues(alpha: 0.16), borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.emoji_events_rounded, size: 20, color: Color(0xFFFFD34D)),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD34D).withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.emoji_events_rounded,
+              size: 20,
+              color: Color(0xFFFFD34D),
+            ),
           ),
           const SizedBox(width: 10),
           const Expanded(
@@ -553,15 +824,32 @@ class _AchievementV2 extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('إكمال اللوحات يكافئك بنجوم ذهبية!', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                Text(
+                  'إكمال اللوحات يكافئك بنجوم ذهبية!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 SizedBox(height: 2),
-                Text('اجمع النجوم وافتح رسومات جديدة', style: TextStyle(color: Color(0xFF8B8DB3), fontSize: 10)),
+                Text(
+                  'اجمع النجوم وافتح رسومات جديدة',
+                  style: TextStyle(color: Color(0xFF8B8DB3), fontSize: 10),
+                ),
               ],
             ),
           ),
           const Icon(Icons.star_rounded, size: 22, color: Color(0xFFFFD34D)),
           const SizedBox(width: 4),
-          Text('$count', style: const TextStyle(color: Color(0xFFFFD34D), fontSize: 14, fontWeight: FontWeight.w900)),
+          Text(
+            '$count',
+            style: const TextStyle(
+              color: Color(0xFFFFD34D),
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ],
       ),
     );

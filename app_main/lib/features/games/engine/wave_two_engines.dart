@@ -31,19 +31,20 @@ import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
 import 'game_session_controller.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 /// Voice keys these engines use, from the contracts' Arabic voice tables.
 class WaveTwoVoiceKeys {
-  static const recount = 'vo.recount';
-  static const explainAnswer = 'vo.explain_answer';
-  static const retry = 'vo.retry';
-  static const hint = 'vo.hint';
-  static const hint1 = 'vo.hint_1';
-  static const hint2 = 'vo.hint_2';
-  static const explainRule = 'vo.explain_rule';
-  static const instructionExplain = 'vo.instruction_explain';
-  static const word = 'vo.word';
-  static const wordSyllables = 'vo.word_syllables';
+  static final recount = 'vo.recount';
+  static final explainAnswer = 'vo.explain_answer';
+  static final retry = 'vo.retry';
+  static final hint = 'vo.hint';
+  static final hint1 = 'vo.hint_1';
+  static final hint2 = 'vo.hint_2';
+  static final explainRule = 'vo.explain_rule';
+  static final instructionExplain = 'vo.instruction_explain';
+  static final word = 'vo.word';
+  static final wordSyllables = 'vo.word_syllables';
 
   /// `vo.count.1` … `vo.count.20`.
   ///
@@ -205,10 +206,7 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
     return option != _expectedAnswer(item);
   }
 
-  Future<void> _countAloud(
-    Map<String, dynamic> item,
-    int generation,
-  ) async {
+  Future<void> _countAloud(Map<String, dynamic> item, int generation) async {
     if (!_countAloudOnError || !_isCurrentLevel(generation)) return;
     final total = _shownCount(item);
     for (var index = 0; index < total; index++) {
@@ -315,11 +313,11 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
       return BoardScaffold(
         controller: widget.controller,
         prompt: widget.controller.prompt,
-        child: const Center(
+        child: Center(
           child: GameStatePanel(
             kind: GameStateKind.empty,
-            title: 'هذا المستوى فارغ الآن',
-            message: 'لا توجد عناصر للعد هنا. جرّب مستوى آخر.',
+            title: AppLocalizationsAr().gameswavetwoenginesTitle01,
+            message: AppLocalizationsAr().gameswavetwoenginesMessage01,
           ),
         ),
       );
@@ -334,10 +332,10 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
               child: OutlinedButton.icon(
                 // Always visible, per the accessibility section — not gated on
                 // having got something wrong.
-                key: const Key('count_recount_button'),
+                key: Key('count_recount_button'),
                 onPressed: _recount,
-                icon: const Icon(Icons.replay_outlined),
-                label: const Text('أعد العدّ'),
+                icon: Icon(Icons.replay_outlined),
+                label: Text(AppLocalizationsAr().gameswavetwoenginesText01),
                 style: ButtonStyle(
                   minimumSize: WidgetStatePropertyAll(Size(target, target)),
                 ),
@@ -367,10 +365,10 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
   Widget _elementGrid(Map<String, dynamic> item, {required int count}) {
     final asset = _setImage(item);
     return GridView.builder(
-      key: const Key('count_element_grid'),
+      key: Key('count_element_grid'),
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 5,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
@@ -380,7 +378,8 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
         final highlighted = _countingHighlight == index;
         final tokenLabel = safeChildFacingLabel(
           artId: asset,
-          arabicFallback: 'عنصر العدّ',
+          arabicFallback:
+              AppLocalizationsAr().gameswavetwoenginesArabicFallback01,
         );
         return Semantics(
           label: '$tokenLabel ${formatNumeral(index + 1, 'arabic_indic')}',
@@ -423,7 +422,9 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
     if (option is int) return formatNumeral(option, _numeralSystem);
     return safeChildFacingLabel(
       technicalId: option?.toString(),
-      arabicFallback: 'الخيار ${formatNumeral(index + 1, 'arabic_indic')}',
+      arabicFallback: AppLocalizationsAr().gameswavetwoenginesArabicFallback02(
+        formatNumeral(index + 1, 'arabic_indic'),
+      ),
     );
   }
 
@@ -468,7 +469,7 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
       child: Column(
         children: [
           _elementGrid(item, count: _shownCount(item)),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _optionRow(item, target),
         ],
       ),
@@ -480,7 +481,7 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
     final required = _expectedAnswer(item);
     final tokenLabel = safeChildFacingLabel(
       artId: _setImage(item),
-      arabicFallback: 'عنصر العدّ',
+      arabicFallback: AppLocalizationsAr().gameswavetwoenginesArabicFallback03,
     );
     return SingleChildScrollView(
       child: Column(
@@ -497,8 +498,10 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
                 Semantics(
                   button: true,
                   excludeSemantics: true,
-                  label:
-                      '$tokenLabel رقم ${formatNumeral(index + 1, 'arabic_indic')}',
+                  label: AppLocalizationsAr().gameswavetwoenginesText02(
+                    tokenLabel,
+                    formatNumeral(index + 1, 'arabic_indic'),
+                  ),
                   child: InkWell(
                     key: ValueKey('drag_source_$index'),
                     onTap: () => setState(() => _inBox++),
@@ -519,9 +522,9 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Container(
-            key: const Key('drag_box'),
+            key: Key('drag_box'),
             height: target * 2,
             decoration: BoxDecoration(
               border: Border.all(
@@ -533,26 +536,26 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
             alignment: Alignment.center,
             child: Semantics(
               liveRegion: true,
-              label: 'عدد العناصر في الصندوق',
+              label: AppLocalizationsAr().gameswavetwoenginesLabel01,
               value: formatNumeral(_inBox, 'arabic_indic'),
               child: _numberLabel(_inBox),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           if (_inBox > 0)
             TextButton(
-              key: const Key('drag_take_back'),
+              key: Key('drag_take_back'),
               onPressed: () => setState(() => _inBox--),
-              child: const Text('أرجع واحدًا'),
+              child: Text(AppLocalizationsAr().gameswavetwoenginesText03),
             ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           FilledButton(
-            key: const Key('drag_confirm'),
+            key: Key('drag_confirm'),
             onPressed: () => _answer(_inBox == required ? required : _inBox),
             style: ButtonStyle(
               minimumSize: WidgetStatePropertyAll(Size(target * 2, target)),
             ),
-            child: const Text('انتهيت'),
+            child: Text(AppLocalizationsAr().gameswavetwoenginesText04),
           ),
         ],
       ),
@@ -573,7 +576,7 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
         child: Column(
           children: [
             Text(label, style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Wrap(
               spacing: 6,
               runSpacing: 6,
@@ -593,8 +596,8 @@ class _CountQuantityBoardState extends State<_CountQuantityBoard> {
 
     final options = _visibleOptions(item);
     final labels = {
-      'set_a': 'المجموعة الأولى',
-      'set_b': 'المجموعة الثانية',
+      'set_a': AppLocalizationsAr().gameswavetwoenginesText05,
+      'set_b': AppLocalizationsAr().gameswavetwoenginesText06,
       'equal': 'متساويتان',
     };
 
@@ -1038,7 +1041,7 @@ class _LogicPatternBoardState extends State<_LogicPatternBoard> {
 
 /// Zero-width joiner. Forces a letter to render in a joining form without needing
 /// the Arabic Presentation Forms-B block or a font-specific hack.
-const _zwj = '\u200D';
+final _zwj = '\u200D';
 
 /// The letter as it appears *in the word*.
 ///

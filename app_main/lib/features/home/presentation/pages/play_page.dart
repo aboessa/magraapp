@@ -13,6 +13,7 @@ import '../../../games/application/game_providers.dart';
 import '../../../games/application/play_catalog.dart';
 import '../widgets/content_cards.dart';
 import '../widgets/content_rail.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 class PlayPage extends ConsumerWidget {
   const PlayPage({super.key});
@@ -21,10 +22,9 @@ class PlayPage extends ConsumerWidget {
     final catalogAsync = ref.watch(homeCatalogProvider);
     final gamesAsync = ref.watch(gameCatalogProvider);
     return catalogAsync.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, s) => const Scaffold(
-        body: Center(child: Text('مفيش اتصال بالإنترنت. جرّب تاني بعد شوية.')),
+      loading: () => Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, s) => Scaffold(
+        body: Center(child: Text(AppLocalizationsAr().homeplaypageBuild01)),
       ),
       data: (catalog) {
         final padding = context.horizontalPagePadding;
@@ -78,7 +78,7 @@ class PlayPage extends ConsumerWidget {
           return Scaffold(
             backgroundColor: AppColors.deepSpace,
             appBar: AppBar(
-              title: const Text('العب'),
+              title: Text(AppLocalizationsAr().homeplaypageText01),
               backgroundColor: AppColors.deepSpace,
               foregroundColor: Colors.white,
             ),
@@ -280,7 +280,7 @@ String _engineFromId(String id) {
 }
 
 String _engineLabel(String engineId) {
-  const labels = {
+  final labels = {
     'match_pairs': 'المطابقة',
     'trace_color': 'التتبّع والتلوين',
     'sort_bins': 'التصنيف',

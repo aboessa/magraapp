@@ -53,6 +53,7 @@ void main() {
     '/deletion-status',
     '/help-signin',
     '/terms',
+    '/legal/:slug',
     '/verify-email',
     '/parent-pin',
     '/children',
@@ -62,33 +63,38 @@ void main() {
     '/audio',
     '/game/:gameId',
     '/tv-pairing',
+    '/link-tv',
+    '/tv-remote',
     '/series/:seriesId',
   ];
 
   group('تغطية شاملة: كل مسار في _routes مصنَّف فعليًا (Requirement 1.2)', () {
     // 1
-    test('كل مسار في allRoutePaths له مفتاح مطابق تمامًا في routeAccessTable', () {
-      // Deliberately checks table *membership*, not the resolved
-      // `accessFor()` value — a route that is genuinely classified
-      // `authenticatedFamily` (e.g. `/free`, `/search`) must pass this
-      // check exactly the same as one classified `parentVerified`. Only a
-      // route that is *absent* from the table should fail it. Comparing
-      // `accessFor()` output alone could never tell the two apart, because
-      // both a deliberate `authenticatedFamily` entry and a missing entry
-      // resolve to the exact same enum value.
-      final missing = <String>[
-        for (final path in allRoutePaths)
-          if (!routeAccessTable.containsKey(path)) path,
-      ];
-      expect(
-        missing,
-        isEmpty,
-        reason:
-            'accessFor() would silently fall through to '
-            'RouteAccess.authenticatedFamily for these routes, without '
-            'anyone having deliberately classified them: $missing',
-      );
-    });
+    test(
+      'كل مسار في allRoutePaths له مفتاح مطابق تمامًا في routeAccessTable',
+      () {
+        // Deliberately checks table *membership*, not the resolved
+        // `accessFor()` value — a route that is genuinely classified
+        // `authenticatedFamily` (e.g. `/free`, `/search`) must pass this
+        // check exactly the same as one classified `parentVerified`. Only a
+        // route that is *absent* from the table should fail it. Comparing
+        // `accessFor()` output alone could never tell the two apart, because
+        // both a deliberate `authenticatedFamily` entry and a missing entry
+        // resolve to the exact same enum value.
+        final missing = <String>[
+          for (final path in allRoutePaths)
+            if (!routeAccessTable.containsKey(path)) path,
+        ];
+        expect(
+          missing,
+          isEmpty,
+          reason:
+              'accessFor() would silently fall through to '
+              'RouteAccess.authenticatedFamily for these routes, without '
+              'anyone having deliberately classified them: $missing',
+        );
+      },
+    );
   });
 
   group('تصنيف الفئات الأربع عبر accessFor (Requirement 1.1)', () {
@@ -194,25 +200,22 @@ void main() {
     });
 
     // 2
-    test(
-      'لا يوجد مفتاح ميت في routeAccessTable بلا مسار مقابل في _routes',
-      () {
-        // Backward diff: a key left behind in the table after its route
-        // was removed from the router. Not itself a security hole, but a
-        // dead entry that misrepresents today's real route surface and
-        // could mask a genuinely missing classification behind an
-        // inflated coverage count.
-        final deadTableEntries = routeAccessTable.keys.toSet().difference(
-          allRoutePaths.toSet(),
-        );
-        expect(
-          deadTableEntries,
-          isEmpty,
-          reason:
-              'Key(s) left in routeAccessTable with no matching route in '
-              '_routes: $deadTableEntries',
-        );
-      },
-    );
+    test('لا يوجد مفتاح ميت في routeAccessTable بلا مسار مقابل في _routes', () {
+      // Backward diff: a key left behind in the table after its route
+      // was removed from the router. Not itself a security hole, but a
+      // dead entry that misrepresents today's real route surface and
+      // could mask a genuinely missing classification behind an
+      // inflated coverage count.
+      final deadTableEntries = routeAccessTable.keys.toSet().difference(
+        allRoutePaths.toSet(),
+      );
+      expect(
+        deadTableEntries,
+        isEmpty,
+        reason:
+            'Key(s) left in routeAccessTable with no matching route in '
+            '_routes: $deadTableEntries',
+      );
+    });
   });
 }

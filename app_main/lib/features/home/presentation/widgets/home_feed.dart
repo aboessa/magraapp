@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/analytics/analytics.dart';
+import '../../../../core/config/feature_flags.dart';
 import '../../../../core/layout/app_layout.dart';
 import '../../../../core/widgets/animated_brand_logo.dart';
 import '../../../../core/widgets/cinematic_background.dart';
@@ -19,7 +20,6 @@ import '../../domain/feed_blocks.dart';
 import 'cinematic_hero.dart';
 import 'content_cards.dart';
 import 'content_rail.dart';
-import '../../../../core/images/heavy_assets.dart';
 import '../../../../core/widgets/cinematic_image.dart';
 import '../../../../core/widgets/focusable_scale.dart';
 
@@ -292,6 +292,10 @@ class _RealContinueSliver extends ConsumerWidget {
   final String? subtitle;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // ADM-305: the operator can hide the rail from the dashboard.
+    if (!featureOn(ref, FeatureFlag.continueWatching)) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
     final progress = ref.watch(progressProvider).valueOrNull ?? const {};
     final fractions = <String, double>{
       for (final e in progress.entries)
@@ -357,8 +361,6 @@ class _RealContinueSliver extends ConsumerWidget {
     );
   }
 }
-
-
 
 /// Horizontal slider — استكشف مجرة (after planets, compact rail)
 class _ExploreMajarraRail extends StatelessWidget {
@@ -658,38 +660,59 @@ class _ExploreRailCard extends StatelessWidget {
   }
 }
 
-/// Creative Studio first-class Home entry — now full banner image homebgaart.png
 class _CreativeStudioEntry extends StatelessWidget {
   const _CreativeStudioEntry({required this.isTelevision});
   final bool isTelevision;
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
       label: 'مرسمي - افتح استوديو الرسم والتلوين',
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => context.push('/studio'),
-            borderRadius: BorderRadius.circular(22),
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                color: Color(
-                  0xFF1A1040,
-                ), // matches image gradient, no black bleed
-              ),
-              // R2-first: bundled webp paints instantly, CDN twin via disk
-              // cache after first load. The PNG rung is gone — never uploaded.
-              child: CinematicImage(
-                assetPath: 'assets/images/studio/homebgaart.webp',
-                networkUrl: heavyStudioBannerUrl(
-                  'assets/images/studio/homebgaart.png',
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: isTelevision ? 360 : 320),
+          child: AspectRatio(
+            aspectRatio: 1376 / 768,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  width: 1.0,
                 ),
-                semanticLabel: '',
-                fit: BoxFit.contain,
-                alignment: Alignment.center,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.16),
+                    blurRadius: 28,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(21),
+                child: Material(
+                  color: const Color(0xFF030C2B),
+                  child: InkWell(
+                    onTap: () => context.push('/studio'),
+                    borderRadius: BorderRadius.circular(21),
+                    child: Image.asset(
+                      'assets/images/studio/homebgaart.webp',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.center,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/images/studio/homebgaart.webp',
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -951,7 +974,9 @@ class _BlockSliver extends StatelessWidget {
           return SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsetsDirectional.fromSTEB(padding, 22, padding, 0),
-              child: _WelcomeJourneyCard(onExplore: () => onOpenPlanets?.call()),
+              child: _WelcomeJourneyCard(
+                onExplore: () => onOpenPlanets?.call(),
+              ),
             ),
           );
         }
@@ -1032,7 +1057,9 @@ class _BlockSliver extends StatelessWidget {
             child: ContentRail<EpisodeItem>(
               title: block.title ?? 'حلقات جديدة',
               subtitle: block.subtitle ?? 'أضيفت حديثًا',
-              items: catalog.episodes.reversed.take(block.maxItems ?? 5).toList(),
+              items: catalog.episodes.reversed
+                  .take(block.maxItems ?? 5)
+                  .toList(),
               height: isTelevision ? 247 : 208,
               horizontalPadding: padding,
               isTelevision: isTelevision,
@@ -1082,7 +1109,9 @@ class _BlockSliver extends StatelessWidget {
             padding: const EdgeInsets.only(top: 26),
             child: ContentRail<Planet>(
               title: block.title ?? 'الكواكب',
-              subtitle: block.subtitle ?? 'اختر عالمًا، ثم شاهد سلاسله وحلقاته وأنشطته',
+              subtitle:
+                  block.subtitle ??
+                  'اختر عالمًا، ثم شاهد سلاسله وحلقاته وأنشطته',
               items: catalog.planets,
               height: isTelevision ? 226 : 190,
               horizontalPadding: padding,
@@ -1189,7 +1218,8 @@ class _BlockSliver extends StatelessWidget {
               padding: const EdgeInsets.only(top: 30),
               child: ContentRail<BookItem>(
                 title: block.title ?? 'حكايات وقصص',
-                subtitle: block.subtitle ?? 'قصص مصورة وحكايات مسموعة لكل الأعمار',
+                subtitle:
+                    block.subtitle ?? 'قصص مصورة وحكايات مسموعة لكل الأعمار',
                 items: books.take(6).toList(),
                 height: isTelevision ? 354 : 282,
                 horizontalPadding: padding,
@@ -1223,7 +1253,9 @@ class _BlockSliver extends StatelessWidget {
           );
         }
         if (style == CardStyle.square) {
-          final sqItems = catalog.experiences.where((item) => item.isServerBacked).toList(growable: false);
+          final sqItems = catalog.experiences
+              .where((item) => item.isServerBacked)
+              .toList(growable: false);
           return SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(top: 30),
@@ -1718,7 +1750,6 @@ class _FeatureBannerCard extends StatelessWidget {
   }
 }
 
-
 class _AudioCard extends StatelessWidget {
   const _AudioCard({required this.item, required this.isTelevision});
   final BookItem item;
@@ -1925,7 +1956,6 @@ class _CharacterOrbitRail extends StatelessWidget {
     );
   }
 }
-
 
 /// A seasonal banner rendered only from complete Home Builder configuration.
 class _SeasonalBannerCard extends StatelessWidget {

@@ -18,15 +18,16 @@ import '../../../../l10n/app_localizations_ar.dart';
 import '../../data/billing_catalog.dart';
 import '../../data/billing_status.dart';
 import '../../data/google_play_billing.dart';
+import '../../data/manual_payment.dart';
 import '../../../home/application/home_providers.dart';
+import '../widgets/manual_payment_section.dart';
 import '../widgets/profile_page_content.dart';
 
 @visibleForTesting
 bool shouldInitializePurchaseStore({
   bool isWeb = kIsWeb,
   TargetPlatform? platform,
-}) =>
-    !isWeb && (platform ?? defaultTargetPlatform) == TargetPlatform.android;
+}) => !isWeb && (platform ?? defaultTargetPlatform) == TargetPlatform.android;
 
 /// Membership and subscription state.
 ///
@@ -63,8 +64,9 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
     _purchases = purchases;
     _purchaseSubscription = purchases.purchaseStream.listen(
       _handlePurchaseUpdates,
-      onError: (_, __) =>
-          _setBillingMessage('تعذر إتمام عملية الشراء. أعد المحاولة.'),
+      onError: (_, __) => _setBillingMessage(
+        AppLocalizationsAr().profilemembershippageInitState01,
+      ),
     );
     _restorePendingPurchases();
   }
@@ -298,6 +300,9 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
   Widget build(BuildContext context) {
     final status = ref.watch(billingStatusProvider);
     final catalog = ref.watch(billingCatalogProvider);
+    final manual =
+        ref.watch(manualPaymentOptionsProvider).valueOrNull ??
+        ManualPaymentOptions.unavailable;
 
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
@@ -330,6 +335,7 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
                   onPressed: () {
                     ref.invalidate(billingStatusProvider);
                     ref.invalidate(billingCatalogProvider);
+                    ref.invalidate(manualPaymentOptionsProvider);
                   },
                 ),
               ],
@@ -369,12 +375,17 @@ class _MembershipPageState extends ConsumerState<MembershipPage> {
                       _UpgradeSection(
                         status: data,
                         catalog: catalog,
+                        manual: manual,
                         busy: _billingActionInProgress,
                         message: _billingMessage,
                         onOpenPlans: _openPlans,
                         onManageSubscription: () =>
                             _manageSubscription(data.subscription?.source),
                       ),
+                      if (manual.enabled && !data.isGuestPreview) ...[
+                        const SizedBox(height: 16),
+                        ManualPaymentSection(options: manual, status: data),
+                      ],
                     ],
                   ),
                 ),
@@ -391,6 +402,7 @@ class _UpgradeSection extends StatelessWidget {
   const _UpgradeSection({
     required this.status,
     required this.catalog,
+    required this.manual,
     required this.busy,
     required this.message,
     required this.onOpenPlans,
@@ -399,6 +411,7 @@ class _UpgradeSection extends StatelessWidget {
 
   final BillingStatus status;
   final AsyncValue<BillingCatalog> catalog;
+  final ManualPaymentOptions manual;
   final bool busy;
   final String? message;
   final VoidCallback onOpenPlans;
@@ -418,6 +431,10 @@ class _UpgradeSection extends StatelessWidget {
     // A guest can compare plans but cannot buy: a subscription must belong to a
     // real family account that the server can grant entitlements to.
     final checkoutAvailable = !status.isGuestPreview && methods.isNotEmpty;
+    // Wallet / InstaPay transfer is the only way to pay: the section below the
+    // plans carries the action, so the disabled store button is not shown.
+    final manualOnly =
+        manual.enabled && !checkoutAvailable && !status.isGuestPreview;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -482,8 +499,12 @@ class _UpgradeSection extends StatelessWidget {
           details: family == null
               ? 'تنزيل محمي على جهازين'
               : 'تنزيل محمي على ${family.downloadDevices} أجهزة',
-          price: _offerPrice(context, familyOffer),
-          period: _periodLabel(familyOffer?.period),
+          price:
+              _offerPrice(context, familyOffer) ??
+              _manualPrice(manual, BillingPlan.family),
+          period: _periodLabel(
+            familyOffer?.period ?? _manualPeriod(manual, BillingPlan.family),
+          ),
           icon: Icons.family_restroom_rounded,
         ),
         const SizedBox(height: 10),
@@ -496,8 +517,13 @@ class _UpgradeSection extends StatelessWidget {
           details: familyPlus == null
               ? 'تنزيل محمي على 4 أجهزة'
               : 'تنزيل محمي على ${familyPlus.downloadDevices} أجهزة',
-          price: _offerPrice(context, familyPlusOffer),
-          period: _periodLabel(familyPlusOffer?.period),
+          price:
+              _offerPrice(context, familyPlusOffer) ??
+              _manualPrice(manual, BillingPlan.familyPlus),
+          period: _periodLabel(
+            familyPlusOffer?.period ??
+                _manualPeriod(manual, BillingPlan.familyPlus),
+          ),
           icon: Icons.workspace_premium_rounded,
           highlighted: true,
         ),
@@ -564,76 +590,81 @@ class _UpgradeSection extends StatelessWidget {
                 'هذه معاينة للباقات في تجربة الضيف. أنشئ حساب أسرة أو سجّل '
                 'الدخول لعرض باقتك الحالية وإتمام الاشتراك.',
           ),
-        ] else if (!paid && catalogData != null && !checkoutAvailable) ...[
+        ] else if (!paid &&
+            catalogData != null &&
+            !checkoutAvailable &&
+            !manualOnly) ...[
           const SizedBox(height: 14),
           const _BillingNotice(
             message:
                 'لا توجد وسيلة دفع مفعّلة لهذه المنصة حاليًا. يمكنك مراجعة الباقات، وسنُظهر الدفع فور اكتمال ربط المزود الآمن.',
           ),
         ],
-        const SizedBox(height: 16),
-        Semantics(
-          button: true,
-          enabled: status.isGuestPreview || paid || checkoutAvailable,
-          label: status.isGuestPreview
-              ? 'تسجيل الدخول لإتمام الاشتراك'
-              : paid
-              ? 'إدارة الاشتراك الحالي'
-              : checkoutAvailable
-              ? 'متابعة اختيار الباقة والدفع'
-              : 'الدفع غير متاح حاليًا',
-          child: FilledButton.icon(
-            onPressed: status.isGuestPreview
-                ? () => context.push('/login')
-                : busy || (!paid && !checkoutAvailable)
-                ? null
-                : (paid ? onManageSubscription : onOpenPlans),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(54),
-              backgroundColor: AppColors.starGold,
-              foregroundColor: AppColors.deepSpace,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+        if (!manualOnly) ...[
+          const SizedBox(height: 16),
+          Semantics(
+            button: true,
+            enabled: status.isGuestPreview || paid || checkoutAvailable,
+            label: status.isGuestPreview
+                ? 'تسجيل الدخول لإتمام الاشتراك'
+                : paid
+                ? 'إدارة الاشتراك الحالي'
+                : checkoutAvailable
+                ? 'متابعة اختيار الباقة والدفع'
+                : 'الدفع غير متاح حاليًا',
+            child: FilledButton.icon(
+              onPressed: status.isGuestPreview
+                  ? () => context.push('/login')
+                  : busy || (!paid && !checkoutAvailable)
+                  ? null
+                  : (paid ? onManageSubscription : onOpenPlans),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(54),
+                backgroundColor: AppColors.starGold,
+                foregroundColor: AppColors.deepSpace,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              icon: busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.deepSpace,
+                      ),
+                    )
+                  : Icon(
+                      status.isGuestPreview
+                          ? Icons.login_rounded
+                          : paid
+                          ? Icons.settings_outlined
+                          : Icons.lock_outline_rounded,
+                    ),
+              label: Text(
+                status.isGuestPreview
+                    ? 'تسجيل الدخول أو إنشاء حساب'
+                    : paid
+                    ? 'إدارة الاشتراك'
+                    : checkoutAvailable
+                    ? 'متابعة آمنة للدفع'
+                    : 'الدفع غير متاح حاليًا',
+                style: const TextStyle(fontWeight: FontWeight.w900),
               ),
             ),
-            icon: busy
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.deepSpace,
-                    ),
-                  )
-                : Icon(
-                    status.isGuestPreview
-                        ? Icons.login_rounded
-                        : paid
-                        ? Icons.settings_outlined
-                        : Icons.lock_outline_rounded,
-                  ),
-            label: Text(
-              status.isGuestPreview
-                  ? 'تسجيل الدخول أو إنشاء حساب'
-                  : paid
-                  ? 'إدارة الاشتراك'
-                  : checkoutAvailable
-                  ? 'متابعة آمنة للدفع'
-                  : 'الدفع غير متاح حاليًا',
-              style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            _checkoutDisclosure(catalogData?.platform),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.mutedText.withValues(alpha: 0.72),
+              fontSize: 10.8,
+              height: 1.6,
             ),
           ),
-        ),
-        const SizedBox(height: 9),
-        Text(
-          _checkoutDisclosure(catalogData?.platform),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppColors.mutedText.withValues(alpha: 0.72),
-            fontSize: 10.8,
-            height: 1.6,
-          ),
-        ),
+        ],
         if (message != null) ...[
           const SizedBox(height: 10),
           _BillingNotice(message: message!),
@@ -669,6 +700,27 @@ class _UpgradeSection extends StatelessWidget {
       return '${offer.majorAmount} ${offer.currency}';
     }
   }
+
+  /// The first manual offer for [plan] (monthly before annual), as shown on the plan card.
+  static ManualPaymentOffer? _manualOffer(
+    ManualPaymentOptions manual,
+    BillingPlan plan,
+  ) {
+    ManualPaymentOffer? found;
+    for (final offer in manual.offers) {
+      if (offer.plan != plan) continue;
+      if (found == null || offer.period == 'monthly') found = offer;
+    }
+    return found;
+  }
+
+  static String? _manualPrice(ManualPaymentOptions manual, BillingPlan plan) {
+    final offer = _manualOffer(manual, plan);
+    return offer == null ? null : '${offer.amountEgp} ج.م';
+  }
+
+  static String? _manualPeriod(ManualPaymentOptions manual, BillingPlan plan) =>
+      _manualOffer(manual, plan)?.period;
 
   static String? _periodLabel(String? value) => switch (value) {
     'annual' => 'سنويًا',

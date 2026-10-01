@@ -13,7 +13,10 @@ import '../../../core/widgets/cinematic_image.dart';
 import '../../home/application/home_providers.dart';
 import '../../home/domain/content_models.dart';
 import '../../home/presentation/widgets/content_cards.dart';
+import '../../child/application/child_provider.dart';
+import '../../profile/data/series_likes.dart';
 import '../../profile/data/watchlist_store.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 class SeriesDetailsPage extends ConsumerWidget {
   const SeriesDetailsPage({required this.seriesId, super.key});
@@ -83,7 +86,9 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
     final declared = widget.series.episodesCount;
     final count = declared > 0 ? declared : loaded;
     if (count <= 0) return null;
-    return count == 1 ? 'حلقة واحدة' : '$count حلقة';
+    return count == 1
+        ? AppLocalizationsAr().detailsseriesdetailspageLoaded01
+        : AppLocalizationsAr().detailsseriesdetailspageLoaded02(count);
   }
 
   void _toggleWatchlist() {
@@ -93,7 +98,36 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          added ? 'تم حفظ المسلسل' : 'تمت إزالة المسلسل من المحفوظات',
+          added
+              ? AppLocalizationsAr().detailsseriesdetailspageLoaded03
+              : AppLocalizationsAr().detailsseriesdetailspageLoaded04,
+        ),
+      ),
+    );
+  }
+
+  bool get _liked => ref.watch(seriesLikesProvider).contains(widget.series.id);
+
+  Future<void> _toggleLike() async {
+    final messenger = ScaffoldMessenger.of(context);
+    await HapticFeedback.selectionClick();
+    final liking = !ref.read(seriesLikesProvider).contains(widget.series.id);
+    final ok = await ref
+        .read(seriesLikesProvider.notifier)
+        .toggle(widget.series.id);
+    final childId = ref.read(childProvider).activeChildId;
+    // The rail re-ranks on the next read; the projection is written by the queue
+    // a moment later, so this refresh may still show the previous order.
+    if (ok && childId != null) ref.invalidate(recommendationsProvider(childId));
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          !ok
+              ? AppLocalizationsAr().detailsseriesdetailspageGet01
+              : liking
+              ? AppLocalizationsAr().detailsseriesdetailspageText01
+              : 'اتشال من اللي عجبك',
         ),
       ),
     );
@@ -547,6 +581,36 @@ class _SeriesDetailsContentState extends ConsumerState<_SeriesDetailsContent> {
                                       ),
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                // APP-209: «عجبني» — feeds «اخترنا لك».
+                                Tooltip(
+                                  message: _liked ? 'إلغاء عجبني' : 'عجبني',
+                                  child: Semantics(
+                                    button: true,
+                                    toggled: _liked,
+                                    label: 'عجبني',
+                                    child: Material(
+                                      color: const Color(0xFF111A3A),
+                                      shape: const CircleBorder(),
+                                      child: InkWell(
+                                        customBorder: const CircleBorder(),
+                                        onTap: _toggleLike,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Icon(
+                                            _liked
+                                                ? Icons.favorite_rounded
+                                                : Icons.favorite_border_rounded,
+                                            color: _liked
+                                                ? AppColors.starGold
+                                                : Colors.white,
+                                            size: 20,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),

@@ -33,17 +33,17 @@ const List<String> kChildInterestIds = <String>[
 ];
 
 String _interestLabel(AppLocalizations l10n, String id) => switch (id) {
-      'abjad' => l10n.interestAbjad,
-      'arqam' => l10n.interestArqam,
-      'oloom' => l10n.interestOloom,
-      'qiyam' => l10n.interestQiyam,
-      'qisas' => l10n.interestQisas,
-      'maharat' => l10n.interestMaharat,
-      'tarikh' => l10n.interestTarikh,
-      'alam' => l10n.interestAlam,
-      'islamic' => l10n.interestIman,
-      _ => id,
-    };
+  'abjad' => l10n.interestAbjad,
+  'arqam' => l10n.interestArqam,
+  'oloom' => l10n.interestOloom,
+  'qiyam' => l10n.interestQiyam,
+  'qisas' => l10n.interestQisas,
+  'maharat' => l10n.interestMaharat,
+  'tarikh' => l10n.interestTarikh,
+  'alam' => l10n.interestAlam,
+  'islamic' => l10n.interestIman,
+  _ => id,
+};
 
 /// Full-screen create/edit surface for a child profile (Requirement 10).
 ///
@@ -130,8 +130,9 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
     super.dispose();
   }
 
-  List<int> get _selectableYears =>
-      [for (var age = 3; age <= 12; age++) DateTime.now().year - age];
+  List<int> get _selectableYears => [
+    for (var age = 3; age <= 12; age++) DateTime.now().year - age,
+  ];
 
   Future<void> _submit() async {
     final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
@@ -196,8 +197,9 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
             slivers: [
               SliverAppBar(
                 pinned: true,
-                backgroundColor:
-                    const Color(0xFF0B1026).withValues(alpha: 0.88),
+                backgroundColor: const Color(
+                  0xFF0B1026,
+                ).withValues(alpha: 0.88),
                 leading: IconButton(
                   icon: const Icon(
                     Icons.arrow_forward_rounded,
@@ -238,8 +240,9 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: AppColors.starGold
-                                      .withValues(alpha: 0.14),
+                                  color: AppColors.starGold.withValues(
+                                    alpha: 0.14,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -253,8 +256,7 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       widget.isEditing
@@ -296,19 +298,22 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                               labelText: l10n.childFormNicknameLabel,
                               hintText: l10n.childFormNicknameHint,
                               hintStyle: TextStyle(
-                                color: AppColors.mutedText
-                                    .withValues(alpha: 0.42),
+                                color: AppColors.mutedText.withValues(
+                                  alpha: 0.42,
+                                ),
                                 fontSize: 13,
                               ),
                               counterText: '',
                               labelStyle: TextStyle(
-                                color:
-                                    AppColors.mutedText.withValues(alpha: 0.72),
+                                color: AppColors.mutedText.withValues(
+                                  alpha: 0.72,
+                                ),
                                 fontSize: 12,
                               ),
                               filled: true,
-                              fillColor:
-                                  const Color(0xFF111A3A).withValues(alpha: 0.78),
+                              fillColor: const Color(
+                                0xFF111A3A,
+                              ).withValues(alpha: 0.78),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 16,
@@ -320,7 +325,14 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
                                 borderSide: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.08),
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(
+                                  color: AppColors.starGold,
+                                  width: 2.8,
                                 ),
                               ),
                             ),
@@ -342,14 +354,12 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                                     key: const Key('birthMonthDropdown'),
                                     label: l10n.childFormBirthMonthLabel,
                                     value: _birthMonth,
-                                    items: [
-                                      for (var m = 1; m <= 12; m++) m,
-                                    ],
+                                    items: [for (var m = 1; m <= 12; m++) m],
                                     labelBuilder: (m) => '$m',
                                     onChanged: _submitting
                                         ? null
                                         : (v) =>
-                                            setState(() => _birthMonth = v),
+                                              setState(() => _birthMonth = v),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -362,8 +372,7 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                                     labelBuilder: (y) => '$y',
                                     onChanged: _submitting
                                         ? null
-                                        : (v) =>
-                                            setState(() => _birthYear = v),
+                                        : (v) => setState(() => _birthYear = v),
                                   ),
                                 ),
                               ],
@@ -410,8 +419,7 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                           ChildAvatarPicker(
                             selectedId: _avatarId,
                             enabled: !_submitting,
-                            onSelected: (id) =>
-                                setState(() => _avatarId = id),
+                            onSelected: (id) => setState(() => _avatarId = id),
                           ),
                           const SizedBox(height: 22),
                           Text(
@@ -454,8 +462,9 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF111A3A)
-                                  .withValues(alpha: 0.6),
+                              color: const Color(
+                                0xFF111A3A,
+                              ).withValues(alpha: 0.6),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: Colors.white.withValues(alpha: 0.06),
@@ -466,8 +475,9 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                                 Icon(
                                   Icons.language_rounded,
                                   size: 16,
-                                  color: AppColors.mutedText
-                                      .withValues(alpha: 0.8),
+                                  color: AppColors.mutedText.withValues(
+                                    alpha: 0.8,
+                                  ),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -501,8 +511,7 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                                     vertical: 5,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white
-                                        .withValues(alpha: 0.06),
+                                    color: Colors.white.withValues(alpha: 0.06),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -522,12 +531,12 @@ class _ChildProfileFormPageState extends ConsumerState<ChildProfileFormPage> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: AppColors.danger
-                                    .withValues(alpha: 0.10),
+                                color: AppColors.danger.withValues(alpha: 0.10),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: AppColors.danger
-                                      .withValues(alpha: 0.22),
+                                  color: AppColors.danger.withValues(
+                                    alpha: 0.22,
+                                  ),
                                 ),
                               ),
                               child: Text(
@@ -734,46 +743,56 @@ class _Dropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle:
-              TextStyle(color: AppColors.mutedText.withValues(alpha: 0.72), fontSize: 11),
-          filled: true,
-          fillColor: const Color(0xFF111A3A).withValues(alpha: 0.78),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    decoration: InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(
+        color: AppColors.mutedText.withValues(alpha: 0.72),
+        fontSize: 11,
+      ),
+      filled: true,
+      fillColor: const Color(0xFF111A3A).withValues(alpha: 0.78),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    ),
+    child: DropdownButtonHideUnderline(
+      child: DropdownButton<T>(
+        value: value,
+        isDense: true,
+        isExpanded: true,
+        dropdownColor: const Color(0xFF111A3A),
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: AppColors.mutedText,
+          size: 18,
         ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<T>(
-            value: value,
-            isDense: true,
-            isExpanded: true,
-            dropdownColor: const Color(0xFF111A3A),
-            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.mutedText, size: 18),
-            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-            items: [
-              for (final item in items)
-                DropdownMenuItem(
-                  value: item,
-                  child: Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: Text(labelBuilder(item)),
-                  ),
-                ),
-            ],
-            onChanged: onChanged == null
-                ? null
-                : (selected) {
-                    if (selected != null) onChanged!(selected);
-                  },
-          ),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
         ),
-      );
+        items: [
+          for (final item in items)
+            DropdownMenuItem(
+              value: item,
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: Text(labelBuilder(item)),
+              ),
+            ),
+        ],
+        onChanged: onChanged == null
+            ? null
+            : (selected) {
+                if (selected != null) onChanged!(selected);
+              },
+      ),
+    ),
+  );
 }

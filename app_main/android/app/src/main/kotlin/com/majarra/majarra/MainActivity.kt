@@ -101,11 +101,18 @@ class MainActivity : FlutterFragmentActivity() {
             when (call.method) {
                 "isTelevision" -> {
                     val uiModeManager =
-                        getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
-                    result.success(
-                        uiModeManager.currentModeType ==
-                            Configuration.UI_MODE_TYPE_TELEVISION,
-                    )
+                        getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
+                    val isTvMode = uiModeManager?.currentModeType ==
+                        Configuration.UI_MODE_TYPE_TELEVISION
+                    val hasLeanback =
+                        packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
+                    val hasTvFeature =
+                        packageManager.hasSystemFeature("android.hardware.type.television")
+                    val isFireTv =
+                        packageManager.hasSystemFeature("amazon.hardware.fire_tv")
+                    val isNoTouchScreen =
+                        !packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)
+                    result.success(isTvMode || hasLeanback || hasTvFeature || isFireTv || isNoTouchScreen)
                 }
 
                 "setSecureFlag" -> {
@@ -115,6 +122,28 @@ class MainActivity : FlutterFragmentActivity() {
                 }
 
                 "deviceIntegrity" -> result.success(deviceIntegrity())
+
+                // TV-004: a seed that survives reinstalling the app, so a
+                // reinstalled TV is the same device rather than a new one taking
+                // another slot. Since Android 8 ANDROID_ID is scoped to this
+                // app's signing key and user, so it cannot correlate us with
+                // other apps; the Dart side hashes it before it leaves the device.
+                "installationSeed" -> result.success(
+                    android.provider.Settings.Secure.getString(
+                        contentResolver,
+                        android.provider.Settings.Secure.ANDROID_ID,
+                    ),
+                )
+
+                // TV-004: tells two TVs apart in the family's list and the cast
+                // sheet ("تلفزيون Xiaomi MIBOX4" rather than two "تلفزيون").
+                "deviceLabel" -> result.success(
+                    listOf(android.os.Build.MANUFACTURER, android.os.Build.MODEL)
+                        .filter { !it.isNullOrBlank() }
+                        .distinct()
+                        .joinToString(" ")
+                        .take(40),
+                )
 
                 else -> result.notImplemented()
             }

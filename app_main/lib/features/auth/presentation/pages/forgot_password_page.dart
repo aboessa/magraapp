@@ -156,6 +156,26 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           fillColor: const Color(0xFF111A3A),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: AppColors.starGold,
+                              width: 2.8,
+                            ),
+                          ),
+                          floatingLabelStyle: const TextStyle(
+                            color: AppColors.starGold,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),

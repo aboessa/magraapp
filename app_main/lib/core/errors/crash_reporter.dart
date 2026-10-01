@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+
+import 'crash_upload.dart';
 
 /// Crash and uncaught-error capture (H8).
 ///
@@ -8,18 +12,17 @@ import 'package:flutter/foundation.dart';
 /// printed to a console nobody reads in release, or killed the isolate
 /// silently.
 ///
-/// ## No third-party provider yet
+/// ## First-party, not a third party (`OPS-202`)
 ///
-/// This deliberately does NOT add Sentry or Crashlytics. Both need a project
-/// DSN / `google-services.json` that does not exist, and adding either would
-/// mean a children's app sends diagnostics to a third party before the privacy
-/// disclosure covering it is written. What this class does provide is the
-/// single funnel every error now passes through, so wiring a provider later is
-/// one method body rather than a hunt through the codebase.
+/// Sentry and Crashlytics would send a children's app's diagnostics to a third
+/// party before a privacy disclosure covers it. Reports go to the platform's own
+/// API instead ([CrashUploader], `POST /api/v1/analytics/crashes`) and appear
+/// in the dashboard's «تشخيص التطبيق».
 ///
 /// ## PII
 ///
-/// [report] never forwards the error object's `toString()` anywhere off-device.
+/// [report] never forwards the error object's `toString()` anywhere off-device;
+/// [CrashPayload] carries only the runtime type and shaped stack frames.
 /// Server error bodies routinely contain request payloads, so treating them as
 /// potentially sensitive is the safe default.
 abstract final class CrashReporter {
@@ -55,8 +58,25 @@ abstract final class CrashReporter {
       if (stack != null) debugPrintStack(stackTrace: stack);
     }
 
-    // Provider hook. See class docs for why this is intentionally empty.
+    // OPS-202: first-party upload, privacy-shaped (type + frames, no message).
+    final sink = uploader;
+    if (sink != null) {
+      unawaited(
+        sink.enqueue(
+          CrashPayload.from(
+            error,
+            stack,
+            context: context,
+            fatal: fatal,
+            at: record.at,
+          ),
+        ),
+      );
+    }
   }
+
+  /// Installed by `main.dart` in production release builds only (`OPS-202`).
+  static CrashUploader? uploader;
 }
 
 class CrashRecord {

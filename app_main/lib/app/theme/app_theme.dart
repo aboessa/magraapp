@@ -98,8 +98,33 @@ abstract final class AppTheme {
         ),
       ),
       dividerColor: AppColors.starlight.withValues(alpha: 0.08),
-      focusColor: AppColors.electricCyan,
+      focusColor: AppColors.starGold,
       hoverColor: AppColors.starlight.withValues(alpha: 0.06),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFF111A3A).withValues(alpha: 0.72),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.starGold, width: 2.5),
+        ),
+        labelStyle: TextStyle(
+          color: AppColors.mutedText.withValues(alpha: 0.7),
+        ),
+        floatingLabelStyle: const TextStyle(
+          color: AppColors.starGold,
+          fontWeight: FontWeight.w700,
+        ),
+        prefixIconColor: AppColors.mutedText,
+        focusColor: AppColors.starGold.withValues(alpha: 0.15),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
         backgroundColor: AppColors.midnight.withValues(alpha: 0.97),
@@ -121,27 +146,102 @@ abstract final class AppTheme {
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          foregroundColor: AppColors.deepSpace,
-          backgroundColor: AppColors.electricCyan,
-          minimumSize: const Size(48, 50),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.all(AppColors.deepSpace),
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return AppColors.mutedText.withValues(alpha: 0.3);
+            }
+            if (states.contains(WidgetState.focused)) {
+              return AppColors.starGold;
+            }
+            return AppColors.electricCyan;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: Colors.white, width: 2.5);
+            }
+            return BorderSide.none;
+          }),
+          elevation: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) return 8;
+            return 0;
+          }),
+          shadowColor: WidgetStateProperty.all(
+            AppColors.starGold.withValues(alpha: 0.5),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          minimumSize: WidgetStateProperty.all(const Size(48, 50)),
+          padding: WidgetStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          ),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          textStyle: WidgetStateProperty.all(
+            const TextStyle(
+              fontFamily: fontFamily,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.starlight,
-          minimumSize: const Size(48, 50),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-          side: BorderSide(color: AppColors.starlight.withValues(alpha: 0.28)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) return Colors.white;
+            return AppColors.starlight;
+          }),
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return AppColors.royalBlue.withValues(alpha: 0.35);
+            }
+            return Colors.transparent;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: AppColors.starGold, width: 2.5);
+            }
+            return BorderSide(
+              color: AppColors.starlight.withValues(alpha: 0.28),
+            );
+          }),
+          minimumSize: WidgetStateProperty.all(const Size(48, 50)),
+          padding: WidgetStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          textStyle: WidgetStateProperty.all(
+            const TextStyle(
+              fontFamily: fontFamily,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return AppColors.starGold;
+            }
+            return AppColors.electricCyan;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: AppColors.starGold, width: 1.5);
+            }
+            return BorderSide.none;
+          }),
+          textStyle: WidgetStateProperty.resolveWith((states) {
+            return TextStyle(
+              fontFamily: fontFamily,
+              fontWeight: states.contains(WidgetState.focused)
+                  ? FontWeight.w800
+                  : FontWeight.w600,
+            );
+          }),
         ),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(

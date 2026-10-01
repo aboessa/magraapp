@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/auth_guard.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/device/device_profile.dart';
 import '../../../../core/widgets/cinematic_background.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../l10n/app_localizations_ar.dart';
@@ -53,6 +54,9 @@ class PinSetupPage extends ConsumerStatefulWidget {
 class _PinSetupPageState extends ConsumerState<PinSetupPage> {
   final _pin = TextEditingController();
   final _confirmPin = TextEditingController();
+  final _pinFocus = FocusNode(debugLabel: 'setup_pin');
+  final _confirmFocus = FocusNode(debugLabel: 'setup_confirm');
+  final _submitFocus = FocusNode(debugLabel: 'setup_submit');
   ParentPinStore get _store => ref.read(parentPinStoreProvider);
 
   bool _obscure = true;
@@ -63,6 +67,9 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
   void dispose() {
     _pin.dispose();
     _confirmPin.dispose();
+    _pinFocus.dispose();
+    _confirmFocus.dispose();
+    _submitFocus.dispose();
     super.dispose();
   }
 
@@ -73,7 +80,11 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
     '/membership',
     '/settings',
     '/my-collection',
+    '/link-tv',
   };
+
+  /// Callers that pushed the PIN screen and await `true` (see PinUnlockPage).
+  static const _popBackTargets = {'/my-collection', '/link-tv'};
 
   String get _returnTarget => _allowedReturnTargets.contains(widget.returnTo)
       ? widget.returnTo!
@@ -85,11 +96,15 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
     final expiresAtValue = data['expires_at'] as String?;
     final issuedAtValue = data['issued_at'] as String?;
 
-    DateTime? expiresAt = expiresAtValue != null ? DateTime.tryParse(expiresAtValue) : null;
+    DateTime? expiresAt = expiresAtValue != null
+        ? DateTime.tryParse(expiresAtValue)
+        : null;
     // Fallback: if server clock is far ahead (e.g. DO fake time 2026) or parse fails,
     // use issued_at + 15m or now + 15m so grant never fails due to clock skew.
     if (expiresAt == null) {
-      final issued = issuedAtValue != null ? DateTime.tryParse(issuedAtValue) : null;
+      final issued = issuedAtValue != null
+          ? DateTime.tryParse(issuedAtValue)
+          : null;
       if (issued != null) {
         expiresAt = issued.add(const Duration(minutes: 15));
       } else {
@@ -100,7 +115,11 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
     if (proof == null || proof.isEmpty) return false;
 
     final guard = ref.read(authGuardProvider);
-    final granted = guard.grantParentAccess(proof: proof, expiresAt: expiresAt);
+    final granted = guard.grantParentAccess(
+      proof: proof,
+      expiresAt: expiresAt,
+      issuedAt: issuedAtValue != null ? DateTime.tryParse(issuedAtValue) : null,
+    );
 
     // Even if grant says false due to transient auth state, still navigate –
     // the router will re-check hasParentAccess and show PIN again if truly invalid.
@@ -109,7 +128,8 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
       if (granted) {
         if (widget.onComplete != null) {
           widget.onComplete!();
-        } else if (widget.returnTo == '/my-collection' && context.canPop()) {
+        } else if (_popBackTargets.contains(widget.returnTo) &&
+            context.canPop()) {
           context.pop(true);
         } else {
           context.go(_returnTarget);
@@ -166,7 +186,9 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
 
     setState(() => _busy = true);
     try {
-      final response = await ref.read(majarraApiClientProvider).setParentPin(pin: pin);
+      final response = await ref
+          .read(majarraApiClientProvider)
+          .setParentPin(pin: pin);
       if (!mounted) return;
       // Navigate immediately: the server proof is the real gate, and the local
       // store is only a child-lock convenience, so persist it in the background.
@@ -202,10 +224,15 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
         // الصفحة نفسها، ويُعاد الطلب، ويُعاد 403 بلا نهاية. وهذه هي الحلقة
         // التي ظهرت في المتصفّح: `POST .../family/parent-pin 403`.
         setState(() => _busy = false);
-        context.go(Uri(path: '/parent-pin', queryParameters: {
-          if (widget.returnTo != null) 'from': widget.returnTo,
-          'stage': 'unlock',
-        }).toString());
+        context.go(
+          Uri(
+            path: '/parent-pin',
+            queryParameters: {
+              if (widget.returnTo != null) 'from': widget.returnTo,
+              'stage': 'unlock',
+            },
+          ).toString(),
+        );
         return;
       }
       setState(() {
@@ -234,6 +261,8 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
+    final isTelevision =
+        ref.watch(deviceProfileProvider).valueOrNull?.isTelevision ?? false;
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
       body: CinematicBackground(
@@ -284,15 +313,20 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
                 const SizedBox(height: 24),
                 _PinField(
                   controller: _pin,
+                  focusNode: _pinFocus,
+                  autofocus: isTelevision,
+                  textInputAction: TextInputAction.next,
                   obscure: _obscure,
                   enabled: !_busy,
                   hintText: '••••',
                   onToggleObscure: () => setState(() => _obscure = !_obscure),
-                  onSubmitted: (_) => _submit(),
+                  onSubmitted: (_) => _confirmFocus.requestFocus(),
                 ),
                 const SizedBox(height: 12),
                 _PinField(
                   controller: _confirmPin,
+                  focusNode: _confirmFocus,
+                  textInputAction: TextInputAction.done,
                   obscure: _obscure,
                   enabled: !_busy,
                   hintText: l10n.pinConfirmLabel,
@@ -331,12 +365,37 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
                 SizedBox(
                   height: 50,
                   child: FilledButton(
+                    focusNode: _submitFocus,
                     onPressed: _busy ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.starGold,
-                      foregroundColor: AppColors.deepSpace,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith((
+                        states,
+                      ) {
+                        if (states.contains(WidgetState.focused)) {
+                          return const Color(0xFFFFE580);
+                        }
+                        return AppColors.starGold;
+                      }),
+                      foregroundColor: WidgetStateProperty.all(
+                        AppColors.deepSpace,
+                      ),
+                      side: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.focused)) {
+                          return const BorderSide(
+                            color: Colors.white,
+                            width: 2.8,
+                          );
+                        }
+                        return BorderSide.none;
+                      }),
+                      elevation: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.focused)) return 8;
+                        return 0;
+                      }),
+                      shape: WidgetStateProperty.all(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                     child: _busy
@@ -381,6 +440,9 @@ class _PinField extends StatelessWidget {
     required this.hintText,
     required this.onToggleObscure,
     required this.onSubmitted,
+    this.focusNode,
+    this.autofocus = false,
+    this.textInputAction = TextInputAction.done,
   });
 
   final TextEditingController controller;
@@ -389,15 +451,21 @@ class _PinField extends StatelessWidget {
   final String hintText;
   final VoidCallback onToggleObscure;
   final ValueChanged<String> onSubmitted;
+  final FocusNode? focusNode;
+  final bool autofocus;
+  final TextInputAction textInputAction;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context) ?? AppLocalizationsAr();
     return TextField(
       controller: controller,
+      focusNode: focusNode,
+      autofocus: autofocus,
       obscureText: obscure,
       enabled: enabled,
       keyboardType: TextInputType.number,
+      textInputAction: textInputAction,
       textAlign: TextAlign.center,
       maxLength: ParentPinStore.maxPinLength,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -420,9 +488,18 @@ class _PinField extends StatelessWidget {
         fillColor: const Color(0xFF111A3A).withValues(alpha: 0.72),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.starGold, width: 2.8),
         ),
         suffixIcon: IconButton(
+          focusNode: FocusNode(skipTraversal: true, canRequestFocus: false),
           icon: Icon(
             obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
             color: AppColors.mutedText,

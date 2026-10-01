@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/cinematic_background.dart';
+import '../../data/legal_documents.dart';
 
 class PrivacyPage extends StatelessWidget {
   const PrivacyPage({super.key});
@@ -66,7 +67,7 @@ class PrivacyPage extends StatelessWidget {
                               SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  'هذا ملخص للبيانات والضوابط التي ينفذها التطبيق الآن، وليس نصًا قانونيًا أو شروط استخدام معتمدة.',
+                                  'هذا ملخص للبيانات والضوابط التي ينفذها التطبيق الآن. النصوص الرسمية في الروابط تحت.',
                                   style: TextStyle(
                                     color: AppColors.starlight,
                                     fontSize: 12,
@@ -77,6 +78,8 @@ class PrivacyPage extends StatelessWidget {
                             ],
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        const _LegalLinks(),
                         const SizedBox(height: 16),
                         const _Section(
                           title: 'البيانات المرتبطة بالحساب',
@@ -196,5 +199,24 @@ class _Section extends StatelessWidget {
         ],
       ),
     ),
+  );
+}
+
+/// Links to the published legal documents (admin «الصفحات القانونية»).
+class _LegalLinks extends StatelessWidget {
+  const _LegalLinks();
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      for (final entry in legalDocumentSlugs.entries)
+        ActionChip(
+          avatar: const Icon(Icons.description_outlined, size: 18),
+          label: Text(entry.value),
+          onPressed: () => context.push('/legal/${entry.key}'),
+        ),
+    ],
   );
 }

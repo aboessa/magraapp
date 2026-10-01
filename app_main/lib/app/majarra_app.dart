@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show SchedulerPhase;
@@ -6,13 +8,16 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/device/device_profile.dart';
 import '../core/env/app_environment.dart';
+import '../core/push/push_service.dart';
 import '../core/env/app_version.dart';
 import '../core/errors/crash_reporter.dart';
 import '../core/input/input_mode.dart';
 import '../core/l10n/locale_catalog.dart';
 import '../features/auth/application/auth_controller.dart';
 import '../features/home/application/home_providers.dart';
+import '../features/tv/presentation/tv_receiver_host.dart';
 import '../l10n/app_localizations.dart';
 import 'router/app_router.dart';
 import 'router/auth_guard.dart';
@@ -66,12 +71,34 @@ class _MajarraAppState extends ConsumerState<MajarraApp>
   ///
   /// و`inactive` غير مشمولة قصدًا: تُطلقها إشعارات النظام ومركز التحكّم على iOS
   /// والتطبيق ما زال في يد وليّ الأمر.
+  ///
+  /// ## مهلة قصيرة قبل الإبطال
+  ///
+  /// كان أيّ خروج من المقدّمة يُبطل فورًا: شاشة شراء، اختيار صورة، شاشة توقّف
+  /// التلفزيون، أو ضغطة زرّ الرئيسية لثانية — فيُطلب الرمز من جديد وكأنه لم
+  /// يُحفظ. صار الإبطال عند العودة **إن غاب التطبيق أكثر من دقيقتين**، و
+  /// `detached` تُبطل فورًا كما كانت. من يُسلّم الجهاز لطفلٍ ويبتعد لا يعود في
+  /// أقل من دقيقتين عادةً، وإن عاد فالمنح نفسه لا يتجاوز خمس عشرة دقيقة.
+  static const _backgroundGrace = Duration(minutes: 2);
+  DateTime? _leftAt;
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final leftForeground = state == AppLifecycleState.detached ||
-        (!kIsWeb && state == AppLifecycleState.paused);
-    if (leftForeground) {
-      ref.read(authGuardProvider).revokeParentAccess();
+    final guard = ref.read(authGuardProvider);
+    if (state == AppLifecycleState.detached) {
+      guard.revokeParentAccess();
+      return;
+    }
+    if (kIsWeb) return;
+    if (state == AppLifecycleState.paused) {
+      _leftAt ??= DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      final leftAt = _leftAt;
+      _leftAt = null;
+      if (leftAt != null &&
+          DateTime.now().difference(leftAt) > _backgroundGrace) {
+        guard.revokeParentAccess();
+      }
     }
   }
 
@@ -91,6 +118,13 @@ class _MajarraAppState extends ConsumerState<MajarraApp>
     // The router and its route providers are not constructed until persisted
     // auth has resolved and any terminal account-scoped wipe has fully succeeded.
     final router = ref.watch(routerProvider);
+    // APP-203: a tapped notification opens its screen. Init is idempotent.
+    unawaited(
+      PushService.instance.init(
+        isTelevision: ref.read(currentDeviceProfileProvider).isTelevision,
+        onOpen: router.go,
+      ),
+    );
     // Min version enforcement handled via overlay — check async without blocking router build
     return _VersionGate(
       child: MaterialApp.router(
@@ -146,9 +180,13 @@ class _MajarraAppState extends ConsumerState<MajarraApp>
           // و`ListenableBuilder` على المُفوِّض شرطٌ لا تحسين: القرار يتغيّر
           // بالتنقّل، وهذا الـ`builder` كان يُعاد بناؤه على تغيّر `MediaQuery`
           // وحده — فحتى لو صحّ الشرط لكان يتأخّر إلى أوّل دورة إطار أخرى.
-          return InputModeTracker(
-            child: _EnvironmentBanner(
-              child: _OrientationGate(router: router, child: content),
+          // TV-002: a signed-in television stays reachable from the family's
+          // phones while the app is open. A pass-through everywhere else.
+          return TvReceiverHost(
+            child: InputModeTracker(
+              child: _EnvironmentBanner(
+                child: _OrientationGate(router: router, child: content),
+              ),
             ),
           );
         },
@@ -163,63 +201,73 @@ class _AuthBootstrapScreen extends StatelessWidget {
   final bool failed;
   final VoidCallback? onRetry;
 
+  Widget _buildContent(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: AppColors.deepSpace,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: failed
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.security_rounded,
+                          color: AppColors.starGold,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'تعذّر تأمين بيانات الجلسة السابقة',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'لن يفتح التطبيق قبل اكتمال المسح المحلي. أعد المحاولة.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                        const SizedBox(height: 20),
+                        FilledButton(
+                          onPressed: onRetry,
+                          child: const Text('إعادة المحاولة'),
+                        ),
+                      ],
+                    )
+                  : Semantics(
+                      label: 'جارٍ تأمين الجلسة',
+                      child: const CircularProgressIndicator(
+                        color: AppColors.starGold,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'مجرة',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
-      home: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Scaffold(
-          backgroundColor: AppColors.deepSpace,
-          body: SafeArea(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: failed
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.security_rounded,
-                            color: AppColors.starGold,
-                            size: 48,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'تعذّر تأمين بيانات الجلسة السابقة',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'لن يفتح التطبيق قبل اكتمال المسح المحلي. أعد المحاولة.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                          const SizedBox(height: 20),
-                          FilledButton(
-                            onPressed: onRetry,
-                            child: const Text('إعادة المحاولة'),
-                          ),
-                        ],
-                      )
-                    : Semantics(
-                        label: 'جارٍ تأمين الجلسة',
-                        child: const CircularProgressIndicator(
-                          color: AppColors.starGold,
-                        ),
-                      ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      // تثبيت initialRoute إلى '/' حتى لو أرسل النظام مساراً أولياً كـ '/login'
+      // أثناء انتظار فك تشفير وتأمين الجلسة المحفوظة.
+      initialRoute: '/',
+      onGenerateRoute: (settings) =>
+          MaterialPageRoute<void>(settings: settings, builder: _buildContent),
+      onUnknownRoute: (settings) =>
+          MaterialPageRoute<void>(settings: settings, builder: _buildContent),
     );
   }
 }
@@ -437,20 +485,35 @@ class _PortraitRequiredScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppColors.starGold.withValues(alpha: 0.14),
-                    border: Border.all(color: AppColors.starGold.withValues(alpha: 0.24), width: 1.5),
+                    border: Border.all(
+                      color: AppColors.starGold.withValues(alpha: 0.24),
+                      width: 1.5,
+                    ),
                   ),
-                  child: const Icon(Icons.screen_rotation_rounded, color: AppColors.starGold, size: 42),
+                  child: const Icon(
+                    Icons.screen_rotation_rounded,
+                    color: AppColors.starGold,
+                    size: 42,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const Text(
                   'اقلب الجهاز عمودياً',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 const Text(
                   'مجرة مصممة للعرض العمودي فقط على الهاتف.\nالفيديو يدعم العرض الأفقي تلقائياً.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.mutedText, fontSize: 13, height: 1.6),
+                  style: TextStyle(
+                    color: AppColors.mutedText,
+                    fontSize: 13,
+                    height: 1.6,
+                  ),
                 ),
               ],
             ),

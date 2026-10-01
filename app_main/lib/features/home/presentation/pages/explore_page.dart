@@ -21,30 +21,58 @@ class ExplorePage extends ConsumerWidget {
       backgroundColor: AppColors.deepSpace,
       appBar: AppBar(
         backgroundColor: AppColors.deepSpace,
-        foregroundColor: Colors.white,
-        title: const Text('استكشف'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search_rounded),
-            onPressed: () => context.push('/search'),
-            tooltip: 'بحث',
-          ),
-        ],
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        titleSpacing: padding,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: AppColors.cosmicPurple.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.cosmicPurple.withValues(alpha: 0.35),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.explore_rounded,
+                size: 18,
+                color: Color(0xFFC7B8FF),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'استكشف',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
       ),
       body: CinematicBackground(
         child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(padding),
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  padding,
+                  4,
+                  padding,
+                  padding,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    FilledButton.icon(
-                      onPressed: () => context.push('/search'),
-                      icon: const Icon(Icons.search_rounded),
-                      label: const Text('ابحث في مجرة'),
-                    ),
+                    _ExploreSearchBar(onTap: () => context.push('/search')),
                     const SizedBox(height: 18),
                     GridView.count(
                       shrinkWrap: true,
@@ -236,4 +264,81 @@ class _Dest extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _ExploreSearchBar extends StatelessWidget {
+  const _ExploreSearchBar({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'ابحث في محتوى مجرة',
+      child: Material(
+        color: const Color(0xFF101735),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.12),
+                width: 1.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.28),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.search_rounded,
+                  color: AppColors.starGold,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'ابحث عن المسلسلات، الألعاب، أو الكواكب...',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.mutedText.withValues(alpha: 0.85),
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.tune_rounded,
+                    size: 16,
+                    color: AppColors.mutedText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -71,6 +71,17 @@
                     android:host="app"
                     android:pathPrefix="/studio" />
             </intent-filter>
+            <!-- TV-001: the QR on a signed-out television,
+                 majarra://app/link-tv?code=ABCD-EF23, opens the approval screen. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="majarra"
+                    android:host="app"
+                    android:path="/link-tv" />
+            </intent-filter>
         </activity>
         <meta-data
             android:name="flutterEmbedding"

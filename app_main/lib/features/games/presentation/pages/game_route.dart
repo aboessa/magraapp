@@ -19,6 +19,7 @@ import '../../engine/game_pack.dart';
 import '../../engine/game_session_controller.dart';
 import '../../engine/media_audio_player.dart';
 import 'game_screen.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 /// Highest pack schema this build can parse safely.
 const int kSupportedPackVersion = 1;
@@ -37,9 +38,9 @@ class GameRoute extends ConsumerWidget {
     final childId = ref.watch(childProvider).activeChildId;
 
     if (childId == null || childId.isEmpty) {
-      return const _GameMessage(
-        title: 'اختر طفلًا أولًا',
-        body: 'الألعاب تُفتح لطفل واحد، حتى يُحفظ تقدّمه في المكان الصحيح.',
+      return _GameMessage(
+        title: AppLocalizationsAr().gamesgamerouteTitle01,
+        body: AppLocalizationsAr().gamesgamerouteBody01,
       );
     }
 

@@ -1,7 +1,7 @@
 name: majarra
 description: "مجرة - تجربة تعليمية ترفيهية عربية سينمائية للعائلة"
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.1.14+2021
 
 environment:
   sdk: ^3.9.0
@@ -39,6 +39,14 @@ dependencies:
   flutter_svg: ^2.3.0
   just_audio: ^0.10.6
   audio_session: ^0.2.4
+  # TV-001: renders the pairing QR on the television. Pure Dart, no platform code.
+  qr_flutter: 4.1.0
+  # TV-002: the TV/remote link socket. Official dart-lang package; works on
+  # Android, iOS and web from one API.
+  web_socket_channel: 3.0.3
+  firebase_core: 4.15.0
+  firebase_messaging: 16.7.0
+  image_picker: 1.2.2
 
 dev_dependencies:
   flutter_test:
@@ -115,6 +123,7 @@ flutter:
     - assets/images/episodes/
     - assets/images/explore/
     - assets/images/seasonal/
+    - assets/images/portal/
     # الكتب: R2 أوّلًا عبر `heavyCdnUrl` (16 webp على
     # `public/catalog/assets/images/books/`)، و`posterAsset` المبندل بديل عدم
     # الاتصال. تُبندل لسبب واحد: كتالوج عدم الاتصال (`local_catalog.dart`)

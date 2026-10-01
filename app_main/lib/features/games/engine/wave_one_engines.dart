@@ -34,6 +34,7 @@ import 'game_board_kit.dart';
 import 'game_engine_registry.dart';
 import 'game_services.dart';
 import 'game_session_controller.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 // The level-JSON readers, the seeded shuffle and the board chrome now live in
 // `game_board_kit.dart`, shared with Wave 2.
@@ -217,11 +218,11 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
       return BoardScaffold(
         controller: widget.controller,
         prompt: widget.controller.prompt,
-        child: const Center(
+        child: Center(
           child: GameStatePanel(
             kind: GameStateKind.empty,
-            title: 'هذا المستوى فارغ الآن',
-            message: 'اختر لعبة أخرى وسنجهّز هذا المستوى قريبًا.',
+            title: AppLocalizationsAr().gameswaveoneenginesTitle01,
+            message: AppLocalizationsAr().gameswaveoneenginesMessage01,
             compact: true,
           ),
         ),
@@ -248,22 +249,25 @@ class _MemoryFlipBoardState extends State<_MemoryFlipBoard> {
           );
           final cardIdentity = safeChildFacingLabel(
             artId: _deck[index].assetId,
-            arabicFallback:
-                'الزوج رقم ${formatNumeral(_deck[index].pairIndex + 1, 'arabic_indic')}',
+            arabicFallback: AppLocalizationsAr().gameswaveoneenginesText01(
+              formatNumeral(_deck[index].pairIndex + 1, 'arabic_indic'),
+            ),
           );
           final stateLabel = isMatched
-              ? 'بطاقة متطابقة: $cardIdentity'
+              ? AppLocalizationsAr().gameswaveoneenginesText02(cardIdentity)
               : isRetry
-              ? 'بطاقة مكشوفة: $cardIdentity، جرّب بطاقة أخرى'
+              ? AppLocalizationsAr().gameswaveoneenginesText03(cardIdentity)
               : isUp
-              ? 'بطاقة مكشوفة: $cardIdentity'
-              : 'بطاقة مقلوبة';
+              ? AppLocalizationsAr().gameswaveoneenginesText04(cardIdentity)
+              : AppLocalizationsAr().gameswaveoneenginesText05;
           return Semantics(
             button: true,
             excludeSemantics: true,
             selected: isUp,
             label: stateLabel,
-            value: isRetry ? 'حاول مرة أخرى' : null,
+            value: isRetry
+                ? AppLocalizationsAr().gameswaveoneenginesText06
+                : null,
             child: InkWell(
               // Position-stable key: the tile stays addressable as it flips, which
               // a reveal-state finder cannot do.
@@ -375,9 +379,9 @@ class _CardFace extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(nonColourGlyph(_fallbackCardIndex(assetId)), size: 34),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text(
-            name ?? 'بطاقة مصوّرة',
+            name ?? AppLocalizationsAr().gameswaveoneenginesBuild01,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium,
           ),
@@ -456,7 +460,7 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
     if (itemId == null) return;
     final item = _items.firstWhere(
       (entry) => str(entry, 'id') == itemId,
-      orElse: () => const {},
+      orElse: () => {},
     );
     final belongsTo = str(item, 'target');
 
@@ -467,7 +471,7 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
       setState(() {
         _retried.add(itemId);
         _selectedItem = null;
-        _retryMessage = 'ليست هنا. جرّب هدفًا آخر.';
+        _retryMessage = AppLocalizationsAr().gameswaveoneenginesRetryMessage01;
       });
       return;
     }
@@ -512,11 +516,11 @@ class _MatchPairsBoardState extends State<_MatchPairsBoard> {
       return BoardScaffold(
         controller: widget.controller,
         prompt: widget.controller.prompt,
-        child: const Center(
+        child: Center(
           child: GameStatePanel(
             kind: GameStateKind.empty,
-            title: 'هذا المستوى فارغ الآن',
-            message: 'لا توجد عناصر للمطابقة هنا. جرّب مستوى آخر.',
+            title: AppLocalizationsAr().gameswaveoneenginesTitle02,
+            message: AppLocalizationsAr().gameswaveoneenginesMessage02,
           ),
         ),
       );
@@ -696,11 +700,11 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
       return BoardScaffold(
         controller: widget.controller,
         prompt: widget.controller.prompt,
-        child: const Center(
+        child: Center(
           child: GameStatePanel(
             kind: GameStateKind.empty,
-            title: 'هذا المستوى فارغ الآن',
-            message: 'لا توجد عناصر للفرز هنا. جرّب مستوى آخر.',
+            title: AppLocalizationsAr().gameswaveoneenginesTitle03,
+            message: AppLocalizationsAr().gameswaveoneenginesMessage03,
           ),
         ),
       );
@@ -765,7 +769,9 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
     return safeChildFacingLabel(
       technicalId: str(bin, 'label_key'),
       artId: _binArt(bin),
-      arabicFallback: 'السلة ${formatNumeral(index + 1, 'arabic_indic')}',
+      arabicFallback: AppLocalizationsAr().gameswaveoneenginesArabicFallback01(
+        formatNumeral(index + 1, 'arabic_indic'),
+      ),
     );
   }
 
@@ -773,7 +779,9 @@ class _SortBinsBoardState extends State<_SortBinsBoard> {
     return safeChildFacingLabel(
       technicalId: str(item, 'label_key'),
       artId: str(item, 'image'),
-      arabicFallback: 'القطعة ${formatNumeral(index + 1, 'arabic_indic')}',
+      arabicFallback: AppLocalizationsAr().gameswaveoneenginesArabicFallback02(
+        formatNumeral(index + 1, 'arabic_indic'),
+      ),
     );
   }
 
@@ -939,7 +947,10 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
       return safeChildFacingLabel(
         authoredText: str(panel, 'caption'),
         technicalId: str(panel, 'caption_key'),
-        arabicFallback: 'الخطوة ${formatNumeral(index + 1, 'arabic_indic')}',
+        arabicFallback: AppLocalizationsAr()
+            .gameswaveoneenginesArabicFallback03(
+              formatNumeral(index + 1, 'arabic_indic'),
+            ),
       );
     }
 
@@ -950,18 +961,18 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
           return panelCaption(panels[index], index);
         }
       }
-      return 'خطوة مصوّرة';
+      return AppLocalizationsAr().gameswaveoneenginesPanelCaptionForId01;
     }
 
     if (_panels.isEmpty || _accepted.isEmpty) {
       return BoardScaffold(
         controller: widget.controller,
         prompt: widget.controller.prompt,
-        child: const Center(
+        child: Center(
           child: GameStatePanel(
             kind: GameStateKind.empty,
-            title: 'هذا المستوى فارغ الآن',
-            message: 'لا توجد خطوات للترتيب هنا. جرّب مستوى آخر.',
+            title: AppLocalizationsAr().gameswaveoneenginesTitle04,
+            message: AppLocalizationsAr().gameswaveoneenginesMessage04,
           ),
         ),
       );
@@ -973,11 +984,11 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
       footer: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: OutlinedButton.icon(
-          key: const Key('sequence_undo_button'),
+          key: Key('sequence_undo_button'),
           style: gameActionStyle(target),
           onPressed: _undo,
-          icon: const Icon(Icons.undo),
-          label: const Text('رجوع'),
+          icon: Icon(Icons.undo),
+          label: Text(AppLocalizationsAr().gameswaveoneenginesText07),
         ),
       ),
       child: SingleChildScrollView(
@@ -1001,7 +1012,9 @@ class _SequenceOrderBoardState extends State<_SequenceOrderBoard> {
                             : null,
                         caption: slot < _order.length
                             ? panelCaptionForId(_order[slot])
-                            : 'الخطوة ${formatNumeral(slot + 1, 'arabic_indic')}',
+                            : AppLocalizationsAr().gameswaveoneenginesText08(
+                                formatNumeral(slot + 1, 'arabic_indic'),
+                              ),
                         minHeight: target,
                       ),
                     ),

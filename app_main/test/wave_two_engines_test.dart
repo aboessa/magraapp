@@ -283,7 +283,7 @@ Future<void> tabTo(WidgetTester tester, Finder finder) async {
     await tester.pump();
     if (primaryFocusIsWithin(finder)) return;
   }
-  fail('Could not focus ${finder.description} with Tab.');
+  fail('Could not focus $finder with Tab.');
 }
 
 void main() {
@@ -696,11 +696,7 @@ void main() {
         'levels_to_finish': 3,
         'advance_on': 'level_complete',
       };
-      json['levels'] = [
-        countLevel(1, 1),
-        countLevel(2, 2),
-        countLevel(3, 3),
-      ];
+      json['levels'] = [countLevel(1, 1), countLevel(2, 2), countLevel(3, 3)];
       final s = session(json, gameId: 'game-wave1-count-place');
       await tester.pumpWidget(
         MaterialApp(
@@ -866,20 +862,17 @@ void main() {
     testWidgets('logic progression resets stage and feedback 1→2→3', (
       tester,
     ) async {
-      Map<String, dynamic> logicLevel(
-        int level,
-        String answer,
-        String wrong,
-      ) => {
-        'level': level,
-        'mode': 'linear',
-        'scoring': 'discrete',
-        'sequence': [answer, wrong, answer, null],
-        'options': [answer, wrong],
-        'answer': answer,
-        'rule_key': 'rule.level_$level',
-        'changing_dimensions': ['shape'],
-      };
+      Map<String, dynamic> logicLevel(int level, String answer, String wrong) =>
+          {
+            'level': level,
+            'mode': 'linear',
+            'scoring': 'discrete',
+            'sequence': [answer, wrong, answer, null],
+            'options': [answer, wrong],
+            'answer': answer,
+            'rule_key': 'rule.level_$level',
+            'changing_dimensions': ['shape'],
+          };
 
       final levels = [
         logicLevel(1, 'asset-color-cat', 'asset-color-bird'),

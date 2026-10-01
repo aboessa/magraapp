@@ -21,7 +21,7 @@ class RegisterPage extends ConsumerStatefulWidget {
 }
 
 class _RegisterPageState extends ConsumerState<RegisterPage> {
-  static const _minPasswordLength = 12;
+  static final _minPasswordLength = 12;
 
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
@@ -42,27 +42,28 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     super.dispose();
   }
 
-  String? _validateName(String? value) =>
-      (value?.trim().isEmpty ?? true) ? 'أدخل اسم عرض للأسرة' : null;
+  String? _validateName(String? value) => (value?.trim().isEmpty ?? true)
+      ? AppLocalizationsAr().authregisterpageDispose01
+      : null;
 
   String? _validateEmail(String? value) {
     final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'أدخل البريد الإلكتروني';
+    if (email.isEmpty) return AppLocalizationsAr().authregisterpageDispose02;
     if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
-      return 'أدخل بريدًا إلكترونيًا صالحًا';
+      return AppLocalizationsAr().authregisterpageDispose03;
     }
     return null;
   }
 
   String? _validatePassword(String? value) {
     if ((value ?? '').length < _minPasswordLength) {
-      return 'استخدم $_minPasswordLength حرفًا على الأقل';
+      return AppLocalizationsAr().authregisterpageText01(_minPasswordLength);
     }
     return null;
   }
 
   String? _validateConfirmation(String? value) {
-    if (value != _pass.text) return 'كلمتا المرور غير متطابقتين';
+    if (value != _pass.text) return AppLocalizationsAr().authregisterpageText02;
     return null;
   }
 
@@ -203,6 +204,60 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           onFieldSubmitted: (_) => _register(),
                           onToggleObscure: () => setState(
                             () => _obscureConfirmation = !_obscureConfirmation,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Required: an account is created only by a parent
+                        // who accepted the terms and the privacy policy.
+                        FormField<bool>(
+                          initialValue: false,
+                          validator: (value) => value == true
+                              ? null
+                              : 'لازم توافق على الشروط وسياسة الخصوصية',
+                          builder: (field) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CheckboxListTile(
+                                value: field.value ?? false,
+                                onChanged: (value) => field.didChange(value),
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                contentPadding: EdgeInsets.zero,
+                                activeColor: AppColors.starGold,
+                                checkColor: AppColors.deepSpace,
+                                title: const Text(
+                                  'أنا ولي الأمر (18 سنة فأكثر)، وموافق على شروط الاستخدام وسياسة الخصوصية وخصوصية الأطفال',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12.5,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+                              Wrap(
+                                spacing: 4,
+                                children: [
+                                  for (final (slug, label) in const [
+                                    ('terms', 'الشروط'),
+                                    ('privacy', 'الخصوصية'),
+                                    ('children-privacy', 'خصوصية الأطفال'),
+                                  ])
+                                    TextButton(
+                                      onPressed: () =>
+                                          context.push('/legal/$slug'),
+                                      child: Text(label),
+                                    ),
+                                ],
+                              ),
+                              if (field.hasError)
+                                Text(
+                                  field.errorText!,
+                                  style: const TextStyle(
+                                    color: AppColors.danger,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                         if (_submitError != null) ...[
@@ -362,6 +417,10 @@ class _AuthField extends StatelessWidget {
         suffixIcon: onToggleObscure == null
             ? null
             : IconButton(
+                focusNode: FocusNode(
+                  skipTraversal: true,
+                  canRequestFocus: false,
+                ),
                 tooltip: obscure ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور',
                 onPressed: onToggleObscure,
                 icon: Icon(
@@ -375,6 +434,14 @@ class _AuthField extends StatelessWidget {
         fillColor: const Color(0xFF111A3A).withValues(alpha: 0.72),
         border: border,
         enabledBorder: border,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.starGold, width: 2.8),
+        ),
+        floatingLabelStyle: const TextStyle(
+          color: AppColors.starGold,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

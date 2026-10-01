@@ -27,7 +27,8 @@ import '../studio/studio_categories.dart';
 import '../studio/studio_design.dart';
 import '../studio/studio_home_view.dart';
 import '../studio/studio_home_widgets.dart';
-import 'coloring/coloring_home_v2.dart' show FeaturedColoringSpec, kFeaturedColoringV2;
+import 'coloring/coloring_home_v2.dart'
+    show FeaturedColoringSpec, kFeaturedColoringV2;
 import 'coloring/coloring_board_v2.dart' show ColoringBoardV2Page;
 import 'coloring/coloring_home_v2_live.dart' show ColoringHomeV2LiveWrapper;
 import 'my_boards_page.dart';
@@ -373,10 +374,18 @@ class _StudioCategoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (category.id == StudioCategoryId.connectDots) {
-      return ConnectDotsCataloguePage(childId: childId, creationStore: creationStore, onSaved: onSaved);
+      return ConnectDotsCataloguePage(
+        childId: childId,
+        creationStore: creationStore,
+        onSaved: onSaved,
+      );
     }
     if (category.id == StudioCategoryId.complete) {
-      return CompleteCataloguePage(childId: childId, creationStore: creationStore, onSaved: onSaved);
+      return CompleteCataloguePage(
+        childId: childId,
+        creationStore: creationStore,
+        onSaved: onSaved,
+      );
     }
     if (category.id == StudioCategoryId.trace) {
       return TraceHomeWrapper(
@@ -384,10 +393,8 @@ class _StudioCategoryPage extends StatelessWidget {
         onOpenMyBoards: () {
           Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => MyBoardsV2Page(
-                childId: childId,
-                store: creationStore,
-              ),
+              builder: (_) =>
+                  MyBoardsV2Page(childId: childId, store: creationStore),
             ),
           );
         },
@@ -402,15 +409,15 @@ class _StudioCategoryPage extends StatelessWidget {
     }
     if (category.id == StudioCategoryId.coloring) {
       // V2 coloring home — مطابقة 100% للتصميم الجديد (hero + لوحاتي + رسومات مميزة + فئات)
-      final _CatColoringBridge bridge = _CatColoringBridge.convert(childId: childId, creationStore: creationStore);
+      final _CatColoringBridge bridge = _CatColoringBridge.convert(
+        childId: childId,
+        creationStore: creationStore,
+      );
       return bridge.buildV2(context);
     }
     return Scaffold(
       backgroundColor: AppColors.deepSpace,
-      appBar: StudioAppBar(
-        title: category.title,
-        glyph: category.icon,
-      ),
+      appBar: StudioAppBar(title: category.title, glyph: category.icon),
       body: DecoratedBox(
         decoration: const BoxDecoration(gradient: StudioGradients.page),
         child: ListView(
@@ -440,7 +447,10 @@ class _CatColoringBridge {
   final String childId;
   final LocalCreationStore creationStore;
 
-  static _CatColoringBridge convert({required String childId, required LocalCreationStore creationStore}) => _CatColoringBridge._(childId, creationStore);
+  static _CatColoringBridge convert({
+    required String childId,
+    required LocalCreationStore creationStore,
+  }) => _CatColoringBridge._(childId, creationStore);
 
   Widget buildV2(BuildContext outerContext) {
     return FutureBuilder<List<LocalCreation>>(
@@ -456,27 +466,47 @@ class _CatColoringBridge {
           displayName: null,
           resumable: const [],
           onOpenMyBoards: () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => MyBoardsPage(childId: childId, creationStore: creationStore)));
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => MyBoardsPage(
+                  childId: childId,
+                  creationStore: creationStore,
+                ),
+              ),
+            );
           },
           onOpenCategory: (selection) {
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => CategoryInsideColoringPage(
-                title: selection.category.label,
-                heroUrl: selection.category.bestDisplayUrl,
-                items: selection.items,
-                onOpen: (featured) => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => _CatBoardLauncher(
-                    childId: childId,
-                    creationStore: creationStore,
-                    featured: featured,
-                    thumbSpecs: selection.items,
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => CategoryInsideColoringPage(
+                  title: selection.category.label,
+                  heroUrl: selection.category.bestDisplayUrl,
+                  items: selection.items,
+                  onOpen: (featured) => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => _CatBoardLauncher(
+                        childId: childId,
+                        creationStore: creationStore,
+                        featured: featured,
+                        thumbSpecs: selection.items,
+                      ),
+                    ),
                   ),
-                )),
+                ),
               ),
-            ));
+            );
           },
           onOpenFeatured: (featured) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => _CatBoardLauncher(childId: childId, creationStore: creationStore, featured: featured, thumbSpecs: kFeaturedColoringV2)));
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => _CatBoardLauncher(
+                  childId: childId,
+                  creationStore: creationStore,
+                  featured: featured,
+                  thumbSpecs: kFeaturedColoringV2,
+                ),
+              ),
+            );
           },
         );
       },
@@ -485,7 +515,12 @@ class _CatColoringBridge {
 }
 
 class _CatBoardLauncher extends StatelessWidget {
-  const _CatBoardLauncher({required this.childId, required this.creationStore, required this.featured, required this.thumbSpecs});
+  const _CatBoardLauncher({
+    required this.childId,
+    required this.creationStore,
+    required this.featured,
+    required this.thumbSpecs,
+  });
   final String childId;
   final LocalCreationStore creationStore;
   final FeaturedColoringSpec featured;
@@ -498,7 +533,16 @@ class _CatBoardLauncher extends StatelessWidget {
       thumbSpecs: thumbSpecs,
       tutorialStorageKey: 'tutorial_coloring_v2_seen_$childId',
       onSelectOther: (other) {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => _CatBoardLauncher(childId: childId, creationStore: creationStore, featured: other, thumbSpecs: thumbSpecs)));
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => _CatBoardLauncher(
+              childId: childId,
+              creationStore: creationStore,
+              featured: other,
+              thumbSpecs: thumbSpecs,
+            ),
+          ),
+        );
       },
       onSave: (pngBytes) async {
         try {
@@ -508,7 +552,8 @@ class _CatBoardLauncher extends StatelessWidget {
             childId: childId,
             gameId: 'coloring-v2-${featured.id}',
             drawingMode: 'coloring-v2',
-            documentJson: '{"source":"${featured.id}","label":"${featured.label}"}',
+            documentJson:
+                '{"source":"${featured.id}","label":"${featured.label}"}',
             documentVersion: 1,
             pngBytes: pngBytes,
             width: 1024,
@@ -590,8 +635,7 @@ Widget _studioGridSection({
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      if (showHeader)
-        StudioSectionHeader(title: title, subtitle: subtitle),
+      if (showHeader) StudioSectionHeader(title: title, subtitle: subtitle),
       GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -640,7 +684,11 @@ class _StudioItemTile extends StatelessWidget {
 
     final Widget art = id != null
         ? DrawingAsset(assetIdOrPath: id, fit: BoxFit.contain)
-        : Icon(fallbackIcon ?? Icons.brush_rounded, size: 34, color: Colors.white);
+        : Icon(
+            fallbackIcon ?? Icons.brush_rounded,
+            size: 34,
+            color: Colors.white,
+          );
 
     return StudioSurface(
       onTap: onTap,
@@ -2223,6 +2271,11 @@ class _FreeDrawHostState extends State<_FreeDrawHost> {
       eventIdFactory: () => 'studio-${DateTime.now().microsecondsSinceEpoch}',
       initialCreationJson: widget.initialDocument?.toJsonString(),
     );
+    _ctrl.addListener(() {
+      if (_ctrl.gameComplete && !_saving && mounted) {
+        _save();
+      }
+    });
   }
 
   @override
@@ -2237,6 +2290,19 @@ class _FreeDrawHostState extends State<_FreeDrawHost> {
       appBar: StudioAppBar(
         title: widget.promptOverride ?? 'ارسم بحرية',
         glyph: Icons.gesture_rounded,
+        actions: [
+          StudioBarPill(
+            label: _saving
+                ? 'جارٍ الحفظ…'
+                : widget.continueCreation != null
+                ? 'تحديث'
+                : 'احفظ رسمتي',
+            icon: _saving
+                ? Icons.hourglass_top_rounded
+                : Icons.save_alt_rounded,
+            onTap: _saving ? null : _save,
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -2256,28 +2322,6 @@ class _FreeDrawHostState extends State<_FreeDrawHost> {
                 child: Text(_message!),
               ),
             ),
-          SafeArea(
-            minimum: const EdgeInsets.all(12),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _saving ? null : _save,
-                icon: _saving
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save_alt),
-                label: Text(
-                  _saving
-                      ? 'جارٍ الحفظ…'
-                      : widget.continueCreation != null
-                      ? 'تحديث الرسم'
-                      : 'احفظ رسمتي',
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -2500,10 +2544,7 @@ class TraceActivityHostState extends State<TraceActivityHost> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: StudioAppBar(
-        title: widget.title,
-        glyph: Icons.gesture_rounded,
-      ),
+      appBar: StudioAppBar(title: widget.title, glyph: Icons.gesture_rounded),
       body: Column(
         children: [
           Expanded(
@@ -2664,7 +2705,10 @@ class _ColoringPageHostState extends State<_ColoringPageHost> {
                 ),
               ),
             ),
-          const SafeArea(minimum: EdgeInsets.only(bottom: 4), child: SizedBox()),
+          const SafeArea(
+            minimum: EdgeInsets.only(bottom: 4),
+            child: SizedBox(),
+          ),
         ],
       ),
     );

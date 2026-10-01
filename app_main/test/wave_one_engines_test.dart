@@ -127,7 +127,7 @@ Future<void> tabTo(WidgetTester tester, Finder finder) async {
     await tester.pump();
     if (primaryFocusIsWithin(finder)) return;
   }
-  fail('Could not focus ${finder.description} with Tab.');
+  fail('Could not focus $finder with Tab.');
 }
 
 void main() {
@@ -369,11 +369,7 @@ void main() {
         },
       ];
       final harness = Harness(
-        packOf(
-          engineId: 'memory_flip',
-          levels: levels,
-          levelsToFinish: 3,
-        ),
+        packOf(engineId: 'memory_flip', levels: levels, levelsToFinish: 3),
         gameId: 'game-wave1-memory-animals',
       );
       await pumpBig(tester, harness.widget());

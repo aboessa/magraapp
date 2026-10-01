@@ -43,7 +43,8 @@ class DrawingAsset extends StatelessWidget {
   String get _resolved => drawingAssetPath(assetIdOrPath) ?? assetIdOrPath;
 
   bool get _isSvg => _resolved.toLowerCase().endsWith('.svg');
-  bool get _isNetwork => _resolved.startsWith('http://') || _resolved.startsWith('https://');
+  bool get _isNetwork =>
+      _resolved.startsWith('http://') || _resolved.startsWith('https://');
   bool get _isAsset => _resolved.startsWith('assets/');
 
   @override
@@ -142,7 +143,9 @@ class DrawingAsset extends StatelessWidget {
 
   void _logFailure(Object error) {
     // Always log — grey box without diagnostics is forbidden.
-    debugPrint('[DrawingAsset] FAILED id="$assetIdOrPath" resolved="$_resolved" error=$error');
+    debugPrint(
+      '[DrawingAsset] FAILED id="$assetIdOrPath" resolved="$_resolved" error=$error',
+    );
   }
 
   Widget _placeholder(BuildContext context, {bool loading = false}) {
@@ -232,7 +235,6 @@ class _RemoteDrawingImage extends StatefulWidget {
 
 class _RemoteDrawingImageState extends State<_RemoteDrawingImage> {
   String? _cachedPath;
-  bool _lookupDone = false;
 
   bool get _isSvg => widget.url.toLowerCase().endsWith('.svg');
 
@@ -247,22 +249,20 @@ class _RemoteDrawingImageState extends State<_RemoteDrawingImage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.url != widget.url) {
       _cachedPath = null;
-      _lookupDone = false;
       _lookupCache();
     }
   }
 
   Future<void> _lookupCache() async {
     if (!RemoteImageCache.isCacheableUrl(widget.url)) {
-      if (mounted) setState(() => _lookupDone = true);
       return;
     }
-    final hit = await (DrawingAsset.testCache ?? RemoteImageCache())
-        .fetch(widget.url);
+    final hit = await (DrawingAsset.testCache ?? RemoteImageCache()).fetch(
+      widget.url,
+    );
     if (!mounted) return;
     setState(() {
       _cachedPath = hit?.file.path;
-      _lookupDone = true;
     });
   }
 
@@ -306,9 +306,8 @@ class _RemoteDrawingImageState extends State<_RemoteDrawingImage> {
     }
 
     if (_cachedPath == null) {
-      // البحث جارٍ أو لا ملفّ: شبكة مباشرة مؤقتًا بدل شاشة فارغة.
-      if (!_lookupDone) return netChild;
-      return placeholder;
+      // البحث جارٍ أو لا ملفّ في الكاش: شبكة مباشرة بدل شاشة فارغة.
+      return netChild;
     }
     // ملفّ محلّي صالح: لا شبكة في هذا البناء.
     if (_isSvg) {

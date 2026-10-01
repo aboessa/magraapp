@@ -6,11 +6,13 @@ import '../../../app/theme/app_colors.dart';
 import '../../../core/device/device_profile.dart';
 import '../../../core/widgets/animated_brand_logo.dart';
 import '../application/home_providers.dart';
+import '../data/content_repository.dart';
 import '../domain/content_models.dart';
 import '../../child/application/child_provider.dart';
 import '../../games/application/game_providers.dart';
 import 'shells/adaptive_home_shell.dart';
 import 'shells/tv_home_shell.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -63,8 +65,10 @@ class HomePage extends ConsumerWidget {
 
     return effectiveCatalog.when(
       loading: () => const Scaffold(body: BrandLoadingView()),
-      error: (_, __) =>
-          _HomeErrorView(onRetry: () => ref.invalidate(homeCatalogProvider)),
+      error: (error, _) => _HomeErrorView(
+        offline: error is CatalogUnavailableException,
+        onRetry: () => ref.invalidate(homeCatalogProvider),
+      ),
       data: (value) => isTelevision
           ? TvHomeShell(catalog: value)
           : AdaptiveHomeShell(catalog: value),
@@ -73,15 +77,18 @@ class HomePage extends ConsumerWidget {
 }
 
 class _HomeErrorView extends StatelessWidget {
-  const _HomeErrorView({required this.onRetry});
+  const _HomeErrorView({required this.onRetry, this.offline = false});
 
   final VoidCallback onRetry;
+
+  /// `APP-202`: لا كتالوج حيّ ولا محفوظ، فالسبب انقطاع لا عطل.
+  final bool offline;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(
             center: Alignment.topCenter,
             radius: 1.2,
@@ -94,15 +101,19 @@ class _HomeErrorView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AnimatedBrandLogo(size: 108),
-                const SizedBox(height: 24),
+                AnimatedBrandLogo(size: 108),
+                SizedBox(height: 24),
                 Text(
-                  'تعذّر تجهيز الرحلة',
+                  offline
+                      ? AppLocalizationsAr().homehomepageBuild01
+                      : AppLocalizationsAr().homehomepageBuild02,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'جرّب مرة أخرى، وسنعود إلى مكتبتك بأمان.',
+                  offline
+                      ? 'اتأكد من الواي فاي أو البيانات وجرّب تاني.'
+                      : 'جرّب مرة أخرى، وسنعود إلى مكتبتك بأمان.',
                   style: Theme.of(context).textTheme.bodyLarge,
                   textAlign: TextAlign.center,
                 ),

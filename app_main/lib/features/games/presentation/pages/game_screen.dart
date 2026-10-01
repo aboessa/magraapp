@@ -22,6 +22,7 @@ import '../../engine/timeline_map_engine.dart';
 import '../../engine/trace_color_engine.dart';
 import '../../engine/wave_one_engines.dart';
 import '../../engine/wave_two_engines.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 GameEngineRegistry buildDefaultRegistry() => GameEngineRegistry(const [
   TraceColorEngine(),
@@ -130,19 +131,22 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         toolbarHeight: touchTarget,
         title: Text(
-          'المستوى ${widget.controller.levelIndex + 1} من '
-          '${widget.controller.levelCount}',
+          // ignore: prefer_interpolation_to_compose_strings
+          AppLocalizationsAr().gamesgamescreenText01(
+                widget.controller.levelIndex + 1,
+              ) +
+              '${widget.controller.levelCount}',
         ),
         actions: [
           IconButton(
-            key: const Key('simplified_motor_button'),
+            key: Key('simplified_motor_button'),
             style: actionStyle,
             icon: Icon(
               widget.controller.settings.simplifiedMotor
                   ? Icons.accessibility_new
                   : Icons.accessibility,
             ),
-            tooltip: 'وضع حركي مبسّط',
+            tooltip: AppLocalizationsAr().gamesgamescreenTooltip01,
             onPressed: _toggleSimplifiedMotor,
           ),
         ],
@@ -162,7 +166,7 @@ class _GameScreenState extends State<GameScreen> {
                     horizontal: 16,
                   ),
                   child: Text(
-                    'الوضع الحركي المبسّط مفعّل: الطريق أوسع.',
+                    AppLocalizationsAr().gamesgamescreenText02,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -182,10 +186,10 @@ class _GameScreenState extends State<GameScreen> {
                       ? GameStateKind.gameComplete
                       : GameStateKind.levelComplete,
                   title: widget.controller.gameComplete
-                      ? 'أكملت اللعبة'
-                      : 'أكملت المستوى',
+                      ? AppLocalizationsAr().gamesgamescreenText03
+                      : AppLocalizationsAr().gamesgamescreenText04,
                   message: widget.controller.gameComplete
-                      ? 'أنهيت كل المستويات. عمل رائع!'
+                      ? AppLocalizationsAr().gamesgamescreenText05
                       : 'المستوى التالي جاهز عندما تريد.',
                   compact: true,
                 ),

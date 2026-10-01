@@ -14,6 +14,7 @@ import '../../child/application/child_provider.dart';
 import '../../home/domain/content_models.dart';
 import '../data/recent_searches_store.dart';
 import '../domain/search_engine.dart';
+import 'package:majarra/l10n/app_localizations_ar.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({
@@ -86,97 +87,121 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         : {_selectedKind!};
     final results = searchCatalog(widget.catalog, effectiveQuery, kinds: kinds);
 
-    return CinematicBackground(
-      child: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            toolbarHeight: widget.isTelevision ? 82 : 72,
-            backgroundColor: const Color(0xFF0B1026).withValues(alpha: 0.88),
-            surfaceTintColor: Colors.transparent,
-            titleSpacing: padding,
-            title: Text(
-              'بحث',
-              style: Theme.of(context).textTheme.headlineMedium,
+    return Scaffold(
+      backgroundColor: AppColors.deepSpace,
+      body: CinematicBackground(
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              toolbarHeight: widget.isTelevision ? 82 : 72,
+              backgroundColor: Color(0xFF0B1026).withValues(alpha: 0.88),
+              surfaceTintColor: Colors.transparent,
+              leading: (ModalRoute.of(context)?.canPop ?? false)
+                  ? IconButton(
+                      icon: BackButtonIcon(),
+                      tooltip: AppLocalizationsAr().searchsearchpageTooltip01,
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        } else {
+                          context.go('/');
+                        }
+                      },
+                    )
+                  : null,
+              titleSpacing: (ModalRoute.of(context)?.canPop ?? false)
+                  ? 0
+                  : padding,
+              title: Text(
+                'بحث',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(padding, 16, padding, 0),
-              child: TextField(
-                controller: _controller,
-                autofocus: !widget.isTelevision,
-                textInputAction: TextInputAction.search,
-                onChanged: _setQuery,
-                onSubmitted: (value) {
-                  if (value.trim().isEmpty) return;
-                  unawaited(_remember(value));
-                  MajarraAnalytics.searchPerformed(
-                    resultCount: searchCatalog(widget.catalog, value).length,
-                  );
-                },
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'ابحث عن مسلسل، حلقة، لعبة، قصة، كتاب، أو كوكب...',
-                  hintStyle: TextStyle(
-                    color: AppColors.mutedText.withValues(alpha: 0.6),
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: AppColors.mutedText,
-                  ),
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _VoiceSearchButton(
-                        onTranscript: (text) {
-                          _controller.text = text;
-                          _controller.selection = TextSelection.collapsed(
-                            offset: text.length,
-                          );
-                          _setQuery(text);
-                        },
-                      ),
-                      if (_query.isNotEmpty)
-                        IconButton(
-                          icon: const Icon(
-                            Icons.clear_rounded,
-                            color: AppColors.mutedText,
-                          ),
-                          tooltip: 'مسح البحث',
-                          onPressed: () {
-                            _controller.clear();
-                            setState(() {
-                              _query = '';
-                              _selectedKind = null;
-                            });
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  padding,
+                  16,
+                  padding,
+                  0,
+                ),
+                child: TextField(
+                  controller: _controller,
+                  autofocus: !widget.isTelevision,
+                  textInputAction: TextInputAction.search,
+                  onChanged: _setQuery,
+                  onSubmitted: (value) {
+                    if (value.trim().isEmpty) return;
+                    unawaited(_remember(value));
+                    MajarraAnalytics.searchPerformed(
+                      resultCount: searchCatalog(widget.catalog, value).length,
+                    );
+                  },
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText:
+                        'ابحث عن مسلسل، حلقة، لعبة، قصة، كتاب، أو كوكب...',
+                    hintStyle: TextStyle(
+                      color: AppColors.mutedText.withValues(alpha: 0.6),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: AppColors.mutedText,
+                    ),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _VoiceSearchButton(
+                          onTranscript: (text) {
+                            _controller.text = text;
+                            _controller.selection = TextSelection.collapsed(
+                              offset: text.length,
+                            );
+                            _setQuery(text);
                           },
                         ),
-                    ],
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFF111A3A).withValues(alpha: 0.88),
-                  border: _fieldBorder(),
-                  enabledBorder: _fieldBorder(),
-                  focusedBorder: _fieldBorder(
-                    color: AppColors.electricCyan,
-                    width: 2,
+                        if (_query.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(
+                              Icons.clear_rounded,
+                              color: AppColors.mutedText,
+                            ),
+                            tooltip: 'مسح البحث',
+                            onPressed: () {
+                              _controller.clear();
+                              setState(() {
+                                _query = '';
+                                _selectedKind = null;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFF111A3A).withValues(alpha: 0.88),
+                    border: _fieldBorder(),
+                    enabledBorder: _fieldBorder(),
+                    focusedBorder: _fieldBorder(
+                      color: AppColors.electricCyan,
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          if (hasQuery) _buildFilters(padding),
-          if (!hasQuery)
-            ..._buildIdleState(context, padding, childId)
-          else if (results.isEmpty)
-            _buildEmptyState(context)
-          else
-            ..._buildResults(context, padding, results),
-          SliverToBoxAdapter(
-            child: SizedBox(height: widget.isTelevision ? 32 : 98),
-          ),
-        ],
+            if (hasQuery) _buildFilters(padding),
+            if (!hasQuery)
+              ..._buildIdleState(context, padding, childId)
+            else if (results.isEmpty)
+              _buildEmptyState(context)
+            else
+              ..._buildResults(context, padding, results),
+            SliverToBoxAdapter(
+              child: SizedBox(height: widget.isTelevision ? 32 : 98),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -388,7 +413,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     double padding,
     List<SearchResult> results,
   ) {
-    const order = [
+    final order = [
       SearchResultKind.series,
       SearchResultKind.episode,
       SearchResultKind.game,
