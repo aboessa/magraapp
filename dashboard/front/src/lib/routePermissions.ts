@@ -133,6 +133,9 @@ export const ROUTE_PERMISSIONS: Record<string, ServerPermission | null> = {
   'ops-sla/policy/:id': null,
   'campaigns': null,
   'campaigns/:id': null,
+  'notifications': null,
+  'gamification': null,
+  'compliance': null,
   'revenue': null,
   'translation': null,
   'translation/:id': null,
@@ -143,6 +146,8 @@ export const ROUTE_PERMISSIONS: Record<string, ServerPermission | null> = {
   'partnerships': null,
   'website/pages': null,
   'website/pages/:id': null,
+  // القراءة لأي مسؤول؛ الحفظ والنشر بصلاحية publish في الخادم.
+  'website/legal': null,
   'blog/posts': null,
   'blog/posts/:id': null,
   'blog/taxonomy': null,
@@ -151,6 +156,13 @@ export const ROUTE_PERMISSIONS: Record<string, ServerPermission | null> = {
   'app-experience': null,
   'stories/:id/builder': null,
   'settings': null,
+  'media-ingest': null,
+  'stream-health': null,
+  'parent-digests': null,
+  'tickets': null,
+  'ai-story-studio': null,
+  'live-events': null,
+  'screentime-policies': null,
 
   // --- شاشات هي فعلٌ كامل: بلا الصلاحية لا يبقى فيها شيء ---------------------
   //
@@ -175,9 +187,11 @@ export const ROUTE_PERMISSIONS: Record<string, ServerPermission | null> = {
   'billing': 'manage_billing',
   'billing/subscription/:id': 'manage_billing',
   'billing/transaction/:id': 'manage_billing',
+  'billing/manual': 'manage_billing',
   'packages': 'manage_billing',
   'plans/:id': 'manage_billing',
   'finance-advanced': 'manage_billing',
+  'coupons': 'manage_billing',
 
   // سجل التدقيق: صلاحيته مُسمّاة في الخادم بالاسم نفسه.
   'audit-logs': 'view_audit_log',
@@ -187,6 +201,11 @@ export const ROUTE_PERMISSIONS: Record<string, ServerPermission | null> = {
   // يراه المستخدم النهائي، وحرسها في الخادم `publish`.
   'website/mode': 'publish',
   'remote-config': 'publish',
+  // ADMIN-POLICY: plan limits and platform timings; the server guards with `publish`.
+  'platform-policy': 'publish',
+  // ADM-305 / ADM-306
+  'feature-flags': 'publish',
+  'tvs': null,
   'failed-events': 'publish',
   'failed-events/:id': 'publish',
 

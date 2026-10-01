@@ -1,5 +1,6 @@
 import { lazy, useEffect, useState } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { adminPath } from './lib/adminPath'
 import { AdminLayout } from './components/AdminLayout'
 import { AdminLoginPage } from './pages/AdminLoginPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -59,6 +60,10 @@ import './styles/contentStudioTheme.css'
 // مستخدَمًا. فصارت `lazy` مثل الـ115 الأخرى بدل استثناءٍ يستند إلى وصفٍ باطل.
 const AdvancedFinancePage = lazy(() => import('./pages/AdvancedFinancePage').then((module) => ({ default: module.AdvancedFinancePage })))
 const CampaignsPage = lazy(() => import('./pages/CampaignsPage').then((module) => ({ default: module.CampaignsPage })))
+const NotificationsBroadcastPage = lazy(() => import('./pages/NotificationsBroadcastPage').then((m) => ({ default: m.default })))
+const CouponsAdminPage = lazy(() => import('./pages/CouponsAdminPage').then((m) => ({ default: m.default })))
+const GamificationAdminPage = lazy(() => import('./pages/GamificationAdminPage').then((m) => ({ default: m.GamificationAdminPage })))
+const KidsSafetyCompliancePage = lazy(() => import('./pages/KidsSafetyCompliancePage').then((m) => ({ default: m.KidsSafetyCompliancePage })))
 const CampaignWorkspacePage = lazy(() => import('./pages/CampaignWorkspacePage').then((module) => ({ default: module.CampaignWorkspacePage })))
 const OpsSlaPage = lazy(() => import('./pages/OpsSlaPage').then((module) => ({ default: module.OpsSlaPage })))
 const QuizBuilderPage = lazy(() => import('./pages/QuizBuilderPage').then((module) => ({ default: module.QuizBuilderPage })))
@@ -80,6 +85,7 @@ const CreativeCopyPatternAdminPage = lazy(() => import('./pages/CreativeCopyPatt
 // --- المحتوى ---------------------------------------------------------------
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
 const WebsiteModePage = lazy(() => import('./pages/WebsiteModePage').then((module) => ({ default: module.WebsiteModePage })))
+const LegalDocumentsPage = lazy(() => import('./pages/LegalDocumentsPage').then((module) => ({ default: module.LegalDocumentsPage })))
 const MyAccountPage = lazy(() => import('./pages/MyAccountPage').then((module) => ({ default: module.MyAccountPage })))
 const SecurityPage = lazy(() => import('./pages/SecurityPage').then((module) => ({ default: module.SecurityPage })))
 const SessionsPage = lazy(() => import('./pages/SessionsPage').then((module) => ({ default: module.SessionsPage })))
@@ -127,9 +133,6 @@ const VisualStyleComparePage = lazy(() => import('./pages/VisualStyleComparePage
 const NarrationPage = lazy(() => import('./pages/NarrationPage').then((module) => ({ default: module.NarrationPage })))
 const AiProvidersPage = lazy(() => import('./pages/AiProvidersPage').then((module) => ({ default: module.AiProvidersPage })))
 const QualityPage = lazy(() => import('./pages/QualityPage').then((module) => ({ default: module.QualityPage })))
-const CreativeStudioOverviewPage = lazy(() => import('./pages/CreativeStudioOverviewPage').then((m) => ({ default: m.default })))
-const ReferenceDrawingDetailPage = lazy(() => import('./pages/ReferenceDrawingDetailPage').then((m) => ({ default: m.default })))
-const DrawingAuthoringPage = lazy(() => import('./pages/DrawingAuthoringPage').then((m) => ({ default: m.default })))
 
 // --- استوديو الألعاب -------------------------------------------------------
 // أثقل مجموعة في اللوحة: صفحة اللعبة تجرّ محرّرات أحد عشر محرّكًا وقواعد التحقّق
@@ -156,10 +159,14 @@ const SupportCenterPage = lazy(() => import('./pages/SupportCenterPage').then((m
 
 // --- التجارة ---------------------------------------------------------------
 const BillingPage = lazy(() => import('./pages/BillingPage').then((module) => ({ default: module.BillingPage })))
+const ManualPaymentsPage = lazy(() => import('./pages/ManualPaymentsPage').then((module) => ({ default: module.ManualPaymentsPage })))
 const SubscriptionWorkspacePage = lazy(() => import('./pages/SubscriptionWorkspacePage').then((module) => ({ default: module.SubscriptionWorkspacePage })))
 const TransactionWorkspacePage = lazy(() => import('./pages/TransactionWorkspacePage').then((module) => ({ default: module.TransactionWorkspacePage })))
 const PackagesPage = lazy(() => import('./pages/PackagesPage').then((module) => ({ default: module.PackagesPage })))
 const PlanWorkspacePage = lazy(() => import('./pages/PlanWorkspacePage').then((module) => ({ default: module.PlanWorkspacePage })))
+const FeatureFlagsPage = lazy(() => import('./pages/FeatureFlagsPage').then((module) => ({ default: module.FeatureFlagsPage })))
+const TvAdminPage = lazy(() => import('./pages/TvAdminPage').then((module) => ({ default: module.TvAdminPage })))
+const PlatformPolicyPage = lazy(() => import('./pages/PlatformPolicyPage').then((module) => ({ default: module.PlatformPolicyPage })))
 const RightsPage = lazy(() => import('./pages/RightsPage').then((module) => ({ default: module.RightsPage })))
 const RightsWorkspacePage = lazy(() => import('./pages/RightsWorkspacePage').then((module) => ({ default: module.RightsWorkspacePage })))
 const PartnershipsPage = lazy(() => import('./pages/PartnershipsPage').then((module) => ({ default: module.PartnershipsPage })))
@@ -198,6 +205,17 @@ const BlogPostsPage = lazy(() => import('./pages/BlogPostsPage').then((module) =
 const BlogPostEditor = lazy(() => import('./pages/BlogPostEditor').then((module) => ({ default: module.BlogPostEditor })))
 const BlogTaxonomyPage = lazy(() => import('./pages/BlogTaxonomyPage').then((module) => ({ default: module.BlogTaxonomyPage })))
 const SeoOperationsPage = lazy(() => import('./pages/SeoOperationsPage').then((module) => ({ default: module.SeoOperationsPage })))
+
+// --- العمليات ورعاية الأهل (Phase 5) ---------------------------------------
+const MediaIngestPage = lazy(() => import('./pages/MediaIngestPage').then((module) => ({ default: module.MediaIngestPage })))
+const StreamHealthPage = lazy(() => import('./pages/StreamHealthPage').then((module) => ({ default: module.StreamHealthPage })))
+const ParentDigestsPage = lazy(() => import('./pages/ParentDigestsPage').then((module) => ({ default: module.ParentDigestsPage })))
+const SupportTicketsPage = lazy(() => import('./pages/SupportTicketsPage').then((module) => ({ default: module.SupportTicketsPage })))
+
+// --- الذكاء الاصطناعي والفعاليات ووقت الشاشة (Phase 6) ----------------------
+const AiStoryStudioPage = lazy(() => import('./pages/AiStoryStudioPage').then((module) => ({ default: module.AiStoryStudioPage })))
+const LiveEventsPage = lazy(() => import('./pages/LiveEventsPage').then((module) => ({ default: module.LiveEventsPage })))
+const ScreentimePoliciesPage = lazy(() => import('./pages/ScreentimePoliciesPage').then((module) => ({ default: module.ScreentimePoliciesPage })))
 
 export default function AdminRoutes() {
   // 'checking' حالة ثالثة ضرورية: بلا فصلها عن 'signed-out' تظهر شاشة الدخول
@@ -242,6 +260,7 @@ export default function AdminRoutes() {
         <Route index element={<DashboardPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="website/mode" element={<WebsiteModePage />} />
+        <Route path="website/legal" element={<LegalDocumentsPage />} />
         <Route path="my-account" element={<MyAccountPage />} />
         <Route path="security" element={<SecurityPage />} />
         <Route path="sessions" element={<SessionsPage />} />
@@ -300,9 +319,12 @@ export default function AdminRoutes() {
         <Route path="creative-studio/complete" element={<CreativeCompleteAdminPage />} />
         <Route path="creative-studio/trace" element={<CreativeTraceAdminPage />} />
         <Route path="creative-studio/copy-pattern" element={<CreativeCopyPatternAdminPage />} />
-        <Route path="creative-studio/reference" element={<CreativeStudioOverviewPage />} />
-        <Route path="creative-studio/reference/:id" element={<ReferenceDrawingDetailPage />} />
-        <Route path="creative-studio/authoring" element={<DrawingAuthoringPage />} />
+        {/* ADM-303: these three read a `reference-activities` endpoint that never
+            existed and saved nothing. "ارسم مثلي" is the working page for the
+            same content (`creative_drawings`), so old links land there. */}
+        <Route path="creative-studio/reference" element={<Navigate to={adminPath('creative-studio/draw-like-me')} replace />} />
+        <Route path="creative-studio/reference/:id" element={<Navigate to={adminPath('creative-studio/draw-like-me')} replace />} />
+        <Route path="creative-studio/authoring" element={<Navigate to={adminPath('creative-studio/draw-like-me')} replace />} />
         <Route path="parents" element={<ParentsPage />} />
         <Route path="parents/:id" element={<ParentWorkspacePage />} />
         {/* Customer 360: القائمة ثم مساحة العمل. منفصلة عن /parents لأن تلك قراءة
@@ -350,7 +372,10 @@ export default function AdminRoutes() {
         <Route path="remote-config" element={<RemoteConfigPage />} />
         <Route path="packages" element={<PackagesPage />} />
         <Route path="plans/:id" element={<PlanWorkspacePage />} />
-        <Route path="billing" element={<BillingPage />} />
+        <Route path="platform-policy" element={<PlatformPolicyPage />} />
+        <Route path="feature-flags" element={<FeatureFlagsPage />} />
+        <Route path="tvs" element={<TvAdminPage />} />
+        <Route path="billing" element={<BillingPage />} />`n        <Route path="billing/manual" element={<ManualPaymentsPage />} />
         <Route path="billing/subscription/:id" element={<SubscriptionWorkspacePage />} />
         <Route path="billing/transaction/:id" element={<TransactionWorkspacePage />} />
         <Route path="ops" element={<OpsPage />} />
@@ -362,6 +387,10 @@ export default function AdminRoutes() {
         <Route path="ops/telemetry" element={<OpsPage />} />
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="campaigns/:id" element={<CampaignWorkspacePage />} />
+        <Route path="notifications" element={<NotificationsBroadcastPage />} />
+        <Route path="coupons" element={<CouponsAdminPage />} />
+        <Route path="gamification" element={<GamificationAdminPage />} />
+        <Route path="compliance" element={<KidsSafetyCompliancePage />} />
         <Route path="revenue" element={<RevenuePage />} />
         <Route path="translation" element={<TranslationCenterPage />} />
         <Route path="translation/:id" element={<TranslationWorkspacePage />} />
@@ -382,6 +411,15 @@ export default function AdminRoutes() {
         <Route path="blog/posts/:id" element={<BlogPostEditor />} />
         <Route path="blog/taxonomy" element={<BlogTaxonomyPage />} />
         <Route path="seo" element={<SeoOperationsPage />} />
+        {/* العمليات ورعاية الأهل: استيراد الوسائط، صحة البث، تقارير الأهل، تذاكر الدعم */}
+        <Route path="media-ingest" element={<MediaIngestPage />} />
+        <Route path="stream-health" element={<StreamHealthPage />} />
+        <Route path="parent-digests" element={<ParentDigestsPage />} />
+        <Route path="tickets" element={<SupportTicketsPage />} />
+        {/* الذكاء الاصطناعي الإبداعي، الفعاليات الحية، وسياسات وقت الشاشة */}
+        <Route path="ai-story-studio" element={<AiStoryStudioPage />} />
+        <Route path="live-events" element={<LiveEventsPage />} />
+        <Route path="screentime-policies" element={<ScreentimePoliciesPage />} />
       </Route>
     </Routes>
   )

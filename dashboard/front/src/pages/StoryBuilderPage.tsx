@@ -9,6 +9,7 @@ import { api, ApiError } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
 import { formatNumber } from '../lib/labels'
 import { hasPermission } from '../lib/adminSession'
+import { KaraokeSyncStudio, type TimingCue } from '../components/stories/KaraokeSyncStudio'
 import type { StoryWorkspace, StoryWorkspacePage } from '../types/api'
 
 /**
@@ -942,6 +943,25 @@ export function StoryBuilderPage() {
                           {text.removeNarration}
                         </button>
                       </div>
+
+                      {/* Interactive Karaoke Audio-Text Sync Studio */}
+                      <KaraokeSyncStudio
+                        pageId={selected.id}
+                        language={language}
+                        audioAssetId={localized.narration_asset_id}
+                        bodyText={draftText || localized.body_text || ''}
+                        initialCues={(localized.timing_cues || []) as unknown as TimingCue[]}
+                        onSaveCues={async (cues) => {
+                          await api.savePageLocalization(selected.id, language, {
+                            body_text: draftText.trim() || null,
+                            alt_text: draftAlt.trim() || null,
+                            narration_asset_id: localized.narration_asset_id,
+                            timing_cues: cues,
+                          })
+                          await load()
+                        }}
+                        canEdit={canEdit}
+                      />
                     </div>
                   ) : (
                     <>
@@ -951,7 +971,6 @@ export function StoryBuilderPage() {
                       </button>
                     </>
                   )}
-                  <p className="story-inspector__hint">{workspace.capabilities.timing_reason}</p>
                 </section>
               )}
 

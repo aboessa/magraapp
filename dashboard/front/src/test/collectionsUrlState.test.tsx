@@ -152,6 +152,19 @@ describe('EpisodesPage', () => {
     // الصفحة الخامسة من مجموعة أضيق تُعرض «لا نتائج» على مجموعة فيها نتائج.
     expect(lastArgs(episodes).offset).toBe(0)
   })
+
+  test('clicking play opens the episode player modal', async () => {
+    mockList()
+    const user = userEvent.setup()
+    renderWithProviders(<EpisodesPage />, { route: adminPath('episodes') })
+
+    const playBtn = await screen.findByRole('button', { name: 'تشغيل الحلقة' })
+    await user.click(playBtn)
+
+    const dialog = await screen.findByRole('dialog', { name: /مشغل الحلقة/ })
+    expect(dialog).toBeInTheDocument()
+    expect(within(dialog).getByRole('heading', { name: /مشغل الحلقة/ })).toBeInTheDocument()
+  })
 })
 
 // --- العائلات --------------------------------------------------------------

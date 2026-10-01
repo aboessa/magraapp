@@ -32,6 +32,81 @@ function normalize(value: Drawing['geometry']): Stroke[] {
   }));
 }
 
+export type SvgValidationReport = {
+  isValid: boolean;
+  pathCount: number;
+  unclosedPaths: number;
+  hasViewBox: boolean;
+  viewBox: string | null;
+  securityIssues: string[];
+  warnings: string[];
+};
+
+export function validateSvgContent(svgText: string): SvgValidationReport {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgText, 'image/svg+xml');
+  const parseError = doc.querySelector('parsererror');
+  if (parseError) {
+    return {
+      isValid: false,
+      pathCount: 0,
+      unclosedPaths: 0,
+      hasViewBox: false,
+      viewBox: null,
+      securityIssues: ['ملف SVG تالف أو به أخطاء في صياغة XML'],
+      warnings: [],
+    };
+  }
+
+  const svgEl = doc.querySelector('svg');
+  if (!svgEl) {
+    return {
+      isValid: false,
+      pathCount: 0,
+      unclosedPaths: 0,
+      hasViewBox: false,
+      viewBox: null,
+      securityIssues: ['لم يتم العثور على وسم <svg> الرئيسي'],
+      warnings: [],
+    };
+  }
+
+  const securityIssues: string[] = [];
+  if (doc.querySelector('script')) securityIssues.push('الملف يحتوي على وسم script غير آمن وممنوع برمجياً');
+  if (doc.querySelector('foreignObject')) securityIssues.push('الملف يحتوي على وسم foreignObject');
+
+  const paths = Array.from(doc.querySelectorAll('path'));
+  let unclosed = 0;
+  for (const p of paths) {
+    const d = p.getAttribute('d') || '';
+    if (d && !/[zZ]\s*$/.test(d.trim()) && !/[zZ]/.test(d)) {
+      unclosed += 1;
+    }
+  }
+
+  const warnings: string[] = [];
+  const viewBox = svgEl.getAttribute('viewBox');
+  if (!viewBox) {
+    warnings.push('الملف يفتقر إلى سمة viewBox (ضرورية للتجاوب مع أحجام شاشات الأجهزة الذكية)');
+  }
+  if (paths.length === 0 && !doc.querySelector('polyline, polygon, circle, line')) {
+    warnings.push('لا توجد مسارات متجهة (vector paths) معرفة في الملف');
+  }
+  if (unclosed > 0) {
+    warnings.push(`يوجد ${unclosed} مسار غير مغلق بأمر Z/z`);
+  }
+
+  return {
+    isValid: securityIssues.length === 0 && (paths.length > 0 || doc.querySelector('polygon, polyline, circle') !== null),
+    pathCount: paths.length,
+    unclosedPaths: unclosed,
+    hasViewBox: Boolean(viewBox),
+    viewBox,
+    securityIssues,
+    warnings,
+  };
+}
+
 export default function CreativeTraceAdminPage() {
   const [category, setCategory] = useState<Drawing['category']>('trace');
   const [items, setItems] = useState<Drawing[]>([]);
@@ -41,6 +116,7 @@ export default function CreativeTraceAdminPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [animating, setAnimating] = useState(false);
   const [animProgress, setAnimProgress] = useState(0);
+  const [svgReport, setSvgReport] = useState<SvgValidationReport | null>(null);
 
   async function load(preferred?: string) {
     let result = await admin(`/creative-studio/drawings?category=${category}&limit=100`);
@@ -67,6 +143,7 @@ export default function CreativeTraceAdminPage() {
     setActive(0);
     setNotice(null);
     setAnimating(false);
+    setSvgReport(null);
   }
 
   function addPoint(event: React.MouseEvent<SVGSVGElement>) {
@@ -101,19 +178,50 @@ export default function CreativeTraceAdminPage() {
 
   async function upload(file: File | undefined) {
     if (!selected || !file) return;
+
+    // Validate SVG Client-side
+    try {
+      const text = await file.text();
+      const report = validateSvgContent(text);
+      setSvgReport(report);
+
+      if (report.securityIssues.length > 0) {
+        setNotice(`❌ تم رفض الملف لأسباب أمنية: ${report.securityIssues.join('، ')}`);
+        return;
+      }
+      if (!report.isValid) {
+        setNotice('❌ الملف ليس بصيغة SVG متجهة صحيحة');
+        return;
+      }
+    } catch {
+      setNotice('❌ تعذر قراءة وفحص ملف SVG');
+      return;
+    }
+
     const form = new FormData();
     form.append('kind', 'main');
     form.append('file', file);
     const result = await admin(`/creative-studio/drawings/${selected.id}/upload`, { method: 'POST', body: form });
     if (!result.success) setNotice(`فشل الرفع: ${result.error || 'خطأ غير معروف'}`);
     else {
-      setNotice('تم رفع ملف SVG بنجاح إلى السحابة ✅');
+      setNotice('تم فحص ورفع ملف SVG بنجاح إلى السحابة ✅');
       await load(selected.id);
     }
   }
 
   async function save(status?: 'ready' | 'published') {
     if (!selected) return;
+
+    // Validate strokes integrity
+    const invalidStrokes = strokes.filter(s => s.type === 'stroke' && s.points.length < 2);
+    if (invalidStrokes.length > 0) {
+      const warnMsg = `تنبيه: يوجد ${invalidStrokes.length} مسار متصل يحتوي على أقل من نقطتين. يرجى إكمال النقاط أو حذف المسار.`;
+      if (status === 'published' || status === 'ready') {
+        setNotice(`❌ تعذر النشر: ${warnMsg}`);
+        return;
+      }
+    }
+
     const geometry = {
       strokePaths: strokes.map((stroke, index) => ({
         ...stroke,
@@ -127,7 +235,7 @@ export default function CreativeTraceAdminPage() {
     });
     if (!result.success) setNotice(`تعذر الحفظ: ${result.error || 'خطأ غير معروف'}`);
     else {
-      setNotice(status ? `تم تغيير الحالة إلى ${status}.` : 'تم حفظ المسارات بنجاح ✨');
+      setNotice(status ? `تم التحقق وتغيير الحالة إلى ${status} بنجاح ✅` : 'تم حفظ المسارات بنجاح ✨');
       await load(selected.id);
     }
   }
@@ -380,6 +488,38 @@ export default function CreativeTraceAdminPage() {
                     • يحتاج المسار المتصل نقطتين على الأقل.
                   </div>
                 </div>
+
+                {/* SVG Vector Integrity Diagnostics */}
+                {svgReport && (
+                  <div
+                    style={{
+                      padding: 12,
+                      background: svgReport.isValid && svgReport.warnings.length === 0 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                      border: `1px solid ${svgReport.isValid && svgReport.warnings.length === 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                      borderRadius: 10,
+                      marginBottom: 16,
+                      fontSize: 12,
+                    }}
+                  >
+                    <div style={{ fontWeight: 800, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>{svgReport.isValid && svgReport.warnings.length === 0 ? '✅' : '⚠️'}</span>
+                      <span>تقرير فحص المتجهات (SVG Health)</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8, fontSize: 11 }}>
+                      <div>المسارات: <strong>{svgReport.pathCount}</strong></div>
+                      <div>غير مغلقة: <strong>{svgReport.unclosedPaths}</strong></div>
+                      <div>viewBox: <strong>{svgReport.hasViewBox ? 'نعم' : 'مفقود'}</strong></div>
+                      <div>الأمان: <strong style={{ color: '#10b981' }}>آمن</strong></div>
+                    </div>
+                    {svgReport.warnings.length > 0 && (
+                      <ul style={{ margin: 0, paddingRight: 16, fontSize: 11, color: '#f59e0b', lineHeight: 1.4 }}>
+                        {svgReport.warnings.map((w, idx) => (
+                          <li key={idx}>{w}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <button onClick={() => void save('ready')} className="studio-btn studio-btn--primary">

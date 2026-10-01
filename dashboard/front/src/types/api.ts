@@ -1,4 +1,4 @@
-﻿export type AgeTrack = 'preschool' | 'kids' | 'junior'
+export type AgeTrack = 'preschool' | 'kids' | 'junior'
 export type ContentStatus =
   | 'draft'
   | 'writing'
@@ -478,6 +478,8 @@ export interface EpisodeRecord {
   description_ar?: string | null
   thumbnail_url?: string | null
   video_master_url?: string | null
+  video_asset_id?: string | null
+  video_url?: string | null
   captions_ar_url?: string | null
   dubs?: string[]
   duration_seconds?: number | null
@@ -604,6 +606,10 @@ export interface EpisodePayload {
   description_ar?: string
   parent_guide_ar?: string
   family_activity_ar?: string
+  thumbnail_url?: string | null
+  thumbnail_asset_id?: string | null
+  video_url?: string | null
+  video_asset_id?: string | null
   status?: ContentStatus
 }
 
@@ -1394,10 +1400,39 @@ export interface AdminPlanRecord {
 }
 
 export interface PlansCatalogue {
-  source: 'family_policy'
+  source: 'family_policy' | 'platform_policy'
+  policy_version?: number
   pricing_available: boolean
   plans: AdminPlanRecord[]
 }
+
+/// ADMIN-POLICY: `GET /admin/platform-policy`.
+export type PlanLimitField = 'children' | 'devices' | 'tvDevices' | 'concurrentStreams' | 'downloadDevices' | 'offlineItems'
+export type PlanLimitTable = Record<'free' | 'family' | 'family_plus', Record<PlanLimitField, number>>
+export interface TvPairingPolicy { code_ttl_minutes: number; poll_interval_seconds: number }
+export interface OfflineLicensePolicy { ttl_days: number }
+export interface LoadedPolicy<T> {
+  value: T
+  version: number
+  source: 'stored' | 'cached' | 'default'
+  updated_at: string | null
+  updated_by: string | null
+}
+export interface PlatformPolicySnapshot {
+  sections: {
+    plan_limits: LoadedPolicy<PlanLimitTable>
+    tv_pairing: LoadedPolicy<TvPairingPolicy>
+    offline_license: LoadedPolicy<OfflineLicensePolicy>
+  }
+  defaults: { plan_limits: PlanLimitTable; tv_pairing: TvPairingPolicy; offline_license: OfflineLicensePolicy }
+  bounds: {
+    plan_limits: Record<PlanLimitField, [number, number]>
+    tv_pairing: Record<keyof TvPairingPolicy, [number, number]>
+    offline_license: Record<keyof OfflineLicensePolicy, [number, number]>
+  }
+  not_editable: string[]
+}
+export type PlatformPolicySection = keyof PlatformPolicySnapshot['sections']
 
 export interface RightsLicenseRecord {
   id: string
@@ -1720,7 +1755,7 @@ export interface BillingPaymentMethod {
 
 export interface PlanDetail {
   id: string
-  limits: { children:number; devices:number; concurrent_streams:number; download_devices:number }
+  limits: { children:number; devices:number; tv_devices?:number; concurrent_streams:number; download_devices:number; offline_items?:number }
   subscribers: number
   pricing: PlanPricingRow[]
   products: StoreProduct[]
@@ -3785,5 +3820,237 @@ export interface AiUsageEnvelope {
   days: number
   by_task: AiUsageRow[]
   by_day: AiUsageDayRow[]
+}
+
+// Gamification
+export interface GamificationStreakDay {
+  day: number
+  stars: number
+  bonus: string | null
+}
+
+export interface GamificationStreaksConfig {
+  enabled: boolean
+  max_multiplier: number
+  daily_rewards: GamificationStreakDay[]
+}
+
+export interface GamificationEconomyConfig {
+  stars_per_episode: number
+  stars_per_game_completed: number
+  stars_per_story_read: number
+  stars_per_perfect_drawing: number
+  stars_per_quiz_passed: number
+  daily_cap: number
+}
+
+export interface GamificationBadge {
+  id: string
+  code: string
+  name_ar: string
+  name_en: string
+  icon: string
+  category: string
+  unlock_condition: string
+  stars_reward: number
+}
+
+export interface GamificationParentControls {
+  require_parent_approval_for_redemptions: boolean
+  weekly_screen_time_milestone_reward: boolean
+  allow_custom_parent_rewards: boolean
+}
+
+export interface GamificationConfig {
+  streaks: GamificationStreaksConfig
+  economy: GamificationEconomyConfig
+  badges: GamificationBadge[]
+  parent_controls: GamificationParentControls
+}
+
+// Compliance & Kids Safety
+export interface ComplianceCheck {
+  id: string
+  label: string
+  passed: boolean
+  details: string
+}
+
+export interface ComplianceStandard {
+  name: string
+  status: 'compliant' | 'warning' | 'non_compliant'
+  description: string
+  checks: ComplianceCheck[]
+}
+
+export interface ComplianceMetrics {
+  active_children_profiles: number
+  active_parent_accounts: number
+  pii_violations_detected: number
+  unauthorized_trackers_detected: number
+  pending_deletion_requests: number
+  parental_consent_rate: string
+}
+
+export interface ComplianceAuditData {
+  overall_status: 'compliant' | 'warning' | 'non_compliant'
+  coppa_score: number
+  gdpr_k_score: number
+  scanned_at: string
+  standards: ComplianceStandard[]
+  metrics: ComplianceMetrics
+}
+
+// Media Ingest & Matcher
+export interface MediaIngestMatch {
+  filename: string
+  detected_field: 'thumbnail_url' | 'video_url' | 'subtitles'
+  parsed_episode_number: number | null
+  parsed_season_number: number | null
+  matched_episode_id: string | null
+  episode_title: string | null
+  series_title: string | null
+  confidence: 'high' | 'medium' | 'unmatched'
+}
+
+export interface MediaIngestMatchResult {
+  total: number
+  matched: number
+  matches: MediaIngestMatch[]
+}
+
+// Stream CDN & Broken Asset Health
+export interface StreamHealthIssue {
+  id: string
+  severity: 'critical' | 'warning' | 'info'
+  entity_type: 'episode' | 'story' | 'game' | 'cdn'
+  entity_id?: string
+  title: string
+  description: string
+  action_url: string
+}
+
+export interface StreamHealthData {
+  health_score: number
+  cdn_status: string
+  cdn_latency_ms: number
+  edge_locations_active: number
+  scanned_at: string
+  metrics: {
+    total_audited_items: number
+    published_episodes: number
+    total_issues: number
+    critical_issues: number
+    warning_issues: number
+  }
+  issues: StreamHealthIssue[]
+}
+
+// Parent Weekly Progress Digest
+export interface ParentDigestConfig {
+  enabled: boolean
+  delivery_day: string
+  delivery_time: string
+  channels: {
+    email: boolean
+    whatsapp: boolean
+    push: boolean
+  }
+  email_subject_template: string
+  message_template_ar: string
+}
+
+export interface ParentDigestPreview {
+  child_id: string
+  child_name: string
+  screen_time_hours: number
+  stars_earned: number
+  skills_mastered: number
+  top_category: string
+  badge_awarded: string
+  recommended_story: string
+  metrics: {
+    episodes_watched: number
+    games_played: number
+    stories_read: number
+    quizzes_passed: number
+  }
+  retention_impact: {
+    opened_rate: string
+    active_parent_satisfaction: string
+    churn_reduction_estimate: string
+  }
+}
+
+// Support Tickets
+export interface ParentTicket {
+  id: string
+  parent_email: string
+  parent_name: string
+  subject: string
+  category: 'billing' | 'technical' | 'content_inquiry' | 'parental_controls'
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  status: 'open' | 'in_progress' | 'resolved'
+  message: string
+  reply_note?: string | null
+  created_at: string
+  updated_at: string
+}
+
+// Phase 6: Copilot, AI Story Studio, Live Events, Screentime Policies
+export interface CopilotQueryResponse {
+  query: string
+  reply: string
+  actions: Array<{ label: string; url: string; icon?: string }>
+  timestamp: string
+}
+
+export interface AiStoryGenerated {
+  title_ar: string
+  age_track: 'preschool' | 'kids' | 'junior'
+  theme: string
+  characters: string[]
+  moral_value: string
+  pages: Array<{
+    page_number: number
+    text_ar: string
+    illustration_prompt: string
+    scene_summary: string
+  }>
+  created_at: string
+}
+
+export interface LiveEvent {
+  id: string
+  title_ar: string
+  title_en: string
+  description_ar: string
+  banner_color: string
+  target_track: 'all' | 'preschool' | 'kids' | 'junior'
+  reward_multiplier: number
+  badge_reward_name: string
+  starts_at: string
+  ends_at: string
+  is_active: boolean
+  participants_count: number
+}
+
+export interface ScreentimeTrackPolicy {
+  track: 'preschool' | 'kids' | 'junior'
+  daily_limit_minutes: number
+  bedtime_lock_enabled: boolean
+  bedtime_start: string
+  bedtime_end: string
+  break_interval_minutes: number
+  learn_before_play: boolean
+  learn_required_minutes: number
+}
+
+export interface ScreentimeConfig {
+  policies: ScreentimeTrackPolicy[]
+  strict_pin_lock: boolean
+  allow_parent_override: boolean
+  eye_care_blue_light_reminder: boolean
+  updated_at: string
 }
 

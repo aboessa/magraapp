@@ -1,3 +1,4 @@
+import { DownloadsPanel } from '../components/devices/DownloadsPanel'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
@@ -43,9 +44,9 @@ const copy = {
     refresh: 'تحديث البيانات',
     exportCsv: 'تصدير الأجهزة (CSV)',
     revokeAction: 'سحب الجهاز وإلغاء التنزيلات متاح من مساحة عمل الجهاز أو ملف العائلة.',
-    downloadsNote: 'التنزيلات المحلية مرتبطة برخص أجهزة مؤمنة؛ إلغاء التنزيلات يحرر السعة دون إلغاء توثيق الجهاز.',
-    systemBeacon: 'محرك تراخيص العتاد وDRM',
-    beaconSub: 'رخص تنزيل مؤمنة ومشفرة محلياً',
+    downloadsNote: 'التنزيلات مرتبطة بتراخيص موقّعة لكل جهاز (حماية بالتحكم في الوصول، مش DRM)؛ إلغاء التنزيلات ما بيسجّلش خروج الجهاز.',
+    systemBeacon: 'الأجهزة وتراخيص التنزيل',
+    beaconSub: 'تراخيص موقّعة لكل جهاز',
     deviceId: 'معرّف الجهاز (Device ID)',
     familyId: 'معرّف العائلة (Family ID)',
     deviceDrawerTitle: 'فحص مواصفات الجهاز والجلسة',
@@ -56,7 +57,7 @@ const copy = {
   },
   en: {
     eyebrow: 'Hardware & Encrypted Session Management',
-    title: 'Device & Offline DRM Operations Center',
+    title: 'Devices & Offline Downloads',
     lede: 'Monitor registered hardware, active mobile sessions, and offline cached licenses with audited administrative revocations.',
     device: 'Device',
     family: 'Family',
@@ -82,9 +83,9 @@ const copy = {
     refresh: 'Refresh Data',
     exportCsv: 'Export Devices (CSV)',
     revokeAction: 'Device revocation and offline license wipe available via device workspace.',
-    downloadsNote: 'Local downloads use secure DRM hardware-bound leases; wiping downloads does not deregister the device.',
-    systemBeacon: 'Hardware DRM & Session Engine',
-    beaconSub: 'Hardware-bound cryptographically secured leases',
+    downloadsNote: 'Downloads use signed per-device licences (access control, not DRM); ending downloads does not sign the device out.',
+    systemBeacon: 'Devices & download licences',
+    beaconSub: 'Signed per-device licences',
     deviceId: 'Device ID',
     familyId: 'Family ID',
     deviceDrawerTitle: 'Hardware & Session Dossier Inspection',
@@ -129,6 +130,9 @@ const FILTER_FIELDS = (text: (typeof copy)['ar']): FilterField[] => [
       { value: 'ios', label: 'Apple iOS' },
       { value: 'android', label: 'Google Android' },
       { value: 'web', label: 'Web Browser' },
+      // ADM-307: televisions are devices too (their own allowance, TV-004).
+      { value: 'android_tv', label: 'Android TV' },
+      { value: 'tvos', label: 'Apple TV' },
     ],
   },
 ]
@@ -232,6 +236,8 @@ export function DevicesAdminPage() {
     if (p === 'ios') return { label: 'Apple iOS', bg: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', iconColor: '#6366f1' }
     if (p === 'android') return { label: 'Google Android', bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', iconColor: '#10b981' }
     if (p === 'web') return { label: 'Web Browser', bg: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', iconColor: '#f59e0b' }
+    if (p === 'android_tv') return { label: 'Android TV', bg: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', iconColor: '#0ea5e9' }
+    if (p === 'tvos') return { label: 'Apple TV', bg: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', iconColor: '#0ea5e9' }
     return { label: plat?.toUpperCase() || 'UNKNOWN', bg: 'rgba(148, 163, 184, 0.15)', color: '#94a3b8', iconColor: '#64748b' }
   }
 
@@ -872,6 +878,8 @@ export function DevicesAdminPage() {
           </aside>
         </div>
       )}
+
+      <DownloadsPanel />
     </div>
   )
 }

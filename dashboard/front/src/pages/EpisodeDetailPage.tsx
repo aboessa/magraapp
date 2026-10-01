@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { AvailabilityPanel } from '../components/AvailabilityPanel'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { StatusBadge } from '../components/StatusBadge'
 import { usePreferences } from '../context/preferences'
-import { api } from '../lib/api'
+import { api, episodePlaybackUrl } from '../lib/api'
 import { adminPath } from '../lib/adminPath'
 import { formatDate, formatNumber, statusLabels } from '../lib/labels'
 import type { ContentStatus, EpisodeRecord } from '../types/api'
@@ -30,7 +30,7 @@ const copy = {
     loadError: 'تعذر تحميل الحلقة',
     notFound: 'الحلقة غير موجودة',
     overview: 'نظرة عامة والقصة',
-    mediaTab: 'الوسائط والفيديو',
+    mediaTab: 'الوسائط والفيديو وتوقيتات البث',
     learningTab: 'الأهداف والدليل التربوي',
     familyTab: 'الأنشطة العائلية',
     productionTab: 'مراحل الإنتاج والنشر',
@@ -67,7 +67,7 @@ const copy = {
     loadError: 'Unable to load episode',
     notFound: 'Episode not found',
     overview: 'Overview & Story',
-    mediaTab: 'Media & Video',
+    mediaTab: 'Media, Video & Streaming',
     learningTab: 'Pedagogy & Guide',
     familyTab: 'Family Activities',
     productionTab: 'Production Pipeline',
@@ -117,18 +117,65 @@ export function EpisodeDetailPage() {
   const [error, setError] = useState('')
   const [tab, setTab] = useState<'overview' | 'media' | 'production' | 'learning' | 'availability'>('overview')
 
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const [streaming, setStreaming] = useState<{
+    intro_start_ms: number | null
+    intro_end_ms: number | null
+    recap_start_ms: number | null
+    recap_end_ms: number | null
+    credits_start_ms: number | null
+  }>({
+    intro_start_ms: null,
+    intro_end_ms: null,
+    recap_start_ms: null,
+    recap_end_ms: null,
+    credits_start_ms: null,
+  })
+  const [subtitleTracks, setSubtitleTracks] = useState<Array<{ id: string; language: string; label: string; format: string; is_default: number }>>([])
+  const [audioTracks, setAudioTracks] = useState<Array<{ id: string; language: string; label: string; is_default: number }>>([])
+  const [savingTimestamps, setSavingTimestamps] = useState(false)
+  const [timestampNotice, setTimestampNotice] = useState('')
+  const [newSubLang, setNewSubLang] = useState('ar')
+  const [newSubLabel, setNewSubLabel] = useState('')
+  const [newSubFormat, setNewSubFormat] = useState('vtt')
+  const [uploadingSub, setUploadingSub] = useState(false)
+
+  const loadStreaming = useCallback(async () => {
+    try {
+      const res = await api.episodeStreaming(id)
+      if (res.data?.episode) {
+        setStreaming({
+          intro_start_ms: res.data.episode.intro_start_ms,
+          intro_end_ms: res.data.episode.intro_end_ms,
+          recap_start_ms: res.data.episode.recap_start_ms,
+          recap_end_ms: res.data.episode.recap_end_ms,
+          credits_start_ms: res.data.episode.credits_start_ms,
+        })
+      }
+      if (res.data?.subtitle_tracks) {
+        setSubtitleTracks(res.data.subtitle_tracks)
+      }
+      if (res.data?.audio_tracks) {
+        setAudioTracks(res.data.audio_tracks)
+      }
+    } catch {
+      // streaming might not exist yet
+    }
+  }, [id])
+
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
       const response = await api.episodeDetail(id)
       setEpisode(response.data)
+      void loadStreaming()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.loadError)
     } finally {
       setLoading(false)
     }
-  }, [id, text.loadError])
+  }, [id, text.loadError, loadStreaming])
 
   useEffect(() => {
     void load()
@@ -305,56 +352,396 @@ export function EpisodeDetailPage() {
           )}
 
           {tab === 'media' && (
-            <div className="panel" style={{ padding: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                <Icon name="play" size={18} />
-                <h3 style={{ margin: 0, fontSize: 16 }}>{text.mediaTab}</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Master Video & Direct Frame Tools */}
+              <div className="panel" style={{ padding: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Icon name="play" size={18} />
+                    <h3 style={{ margin: 0, fontSize: 16 }}>{text.video}</h3>
+                  </div>
+                  {timestampNotice && (
+                    <span style={{ fontSize: 12, color: 'var(--color-success, #10b981)', fontWeight: 600 }}>
+                      ✓ {timestampNotice}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(240px, 1fr)', gap: 16, alignItems: 'start' }}>
+                  <div style={{ background: '#000', borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    {(() => {
+                      const videoSrc = episodePlaybackUrl(episode)
+                      return videoSrc ? (
+                        <video
+                          ref={videoRef}
+                          src={videoSrc}
+                          controls
+                          crossOrigin="anonymous"
+                          preload="metadata"
+                          style={{ width: '100%', maxHeight: 320, objectFit: 'contain' }}
+                        />
+                      ) : (
+                        <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>
+                          <Icon name="play" size={36} />
+                          <p style={{ marginTop: 8, fontSize: 13 }}>{text.noVideo}</p>
+                        </div>
+                      )
+                    })()}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ padding: 12, background: 'var(--surface-sunken)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <strong style={{ fontSize: 13, display: 'block', marginBottom: 6 }}>
+                        {ar ? 'أزرار مساعدة لالتقاط التوقيت' : 'Quick Capture from Playback'}
+                      </strong>
+                      <p style={{ fontSize: 11, color: 'var(--muted)', margin: '0 0 10px' }}>
+                        {ar ? 'شغّل الفيديو إلى اللحظة المطلوبة ثم اضغط لتعبئة الحقل تلقائياً:' : 'Play video to desired frame and click to populate timestamp:'}
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <button
+                          type="button"
+                          className="button button--secondary button--small"
+                          onClick={() => {
+                            if (videoRef.current) {
+                              const sec = Math.floor(videoRef.current.currentTime)
+                              setStreaming(prev => ({ ...prev, intro_start_ms: sec * 1000 }))
+                            }
+                          }}
+                        >
+                          {ar ? 'تعيين بداية المقدمة (Intro Start)' : 'Set Intro Start'}
+                        </button>
+                        <button
+                          type="button"
+                          className="button button--secondary button--small"
+                          onClick={() => {
+                            if (videoRef.current) {
+                              const sec = Math.floor(videoRef.current.currentTime)
+                              setStreaming(prev => ({ ...prev, intro_end_ms: sec * 1000 }))
+                            }
+                          }}
+                        >
+                          {ar ? 'تعيين نهاية المقدمة (Intro End)' : 'Set Intro End'}
+                        </button>
+                        <button
+                          type="button"
+                          className="button button--secondary button--small"
+                          onClick={() => {
+                            if (videoRef.current) {
+                              const sec = Math.floor(videoRef.current.currentTime)
+                              setStreaming(prev => ({ ...prev, credits_start_ms: sec * 1000 }))
+                            }
+                          }}
+                        >
+                          {ar ? 'تعيين بداية شارة النهاية (Credits Start)' : 'Set Credits Start'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: 'var(--surface-sunken)', borderRadius: 8 }}>
+                      {episode.thumbnail_url ? (
+                        <img src={episode.thumbnail_url} alt="" style={{ width: 64, height: 48, borderRadius: 6, objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: 64, height: 48, borderRadius: 6, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Icon name="eye" size={18} />
+                        </div>
+                      )}
+                      <div>
+                        <strong style={{ fontSize: 12, display: 'block' }}>{text.thumbnail}</strong>
+                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                          {episode.thumbnail_url ? (ar ? 'صورة مفعلة' : 'Set') : text.noThumbnail}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-                <div style={{ padding: 14, background: 'var(--surface-sunken)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <Icon name="play" size={16} />
-                    <strong style={{ fontSize: 13 }}>{text.video}</strong>
+              {/* Streaming Timestamps Editor */}
+              <div className="panel" style={{ padding: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Icon name="clock" size={18} />
+                    <h3 style={{ margin: 0, fontSize: 16 }}>{ar ? 'توقيتات البث والتخطي الذكي' : 'Streaming Timestamps & Skip Markers'}</h3>
                   </div>
-                  {episode.video_master_url ? (
-                    <video src={episode.video_master_url} controls style={{ width: '100%', borderRadius: 6, maxHeight: 180 }} />
-                  ) : (
-                    <p style={{ margin: 0, color: 'var(--muted)', fontSize: 12 }}>{text.noVideo}</p>
-                  )}
+                  <button
+                    type="button"
+                    className="button button--primary button--small"
+                    disabled={savingTimestamps}
+                    onClick={async () => {
+                      setSavingTimestamps(true)
+                      setTimestampNotice('')
+                      try {
+                        await api.updateEpisodeStreaming(episode.id, streaming)
+                        setTimestampNotice(ar ? 'تم حفظ التوقيتات بنجاح' : 'Timestamps saved')
+                      } catch (err) {
+                        alert(err instanceof Error ? err.message : 'Failed to save')
+                      } finally {
+                        setSavingTimestamps(false)
+                      }
+                    }}
+                  >
+                    {savingTimestamps ? (ar ? 'جارٍ الحفظ...' : 'Saving...') : (ar ? 'حفظ التوقيتات' : 'Save Timestamps')}
+                  </button>
                 </div>
 
-                <div style={{ padding: 14, background: 'var(--surface-sunken)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <Icon name="eye" size={16} />
-                    <strong style={{ fontSize: 13 }}>{text.thumbnail}</strong>
-                  </div>
-                  {episode.thumbnail_url ? (
-                    <img src={episode.thumbnail_url} alt="" style={{ width: '100%', borderRadius: 6, maxHeight: 180, objectFit: 'cover' }} />
-                  ) : (
-                    <p style={{ margin: 0, color: 'var(--muted)', fontSize: 12 }}>{text.noThumbnail}</p>
-                  )}
+                <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>
+                  {ar
+                    ? 'تتيح هذه التوقيتات لتطبيق الأطفال إظهار زر "تخطي شارة البداية" وتشغيل الحلقة التالية تلقائياً عند بدء شارة النهاية.'
+                    : 'These markers enable the Skip Intro button and trigger the Next Episode countdown before credits.'}
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+                  <label className="field">
+                    <span className="field__label">{ar ? 'بداية المقدمة (ثانية)' : 'Intro Start (sec)'}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      className="input"
+                      value={streaming.intro_start_ms != null ? streaming.intro_start_ms / 1000 : ''}
+                      placeholder="0"
+                      onChange={e => {
+                        const val = e.target.value === '' ? null : Math.max(0, Number(e.target.value))
+                        setStreaming(prev => ({ ...prev, intro_start_ms: val != null ? Math.round(val * 1000) : null }))
+                      }}
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span className="field__label">{ar ? 'نهاية المقدمة (ثانية)' : 'Intro End (sec)'}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      className="input"
+                      value={streaming.intro_end_ms != null ? streaming.intro_end_ms / 1000 : ''}
+                      placeholder="e.g. 45"
+                      onChange={e => {
+                        const val = e.target.value === '' ? null : Math.max(0, Number(e.target.value))
+                        setStreaming(prev => ({ ...prev, intro_end_ms: val != null ? Math.round(val * 1000) : null }))
+                      }}
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span className="field__label">{ar ? 'بداية التلخيص (ثانية)' : 'Recap Start (sec)'}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      className="input"
+                      value={streaming.recap_start_ms != null ? streaming.recap_start_ms / 1000 : ''}
+                      placeholder="0"
+                      onChange={e => {
+                        const val = e.target.value === '' ? null : Math.max(0, Number(e.target.value))
+                        setStreaming(prev => ({ ...prev, recap_start_ms: val != null ? Math.round(val * 1000) : null }))
+                      }}
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span className="field__label">{ar ? 'نهاية التلخيص (ثانية)' : 'Recap End (sec)'}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      className="input"
+                      value={streaming.recap_end_ms != null ? streaming.recap_end_ms / 1000 : ''}
+                      placeholder="e.g. 30"
+                      onChange={e => {
+                        const val = e.target.value === '' ? null : Math.max(0, Number(e.target.value))
+                        setStreaming(prev => ({ ...prev, recap_end_ms: val != null ? Math.round(val * 1000) : null }))
+                      }}
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span className="field__label">{ar ? 'بداية شارة النهاية (ثانية)' : 'Credits Start (sec)'}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      className="input"
+                      value={streaming.credits_start_ms != null ? streaming.credits_start_ms / 1000 : ''}
+                      placeholder="e.g. 680"
+                      onChange={e => {
+                        const val = e.target.value === '' ? null : Math.max(0, Number(e.target.value))
+                        setStreaming(prev => ({ ...prev, credits_start_ms: val != null ? Math.round(val * 1000) : null }))
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Subtitles & Captions Manager */}
+              <div className="panel" style={{ padding: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                  <Icon name="text" size={18} />
+                  <h3 style={{ margin: 0, fontSize: 16 }}>{ar ? 'مسارات الترجمة المصاحبة (Subtitles)' : 'Subtitle & Caption Tracks'}</h3>
                 </div>
 
-                <div style={{ padding: 14, background: 'var(--surface-sunken)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <Icon name="text" size={16} />
-                    <strong style={{ fontSize: 13 }}>{text.captions}</strong>
+                {subtitleTracks.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
+                    {subtitleTracks.map(sub => (
+                      <div
+                        key={sub.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          background: 'var(--surface-sunken)',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: 12, padding: '2px 8px', borderRadius: 4, background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                            {sub.language}
+                          </span>
+                          <strong style={{ fontSize: 13 }}>{sub.label}</strong>
+                          <span style={{ fontSize: 11, color: 'var(--muted)' }}>({sub.format.toUpperCase()})</span>
+                          {sub.is_default === 1 && (
+                            <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600 }}>{ar ? 'افتراضي' : 'Default'}</span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="button button--ghost button--small"
+                          style={{ color: 'var(--color-danger, #ef4444)' }}
+                          onClick={async () => {
+                            if (!confirm(ar ? 'هل أنت متأكد من حذف مسار الترجمة هذا؟' : 'Delete this subtitle track?')) return
+                            try {
+                              await api.deleteEpisodeSubtitleTrack(episode.id, sub.id)
+                              await loadStreaming()
+                            } catch (err) {
+                              alert(err instanceof Error ? err.message : 'Error')
+                            }
+                          }}
+                        >
+                          <Icon name="trash" size={14} />
+                          <span>{ar ? 'حذف' : 'Delete'}</span>
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <p style={{ margin: 0, fontSize: 12, color: episode.captions_ar_url ? 'var(--text)' : 'var(--muted)' }}>
-                    {episode.captions_ar_url ? 'VTT / Arabic Synced' : text.noCaptions}
+                ) : (
+                  <p style={{ margin: '0 0 16px', color: 'var(--muted)', fontSize: 13 }}>
+                    {ar ? 'لا توجد مسارات ترجمة مصاحبة مسجلة لهذه الحلقة.' : 'No subtitle tracks configured yet.'}
                   </p>
-                </div>
+                )}
 
-                <div style={{ padding: 14, background: 'var(--surface-sunken)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <Icon name="globe" size={16} />
-                    <strong style={{ fontSize: 13 }}>{text.dubs}</strong>
+                {/* Direct Upload New Subtitle Track */}
+                <div style={{ padding: 14, background: 'var(--surface-sunken)', borderRadius: 8, border: '1px dashed var(--border)' }}>
+                  <strong style={{ fontSize: 13, display: 'block', marginBottom: 10 }}>
+                    {ar ? 'رفع مسار ترجمة جديد (WebVTT / SRT)' : 'Upload New Subtitle Track'}
+                  </strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, alignItems: 'end' }}>
+                    <label className="field">
+                      <span className="field__label">{ar ? 'اللغة' : 'Language'}</span>
+                      <select className="input" value={newSubLang} onChange={e => setNewSubLang(e.target.value)}>
+                        <option value="ar">العربية (ar)</option>
+                        <option value="en">English (en)</option>
+                        <option value="fr">Français (fr)</option>
+                      </select>
+                    </label>
+
+                    <label className="field">
+                      <span className="field__label">{ar ? 'الصيغة' : 'Format'}</span>
+                      <select className="input" value={newSubFormat} onChange={e => setNewSubFormat(e.target.value)}>
+                        <option value="vtt">WebVTT (.vtt)</option>
+                        <option value="srt">SubRip (.srt)</option>
+                      </select>
+                    </label>
+
+                    <label className="field">
+                      <span className="field__label">{ar ? 'التسمية' : 'Label'}</span>
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder={newSubLang === 'ar' ? 'العربية' : 'English CC'}
+                        value={newSubLabel}
+                        onChange={e => setNewSubLabel(e.target.value)}
+                      />
+                    </label>
+
+                    <div>
+                      <label className={`button button--secondary button--small ${uploadingSub ? 'is-loading' : ''}`} style={{ width: '100%', cursor: 'pointer', textAlign: 'center' }}>
+                        <Icon name="upload" size={14} />
+                        <span>{uploadingSub ? (ar ? 'جارٍ الرفع...' : 'Uploading...') : (ar ? 'اختر ملف الترجمة' : 'Choose File')}</span>
+                        <input
+                          type="file"
+                          accept=".vtt,.srt"
+                          style={{ display: 'none' }}
+                          disabled={uploadingSub}
+                          onChange={async e => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            setUploadingSub(true)
+                            try {
+                              const assetRes = await api.createAsset({
+                                kind: 'subtitle',
+                                title: `${episode.title_ar} Subtitle (${newSubLang})`,
+                                language: newSubLang,
+                              })
+                              const assetId = assetRes.data.id
+                              await api.uploadAssetFile(assetId, file)
+                              await api.createEpisodeSubtitleTrack(episode.id, {
+                                language: newSubLang,
+                                asset_id: assetId,
+                                label: newSubLabel.trim() || (newSubLang === 'ar' ? 'العربية' : newSubLang === 'en' ? 'English' : 'Français'),
+                                format: newSubFormat,
+                                is_default: subtitleTracks.length === 0,
+                              })
+                              await loadStreaming()
+                              setNewSubLabel('')
+                            } catch (err) {
+                              alert(err instanceof Error ? err.message : 'Upload failed')
+                            } finally {
+                              setUploadingSub(false)
+                              e.target.value = ''
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
-                  <p style={{ margin: 0, fontSize: 12 }}>
-                    {episode.dubs?.length ? episode.dubs.join(' · ') : 'Arabic (Original)'}
-                  </p>
                 </div>
+              </div>
+
+              {/* Audio Dubs Manager */}
+              <div className="panel" style={{ padding: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <Icon name="globe" size={18} />
+                  <h3 style={{ margin: 0, fontSize: 16 }}>{text.dubs}</h3>
+                </div>
+                {audioTracks.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {audioTracks.map(audio => (
+                      <div
+                        key={audio.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          background: 'var(--surface-sunken)',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: 12, padding: '2px 8px', borderRadius: 4, background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                            {audio.language}
+                          </span>
+                          <strong style={{ fontSize: 13 }}>{audio.label}</strong>
+                          {audio.is_default === 1 && (
+                            <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600 }}>{ar ? 'المسار الافتراضي' : 'Default'}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)' }}>
+                    {episode.dubs?.length ? episode.dubs.join(' · ') : (ar ? 'اللغة العربية (المسار الصوتي الأصلي مدمج في الفيديو)' : 'Arabic (Original master audio)')}
+                  </p>
+                )}
               </div>
             </div>
           )}

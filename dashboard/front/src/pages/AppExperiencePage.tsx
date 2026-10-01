@@ -4,6 +4,7 @@ import { Modal } from '../components/Modal'
 import { Icon } from '../components/Icon'
 import { usePreferences } from '../context/preferences'
 import { api } from '../lib/api'
+import { formatMetric, metricAvailabilityTitle } from '../lib/labels'
 import type {
   HomeBlockRecord,
   HomeBlockVersion,
@@ -217,6 +218,11 @@ export function AppExperiencePage() {
   const [previewError, setPreviewError] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [previewMode, setPreviewMode] = useState<'mockup' | 'list'>('mockup')
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [copiedJson, setCopiedJson] = useState(false)
+  const [importJsonText, setImportJsonText] = useState('')
+  const [importError, setImportError] = useState('')
 
   /// The edited copy of the selected block. Kept separate from `blocks` so the
   /// list always shows saved server state and Save/Revert mean something: the
@@ -340,7 +346,7 @@ export function AppExperiencePage() {
       await api.updateHomeBlock(draft.id, {
         title_ar: draft.title_ar,
         is_active: Number(draft.is_active) === 1,
-        is_draft: Number(draft.is_draft ?? 0) === 1,
+        is_draft: Number(draft.is_draft) === 1,
         scheduled_at: draft.scheduled_at ?? null,
         expires_at: draft.expires_at ?? null,
         targeting: draft.targeting,
@@ -400,6 +406,63 @@ export function AppExperiencePage() {
     }
   }
 
+  /// ADM-308: applies a pasted layout through the same audited, versioned
+  /// endpoints the editor uses. A block whose id exists is updated, one without
+  /// is created, then the file's order is applied. Blocks absent from the file
+  /// are kept (placed after the imported ones): an import never deletes.
+  const importLayout = async () => {
+    let parsed: unknown
+    try { parsed = JSON.parse(importJsonText) } catch { setImportError(locale === 'ar' ? 'JSON غير صالح' : 'Invalid JSON'); return }
+    if (!Array.isArray(parsed) || parsed.some((item) => !item || typeof item !== 'object' || typeof (item as { block_type?: unknown }).block_type !== 'string')) {
+      setImportError(locale === 'ar' ? 'لازم يكون قائمة أقسام، وكل قسم فيه block_type' : 'Expected a list of blocks, each with block_type')
+      return
+    }
+    const items = parsed as Array<Partial<HomeBlockRecord> & { block_type: string }>
+    if (!window.confirm(locale === 'ar'
+      ? `هيتحدّث/يتضاف ${items.length} قسم ويتغيّر الترتيب. الأقسام اللي مش في الملف مش هتتمسح. متأكد؟`
+      : `This updates/creates ${items.length} blocks and reorders them. Blocks not in the file are kept. Continue?`)) return
+
+    setBusy(true)
+    setImportError('')
+    const existing = new Map(blocks.map((b) => [b.id, b]))
+    const order: string[] = []
+    try {
+      for (const item of items) {
+        const fields = {
+          title_ar: item.title_ar ?? null,
+          is_active: Number(item.is_active) === 1,
+          is_draft: Number(item.is_draft) === 1,
+          scheduled_at: item.scheduled_at ?? null,
+          expires_at: item.expires_at ?? null,
+          ...(item.targeting ? { targeting: item.targeting } : {}),
+          ...(item.config ? { config: item.config } : {}),
+        }
+        const current = item.id ? existing.get(item.id) : undefined
+        if (current) {
+          if (current.block_type !== item.block_type) {
+            throw new Error(`${item.id}: block_type ${current.block_type} → ${item.block_type} (${locale === 'ar' ? 'مينفعش يتغيّر' : 'cannot change'})`)
+          }
+          await api.updateHomeBlock(current.id, fields)
+          order.push(current.id)
+        } else {
+          const created = await api.createHomeBlock({ block_type: item.block_type, sort_order: blocks.length + order.length, ...fields })
+          order.push(created.data.id)
+        }
+      }
+      const rest = blocks.map((b) => b.id).filter((id) => !order.includes(id))
+      await api.reorderHomeBlocks([...order, ...rest])
+      setShowExportModal(false)
+      setNotice(text.saved)
+    } catch (caught) {
+      // What was applied before the failure stays applied (each step is its own
+      // versioned write); the message names the block that stopped the import.
+      setImportError(caught instanceof Error ? caught.message : 'Import failed')
+    } finally {
+      await load()
+      setBusy(false)
+    }
+  }
+
   const patchDraft = (change: Partial<HomeBlockRecord>) =>
     setDraft((current) => (current ? { ...current, ...change } : current))
   const patchTargeting = (change: Partial<HomeTargeting>) =>
@@ -425,6 +488,13 @@ export function AppExperiencePage() {
         </div>
 
         <div className="commercial-command-strip__right">
+          <button className="button button--secondary button--small" type="button" onClick={() => {
+            setImportJsonText(JSON.stringify(blocks, null, 2))
+            setShowExportModal(true)
+          }}>
+            <Icon name="copy" size={14} />
+            <span>{locale === 'ar' ? 'تصدير / استيراد التخطيط' : 'Export / Import Layout'}</span>
+          </button>
           <button className="button button--secondary button--small" type="button" onClick={() => void openVersions()} disabled={!selected}>
             <Icon name="clock" size={14} />
             <span>{text.versions}</span>
@@ -505,7 +575,13 @@ export function AppExperiencePage() {
               <Icon name="check" size={18} />
             </div>
           </div>
-          <div className="commercial-bento-card__metric">{preview?.meta.matched ?? 0}</div>
+          <div
+            className="commercial-bento-card__metric"
+            title={metricAvailabilityTitle(preview?.meta.matched, locale)}
+            aria-label={preview?.meta.matched == null ? metricAvailabilityTitle(preview?.meta.matched, locale) : undefined}
+          >
+            {formatMetric(preview?.meta.matched, locale)}
+          </div>
           <div className="commercial-bento-card__footer">
             <span className="commercial-bento-card__trend">{locale === 'ar' ? 'للشخصية المختارة' : 'For current persona'}</span>
           </div>
@@ -587,7 +663,7 @@ export function AppExperiencePage() {
                       <span className="track-badge">{block.is_system ? text.system : text.editorial}</span>{' '}
                       {targetingSentence(block.targeting, locale, text.everyone)}
                     </small>
-                    {Number(block.is_draft ?? 0) === 1 && <small>{text.draft}</small>}
+                    {Number(block.is_draft) === 1 && <small>{text.draft}</small>}
                     {/* APP-104: an existing row whose type no app renders */}
                     {(meta?.retired_block_types ?? []).includes(block.block_type) && (
                       <small role="alert">{text.retiredType}</small>
@@ -627,8 +703,28 @@ export function AppExperiencePage() {
 
         {/* CENTER: what the resolver returns for the chosen persona */}
         <div className="panel">
-          <div className="panel__header">
-            <h3>{text.preview}</h3>
+          <div className="panel__header" style={{ flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <h3>{text.preview}</h3>
+              <div style={{ display: 'inline-flex', background: 'var(--bg-subtle, rgba(0,0,0,0.06))', padding: 2, borderRadius: 6 }}>
+                <button
+                  type="button"
+                  className={`button button--small ${previewMode === 'mockup' ? 'button--secondary' : 'button--ghost'}`}
+                  style={{ padding: '3px 8px', fontSize: 11 }}
+                  onClick={() => setPreviewMode('mockup')}
+                >
+                  📱 {locale === 'ar' ? 'المحاكي' : 'Mockup'}
+                </button>
+                <button
+                  type="button"
+                  className={`button button--small ${previewMode === 'list' ? 'button--secondary' : 'button--ghost'}`}
+                  style={{ padding: '3px 8px', fontSize: 11 }}
+                  onClick={() => setPreviewMode('list')}
+                >
+                  📋 {locale === 'ar' ? 'القائمة' : 'List'}
+                </button>
+              </div>
+            </div>
             <div className="home-builder__persona">
               <label className="field">
                 <span>{text.persona}</span>
@@ -661,14 +757,170 @@ export function AppExperiencePage() {
             {previewError && <ErrorState message={previewError} onRetry={() => void runPreview()} />}
             {!previewError && preview && (
               preview.blocks.length ? (
-                preview.blocks.map((block) => (
-                  <div key={block.id} className="home-builder__preview-row">
-                    <strong>{block.title || blockLabel(block.type, locale)}</strong>
-                    <small dir="ltr">
-                      {block.type} · {block.source}
-                    </small>
+                previewMode === 'mockup' ? (
+                  <div className="home-phone-simulator">
+                    <div className="home-phone-topbar">
+                      <span>9:41</span>
+                      <div className="home-phone-notch" />
+                      <span style={{ display: 'flex', gap: 4 }}>📶 🔋</span>
+                    </div>
+
+                    <div className="home-phone-screen">
+                      <div className="home-phone-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #f59e0b, #ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                            🦁
+                          </div>
+                          <div>
+                            <span style={{ fontSize: 11, fontWeight: 700, display: 'block', lineHeight: 1.2 }}>{locale === 'ar' ? 'أهلاً يا بطل 🚀' : 'Hello Champ! 🚀'}</span>
+                            <span style={{ fontSize: 9, color: '#f59e0b', fontWeight: 600 }}>⭐ 1,450 {locale === 'ar' ? 'نجمة' : 'Stars'}</span>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#818cf8' }}>MAJARRA</span>
+                      </div>
+
+                      {preview.blocks.map((block) => {
+                        const title = block.title || blockLabel(block.type, locale)
+                        if (block.type === 'hero_slider' || block.type === 'feature_banner' || block.type === 'seasonal_banner') {
+                          return (
+                            <div key={block.id} className="home-phone-hero">
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                <span style={{ fontSize: 9, background: '#f59e0b', color: '#000', fontWeight: 800, padding: '2px 8px', borderRadius: 10 }}>{locale === 'ar' ? 'مميز' : 'Featured'}</span>
+                                <span style={{ fontSize: 9, color: '#c7d2fe' }}>{block.source}</span>
+                              </div>
+                              <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 800, color: '#fff' }}>
+                                {title}
+                              </h4>
+                              <p style={{ margin: '0 0 10px', fontSize: 10, color: '#e0e7ff', opacity: 0.9 }}>
+                                {block.subtitle || (locale === 'ar' ? 'مغامرة كرتونية جديدة مليئة بالإثارة والتعلم' : 'New exciting educational adventure')}
+                              </p>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ background: '#fff', color: '#312e81', fontWeight: 700, fontSize: 10, padding: '3px 10px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  ▶ {locale === 'ar' ? 'شاهد الآن' : 'Watch Now'}
+                                </span>
+                                <div style={{ display: 'flex', gap: 4 }}>
+                                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff' }} />
+                                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(255,255,255,0.4)' }} />
+                                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(255,255,255,0.4)' }} />
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        if (block.type === 'planet_orbit') {
+                          return (
+                            <div key={block.id} className="home-phone-rail">
+                              <div className="home-phone-rail-header">
+                                <span>{title}</span>
+                                <span style={{ fontSize: 9, color: '#818cf8' }}>🪐 4 {locale === 'ar' ? 'كواكب' : 'Planets'}</span>
+                              </div>
+                              <div className="home-phone-planet-row">
+                                {[
+                                  { name: locale === 'ar' ? 'العلوم' : 'Science', icon: '🚀', bg: 'linear-gradient(135deg, #0284c7, #38bdf8)' },
+                                  { name: locale === 'ar' ? 'الحكايات' : 'Stories', icon: '📚', bg: 'linear-gradient(135deg, #7c3aed, #c084fc)' },
+                                  { name: locale === 'ar' ? 'الألعاب' : 'Games', icon: '🎮', bg: 'linear-gradient(135deg, #ea580c, #fb923c)' },
+                                  { name: locale === 'ar' ? 'اللغات' : 'Languages', icon: '🔤', bg: 'linear-gradient(135deg, #059669, #34d399)' },
+                                ].map((planet, i) => (
+                                  <div key={i} className="home-phone-planet-card">
+                                    <div className="home-phone-planet-orb" style={{ background: planet.bg }}>
+                                      {planet.icon}
+                                    </div>
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 60 }}>{planet.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        if (block.type === 'character_orbit') {
+                          return (
+                            <div key={block.id} className="home-phone-rail">
+                              <div className="home-phone-rail-header">
+                                <span>{title}</span>
+                                <span style={{ fontSize: 9, color: '#818cf8' }}>⭐ {locale === 'ar' ? 'أصدقاء مجرة' : 'Friends'}</span>
+                              </div>
+                              <div className="home-phone-planet-row">
+                                {[
+                                  { name: 'نمنم', color: '#f59e0b', emoji: '🦊' },
+                                  { name: 'زوزو', color: '#ec4899', emoji: '🐰' },
+                                  { name: 'كريم', color: '#3b82f6', emoji: '🦁' },
+                                  { name: 'تالا', color: '#10b981', emoji: '🐼' },
+                                ].map((char, i) => (
+                                  <div key={i} className="home-phone-planet-card">
+                                    <div className="home-phone-planet-orb" style={{ background: char.color, border: '2px solid rgba(255,255,255,0.3)' }}>
+                                      {char.emoji}
+                                    </div>
+                                    <span>{char.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        if (block.type === 'continue_watching') {
+                          return (
+                            <div key={block.id} className="home-phone-rail">
+                              <div className="home-phone-rail-header">
+                                <span>{title}</span>
+                                <span style={{ fontSize: 9, color: '#94a3b8' }}>{locale === 'ar' ? 'متبقي 4 دقائق' : '4m left'}</span>
+                              </div>
+                              <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: 8, display: 'flex', gap: 10, alignItems: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div style={{ width: 75, height: 46, background: '#1e293b', borderRadius: 8, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <span style={{ fontSize: 16 }}>▶</span>
+                                  <div className="home-phone-progress-bar">
+                                    <div className="home-phone-progress-fill" style={{ width: '65%' }} />
+                                  </div>
+                                </div>
+                                <div style={{ flex: 1, fontSize: 11 }}>
+                                  <strong style={{ display: 'block', color: '#f8fafc', marginBottom: 2 }}>{locale === 'ar' ? 'حكاية البطل الصغير' : 'The Little Hero'}</strong>
+                                  <span style={{ color: '#94a3b8', fontSize: 9 }}>{locale === 'ar' ? 'الموسم 1 • الحلقة 3' : 'S1 • E3'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        return (
+                          <div key={block.id} className="home-phone-rail">
+                            <div className="home-phone-rail-header">
+                              <span>{title}</span>
+                              <span style={{ fontSize: 9, color: '#818cf8', cursor: 'pointer' }}>{locale === 'ar' ? 'عرض الكل' : 'View all'}</span>
+                            </div>
+                            <div className="home-phone-cards">
+                              {[1, 2, 3].map((cardIdx) => (
+                                <div key={cardIdx} className="home-phone-card">
+                                  <div className="home-phone-card-thumb">
+                                    <span style={{ fontSize: 18 }}>
+                                      {block.type.includes('game') ? '🎮' : block.type.includes('stori') ? '📖' : '🎬'}
+                                    </span>
+                                  </div>
+                                  <div style={{ padding: '4px 6px' }}>
+                                    <span style={{ display: 'block', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {cardIdx === 1 ? (locale === 'ar' ? 'مغامرة الفضاء' : 'Space Trip') : cardIdx === 2 ? (locale === 'ar' ? 'سر الجزيرة' : 'Island Secret') : (locale === 'ar' ? 'أصدقاء الغابة' : 'Forest Pals')}
+                                    </span>
+                                    <span style={{ color: '#94a3b8', fontSize: 8 }}>{locale === 'ar' ? '3-8 سنوات' : '3-8 yrs'}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
-                ))
+                ) : (
+                  preview.blocks.map((block) => (
+                    <div key={block.id} className="home-builder__preview-row">
+                      <strong>{block.title || blockLabel(block.type, locale)}</strong>
+                      <small dir="ltr">
+                        {block.type} · {block.source}
+                      </small>
+                    </div>
+                  ))
+                )
               ) : (
                 <EmptyState title={text.empty} description={text.emptyHint} />
               )
@@ -732,7 +984,7 @@ export function AppExperiencePage() {
                   <span>{text.enabled}</span>
                 </label>
                 <label className="field field--inline">
-                  <input type="checkbox" checked={Number(draft.is_draft ?? 0) === 1}
+                  <input type="checkbox" checked={Number(draft.is_draft) === 1}
                     onChange={(event) => patchDraft({ is_draft: event.target.checked ? 1 : 0 })} />
                   <span>{text.draft}</span>
                 </label>
@@ -885,6 +1137,89 @@ export function AppExperiencePage() {
           {versionsMeta && versionsMeta.legacy_records > 0 && (
             <p className="table-secondary" role="note">{text.legacyNote}</p>
           )}
+        </div>
+      </Modal>
+
+      <Modal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        title={locale === 'ar' ? 'تصدير / استيراد مخطط الصفحة الرئيسية' : 'Export / Import Home Layout'}
+        maxWidth={640}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <p style={{ fontSize: 13, color: 'var(--muted, #64748b)', margin: 0 }}>
+            {locale === 'ar'
+              ? 'يمكنك نسخ هذا الـ JSON للنسخ الاحتياطي أو نقله لبيئة أخرى، أو تعديله ولصقه هنا لحفظ التخطيط.'
+              : 'You can copy this JSON as backup, or paste a new layout configuration below.'}
+          </p>
+
+          {importError && (
+            <div style={{ padding: 10, borderRadius: 6, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontSize: 12 }}>
+              {importError}
+            </div>
+          )}
+
+          <textarea
+            dir="ltr"
+            rows={12}
+            style={{ width: '100%', fontFamily: 'monospace', fontSize: 12, padding: 10, borderRadius: 8, border: '1px solid var(--border)' }}
+            value={importJsonText}
+            onChange={(e) => {
+              setImportJsonText(e.target.value)
+              setImportError('')
+            }}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className="button button--secondary button--small"
+                onClick={() => {
+                  void navigator.clipboard.writeText(importJsonText)
+                  setCopiedJson(true)
+                  setTimeout(() => setCopiedJson(false), 2000)
+                }}
+              >
+                <Icon name="copy" size={14} />
+                <span>{copiedJson ? (locale === 'ar' ? 'تم النسخ!' : 'Copied!') : (locale === 'ar' ? 'نسخ JSON' : 'Copy JSON')}</span>
+              </button>
+              <button
+                type="button"
+                className="button button--ghost button--small"
+                onClick={() => {
+                  const blob = new Blob([importJsonText], { type: 'application/json' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `majarra-home-layout-${new Date().toISOString().slice(0, 10)}.json`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+              >
+                <Icon name="download" size={14} />
+                <span>{locale === 'ar' ? 'تنزيل ملف' : 'Download file'}</span>
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className="button button--primary button--small"
+                disabled={busy}
+                onClick={() => void importLayout()}
+              >
+                {locale === 'ar' ? 'استيراد وتطبيق' : 'Import & apply'}
+              </button>
+              <button
+                type="button"
+                className="button button--ghost"
+                onClick={() => setShowExportModal(false)}
+              >
+                {locale === 'ar' ? 'إغلاق' : 'Close'}
+              </button>
+            </div>
+          </div>
         </div>
       </Modal>
     </div>

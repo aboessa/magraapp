@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState'
 import { Icon } from '../components/Icon'
 import { usePreferences } from '../context/preferences'
+import { WatchTimePanel } from '../components/analytics/WatchTimePanel'
 import { api } from '../lib/api'
 import { formatNumber } from '../lib/labels'
 import type { AnalyticsOverview } from '../types/api'
@@ -340,6 +341,9 @@ export function AnalyticsPage() {
       <div className="exec-split" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'start' }}>
         {/* Left Column (68% Multi-layer Intelligence & Visual Charts) */}
         <div className="exec-split__main" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          {/* ADM-309: real watch time */}
+          <WatchTimePanel />
+
           {/* Section A: Visual Track Consumption Spectrum */}
           <section className="panel" style={{ padding: 22, borderRadius: 16 }}>
             <div className="panel__header" style={{ padding: 0, marginBottom: 16 }}>

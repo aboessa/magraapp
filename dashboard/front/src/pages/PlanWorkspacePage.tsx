@@ -223,6 +223,10 @@ export function PlanWorkspacePage() {
                     <td><strong>{data.limits.devices}</strong></td>
                   </tr>
                   <tr>
+                    <td>التلفزيونات (TVs)</td>
+                    <td><strong>{data.limits.tv_devices ?? '—'}</strong></td>
+                  </tr>
+                  <tr>
                     <td>البث المتزامن (Concurrent Streams)</td>
                     <td><strong>{data.limits.concurrent_streams}</strong></td>
                   </tr>
@@ -234,7 +238,8 @@ export function PlanWorkspacePage() {
               </table>
             </div>
             <p className="readiness-note" style={{ marginTop: 16 }}>
-              {text.limitChange}
+              {text.limitChange}{' '}
+              <Link to={adminPath('platform-policy')}>{locale === 'en' ? 'Edit limits' : 'تعديل الحدود'}</Link>
             </p>
           </section>
         )}

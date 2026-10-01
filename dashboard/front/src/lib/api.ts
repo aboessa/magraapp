@@ -26,9 +26,90 @@ import type {
 } from '../types/api'
 import { readAdminActor, readAdminToken } from './adminSession'
 
+export type LegalDocument = {
+  slug: 'privacy' | 'children-privacy' | 'terms' | 'delete-account'
+  title_ar: string
+  body_ar: string
+  status: 'draft' | 'published'
+  version: number
+  published_title_ar: string | null
+  published_body_ar: string | null
+  published_at: string | null
+  updated_by: string | null
+  updated_at: string
+  placeholders: string[]
+  draft_differs: boolean
+}
+
+export type ManualMethodCode = 'vodafone_cash' | 'etisalat_cash' | 'orange_cash' | 'we_pay' | 'instapay'
+export type ManualPaymentMethod = { code: ManualMethodCode; account: string; holder: string; enabled: boolean }
+export type ManualPrices = Record<'family' | 'family_plus', Record<'monthly' | 'annual', number | null>>
+export type ManualPaymentSettingsInput = {
+  enabled: boolean
+  methods: ManualPaymentMethod[]
+  prices: ManualPrices
+  instructions: string
+  receipt_required: boolean
+}
+export type ManualPaymentSettings = ManualPaymentSettingsInput & {
+  version: number
+  updated_at: string | null
+  updated_by: string | null
+  method_codes: ManualMethodCode[]
+  method_labels: Record<ManualMethodCode, string>
+}
+export type ManualPaymentRequest = {
+  id: string
+  parent_id: string
+  plan: 'family' | 'family_plus'
+  period: 'monthly' | 'annual'
+  days: number
+  amount_egp: number
+  method_code: ManualMethodCode
+  sender: string
+  reference: string | null
+  has_receipt: number | boolean
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled'
+  reject_reason: string | null
+  expires_at_ms: number | null
+  reviewed_by: string | null
+  reviewed_at: string | null
+  created_at: string
+}
+
 const API_ROOT = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/, '')
 /** للاستخدام خارج lib/api.ts للروابط المباشرة (exports) حتى تحترم VITE_API_BASE_URL */
 export const apiRoot = API_ROOT
+
+/**
+ * يُرجع رابط بث فيديو الحلقة الصالح للعرض المباشر في عنصر <video src="..."> للمسؤول.
+ * يضيف رمز الجلسة token كمعامل استعلام لتمكين التوثيق وتدفق Range في المتصفح.
+ */
+export function episodePlaybackUrl(episode: Partial<EpisodeRecord> | null | undefined): string | null {
+  if (!episode) return null
+  const token = readAdminToken()
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : ''
+
+  if (episode.video_url) {
+    if (episode.video_url.startsWith('http://') || episode.video_url.startsWith('https://')) {
+      return episode.video_url
+    }
+    const cleanPath = episode.video_url.startsWith('/') ? episode.video_url : `/${episode.video_url}`
+    return `${API_ROOT}${cleanPath}${tokenParam}`
+  }
+
+  if (episode.video_asset_id) {
+    return `${API_ROOT}/admin/assets/${encodeURIComponent(episode.video_asset_id)}/content${tokenParam}`
+  }
+
+  if (episode.video_master_url) {
+    if (episode.video_master_url.startsWith('http://') || episode.video_master_url.startsWith('https://')) {
+      return episode.video_master_url
+    }
+  }
+
+  return null
+}
 /**
  * فوق هذا الحد يُستخدم رفع مجزأ عبر asset-upload-sessions (R2 multipart).
  * 95 MiB هو حدّ Worker's bundling — الآن مركزي في constants.ts مع دعم VITE_DIRECT_UPLOAD_LIMIT override.
@@ -313,6 +394,28 @@ export const api = {
   updateEpisode: (id: string, payload: Partial<EpisodePayload> & { status?: string }) => request<ApiEnvelope<{ id: string; updated: boolean }>>(`/admin/episodes/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   publishEpisode: (id: string) => request<ApiEnvelope<{ id: string; status: 'published'; published: boolean }>>(`/admin/episodes/${id}/publish`, { method: 'POST' }),
   archiveEpisode: (id: string) => request<ApiEnvelope<{ id: string; status: string }>>(`/admin/episodes/${id}`, { method: 'DELETE' }),
+  episodeStreaming: (id: string) => request<ApiEnvelope<{
+    episode: {
+      id: string
+      intro_start_ms: number | null
+      intro_end_ms: number | null
+      recap_start_ms: number | null
+      recap_end_ms: number | null
+      credits_start_ms: number | null
+      preview_sprite_url: string | null
+      preview_sprite_vtt_url: string | null
+      quality_renditions: unknown
+    }
+    audio_tracks: Array<{ id: string; episode_id: string; language: string; asset_id: string; label: string; is_default: number; status: string; r2_key?: string }>
+    subtitle_tracks: Array<{ id: string; episode_id: string; language: string; asset_id: string; label: string; format: string; is_default: number; status: string; r2_key?: string }>
+    renditions: Array<{ id: string; episode_id: string; label: string; asset_id: string; width: number | null; height: number | null; bitrate_kbps: number | null; is_default: number; status: string }>
+  }>>(`/admin/episodes/${encodeURIComponent(id)}/streaming`),
+  updateEpisodeStreaming: (id: string, payload: Record<string, unknown>) =>
+    request<ApiEnvelope<void>>(`/admin/episodes/${encodeURIComponent(id)}/streaming`, { method: 'PUT', body: JSON.stringify(payload) }),
+  createEpisodeSubtitleTrack: (id: string, payload: { language: string; asset_id: string; label?: string; format?: string; is_default?: boolean }) =>
+    request<ApiEnvelope<{ id: string }>>(`/admin/episodes/${encodeURIComponent(id)}/subtitle-tracks`, { method: 'POST', body: JSON.stringify(payload) }),
+  deleteEpisodeSubtitleTrack: (id: string, trackId: string) =>
+    request<ApiEnvelope<void>>(`/admin/episodes/${encodeURIComponent(id)}/subtitle-tracks/${encodeURIComponent(trackId)}`, { method: 'DELETE' }),
 
   characters: (filters: { series_id?: string; limit?: number; offset?: number } = {}) =>
     request<PaginatedEnvelope<CharacterRecord>>(`/admin/characters${queryString(filters)}`),
@@ -478,10 +581,24 @@ export const api = {
   createRight: (payload: import('../types/api').RightsLicensePayload) => request<ApiEnvelope<{ id: string }>>('/admin/rights', { method: 'POST', body: JSON.stringify(payload) }),
   remoteConfig: () => request<ApiEnvelope<import('../types/api').RemoteConfigRecord[]>>('/admin/remote-config'),
   saveRemoteConfig: (key: string, payload: { value: unknown; rollout_percent?: number; targeting?: Record<string, unknown> }) => request<ApiEnvelope<{ key: string; rollout_percent: number }>>(`/admin/remote-config/${encodeURIComponent(key)}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  // ADM-308: remote-config history with the value each change replaced, and rollback.
+  remoteConfigHistory: (key?: string) => request<ApiEnvelope<Array<{
+    id: string; key: string; actor_id: string; action: string; created_at: string
+    restorable: boolean; reason: string | null
+    before: { value: unknown; rollout_percent: number } | null
+    after: unknown
+  }>>>(`/admin/remote-config/history${queryString({ key })}`),
+  rollbackRemoteConfig: (key: string, changeId: string, reason: string) =>
+    request<ApiEnvelope<{ key: string; restored_from: string }>>(`/admin/remote-config/${encodeURIComponent(key)}/rollback`, { method: 'POST', body: JSON.stringify({ change_id: changeId, reason }) }),
   featureFlags: () => request<ApiEnvelope<import('../types/api').FeatureFlagRecord[]>>('/admin/feature-flags'),
+  // ADM-305
+  saveFeatureFlag: (key: string, enabled: boolean, reason: string) =>
+    request<ApiEnvelope<{ key: string; enabled: boolean }>>(`/admin/feature-flags/${encodeURIComponent(key)}`, { method: 'PUT', body: JSON.stringify({ enabled, reason }) }),
+  deleteFeatureFlag: (key: string) =>
+    request<ApiEnvelope<{ key: string; deleted: boolean }>>(`/admin/feature-flags/${encodeURIComponent(key)}`, { method: 'DELETE' }),
   /// القائمة تعيد meta تحمل الأنواع والأبعاد التي يقبلها الخادم.
   homeExperience: () => request<ApiEnvelope<import('../types/api').HomeBlockRecord[]> & { meta: import('../types/api').HomeBuilderMeta }>('/admin/home-experience'),
-  createHomeBlock: (payload: { block_type: string; title_ar?: string | null; sort_order?: number; is_active?: boolean; is_draft?: boolean }) => request<ApiEnvelope<import('../types/api').HomeBlockRecord>>('/admin/home-experience', { method: 'POST', body: JSON.stringify(payload) }),
+  createHomeBlock: (payload: { block_type: string; title_ar?: string | null; sort_order?: number; is_active?: boolean; is_draft?: boolean; scheduled_at?: string | null; expires_at?: string | null; targeting?: unknown; config?: unknown }) => request<ApiEnvelope<import('../types/api').HomeBlockRecord>>('/admin/home-experience', { method: 'POST', body: JSON.stringify(payload) }),
   /// يعيد الكتلة بعد التعديل لا `{id}` فقط، فتُحدَّث الشاشة من حالة الخادم.
   updateHomeBlock: (id: string, payload: Record<string, unknown>) => request<ApiEnvelope<import('../types/api').HomeBlockRecord>>(`/admin/home-experience/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteHomeBlock: (id: string) => request<ApiEnvelope<{ id: string; deleted: boolean }>>(`/admin/home-experience/${encodeURIComponent(id)}`, { method: 'DELETE' }),
@@ -609,6 +726,11 @@ export const api = {
   customers: (filters: { q?: string; plan?: string; status?: string; limit?: number; offset?: number } = {}) =>
     request<PaginatedEnvelope<import('../types/api').CustomerListRow>>(`/admin/customers${queryString(filters)}`),
   customer360: (id: string) => request<ApiEnvelope<import('../types/api').Customer360>>(`/admin/customers/${encodeURIComponent(id)}`),
+  // ADM-306
+  familyTvs: (id: string) => request<ApiEnvelope<{
+    registered: Array<{ id: string; display_name: string | null; platform: string; status: string; registered_at: number; last_seen_at: number }> | null
+    connected: Array<{ device_id: string; name: string | null; connected_at: number; state: { status: string; title: string | null; position_ms: number; duration_ms: number } | null }> | null
+  }>>(`/admin/families/${encodeURIComponent(id)}/tvs`),
   familyDeviceState: (id: string) => request<ApiEnvelope<import('../types/api').FamilyAuthorityState>>(`/admin/families/${encodeURIComponent(id)}/device-state`),
   revokeFamilyDevice: (familyId: string, deviceId: string, reason: string) =>
     request<ApiEnvelope<{ revoked: boolean }>>(`/admin/families/${encodeURIComponent(familyId)}/devices/${encodeURIComponent(deviceId)}/revoke`, { method: 'POST', body: JSON.stringify({ reason }) }),
@@ -616,6 +738,12 @@ export const api = {
     request<ApiEnvelope<{ leases_revoked: number }>>(`/admin/families/${encodeURIComponent(familyId)}/downloads/revoke`, { method: 'POST', body: JSON.stringify({ reason, device_id: deviceId ?? null }) }),
   resyncFamily: (familyId: string, reason: string) =>
     request<ApiEnvelope<{ plan: string; note: string }>>(`/admin/families/${encodeURIComponent(familyId)}/resync`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  revokeAllFamilyDevices: (familyId: string, reason: string) =>
+    request<ApiEnvelope<{ revoked_all: boolean }>>(`/admin/families/${encodeURIComponent(familyId)}/devices/revoke-all`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  resetParentPin: (familyId: string, reason: string) =>
+    request<ApiEnvelope<{ reset: boolean }>>(`/admin/families/${encodeURIComponent(familyId)}/pin/reset`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  grantFamilySubscription: (parentId: string, plan: 'family' | 'family_plus', days: number, reason: string) =>
+    request<ApiEnvelope<{ success: boolean }>>('/admin/billing/grant', { method: 'POST', body: JSON.stringify({ parent_id: parentId, plan, days, source: `admin_grant: ${reason}` }) }),
   billingStats: () => request<ApiEnvelope<import('../types/api').BillingStats>>('/admin/billing/stats'),
   /// سجل الشراء الكامل من billing_audit. يحمل أعمدة أكثر من `recent_purchases`
   /// داخل /stats: يضيف purchase_token_hash و verified_at_ms.
@@ -624,6 +752,24 @@ export const api = {
   billingEntitlements: () => request<ApiEnvelope<import('../types/api').BillingEntitlementRecord[]>>('/admin/billing/entitlements'),
   billingRefunds: (filters: Record<string,string|number|undefined>={}) => request<PaginatedEnvelope<any>>(`/admin/billing/refunds${queryString(filters)}`),
   createRefund: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string }>>('/admin/billing/refunds', { method:'POST', body: JSON.stringify(payload) }),
+  // Legal documents — migration 0105
+  legalDocuments: () => request<ApiEnvelope<LegalDocument[]>>('/admin/legal'),
+  saveLegalDocument: (slug: string, payload: { title_ar: string; body_ar: string }) => request<ApiEnvelope<LegalDocument>>(`/admin/legal/${encodeURIComponent(slug)}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  publishLegalDocument: (slug: string) => request<ApiEnvelope<LegalDocument>>(`/admin/legal/${encodeURIComponent(slug)}/publish`, { method: 'POST', body: JSON.stringify({}) }),
+  unpublishLegalDocument: (slug: string) => request<ApiEnvelope<{ slug: string }>>(`/admin/legal/${encodeURIComponent(slug)}/unpublish`, { method: 'POST', body: JSON.stringify({}) }),
+  // Manual payments (wallets / InstaPay) — migration 0104
+  manualPaymentSettings: () => request<ApiEnvelope<ManualPaymentSettings>>('/admin/billing/manual/settings'),
+  saveManualPaymentSettings: (payload: ManualPaymentSettingsInput) => request<ApiEnvelope<ManualPaymentSettings>>('/admin/billing/manual/settings', { method: 'PUT', body: JSON.stringify(payload) }),
+  manualPaymentRequests: (status?: string) => request<ApiEnvelope<ManualPaymentRequest[]> & { meta?: { pending: number } }>(`/admin/billing/manual/requests${queryString({ status })}`),
+  approveManualPayment: (id: string) => request<ApiEnvelope<{ id: string; expires_at: string }>>(`/admin/billing/manual/requests/${encodeURIComponent(id)}/approve`, { method: 'POST', body: JSON.stringify({}) }),
+  rejectManualPayment: (id: string, reason: string) => request<ApiEnvelope<{ id: string }>>(`/admin/billing/manual/requests/${encodeURIComponent(id)}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  /// The receipt is private: fetched with the admin session and shown from a blob URL.
+  /// The caller must `URL.revokeObjectURL` it.
+  manualPaymentReceipt: async (id: string) => {
+    const response = await fetch(`${API_ROOT}/admin/billing/manual/requests/${encodeURIComponent(id)}/receipt`, { headers: authorizedHeaders() })
+    if (!response.ok) throw await responseError(response)
+    return URL.createObjectURL(await response.blob())
+  },
   // Commerce — Subscriptions & Transactions
   subscriptions: (filters: Record<string,string|number|undefined>={}) => request<PaginatedEnvelope<import('../types/api').SubscriptionRecord>>(`/admin/subscriptions${queryString(filters)}`),
   subscription: (id:string) => request<ApiEnvelope<import('../types/api').SubscriptionDetail>>(`/admin/subscriptions/${encodeURIComponent(id)}`),
@@ -688,7 +834,43 @@ export const api = {
   contentCostDetail: (entityType:string, entityId:string) => request<ApiEnvelope<{ costs:import('../types/api').ContentCostRecord[]; by_category:any[] }>>(`/admin/content-costs/${encodeURIComponent(entityType)}/${encodeURIComponent(entityId)}`),
   createContentCost: (payload: Record<string,unknown>) => request<ApiEnvelope<{ id:string }>>('/admin/content-costs', { method:'POST', body: JSON.stringify(payload) }),
   contentBudgets: () => request<ApiEnvelope<any[]>>('/admin/content-budgets'),
+  // ADM-304: app versions in use, failures, and forced-update settings.
+  appHealth: () => request<ApiEnvelope<{
+    versions: Array<{ version: string | null; families: number; events: number; last_seen: string }>
+    errors: Array<{ event_name: string; reason: string | null; count: number; families: number }>
+    daily: Array<{ day: string; errors: number; starts: number }>
+    settings: { min_app_version: string | null; forced_update_url: string | null; maintenance_message: string | null }
+    volume_7d: { events: number; families: number }
+    // OPS-202: crash groups (type + top frames), last 7 days. Optional for an older API.
+    crashes?: {
+      groups: Array<{
+        fingerprint: string; error_type: string; frames: string[]; context: string | null
+        reports: number; fatal: number; families: number; first_seen: string; last_seen: string
+        versions: string[]
+      }>
+      daily: Array<{ day: string; reports: number; fatal: number }>
+    }
+  }>>('/admin/app-health'),
+  createContentBudget: (payload: { scope_type: string; scope_id?: string; amount_minor: number; currency: string; period: string; status?: string; notes?: string }) =>
+    request<ApiEnvelope<{ id: string }>>('/admin/content-budgets', { method: 'POST', body: JSON.stringify(payload) }),
+  // Offline licences across families (read-only; revoke is per family).
+  adminDownloads: (filters: { status?: string; parent_id?: string; device_id?: string; limit?: number; offset?: number } = {}) =>
+    request<ApiEnvelope<Array<{
+      id: string; parent_id: string; parent_name: string | null; device_id: string; device_name: string | null
+      platform: string | null; entity_type: string; content_id: string; content_title: string | null; status: string
+      bytes: number; issued_at: string | null; expires_at: string | null; completed_at: string | null; revoked_at: string | null
+    }>> & { meta: { total: number; limit: number; offset: number; by_status: Record<string, number> } }>(`/admin/downloads${queryString(filters)}`),
   analyticsOverview: () => request<ApiEnvelope<import('../types/api').AnalyticsOverview>>('/admin/analytics/overview'),
+  // ADM-309: watch time from the same seconds the screen-time limits count.
+  watchTime: (days: 7 | 30 | 90) => request<ApiEnvelope<{
+    days: number
+    since: string
+    totals: { watched_minutes: number; active_children: number; active_families: number; avg_minutes_per_child_day: number }
+    daily: Array<{ day: string; minutes: number; children: number }>
+    by_track: Array<{ age_track: string | null; minutes: number; children: number }>
+    top_content: Array<{ content_type: string; content_id: string; title: string | null; series_title: string | null; minutes: number; seconds: number; children: number }>
+    top_series: Array<{ series_id: string; title: string | null; minutes: number; seconds: number; children: number }>
+  }>>(`/admin/analytics/watch-time?days=${days}`),
   /// تقدّم طفل واحد من ثلاثة مصادر: watch_progress و mastery و attempts.
   /// كان المسار يستعلم جدولًا اسمه content_progress لا وجود له، فيرمي على كل
   /// نداء — ولم يظهر ذلك لأنه بلا واجهة.
@@ -696,6 +878,12 @@ export const api = {
   siteMode: () => request<ApiEnvelope<import('../types/api').SiteModeEnvelope>>('/admin/site-mode'),
   saveSiteMode: (payload: Partial<import('../types/api').SiteModeSettings>) => request<ApiEnvelope<import('../types/api').SiteModeEnvelope>>('/admin/site-mode', { method: 'PUT', body: JSON.stringify(payload) }),
   resetSiteMode: () => request<ApiEnvelope<import('../types/api').SiteModeEnvelope>>('/admin/site-mode/reset', { method: 'POST' }),
+  // ADMIN-POLICY: plan limits, TV pairing and offline licence timings.
+  platformPolicy: () => request<ApiEnvelope<import('../types/api').PlatformPolicySnapshot>>('/admin/platform-policy'),
+  savePlatformPolicy: (section: import('../types/api').PlatformPolicySection, value: unknown, reason: string) =>
+    request<ApiEnvelope<import('../types/api').PlatformPolicySnapshot>>(`/admin/platform-policy/${section}`, { method: 'PUT', body: JSON.stringify({ value, reason }) }),
+  resetPlatformPolicy: (section: import('../types/api').PlatformPolicySection, reason: string) =>
+    request<ApiEnvelope<import('../types/api').PlatformPolicySnapshot>>(`/admin/platform-policy/${section}/reset`, { method: 'POST', body: JSON.stringify({ reason }) }),
 
   // الإطار التعليمي: المسارات موجودة في adminCatalogue.ts منذ إنشائه ولم يكن
   // لها أي مستدعٍ في الواجهة، فكانت عناصر القائمة الثلاثة معطَّلة بلافتة
@@ -1004,4 +1192,165 @@ export const api = {
     request<ApiEnvelope<{ id: string }>>(`/admin/recommendations/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteRecommendation: (id: string) =>
     request<ApiEnvelope<{ id: string; deleted: boolean }>>(`/admin/recommendations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+  // --- مركز البث والإشعارات (Push Notifications Broadcast) --------------------
+  broadcastNotifications: (filters: Record<string, string | number | undefined> = {}) =>
+    request<PaginatedEnvelope<{
+      id: string
+      parent_id: string | null
+      child_id: string | null
+      kind: string
+      title_ar: string
+      body_ar: string | null
+      deep_link: string | null
+      is_read: number
+      created_at: string
+    }> & { meta: { total: number; unread: number } }>(`/admin/notifications${queryString(filters)}`),
+  sendBroadcastNotification: (payload: {
+    title_ar: string
+    body_ar?: string
+    kind?: string
+    target?: 'all' | 'active_subscribers' | 'specific'
+    parent_id?: string
+    deep_link?: string
+  }) => request<ApiEnvelope<{ sent: number }>>('/admin/notifications/broadcast', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteBroadcastNotification: (id: string) =>
+    request<ApiEnvelope<void>>(`/admin/notifications/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+  // --- إدارة الكوبونات وشركاء النجاح (Coupons & Affiliates) -----------------
+  coupons: () =>
+    request<ApiEnvelope<Array<{
+      id: string
+      code: string
+      discount_type: 'percentage' | 'fixed_amount' | 'free_days'
+      discount_value: number
+      currency?: string
+      applicable_plan: 'all' | 'family' | 'family_plus'
+      max_redemptions: number | null
+      times_redeemed: number
+      starts_at?: string | null
+      expires_at?: string | null
+      affiliate_name?: string | null
+      affiliate_commission_rate?: number
+      is_active: boolean
+      created_at: string
+      updated_at: string
+    }>> & { meta: { total: number; active: number; total_redemptions: number; total_affiliates: number } }>('/admin/coupons'),
+  createCoupon: (payload: {
+    code: string
+    discount_type: 'percentage' | 'fixed_amount' | 'free_days'
+    discount_value: number
+    currency?: string
+    applicable_plan?: 'all' | 'family' | 'family_plus'
+    max_redemptions?: number | null
+    starts_at?: string | null
+    expires_at?: string | null
+    affiliate_name?: string | null
+    affiliate_commission_rate?: number
+    is_active?: boolean
+  }) => request<ApiEnvelope<{ id: string; code: string }>>('/admin/coupons', { method: 'POST', body: JSON.stringify(payload) }),
+  updateCoupon: (code: string, payload: Record<string, unknown>) =>
+    request<ApiEnvelope<void>>(`/admin/coupons/${encodeURIComponent(code)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteCoupon: (code: string) =>
+    request<ApiEnvelope<void>>(`/admin/coupons/${encodeURIComponent(code)}`, { method: 'DELETE' }),
+
+  // --- محرك التحفيز والمكافآت (Gamification Engine) --------------------------
+  gamificationConfig: () =>
+    request<ApiEnvelope<import('../types/api').GamificationConfig>>('/admin/gamification'),
+  updateGamificationConfig: (payload: import('../types/api').GamificationConfig) =>
+    request<ApiEnvelope<import('../types/api').GamificationConfig>>('/admin/gamification', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  // --- مركز الامتثال وحماية خصوصية الأطفال (Compliance & Child Safety) --------
+  complianceAudit: () =>
+    request<ApiEnvelope<import('../types/api').ComplianceAuditData>>('/admin/compliance/audit'),
+
+  // --- مركز استيراد ورفع المحتوى الجماعي (Bulk Media Ingest) ----------------
+  mediaIngestMatch: (filenames: string[]) =>
+    request<ApiEnvelope<import('../types/api').MediaIngestMatchResult>>('/admin/media-ingest/match', {
+      method: 'POST',
+      body: JSON.stringify({ filenames }),
+    }),
+  mediaIngestApply: (updates: Array<{ episode_id: string; field: 'thumbnail_url' | 'video_url'; value: string }>) =>
+    request<ApiEnvelope<{ updated: number }>>('/admin/media-ingest/apply', {
+      method: 'POST',
+      body: JSON.stringify({ updates }),
+    }),
+
+  // --- رادار جودة البث والأصول المعطوبة (Stream CDN Health) -----------------
+  streamHealthScan: () =>
+    request<ApiEnvelope<import('../types/api').StreamHealthData>>('/admin/stream-health/scan'),
+
+  // --- محرك تقارير المتابعة الأسبوعية للأهل (Parent Digests) ---------------
+  parentDigestsConfig: () =>
+    request<ApiEnvelope<import('../types/api').ParentDigestConfig>>('/admin/parent-digests/config'),
+  updateParentDigestsConfig: (payload: import('../types/api').ParentDigestConfig) =>
+    request<ApiEnvelope<import('../types/api').ParentDigestConfig>>('/admin/parent-digests/config', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  parentDigestsPreview: () =>
+    request<ApiEnvelope<import('../types/api').ParentDigestPreview>>('/admin/parent-digests/preview'),
+  parentDigestsSendTest: (email?: string) =>
+    request<ApiEnvelope<{ sent: boolean; recipient: string; dispatched_at: string }>>('/admin/parent-digests/send-test', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  // --- تذاكر ودعم أولياء الأمور (Parent Support Tickets) -------------------
+  parentTickets: () =>
+    request<ApiEnvelope<import('../types/api').ParentTicket[]> & { meta: { total: number; open: number; in_progress: number; resolved: number } }>('/admin/tickets'),
+  updateParentTicket: (id: string, payload: Partial<import('../types/api').ParentTicket>) =>
+    request<ApiEnvelope<import('../types/api').ParentTicket>>(`/admin/tickets/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+
+  // --- مساعد الإدارة الذكي (AI Admin Copilot) -----------------------------
+  copilotQuery: (prompt: string) =>
+    request<ApiEnvelope<import('../types/api').CopilotQueryResponse>>('/admin/copilot/query', {
+      method: 'POST',
+      body: JSON.stringify({ prompt }),
+    }),
+
+  // --- استوديو توليد القصص بالذكاء الاصطناعي (AI Story Studio) ------------
+  aiStoryGenerate: (payload: { title?: string; age_track: string; theme: string; characters?: string[]; setting?: string; pages_count?: number }) =>
+    request<ApiEnvelope<import('../types/api').AiStoryGenerated>>('/admin/ai-story-studio/generate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  aiStoryExport: (payload: { title_ar: string; description_ar?: string; age_min?: number; age_max?: number }) =>
+    request<ApiEnvelope<{ id: string; title_ar: string; status: string; message: string }>>('/admin/ai-story-studio/export-story', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  // --- الفعاليات والتحديات الحية (Live Events & Seasonal Quests) ----------
+  liveEvents: () =>
+    request<ApiEnvelope<import('../types/api').LiveEvent[]> & { meta: { total: number; active: number; total_participants: number } }>('/admin/live-events'),
+  createLiveEvent: (payload: Partial<import('../types/api').LiveEvent>) =>
+    request<ApiEnvelope<import('../types/api').LiveEvent>>('/admin/live-events', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateLiveEvent: (id: string, payload: Partial<import('../types/api').LiveEvent>) =>
+    request<ApiEnvelope<import('../types/api').LiveEvent>>(`/admin/live-events/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  deleteLiveEvent: (id: string) =>
+    request<ApiEnvelope<{ deleted: boolean; id: string }>>(`/admin/live-events/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
+
+  // --- سياسات وقت الشاشة والرقابة الأبوية (Screentime Policies) -----------
+  screentimePolicies: () =>
+    request<ApiEnvelope<import('../types/api').ScreentimeConfig>>('/admin/screentime-policies'),
+  updateScreentimePolicies: (payload: Partial<import('../types/api').ScreentimeConfig>) =>
+    request<ApiEnvelope<import('../types/api').ScreentimeConfig>>('/admin/screentime-policies', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
 }

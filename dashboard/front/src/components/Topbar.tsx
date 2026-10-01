@@ -55,6 +55,8 @@ const PAGES: Record<Locale, Record<string, PageMeta>> = {
     translation: { title: 'مركز الترجمة', subtitle: 'حالة اللغات والمصطلحات الموحّدة' },
     quiz: { title: 'بنك الأسئلة', subtitle: 'أسئلة مرتبطة بالأهداف التعليمية' },
     school: { title: 'حسابات المدارس', subtitle: 'الفصول والطلاب ومتابعة الإتقان' },
+    gamification: { title: 'محرك التحفيز والمكافآت', subtitle: 'إدارة تتابعات الدخول واقتصاد النجوم والأوسمة' },
+    compliance: { title: 'الامتثال وحماية الأطفال', subtitle: 'تدقيق الأمان والخصوصية وفق معايير COPPA و GDPR-K' },
 
     // تجربة التطبيق
     'app-experience': { title: 'بناء الصفحة الرئيسية', subtitle: 'ترتيب الأقسام واستهدافها حسب الدولة والعمر والباقة' },
@@ -84,6 +86,15 @@ const PAGES: Record<Locale, Record<string, PageMeta>> = {
     partnerships: { title: 'طلبات الشراكة', subtitle: 'الطلبات الواردة من نموذج الشراكات في صفحة الهبوط' },
     'team-access': { title: 'الموظفون والصلاحيات', subtitle: 'حسابات الفريق وأدوارها: لكل موظف بريده وكلمة مروره' },
     settings: { title: 'وضع الموقع', subtitle: 'مباشر أو تحت الإنشاء أو تحت الصيانة — اللوحة تبقى متاحة دائمًا' },
+
+    // العمليات ورعاية الأهل
+    'media-ingest': { title: 'الاستيراد الدفعي للوسائط', subtitle: 'رفع وتطابق تلقائي للملفات وربطها بقاعدة البيانات' },
+    'stream-health': { title: 'صحة البث والوسائط', subtitle: 'رادار الأصول المفقودة 404 وفحص سرعة واستجابة الـCDN' },
+    'parent-digests': { title: 'محرك التقارير الأسبوعية', subtitle: 'جدولة وقوالب رسائل تقدم الطفل للأهل عبر الواتساب والإيميل' },
+    tickets: { title: 'تذاكر ودعم أولياء الأمور', subtitle: 'متابعة وحل استفسارات ومشاكل العائلات المشتركة' },
+    'ai-story-studio': { title: 'استوديو تأليف القصص التفاعلية', subtitle: 'توليد وتشكيل قصص الأطفال بالذكاء الاصطناعي مع توجيهات الرسوم' },
+    'live-events': { title: 'الفعاليات والتحديات الحية', subtitle: 'إدارة تحديات المواسم ومضاعفات النجوم والأوسمة الحصرية' },
+    'screentime-policies': { title: 'سياسات وقت الشاشة والرقابة الأبوية', subtitle: 'الحدود اليومية وقفل وقت النوم وقاعدة التعلم أولاً' },
   },
   en: {
     '': { title: 'Dashboard', subtitle: 'Live content and family data from the database' },
@@ -108,6 +119,8 @@ const PAGES: Record<Locale, Record<string, PageMeta>> = {
     translation: { title: 'Translation centre', subtitle: 'Language status and shared glossary' },
     quiz: { title: 'Quiz bank', subtitle: 'Questions tied to learning objectives' },
     school: { title: 'School accounts', subtitle: 'Classes, students and mastery tracking' },
+    gamification: { title: 'Gamification Engine', subtitle: 'Streak ladders, star economics and badges catalogue' },
+    compliance: { title: 'Kids Safety & Compliance', subtitle: 'COPPA & GDPR-K auditing and safety certification' },
 
     'app-experience': { title: 'Home page builder', subtitle: 'Order sections and target by country, age and plan' },
     'remote-config': { title: 'Remote config', subtitle: 'Enable a feature or set its rollout without a release' },
@@ -132,6 +145,15 @@ const PAGES: Record<Locale, Record<string, PageMeta>> = {
     partnerships: { title: 'Partnership requests', subtitle: 'Requests from the landing page partnerships form' },
     'team-access': { title: 'Staff & permissions', subtitle: 'Team accounts and roles: every member has their own email and password' },
     settings: { title: 'Site mode', subtitle: 'Live, under construction, or under maintenance — the dashboard stays reachable' },
+
+    // Operations & Parental Care
+    'media-ingest': { title: 'Bulk Media Ingestion', subtitle: 'Batch file upload, regex episode matching and instant DB linking' },
+    'stream-health': { title: 'Stream & CDN Health', subtitle: 'Missing 404 asset radar, broken link detection and CDN latency scan' },
+    'parent-digests': { title: 'Parent Weekly Digests', subtitle: 'Automated weekly progress reports schedule, templates and dispatch' },
+    tickets: { title: 'Parent Support Tickets', subtitle: 'Track and resolve customer and family helpdesk requests' },
+    'ai-story-studio': { title: 'AI Story Studio', subtitle: 'Interactive children story generation with diacritics & art prompts' },
+    'live-events': { title: 'Live Events & Quests', subtitle: 'Seasonal campaigns, star multipliers and exclusive badges' },
+    'screentime-policies': { title: 'Screentime Policies', subtitle: 'Daily limits, bedtime locks and learn-before-play rules' },
   },
 }
 

@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { PreferencesProvider } from './context/PreferencesContext'
 import { LandingPage } from './pages/LandingPage'
+import { LegalPage } from './pages/LegalPage'
 import { ConstructionPage, MaintenancePage, NotFoundPage } from './pages/StatusPages'
 import { initialLandingLocale, type LandingLocale } from './landing/i18n'
 import { fetchSiteStatus, previewModeFromLocation, type SiteStatusResult } from './landing/siteModeApi'
@@ -135,6 +136,8 @@ function App() {
               </Suspense>
             }
           />
+          {/* خارج البوابة: المتاجر والتطبيق بيربطوا هنا حتى والموقع تحت الإنشاء. */}
+          <Route path="/legal/:slug" element={<LegalPage />} />
           <Route path="*" element={<NotFoundRoute />} />
         </Routes>
       </BrowserRouter>

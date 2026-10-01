@@ -48,6 +48,14 @@ const copy = {
     downloadsWarning: 'سيتم إنهاء رخصة الوصول دون اتصال (Offline Leases) على الجهاز المختار مع بقائه مسجلاً.',
     resyncTitle: 'إعادة مزامنة إسقاط بيانات الأسرة',
     resyncWarning: 'يُصدر لقطة من مصدر السلطة إلى الطابور؛ يتحدّث إسقاط D1 عند تسليم الحدث لا فورًا.',
+    resetPinTitle: 'إعادة تعيين رمز PIN لولي الأمر',
+    resetPinWarning: 'سيتم تصفير الرمز السري الحالي وفك القفل. سيُطلب من ولي الأمر تعيين رمز جديد عند الدخول للإعدادات.',
+    revokeAllTitle: 'تسجيل الخروج من كافة أجهزة العائلة',
+    revokeAllWarning: 'سيتم إبطال كافة الجلسات وتجديد دورة التوثيق لجميع أجهزة الأسرة فوراً. سيتعين على الجميع تسجيل الدخول مجدداً.',
+    grantPlanTitle: 'منح اشتراك تعويضي / مجاني',
+    grantPlanWarning: 'سيتم تفعيل الاشتراك المحدد فوراً ومزامنته مع FamilyState وسجل التدقيق.',
+    grantPlanLabel: 'الباقة الممنوحة',
+    grantDaysLabel: 'المدة بالأيام',
     reference: 'المرجع',
     subject: 'الموضوع',
     priority: 'الأولوية',
@@ -123,6 +131,14 @@ const copy = {
     downloadsWarning: 'Ends offline content playback permissions on the selected device.',
     resyncTitle: 'Resync D1 Projection',
     resyncWarning: 'Emits a snapshot from FamilyState authority queue to resynchronize the database.',
+    resetPinTitle: 'Reset Parent PIN',
+    resetPinWarning: 'Clears current PIN and failure locks. Parent will be prompted to set a new PIN.',
+    revokeAllTitle: 'Logout All Family Devices',
+    revokeAllWarning: 'Revokes all active sessions and bumps the auth epoch across all devices for this family.',
+    grantPlanTitle: 'Grant Complimentary Subscription',
+    grantPlanWarning: 'Activates the selected plan immediately in FamilyState authority and billing audit.',
+    grantPlanLabel: 'Granted Plan',
+    grantDaysLabel: 'Duration in Days',
     reference: 'Reference',
     subject: 'Subject',
     priority: 'Priority',
@@ -162,7 +178,13 @@ const copy = {
   },
 }
 
-type PendingAction = { kind: 'revoke'; deviceId: string } | { kind: 'downloads'; deviceId?: string } | { kind: 'resync' }
+type PendingAction =
+  | { kind: 'revoke'; deviceId: string }
+  | { kind: 'downloads'; deviceId?: string }
+  | { kind: 'resync' }
+  | { kind: 'reset_pin' }
+  | { kind: 'revoke_all' }
+  | { kind: 'grant_plan' }
 const isAvailable = (value: Customer360['authority']): value is FamilyAuthorityState =>
   (value as { available?: boolean }).available !== false
 
@@ -181,6 +203,9 @@ export function CustomerDetailPage() {
   const [saving, setSaving] = useState(false)
   const [actionError, setActionError] = useState('')
   const [notice, setNotice] = useState('')
+
+  const [grantPlan, setGrantPlan] = useState<'family' | 'family_plus'>('family')
+  const [grantDays, setGrantDays] = useState<number>(30)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -204,10 +229,20 @@ export function CustomerDetailPage() {
     setSaving(true)
     setActionError('')
     try {
-      if (pending.kind === 'revoke') await api.revokeFamilyDevice(id, pending.deviceId, reason.trim())
-      else if (pending.kind === 'downloads')
+      if (pending.kind === 'revoke') {
+        await api.revokeFamilyDevice(id, pending.deviceId, reason.trim())
+      } else if (pending.kind === 'downloads') {
         await api.revokeFamilyDownloads(id, reason.trim(), pending.deviceId)
-      else {
+      } else if (pending.kind === 'reset_pin') {
+        await api.resetParentPin(id, reason.trim())
+        setNotice(locale === 'ar' ? 'تمت إعادة تعيين رمز PIN لولي الأمر بنجاح.' : 'Parent PIN has been reset successfully.')
+      } else if (pending.kind === 'revoke_all') {
+        await api.revokeAllFamilyDevices(id, reason.trim())
+        setNotice(locale === 'ar' ? 'تم تسجيل الخروج من كافة أجهزة العائلة بنجاح.' : 'All family devices have been logged out successfully.')
+      } else if (pending.kind === 'grant_plan') {
+        await api.grantFamilySubscription(id, grantPlan, grantDays, reason.trim())
+        setNotice(locale === 'ar' ? `تم تفعيل اشتراك ${grantPlan} لمدة ${grantDays} يومًا بنجاح.` : `Granted ${grantPlan} plan for ${grantDays} days successfully.`)
+      } else {
         const response = await api.resyncFamily(id, reason.trim())
         setNotice(response.data.note)
       }
@@ -320,7 +355,43 @@ export function CustomerDetailPage() {
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>{text.privacyNote}</div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            className="button button--primary button--small"
+            type="button"
+            onClick={() => {
+              setPending({ kind: 'grant_plan' })
+              setReason('')
+              setActionError('')
+            }}
+          >
+            <Icon name="sparkles" size={13} />
+            <span>{text.grantPlanTitle}</span>
+          </button>
+          <button
+            className="button button--ghost button--small"
+            type="button"
+            onClick={() => {
+              setPending({ kind: 'reset_pin' })
+              setReason('')
+              setActionError('')
+            }}
+          >
+            <Icon name="rights" size={13} />
+            <span>{text.resetPinTitle}</span>
+          </button>
+          <button
+            className="button button--ghost button--small"
+            type="button"
+            onClick={() => {
+              setPending({ kind: 'revoke_all' })
+              setReason('')
+              setActionError('')
+            }}
+          >
+            <Icon name="devices" size={13} />
+            <span>{text.revokeAllTitle}</span>
+          </button>
           <button
             className="button button--ghost button--small"
             type="button"
@@ -769,6 +840,12 @@ export function CustomerDetailPage() {
               ? text.revokeTitle
               : pending.kind === 'downloads'
               ? text.downloadsTitle
+              : pending.kind === 'reset_pin'
+              ? text.resetPinTitle
+              : pending.kind === 'revoke_all'
+              ? text.revokeAllTitle
+              : pending.kind === 'grant_plan'
+              ? text.grantPlanTitle
               : text.resyncTitle
           }
           onClose={() => setPending(null)}
@@ -779,8 +856,41 @@ export function CustomerDetailPage() {
                 ? text.revokeWarning
                 : pending.kind === 'downloads'
                 ? text.downloadsWarning
+                : pending.kind === 'reset_pin'
+                ? text.resetPinWarning
+                : pending.kind === 'revoke_all'
+                ? text.revokeAllWarning
+                : pending.kind === 'grant_plan'
+                ? text.grantPlanWarning
                 : text.resyncWarning}
             </p>
+            {pending.kind === 'grant_plan' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <label className="field">
+                  <span>{text.grantPlanLabel}</span>
+                  <select
+                    value={grantPlan}
+                    onChange={(e) => setGrantPlan(e.target.value as 'family' | 'family_plus')}
+                  >
+                    <option value="family">Family (عائلي)</option>
+                    <option value="family_plus">Family Plus (عائلي بلس)</option>
+                  </select>
+                </label>
+                <label className="field">
+                  <span>{text.grantDaysLabel}</span>
+                  <select
+                    value={grantDays}
+                    onChange={(e) => setGrantDays(Number(e.target.value))}
+                  >
+                    <option value={7}>{locale === 'ar' ? '7 أيام (أسبوع تعويضي)' : '7 days (Comp)'}</option>
+                    <option value={14}>{locale === 'ar' ? '14 يومًا (أسبوعان)' : '14 days'}</option>
+                    <option value={30}>{locale === 'ar' ? '30 يومًا (شهر مجاني)' : '30 days (1 month)'}</option>
+                    <option value={90}>{locale === 'ar' ? '90 يومًا (3 أشهر)' : '90 days (3 months)'}</option>
+                    <option value={365}>{locale === 'ar' ? '365 يومًا (سنة كاملة)' : '365 days (1 year)'}</option>
+                  </select>
+                </label>
+              </div>
+            )}
             {actionError && (
               <p className="inline-alert inline-alert--error" role="alert">
                 {actionError}

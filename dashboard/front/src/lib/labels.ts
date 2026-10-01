@@ -64,6 +64,24 @@ export function formatNumber(value: number, locale: Locale) {
   return new Intl.NumberFormat(localeCode(locale)).format(value)
 }
 
+export function metricAvailabilityLabel(locale: Locale) {
+  return locale === 'ar' ? 'غير متاح' : 'Unavailable'
+}
+
+/** Keeps an explicit zero while distinguishing absent telemetry from zero. */
+export function formatMetric(value: number | null | undefined, locale: Locale, suffix = '') {
+  return value == null ? '—' : `${formatNumber(value, locale)}${suffix}`
+}
+
+export function metricAvailabilityTitle(value: unknown, locale: Locale) {
+  return value == null ? metricAvailabilityLabel(locale) : undefined
+}
+
+export function metricAvailabilityProps(value: unknown, locale: Locale) {
+  const title = metricAvailabilityTitle(value, locale)
+  return title ? { title, 'aria-label': title } : {}
+}
+
 export function formatDate(value: string | number | null | undefined, locale: Locale, includeTime = false) {
   if (value == null || value === '') return '—'
   const date = new Date(typeof value === 'number' ? value : String(value))

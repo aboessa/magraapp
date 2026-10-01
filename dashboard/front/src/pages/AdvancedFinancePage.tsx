@@ -580,6 +580,7 @@ export function AdvancedFinancePage() {
             <Icon name="alert-triangle" size={16} />
             <span>عدم الخلط بين الميزانية التقديرية وبين التكاليف الفعلية الملتزم بها.</span>
           </div>
+          <BudgetPanel />
         </div>
       )}
 
@@ -835,6 +836,107 @@ export function AdvancedFinancePage() {
             </div>
           </div>
         </Modal>
+      )}
+    </div>
+  )
+}
+
+/// ADM-302: budgets against recorded costs, same currency only.
+function BudgetPanel() {
+  const [rows, setRows] = useState<any[] | null>(null)
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({ scope_type: 'global', scope_id: '', amount: '', currency: 'EGP', period: String(new Date().getFullYear()), status: 'draft' })
+
+  const load = useCallback(async () => {
+    setError('')
+    try {
+      setRows((await api.contentBudgets()).data ?? [])
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Error')
+      setRows([])
+    }
+  }, [])
+  useEffect(() => { void load() }, [load])
+
+  const save = async () => {
+    setSaving(true)
+    setError('')
+    try {
+      await api.createContentBudget({
+        scope_type: form.scope_type,
+        scope_id: form.scope_type === 'global' ? undefined : form.scope_id,
+        amount_minor: Math.round(Number(form.amount) * 100),
+        currency: form.currency,
+        period: form.period,
+        status: form.status,
+      })
+      setForm((current) => ({ ...current, amount: '', scope_id: '' }))
+      await load()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const money = (minor: number, currency: string) => `${(Number(minor) / 100).toLocaleString('ar-EG')} ${currency}`
+
+  return (
+    <div style={{ marginTop: 18 }}>
+      {error && <div className="panel panel--notice panel--notice--bad" role="alert">{error}</div>}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end', marginBottom: 14 }}>
+        <label className="field"><span>النطاق</span>
+          <select value={form.scope_type} onChange={(e) => setForm({ ...form, scope_type: e.target.value })}>
+            <option value="global">عام</option><option value="planet">كوكب</option><option value="series">سلسلة</option>
+          </select>
+        </label>
+        {form.scope_type !== 'global' && (
+          <label className="field"><span>المعرّف</span>
+            <input value={form.scope_id} onChange={(e) => setForm({ ...form, scope_id: e.target.value })} />
+          </label>
+        )}
+        <label className="field"><span>المبلغ</span>
+          <input type="number" min={0} step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+        </label>
+        <label className="field"><span>العملة</span>
+          <input value={form.currency} maxLength={3} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })} style={{ width: '5rem' }} />
+        </label>
+        <label className="field"><span>الفترة (2026 أو 2026-Q1 أو 2026-03)</span>
+          <input value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value })} />
+        </label>
+        <label className="field"><span>الحالة</span>
+          <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+            <option value="draft">مسودة</option><option value="committed">ملتزم به</option>
+            <option value="actual">فعلي</option><option value="forecast">متوقع</option>
+          </select>
+        </label>
+        <button className="button button--primary" type="button" disabled={saving || !form.amount || !form.period} onClick={() => void save()}>
+          {saving ? 'جارٍ الحفظ…' : 'إضافة ميزانية'}
+        </button>
+      </div>
+      {rows === null ? <LoadingState /> : rows.length === 0 ? (
+        <p style={{ color: 'var(--muted)' }}>لا توجد ميزانيات بعد.</p>
+      ) : (
+        <div className="table-scroll" tabIndex={0}>
+          <table className="data-table">
+            <thead><tr><th>الفترة</th><th>النطاق</th><th>الحالة</th><th>الميزانية</th><th>الفعلي المسجّل</th><th>المتبقي</th></tr></thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <td>{row.period}</td>
+                  <td>{row.scope_type === 'global' ? 'عام' : `${row.scope_type}: ${row.scope_id}`}</td>
+                  <td>{row.status}</td>
+                  <td>{money(row.amount_minor, row.currency)}</td>
+                  <td>{money(row.actual_minor, row.currency)}</td>
+                  <td style={{ color: row.amount_minor - row.actual_minor < 0 ? '#ef4444' : undefined }}>
+                    {money(row.amount_minor - row.actual_minor, row.currency)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

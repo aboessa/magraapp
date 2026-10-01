@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { CommandPalette, useCommandPalette } from './CommandPalette'
+import { AdminCopilot } from './AdminCopilot'
 import { PermissionGate } from './PermissionGate'
 import { usePreferences } from '../context/preferences'
 import { ADMIN_BASE } from '../lib/adminPath'
@@ -76,6 +77,7 @@ export function AdminLayout() {
         </main>
       </div>
       <CommandPalette open={palette.open} onClose={() => palette.setOpen(false)} />
+      <AdminCopilot />
     </div>
   )
 }

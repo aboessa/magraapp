@@ -506,18 +506,18 @@
 .modal-backdrop {
   position: fixed !important;
   inset: 0 !important;
-  z-index: 1000 !important;
+  z-index: 99999 !important;
   display: grid !important;
   place-items: center !important;
   padding: 24px !important;
-  background: rgba(4, 7, 18, 0.80) !important;
+  background: rgba(4, 7, 18, 0.82) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
   animation: csFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .modal {
-  width: min(800px, 95vw) !important;
+  width: min(var(--modal-max-width, 820px), 95vw) !important;
   max-height: min(90vh, 880px) !important;
   background: var(--cs-glass-bg) !important;
   backdrop-filter: var(--cs-glass-blur) !important;
@@ -1788,28 +1788,42 @@
   overflow: hidden !important;
 }
 
+.episode-studio-card__thumb--clickable {
+  cursor: pointer !important;
+}
+
 .episode-studio-card__thumb img {
+  position: absolute !important;
+  inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
+  transition: transform 0.35s ease !important;
+}
+
+.episode-studio-card:hover .episode-studio-card__thumb img {
+  transform: scale(1.06) !important;
 }
 
 .episode-studio-card__play {
-  width: 44px !important;
-  height: 44px !important;
+  position: relative !important;
+  z-index: 2 !important;
+  width: 46px !important;
+  height: 46px !important;
   border-radius: 50% !important;
-  background: rgba(99, 102, 241, 0.85) !important;
+  background: rgba(99, 102, 241, 0.9) !important;
   color: #ffffff !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   backdrop-filter: blur(8px) !important;
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.6) !important;
-  transition: transform 0.2s ease !important;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.6) !important;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 .episode-studio-card:hover .episode-studio-card__play {
-  transform: scale(1.15) !important;
+  transform: scale(1.18) !important;
+  box-shadow: 0 0 28px rgba(99, 102, 241, 0.9) !important;
 }
 
 .episode-studio-card__duration {

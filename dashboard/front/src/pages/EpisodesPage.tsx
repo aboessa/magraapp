@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api } from '../lib/api'
+import { api, apiRoot, episodePlaybackUrl } from '../lib/api'
 import type { ContentStatus, EpisodePayload, EpisodeRecord, SeriesRecord } from '../types/api'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
@@ -31,6 +31,9 @@ const copy = {
     loading: 'جارٍ تحميل الحلقات...', episode: 'الحلقة', series: 'السلسلة', track: 'المسار', objective: 'الهدف', familyActivity: 'النشاط العائلي', duration: 'المدة', status: 'الحالة', actions: 'إجراءات',
     episodeNumber: (number: number) => `الحلقة ${number}`, noNumber: 'بلا رقم بعد', unspecified: 'غير محدد', edit: 'تعديل', archive: 'أرشفة', empty: 'لا توجد حلقات بعد', emptyDesc: 'أنشئ أول حلقة داخل إحدى السلاسل، ولن نعرض بيانات تجريبية بدلًا منها.', addEpisode: 'إضافة حلقة',
     editTitle: 'تعديل الحلقة', createTitle: 'إضافة حلقة جديدة', modalDesc: 'يمكن استكمال الهدف التعليمي والوسائط لاحقًا عبر الـAPI.', name: 'اسم الحلقة *', selectSeries: 'اختر السلسلة', number: 'رقم الحلقة', seconds: 'المدة بالثواني', description: 'وصف الحلقة', parentGuide: 'دليل ولي الأمر', activity: 'نشاط عائلي', cancel: 'إلغاء', saving: 'جارٍ الحفظ...', save: 'حفظ الحلقة',
+    play: 'تشغيل الحلقة', playerTitle: 'مشغل الحلقة', noVideo: 'لا يوجد ملف فيديو متاح لهذه الحلقة بعد.', openWorkspace: 'فتح في مساحة العمل', downloadVideo: 'تنزيل الفيديو',
+    captureThumbnail: 'تعيين اللقطة كغلاف للحلقة', downloadFrame: 'تنزيل لقطة الشاشة', capturing: 'جارٍ المعالجة والرفع...',
+    selectedCount: (n: number) => `${n} حلقة محددة`, bulkPublish: 'نشر الحلقات المحددة', bulkDraft: 'تحويل إلى مسودة', deselectAll: 'إلغاء التحديد',
   },
   en: {
     loadError: 'Unable to load episodes', required: 'Episode name and series are required.', saveError: 'Unable to save the episode', statusError: 'Unable to update status', archiveError: 'Unable to archive the episode',
@@ -39,6 +42,9 @@ const copy = {
     loading: 'Loading episodes...', episode: 'Episode', series: 'Series', track: 'Track', objective: 'Objective', familyActivity: 'Family activity', duration: 'Duration', status: 'Status', actions: 'Actions',
     episodeNumber: (number: number) => `Episode ${number}`, noNumber: 'Not numbered yet', unspecified: 'Not specified', edit: 'Edit', archive: 'Archive', empty: 'No episodes yet', emptyDesc: 'Create the first episode in a series; placeholder data is never shown instead.', addEpisode: 'Add episode',
     editTitle: 'Edit episode', createTitle: 'Add a new episode', modalDesc: 'The learning objective and media can be completed later through the API.', name: 'Episode name *', selectSeries: 'Select a series', number: 'Episode number', seconds: 'Duration in seconds', description: 'Episode description', parentGuide: 'Parent guide', activity: 'Family activity', cancel: 'Cancel', saving: 'Saving...', save: 'Save episode',
+    play: 'Play episode', playerTitle: 'Episode player', noVideo: 'No video file available for this episode yet.', openWorkspace: 'Open in workspace', downloadVideo: 'Download video',
+    captureThumbnail: 'Set Frame as Thumbnail', downloadFrame: 'Download Screenshot', capturing: 'Processing & uploading...',
+    selectedCount: (n: number) => `${n} episodes selected`, bulkPublish: 'Publish Selected', bulkDraft: 'Set as Draft', deselectAll: 'Deselect All',
   },
 }
 
@@ -121,6 +127,7 @@ export function EpisodesPage() {
   const [formError, setFormError] = useState('')
   const [busyId, setBusyId] = useState('')
   const [publishTarget, setPublishTarget] = useState<EpisodeRecord | null>(null)
+  const [playingEpisode, setPlayingEpisode] = useState<EpisodeRecord | null>(null)
   const columns = useColumnPreferences('episodes', COLUMNS)
 
   const load = useCallback(async () => {
@@ -205,6 +212,95 @@ export function EpisodesPage() {
   }
 
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [capturing, setCapturing] = useState(false)
+  const [captureMsg, setCaptureMsg] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === records.length) setSelectedIds(new Set())
+    else setSelectedIds(new Set(records.map((r) => r.id)))
+  }
+
+  const runBulkStatus = async (newStatus: ContentStatus) => {
+    if (!selectedIds.size) return
+    setBulkBusy(true)
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) => api.updateEpisode(id, { status: newStatus }))
+      )
+      setSelectedIds(new Set())
+      await load()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : text.statusError)
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
+  const captureFrame = async (mode: 'save_thumbnail' | 'download_file') => {
+    const video = videoRef.current
+    if (!video || !playingEpisode) return
+    try {
+      setCapturing(true)
+      setCaptureMsg('')
+      const canvas = document.createElement('canvas')
+      canvas.width = video.videoWidth || 1280
+      canvas.height = video.videoHeight || 720
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('Canvas context unavailable')
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+      if (mode === 'download_file') {
+        const url = canvas.toDataURL('image/jpeg', 0.92)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `frame-${playingEpisode.id}-${Math.floor(video.currentTime)}s.jpg`
+        a.click()
+        setCaptureMsg(locale === 'ar' ? 'تم تنزيل لقطة الشاشة بنجاح.' : 'Screenshot downloaded.')
+        return
+      }
+
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.90))
+      if (!blob) throw new Error('Failed to create frame blob')
+      const fileName = `thumb-${playingEpisode.id}-${Date.now()}.jpg`
+      const file = new File([blob], fileName, { type: 'image/jpeg' })
+
+      const created = await api.createAsset({
+        title_ar: `غلاف الحلقة: ${playingEpisode.title_ar}`,
+        original_filename: fileName,
+        kind: 'image',
+        source: 'upload',
+        status: 'ready',
+        visibility: 'public',
+        expected_width: canvas.width,
+        expected_height: canvas.height,
+        aspect_ratio: '16:9',
+      })
+      const assetId = created.data.id
+      await api.uploadAssetFile(assetId, file)
+      const contentUrl = `${apiRoot}/admin/assets/${assetId}/content`
+      await api.updateEpisode(playingEpisode.id, { thumbnail_url: contentUrl })
+
+      setPlayingEpisode((prev) => (prev ? { ...prev, thumbnail_url: contentUrl } : null))
+      setRecords((prev) => prev.map((ep) => (ep.id === playingEpisode.id ? { ...ep, thumbnail_url: contentUrl } : ep)))
+      setCaptureMsg(locale === 'ar' ? 'تم حفظ اللقطة وتعيينها كغلاف للحلقة بنجاح!' : 'Frame captured and set as episode thumbnail!')
+    } catch (e: unknown) {
+      setCaptureMsg(e instanceof Error ? e.message : (locale === 'ar' ? 'تعذر التقاط الغلاف' : 'Failed to capture frame'))
+    } finally {
+      setCapturing(false)
+    }
+  }
 
   return (
     <div className="page-stack">
@@ -352,6 +448,54 @@ export function EpisodesPage() {
             }
           />
         </header>
+        {selectedIds.size > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 20px',
+              background: 'rgba(99, 102, 241, 0.12)',
+              borderBottom: '1px solid rgba(99, 102, 241, 0.25)',
+              flexWrap: 'wrap',
+              gap: 12,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Icon name="check" size={16} style={{ color: 'var(--primary)' }} />
+              <strong style={{ fontSize: 13, color: 'var(--text)' }}>
+                {text.selectedCount(selectedIds.size)}
+              </strong>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                className="button button--small button--primary"
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => void runBulkStatus('published')}
+              >
+                <Icon name="upload" size={14} />
+                <span>{text.bulkPublish}</span>
+              </button>
+              <button
+                className="button button--small button--ghost"
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => void runBulkStatus('draft')}
+              >
+                <Icon name="edit" size={14} />
+                <span>{text.bulkDraft}</span>
+              </button>
+              <button
+                className="button button--small button--ghost"
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                <span>{text.deselectAll}</span>
+              </button>
+            </div>
+          </div>
+        )}
         {loading && !records.length ? <LoadingState label={text.loading}/> : error && !records.length ? <ErrorState message={error} onRetry={() => void load()}/> : records.length ? (
           <>
             {viewMode === 'grid' ? (
@@ -360,16 +504,25 @@ export function EpisodesPage() {
                 <div className="episodes-studio-grid">
                   {records.map((episode) => (
                     <article className="episode-studio-card" key={episode.id}>
-                      <div className="episode-studio-card__thumb">
+                      <div
+                        className="episode-studio-card__thumb episode-studio-card__thumb--clickable"
+                        onClick={() => setPlayingEpisode(episode)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setPlayingEpisode(episode)
+                          }
+                        }}
+                        title={text.play}
+                      >
                         {episode.thumbnail_url ? (
                           <img src={episode.thumbnail_url} alt={episode.title_ar} loading="lazy" />
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: 'var(--muted)' }}>
-                            <div className="episode-studio-card__play">
-                              <Icon name="play" size={18} />
-                            </div>
-                          </div>
-                        )}
+                        ) : null}
+                        <div className="episode-studio-card__play">
+                          <Icon name="play" size={18} />
+                        </div>
                         {episode.duration_seconds ? (
                           <span className="episode-studio-card__duration">
                             {durationLabel(episode.duration_seconds, locale)}
@@ -405,6 +558,15 @@ export function EpisodesPage() {
                           </Link>
 
                           <div className="table-actions">
+                            <button
+                              className="icon-button icon-button--small"
+                              type="button"
+                              onClick={() => setPlayingEpisode(episode)}
+                              title={text.play}
+                              style={{ color: 'var(--primary)' }}
+                            >
+                              <Icon name="play" size={15} />
+                            </button>
                             {episode.status !== 'published' && (
                               <button className="icon-button icon-button--small" type="button" onClick={() => void publish(episode)} disabled={busyId === episode.id} title={locale === 'ar' ? 'نشر' : 'Publish'}>
                                 <Icon name="upload" size={15} />
@@ -429,6 +591,14 @@ export function EpisodesPage() {
                 <table className="data-table data-table--wide">
                   <thead>
                     <tr>
+                      <th style={{ width: 44, textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={records.length > 0 && selectedIds.size === records.length}
+                          onChange={toggleSelectAll}
+                          aria-label="Select all episodes"
+                        />
+                      </th>
                       <th>{text.episode}</th>
                       {columns.isVisible('series') && <th>{text.series}</th>}
                       {columns.isVisible('track') && <th>{text.track}</th>}
@@ -441,7 +611,15 @@ export function EpisodesPage() {
                   </thead>
                   <tbody>
                     {records.map((episode) => (
-                      <tr key={episode.id}>
+                      <tr key={episode.id} className={selectedIds.has(episode.id) ? 'row--selected' : ''}>
+                        <td style={{ width: 44, textAlign: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(episode.id)}
+                            onChange={() => toggleSelect(episode.id)}
+                            aria-label={`Select ${episode.title_ar}`}
+                          />
+                        </td>
                         <td>
                           <Link className="entity-cell entity-cell--button" to={adminPath(`episodes/${episode.id}`)}>
                             <EntityThumbnail src={episode.thumbnail_url} alt={episode.title_ar} icon="play" />
@@ -458,6 +636,15 @@ export function EpisodesPage() {
                         )}
                         <td>
                           <div className="table-actions">
+                            <button
+                              className="icon-button icon-button--small"
+                              type="button"
+                              onClick={() => setPlayingEpisode(episode)}
+                              title={text.play}
+                              style={{ color: 'var(--primary)' }}
+                            >
+                              <Icon name="play" size={16} />
+                            </button>
                             {episode.status !== 'published' ? <button className="icon-button icon-button--small" type="button" onClick={() => void publish(episode)} disabled={busyId === episode.id} title={locale === 'ar' ? 'نشر' : 'Publish'}><Icon name="upload" size={16}/></button> : null}
                             <button className="icon-button icon-button--small" type="button" onClick={() => openEdit(episode)} title={text.edit}><Icon name="edit" size={16}/></button>
                             <button className="icon-button icon-button--small icon-button--danger" type="button" onClick={() => void archive(episode)} disabled={busyId === episode.id} title={text.archive}><Icon name="archive" size={16}/></button>
@@ -495,6 +682,139 @@ export function EpisodesPage() {
           onPublish={(id) => api.publishEpisode(id)}
           onPublished={load}
         />
+      )}
+
+      {playingEpisode && (
+        <Modal
+          open
+          onClose={() => setPlayingEpisode(null)}
+          maxWidth={880}
+          title={`${text.playerTitle} - ${playingEpisode.episode_number ? `${text.episodeNumber(playingEpisode.episode_number)}: ` : ''}${playingEpisode.title_ar}`}
+          description={`${playingEpisode.series_title || text.series} · ${durationLabel(playingEpisode.duration_seconds, locale)}`}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {(() => {
+              const videoSrc = episodePlaybackUrl(playingEpisode)
+              if (!videoSrc) {
+                return (
+                  <div
+                    style={{
+                      padding: 32,
+                      background: 'var(--surface-sunken)',
+                      borderRadius: 12,
+                      textAlign: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-danger, #ef4444)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name="video" size={24} />
+                    </div>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: 15, marginBottom: 4 }}>{text.noVideo}</strong>
+                      <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+                        {locale === 'ar'
+                          ? 'يمكنك ربط ملف فيديو للحلقة من مساحة عمل الحلقة أو مكتبة الوسائط.'
+                          : 'You can link a video file to this episode from the episode workspace or media library.'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              }
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ background: '#000', borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
+                    <video
+                      ref={videoRef}
+                      crossOrigin="anonymous"
+                      src={videoSrc}
+                      controls
+                      autoPlay
+                      playsInline
+                      preload="metadata"
+                      style={{ width: '100%', maxHeight: '65vh', display: 'block', outline: 'none' }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      background: 'var(--surface-2)',
+                      borderRadius: 10,
+                      border: '1px solid var(--cs-glass-border)',
+                      flexWrap: 'wrap',
+                      gap: 10,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        className="button button--small button--primary"
+                        type="button"
+                        disabled={capturing}
+                        onClick={() => void captureFrame('save_thumbnail')}
+                        title={text.captureThumbnail}
+                      >
+                        <Icon name="sparkles" size={14} />
+                        <span>{capturing ? text.capturing : text.captureThumbnail}</span>
+                      </button>
+                      <button
+                        className="button button--small button--ghost"
+                        type="button"
+                        disabled={capturing}
+                        onClick={() => void captureFrame('download_file')}
+                        title={text.downloadFrame}
+                      >
+                        <Icon name="media" size={14} />
+                        <span>{text.downloadFrame}</span>
+                      </button>
+                    </div>
+                    {captureMsg && (
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)' }}>
+                        {captureMsg}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <StatusBadge status={playingEpisode.status} />
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  {playingEpisode.duration_seconds ? `${playingEpisode.duration_seconds} ${locale === 'ar' ? 'ثانية' : 'sec'}` : ''}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {episodePlaybackUrl(playingEpisode) && (
+                  <a
+                    href={episodePlaybackUrl(playingEpisode)!}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="button button--ghost button--small"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <Icon name="upload" size={14} style={{ transform: 'rotate(180deg)' }} />
+                    <span>{text.downloadVideo}</span>
+                  </a>
+                )}
+                <Link
+                  to={adminPath(`episodes/${playingEpisode.id}`)}
+                  className="button button--primary button--small"
+                  style={{ textDecoration: 'none' }}
+                >
+                  <Icon name="arrow" size={14} />
+                  <span>{text.openWorkspace}</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   )

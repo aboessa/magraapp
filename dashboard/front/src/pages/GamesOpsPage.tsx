@@ -66,6 +66,7 @@ export function GamesOpsPage(){
   const [q, setQ] = useState('')
   const [engineFilter, setEngineFilter] = useState('')
   const [quick, setQuick] = useState<GameRecord | null>(null)
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
 
   const load = useCallback(async()=>{
     setLoading(true); setError('')
@@ -110,11 +111,6 @@ export function GamesOpsPage(){
     ]
   },[overview, locale])
 
-  if(loading) return <LoadingState label="جارٍ تحميل العمليات..." />
-  if(error) return <ErrorState message={error} onRetry={()=> void load()} />
-
-  const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
-
   const activeGame = useMemo(() => {
     if (selectedGameId) {
       const match = filtered.find((g) => g.id === selectedGameId)
@@ -122,6 +118,9 @@ export function GamesOpsPage(){
     }
     return filtered[0] ?? null
   }, [filtered, selectedGameId])
+
+  if(loading) return <LoadingState label="جارٍ تحميل العمليات..." />
+  if(error) return <ErrorState message={error} onRetry={()=> void load()} />
 
   return (
     <div className="content-studio-root">

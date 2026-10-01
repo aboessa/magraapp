@@ -41,6 +41,9 @@ const copy = {
     // فشلٌ غير `Error` كان يُنتج `setError(undefined)` فتُعرض الصفحة **فارغةً
     // كأن القراءة نجحت**، والحفظ الفاشل كان يُغلق بلا رسالة.
     loadError: 'تعذّر قراءة الضبط البعيد',
+    rollback: 'استرجاع', rolledBack: 'اتسترجعت القيمة القديمة', notRestorable: 'قديم، مش متسجّل قيمته السابقة',
+    noHistory: 'مفيش تغييرات مسجّلة', rollbackConfirm: 'هترجع القيمة اللي كانت قبل التغيير ده، وهتوصل لكل التطبيقات على طول.',
+    restoreTo: 'هترجع لـ', reason: 'السبب', reasonRequired: 'اكتب سبب الاسترجاع (3 أحرف على الأقل)',
   },
   en: {
     eyebrow: 'App Control', title: 'Remote Config', lede: 'Settings reaching all users immediately — controlled operations. Environment is visibly Production.',
@@ -59,6 +62,9 @@ const copy = {
     empty: 'No config', flagsEmpty: 'No flags',
     invalidJson: 'Invalid JSON', invalidRollout: 'Rollout 0-100', invalidVersion: 'Invalid semver (e.g. 2.4.0)',
     loadError: 'Could not read remote config',
+    rollback: 'Roll back', rolledBack: 'Previous value restored', notRestorable: 'Older change, previous value not recorded',
+    noHistory: 'No changes recorded', rollbackConfirm: 'This restores the value from before this change. It reaches every app immediately.',
+    restoreTo: 'Restores to', reason: 'Reason', reasonRequired: 'Give a reason (at least 3 characters)',
   }
 }
 
@@ -69,6 +75,13 @@ function displayValue(v:any, text:any){
   return String(v)
 }
 function isTruthy(v:any){ if(typeof v==='boolean') return v; if(typeof v==='number') return v!==0; if(typeof v==='string') return v!=='' && v!=='false'; return v!=null }
+
+type HistoryRow = Awaited<ReturnType<typeof api.remoteConfigHistory>>['data'][number]
+
+const short = (value: unknown) => {
+  const textValue = JSON.stringify(value)
+  return textValue === undefined ? '—' : textValue.length > 40 ? `${textValue.slice(0, 40)}…` : textValue
+}
 
 export function RemoteConfigPage(){
   const { locale } = usePreferences()
@@ -87,7 +100,22 @@ export function RemoteConfigPage(){
   const [modalError,setModalError]=useState('')
   const [confirmHighRisk,setConfirmHighRisk]=useState(false)
   const [preview,setPreview]=useState<any>(null)
-  const [history,setHistory]=useState<any[]>([])
+  const [history,setHistory]=useState<HistoryRow[]>([])
+  const [historyError,setHistoryError]=useState('')
+  const [rollbackTarget,setRollbackTarget]=useState<HistoryRow|null>(null)
+  const [rollbackReason,setRollbackReason]=useState('')
+  const [rollbackError,setRollbackError]=useState('')
+  const [rollingBack,setRollingBack]=useState(false)
+
+  const confirmRollback=async()=>{
+    if(!rollbackTarget) return
+    if(rollbackReason.trim().length<3){ setRollbackError(text.reasonRequired); return }
+    setRollingBack(true); setRollbackError('')
+    try{
+      await api.rollbackRemoteConfig(rollbackTarget.key, rollbackTarget.id, rollbackReason.trim())
+      setRollbackTarget(null); setRollbackReason(''); setNotice(text.rolledBack); await load()
+    }catch(e){ setRollbackError(e instanceof Error? e.message: text.loadError) }finally{ setRollingBack(false) }
+  }
 
 
   const load=useCallback(async()=>{
@@ -95,8 +123,10 @@ export function RemoteConfigPage(){
     try{
       const [cRes,fRes]=await Promise.all([api.remoteConfig(), api.featureFlags()])
       setEntries(cRes.data); setFlags(fRes.data)
-      // load audit for history
-      try{ const h=await api.auditLogs({ entity_type:'remote_config', limit:20 } as any); setHistory((h as any).data ?? []) }catch{}
+      // ADM-308: history with the replaced value, from the remote-config route
+      // itself (the generic audit log needs `view_audit_log` and failed silently).
+      try{ const h=await api.remoteConfigHistory(); setHistory(h.data ?? []); setHistoryError('') }
+      catch(e){ setHistory([]); setHistoryError(e instanceof Error? e.message: 'History unavailable') }
     }catch(e){ setError(e instanceof Error? e.message: text.loadError)} finally{ setLoading(false)}
   },[text.loadError])
 
@@ -437,12 +467,41 @@ export function RemoteConfigPage(){
 
       {activeTab==='history' && (
         <section className="panel"><div style={{padding:12}}><h3>{text.history}</h3><p style={{fontSize:12, color:'var(--muted)'}}>{text.historyHint}</p>
-          <table className="data-table"><thead><tr><th>Key</th><th>Actor</th><th>Time</th><th>Old → New</th><th>Reason</th></tr></thead><tbody>
-            {history.slice(0,10).map((h:any)=> <tr key={h.id}><td dir="ltr">{h.entity_id}</td><td>{h.actor_id}</td><td>{String(h.created_at).slice(0,16)}</td><td style={{maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{h.details}</td><td>—</td></tr>)}
-            {!history.length && <tr><td colSpan={5} style={{textAlign:'center', color:'var(--muted)'}}>No history yet</td></tr>}
+          {historyError && <p className="field__error" role="alert">{historyError}</p>}
+          <table className="data-table"><thead><tr><th>Key</th><th>Actor</th><th>Time</th><th>Old → New</th><th>Reason</th><th /></tr></thead><tbody>
+            {history.map((h)=> <tr key={h.id}>
+              <td dir="ltr">{h.key}</td><td dir="ltr">{h.actor_id}</td><td dir="ltr">{String(h.created_at).slice(0,16)}</td>
+              <td dir="ltr" style={{maxWidth:260, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                {h.restorable ? `${short(h.before?.value)} → ${short((h.after as { value?: unknown } | null)?.value)}` : short((h.after as { value?: unknown } | null)?.value ?? h.after)}
+              </td>
+              <td>{h.reason ?? '—'}</td>
+              <td>{h.restorable
+                ? <button className="button button--ghost button--small" type="button" onClick={()=>{ setRollbackTarget(h); setRollbackReason(''); setRollbackError('') }}>{text.rollback}</button>
+                : <small className="table-secondary">{text.notRestorable}</small>}</td>
+            </tr>)}
+            {!history.length && !historyError && <tr><td colSpan={6} style={{textAlign:'center', color:'var(--muted)'}}>{text.noHistory}</td></tr>}
           </tbody></table>
-          <button className="button button--ghost button--small" disabled>Rollback where safe</button>
         </div></section>
+      )}
+
+      {rollbackTarget && (
+        <Modal open title={`${text.rollback}: ${rollbackTarget.key}`} onClose={()=> setRollbackTarget(null)}>
+          <div className="entity-form">
+            <p>{text.rollbackConfirm}</p>
+            <dl className="detail-list">
+              <div><dt>{text.restoreTo}</dt><dd dir="ltr">{short(rollbackTarget.before?.value)}</dd></div>
+              <div><dt>{text.rolloutLabel}</dt><dd dir="ltr">{rollbackTarget.before?.rollout_percent ?? '—'}%</dd></div>
+            </dl>
+            <label className="field"><span>{text.reason}</span>
+              <input value={rollbackReason} onChange={e=> setRollbackReason(e.target.value)} maxLength={500} />
+            </label>
+            {rollbackError && <p className="field__error" role="alert">{rollbackError}</p>}
+            <div className="form-actions">
+              <button className="button button--ghost" type="button" onClick={()=> setRollbackTarget(null)}>{text.cancel}</button>
+              <button className="button button--primary" type="button" disabled={rollingBack} onClick={()=> void confirmRollback()}>{rollingBack? text.saving: text.rollback}</button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {selected && (
