@@ -6,17 +6,20 @@
 |---|---|
 | `episode_number` | 5 |
 | `title_ar` | كلمات من بيتي |
+| `title_en` | Words from My Home |
 | `description_ar` | مفردات المنزل المألوفة |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 3 / 5 |
 | `reading_level` | `pre_reader` |
 | `interaction_mode` | `tap` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `easy` |
 | `is_free` | 0 |
 | `learning_objective_id` | `lang.vocab.name_objects` |
 | `linked_game_id` | `sb-luna-ep5` |
 | `prerequisites` | `["ep-02"]` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

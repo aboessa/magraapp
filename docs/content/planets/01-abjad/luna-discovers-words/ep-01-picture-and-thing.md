@@ -7,6 +7,7 @@
 | `series_id` | `luna-discovers-words` |
 | `episode_number` | 1 |
 | `title_ar` | الصورة والشيء |
+| `title_en` | The Picture and the Thing |
 | `description_ar` | مطابقة صورة واضحة بالشيء الذي تمثله |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 3 / 5 |
@@ -17,6 +18,7 @@
 | `is_free` | 1 ✅ |
 | `learning_objective_id` | `lang.vocab.match_word_image` |
 | `linked_game_id` | `mp-luna-ep1` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | لا يوجد نشاط منزلي |
 

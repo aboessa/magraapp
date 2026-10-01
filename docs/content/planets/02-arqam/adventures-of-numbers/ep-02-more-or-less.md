@@ -6,17 +6,20 @@
 |---|---|
 | `episode_number` | 2 |
 | `title_ar` | أكثر أم أقل؟ |
+| `title_en` | More or Less? |
 | `description_ar` | مقارنة مجموعتين بصريًا |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `interaction_mode` | `guided` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `easy` |
 | `is_free` | 0 |
 | `learning_objective_id` | `math.compare.more_less` |
 | `linked_game_id` | `cq-aon-ep2` |
 | `prerequisites` | `["aon-ep-01"]` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

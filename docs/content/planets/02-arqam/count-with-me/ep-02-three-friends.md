@@ -6,17 +6,20 @@
 |---|---|
 | `episode_number` | 2 |
 | `title_ar` | ثلاثة أصدقاء |
+| `title_en` | Three Friends |
 | `description_ar` | عد ثلاثة عناصر بصريًا وصوتيًا |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 3 / 5 |
 | `reading_level` | `pre_reader` |
 | `interaction_mode` | `tap` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `easy` |
 | `is_free` | 0 |
 | `learning_objective_id` | `math.count.to_five` |
 | `linked_game_id` | `cq-cwm-ep2` |
 | `prerequisites` | `["cwm-ep-01"]` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

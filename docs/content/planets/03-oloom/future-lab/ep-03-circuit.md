@@ -7,16 +7,18 @@
 | `series_id` | `future-lab` |
 | `episode_number` | 3 |
 | `title_ar` | الدائرة الكهربية |
+| `title_en` | The Electric Circuit |
 | `description_ar` | تحدٍّ كهربي: لماذا يخبو الضوء بزيادة المصابيح؟ |
 | `duration_seconds` | 420 |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `interactive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `mixed` |
 | `supervision_level` | `recommended` |
 | `difficulty` | `hard` |
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.energy.series_circuit` |
 | `linked_game_id` | `sl-fl-ep3` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 
 ## 🔴 `safety_notes` — أشدّ بنود السلسلة

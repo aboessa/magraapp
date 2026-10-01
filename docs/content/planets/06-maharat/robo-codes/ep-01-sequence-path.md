@@ -7,16 +7,18 @@
 | `series_id` | `robo-codes` |
 | `episode_number` | 1 |
 | `title_ar` | مسار التسلسل |
+| `title_en` | Sequence Path |
 | `description_ar` | روبو ينفّذ ما تكتبه بالترتيب، لا ما تقصده |
 | `duration_seconds` | 360 *(6:00)* |
 | `age_min` / `age_max` | 9 / 12 |
 | `reading_level` | `independent` |
 | `interaction_mode` | `independent` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `hard` |
 | `is_free` | 1 ✅ |
 | `learning_objective_id` | `skill.ct.sequence` |
 | `linked_game_id` | `bc-first-steps` · المستوى 1 |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `arqam` |
 | `safety_notes` | لا ينطبق — محتوى شاشة بلا نشاط بدني |

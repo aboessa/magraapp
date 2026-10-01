@@ -7,6 +7,7 @@
 | `series_id` | `hekaya-wa-hikma` |
 | `episode_number` | 6 |
 | `title_ar` | أعتذر |
+| `title_en` | I Apologize |
 | `description_ar` | كسر شيئًا بلا قصد، ولم يره أحد |
 | `duration_seconds` | 240 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `val.apology.repair_four_steps` |
 | `linked_game_id` | `so-hwh-ep6` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | 🔴 الحلقة تعلّم أن **الاعتراف لا يُعاقَب**. لا مشهد عقاب ولا توبيخ ولا خوف من الكبار. |
 

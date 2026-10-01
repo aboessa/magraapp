@@ -7,16 +7,18 @@
 | `series_id` | `science-in-a-minute` |
 | `episode_number` | 5 |
 | `title_ar` | دورة الماء |
+| `title_en` | The Water Cycle |
 | `description_ar` | الماء الذي تشربه اليوم كان في مكان آخر |
 | `duration_seconds` | **120** |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `passive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `guided` |
 | `supervision_level` | `none` |
 | `difficulty` | `easy` |
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.env.water_cycle` |
 | `linked_game_id` | `lp-siam-ep5` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | لا نشاط تنفيذي. 🔴 لا تسخين ماء ولا بخار. النشاط بالملاحظة فقط. |
 

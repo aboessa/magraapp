@@ -7,16 +7,18 @@
 | `series_id` | `future-lab` |
 | `episode_number` | 1 |
 | `title_ar` | المركبة الشمسية |
+| `title_en` | The Solar Vehicle |
 | `description_ar` | تحدٍّ هندسي: كيف نجعل مركبة شمسية أسرع؟ |
 | `duration_seconds` | 420 |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `interactive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `mixed` |
 | `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 1 ✅ |
 | `learning_objective_id` | `sci.energy.solar_conversion` |
 | `linked_game_id` | `sl-fl-ep1` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | كل التجارب **محاكاة رقمية**. لا تنفيذ منزلي. لا يُنظر إلى الشمس مباشرة في أي حال. |
 

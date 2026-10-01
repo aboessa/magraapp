@@ -7,6 +7,7 @@
 | `series_id` | `colors-around-us` |
 | `episode_number` | 4 |
 | `title_ar` | كبير وصغير |
+| `title_en` | Big and Small |
 | `description_ar` | لا كبير بلا صغير بجانبه |
 | `duration_seconds` | 160 *(2:40)* |
 | `age_min` / `age_max` | 3 / 5 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `world.size.compare` |
 | `linked_game_id` | `sb-shapes-size` · المستوى 3 |
+| `prerequisites` | `["ep-03-circle-and-square"]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `arqam` |
 | `safety_notes` | 🔴 **لا أشياء صغيرة تُبلَع** في النشاط |

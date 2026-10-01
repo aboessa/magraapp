@@ -7,16 +7,18 @@
 | `series_id` | `explorers-adventures` |
 | `episode_number` | 5 |
 | `title_ar` | لغز الحديقة |
+| `title_en` | The Garden Mystery |
 | `description_ar` | جانب أطول من جانب، والسبب ليس ما ظنّاه |
 | `duration_seconds` | 330 *(5:30)* |
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `interaction_mode` | `tap` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `world.reason.correlation_not_cause` |
 | `linked_game_id` | `lp-shapes-linear` · المستوى 2 |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `oloom` |
 | `safety_notes` | 🔴 **لا نظر إلى الشمس · لا أكل من الحديقة · لا اقتلاع نبات** |

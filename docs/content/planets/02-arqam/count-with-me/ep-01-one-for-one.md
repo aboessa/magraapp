@@ -7,6 +7,7 @@
 | `series_id` | `count-with-me` |
 | `episode_number` | 1 |
 | `title_ar` | واحد لكل واحد |
+| `title_en` | One for Each One |
 | `description_ar` | ربط كل عنصر بمكان واحد |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 3 / 5 |
@@ -18,6 +19,7 @@
 | `learning_objective_id` | `math.count.one_to_one` |
 | `linked_game_id` | `cq-cwm-ep1` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

@@ -7,6 +7,7 @@
 | `series_id` | `try-it-at-home` |
 | `episode_number` | 3 |
 | `title_ar` | يطفو أم يغوص؟ |
+| `title_en` | Float or Sink? |
 | `description_ar` | تجربة تكشف أن الحجم ليس السبب |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.method.test_hypothesis` |
 | `linked_game_id` | `sl-tiah-ep3` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 
 ## `safety_notes` — الحقل الإلزامي

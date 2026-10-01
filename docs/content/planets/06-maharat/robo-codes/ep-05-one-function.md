@@ -7,16 +7,18 @@
 | `series_id` | `robo-codes` |
 | `episode_number` | 5 |
 | `title_ar` | وظيفة واحدة تكفي |
+| `title_en` | One Function Is Enough |
 | `description_ar` | تجد النمط المتكرّر، ثم تعطيه اسمًا |
 | `duration_seconds` | 390 *(6:30)* |
 | `age_min` / `age_max` | 9 / 12 |
 | `reading_level` | `independent` |
 | `interaction_mode` | `independent` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `hard` |
 | `is_free` | 0 |
 | `learning_objective_id` | `skill.ct.function` |
 | `linked_game_id` | `bc-conditions` · المستوى 5 |
+| `prerequisites` | `["ep-04-if-else"]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `abjad` |
 | `safety_notes` | لا ينطبق |

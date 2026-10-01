@@ -7,16 +7,18 @@
 | `series_id` | `journey-of-civilizations` |
 | `episode_number` | 2 |
 | `title_ar` | المرصد |
+| `title_en` | The Observatory |
 | `description_ar` | كيف قاس الناس السماء ليعرفوا الوقت والاتجاه |
 | `duration_seconds` | 420 *(7:00)* |
 | `age_min` / `age_max` | 9 / 12 |
 | `reading_level` | `independent` |
 | `interaction_mode` | `independent` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `hist.civ.observation` |
 | `linked_game_id` | `tm-civilizations` · المستوى 3 |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `oloom` — 🔴 **فحص تعارض إلزامي** |
 | `safety_notes` | 🔴 **لا نظر إلى الشمس** — منصوص في النصّ ودليل ولي الأمر |

@@ -7,16 +7,18 @@
 | `series_id` | `explorers-adventures` |
 | `episode_number` | 1 |
 | `title_ar` | دلائل الصور |
+| `title_en` | Picture Clues |
 | `description_ar` | دفتر بلا اسم، وثلاث رسوم تدلّ على صاحبه |
 | `duration_seconds` | 300 *(5:00)* |
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `interaction_mode` | `tap` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 1 ✅ |
 | `learning_objective_id` | `world.reason.combine_clues` |
 | `linked_game_id` | `so-episode-recap` · المستوى 1 |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | 🔴 **لا دخول بيت أحد** — الدفتر يُعاد عند الباب مع بالغ |
 

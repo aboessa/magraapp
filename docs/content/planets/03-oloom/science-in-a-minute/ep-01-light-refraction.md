@@ -7,16 +7,18 @@
 | `series_id` | `science-in-a-minute` |
 | `episode_number` | 1 |
 | `title_ar` | انكسار الضوء |
+| `title_en` | Light Refraction |
 | `description_ar` | لماذا تبدو الملعقة مكسورة في كوب الماء؟ |
 | `duration_seconds` | **120** |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `passive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `guided` |
 | `supervision_level` | `none` |
 | `difficulty` | `medium` |
 | `is_free` | 1 ✅ |
 | `learning_objective_id` | `sci.physics.refraction` |
 | `linked_game_id` | `lp-siam-ep1` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | لا نشاط تنفيذي. 🔴 لا يُنظر إلى الشمس، ولا يُستعمل ليزر بأي حال. |
 

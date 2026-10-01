@@ -7,6 +7,7 @@
 | `series_id` | `colors-around-us` |
 | `episode_number` | 2 |
 | `title_ar` | صنّف لونين |
+| `title_en` | Sort Two Colors |
 | `description_ar` | نضع الأصفر مع الأصفر، والأحمر مع الأحمر |
 | `duration_seconds` | 160 *(2:40)* |
 | `age_min` / `age_max` | 3 / 5 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `world.color.sort_two` |
 | `linked_game_id` | `sb-colors` · المستوى 1 |
+| `prerequisites` | `["ep-01-find-yellow"]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `arqam` |
 | `safety_notes` | 🔴 **لا أشياء صغيرة تُبلَع** في النشاط |

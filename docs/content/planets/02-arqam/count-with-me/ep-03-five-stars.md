@@ -6,17 +6,20 @@
 |---|---|
 | `episode_number` | 3 |
 | `title_ar` | خمس نجوم |
+| `title_en` | Five Stars |
 | `description_ar` | العدّ حتى خمسة والتعرّف على الأرقام |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 3 / 5 |
 | `reading_level` | `pre_reader` |
 | `interaction_mode` | `tap` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `easy` |
 | `is_free` | 0 |
 | `learning_objective_id` | `math.count.to_five` |
 | `linked_game_id` | `cq-cwm-ep3` |
 | `prerequisites` | `["cwm-ep-02"]` |
-| `status` | ❌ غير مسجّلة في DB |
+| `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

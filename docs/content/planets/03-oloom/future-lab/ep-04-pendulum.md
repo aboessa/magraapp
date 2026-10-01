@@ -7,16 +7,18 @@
 | `series_id` | `future-lab` |
 | `episode_number` | 4 |
 | `title_ar` | البندول |
+| `title_en` | The Pendulum |
 | `description_ar` | تحدٍّ فيزيائي: متغيّر يؤثر، ومتغيّر لا يؤثر |
 | `duration_seconds` | 420 |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `interactive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `mixed` |
 | `supervision_level` | `recommended` |
 | `difficulty` | `hard` |
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.method.null_result` |
 | `linked_game_id` | `sl-fl-ep4` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | كل التجارب **محاكاة رقمية**. لا تنفيذ منزلي. لا تُعلَّق أثقال بحبال، ولا يُلعب بأي شيء معلّق قرب الرأس. |
 

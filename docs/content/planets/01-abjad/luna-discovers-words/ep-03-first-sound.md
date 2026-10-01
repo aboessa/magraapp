@@ -11,6 +11,7 @@
 | `series_id` | `luna-discovers-words` |
 | `episode_number` | 3 |
 | `title_ar` | أول حرف |
+| `title_en` | The First Sound |
 | `description_ar` | التعرّف على صوت الحرف الأول في الكلمة |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 4 / 5 |
@@ -23,6 +24,7 @@
 | `linked_game_id` | `wb-luna-ep3` |
 | `prerequisites` | `["ep-01", "ep-02"]` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 **ملاحظة على العمر:** `age_min = 4` لا 3. الوعي الصوتي يحتاج نضجًا لا يتوفر عند الثالثة عادة.
 

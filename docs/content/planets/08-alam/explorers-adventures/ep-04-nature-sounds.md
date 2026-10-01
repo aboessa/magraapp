@@ -7,16 +7,18 @@
 | `series_id` | `explorers-adventures` |
 | `episode_number` | 4 |
 | `title_ar` | أصوات الطبيعة |
+| `title_en` | Nature Sounds |
 | `description_ar` | أربعة أصوات، وواحد مجهول يُعرَف بالباقي |
 | `duration_seconds` | 300 *(5:00)* |
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `interaction_mode` | `tap` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `world.observe.classify_sounds` |
 | `linked_game_id` | `sb-habitats` · المستوى 5 |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `qisas` |
 | `safety_notes` | 🔴 **بلا رعد ولا صوت مرتفع ولا صوت مفاجئ** — بند صوتي مشدّد |

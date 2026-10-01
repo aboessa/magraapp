@@ -21,6 +21,7 @@
 | `age_max` | 6 |
 | `track` | `preschool` |
 | `production_level` | `draft_script_only` |
+| `is_free` | `1` |
 | `source_reference` | سنن أبي داود 3767؛ جامع الترمذي 1858، حديث حسن صحيح عند الترمذي. |
 | `status` | `review_sharia` |
 | `sharia_reviewer_id` | — |

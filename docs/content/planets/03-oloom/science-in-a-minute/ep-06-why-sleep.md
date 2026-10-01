@@ -7,16 +7,18 @@
 | `series_id` | `science-in-a-minute` |
 | `episode_number` | 6 |
 | `title_ar` | لماذا ننام؟ |
+| `title_en` | Why Do We Sleep? |
 | `description_ar` | ما يفعله جسمك ودماغك أثناء النوم |
 | `duration_seconds` | **120** |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `passive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `guided` |
 | `supervision_level` | `none` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.health.sleep_function` |
 | `linked_game_id` | `lp-siam-ep6` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | 🔴 لا نصيحة طبية ولا عدد ساعات موصى به. الحلقة **تصف** وظيفة النوم ولا **توجّه**. أي سؤال صحّي يُوجَّه لطبيب. |
 

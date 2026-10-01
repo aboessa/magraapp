@@ -7,6 +7,7 @@
 | `series_id` | `colors-around-us` |
 | `episode_number` | 5 |
 | `title_ar` | نمط الألوان |
+| `title_en` | The Color Pattern |
 | `description_ar` | ترتيب يتكرّر، فنعرف ما بعده |
 | `duration_seconds` | 180 *(3:00)* |
 | `age_min` / `age_max` | 4 / 5 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `world.pattern.ab_repeat` |
 | `linked_game_id` | ⚠️ `lp-color-repeat` · المستوى 1 |
+| `prerequisites` | `["ep-04-big-and-small"]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `arqam` · 🔗 `maharat` |
 | `safety_notes` | 🔴 **لا أشياء صغيرة تُبلَع** في النشاط |

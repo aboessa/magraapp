@@ -7,6 +7,7 @@
 | `series_id` | `try-it-at-home` |
 | `episode_number` | 4 |
 | `title_ar` | بذرة تنمو |
+| `title_en` | A Seed Grows |
 | `description_ar` | تجربة تمتدّ سبعة أيام وتدرّب على الملاحظة والتسجيل |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.method.record_observe` |
 | `linked_game_id` | `sl-tiah-ep4` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 
 ## `safety_notes` — الحقل الإلزامي

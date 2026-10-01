@@ -7,16 +7,18 @@
 | `series_id` | `robo-codes` |
 | `episode_number` | 4 |
 | `title_ar` | إذا وإلا |
+| `title_en` | If and Else |
 | `description_ar` | سؤال يُسأل مرّة واحدة، ومسارَان يخرجان منه |
 | `duration_seconds` | 390 *(6:30)* |
 | `age_min` / `age_max` | 9 / 12 |
 | `reading_level` | `independent` |
 | `interaction_mode` | `independent` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `hard` |
 | `is_free` | 0 |
 | `learning_objective_id` | `skill.ct.condition` |
 | `linked_game_id` | `bc-conditions` · المستوى 4 |
+| `prerequisites` | `["ep-03-repeat-with-me"]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `oloom` |
 | `safety_notes` | لا ينطبق |

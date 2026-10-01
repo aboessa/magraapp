@@ -7,16 +7,18 @@
 | `series_id` | `science-in-a-minute` |
 | `episode_number` | 4 |
 | `title_ar` | من أين الكهرباء؟ |
+| `title_en` | Where Does Electricity Come From? |
 | `description_ar` | الكهرباء لا تُصنع من فراغ |
 | `duration_seconds` | **120** |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `passive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `guided` |
 | `supervision_level` | `none` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.energy.conversion` |
 | `linked_game_id` | `lp-siam-ep4` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | لا نشاط تنفيذي. 🔴 لا اقتراب من مقبس أو سلك أو عدّاد كهرباء. لا فتح أي جهاز. |
 

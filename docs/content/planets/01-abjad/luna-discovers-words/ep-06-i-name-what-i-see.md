@@ -8,17 +8,20 @@
 |---|---|
 | `episode_number` | 6 |
 | `title_ar` | أسمّي ما أرى |
+| `title_en` | I Name What I See |
 | `description_ar` | تسمية عناصر في مشهد بسيط |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 3 / 5 |
 | `reading_level` | `pre_reader` |
 | `interaction_mode` | `tap` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `easy` |
 | `is_free` | 0 |
 | `learning_objective_id` | `lang.vocab.name_objects` |
 | `linked_game_id` | `mp-luna-ep6` |
 | `prerequisites` | `["ep-01","ep-02","ep-03","ep-04","ep-05"]` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

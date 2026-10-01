@@ -6,17 +6,20 @@
 |---|---|
 | `episode_number` | 5 |
 | `title_ar` | نطرح ونوزّع |
+| `title_en` | We Subtract and Share |
 | `description_ar` | مقدمة بصرية للطرح |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 7 / 8 |
 | `reading_level` | `emerging` |
 | `interaction_mode` | `guided` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `math.subtract.visual` |
 | `linked_game_id` | `cq-aon-ep5` |
 | `prerequisites` | `["aon-ep-02","aon-ep-04"]` |
-| `status` | ❌ غير مسجّلة في DB |
+| `status` | `draft` |
+| `safety_notes` | - |
 
 **ملاحظة على العمر:** `age_min = 7` لا 6. الطرح يحتاج إتقان الجمع والفرق أولًا.
 

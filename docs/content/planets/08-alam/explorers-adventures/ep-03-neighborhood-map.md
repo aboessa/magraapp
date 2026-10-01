@@ -7,16 +7,18 @@
 | `series_id` | `explorers-adventures` |
 | `episode_number` | 3 |
 | `title_ar` | خريطة الحيّ |
+| `title_en` | The Neighborhood Map |
 | `description_ar` | خريطة تُرسَم من الذاكرة، ثم تُختبَر بالسير |
 | `duration_seconds` | 330 *(5:30)* |
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `interaction_mode` | `tap` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `world.space.map_landmarks` |
 | `linked_game_id` | ⚠️ `tm-neighborhood` · نمط `map` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `tarikh` |
 | `safety_notes` | 🔴 **بلا عبور شارع سيّارات · بلا خروج من الحيّ · بلا انفراد** |

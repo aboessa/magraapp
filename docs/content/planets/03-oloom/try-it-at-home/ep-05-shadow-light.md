@@ -7,6 +7,7 @@
 | `series_id` | `try-it-at-home` |
 | `episode_number` | 5 |
 | `title_ar` | الظل والضوء |
+| `title_en` | Shadow and Light |
 | `description_ar` | كيف يتكوّن الظل ولماذا يتغيّر حجمه |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.method.change_one_variable` |
 | `linked_game_id` | `sl-tiah-ep5` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 
 ## `safety_notes` — الحقل الإلزامي

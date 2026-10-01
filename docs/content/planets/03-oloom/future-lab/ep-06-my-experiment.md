@@ -7,16 +7,18 @@
 | `series_id` | `future-lab` |
 | `episode_number` | 6 |
 | `title_ar` | تجربتي أنا |
+| `title_en` | My Own Experiment |
 | `description_ar` | الحلقة الختامية: الطالب يصمّم التجربة بنفسه |
 | `duration_seconds` | 420 |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `interactive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `mixed` |
 | `supervision_level` | `recommended` |
 | `difficulty` | `hard` |
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.method.design_experiment` |
 | `linked_game_id` | `sl-fl-ep6` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 
 ## 🔴 حلقة مختلفة بنيويًا

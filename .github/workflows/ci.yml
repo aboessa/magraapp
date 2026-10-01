@@ -9,6 +9,13 @@ on:
     branches: [master, main]
   pull_request:
     branches: [master, main]
+  workflow_dispatch:
+    inputs:
+      deploy_production:
+        description: Deploy the verified Worker to Cloudflare production
+        required: true
+        type: boolean
+        default: false
 
 # A second push to the same branch supersedes the first.
 concurrency:
@@ -27,6 +34,41 @@ jobs:
         with:
           channel: stable
           cache: true
+      - name: Check whether Android release credentials are configured
+        id: android-release
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON_BASE64" ] \
+            && [ -n "$ANDROID_KEYSTORE_BASE64" ] \
+            && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] \
+            && [ -n "$ANDROID_KEY_ALIAS" ] \
+            && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Materialize Android release credentials
+        if: steps.android-release.outputs.configured == 'true'
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/majarra-upload.jks
+          {
+            echo "storeFile=../majarra-upload.jks"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > android/key.properties
       - run: flutter pub get
       - run: flutter analyze --fatal-warnings
       # `|| flutter test` used to mask a failure of the first invocation.
@@ -57,13 +99,23 @@ jobs:
         working-directory: .
         run: node tools/ci/assets-declared.mjs --check
 
-      - run: flutter build appbundle --release
+      - name: Build signed Android release bundle
+        if: steps.android-release.outputs.configured == 'true'
+        run: flutter build appbundle --release
+
+      - name: Android release skipped because credentials are unavailable
+        if: steps.android-release.outputs.configured != 'true'
+        working-directory: .
+        run: |
+          echo "### Android release skipped" >> "$GITHUB_STEP_SUMMARY"
+          echo "Analyze and tests passed, but the Firebase/signing secrets are not fully configured." >> "$GITHUB_STEP_SUMMARY"
 
       # الحدّ 200 MB عتبةُ Google Play التي يرى فوقها المستخدم على بيانات
       # الجوّال تحذيرًا بحجم التطبيق عند التثبيت — قيدٌ خارجيّ لا رقمٌ مُختار.
       # وغيابُ ملف الحزمة فشلٌ: خطوةٌ تقيس ما لا وجود له وتُبلّغ نجاحًا أسوأ من
       # غيابها.
       - name: Release bundle size
+        if: steps.android-release.outputs.configured == 'true'
         working-directory: .
         run: node tools/ci/aab-size.mjs
 
@@ -338,7 +390,8 @@ jobs:
   # الاسمان معًا لنفس سبب `on:`: إعادةُ تسميةٍ لاحقة لا تُعطّل النشر بصمت.
   deploy:
     needs: [flutter, worker, admin, migrations, content-pacing, secrets, dependencies]
-    if: (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') && github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_production == true
+    environment: production
     runs-on: ubuntu-latest
     permissions:
       # The release tag is the durable version-to-commit record.

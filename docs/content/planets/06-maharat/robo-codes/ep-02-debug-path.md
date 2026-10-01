@@ -7,16 +7,18 @@
 | `series_id` | `robo-codes` |
 | `episode_number` | 2 |
 | `title_ar` | صحّح المسار |
+| `title_en` | Fix the Path |
 | `description_ar` | الانعطاف في الموضع الخاطئ، وكيف تجد الخطأ بلا تخمين |
 | `duration_seconds` | 360 *(6:00)* |
 | `age_min` / `age_max` | 9 / 12 |
 | `reading_level` | `independent` |
 | `interaction_mode` | `independent` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `hard` |
 | `is_free` | 0 |
 | `learning_objective_id` | `skill.ct.debug` |
 | `linked_game_id` | `bc-first-steps` · المستوى 2 |
+| `prerequisites` | `["ep-01-sequence-path"]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `qiyam` |
 | `safety_notes` | لا ينطبق |

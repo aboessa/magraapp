@@ -7,16 +7,18 @@
 | `series_id` | `robo-codes` |
 | `episode_number` | 3 |
 | `title_ar` | كرّر معي |
+| `title_en` | Repeat With Me |
 | `description_ar` | أوامر أقلّ، وخطوات كما هي |
 | `duration_seconds` | 360 *(6:00)* |
 | `age_min` / `age_max` | 9 / 12 |
 | `reading_level` | `independent` |
 | `interaction_mode` | `independent` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `hard` |
 | `is_free` | 0 |
 | `learning_objective_id` | `skill.ct.loop` |
 | `linked_game_id` | `bc-loops` · المستوى 3 |
+| `prerequisites` | `["ep-02-debug-path"]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `arqam` |
 | `safety_notes` | لا ينطبق |

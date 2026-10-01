@@ -7,6 +7,7 @@
 | `series_id` | `hekaya-wa-hikma` |
 | `episode_number` | 2 |
 | `title_ar` | مشاركة الألوان |
+| `title_en` | Sharing the Colors |
 | `description_ar` | علبة جديدة، وصديق بلا ألوان |
 | `duration_seconds` | 240 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `val.sharing.with_boundaries` |
 | `linked_game_id` | `sb-hwh-ep2` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | 🔴 الحلقة تعلّم أن **بعض الأشياء لا تُشارَك**: ما يُلمس بالفم أو يخصّ النظافة. ولا تُعلّم المشاركة القسرية. |
 

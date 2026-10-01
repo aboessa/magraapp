@@ -1,0 +1,68 @@
+{
+  "voice": "Kore",
+  "model": "gemini-3.8-flash-tts",
+  "style": "Warm, friendly Arabic female narrator for a premium family app advert. Modern Standard Arabic, clear and gentle, smiling tone, brisk energetic pace, short natural pauses.",
+  "voDir": "vo30",
+  "timings": "voiceover-30.json",
+  "tempo": 1.1,
+  "pacing": { "leadInSec": 0.1, "tailSec": 0.12, "endHoldSec": 0.6 },
+  "scenes": [
+    {
+      "id": "s1-hook",
+      "vo": "ماذا لو صار وقتُ الشاشة... رحلةَ تعلُّم؟",
+      "style": "curious, inviting",
+      "minSec": 2.5,
+      "beats": [0, 1.81]
+    },
+    {
+      "id": "s2-problem",
+      "vo": "وداعًا للفيديوهاتِ العشوائية والإعلانات.",
+      "style": "gently relieved",
+      "minSec": 2.2,
+      "beats": [0, 0.4, 0.8, 1.23, 2.0]
+    },
+    {
+      "id": "s3-logo",
+      "vo": "أهلًا بكم في مَجَرّة!",
+      "style": "bright, joyful reveal",
+      "minSec": 1.6,
+      "beats": [0]
+    },
+    {
+      "id": "s4-planets",
+      "vo": "قصصٌ، وأرقام، وعلوم، ولغة، وقيم... لكلِّ عُمر.",
+      "style": "enthusiastic, clear, quick list",
+      "minSec": 4.9,
+      "beats": [0, 0.98, 2.19, 2.96, 3.53, 4.1, 4.3]
+    },
+    {
+      "id": "s5-formats",
+      "vo": "شاهِد، واقرأ، واستمع، والعب... في رحلةٍ واحدة.",
+      "style": "playful, rhythmic",
+      "minSec": 3,
+      "beats": [0, 0.74, 1.4, 2.17, 2.95]
+    },
+    {
+      "id": "s6-characters",
+      "vo": "مع أصدقاءَ في كلِّ مغامرة.",
+      "style": "warm, smiling",
+      "minSec": 2,
+      "requiresCharacters": true,
+      "beats": [0, 0.65]
+    },
+    {
+      "id": "s7-parents",
+      "vo": "بلا إعلانات، برقابةٍ أبويّة، ومشاهدةٍ بلا إنترنت.",
+      "style": "reassuring, trustworthy",
+      "minSec": 4,
+      "beats": [0, 1.29, 2.1, 2.85]
+    },
+    {
+      "id": "s8-cta",
+      "vo": "مَجَرّة... حيث يكتشفُ طفلُك العالم. حمِّلِ التطبيقَ الآن!",
+      "style": "inspiring, confident, upbeat ending",
+      "minSec": 4,
+      "beats": [0, 1.0, 2.0, 3.28]
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "e1-hook": {
+    "file": "vo-egy/e1-hook.wav",
+    "durationSec": 1.368333,
+    "text": "ابنك مش راضي يسيب الموبايل؟",
+    "voice": "Zephyr",
+    "mime": "audio/wav",
+    "tempo": 1.05,
+    "onsets": [
+      0
+    ]
+  },
+  "e2-flip": {
+    "file": "vo-egy/e2-flip.wav",
+    "durationSec": 3.411208,
+    "text": "خلاص.. سيبُه! بس بدل الفيديوهات اللي ملهاش لازمة..",
+    "voice": "Zephyr",
+    "mime": "audio/wav",
+    "tempo": 1.05,
+    "onsets": [
+      0,
+      0.844,
+      1.661
+    ]
+  },
+  "e3-logo": {
+    "file": "vo-egy/e3-logo.wav",
+    "durationSec": 1.668417,
+    "text": "خلّيه يدخل مَجَرّة!",
+    "voice": "Zephyr",
+    "mime": "audio/wav",
+    "tempo": 1.05,
+    "onsets": [
+      0,
+      0.7
+    ]
+  },
+  "e4-worlds": {
+    "file": "vo-egy/e4-worlds.wav",
+    "durationSec": 4.277271,
+    "text": "حواديت.. أرقام.. علوم.. وقيم! لكل سن، من تلاتة لاتناشر سنة.",
+    "voice": "Zephyr",
+    "mime": "audio/wav",
+    "tempo": 1.05,
+    "onsets": [
+      0,
+      0.596,
+      0.717,
+      0.955,
+      2.423,
+      3.175
+    ]
+  },
+  "e5-parents": {
+    "file": "vo-egy/e5-parents.wav",
+    "durationSec": 3.205021,
+    "text": "ومن غير ولا إعلان.. وإنت متابع كل حاجة بنفسك.",
+    "voice": "Zephyr",
+    "mime": "audio/wav",
+    "tempo": 1.05,
+    "onsets": [
+      0,
+      1.428,
+      2.248
+    ]
+  },
+  "e6-cta": {
+    "file": "vo-egy/e6-cta.wav",
+    "durationSec": 3.560833,
+    "text": "مَجَرّة.. وقت الشاشة بقى وقت مفيد. نزّلها دلوقتي!",
+    "voice": "Zephyr",
+    "mime": "audio/wav",
+    "tempo": 1.05,
+    "onsets": [
+      0,
+      0.803,
+      2.427,
+      2.615
+    ]
+  }
+}

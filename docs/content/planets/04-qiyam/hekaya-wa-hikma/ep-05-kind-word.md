@@ -7,6 +7,7 @@
 | `series_id` | `hekaya-wa-hikma` |
 | `episode_number` | 5 |
 | `title_ar` | كلمة طيبة |
+| `title_en` | A Kind Word |
 | `description_ar` | طفلة جديدة تقف وحدها، واللعبة قد بدأت |
 | `duration_seconds` | 240 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `val.kindness.initiate_words` |
 | `linked_game_id` | `mp-hwh-ep5` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | 🔴 الحلقة تعلّم **دعوة طفل مثله للّعب** في مكان مشرَف عليه، لا التحدّث مع أي شخص. |
 

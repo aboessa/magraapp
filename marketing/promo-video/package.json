@@ -1,0 +1,30 @@
+{
+  "name": "majarra-promo-video",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "voiceover": "node scripts/voiceover.mjs",
+    "voiceover:30": "node scripts/voiceover.mjs --script src/script-30.json",
+    "egy:audio": "node scripts/make-beat.mjs",
+    "egy:voiceover": "node scripts/voiceover.mjs --script src/egy/script-egy.json && node scripts/onsets.mjs --script src/egy/script-egy.json",
+    "render:egy": "remotion render src/index.ts MajarraPromoEgy30 out/majarra-promo-egy-30s.mp4",
+    "render:30": "remotion render src/index.ts MajarraPromo30 out/majarra-promo-30s.mp4",
+    "assets": "node scripts/copy-assets.mjs && python scripts/clean-planets.py && node scripts/make-audio.mjs",
+    "studio": "remotion studio src/index.ts",
+    "render:draft": "remotion render src/index.ts MajarraPromo out/majarra-promo-draft.mp4 --props=props/draft.json",
+    "render": "remotion render src/index.ts MajarraPromo out/majarra-promo.mp4 --props=props/final.json",
+    "sheet": "remotion still src/index.ts CharacterSheet out/character-sheet-3d.png",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.529"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.6.3"
+  }
+}

@@ -7,6 +7,7 @@
 | `series_id` | `discover-your-body` |
 | `episode_number` | 4 |
 | `title_ar` | العظام والحركة |
+| `title_en` | Bones and Movement |
 | `description_ar` | كيف تحملك عظامك وكيف تنثني |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.body.skeleton` |
 | `linked_game_id` | `sb-dyb-ep4` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | تحسّس العظم من فوق الجلد وثني المرفق والركبة بشكل طبيعي آمن. 🔴 **ممنوع** ثني أي مفصل بقوّة، أو ثني الأصابع للخلف، أو الضغط على مفصل، أو محاولة ثني ما لا ينثني. |
 

@@ -7,16 +7,18 @@
 | `series_id` | `science-in-a-minute` |
 | `episode_number` | 3 |
 | `title_ar` | أطوار القمر |
+| `title_en` | Phases of the Moon |
 | `description_ar` | لماذا يتغيّر شكل القمر كل ليلة؟ |
 | `duration_seconds` | **120** |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `passive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `guided` |
 | `supervision_level` | `none` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.space.moon_phases` |
 | `linked_game_id` | `lp-siam-ep3` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | لا نشاط تنفيذي. النظر إلى القمر آمن. 🔴 لا يُنظر إلى الشمس بأي حال، ولا بأي مرشّح منزلي. |
 

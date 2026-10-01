@@ -21,6 +21,7 @@
 | `age_max` | 6 |
 | `track` | `preschool` |
 | `production_level` | `draft_script_only` |
+| `is_free` | `1` |
 | `source_reference` | القرآن 24:61؛ صحيح مسلم 54 في إفشاء السلام. |
 | `status` | `review_sharia` |
 | `sharia_reviewer_id` | — |

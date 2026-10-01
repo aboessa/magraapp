@@ -8,17 +8,20 @@
 |---|---|
 | `episode_number` | 6 |
 | `title_ar` | ما الرقم الناقص؟ |
+| `title_en` | What Is the Missing Number? |
 | `description_ar` | أنماط عددية والعدّ بالوثب |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 7 / 8 |
 | `reading_level` | `emerging` |
 | `interaction_mode` | `guided` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `math.pattern.complete` |
 | `linked_game_id` | `cq-aon-ep6` |
 | `prerequisites` | `["aon-ep-03","aon-ep-04","aon-ep-05"]` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

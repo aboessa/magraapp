@@ -7,6 +7,7 @@
 | `series_id` | `discover-your-body` |
 | `episode_number` | 2 |
 | `title_ar` | الحواس الخمس |
+| `title_en` | The Five Senses |
 | `description_ar` | كيف يعرف جسمك ما حوله بحواسه الخمس |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.body.senses` |
 | `linked_game_id` | `sb-dyb-ep2` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | إغماض العينين والاستماع واللمس آمن. **ممنوع** تذوّق أو شمّ أي مادة، ولو كانت طعامًا. **ممنوع** إدخال أي شيء في الأنف أو الأذن. |
 

@@ -7,6 +7,7 @@
 | `series_id` | `discover-your-body` |
 | `episode_number` | 3 |
 | `title_ar` | كيف نتنفس؟ |
+| `title_en` | How Do We Breathe? |
 | `description_ar` | رحلة الهواء من أنفك إلى رئتيك |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.body.breathing` |
 | `linked_game_id` | `so-dyb-ep3` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | التنفّس الهادئ وعدّ الأنفاس آمن. 🔴 **ممنوع تمامًا** كتم النفس، أو التنفّس السريع المتعمّد، أو النفخ القوي المتكرر. **ممنوع** إدخال أي شيء في الأنف. |
 

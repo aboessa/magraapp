@@ -6,17 +6,20 @@
 |---|---|
 | `episode_number` | 4 |
 | `title_ar` | أكثر أم أقل؟ |
+| `title_en` | More or Less? |
 | `description_ar` | مقارنة مجموعتين بصريًا |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 4 / 5 |
 | `reading_level` | `pre_reader` |
 | `interaction_mode` | `tap` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `easy` |
 | `is_free` | 0 |
 | `learning_objective_id` | `math.compare.more_less` |
 | `linked_game_id` | `cq-cwm-ep4` |
 | `prerequisites` | `["cwm-ep-03"]` |
-| `status` | ❌ غير مسجّلة في DB |
+| `status` | `draft` |
+| `safety_notes` | - |
 
 **ملاحظة على العمر:** `age_min = 4` لا 3. المقارنة تحتاج إتقان العدّ أولًا.
 

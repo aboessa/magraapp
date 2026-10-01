@@ -7,16 +7,18 @@
 | `series_id` | `journey-of-civilizations` |
 | `episode_number` | 4 |
 | `title_ar` | طرق التجارة |
+| `title_en` | Trade Routes |
 | `description_ar` | لماذا سار الناس في هذه الطرق لا في غيرها |
 | `duration_seconds` | 420 *(7:00)* |
 | `age_min` / `age_max` | 9 / 12 |
 | `reading_level` | `independent` |
 | `interaction_mode` | `independent` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `hist.civ.trade_geography` |
 | `linked_game_id` | `tm-arab-geography` · المستوى 4 |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `alam` |
 | `safety_notes` | لا ينطبق |

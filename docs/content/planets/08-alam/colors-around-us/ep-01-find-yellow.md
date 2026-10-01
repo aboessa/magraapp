@@ -7,6 +7,7 @@
 | `series_id` | `colors-around-us` |
 | `episode_number` | 1 |
 | `title_ar` | ابحث عن الأصفر |
+| `title_en` | Find the Yellow |
 | `description_ar` | لون واحد نسمّيه ونجده حولنا |
 | `duration_seconds` | 150 *(2:30)* |
 | `age_min` / `age_max` | 3 / 5 |
@@ -17,6 +18,7 @@
 | `is_free` | 1 ✅ |
 | `learning_objective_id` | `world.color.identify_yellow` |
 | `linked_game_id` | `sb-colors` · المستوى 1 |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | 🔴 **لا نظر إلى الشمس** — الشمس لا تُعرَض في هذه الحلقة |
 

@@ -148,7 +148,7 @@ function parseApiClient() {
   // parameter as `import('../types/api').QualityEntityType`. A `[^)]*` signature
   // matcher stops at that inner `)` and drops the function entirely, which is why
   // `/quality` first appeared to call two endpoints that do not exist.
-  const pattern = /(^|\n)\s{2}([A-Za-z0-9_]+)\s*:\s*(?:async\s*)?\((?:[^()]|\([^()]*\))*\)\s*(?::\s*(?:[^=]|=[^>])+)?=>\s*([\s\S]{0,900}?)(?=\n\s{2}[A-Za-z0-9_]+\s*:|\n\})/g;
+  const pattern = /(^|\n)\s{2}([A-Za-z0-9_]+)\s*:\s*(?:async\s*)?\((?:[^()]|\([^()]*\))*\)\s*(?::\s*(?:[^=]|=[^>])+)?=>\s*([\s\S]*?)(?=\n\s{2}[A-Za-z0-9_]+\s*:|\n\})/g;
   for (const match of source.matchAll(pattern)) {
     const name = match[2];
     const body = match[3];
@@ -219,6 +219,11 @@ function parseMounts() {
     for (const match of source.matchAll(/import\s+([A-Za-z0-9_]+)\s*(?:,\s*\{[^}]*\}\s*)?from\s+'(?:\.\/routes\/|\.\/)([A-Za-z0-9_]+)(?:\.ts)?'/g)) {
       byVar.set(match[1], `${match[2]}.ts`);
     }
+    for (const match of source.matchAll(/import\s*\{\s*([A-Za-z0-9_,\s]+?)\s*\}\s*from\s*'(?:\.\/routes\/|\.\/)([A-Za-z0-9_]+)(?:\.ts)?'/g)) {
+      for (const imported of match[1].split(',').map((name) => name.trim()).filter(Boolean)) {
+        byVar.set(imported, `${match[2]}.ts`);
+      }
+    }
     const list = [];
     for (const match of source.matchAll(/\.route\(\s*'([^']*)'\s*,\s*([A-Za-z0-9_]+)\s*\)/g)) {
       const child = byVar.get(match[2]);
@@ -261,7 +266,7 @@ function parseServerRoutes() {
   for (const file of readdirSync(dir).filter((name) => name.endsWith('.ts'))) {
     const source = read(join(dir, file));
     const prefix = mounts.get(file) ?? null;
-    const pattern = /([A-Za-z0-9_]+)\.(get|post|patch|put|delete)\(\s*'([^']+)'([\s\S]*?)(?=\n[A-Za-z0-9_]+\.(?:get|post|patch|put|delete)\(|\nexport default)/g;
+    const pattern = /([A-Za-z0-9_]+)\.(get|post|patch|put|delete)\(\s*'([^']+)'([\s\S]*?)(?=\n[A-Za-z0-9_]+\.(?:get|post|patch|put|delete)\(|\nexport default|$)/g;
     for (const match of source.matchAll(pattern)) {
       const [, , verb, path, body] = match;
       const permission = body.match(/requirePermission\('([^']+)'\)/)?.[1] ?? null;

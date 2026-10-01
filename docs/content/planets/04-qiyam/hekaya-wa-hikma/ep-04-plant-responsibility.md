@@ -7,6 +7,7 @@
 | `series_id` | `hekaya-wa-hikma` |
 | `episode_number` | 4 |
 | `title_ar` | مسؤولية النبتة |
+| `title_en` | The Plant's Responsibility |
 | `description_ar` | نبتة في يده، ونسي ثلاثة أيام |
 | `duration_seconds` | 240 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `val.responsibility.build_system` |
 | `linked_game_id` | `sl-hwh-ep4` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | نبتة **غير سامّة** فقط. 🔴 لا أكل ورق ولا تربة. غسل اليدين بعد اللمس. لا إفراط في الماء. |
 

@@ -8,17 +8,20 @@
 |---|---|
 | `episode_number` | 5 |
 | `title_ar` | نمط بسيط |
+| `title_en` | A Simple Pattern |
 | `description_ar` | إكمال نمط من عنصرين |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 4 / 5 |
 | `reading_level` | `pre_reader` |
 | `interaction_mode` | `tap` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `easy` |
 | `is_free` | 0 |
 | `learning_objective_id` | `math.pattern.complete` |
 | `linked_game_id` | `lp-cwm-ep5` |
 | `prerequisites` | `["cwm-ep-04"]` |
-| `status` | ❌ غير مسجّلة في DB |
+| `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

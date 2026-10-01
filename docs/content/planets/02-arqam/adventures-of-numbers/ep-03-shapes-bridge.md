@@ -6,17 +6,20 @@
 |---|---|
 | `episode_number` | 3 |
 | `title_ar` | جسر الأشكال |
+| `title_en` | The Shapes Bridge |
 | `description_ar` | اختيار الشكل المناسب لإكمال الجسر |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `interaction_mode` | `guided` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `math.pattern.complete` |
 | `linked_game_id` | `lp-aon-ep3` |
 | `prerequisites` | `["aon-ep-02"]` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

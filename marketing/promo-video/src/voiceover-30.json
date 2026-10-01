@@ -1,0 +1,66 @@
+{
+  "s1-hook": {
+    "file": "vo30/s1-hook.wav",
+    "durationSec": 2.891958,
+    "text": "ماذا لو صار وقتُ الشاشة... رحلةَ تعلُّم؟",
+    "voice": "Kore",
+    "mime": "audio/wav",
+    "tempo": 1.1
+  },
+  "s2-problem": {
+    "file": "vo30/s2-problem.wav",
+    "durationSec": 2.824375,
+    "text": "وداعًا للفيديوهاتِ العشوائية والإعلانات.",
+    "voice": "Kore",
+    "mime": "audio/wav",
+    "tempo": 1.1
+  },
+  "s3-logo": {
+    "file": "vo30/s3-logo.wav",
+    "durationSec": 1.364479,
+    "text": "أهلًا بكم في مَجَرّة!",
+    "voice": "Kore",
+    "mime": "audio/wav",
+    "tempo": 1.1
+  },
+  "s4-planets": {
+    "file": "vo30/s4-planets.wav",
+    "durationSec": 4.492729,
+    "text": "قصصٌ، وأرقام، وعلوم، ولغة، وقيم... لكلِّ عُمر.",
+    "voice": "Kore",
+    "mime": "audio/wav",
+    "tempo": 1.1
+  },
+  "s5-formats": {
+    "file": "vo30/s5-formats.wav",
+    "durationSec": 4.216188,
+    "text": "شاهِد، واقرأ، واستمع، والعب... في رحلةٍ واحدة.",
+    "voice": "Kore",
+    "mime": "audio/wav",
+    "tempo": 1.1
+  },
+  "s6-characters": {
+    "file": "vo30/s6-characters.wav",
+    "durationSec": 2.538063,
+    "text": "مع أصدقاءَ في كلِّ مغامرة.",
+    "voice": "Kore",
+    "mime": "audio/wav",
+    "tempo": 1.1
+  },
+  "s7-parents": {
+    "file": "vo30/s7-parents.wav",
+    "durationSec": 4.649938,
+    "text": "بلا إعلانات، برقابةٍ أبويّة، ومشاهدةٍ بلا إنترنت.",
+    "voice": "Kore",
+    "mime": "audio/wav",
+    "tempo": 1.1
+  },
+  "s8-cta": {
+    "file": "vo30/s8-cta.wav",
+    "durationSec": 4.426188,
+    "text": "مَجَرّة... حيث يكتشفُ طفلُك العالم. حمِّلِ التطبيقَ الآن!",
+    "voice": "Kore",
+    "mime": "audio/wav",
+    "tempo": 1.1
+  }
+}

@@ -7,16 +7,18 @@
 | `series_id` | `future-lab` |
 | `episode_number` | 5 |
 | `title_ar` | الروبوت المتوازن |
+| `title_en` | The Balanced Robot |
 | `description_ar` | تحدٍّ ميكانيكي: ما الذي يمنع السقوط؟ |
 | `duration_seconds` | 420 |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `interactive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `mixed` |
 | `supervision_level` | `recommended` |
 | `difficulty` | `hard` |
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.physics.center_of_mass` |
 | `linked_game_id` | `sl-fl-ep5` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | كل التجارب **محاكاة رقمية**. لا تنفيذ منزلي. لا تُكدَّس أشياء ثقيلة، ولا يُصعد على شيء لاختبار التوازن. |
 

@@ -7,6 +7,7 @@
 | `series_id` | `hekaya-wa-hikma` |
 | `episode_number` | 3 |
 | `title_ar` | انتظار الدور |
+| `title_en` | Waiting for the Turn |
 | `description_ar` | دوره قريب، وأمامه من يتباطأ |
 | `duration_seconds` | 240 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `val.patience.wait_turn` |
 | `linked_game_id` | `so-hwh-ep3` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | 🔴 الصبر **ليس سكوتًا على الظلم**. الحلقة تعلّم الكلام الهادئ وطلب المساعدة عند تجاوز الحقّ. |
 

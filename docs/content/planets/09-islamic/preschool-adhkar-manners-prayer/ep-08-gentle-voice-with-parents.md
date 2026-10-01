@@ -21,6 +21,7 @@
 | `age_max` | 6 |
 | `track` | `preschool` |
 | `production_level` | `draft_script_only` |
+| `is_free` | `1` |
 | `source_reference` | القرآن 17:23–24. |
 | `status` | `review_sharia` |
 | `sharia_reviewer_id` | — |

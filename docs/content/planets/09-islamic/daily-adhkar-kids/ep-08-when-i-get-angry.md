@@ -21,6 +21,7 @@
 | `age_max` | 6 |
 | `track` | `preschool` |
 | `production_level` | `draft_script_only` |
+| `is_free` | `1` |
 | `source_reference` | صحيح البخاري 3282؛ صحيح مسلم 2610 في الاستعاذة عند الغضب. |
 | `status` | `review_sharia` |
 | `sharia_reviewer_id` | — |

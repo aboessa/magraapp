@@ -1,0 +1,19 @@
+{
+  "voice": "Zephyr",
+  "model": "gemini-3.8-flash-tts",
+  "style": "Speak ONLY in natural Egyptian Arabic, Cairene colloquial (عامية مصرية قاهرية), never Modern Standard Arabic. Voice of an energetic, witty young Egyptian mom hosting a fast, punchy TikTok ad for a kids app. Big smile, playful attitude, quick rhythm, crisp short pauses at the dots.",
+  "voDir": "vo-egy",
+  "timings": "egy/voiceover-egy.json",
+  "tempo": 1.05,
+  "totalSec": 30,
+  "bpm": 120,
+  "pacing": { "leadInSec": 0.15, "tailSec": 0.2 },
+  "scenes": [
+    { "id": "e1-hook", "vo": "ابنك مش راضي يسيب الموبايل؟", "style": "teasing, knowing question", "minSec": 3 },
+    { "id": "e2-flip", "vo": "خلاص.. سيبُه! بس بدل الفيديوهات اللي ملهاش لازمة..", "style": "playful shrug, then a little annoyed", "minSec": 4.5, "beats": [0, 0.84, 1.66] },
+    { "id": "e3-logo", "vo": "خلّيه يدخل مَجَرّة!", "style": "big excited reveal", "minSec": 2.5, "beats": [0, 0.7] },
+    { "id": "e4-worlds", "vo": "حواديت.. أرقام.. علوم.. وقيم! لكل سن، من تلاتة لاتناشر سنة.", "style": "rapid-fire, rhythmic list, each word punched", "minSec": 6.5, "beats": [0, 0.73, 1.45, 1.93, 2.42] },
+    { "id": "e5-parents", "vo": "ومن غير ولا إعلان.. وإنت متابع كل حاجة بنفسك.", "style": "confident, reassuring wink", "minSec": 5.5, "beats": [0, 1.43, 2.25] },
+    { "id": "e6-cta", "vo": "مَجَرّة.. وقت الشاشة بقى وقت مفيد. نزّلها دلوقتي!", "style": "proud, upbeat, energetic ending", "minSec": 4.5, "beats": [0, 0.8, 2.43] }
+  ]
+}

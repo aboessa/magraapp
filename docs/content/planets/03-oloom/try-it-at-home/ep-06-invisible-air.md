@@ -7,6 +7,7 @@
 | `series_id` | `try-it-at-home` |
 | `episode_number` | 6 |
 | `title_ar` | الهواء الذي لا نراه |
+| `title_en` | The Air We Can't See |
 | `description_ar` | تجربة تُثبت أن الكوب الفارغ ليس فارغًا |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.method.evidence_claim` |
 | `linked_game_id` | `sl-tiah-ep6` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 
 ## 🔴 قرار تحريري: استبدال تجربة البالون

@@ -7,6 +7,7 @@
 | `series_id` | `hekaya-wa-hikma` |
 | `episode_number` | 1 |
 | `title_ar` | الحقيبة المفقودة |
+| `title_en` | The Lost Bag |
 | `description_ar` | وجد حقيبة ليست له، وفيها ما يشتهيه |
 | `duration_seconds` | 240 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 1 ✅ |
 | `learning_objective_id` | `val.honesty.return_found` |
 | `linked_game_id` | `so-hwh-ep1` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | 🔴 الحلقة تعلّم **تسليم المفقود لشخص مسؤول**، لا التعامل مع غريب. |
 

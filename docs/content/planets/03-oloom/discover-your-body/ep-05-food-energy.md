@@ -7,6 +7,7 @@
 | `series_id` | `discover-your-body` |
 | `episode_number` | 5 |
 | `title_ar` | طعامي وطاقتي |
+| `title_en` | My Food and My Energy |
 | `description_ar` | إلى أين يذهب طعامك وكيف يصير طاقة |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.body.digestion` |
 | `linked_game_id` | `so-dyb-ep5` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | لا يُطلب من الطفل أن يأكل أو يشرب في الحلقة. 🔴 **ممنوع** أي نصيحة عن كمية الطعام أو الوزن أو حصر أنواع. **ممنوع** وصف طعام بأنه سيّئ. |
 

@@ -7,6 +7,7 @@
 | `series_id` | `colors-around-us` |
 | `episode_number` | 3 |
 | `title_ar` | دائرة ومربع |
+| `title_en` | Circle and Square |
 | `description_ar` | شكلان نعرفهما باليد قبل العين |
 | `duration_seconds` | 160 *(2:40)* |
 | `age_min` / `age_max` | 3 / 5 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `world.shape.circle_square` |
 | `linked_game_id` | `sb-shapes-size` · المستوى 2 |
+| `prerequisites` | `["ep-02-sort-two-colors"]` |
 | `status` | `draft` |
 | `safety_notes` | 🔴 **لا أشياء صغيرة تُبلَع ولا حواف حادّة** في النشاط |
 

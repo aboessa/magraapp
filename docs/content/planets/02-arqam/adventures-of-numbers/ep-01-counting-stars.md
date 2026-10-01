@@ -7,6 +7,7 @@
 | `series_id` | `adventures-of-numbers` |
 | `episode_number` | 1 |
 | `title_ar` | عدّ النجوم |
+| `title_en` | Counting the Stars |
 | `description_ar` | تقدير الكمية ثم العد للتحقق |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -18,6 +19,7 @@
 | `learning_objective_id` | `math.count.to_ten` |
 | `linked_game_id` | `cq-aon-ep1` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

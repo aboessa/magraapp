@@ -8,17 +8,20 @@
 |---|---|
 | `episode_number` | 4 |
 | `title_ar` | نجمع المجموعات |
+| `title_en` | We Add the Groups |
 | `description_ar` | مقدمة بصرية للجمع البسيط |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
 | `reading_level` | `emerging` |
 | `interaction_mode` | `guided` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `math.add.visual_sum` |
 | `linked_game_id` | `cq-aon-ep4` |
 | `prerequisites` | `["aon-ep-01","aon-ep-02"]` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

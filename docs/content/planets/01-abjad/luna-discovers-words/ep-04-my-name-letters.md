@@ -9,17 +9,20 @@
 |---|---|
 | `episode_number` | 4 |
 | `title_ar` | حروف اسمي |
+| `title_en` | The Letters of My Name |
 | `description_ar` | تتبّع حروف يعرفها الطفل |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 4 / 5 |
 | `reading_level` | `pre_reader` |
 | `interaction_mode` | `tap` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `easy` |
 | `is_free` | 0 |
 | `learning_objective_id` | `lang.letters.trace_form` |
 | `linked_game_id` | `tc-luna-ep4` |
 | `prerequisites` | `["ep-03"]` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

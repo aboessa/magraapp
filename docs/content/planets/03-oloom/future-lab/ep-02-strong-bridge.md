@@ -7,16 +7,18 @@
 | `series_id` | `future-lab` |
 | `episode_number` | 2 |
 | `title_ar` | الجسر القوي |
+| `title_en` | The Strong Bridge |
 | `description_ar` | تحدٍّ إنشائي: الشكل يحمل، لا المادة وحدها |
 | `duration_seconds` | 420 |
 | `age_min` / `age_max` | 9 / 12 |
-| `reading_level` | `fluent` |
-| `interaction_mode` | `interactive` |
+| `reading_level` | `independent` |
+| `interaction_mode` | `mixed` |
 | `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.engineering.structure_shape` |
 | `linked_game_id` | `sl-fl-ep2` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | كل التجارب **محاكاة رقمية**. لا تنفيذ منزلي. لا تُبنى جسور حقيقية يُقف عليها. |
 

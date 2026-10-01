@@ -7,16 +7,18 @@
 | `series_id` | `robo-codes` |
 | `episode_number` | 6 |
 | `title_ar` | مشروعي الأول |
+| `title_en` | My First Project |
 | `description_ar` | مهمّة كبيرة تُقسَّم إلى ثلاث مهامّ صغيرة تُختبَر واحدة واحدة |
 | `duration_seconds` | 480 *(8:00)* |
 | `age_min` / `age_max` | 9 / 12 |
 | `reading_level` | `independent` |
 | `interaction_mode` | `independent` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `hard` |
 | `is_free` | 0 |
 | `learning_objective_id` | `skill.ct.compose` |
 | `linked_game_id` | `bc-project` · المستوى 5 |
+| `prerequisites` | `["ep-05-one-function"]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `oloom` |
 | `safety_notes` | لا ينطبق |

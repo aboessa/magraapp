@@ -26,7 +26,7 @@
 | `age_min` / `age_max` | 9 / 12 |
 | `reading_level` | `independent` |
 | `interaction_mode` | `independent` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 1 ✅ |
 | `learning_objective_id` | `hist.civ.water_engineering` |

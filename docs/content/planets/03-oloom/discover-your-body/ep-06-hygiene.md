@@ -7,6 +7,7 @@
 | `series_id` | `discover-your-body` |
 | `episode_number` | 6 |
 | `title_ar` | نظافتي ووقايتي |
+| `title_en` | My Cleanliness and Protection |
 | `description_ar` | لماذا نغسل أيدينا ومتى |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.body.hygiene` |
 | `linked_game_id` | `so-dyb-ep6` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | غسل اليدين بماء وصابون عادي آمن. 🔴 **ممنوع** أي مادة منظّفة أو معقّم كحولي في النشاط. **ممنوع** ماء ساخن. **ممنوع** أي رسالة تخويف من المرض أو من لمس الأشياء. |
 

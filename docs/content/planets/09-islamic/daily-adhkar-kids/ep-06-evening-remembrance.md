@@ -21,6 +21,7 @@
 | `age_max` | 6 |
 | `track` | `preschool` |
 | `production_level` | `draft_script_only` |
+| `is_free` | `1` |
 | `source_reference` | سنن أبي داود 5072؛ جامع الترمذي 3389، ويُراجع اللفظ والدرجة وعدد التكرار. |
 | `status` | `review_sharia` |
 | `sharia_reviewer_id` | — |

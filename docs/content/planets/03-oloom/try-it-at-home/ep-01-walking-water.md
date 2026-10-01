@@ -7,6 +7,7 @@
 | `series_id` | `try-it-at-home` |
 | `episode_number` | 1 |
 | `title_ar` | الماء الذي يمشي |
+| `title_en` | The Walking Water |
 | `description_ar` | تجربة آمنة تُري كيف يتحرّك الماء في الورق |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.method.observe_predict` |
 | `linked_game_id` | `sl-tiah-ep1` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 
 ## `safety_notes` — الحقل الإلزامي

@@ -7,6 +7,7 @@
 | `series_id` | `try-it-at-home` |
 | `episode_number` | 2 |
 | `title_ar` | اختبار المغناطيس |
+| `title_en` | The Magnet Test |
 | `description_ar` | ما ينجذب للمغناطيس وما لا ينجذب |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 0 |
 | `learning_objective_id` | `sci.method.classify_test` |
 | `linked_game_id` | `sl-tiah-ep2` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 
 ## `safety_notes` — الحقل الإلزامي

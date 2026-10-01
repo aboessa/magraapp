@@ -7,6 +7,7 @@
 | `series_id` | `discover-your-body` |
 | `episode_number` | 1 |
 | `title_ar` | القلب |
+| `title_en` | The Heart |
 | `description_ar` | شرح علمي آمن ومبسط لوظيفة القلب |
 | `duration_seconds` | 270 |
 | `age_min` / `age_max` | 6 / 8 |
@@ -17,6 +18,7 @@
 | `is_free` | 1 ✅ |
 | `learning_objective_id` | `sci.body.organ_function` |
 | `linked_game_id` | `so-dyb-ep1` |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `safety_notes` | لمس النبض على الصدر أو الرسغ آمن. **ممنوع** كتم النفس أو الضغط على الصدر. |
 

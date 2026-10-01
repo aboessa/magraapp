@@ -7,6 +7,7 @@
 | `series_id` | `luna-discovers-words` |
 | `episode_number` | 2 |
 | `title_ar` | استمع وابحث |
+| `title_en` | Listen and Find |
 | `description_ar` | الاستماع إلى كلمة ثم اختيار الشيء الصحيح |
 | `duration_seconds` | 180 |
 | `age_min` / `age_max` | 3 / 5 |
@@ -19,6 +20,7 @@
 | `linked_game_id` | `mp-luna-ep2` |
 | `prerequisites` | `["ep-01"]` |
 | `status` | `draft` |
+| `safety_notes` | - |
 
 ## الهدف التعليمي
 

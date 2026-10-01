@@ -21,6 +21,7 @@
 | `age_max` | 6 |
 | `track` | `preschool` |
 | `production_level` | `draft_script_only` |
+| `is_free` | `1` |
 | `source_reference` | صحيح البخاري 6325، كتاب الدعوات. |
 | `status` | `review_sharia` |
 | `sharia_reviewer_id` | — |

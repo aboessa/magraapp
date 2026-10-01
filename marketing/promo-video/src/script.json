@@ -1,0 +1,104 @@
+{
+  "voice": "Kore",
+  "model": "gemini-3.8-flash-tts",
+  "style": "Warm, friendly Arabic female narrator for a premium family app advert. Modern Standard Arabic, clear and gentle, smiling tone, medium pace, natural pauses.",
+  "scenes": [
+    {
+      "id": "s1-hook",
+      "vo": "ماذا لو صار وقتُ الشاشة... رحلةً يتعلّمُ فيها طفلُك؟",
+      "style": "curious, inviting, slightly slow",
+      "minSec": 4,
+      "beats": [
+        0,
+        2.64
+      ]
+    },
+    {
+      "id": "s2-problem",
+      "vo": "بدلَ الفيديوهاتِ العشوائية، والإعلاناتِ التي لا تنتهي.",
+      "style": "gently concerned, empathetic",
+      "minSec": 3.5,
+      "beats": [
+        0,
+        0.44,
+        1.28,
+        2.22,
+        3.2
+      ]
+    },
+    {
+      "id": "s3-logo",
+      "vo": "أهلًا بكم في مَجَرّة!",
+      "style": "bright, joyful reveal",
+      "minSec": 3,
+      "beats": [
+        0
+      ]
+    },
+    {
+      "id": "s4-planets",
+      "vo": "كواكبُ من القصصِ والأرقامِ والعلومِ واللغةِ والقيم، لكلِّ عمرٍ من ثلاثِ سنواتٍ إلى اثنتي عشرةَ سنة.",
+      "style": "enthusiastic, clear",
+      "minSec": 6,
+      "beats": [
+        0.75,
+        1.85,
+        3.1,
+        3.8,
+        4.5,
+        5.5,
+        6.9,
+        8.5
+      ]
+    },
+    {
+      "id": "s5-formats",
+      "vo": "يُشاهدُ طفلُك، ويقرأ، ويستمع، ويلعب... في رحلةٍ واحدة.",
+      "style": "playful, rhythmic",
+      "minSec": 4.5,
+      "beats": [
+        0,
+        1.46,
+        2.56,
+        3.77,
+        4.79
+      ]
+    },
+    {
+      "id": "s6-characters",
+      "vo": "مع أصدقاءَ يرافقونه في كلِّ مغامرة.",
+      "style": "warm, smiling",
+      "minSec": 3,
+      "requiresCharacters": true,
+      "beats": [
+        0,
+        1.2,
+        2.4
+      ]
+    },
+    {
+      "id": "s7-parents",
+      "vo": "بلا إعلانات، مع رقابةٍ أبويّة وتقاريرِ تعلُّم، وتنزيلٍ للمشاهدةِ من دونِ إنترنت.",
+      "style": "reassuring, trustworthy, calm",
+      "minSec": 5.5,
+      "beats": [
+        0,
+        1.48,
+        3.2,
+        4.79
+      ]
+    },
+    {
+      "id": "s8-cta",
+      "vo": "مَجَرّة... يكتشفُ فيها طفلُك العالم، ويحافظُ على لغتِه وقيمِه. حمِّلِ التطبيقَ الآن!",
+      "style": "inspiring, confident, upbeat ending",
+      "minSec": 6,
+      "beats": [
+        0,
+        1.21,
+        3.72,
+        6.52
+      ]
+    }
+  ]
+}

@@ -7,16 +7,18 @@
 | `series_id` | `journey-of-civilizations` |
 | `episode_number` | 3 |
 | `title_ar` | بيت الحكمة |
+| `title_en` | The House of Wisdom |
 | `description_ar` | كيف نُقلت المعرفة بين اللغات، ولماذا نجا بعضها وضاع بعضها |
 | `duration_seconds` | 420 *(7:00)* |
 | `age_min` / `age_max` | 9 / 12 |
 | `reading_level` | `independent` |
 | `interaction_mode` | `independent` |
-| `supervision_level` | `optional` |
+| `supervision_level` | `recommended` |
 | `difficulty` | `medium` |
 | `is_free` | 0 |
 | `learning_objective_id` | `hist.civ.translation` |
 | `linked_game_id` | `tm-inventions` · المستوى 2 |
+| `prerequisites` | `[]` |
 | `status` | `draft` |
 | `linked_planets` | 🔗 `abjad` |
 | `safety_notes` | لا ينطبق |
