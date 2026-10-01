@@ -70,6 +70,44 @@ Map<String, dynamic> shapesPack() => {
   'voice_manifest': {'vo.intro': 'asset-vo-intro'},
 };
 
+Map<String, dynamic> progressionMemoryPack() => {
+  'pack_version': 1,
+  'engine_id': 'memory_flip',
+  'pack_id': 'wave1-memory-animals-p2a-test',
+  'supports_dpad': true,
+  'progression': {'levels_to_finish': 3, 'advance_on': 'level_complete'},
+  'accessibility': {
+    'sequential_tap_alternative': true,
+    'reduced_motion_supported': true,
+    'min_touch_target_dp': 64,
+  },
+  'levels': [
+    for (final entry in [(1, 2, 2), (2, 2, 3), (3, 2, 4)])
+      {
+        'level': entry.$1,
+        'grid': [entry.$2, entry.$3],
+        'pair_type': 'identical',
+        'pairs': [
+          for (var pair = 0; pair < entry.$3; pair++)
+            {
+              'a': 'asset-card-$pair',
+              'b': 'asset-card-$pair',
+              'sound_key': 'pair.card_$pair',
+            },
+        ],
+        'flip_back_delay_ms': 1400,
+      },
+  ],
+  'voice_manifest': {
+    'vo.intro': 'asset-vo-intro',
+    'vo.instruction': 'asset-vo-instruction',
+    'vo.instruction_repeat': 'asset-vo-instruction-repeat',
+    'vo.level_complete': 'asset-vo-level-complete',
+    'vo.game_complete': 'asset-vo-game-complete',
+    'vo.exit_confirm': 'asset-vo-exit-confirm',
+  },
+};
+
 class _Harness {
   _Harness(Map<String, dynamic> json, {GameAccessibilitySettings? settings})
     : pack = GamePack.fromJson(json) {
@@ -290,6 +328,68 @@ void main() {
     // No drawing surface is offered at all, rather than one that cannot be used.
     expect(canvasFinder, findsNothing);
   });
+
+  testWidgets(
+    'three-level pack advances 1→2→3 in RTL at 2x with reduced motion',
+    (tester) async {
+      tester.view.physicalSize = const Size(1400, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final harness = _Harness(
+        progressionMemoryPack(),
+        settings: const GameAccessibilitySettings(reduceMotion: true),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(2),
+              disableAnimations: true,
+            ),
+            child: child!,
+          ),
+          home: Directionality(
+            textDirection: TextDirection.rtl,
+            child: GameScreen(
+              pack: harness.pack,
+              controller: harness.controller,
+              registry: buildDefaultRegistry(),
+              isTelevision: true,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('المستوى 1 من 3'), findsWidgets);
+      expect(find.text('هذه اللعبة تحتاج شاشة لمس'), findsNothing);
+      expect(
+        Directionality.of(tester.element(find.text('المستوى 1 من 3').first)),
+        TextDirection.rtl,
+      );
+
+      await harness.controller.finishLevelFromEngine();
+      await tester.pumpAndSettle();
+      expect(find.text('أكملت المستوى'), findsOneWidget);
+      await tester.tap(find.text('التالي'));
+      await tester.pumpAndSettle();
+      expect(find.text('المستوى 2 من 3'), findsWidgets);
+
+      await harness.controller.finishLevelFromEngine();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('التالي'));
+      await tester.pumpAndSettle();
+      expect(find.text('المستوى 3 من 3'), findsWidgets);
+
+      await harness.controller.finishLevelFromEngine();
+      await tester.pumpAndSettle();
+      expect(find.text('أكملت اللعبة'), findsOneWidget);
+      expect(find.text('التالي'), findsNothing);
+      expect(harness.controller.gameComplete, isTrue);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('an unknown engine shows an update prompt, not a crash', (
     tester,

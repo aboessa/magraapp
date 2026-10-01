@@ -131,6 +131,129 @@ Future<void> tabTo(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  test('P2-A Wave 2 fixtures preserve count modes and memory difficulty', () {
+    final countJson = packWith('count_quantity', {
+      'level': 1,
+      'mode': 'drag_amount',
+      'items': const [],
+    });
+    countJson['progression'] = {
+      'levels_to_finish': 3,
+      'advance_on': 'level_complete',
+    };
+    countJson['levels'] = [
+      {
+        'level': 1,
+        'mode': 'drag_amount',
+        'items': [
+          for (final answer in [2, 3, 4])
+            {
+              'id': 'q$answer',
+              'items': [
+                {'image': 'asset-color-apple', 'count': answer},
+              ],
+              'options': [answer - 1, answer, answer + 1],
+              'answer': answer,
+            },
+        ],
+      },
+      {
+        'level': 2,
+        'mode': 'drag_amount',
+        'items': [
+          for (final answer in [4, 5, 6])
+            {
+              'id': 'q$answer',
+              'items': [
+                {'image': 'asset-color-apple', 'count': answer},
+              ],
+              'options': [answer - 1, answer, answer + 1],
+              'answer': answer,
+            },
+        ],
+      },
+      {
+        'level': 3,
+        'mode': 'compare_sets',
+        'items': const [
+          {
+            'answer': 'set_a',
+            'options': ['set_a', 'set_b', 'equal'],
+          },
+          {
+            'answer': 'set_a',
+            'options': ['set_a', 'set_b', 'equal'],
+          },
+          {
+            'answer': 'equal',
+            'options': ['set_a', 'set_b', 'equal'],
+          },
+        ],
+      },
+    ];
+    final countPack = GamePack.fromJson(countJson);
+
+    expect(countPack.progression.levelsToFinish, 3);
+    expect(countPack.supportsDpad, isTrue);
+    expect(countPack.accessibility.sequentialTapAlternative, isTrue);
+    expect(countPack.accessibility.reducedMotionSupported, isTrue);
+    expect(countPack.rawLevels.map((level) => level['mode']), [
+      'drag_amount',
+      'drag_amount',
+      'compare_sets',
+    ]);
+    for (final level in countPack.rawLevels.take(2)) {
+      for (final item in level['items'] as List<dynamic>) {
+        final data = item as Map<String, dynamic>;
+        final visible =
+            ((data['items'] as List).single as Map<String, dynamic>)['count'];
+        expect(data['answer'], visible);
+        expect(data['options'], contains(data['answer']));
+      }
+    }
+
+    final memoryJson = packWith('memory_flip', {
+      'level': 1,
+      'grid': [2, 2],
+      'pair_type': 'identical',
+      'pairs': const [],
+      'flip_back_delay_ms': 1400,
+    });
+    memoryJson['progression'] = {
+      'levels_to_finish': 3,
+      'advance_on': 'level_complete',
+    };
+    memoryJson['levels'] = [
+      {
+        'level': 1,
+        'grid': [2, 2],
+        'flip_back_delay_ms': 1400,
+      },
+      {
+        'level': 2,
+        'grid': [2, 3],
+        'flip_back_delay_ms': 1200,
+      },
+      {
+        'level': 3,
+        'grid': [2, 4],
+        'flip_back_delay_ms': 1100,
+      },
+    ];
+    final memoryPack = GamePack.fromJson(memoryJson);
+    expect(memoryPack.rawLevels.map((level) => level['grid']), [
+      [2, 2],
+      [2, 3],
+      [2, 4],
+    ]);
+    expect(memoryPack.rawLevels.map((level) => level['flip_back_delay_ms']), [
+      1400,
+      1200,
+      1100,
+    ]);
+    expect(memoryPack.voiceManifest, isNot(contains('vo.retry')));
+  });
+
   // ------------------------------------------------------------ engine matrix
 
   group('engine matrix', () {
@@ -389,6 +512,80 @@ void main() {
       );
     });
 
+    testWidgets('count progression resets question and local score 1→2→3', (
+      tester,
+    ) async {
+      Map<String, dynamic> countLevel(int level, int answer) => {
+        'level': level,
+        'mode': 'count_and_pick',
+        'scoring': 'discrete',
+        'range': [answer, answer + 1],
+        'numeral_system': 'arabic_indic',
+        'count_aloud_on_error': true,
+        'allow_recount_button': true,
+        'items': [
+          {
+            'id': 'q$level',
+            'items': [
+              {'image': 'asset-color-stars', 'count': answer},
+            ],
+            'options': [answer, answer + 1],
+            'answer': answer,
+          },
+        ],
+      };
+
+      final json = packWith('count_quantity', countLevel(1, 1));
+      json['progression'] = {
+        'levels_to_finish': 3,
+        'advance_on': 'level_complete',
+      };
+      json['levels'] = [
+        countLevel(1, 1),
+        countLevel(2, 2),
+        countLevel(3, 3),
+      ];
+      final s = session(json, gameId: 'game-wave1-count-place');
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(
+              body: AnimatedBuilder(
+                animation: s.controller,
+                builder: (context, _) =>
+                    const CountQuantityEngine().build(context, s.controller),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      for (var level = 0; level < 3; level++) {
+        final answer = level + 1;
+        expect(
+          find.byKey(ValueKey('count_element_${answer - 1}')),
+          findsOneWidget,
+        );
+        expect(find.byKey(ValueKey('count_element_$answer')), findsNothing);
+        await tester.tap(find.byKey(ValueKey('count_option_$answer')));
+        await tester.pumpAndSettle();
+        expect(s.reporter.attempts[level].score, 1);
+        expect(s.reporter.attempts[level].maxScore, 1);
+        expect(s.reporter.attempts[level].helpUsed, isFalse);
+        if (level < 2) {
+          s.controller.nextLevel();
+          await tester.pump();
+        }
+      }
+
+      expect(s.controller.levelIndex, 2);
+      expect(s.controller.gameComplete, isTrue);
+      expect(s.reporter.attempts.map((attempt) => attempt.score), [1, 1, 1]);
+      expect(tester.takeException(), isNull);
+    });
+
     test('numeral formatting is display only', () {
       expect(formatNumeral(7, 'arabic_indic'), '٧');
       expect(formatNumeral(7, 'western'), '7');
@@ -508,6 +705,92 @@ void main() {
         find.byKey(const ValueKey('logic_option_asset-c3')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('logic progression resets stage and feedback 1→2→3', (
+      tester,
+    ) async {
+      Map<String, dynamic> logicLevel(
+        int level,
+        String answer,
+        String wrong,
+      ) => {
+        'level': level,
+        'mode': 'linear',
+        'scoring': 'discrete',
+        'sequence': [answer, wrong, answer, null],
+        'options': [answer, wrong],
+        'answer': answer,
+        'rule_key': 'rule.level_$level',
+        'changing_dimensions': ['shape'],
+      };
+
+      final levels = [
+        logicLevel(1, 'asset-color-cat', 'asset-color-bird'),
+        logicLevel(2, 'asset-color-rocket', 'asset-color-apple'),
+        logicLevel(3, 'asset-color-rainbow', 'asset-color-moon'),
+      ];
+      final json = packWith('logic_pattern', levels.first);
+      json['progression'] = {
+        'levels_to_finish': 3,
+        'advance_on': 'level_complete',
+      };
+      json['levels'] = levels;
+      final s = session(json, gameId: 'game-wave1-logic-kids');
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(
+              body: AnimatedBuilder(
+                animation: s.controller,
+                builder: (context, _) =>
+                    const LogicPatternEngine().build(context, s.controller),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(
+        find.byKey(const ValueKey('logic_option_asset-color-bird')),
+      );
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const ValueKey('logic_option_asset-color-cat')),
+      );
+      await tester.pumpAndSettle();
+      expect(s.reporter.attempts.single.score, 0);
+      expect(s.reporter.attempts.single.helpUsed, isTrue);
+
+      s.controller.nextLevel();
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('logic_option_asset-color-rocket')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('logic_option_asset-color-rocket')),
+      );
+      await tester.pumpAndSettle();
+      expect(s.reporter.attempts[1].score, 1);
+      expect(s.reporter.attempts[1].helpUsed, isFalse);
+
+      s.controller.nextLevel();
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('logic_option_asset-color-rainbow')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('logic_option_asset-color-rainbow')),
+      );
+      await tester.pumpAndSettle();
+      expect(s.reporter.attempts[2].score, 1);
+      expect(s.reporter.attempts[2].helpUsed, isFalse);
+      expect(s.controller.gameComplete, isTrue);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('every cell carries a text alternative', (tester) async {

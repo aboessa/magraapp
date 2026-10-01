@@ -27,6 +27,17 @@ const REPO = path.resolve(import.meta.dirname, '../../..');
 const DOCS_SCHEMAS = path.join(REPO, 'docs/games/schemas');
 const SRC_SCHEMAS = path.resolve(import.meta.dirname, '../src/schemas');
 const FIXTURES = path.join(REPO, 'docs/games/fixtures');
+const P2A_PRESCHOOL_KIDS = path.resolve(
+  import.meta.dirname,
+  '../migrations/0106_games_p2a_preschool_kids_progression.sql',
+);
+
+function extractP2APacks(sql) {
+  const packs = new Map();
+  const tuple = /^\s*\('(game-[^']+)',\s*'(\{.*\})'\),?\s*$/gm;
+  for (const match of sql.matchAll(tuple)) packs.set(match[1], JSON.parse(match[2]));
+  return packs;
+}
 
 function baseContext(engineId, overrides = {}) {
   return {
@@ -69,7 +80,96 @@ function validate(engineId, pack, ctxOverrides = {}) {
   return validateGamePack(ENGINE_SCHEMAS[engineId], pack, baseContext(engineId, ctxOverrides));
 }
 
-// ------------------------------------------------------------ schema integrity
+// ---------------------------------------------------------- P2-A migration packs
+
+test('0106 authors only the five verified preschool/kids three-level packs', () => {
+  const sql = readFileSync(P2A_PRESCHOOL_KIDS, 'utf8');
+  const executable = sql.replace(/^\s*--.*$/gm, '');
+  const packs = extractP2APacks(sql);
+  const expectedIds = [
+    'game-wave1-count-place',
+    'game-wave1-logic-kids',
+    'game-wave1-memory-animals',
+    'game-wave2-count-drag',
+    'game-wave2-memory-2',
+  ];
+
+  assert.deepEqual([...packs.keys()].sort(), expectedIds);
+  assert.match(executable, /UPDATE games\s+SET content_pack = resolved\.content_pack\s+FROM resolved/i);
+  assert.doesNotMatch(executable, /\bSET\s+(?:status|age_min|age_max|learning_objective_id)\s*=/i);
+  assert.doesNotMatch(executable, /\b(?:INSERT|DELETE)\b/i);
+  assert.match(executable, /ca\.r2_key = v\.value[\s\S]*ca\.status = 'ready'/i);
+  assert.match(executable, /resolved_voice_count = resolved\.required_voice_count/i);
+  assert.doesNotMatch(sql, /asset-(?:games|vo)-[a-z0-9-]+/i,
+    'voice ids are environment-specific; the migration must carry only stable r2_key values');
+
+  const voiceSeed = readFileSync(path.resolve(import.meta.dirname, '../migrations/0088_games_voice_assets.sql'), 'utf8');
+  const imageSeed = [
+    '0042_drawing_assets_ready.sql',
+    '0043_coloring_40_library.sql',
+  ].map((name) => readFileSync(path.resolve(import.meta.dirname, `../migrations/${name}`), 'utf8')).join('\n');
+  const voiceIds = new Map();
+  let voiceIndex = 0;
+
+  for (const [gameId, pack] of packs) {
+    assert.equal(pack.levels.length, 3, gameId);
+    assert.deepEqual(pack.levels.map((level) => level.level), [1, 2, 3], gameId);
+    assert.equal(pack.progression.levels_to_finish, 3, gameId);
+    assert.equal(pack.progression.advance_on, 'level_complete', gameId);
+    assert.equal(pack.supports_dpad, true, gameId);
+    assert.equal(pack.accessibility.sequential_tap_alternative, true, gameId);
+    assert.equal(pack.accessibility.reduced_motion_supported, true, gameId);
+
+    for (const imageId of pack.assets.images) {
+      const escaped = imageId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      assert.match(imageSeed, new RegExp(`\\('${escaped}','[^']*','image','ready'`),
+        `${gameId}: ${imageId} must already be a ready image`);
+    }
+
+    for (const [voiceKey, r2Key] of Object.entries(pack.voice_manifest)) {
+      assert.match(r2Key, /^private\/audio\/games\/.+\.wav$/, `${gameId}: ${voiceKey}`);
+      assert.ok(voiceSeed.includes(`'${r2Key}'`), `${gameId}: ${voiceKey} must use an existing voice file`);
+      if (!voiceIds.has(r2Key)) voiceIds.set(r2Key, `ready-voice-${++voiceIndex}`);
+      pack.voice_manifest[voiceKey] = voiceIds.get(r2Key);
+    }
+
+    const ready = new Set([...pack.assets.images, ...Object.values(pack.voice_manifest)]);
+    const memory = pack.engine_id === 'memory_flip';
+    const result = validateGamePack(ENGINE_SCHEMAS[pack.engine_id], pack, baseContext(pack.engine_id, {
+      ageMin: gameId === 'game-wave1-memory-animals' || gameId === 'game-wave1-count-place' ? 3 : 6,
+      ageMax: gameId === 'game-wave1-memory-animals' || gameId === 'game-wave1-count-place' ? 5 : 8,
+      hasLearningObjective: !memory,
+      knownAssetIds: ready,
+      readyAssetIds: ready,
+      forPublish: true,
+    }));
+    assert.deepEqual(result.errors, [], `${gameId}: ${result.errors.join('; ')}`);
+  }
+
+  const preschoolMemory = packs.get('game-wave1-memory-animals');
+  assert.deepEqual(preschoolMemory.levels.map((level) => level.grid), [[2, 2], [2, 3], [2, 4]]);
+  assert.ok(preschoolMemory.levels.every((level) => level.flip_back_delay_ms === 1400));
+  assert.ok(preschoolMemory.levels.every((level) => level.scoring === 'none'));
+  assert.equal('vo.retry' in preschoolMemory.voice_manifest, false);
+  assert.doesNotMatch(JSON.stringify(preschoolMemory), /timer|points/i);
+
+  for (const gameId of ['game-wave1-count-place', 'game-wave2-count-drag']) {
+    for (const level of packs.get(gameId).levels.filter((entry) => entry.mode !== 'compare_sets')) {
+      for (const item of level.items) {
+        const visible = item.items.reduce((total, set) => total + set.count, 0);
+        assert.equal(item.answer, visible, `${gameId} level ${level.level} ${item.id}`);
+        assert.ok(item.options.includes(item.answer), `${gameId} level ${level.level} ${item.id}`);
+      }
+    }
+  }
+
+  const logic = packs.get('game-wave1-logic-kids');
+  assert.deepEqual(logic.levels.map((level) => level.mode), ['linear', 'linear_alt', 'matrix_2x2']);
+  assert.ok(logic.levels.every((level) => level.changing_dimensions.includes('shape')));
+  assert.ok(logic.levels.every((level) => level.options.length === 3));
+});
+
+// ------------------------------------------------------------- schema integrity
 
 test('every engine has a runtime schema, and it matches the registry of contracts', () => {
   const withSchema = enginesWithRuntimeSchema();

@@ -131,6 +131,143 @@ Future<void> tabTo(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  test(
+    'P2-A Wave 1 packs keep preschool rules and three-level progression',
+    () async {
+      final memoryLevels = [
+        {
+          'level': 1,
+          'grid': [2, 2],
+          'pair_type': 'identical',
+          'pairs': [
+            {
+              'a': 'asset-color-cat',
+              'b': 'asset-color-cat',
+              'sound_key': 'pair.cat',
+            },
+            {
+              'a': 'asset-color-bird',
+              'b': 'asset-color-bird',
+              'sound_key': 'pair.bird',
+            },
+          ],
+          'flip_back_delay_ms': 1400,
+        },
+        {
+          'level': 2,
+          'grid': [2, 3],
+          'pair_type': 'identical',
+          'pairs': const [],
+          'flip_back_delay_ms': 1400,
+        },
+        {
+          'level': 3,
+          'grid': [2, 4],
+          'pair_type': 'identical',
+          'pairs': const [],
+          'flip_back_delay_ms': 1400,
+        },
+      ];
+      final memory = Harness(
+        packOf(
+          engineId: 'memory_flip',
+          levels: memoryLevels,
+          levelsToFinish: 3,
+        ),
+        gameId: 'game-wave1-memory-animals',
+        settings: const GameAccessibilitySettings(reduceMotion: true),
+      );
+
+      expect(memory.controller.levelCount, 3);
+      expect(memory.pack.progression.levelsToFinish, 3);
+      expect(memory.pack.accessibility.sequentialTapAlternative, isTrue);
+      expect(memory.pack.accessibility.reducedMotionSupported, isTrue);
+      expect(
+        memory.pack.rawLevels.map((level) => level['flip_back_delay_ms']),
+        everyElement(1400),
+      );
+      expect(memory.pack.rawLevels.toString(), isNot(contains('timer')));
+      expect(memory.pack.rawLevels.toString(), isNot(contains('points')));
+
+      await memory.controller.finishLevelFromEngine();
+      expect(memory.controller.gameComplete, isFalse);
+      memory.controller.nextLevel();
+      expect(memory.controller.levelIndex, 1);
+      await memory.controller.finishLevelFromEngine();
+      expect(memory.controller.gameComplete, isFalse);
+      memory.controller.nextLevel();
+      await memory.controller.finishLevelFromEngine();
+      expect(memory.controller.levelIndex, 2);
+      expect(memory.controller.gameComplete, isTrue);
+
+      final count = GamePack.fromJson(
+        packOf(
+          engineId: 'count_quantity',
+          levels: [
+            for (final entry in [(1, 1), (2, 2), (3, 3)])
+              {
+                'level': entry.$1,
+                'mode': 'count_and_pick',
+                'items': [
+                  {
+                    'id': 'q1',
+                    'items': [
+                      {'image': 'asset-color-stars', 'count': entry.$2},
+                    ],
+                    'options': [entry.$2, entry.$2 + 1],
+                    'answer': entry.$2,
+                  },
+                ],
+              },
+          ],
+          levelsToFinish: 3,
+        ),
+      );
+      expect(count.rawLevels.map((level) => level['level']), [1, 2, 3]);
+      for (final level in count.rawLevels) {
+        final item = (level['items'] as List).single as Map<String, dynamic>;
+        final visible =
+            ((item['items'] as List).single as Map<String, dynamic>)['count'];
+        expect(item['answer'], visible);
+      }
+
+      final logic = GamePack.fromJson(
+        packOf(
+          engineId: 'logic_pattern',
+          levels: [
+            {
+              'level': 1,
+              'mode': 'linear',
+              'changing_dimensions': ['shape'],
+            },
+            {
+              'level': 2,
+              'mode': 'linear_alt',
+              'changing_dimensions': ['shape'],
+            },
+            {
+              'level': 3,
+              'mode': 'matrix_2x2',
+              'changing_dimensions': ['shape'],
+            },
+          ],
+          levelsToFinish: 3,
+        ),
+      );
+      expect(logic.rawLevels.map((level) => level['mode']), [
+        'linear',
+        'linear_alt',
+        'matrix_2x2',
+      ]);
+      expect(
+        logic.rawLevels.every(
+          (level) => (level['changing_dimensions'] as List).contains('shape'),
+        ),
+        isTrue,
+      );
+    },
+  );
+
   group('registry', () {
     test('every Wave 1 engine is registered with a real implementation', () {
       final registry = buildDefaultRegistry();
@@ -190,6 +327,88 @@ void main() {
       // 2 pairs => 4 tiles.
       expect(find.byIcon(Icons.question_mark), findsNWidgets(4));
       expect(find.text('أعد التعليمة'), findsOneWidget);
+    });
+
+    testWidgets('a pending flip never reaches the next progression level', (
+      tester,
+    ) async {
+      List<Map<String, dynamic>> pairs(List<String> assets) => [
+        for (final asset in assets)
+          {'a': asset, 'b': asset, 'sound_key': 'pair.$asset'},
+      ];
+      final levels = [
+        {
+          'level': 1,
+          'grid': [2, 2],
+          'pair_type': 'identical',
+          'pairs': pairs(['asset-color-cat', 'asset-color-bird']),
+          'flip_back_delay_ms': 1400,
+        },
+        {
+          'level': 2,
+          'grid': [2, 3],
+          'pair_type': 'identical',
+          'pairs': pairs([
+            'asset-color-cat',
+            'asset-color-bird',
+            'asset-color-fish',
+          ]),
+          'flip_back_delay_ms': 1400,
+        },
+        {
+          'level': 3,
+          'grid': [2, 4],
+          'pair_type': 'identical',
+          'pairs': pairs([
+            'asset-color-cat',
+            'asset-color-bird',
+            'asset-color-fish',
+            'asset-color-rabbit',
+          ]),
+          'flip_back_delay_ms': 1400,
+        },
+      ];
+      final harness = Harness(
+        packOf(
+          engineId: 'memory_flip',
+          levels: levels,
+          levelsToFinish: 3,
+        ),
+        gameId: 'game-wave1-memory-animals',
+      );
+      await pumpBig(tester, harness.widget());
+
+      final shuffled = seededShuffle<String>([
+        'asset-color-cat',
+        'asset-color-cat',
+        'asset-color-bird',
+        'asset-color-bird',
+      ], harness.controller.gameId.hashCode);
+      final mismatch = shuffled.indexWhere((asset) => asset != shuffled.first);
+      await tester.tap(find.byKey(const ValueKey('memory_tile_0')));
+      await tester.pump();
+      await tester.tap(find.byKey(ValueKey('memory_tile_$mismatch')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('memory_retry_0')), findsWidgets);
+
+      await harness.controller.finishLevelFromEngine();
+      harness.controller.nextLevel();
+      await tester.pump();
+      expect(harness.controller.levelIndex, 1);
+      expect(find.byKey(const ValueKey('memory_tile_5')), findsOneWidget);
+      expect(find.byKey(const ValueKey('memory_tile_6')), findsNothing);
+      expect(find.byKey(const ValueKey('memory_retry_0')), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 1500));
+      expect(find.byKey(const ValueKey('memory_tile_5')), findsOneWidget);
+      expect(find.byKey(const ValueKey('memory_retry_0')), findsNothing);
+
+      await harness.controller.finishLevelFromEngine();
+      harness.controller.nextLevel();
+      await tester.pump();
+      expect(harness.controller.levelIndex, 2);
+      expect(find.byKey(const ValueKey('memory_tile_7')), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('a canonical memory game uses its reviewed card back', (

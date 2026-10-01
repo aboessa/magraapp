@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Add schema-valid three-level progression for five verified preschool/kids packs: memory animals, count place, logic kids, count drag, and memory 2. This feature is independent of the junior pack content but must run first because it claims migration 0106.",
+  "status": "completed",
+  "steps": [
+    "Read context.json, inventory.md and plan.md first; implement only the five exact progression tables in plan.md.",
+    "Extend dashboard/api/test/enginePacks.test.mjs to extract and validate P2-A migration packs with ENGINE_SCHEMAS/validateGamePack, including level continuity, exact game IDs, no status writes, and r2_key-resolved ready voice assets.",
+    "Create dashboard/api/migrations/0106_games_p2a_preschool_kids_progression.sql with idempotent guarded content_pack updates only; resolve environment-specific voice IDs from stable r2_key values and do not apply the migration.",
+    "Update dashboard/api/migrations/LEDGER.md surgically for 0106 without overwriting existing user edits.",
+    "Extend app_main/test/wave_one_engines_test.dart, wave_two_engines_test.dart and game_screen_test.dart only as needed to prove three-level transitions, preschool constraints, RTL, reduced motion, 2x text and D-pad/tap alternatives; do not put content in production Dart."
+  ],
+  "acceptance_criteria": [
+    "Exactly the five named games receive three contiguous levels and levels_to_finish=3; no other game or status changes.",
+    "Memory preschool keeps 1400ms and has no timer, points or retry voice; counting answers equal visible quantities; logic never relies on color alone.",
+    "Every pack passes the real composed schema and engine semantic rules using only existing ready image/voice references.",
+    "No D1 migration is applied and no media, character, APK or publication is produced."
+  ],
+  "verification": [
+    "cd dashboard/api; node --experimental-strip-types --test test/enginePacks.test.mjs test/migrations.test.mjs",
+    "cd app_main; flutter test test/game_screen_test.dart test/engine_content_separation_test.dart test/wave_one_engines_test.dart test/wave_two_engines_test.dart"
+  ],
+  "blocked_reason": null,
+  "findings": "Implemented guarded migration 0106 for exactly game-wave1-memory-animals, game-wave1-count-place, game-wave1-logic-kids, game-wave2-count-drag, and game-wave2-memory-2. The migration updates content_pack only, resolves every voice reference from a ready content_assets.r2_key row, and leaves a pack untouched if any required voice is missing. Verification passed: node --experimental-strip-types --test test/enginePacks.test.mjs test/migrations.test.mjs (50/50); flutter test test/game_screen_test.dart test/engine_content_separation_test.dart test/wave_one_engines_test.dart test/wave_two_engines_test.dart (94/94); flutter analyze lib/features/games; additional drawing_asset_map_integrity/shared_fixtures tests (22/22). npm run typecheck:types remains blocked by 50 pre-existing errors in unrelated untracked admin routes (adminAiStoryStudio, adminCoupons, adminLiveEvents, adminNotifications, adminScreentime); no FEAT-001 file appears in those errors. No D1 migration was applied and no production, media/character, publication, Google key, or APK action occurred. Live backend token/R2/audio playback, hardware D-pad, device safe areas, contrast, and TalkBack/VoiceOver remain unverified release gates."
+}
