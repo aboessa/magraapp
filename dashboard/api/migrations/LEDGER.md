@@ -525,9 +525,60 @@ SELECT g.status,
 في الدورة التالية لأن `probeDeadLetterQueue` يستدعي `clears` حين يصير العدد صفرًا —
 بلا خطوة يدوية.
 
-## الملفات (100)
+## `0098` — سياسة المنصّة من لوحة التحكم
 
-آخر تحديث: 2026-09-23 · `DATA-201` و`DECIDE-108` و`0088` و`0094`–`0097`.
+جدول `platform_policy`: صفٌّ لكل قسم (`plan_limits` و`tv_pairing` و
+`offline_license`) بقيمة JSON مُتحقَّق منها ورقم إصدار. الكاتب الوحيد
+`routes/adminPlatformPolicy.ts` (صلاحية `publish`، حدود دنيا وعليا لكل رقم، سجلّ
+تدقيق، رفع الإصدار مع كل حفظ). غياب الصف = القيم الافتراضية في الكود. والقارئ
+`lib/platformPolicy.ts` يرجع لآخر قيمة قرأها أو للافتراضي إن تعذّر D1، فانقطاع D1 لا
+يفتح حدًّا ولا يحجب أسرة تدفع.
+
+## `0099` — تقارير الانهيار من التطبيق
+
+جدول `app_crash_reports` (`OPS-202`): صفٌّ لكل تقرير من `CrashReporter`. الكاتب الوحيد
+`routes/crashIngest.ts` (`POST /api/v1/analytics/crashes`، تحت حصّة `analyticsLimit`)،
+والقارئ `routes/adminAppHealth.ts`. بلا رسالة خطأ ولا نصّ حرّ: نوع الخطأ وأسطر
+`package:`/`dart:` فقط، والمخطَّط يرفض غيرها. بصمة SHA-256 للتجميع، وحذف ما تجاوز 30 يومًا
+من مسار الكتابة نفسه.
+
+## `0100` — وقت المشاهدة لكل طفل ويوم ومحتوى
+
+جدول `child_watch_time_daily` (`ADM-309`): إسقاط الحدث `watch_time.credited` الذي يصدره
+`FamilyState` في نفس معاملة رصيد وقت الشاشة، فيطابق ما تفرضه الحدود بالضبط. اليوم محلي
+للأسرة. الكاتب الوحيد `queue/familyEvents.ts` (جمعٌ مشروط بعدم وجود الحدث في
+`processed_family_events` داخل نفس الدفعة، ويُمسح مع حذف الطفل أو الأسرة)، والقارئ
+`GET /admin/analytics/watch-time`.
+
+## `0101` — ما أعجب الطفل وما حفظه
+
+جدول `child_series_signals` (`APP-209`): إسقاط `favorite.updated` للسلاسل — `series_like`
+(«عجبني») و`series` («احفظ»). السلطة في `FamilyState.favorites`. الحذف يترك صفًّا
+`active = 0` حتى لا يُحيي حدثٌ أقدم ما أُزيل. يُمسح مع حذف الطفل أو الأسرة. القارئ الوحيد
+`routes/recommendations.ts` عبر `lib/recommendSeries.ts`.
+
+## `0102` — الأجهزة عبر كل الأسر
+
+جدول `device_projection` (`ADM-307`): إسقاط `FamilyState.devices` بدل `account_devices` الميت
+(بلا كاتب، ومفتاح أجنبي إلى `parents` الفارغ). يكتبه الطابور من `session.created`
+و`device.revoked` و`session.revoked` (سحب الكل من المشغّل، يحمل `deviceIds`) و`family.resynced`
+(تعبئة الأسر القديمة). بلا بصمة تثبيت. يُمسح مع حذف الأسرة. القارئ `GET /admin/devices`.
+
+## `0103` — إشعارات الأسرة (FCM)
+
+ثلاث جداول (`APP-203`): `push_tokens` (توكن لكل جهاز، بلا تلفزيونات، يُحذف لما FCM يقول إنه ميت)، و`push_preferences` (غياب الصف = كل الأنواع شغالة، والتعديل بإثبات ولي أمر)، و`push_log` (مرة واحدة لكل مفتاح، يُمسح بعد 30 يوم). الكاتب `routes/push.ts` و`lib/push.ts`، والمُرسِل نبضة التشغيل وجدولة `0 16 * * *`.
+
+## `0104` — الدفع اليدوي (محافظ وإنستاباي)
+
+جدولان: `manual_payment_settings` (صف واحد: الأرقام والأسعار بالجنيه ومفتاح التشغيل، يبدأ مقفولًا؛ الكاتب `PUT /admin/billing/manual/settings` بصلاحية `manage_billing`) و`manual_payment_requests` (طلب لكل تحويل يبلّغ عنه ولي الأمر، المبلغ والأيام منسوخين من الإعدادات وقت الإرسال). الموافقة تمنح استحقاق `manual` في `FamilyState` (المرجع)، والإيصال الاختياري في bucket الإبداعات الخاص تحت `billing/receipts/`. القارئ `routes/manualPayments.ts` ولوحة «طلبات الدفع»، والتذكير قبل الانتهاء في جدولة `0 16 * * *`.
+
+## `0105` — الصفحات القانونية
+
+جدول `legal_documents`: صف لكل وثيقة (الخصوصية، خصوصية الأطفال، الشروط، حذف الحساب) فيه مسودة ونسخة منشورة ورقم إصدار. النص المبذور **مسودة** مكتوبة من اللي الكود بيخزّنه فعلًا، وفيه `{{خانات}}` لازم المالك يملاها؛ النشر بيرفض أي خانة فاضية. الكاتب `routes/adminLegal.ts` (صلاحية `publish`)، والقارئ العام `routes/legal.ts` (المنشور بس) للموقع `/legal/:slug` والتطبيق.
+
+## الملفات (108)
+
+آخر تحديث: 2026-09-27 · `DATA-201` و`DECIDE-108` و`0088` و`0094`–`0105`.
 
 <!-- MIGRATION-LIST:BEGIN — يُحدَّث بـ`node tools/ops/migration-ledger.mjs --list` -->
 0001_init.sql
@@ -630,6 +681,14 @@ SELECT g.status,
 0095_ops_alert_dedupe.sql
 0096_voice_manifest_actual_ids.sql
 0097_discard_orphan_failed_events.sql
+0098_platform_policy.sql
+0099_app_crash_reports.sql
+0100_child_watch_time_daily.sql
+0101_child_series_signals.sql
+0102_device_projection.sql
+0103_push_notifications.sql
+0104_manual_payments.sql
+0105_legal_documents.sql
 <!-- MIGRATION-LIST:END -->
 
 ## ما حُذف
